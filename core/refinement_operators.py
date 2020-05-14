@@ -1,4 +1,9 @@
+import copy
+
 from core.base import KnowledgeBase, Concept
+from typing import Set
+from itertools import chain, permutations, tee
+
 
 class Refinement:
     """
@@ -8,17 +13,15 @@ class Refinement:
     def __init__(self, kb: KnowledgeBase):
         self.kb = kb
 
-    def refine_atomic_concept(self, C: Concept):
+    def refine_atomic_concept(self, C: Concept) -> Set:
         """
         # (1) Create all direct sub concepts of C that are defined in TBOX.
         # (2) Create negations of all leaf concepts in  the concept hierarchy.
         # (3) Create ∀.r.T and ∃.r.T where r is the most general relation.
 
-        :param C:
-        :param A: is an instance of Node Class containing Atomic OWL Class expression
-        :return:
+        :param C: Concept
+        :return: A set of refinements.
         """
-        result = set()
         # (1) Generate all direct_sub_concepts
         sub_concepts = self.kb.get_direct_sub_concepts(C)
         # (2) Create negation of all leaf_concepts
@@ -26,24 +29,16 @@ class Refinement:
         # (3) Create ∃.r.T where r is the most general relation.
         existential_rest = self.kb.most_general_existential_restrictions(C)
         universal_rest = self.kb.most_general_universal_restriction(C)
-
-        result.update(negs)
-        result.update(sub_concepts)
-        result.update(existential_rest)
-        result.update(universal_rest)
-        temp = set()
-        for i in result:
-            if i.str == 'Nothing':
-                continue
-            for j in result:
-                if i == j or (j.str == 'Nothing'):
+        a, b = tee(chain(sub_concepts, negs, existential_rest, universal_rest))
+        for i in a:
+            yield i
+            for j in copy.copy(b):
+                if i == j:
                     continue
-                temp.add(self.kb.union(i, j))
-                temp.add(self.kb.intersection(i, j))
-                break
-            break
-        result.update(temp)
-        return result
+                yield self.kb.union(i, j)
+                yield self.kb.intersection(i, j)
+
+
 
     def refine_complement_of(self, C: Concept):
         """
