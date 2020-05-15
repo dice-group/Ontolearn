@@ -1,6 +1,10 @@
 import types
+from time import sleep
+
 from owlready2 import Not, AllDisjoint
 from core.concept import Concept
+import concurrent.futures
+
 
 class ConceptGenerator:
 
@@ -16,6 +20,8 @@ class ConceptGenerator:
         self.log_of_universal_restriction = dict()
         self.log_of_existential_restriction = dict()
 
+        self.executor = concurrent.futures.ProcessPoolExecutor()
+
     @staticmethod
     def __concepts_sorter(A, B):
         if len(A) < len(B):
@@ -26,6 +32,23 @@ class ConceptGenerator:
         args = [A, B]
         args.sort(key=lambda ce: ce.str)
         return args[0], args[1]
+
+    @staticmethod
+    def type_enrichments(instances, new_concept):
+        for i in instances:
+            i.is_a.append(new_concept)
+
+    @staticmethod
+    def type__restrictions_enrichments(exist, role, filler, c):
+        if exist:
+            # {(x,y) | (x,r,y) \in G}.
+            # TODO use itertools.
+            for x, y in role.get_relations():
+                if y in filler.instances:
+                    x.is_a.append(c)
+
+        else:
+            raise ValueError
 
     def negation(self, concept: Concept):
 
@@ -39,11 +62,10 @@ class ConceptGenerator:
                 AllDisjoint([not_concept, concept.owl])
                 not_concept.is_a.append(self.T.owl)  # superclass
                 not_concept.equivalent_to.append(Not(concept.owl))
-
-                for i in set(self.T.owl.instances()) - set(concept.owl.instances()):
-                    i.is_a.append(not_concept)
+                self.executor.submit(self.type_enrichments, (self.T.instances - concept.instances, not_concept))
 
             self.log_of_negations[concept] = Concept(concept=not_concept, kwargs={'form': 'ObjectComplementOf'})
+
             return self.log_of_negations[concept]
         elif concept.form == 'ObjectComplementOf':
             assert concept.str[0] == '¬'
@@ -72,10 +94,9 @@ class ConceptGenerator:
 
             relation.range.append(concept.owl)
             relation.domain.append(base)
-            # {(x,y) | (x,r,y) \in G}.
-            for x, y in relation.get_relations():  # WHY?
-                if y in concept.instances():
-                    x.is_a.append(new_concept)
+
+            self.executor.submit(self.type__restrictions_enrichments, (True, relation, concept, new_concept))
+
             c = Concept(concept=new_concept,
                         kwargs={'form': 'ObjectSomeValuesFrom', 'Role': relation, 'Filler': concept})
             self.log_of_existential_restriction[(concept, relation)] = c
@@ -108,16 +129,17 @@ class ConceptGenerator:
             new_concept.equivalent_to.append(relation.only(base))
             relation.range.append(concept.owl)
             # relation.domain.append(base)
+
             temp = set()
             # {(s,o) | (s,r,o) \in G}.
             for s, o in relation.get_relations():
-                if not (o in concept.instances()):
+                if not (o in concept.instances):
                     temp.add(o)
                     # s.is_a.append(new_concept)
-
-            temp = self.T.instances() - temp
+            temp = self.T.instances - temp
             for i in temp:
                 i.is_a.append(new_concept)
+
             self.log_of_universal_restriction[(concept, relation)] = Concept(concept=new_concept,
                                                                              kwargs={'form': 'ObjectAllValuesFrom',
                                                                                      'Role': relation,
@@ -143,16 +165,9 @@ class ConceptGenerator:
         with self.onto:
             new_concept = types.new_class(name="({0} ⊔ {1})".format(A.str, B.str), bases=(base,))
             new_concept.namespace = A.owl.namespace
-            try:
-                new_concept.equivalent_to.append(A.owl | B.owl)
-            except:
-                print(A)
-                print(B)
-                exit(1)
+            new_concept.equivalent_to.append(A.owl | B.owl)
 
-            instances = set(A.instances()).union(set(B.instances()))
-            for i in instances:
-                i.is_a.append(new_concept)
+            self.executor.submit(self.type_enrichments, (A.instances | B.instances, new_concept))
 
             self.log_of_unions[(A, B)] = Concept(concept=new_concept,
                                                  kwargs={'form': 'ObjectUnionOf', 'ConceptA': A, 'ConceptB': B})
@@ -176,16 +191,12 @@ class ConceptGenerator:
         with self.onto:
             new_concept = types.new_class(name="({0}  ⊓  {1})".format(A.str, B.str), bases=(base,))
             new_concept.namespace = A.owl.namespace
-            try:
-                new_concept.equivalent_to.append(A.owl & B.owl)
-            except:
-                print(A)
-                print(B)
-                exit(1)
-            for i in (set(A.instances()) & set(B.instances())):
-                i.is_a.append(new_concept)
+            new_concept.equivalent_to.append(A.owl & B.owl)
+
+            self.executor.submit(self.type_enrichments, (A.instances & B.instances, new_concept))
 
             self.log_of_intersections[(A, B)] = Concept(concept=new_concept,
                                                         kwargs={'form': 'ObjectIntersectionOf', 'ConceptA': A,
                                                                 'ConceptB': B})
+
         return self.log_of_intersections[(A, B)]

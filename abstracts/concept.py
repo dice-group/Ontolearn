@@ -14,8 +14,8 @@ class AbstractScorer(ABC):
 
 
 class AbstractConcept(ABC):
-    __slots__ = ['owl', 'full_iri', 'str', 'is_atomic',
-                 'length', 'individuals', 'form', 'role', 'filler', 'concept_a', 'concept_b']
+    __slots__ = ['owl', 'full_iri', 'str', 'is_atomic','__instances'
+                 'length', 'form', 'role', 'filler', 'concept_a', 'concept_b']
 
     @abstractmethod
     def __init__(self, concept: ThingClass, kwargs):
@@ -30,8 +30,15 @@ class AbstractConcept(ABC):
 
         self.is_atomic = self.__is_atomic()  # TODO consider the necessity.
         self.length = self.__calculate_length()
+        
+        self.__instances=None
 
-        self.individuals = {jjj for jjj in concept.instances()} # TODO: maybe we do not need to store in memory?
+    @property
+    def instances(self):
+        if self.__instances:
+            return self.__instances
+        self.__instances={jjj for jjj in self.owl.instances()} # be sure of the memory usage.
+        return self.__instances
 
     def __str__(self):
         return '{self.__repr__}\t{self.full_iri}'.format(self=self)
@@ -71,6 +78,3 @@ class AbstractConcept(ABC):
         elif '⊔' in self.str or '⊓' in self.str or '¬' in self.str:
             return False
         return True
-
-    def instances(self):
-        return self.individuals

@@ -5,7 +5,7 @@ import numpy as np
 class Data:
     def __init__(self, knowledge_base):
         self.kb = knowledge_base
-        self.individuals = list(self.kb.T.instances())
+        self.individuals = list(self.kb.T.instances)
 
         self.num_individuals = len(self.individuals)
 
