@@ -4,12 +4,12 @@ from core.concept_generator import ConceptGenerator
 from core.concept import Concept
 from typing import Dict, Tuple, Set
 
-
 class KnowledgeBase:
+    """Knowledge Base Class representing Tbox and Abox along with concept hierarchies"""
     def __init__(self, path):
 
         self._kb_path = path
-        self.__properties = None
+        self.property_hierarchy = None
         self.onto = get_ontology(self._kb_path).load()
         self.name = self.onto.name
         self.concepts = dict()
@@ -98,7 +98,7 @@ class KnowledgeBase:
         Top-down and bottom up hierarchies are constructed from from owlready2.Ontology
         """
         self.__build_hierarchy(self.onto)
-        self.__properties = PropertyHierarchy(self.onto)
+        self.property_hierarchy = PropertyHierarchy(self.onto)
 
     def get_leaf_concepts(self, concept: Concept):
         """
@@ -108,9 +108,7 @@ class KnowledgeBase:
             yield leaf
 
     def negation(self, concept: Concept):
-        """
-        TODO:
-        """
+        """ Return a Concept object that is a negation of given concept."""
         return self.__concept_generator.negation(concept)
 
     def negation_from_iterables(self, s):
@@ -122,7 +120,7 @@ class KnowledgeBase:
 
     def get_direct_sub_concepts(self, concept: Concept):
         """
-        TODO:
+        Return concepts s.t. are explicit subClassOf a given concepts.
         """
         for v in self.top_down_direct_concept_hierarchy[concept]:
             yield v
@@ -139,7 +137,7 @@ class KnowledgeBase:
         TODO:
         # TODO: Obtain the definition of being most general.
         """
-        properties = self.__properties.get_most_general_property()
+        properties = self.property_hierarchy.get_most_general_property()
 
         for prob in properties:
             existential = self.__concept_generator.existential_restriction(concept, prob)
@@ -149,7 +147,7 @@ class KnowledgeBase:
         """
         TODO:
         """
-        properties = self.__properties.get_most_general_property()
+        properties = self.property_hierarchy.get_most_general_property()
 
         for prob in properties:
             universal = self.__concept_generator.universal_restriction(concept, prob)
@@ -157,14 +155,12 @@ class KnowledgeBase:
 
     def union(self, conceptA, conceptB):
         """
-        TODO:
+        Return a Concept object that is equivalent to conceptA OR conceptB
         """
         return self.__concept_generator.union(conceptA, conceptB)
 
     def intersection(self, conceptA, conceptB):
-        """
-        TODO:
-        """
+        """Return a Concept object that is equivalent to conceptA OR conceptB"""
         return self.__concept_generator.intersection(conceptA, conceptB)
 
     def existential_restriction(self, concept: Concept, property_):
@@ -193,6 +189,12 @@ class KnowledgeBase:
             result.add(ref_)
         return result
 
+    def num_concepts_generated(self):
+
+
+        return len(self.__concept_generator.log_of_universal_restriction)+ len(self.__concept_generator.log_of_existential_restriction)+\
+          len(self.__concept_generator.log_of_intersections)+ len(self.__concept_generator.log_of_unions)+\
+          len(self.__concept_generator.log_of_negations)+len(self.concepts)
 
 class PropertyHierarchy:
     """
@@ -200,7 +202,7 @@ class PropertyHierarchy:
     """
 
     def __init__(self, onto):
-        self.properties = [i for i in onto.properties()]
+        self.all_properties = [i for i in onto.properties()]
 
         self.data_properties = [i for i in onto.data_properties()]
 
@@ -210,5 +212,5 @@ class PropertyHierarchy:
         """
 
         """
-        for i in self.properties:
+        for i in self.all_properties:
             yield i

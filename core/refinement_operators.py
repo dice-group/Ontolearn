@@ -2,7 +2,7 @@ import copy
 
 from core.base import KnowledgeBase, Concept
 from typing import Set
-from itertools import chain, permutations, tee
+from itertools import chain, tee
 
 
 class Refinement:
@@ -37,8 +37,6 @@ class Refinement:
                     continue
                 yield self.kb.union(i, j)
                 yield self.kb.intersection(i, j)
-
-
 
     def refine_complement_of(self, C: Concept):
         """
@@ -106,17 +104,20 @@ class Refinement:
 
     def refine(self, C: Concept):
         assert isinstance(C, Concept)
+
+        result=set()
         if C.is_atomic:
-            return self.refine_atomic_concept(C)
+            result.update(self.refine_atomic_concept(C))
         elif C.form == 'ObjectComplementOf':
-            return self.refine_complement_of(C)
+            result.update(self.refine_complement_of(C))
         elif C.form == 'ObjectSomeValuesFrom':
-            return self.refine_object_some_values_from(C)
+            result.update(self.refine_object_some_values_from(C))
         elif C.form == 'ObjectAllValuesFrom':
-            return self.refine_object_all_values_from(C)
+            result.update(self.refine_object_all_values_from(C))
         elif C.form == 'ObjectUnionOf':
-            return self.refine_object_union_of(C)
+            result.update(self.refine_object_union_of(C))
         elif C.form == 'ObjectIntersectionOf':
-            return self.refine_object_intersection_of(C)
+            result.update(self.refine_object_intersection_of(C))
         else:
             raise ValueError
+        return result
