@@ -5,7 +5,7 @@ import numpy as np
 class Data:
     def __init__(self, knowledge_base):
         self.kb = knowledge_base
-        self.individuals = list(self.kb.T.instances)
+        self.individuals = list(self.kb.thing.instances)
 
         self.num_individuals = len(self.individuals)
 
@@ -45,12 +45,12 @@ class Data:
     def train(self, num):
 
         for i in self.labels:
-            if len(i.instances()) < num or (len(i.instances()) >= len(self.kb.T.instances()) - num):
+            if len(i.instances()) < num or (len(i.instances()) >= len(self.kb.thing.instances()) - num):
                 continue
 
             all_positives = {self.individuals.index(_) for _ in i.instances()}
 
-            all_negatives = {self.individuals.index(_) for _ in self.kb.T.instances() - i.instances()}
+            all_negatives = {self.individuals.index(_) for _ in self.kb.thing.instances() - i.instances()}
 
             return all_positives, all_negatives, i
 

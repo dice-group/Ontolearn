@@ -1,11 +1,15 @@
 from collections import defaultdict
+from itertools import chain
+
 from owlready2 import get_ontology, Ontology, Thing, Nothing
 from core.concept_generator import ConceptGenerator
 from core.concept import Concept
 from typing import Dict, Tuple, Set
 
+
 class KnowledgeBase:
     """Knowledge Base Class representing Tbox and Abox along with concept hierarchies"""
+
     def __init__(self, path):
 
         self._kb_path = path
@@ -13,19 +17,19 @@ class KnowledgeBase:
         self.onto = get_ontology(self._kb_path).load()
         self.name = self.onto.name
         self.concepts = dict()
-        self.T = None
-        self.Bottom = None
+        self.thing = None
+        self.nothing = None
         self.top_down_concept_hierarchy = defaultdict(set)  # Next time thing about including this into Concepts.
         self.top_down_direct_concept_hierarchy = defaultdict(set)
         self.down_top_concept_hierarchy = defaultdict(set)
         self.down_top_direct_concept_hierarchy = defaultdict(set)
         self.concepts_to_leafs = defaultdict(set)
         self.parse()
-        self.__concept_generator = ConceptGenerator(concepts=self.concepts, T=self.T, Bottom=self.Bottom,
+        self.__concept_generator = ConceptGenerator(concepts=self.concepts, T=self.thing, Bottom=self.nothing,
                                                     onto=self.onto)
 
     def get_individuals(self) -> Set:
-        return self.T.instances()
+        return self.thing.instances()
 
     @staticmethod
     def __build_concepts_mapping(onto: Ontology) -> Tuple[Dict, Concept, Concept]:
@@ -63,10 +67,10 @@ class KnowledgeBase:
 
         """
 
-        self.concepts, self.T, self.Bottom = self.__build_concepts_mapping(onto)
+        self.concepts, self.thing, self.nothing = self.__build_concepts_mapping(onto)
 
-        self.down_top_concept_hierarchy[self.T] = set()
-        self.top_down_concept_hierarchy[self.T] = {_ for _ in self.concepts.values()}
+        self.down_top_concept_hierarchy[self.thing] = set()
+        self.top_down_concept_hierarchy[self.thing] = {_ for _ in self.concepts.values()}
 
         for str_, concept_A in self.concepts.items():  # second loop over concepts in the execution,
 
@@ -191,10 +195,19 @@ class KnowledgeBase:
 
     def num_concepts_generated(self):
 
+        return len(self.__concept_generator.log_of_universal_restriction) + len(
+            self.__concept_generator.log_of_existential_restriction) + \
+               len(self.__concept_generator.log_of_intersections) + len(self.__concept_generator.log_of_unions) + \
+               len(self.__concept_generator.log_of_negations) + len(self.concepts)
 
-        return len(self.__concept_generator.log_of_universal_restriction)+ len(self.__concept_generator.log_of_existential_restriction)+\
-          len(self.__concept_generator.log_of_intersections)+ len(self.__concept_generator.log_of_unions)+\
-          len(self.__concept_generator.log_of_negations)+len(self.concepts)
+    def get_all_concepts(self):
+        return set(chain(self.concepts,
+                     self.__concept_generator.log_of_universal_restriction.values(),
+                     self.__concept_generator.log_of_negations.values(),
+                     self.__concept_generator.log_of_intersections.values(),
+                     self.__concept_generator.log_of_universal_restriction.values(),
+                     self.__concept_generator.log_of_existential_restriction.values()))
+
 
 class PropertyHierarchy:
     """

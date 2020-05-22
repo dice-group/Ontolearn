@@ -7,5 +7,5 @@ kb = KnowledgeBase(path='data/family-benchmark_rich_background.owl')
 data = Data(knowledge_base=kb)
 rho = Refinement(kb)
 
-for ith, refs in enumerate(rho.refine(kb.T)):
+for ith, refs in enumerate(rho.refine(kb.thing)):
     print(refs)
