@@ -1,10 +1,12 @@
 from collections import defaultdict
 from itertools import chain
 
-from owlready2 import get_ontology, Ontology, Thing, Nothing
+from owlready2 import get_ontology, Ontology, Thing, Nothing, class_construct
 from core.concept_generator import ConceptGenerator
 from core.concept import Concept
-from typing import Dict, Tuple, Set
+from typing import Dict, Tuple, Set, Generator
+from types import MappingProxyType
+from core.util import parametrized_performance_debugger, get_full_iri
 
 
 class KnowledgeBase:
@@ -25,8 +27,89 @@ class KnowledgeBase:
         self.down_top_direct_concept_hierarchy = defaultdict(set)
         self.concepts_to_leafs = defaultdict(set)
         self.parse()
+        # self.concepts = MappingProxyType(self.concepts)
         self.__concept_generator = ConceptGenerator(concepts=self.concepts, T=self.thing, Bottom=self.nothing,
                                                     onto=self.onto)
+
+    def retrieval_func(self, concept: Concept):
+
+        if len(concept.instances) > 0:
+            return
+
+        print('Retrieve instances of {0}'.format(concept))
+
+        assert len(concept.owl.equivalent_to) > 0
+        assert isinstance(concept.owl.equivalent_to, list)
+
+        for i in concept.owl.equivalent_to:
+
+            if isinstance(i, class_construct.And):
+                concept_A, concept_B = i.__getattribute__('Classes')[0], i.__getattribute__('Classes')[1]
+
+                # Get object from concept dict
+                full_iri_A = get_full_iri(concept_A)
+                full_iri_B = get_full_iri(concept_B)
+
+                try:
+                    self.retrieval_func(self.concepts[full_iri_A])
+                except:
+                    print(full_iri_A)
+                    print('Not found')
+
+                    for k, v in self.concepts.items():
+                        print(k)
+
+                    exit(1)
+
+                self.retrieval_func(self.concepts[full_iri_B])
+
+                self.__concept_generator.type_enrichments(
+                    self.concepts[full_iri_A].instances & self.concepts[full_iri_B].instances, concept.owl)
+
+            elif isinstance(i, class_construct.Or):
+                concept_A, concept_B = i.__getattribute__('Classes')[0], i.__getattribute__('Classes')[1]
+
+                # Get object from concept dict
+                full_iri_A = get_full_iri(concept_A)
+                full_iri_B = get_full_iri(concept_B)
+
+                try:
+                    self.retrieval_func(self.concepts[full_iri_A])
+                except:
+                    print(full_iri_A)
+                    print('Not found')
+
+                    for k, v in self.concepts.items():
+                        print(k, '\t', k == full_iri_A)
+
+                    exit(1)
+                self.retrieval_func(self.concepts[full_iri_B])
+
+                self.__concept_generator.type_enrichments(
+                    self.concepts[full_iri_A].instances | self.concepts[full_iri_B].instances, concept.owl)
+
+            elif isinstance(i, class_construct.Not):
+                concept_A, = i.__dict__('Class')
+                # Get object from concept dict
+                full_iri_A = get_full_iri(concept_A)
+                self.retrieval_func(self.concepts[full_iri_A])
+                self.__concept_generator.type_enrichments(self.T.instance - self.concepts[full_iri_A].intances,
+                                                          concept.owl)
+
+
+            else:
+
+                # TODO assign instances by extractin info from equivalances.
+                # print(new_concept.equivalent_to[0].__getattr__('Classes'))
+
+                # print(type(new_concept.equivalent_to[0]))
+                print(concept)
+                print('FFFFUK')
+                print()
+                exit(1)
+
+    def save(self, path):
+        self.onto.save(path)
 
     def get_individuals(self) -> Set:
         return self.thing.instances()
@@ -43,6 +126,7 @@ class KnowledgeBase:
         """
         concepts = dict()
         T = Concept(Thing, kwargs={'form': 'Class'})
+        T.owl.equivalent_to.append(Thing)
         bottom = Concept(Nothing, kwargs={'form': 'Class'})
 
         for i in onto.classes():
@@ -105,9 +189,7 @@ class KnowledgeBase:
         self.property_hierarchy = PropertyHierarchy(self.onto)
 
     def get_leaf_concepts(self, concept: Concept):
-        """
-        TODO:
-        """
+        """ Return : { x | (x subClassOf concept) AND not exist y: y subClassOf x )} """
         for leaf in self.concepts_to_leafs[concept]:
             yield leaf
 
@@ -115,24 +197,20 @@ class KnowledgeBase:
         """ Return a Concept object that is a negation of given concept."""
         return self.__concept_generator.negation(concept)
 
-    def negation_from_iterables(self, s):
-        """
-        TODO:
-        """
+    @parametrized_performance_debugger()
+    def negation_from_iterables(self, s: Generator):
+        """ Return : { x | ( x \equv not s} """
         for item in s:
             yield self.__concept_generator.negation(item)
 
+    @parametrized_performance_debugger()
     def get_direct_sub_concepts(self, concept: Concept):
-        """
-        Return concepts s.t. are explicit subClassOf a given concepts.
-        """
+        """ Return : { x | ( x subClassOf concept )} """
         for v in self.top_down_direct_concept_hierarchy[concept]:
             yield v
 
     def get_direct_parents(self, concept: Concept):
-        """
-        TODO:
-        """
+        """ Return : { x | (concept subClassOf x)} """
         for direct_parent in self.down_top_direct_concept_hierarchy[concept]:
             yield direct_parent
 
@@ -158,13 +236,11 @@ class KnowledgeBase:
             yield universal
 
     def union(self, conceptA, conceptB):
-        """
-        Return a Concept object that is equivalent to conceptA OR conceptB
-        """
+        """Return {x | x ==(conceptA OR conceptA)}"""
         return self.__concept_generator.union(conceptA, conceptB)
 
     def intersection(self, conceptA, conceptB):
-        """Return a Concept object that is equivalent to conceptA OR conceptB"""
+        """Return {x | x ==(conceptA AND conceptA)}"""
         return self.__concept_generator.intersection(conceptA, conceptB)
 
     def existential_restriction(self, concept: Concept, property_):
@@ -202,11 +278,11 @@ class KnowledgeBase:
 
     def get_all_concepts(self):
         return set(chain(self.concepts,
-                     self.__concept_generator.log_of_universal_restriction.values(),
-                     self.__concept_generator.log_of_negations.values(),
-                     self.__concept_generator.log_of_intersections.values(),
-                     self.__concept_generator.log_of_universal_restriction.values(),
-                     self.__concept_generator.log_of_existential_restriction.values()))
+                         self.__concept_generator.log_of_universal_restriction.values(),
+                         self.__concept_generator.log_of_negations.values(),
+                         self.__concept_generator.log_of_intersections.values(),
+                         self.__concept_generator.log_of_universal_restriction.values(),
+                         self.__concept_generator.log_of_existential_restriction.values()))
 
 
 class PropertyHierarchy:

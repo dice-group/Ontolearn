@@ -3,6 +3,7 @@ import copy
 from core.base import KnowledgeBase, Concept
 from typing import Set
 from itertools import chain, tee
+from core.util import parametrized_performance_debugger
 
 
 class Refinement:
@@ -13,6 +14,7 @@ class Refinement:
     def __init__(self, kb: KnowledgeBase):
         self.kb = kb
 
+    @parametrized_performance_debugger()
     def refine_atomic_concept(self, concept: Concept) -> Set:
         """
         # (1) Create all direct sub concepts of C that are defined in TBOX.
@@ -30,20 +32,14 @@ class Refinement:
         existential_rest = self.kb.most_general_existential_restrictions(concept)
         universal_rest = self.kb.most_general_universal_restriction(concept)
         a, b = tee(chain(sub_concepts, negs, existential_rest, universal_rest))
-        mem=set()
+
+        mem = set()
         for i in a:
             yield i
             for j in copy.copy(b):
-                if i == j:
+                if (i == j) or ((i.str, j.str) in mem) or ((j.str, i.str) in mem):
                     continue
-
-                if (i.str,j.str) in mem:
-                    continue
-                if (j.str, i.str) in mem:
-                    continue
-
-                mem.add((i.str,j.str))
-                mem.add((j.str,i.str))
+                mem.add((j.str, i.str))
                 mem.add((i.str, j.str))
                 mem.add((j.str, i.str))
                 yield self.kb.union(i, j)
@@ -116,7 +112,7 @@ class Refinement:
     def refine(self, concept: Concept):
         assert isinstance(concept, Concept)
 
-        result=set()
+        result = set()
         if concept.is_atomic:
             result.update(self.refine_atomic_concept(concept))
         elif concept.form == 'ObjectComplementOf':
