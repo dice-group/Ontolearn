@@ -4,6 +4,8 @@ from time import sleep
 from owlready2 import Not, AllDisjoint
 from core.concept import Concept
 import concurrent.futures
+import os
+import time
 
 
 class ConceptGenerator:
@@ -13,7 +15,7 @@ class ConceptGenerator:
         self.T = T
         self.Bottom = Bottom
         self.onto = onto
-
+        # TODO Have a data structure that can only be written once.
         self.log_of_intersections = dict()
         self.log_of_unions = dict()
         self.log_of_negations = dict()
@@ -38,17 +40,37 @@ class ConceptGenerator:
         for i in instances:
             i.is_a.append(new_concept)
 
-    @staticmethod
-    def type__restrictions_enrichments(exist, role, filler, c):
+    def type__restrictions_enrichments(self, exist, role, filler, c):
         if exist:
             # {(x,y) | (x,r,y) \in G}.
-            # TODO use itertools.
             for x, y in role.get_relations():
                 if y in filler.instances:
                     x.is_a.append(c)
-
         else:
-            raise ValueError
+            temp = set()
+            # {(s,o) | (s,r,o) \in G}.
+            for s, o in role.get_relations():
+                if not (o in filler.instances):
+                    temp.add(o)
+            temp = self.T.instances - temp
+            for i in temp:
+                i.is_a.append(c)
+
+    def get_instances_for_restrictions(self, exist, role, filler):
+        if exist:
+            temp = set()
+            # {(x,y) | (x,r,y) \in G}.
+            for x, y in role.get_relations():
+                if y in filler.instances:
+                    temp.add(x)
+            return temp
+        else:
+            temp = set()
+            # {(s,o) | (s,r,o) \in G}.
+            for s, o in role.get_relations():
+                if not (o in filler.instances):
+                    temp.add(o)
+            return self.T.instances - temp
 
     def negation(self, concept: Concept):
 
@@ -62,9 +84,13 @@ class ConceptGenerator:
                 AllDisjoint([not_concept, concept.owl])
                 not_concept.is_a.append(self.T.owl)  # superclass
                 not_concept.equivalent_to.append(Not(concept.owl))
-                self.executor.submit(self.type_enrichments, (self.T.instances - concept.instances, not_concept))
+                # self.type_enrichments(self.T.instances - concept.instances, not_concept)
 
-            self.log_of_negations[concept] = Concept(concept=not_concept, kwargs={'form': 'ObjectComplementOf'})
+                c = Concept(concept=not_concept, kwargs={'form': 'ObjectComplementOf'})
+                c.instances = self.T.instances - concept.instances
+
+                self.log_of_negations[concept] = c
+                self.concepts[c.full_iri] = c
 
             return self.log_of_negations[concept]
         elif concept.form == 'ObjectComplementOf':
@@ -87,19 +113,23 @@ class ConceptGenerator:
             base = self.T.owl
 
         with self.onto:
-            new_concept = types.new_class(name="(∃ {0}.{1})".format(relation.name, concept.str), bases=(base,))
+            new_concept = types.new_class(name="(∃{0}.{1})".format(relation.name, concept.str), bases=(base,))
             new_concept.namespace = relation.namespace
             new_concept.is_a.append(relation.some(concept.owl))
             new_concept.equivalent_to.append(relation.some(concept.owl))
 
             relation.range.append(concept.owl)
             relation.domain.append(base)
-
-            self.executor.submit(self.type__restrictions_enrichments, (True, relation, concept, new_concept))
+            # self.type__restrictions_enrichments(True, relation, concept, new_concept)
+            # self.executor.submit(self.type__restrictions_enrichments, (True, relation, concept, new_concept))
 
             c = Concept(concept=new_concept,
                         kwargs={'form': 'ObjectSomeValuesFrom', 'Role': relation, 'Filler': concept})
+
+            c.instances = self.get_instances_for_restrictions(True, relation, concept)
             self.log_of_existential_restriction[(concept, relation)] = c
+
+            self.concepts[c.full_iri] = c
 
         return self.log_of_existential_restriction[(concept, relation)]
 
@@ -123,27 +153,23 @@ class ConceptGenerator:
             base = self.T.owl
 
         with self.onto:
-            new_concept = types.new_class(name="(∀ {0}.{1})".format(relation.name, concept.str), bases=(base,))
+            new_concept = types.new_class(name="(∀{0}.{1})".format(relation.name, concept.str), bases=(base,))
             new_concept.namespace = relation.namespace
             new_concept.is_a.append(relation.only(base))
             new_concept.equivalent_to.append(relation.only(base))
             relation.range.append(concept.owl)
-            # relation.domain.append(base)
+            relation.domain.append(base)
 
-            temp = set()
-            # {(s,o) | (s,r,o) \in G}.
-            for s, o in relation.get_relations():
-                if not (o in concept.instances):
-                    temp.add(o)
-                    # s.is_a.append(new_concept)
-            temp = self.T.instances - temp
-            for i in temp:
-                i.is_a.append(new_concept)
+            #            self.type__restrictions_enrichments(False, relation, concept, new_concept)
+            # self.executor.submit(self.type__restrictions_enrichments, (False, relation, concept, new_concept))
+            c = Concept(concept=new_concept,
+                        kwargs={'form': 'ObjectAllValuesFrom', 'Role': relation, 'Filler': concept})
+            c.instances = self.get_instances_for_restrictions(False, relation, concept)
 
-            self.log_of_universal_restriction[(concept, relation)] = Concept(concept=new_concept,
-                                                                             kwargs={'form': 'ObjectAllValuesFrom',
-                                                                                     'Role': relation,
-                                                                                     'Filler': concept})
+            self.log_of_universal_restriction[(concept, relation)] = c
+
+            self.concepts[c.full_iri] = c
+
         return self.log_of_universal_restriction[(concept, relation)]
 
     def union(self, A: Concept, B: Concept, base=None):
@@ -167,10 +193,16 @@ class ConceptGenerator:
             new_concept.namespace = A.owl.namespace
             new_concept.equivalent_to.append(A.owl | B.owl)
 
-            self.executor.submit(self.type_enrichments, (A.instances | B.instances, new_concept))
+            # self.type_enrichments(A.instances | B.instances, new_concept)
+            # self.executor.submit(self.type_enrichments, (A.instances | B.instances, new_concept))
 
-            self.log_of_unions[(A, B)] = Concept(concept=new_concept,
-                                                 kwargs={'form': 'ObjectUnionOf', 'ConceptA': A, 'ConceptB': B})
+            c = Concept(concept=new_concept, kwargs={'form': 'ObjectUnionOf', 'ConceptA': A, 'ConceptB': B})
+
+            c.instances = A.instances | B.instances
+
+            self.log_of_unions[(A, B)] = c
+
+            self.concepts[c.full_iri] = c
         return self.log_of_unions[(A, B)]
 
     def intersection(self, A: Concept, B: Concept, base=None):
@@ -193,10 +225,12 @@ class ConceptGenerator:
             new_concept.namespace = A.owl.namespace
             new_concept.equivalent_to.append(A.owl & B.owl)
 
-            self.executor.submit(self.type_enrichments, (A.instances & B.instances, new_concept))
+            # self.type_enrichments(A.instances & B.instances, new_concept)
+            # self.executor.submit(self.type_enrichments, (A.instances & B.instances, new_concept))
 
-            self.log_of_intersections[(A, B)] = Concept(concept=new_concept,
-                                                        kwargs={'form': 'ObjectIntersectionOf', 'ConceptA': A,
-                                                                'ConceptB': B})
+            c = Concept(concept=new_concept, kwargs={'form': 'ObjectIntersectionOf', 'ConceptA': A, 'ConceptB': B})
+            c.instances = A.instances & B.instances
+            self.log_of_intersections[(A, B)] = c
+            self.concepts[c.full_iri] = c
 
         return self.log_of_intersections[(A, B)]

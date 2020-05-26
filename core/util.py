@@ -3,8 +3,29 @@ import os
 import pickle
 import time
 import copy
-from queue import PriorityQueue
-from typing import Tuple, Set
+
+# DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
+DEFAULT_FMT = 'Func:{name} took {elapsed:0.8f}s'
+
+flag_for_performance = False
+
+
+def parametrized_performance_debugger(fmt=DEFAULT_FMT):
+    def decorate(func):
+        def clocked(*_args):
+            t0 = time.time()
+            _result = func(*_args)
+            elapsed = time.time() - t0
+            name = func.__name__
+            args = ', '.join(repr(arg) for arg in _args)
+            result = repr(_result)
+            if flag_for_performance:
+                print(fmt.format(**locals()))
+            return _result
+
+        return clocked
+
+    return decorate
 
 
 def performance_debugger(func_name):
@@ -96,10 +117,6 @@ def create_experiment_folder(folder_name='Experiments'):
     return path_of_folder, path_of_folder[:path_of_folder.rfind('/')]
 
 
-
-
-
-
 def serializer(*, object_: object, path: str, serialized_name: str):
     with open(path + '/' + serialized_name + ".p", "wb") as f:
         pickle.dump(object_, f)
@@ -111,3 +128,7 @@ def deserializer(*, path: str, serialized_name: str):
         obj_ = pickle.load(f)
     f.close()
     return obj_
+
+
+def get_full_iri(x):
+    return x.namespace.base_iri + x.name
