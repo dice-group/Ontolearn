@@ -21,7 +21,7 @@ class Refinement:
         # (2) Create negations of all leaf concepts in  the concept hierarchy.
         # (3) Create ∀.r.T and ∃.r.T where r is the most general relation.
 
-        :param C: Concept
+        :param concept: Concept
         :return: A set of refinements.
         """
         # (1) Generate all direct_sub_concepts
@@ -47,8 +47,8 @@ class Refinement:
 
     def refine_complement_of(self, concept: Concept):
         """
-        :type C: object
-        :param C:
+        :type concept: Concept
+        :param concept:
         :return:
         """
         parents = self.kb.get_direct_parents(self.kb.negation(concept))

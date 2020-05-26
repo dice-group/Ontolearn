@@ -25,7 +25,7 @@ class Data:
 
         y = []
         for j in self.labels:  # training data corresponds to number of outputs.
-            individuals = {self.individuals.index(j) for j in j.instances()}
+            individuals = {self.individuals.index(j) for j in j.instances}
 
             tp = len(pos.intersection(individuals))
             tn = len(neg.difference(individuals))
@@ -43,16 +43,16 @@ class Data:
         return y
 
     def train(self, num):
-
+        print('Training starts')
         for i in self.labels:
-            if len(i.instances()) < num or (len(i.instances()) >= len(self.kb.thing.instances()) - num):
+            if len(i.instances) < num or (len(i.instances) >= len(self.kb.thing.instances) - num):
                 continue
 
-            all_positives = {self.individuals.index(_) for _ in i.instances()}
+            all_positives = {self.individuals.index(_) for _ in i.instances}
 
-            all_negatives = {self.individuals.index(_) for _ in self.kb.thing.instances() - i.instances()}
+            all_negatives = {self.individuals.index(_) for _ in self.kb.thing.instances - i.instances}
 
-            return all_positives, all_negatives, i
+            yield all_positives, all_negatives, i
 
 
 class PriorityQueue:

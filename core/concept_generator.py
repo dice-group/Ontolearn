@@ -199,6 +199,26 @@ class ConceptGenerator:
             c = Concept(concept=new_concept, kwargs={'form': 'ObjectUnionOf', 'ConceptA': A, 'ConceptB': B})
 
             c.instances = A.instances | B.instances
+            """
+            print(A)
+            print(B)
+
+            print(id(A.instances))
+            print(id(B.instances))
+            print(id(c.instances))
+
+            for i in A.instances:
+                print('A:',id(i))
+            print('####')
+            for i in B.instances:
+                print('A:',id(i))
+            print('####')
+            for i in c.instances:
+                print('c:',id(i))
+
+            """
+
+
 
             self.log_of_unions[(A, B)] = c
 

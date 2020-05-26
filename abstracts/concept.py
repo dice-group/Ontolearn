@@ -1,21 +1,25 @@
 from abc import ABC, abstractmethod
+from functools import total_ordering
 
 from owlready2 import ThingClass
+from core.util import get_full_iri
 
 
+# TODO understand the difference between ABC and metaclass
 class AbstractScorer(ABC):
     @abstractmethod
     def __init__(self, pos, neg):
         self.pos = pos
         self.neg = neg
 
+    @abstractmethod
     def apply(self, n):
         pass
 
-
+@total_ordering
 class AbstractConcept(ABC):
-    __slots__ = ['owl', 'full_iri', 'str', 'is_atomic','__instances'
-                 'length', 'form', 'role', 'filler', 'concept_a', 'concept_b']
+    __slots__ = ['owl', 'full_iri', 'str', 'is_atomic', '__instances'
+                                                        'length', 'form', 'role', 'filler', 'concept_a', 'concept_b']
 
     @abstractmethod
     def __init__(self, concept: ThingClass, kwargs):
@@ -24,21 +28,25 @@ class AbstractConcept(ABC):
                                   'ObjectSomeValuesFrom', 'ObjectAllValuesFrom']
 
         self.owl = concept
-        self.full_iri = concept.namespace.base_iri + concept.name
+        self.full_iri = get_full_iri(concept)  # .namespace.base_iri + concept.name
         self.str = concept.name
         self.form = kwargs['form']
 
         self.is_atomic = self.__is_atomic()  # TODO consider the necessity.
         self.length = self.__calculate_length()
-        
-        self.__instances=None
+
+        self.__instances = None
 
     @property
     def instances(self):
         if self.__instances:
             return self.__instances
-        self.__instances={jjj for jjj in self.owl.instances()} # be sure of the memory usage.
+        self.__instances = {jjj for jjj in self.owl.instances()}  # be sure of the memory usage.
         return self.__instances
+
+    @instances.setter
+    def instances(self, x):
+        self.__instances = x
 
     def __str__(self):
         return '{self.__repr__}\t{self.full_iri}'.format(self=self)
@@ -78,3 +86,9 @@ class AbstractConcept(ABC):
         elif '⊔' in self.str or '⊓' in self.str or '¬' in self.str:
             return False
         return True
+
+    def __lt__(self, other):
+        return self.length < other.length
+
+    def __gt__(self, other):
+        return self.length > other.length
