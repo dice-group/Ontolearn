@@ -1,5 +1,9 @@
 from typing import Tuple
 import numpy as np
+from sklearn import preprocessing
+from typing import List
+import random
+import torch
 
 
 class Data:
@@ -12,6 +16,7 @@ class Data:
         self.labels = None
 
         self.num_of_outputs = None
+        self.lb = preprocessing.LabelBinarizer()
 
     def concepts_for_training(self, m):
         self.labels = np.array(m)
@@ -53,6 +58,76 @@ class Data:
             all_negatives = {self.individuals.index(_) for _ in self.kb.thing.instances - i.instances}
 
             yield all_positives, all_negatives, i
+
+    @staticmethod
+    def __generate_concepts(*, root_concept, rho, max_concept: int) -> List:
+        """
+        Generate a list of concepts that are randomly generated given root_concept
+        Given a root concept, and refinement operator
+        """
+        concepts_to_be_refined = set()
+        refined_concepts = set()
+
+        concepts_to_be_refined.add(root_concept)
+        while len(refined_concepts) < max_concept:
+            try:
+                c = concepts_to_be_refined.pop()
+            except KeyError:
+                print('Break')
+                break
+            if c in refined_concepts:
+                continue
+            # print(len(refined_concepts), '.th Concept ', c.str, ' is refined.')
+            for i in rho.refine(c):
+                concepts_to_be_refined.add(i)
+            refined_concepts.add(c)
+
+        concepts = []
+        concepts.extend(refined_concepts)
+        concepts.extend(concepts_to_be_refined)
+        return concepts
+
+    def generate(self, **kwargs):
+
+        x = self.__generate_concepts(root_concept=kwargs['root_concept'],
+                                     rho=kwargs['refinement_operator'],
+                                     max_concept=kwargs['num_of_concepts_refined'])
+
+        x = [concept for concept in x if len(concept.instances) > kwargs['num_of_inputs_for_model']]
+
+        y = [len(concept) for concept in x]
+
+        self.lb.fit(y)
+        return x, self.lb.transform(y), {'num_instances': self.num_individuals,
+                                         'num_of_outputs': len(self.lb.classes_)}
+
+    def construct_labels(self, **kwargs):
+
+        print('asd')
+        exit(1)
+        pass
+
+    def __get_index_from_iterable(self, x):
+
+        res = []
+        for i in x:
+            res.append(self.individuals.index(i))
+
+        if len(res) == 0:
+            raise ValueError
+        return res
+
+    def get_mini_batch(self, X, y, jth, kwargs):
+
+        sampled_instances = []
+        concepts = []
+        for x in X[jth:jth + kwargs['batch_size']]:
+            sample = random.sample(x.instances, k=kwargs['num_of_inputs_for_model'])
+            sampled_instances.append(self.__get_index_from_iterable(sample))
+
+            concepts.append(x)
+
+        return concepts, torch.tensor(sampled_instances), y[jth:jth + kwargs['batch_size']]
 
 
 class PriorityQueue:

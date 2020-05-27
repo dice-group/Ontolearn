@@ -10,4 +10,4 @@ def test_refinement_operator():
     rho = Refinement(kb)
 
     for _ in rho.refine(kb.thing):
-        assert _
+        assert _ # refinements can not be None.
