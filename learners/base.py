@@ -4,6 +4,10 @@ from torch.nn import functional as F
 
 
 class DCL(torch.nn.Module):
+    """
+    Differenciable Concept Learner
+    """
+
     def __init__(self, args):
         super(DCL, self).__init__()
 
@@ -42,7 +46,7 @@ class LengthClassifier(torch.nn.Module):
     def __init__(self, args):
         super(LengthClassifier, self).__init__()
 
-        self.embedding_dim =  args['num_dim']
+        self.embedding_dim = args['num_dim']
         self.num_instances = args['num_instances']
         self.num_outputs = args['num_of_outputs']
         self.embedding = torch.nn.Embedding(args['num_instances'], self.embedding_dim, padding_idx=0)
@@ -69,6 +73,39 @@ class LengthClassifier(torch.nn.Module):
         emb_idx = F.relu(self.fc2(emb_idx))
         emb_idx = self.fc3(emb_idx)
 
-        return torch.softmax(emb_idx,dim=1)
+        return torch.softmax(emb_idx, dim=1)
 
 
+class ConceptLearner(torch.nn.Module):
+    def __init__(self, args):
+        super(ConceptLearner, self).__init__()
+
+        self.embedding_dim = args['num_dim']
+        self.num_instances = args['num_instances']
+        self.num_outputs = args['num_of_outputs']
+        self.embedding = torch.nn.Embedding(args['num_instances'], self.embedding_dim, padding_idx=0)
+
+        self.fc1 = torch.nn.Linear(self.embedding_dim * args['num_of_inputs_for_model'],
+                                   self.embedding_dim * args['num_of_inputs_for_model'])
+
+        self.fc2 = torch.nn.Linear(self.embedding_dim * args['num_of_inputs_for_model'],
+                                   self.embedding_dim * args['num_of_inputs_for_model'])
+
+        self.fc3 = torch.nn.Linear(self.embedding_dim * args['num_of_inputs_for_model'], args['num_of_outputs'])
+
+        self.loss = torch.nn.KLDivLoss(reduction='sum')
+
+    def init(self):
+        xavier_normal_(self.embedding.weight.data)
+
+    def forward(self, idx):
+        emb_idx = self.embedding(idx)
+
+        # reshape
+        emb_idx = emb_idx.reshape(emb_idx.shape[0], emb_idx.shape[1] * emb_idx.shape[2])
+        # reshape
+        emb_idx = F.relu(self.fc1(emb_idx))
+        emb_idx = F.relu(self.fc2(emb_idx))
+        emb_idx = self.fc3(emb_idx)
+
+        return torch.softmax(emb_idx, dim=1)

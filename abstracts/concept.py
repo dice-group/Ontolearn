@@ -5,7 +5,6 @@ from owlready2 import ThingClass
 from core.util import get_full_iri
 
 
-# TODO understand the difference between ABC and metaclass
 class AbstractScorer(ABC):
     @abstractmethod
     def __init__(self, pos, neg):

@@ -24,9 +24,9 @@ logger.info('Knowledgebase:{0}'.format(kb.name))
 params = {
     'learning_problem': 'length_prediction',
     'num_dim': 50,
-    'num_of_epochs': 1000,
+    'num_of_epochs': 10,
     'batch_size': 256,
-    'num_of_concepts_refined': 200,
+    'num_of_concepts_refined': 10,
     'num_of_inputs_for_model': data.num_individuals // 10,
     'root_concept': kb.thing,
     'refinement_operator': rho,
@@ -60,8 +60,8 @@ plt.ylabel('Number of concepts')
 plt.title('Histogram of concept lengths')
 plt.legend()
 plt.grid(True)
-plt.show()
 plt.savefig(storage_path+'/historgram_of_lengths.pdf')
+plt.show()
 # TODO: We need sampling.
 
 
@@ -71,8 +71,8 @@ plt.xlabel('Number of instances belonging to a class')
 plt.ylabel('Number of concepts')
 plt.title('Histogram of concept lengths')
 plt.grid(True)
-plt.show()
 plt.savefig(storage_path+'/historgram_of_instances.pdf')
+plt.show()
 
 
 logger.info('Average length of concepts in training: {0}'.format(sum([len(i) for i in X_train]) / len(X_train)))
@@ -98,8 +98,9 @@ for it in range(1, params['num_of_epochs'] + 1):
 ###########################################################################################
 model.eval()  # Turns evaluation mode on, i.e., dropouts are turned off.
 plt.plot(loss_per_epoch)
-plt.show()
+plt.grid(True)
 plt.savefig(storage_path+'/loss_history.pdf')
+plt.show()
 
 targets = []
 inputs_ = []

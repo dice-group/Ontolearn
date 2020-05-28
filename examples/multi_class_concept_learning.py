@@ -15,7 +15,7 @@ rho = Refinement(kb)
 refined_concepts = set()
 concepts_to_be_refined = set()
 
-params = {'num_of_concepts_to_be_refined': 10,
+params = {'num_of_concepts_to_be_refined': 1,
           'num_of_inputs_for_model': 10,  # data.num_individuals // 10
           'num_of_datapoints_per_concept': 10,
           'num_of_times_sampling_at_testing': 5,
@@ -60,7 +60,7 @@ for all_positives, all_negatives, TARGET_CONCEPT in data.train(params['num_of_in
         X_pos = random.sample(all_positives, params['num_of_inputs_for_model'] // 2)
         X_neg = random.sample(all_negatives, params['num_of_inputs_for_model'] // 2)
 
-        y = data.score(X_pos, X_neg)
+        y = data.score(pos=X_pos, neg=X_neg)
         X = X_pos + X_neg
 
         X = torch.tensor(X)
@@ -82,7 +82,7 @@ for all_positives, all_negatives, TARGET_CONCEPT in data.train(params['num_of_in
             X_pos = random.sample(all_positives, params['num_of_inputs_for_model'] // 2)
             X_neg = random.sample(all_negatives, params['num_of_inputs_for_model'] // 2)
 
-            y = data.score(X_pos, X_neg)
+            y = data.score(pos=X_pos, neg=X_neg)
             X = X_pos + X_neg
 
             X, y = torch.tensor(X), torch.tensor(y)

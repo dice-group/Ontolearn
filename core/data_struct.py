@@ -21,7 +21,7 @@ class Data:
     def concepts_for_training(self, m):
         self.labels = np.array(m)
 
-    def score(self, pos, neg):
+    def score(self, *, pos, neg):
         assert isinstance(pos, list)
         assert isinstance(neg, list)
 
@@ -31,6 +31,32 @@ class Data:
         y = []
         for j in self.labels:  # training data corresponds to number of outputs.
             individuals = {self.individuals.index(j) for j in j.instances}
+
+            tp = len(pos.intersection(individuals))
+            tn = len(neg.difference(individuals))
+
+            fp = len(neg.intersection(individuals))
+            fn = len(pos.difference(individuals))
+            try:
+                recall = tp / (tp + fn)
+                precision = tp / (tp + fp)
+                f_1 = 2 * ((precision * recall) / (precision + recall))
+            except:
+                f_1 = 0
+
+            y.append(round(f_1, 5))
+        return y
+
+    def score_with_labels(self, *, pos, neg,labels):
+        assert isinstance(pos, list)
+        assert isinstance(neg, list)
+
+        pos = set(pos)
+        neg = set(neg)
+
+        y = []
+        for j in labels:
+            individuals = j.instances
 
             tp = len(pos.intersection(individuals))
             tn = len(neg.difference(individuals))
@@ -64,7 +90,8 @@ class Data:
         """
         Generate a list of concepts that are randomly generated given root_concept
         Given a root concept, and refinement operator
-        """
+
+        # ->If memory usage needs to be optimized,then one could leverage generators."""
         concepts_to_be_refined = set()
         refined_concepts = set()
 
@@ -93,13 +120,42 @@ class Data:
                                      rho=kwargs['refinement_operator'],
                                      max_concept=kwargs['num_of_concepts_refined'])
 
+        # prune concepts that do not satisfy the provided constraint.
         x = [concept for concept in x if len(concept.instances) > kwargs['num_of_inputs_for_model']]
 
-        y = [len(concept) for concept in x]
+        if kwargs['learning_problem'] == 'concept_learning':
+            self.target_idx = dict()
+            y = []
+            for i in x:
+                self.target_idx.setdefault(i.str, len(self.target_idx))
+                y.append(self.target_idx[i.str])
 
-        self.lb.fit(y)
-        return x, self.lb.transform(y), {'num_instances': self.num_individuals,
-                                         'num_of_outputs': len(self.lb.classes_)}
+            y = np.array(y).reshape(len(y), 1)
+
+        elif kwargs['learning_problem'] == 'length_prediction':
+            y = [len(concept) for concept in x]
+            # One might need to omit binary representations for outputs due to sparsity and memory usage.
+            self.lb.fit(y)
+            y = self.lb.transform(y)
+
+        return x, y, {'num_instances': self.num_individuals,
+                      'num_of_outputs': y.shape[1]}
+
+    def generate_concepts(self, **kwargs):
+        """
+        Generate concepts according to the provided settings.
+        Root concept:
+        An upperbound on the number of concepts.
+        """
+
+        x = self.__generate_concepts(root_concept=kwargs['root_concept'],
+                                     rho=kwargs['refinement_operator'],
+                                     max_concept=kwargs['num_of_concepts_refined'])
+
+        # prune concepts that do not satisfy the provided constraint.
+        x = [concept for concept in x if len(concept.instances) > kwargs['num_of_inputs_for_model']]
+
+        return x, {'num_instances': self.num_individuals}
 
     def construct_labels(self, **kwargs):
 
