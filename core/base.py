@@ -31,6 +31,19 @@ class KnowledgeBase:
         self.__concept_generator = ConceptGenerator(concepts=self.concepts, T=self.thing, Bottom=self.nothing,
                                                     onto=self.onto)
 
+    @staticmethod
+    def apply_type_enrichment(concepts):
+        """
+        Extend ABOX by
+        (1) Obtaining all instances of selected concepts.
+        (2) For all instances in (1) include type information into ABOX.
+        @param concepts:
+        @return:
+        """
+        for c in concepts:
+            for ind in c.instances:
+                ind.is_a.append(c.owl)
+
     def save(self, path):
         self.onto.save(path)
 

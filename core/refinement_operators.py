@@ -1,18 +1,18 @@
 import copy
-
+from abstracts.refinement import AbstractRefinement
 from core.base import KnowledgeBase, Concept
 from typing import Set
 from itertools import chain, tee
 from core.util import parametrized_performance_debugger
 
 
-class Refinement:
+class Refinement(AbstractRefinement):
     """
      A top down/downward refinement operator refinement operator in ALC.
     """
 
     def __init__(self, kb: KnowledgeBase):
-        self.kb = kb
+        super().__init__(kb)
 
     @parametrized_performance_debugger()
     def refine_atomic_concept(self, concept: Concept) -> Set:

@@ -4,9 +4,7 @@ from time import sleep
 from owlready2 import Not, AllDisjoint
 from core.concept import Concept
 import concurrent.futures
-import os
-import time
-
+from core.util import get_full_iri
 
 class ConceptGenerator:
 
