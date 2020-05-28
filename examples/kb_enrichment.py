@@ -13,4 +13,5 @@ for ith, refs in enumerate(rho.refine(kb.thing)):
         enrichments.append(refs)
 
 kb.apply_type_enrichment(enrichments)
-kb.save('enriched_kb.owl')
+kb.save('enriched_kb.owl',rdf_format="rdfxml")
+kb.save('enriched_kb.nt',rdf_format="ntriples")

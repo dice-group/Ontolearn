@@ -44,8 +44,8 @@ class KnowledgeBase:
             for ind in c.instances:
                 ind.is_a.append(c.owl)
 
-    def save(self, path):
-        self.onto.save(path)
+    def save(self, path, rdf_format='ntriples'):
+        self.onto.save(file=path, format=rdf_format)
 
     def get_individuals(self) -> Set:
         return self.thing.instances()
