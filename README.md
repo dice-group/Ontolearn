@@ -3,27 +3,26 @@
 OntoPy is an open-source software library for structured machine learning in Python. OntoPy includes modules for processing knowledge bases, representation learning, inductive logic programming and ontology engineering.
 
 - [Framework](#Framework)
-    - [Knowlede Base](#Knowledgebase)
-    - [Refinement Operator](#Refinements)
+    - [Core](#Knowledgebase)
+        - [KnowledeBase](#Knowledgebase)
+        - [Concept](#Concept)        
+        - [Refinement Operator](#Refinements)
+        
     - [Learners](#Learners)
-        - [Reinforcement Algorithms](#rl)
-        - [Search Algorithms](#search_algo)
+        - [Differentiable Concept Learner](#dcl) (We are currently working on the idea and research paper.)
+        - [Learning length of a concept](#length) (We are currently working on the idea and research paper.)
+        - TODO: [Reinforcement Algorithms](#rl)
+            - TODO: [Deep Q Learning](#dql)
+        - TODO: [Search Algorithms](#search_algo)
+            - TODO: [Breadth-First Search](#bfs)
         
 - [Installation](#installation)
-
-## Main Dependencies
-- [Owlready2](https://owlready2.readthedocs.io)
-- [scikit-learn](https://scikit-learn.org)
 
 ## Installation
 
 Currently
 ```
 conda env create -n conda-env -f environment.yml
-```
-Later.
-```
-pip install ontopy
 ```
 
 ## Usage
