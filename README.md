@@ -20,17 +20,16 @@ OntoPy is an open-source software library for structured machine learning in Pyt
 
 ## Installation
 
-Currently
 ```
-conda env create -n conda-env -f environment.yml
+pyton setup.py install
 ```
 
 ## Usage
 
 ```python
-from ontopy import KnowledgeBase, Refinement
+from OntoPy import KnowledgeBase, Refinement, Data
 
-kb = KnowledgeBase(path='data/family-benchmark_rich_background.owl')
+kb = KnowledgeBase(path='../../family-benchmark_rich_background.owl')
 rho = Refinement(kb)
 for refs in enumerate(rho.refine(kb.thing)):
     print(refs)
