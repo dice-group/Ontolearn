@@ -1,4 +1,4 @@
-from abstracts.search import AbstractNode,AbstractTree
+from core.abstracts import *
 
 class Node(AbstractNode):
     def __init__(self,concept,parent_node):

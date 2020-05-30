@@ -5,11 +5,11 @@ from typing import List
 import random
 import torch
 
-from core.util import create_experiment_folder, create_logger
+from .util import create_experiment_folder, create_logger
 
 
 class Data:
-    def __init__(self, knowledge_base, logger):
+    def __init__(self, knowledge_base, logger=None):
         self.kb = knowledge_base
         if logger:
             self.logger = logger
