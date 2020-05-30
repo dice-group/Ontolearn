@@ -4,69 +4,36 @@ from core.refinement_operators import Refinement
 from core.data_struct import Data
 from learners.base import ConceptLearner
 from sklearn.model_selection import train_test_split
-import numpy as np
 import matplotlib.pyplot as plt
 from core.util import create_experiment_folder, create_logger
-import random
-import random
+import pandas as pd
 
 storage_path, _ = create_experiment_folder(folder_name='../Log')
 
-logger = create_logger(name='ConceptLearning', p=storage_path)
+logger = create_logger(name='DCL', p=storage_path)
 
 path = '../data/family-benchmark_rich_background.owl'
 kb = KnowledgeBase(path=path)
-
-data = Data(knowledge_base=kb)
-rho = Refinement(kb)
-
 logger.info('ConceptLearning'.format())
 logger.info('Knowledgebase:{0}'.format(kb.name))
 
+data = Data(knowledge_base=kb, logger=logger)
+rho = Refinement(kb)
+
 params = {
     'learning_problem': 'concept_learning',
-    'num_dim': 5,
-    'num_of_epochs': 10,
-    'batch_size': 1,
+    'num_dim': 10,
+    'num_of_epochs': 300,
+    'batch_size': 32,
     'num_of_concepts_refined': 1,
-    'num_of_inputs_for_model': 4,  # data.num_individuals // 10,
+    'num_of_inputs_for_model': data.num_individuals // 20,
     'root_concept': kb.thing,
-    'refinement_operator': rho, }
+    'num_of_times_sample_per_concept':2,
+    'refinement_operator': rho}
 
-all_concepts, kw = data.generate_concepts(**params)
-
+X, y, kw = data.generate_training_data(**params)
 params.update(kw)
 logger.info('Hyperparameters:{0}'.format(params))
-logger.info('Number of concepts generated:{0}'.format(len(all_concepts)))
-
-############################ Define the learning problem ##############################################################
-
-X = []
-y = []
-
-labels = all_concepts  # random.sample(all_concepts, params['num_of_outputs'])
-
-params['num_of_outputs'] = len(labels)
-indx = dict(zip(kb.thing.instances, list(range(len(kb.thing.instances)))))
-
-for _ in range(1):
-    for c in all_concepts:
-        try:
-            x_pos = random.sample(c.instances, params['num_of_inputs_for_model'] // 2)
-            x_neg = random.sample(kb.thing.instances - c.instances, params['num_of_inputs_for_model'] // 2)
-        except:
-            continue
-        f_dist = data.score_with_labels(pos=x_pos, neg=x_neg, labels=labels)
-        y.append(f_dist)
-        X.append([indx[i] for i in x_pos + x_neg])
-
-X = torch.tensor(X)
-
-y = torch.tensor(y)
-
-assert len(X) == len(y)
-
-y = torch.softmax(y, dim=1)  # F-scores are turned into dist.
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=1)
 
@@ -76,7 +43,7 @@ model = ConceptLearner(params)
 model.init()
 opt = torch.optim.Adam(model.parameters())
 
-assert len(X_train) == len(y_train)
+assert len(X_train) == len(y_train)  # for sanity check.
 
 logger.info(model)
 ####################################################################################################################
@@ -121,4 +88,31 @@ with torch.no_grad():  # Important:    for j in range(0, len(X_train), params['b
     predictions = model.forward(X_test)
 
     loss = model.loss(predictions.log(), y_test)
-    print(loss.item())
+
+    logger.info('Loss at testing: {0}'.format(loss.item()))
+
+    f_dist = pd.DataFrame(y_test.numpy(),columns=[ x.str for x in data.labels])
+    plt.matshow(f_dist.corr())
+    plt.title('Correlation of true quality of concepts at testing')
+    cb = plt.colorbar()
+    cb.ax.tick_params(labelsize=14)
+    #plt.xticks([i for i in range(len(f_dist.columns))], f_dist.columns)
+    plt.yticks([i for i in range(len(f_dist.columns))], f_dist.columns)
+    plt.gcf().set_size_inches(15, 15)
+    plt.savefig(storage_path + '/Correlation of true quality of concepts at testing')
+    plt.show()
+
+    f_dist = pd.DataFrame(predictions.numpy(),columns=[ x.str for x in data.labels])
+    plt.matshow(f_dist.corr())
+    plt.title('Correlation of predicted quality of concepts at testing')
+    cb = plt.colorbar()
+    cb.ax.tick_params(labelsize=14)
+    #plt.xticks([i for i in range(len(f_dist.columns))], f_dist.columns)
+    plt.yticks([i for i in range(len(f_dist.columns))], f_dist.columns)
+    plt.gcf().set_size_inches(15, 15)
+    plt.savefig(storage_path + '/Correlation of predicted quality of concepts at testing')
+    plt.show()
+
+
+
+

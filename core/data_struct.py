@@ -5,10 +5,18 @@ from typing import List
 import random
 import torch
 
+from core.util import create_experiment_folder, create_logger
+
 
 class Data:
-    def __init__(self, knowledge_base):
+    def __init__(self, knowledge_base, logger):
         self.kb = knowledge_base
+        if logger:
+            self.logger = logger
+        else:
+            self.storage_path, _ = create_experiment_folder(folder_name='../Log')
+            self.logger = create_logger(name='Data', p=self.storage_path)
+
         self.individuals = list(self.kb.thing.instances)
 
         self.num_individuals = len(self.individuals)
@@ -17,6 +25,48 @@ class Data:
 
         self.num_of_outputs = None
         self.lb = preprocessing.LabelBinarizer()
+
+    def generate_training_data(self, **params):
+
+        # Define the learning problem
+        X = []
+        y = []
+
+        all_concepts, kw = self.generate_concepts(**params)
+
+        self.logger.info('Number of concepts generated:{0}'.format(len(all_concepts)))
+
+        params.update(kw)
+
+        # Important decision:
+        self.labels = random.sample(all_concepts, 25)
+
+        params['num_of_outputs'] = len(self.labels)
+        indx = dict(zip(self.kb.thing.instances, list(range(len(self.kb.thing.instances)))))
+
+        # Generate Training Data
+        for _ in range(params['num_of_times_sample_per_concept']):
+            for c in all_concepts:
+                try:
+                    x_pos = random.sample(c.instances, params['num_of_inputs_for_model'] // 2)
+                    x_neg = random.sample(self.kb.thing.instances - c.instances,
+                                          params['num_of_inputs_for_model'] // 2)
+                except ValueError:
+                    #self.logger.info('During training,{0} is ignored due due to number of instances {1}.'
+                    #                 ''.format(c.str,len(c.instances)))
+                    continue
+                vec_of_f_scores = self.score_with_labels(pos=x_pos, neg=x_neg, labels=self.labels)
+                y.append(vec_of_f_scores)
+                X.append([indx[i] for i in x_pos + x_neg])
+
+        X = torch.tensor(X)
+        y = torch.tensor(y)
+
+        assert len(X) == len(y)
+
+        y = torch.softmax(y, dim=1)  # F-scores are turned into f-score distributions.
+
+        return X,y,params
 
     def concepts_for_training(self, m):
         self.labels = np.array(m)
@@ -47,7 +97,7 @@ class Data:
             y.append(round(f_1, 5))
         return y
 
-    def score_with_labels(self, *, pos, neg,labels):
+    def score_with_labels(self, *, pos, neg, labels):
         assert isinstance(pos, list)
         assert isinstance(neg, list)
 
