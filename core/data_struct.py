@@ -3,7 +3,6 @@ import numpy as np
 from sklearn import preprocessing
 from typing import List
 import random
-import torch
 
 from .util import create_experiment_folder, create_logger
 
@@ -59,13 +58,8 @@ class Data:
                 y.append(vec_of_f_scores)
                 X.append([indx[i] for i in x_pos + x_neg])
 
-        X = torch.tensor(X)
-        y = torch.tensor(y)
 
         assert len(X) == len(y)
-
-        y = torch.softmax(y, dim=1)  # F-scores are turned into f-score distributions.
-
         return X,y,params
 
     def concepts_for_training(self, m):

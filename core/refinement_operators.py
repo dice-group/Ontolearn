@@ -1,9 +1,9 @@
 import copy
-from .abstracts import *
+from .abstracts import AbstractRefinement
 from .base import KnowledgeBase, Concept
 from typing import Set
 from itertools import chain, tee
-from core.util import parametrized_performance_debugger
+from .util import parametrized_performance_debugger
 
 
 class Refinement(AbstractRefinement):
