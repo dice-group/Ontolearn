@@ -2,8 +2,8 @@ from collections import defaultdict
 from itertools import chain
 
 from owlready2 import get_ontology, Ontology, Thing, Nothing, class_construct
-from core.concept_generator import ConceptGenerator
-from core.concept import Concept
+from .concept_generator import ConceptGenerator
+from .concept import Concept
 from typing import Dict, Tuple, Set, Generator
 from types import MappingProxyType
 from core.util import parametrized_performance_debugger, get_full_iri

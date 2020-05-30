@@ -1,4 +1,4 @@
-from abstracts.concept import AbstractConcept
+from core.abstracts import AbstractConcept
 
 class Concept(AbstractConcept):
     """

@@ -1,6 +1,6 @@
 import copy
-from abstracts.refinement import AbstractRefinement
-from core.base import KnowledgeBase, Concept
+from .abstracts import *
+from .base import KnowledgeBase, Concept
 from typing import Set
 from itertools import chain, tee
 from core.util import parametrized_performance_debugger
