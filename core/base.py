@@ -1,12 +1,11 @@
 from collections import defaultdict
 from itertools import chain
 
-from owlready2 import get_ontology, Ontology, Thing, Nothing, class_construct
+from owlready2 import get_ontology, Ontology, Thing, Nothing
 from .concept_generator import ConceptGenerator
 from .concept import Concept
 from typing import Dict, Tuple, Set, Generator
-from types import MappingProxyType
-from core.util import parametrized_performance_debugger, get_full_iri
+from .util import parametrized_performance_debugger
 
 
 class KnowledgeBase:
@@ -222,9 +221,6 @@ class KnowledgeBase:
 
 
 class PropertyHierarchy:
-    """
-
-    """
 
     def __init__(self, onto):
         self.all_properties = [i for i in onto.properties()]

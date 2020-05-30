@@ -1,4 +1,4 @@
-from core.abstracts import *
+from .abstracts import *
 
 class Node(AbstractNode):
     def __init__(self,concept,parent_node):

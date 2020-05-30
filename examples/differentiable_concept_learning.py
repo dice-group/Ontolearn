@@ -23,7 +23,7 @@ rho = Refinement(kb)
 params = {
     'learning_problem': 'concept_learning',
     'num_dim': 10,
-    'num_of_epochs': 300,
+    'num_of_epochs': 30,
     'batch_size': 32,
     'num_of_concepts_refined': 1,
     'num_of_inputs_for_model': data.num_individuals // 20,
@@ -32,6 +32,11 @@ params = {
     'refinement_operator': rho}
 
 X, y, kw = data.generate_training_data(**params)
+
+X = torch.tensor(X)
+y = torch.tensor(y)
+y = torch.softmax(y, dim=1)  # F-scores are turned into f-score distributions.
+
 params.update(kw)
 logger.info('Hyperparameters:{0}'.format(params))
 
@@ -95,10 +100,10 @@ with torch.no_grad():  # Important:    for j in range(0, len(X_train), params['b
     plt.matshow(f_dist.corr())
     plt.title('Correlation of true quality of concepts at testing')
     cb = plt.colorbar()
-    cb.ax.tick_params(labelsize=14)
+    cb.ax.tick_params(labelsize=12)
     #plt.xticks([i for i in range(len(f_dist.columns))], f_dist.columns)
     plt.yticks([i for i in range(len(f_dist.columns))], f_dist.columns)
-    plt.gcf().set_size_inches(15, 15)
+    plt.gcf().set_size_inches(25, 25)
     plt.savefig(storage_path + '/Correlation of true quality of concepts at testing')
     plt.show()
 
@@ -106,10 +111,10 @@ with torch.no_grad():  # Important:    for j in range(0, len(X_train), params['b
     plt.matshow(f_dist.corr())
     plt.title('Correlation of predicted quality of concepts at testing')
     cb = plt.colorbar()
-    cb.ax.tick_params(labelsize=14)
+    cb.ax.tick_params(labelsize=12)
     #plt.xticks([i for i in range(len(f_dist.columns))], f_dist.columns)
     plt.yticks([i for i in range(len(f_dist.columns))], f_dist.columns)
-    plt.gcf().set_size_inches(15, 15)
+    plt.gcf().set_size_inches(25, 25)
     plt.savefig(storage_path + '/Correlation of predicted quality of concepts at testing')
     plt.show()
 

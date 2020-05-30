@@ -1,14 +1,16 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod, ABC
 from functools import total_ordering
-
+from abc import ABCMeta, abstractmethod
 from owlready2 import ThingClass
 from .util import get_full_iri
+from typing import Set
 
 
 @total_ordering
-class AbstractConcept(ABC):
-    __slots__ = ['owl', 'full_iri', 'str', 'is_atomic', '__instances'
-                                                        'length', 'form', 'role', 'filler', 'concept_a', 'concept_b']
+class BaseConcept(metaclass=ABCMeta):
+    """Base class for Concept."""
+    __slots__ = ['owl', 'full_iri', 'str', 'is_atomic', '__instances', 'length', 'form', 'role', 'filler', 'concept_a',
+                 'concept_b']
 
     @abstractmethod
     def __init__(self, concept: ThingClass, kwargs):
@@ -27,14 +29,16 @@ class AbstractConcept(ABC):
         self.__instances = None
 
     @property
-    def instances(self):
+    def instances(self) -> Set:
+        """ Returns all instances belonging to the concept."""
         if self.__instances:
             return self.__instances
         self.__instances = {jjj for jjj in self.owl.instances()}  # be sure of the memory usage.
         return self.__instances
 
     @instances.setter
-    def instances(self, x):
+    def instances(self, x: Set):
+        """ Setter of instances."""
         self.__instances = x
 
     def __str__(self):
@@ -67,8 +71,9 @@ class AbstractConcept(ABC):
 
     def __is_atomic(self):
         """
-
-        :return:
+        @todo Atomic class definition must be explicitly defined.
+        Currently we consider all concepts having length=1 as atomic.
+        :return: True if self is atomic otherwise False.
         """
         if '∃' in self.str or '∀' in self.str:
             return False
@@ -133,4 +138,3 @@ class AbstractNode(ABC):
 
 class AbstractTree(ABC):
     pass
-

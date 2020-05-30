@@ -1,6 +1,6 @@
-from core.abstracts import AbstractConcept
+from .abstracts import BaseConcept
 
-class Concept(AbstractConcept):
+class Concept(BaseConcept):
     """
     Concept Class representing Concepts in Description Logic, Classes in OWL.
     """
