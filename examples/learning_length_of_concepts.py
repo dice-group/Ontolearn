@@ -40,11 +40,12 @@ logger.info('Hyperparameters:{0}'.format(params))
 
 logger.info('Number of concepts generated:{0}'.format(len(X)))
 
+y = torch.tensor(y, dtype=torch.float32)
+
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=1)
 
 logger.info('Number of concepts in training split:{0}'.format(len(X_train)))
 
-y_train = torch.tensor(y_train, dtype=torch.float32)
 
 model = LengthClassifier(params)
 model.init()
@@ -89,7 +90,7 @@ for it in range(1, params['num_of_epochs'] + 1):
         opt.zero_grad()
 
         concepts, x_batch, y_batch = data.get_mini_batch(X_train, y_train, j, params)
-        predictions = model.forward(x_batch)
+        predictions = model.forward(torch.tensor(x_batch))
         loss = model.loss(predictions, y_batch)
         loss.backward()
         opt.step()
@@ -111,8 +112,7 @@ logger.info('Testing starts')
 with torch.no_grad():  # Important:
     for j in range(0, len(X_test), params['batch_size']):
         concepts, x_batch, y_batch = data.get_mini_batch(X_test, y_test, j, params)
-        predictions = model.forward(x_batch)
-
+        predictions = model.forward(torch.tensor(x_batch))
         loss = model.loss(predictions, y_batch)
 
         for c, t, p in zip(concepts, y_batch, predictions):

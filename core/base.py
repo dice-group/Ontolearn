@@ -40,7 +40,7 @@ class KnowledgeBase:
         @return:
         """
         for c in concepts:
-            for ind in c.instances:
+            for ind in c.owl.instances():
                 ind.is_a.append(c.owl)
 
     def save(self, path, rdf_format='ntriples'):

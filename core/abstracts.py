@@ -3,7 +3,7 @@ from functools import total_ordering
 from abc import ABCMeta, abstractmethod
 from owlready2 import ThingClass
 from .util import get_full_iri
-from typing import Set
+from typing import Set, SupportsFloat
 
 
 @total_ordering
@@ -33,7 +33,7 @@ class BaseConcept(metaclass=ABCMeta):
         """ Returns all instances belonging to the concept."""
         if self.__instances:
             return self.__instances
-        self.__instances = {jjj for jjj in self.owl.instances()}  # be sure of the memory usage.
+        self.__instances = {get_full_iri(jjj) for jjj in self.owl.instances()}  # be sure of the memory usage.
         return self.__instances
 
     @instances.setter
@@ -98,43 +98,113 @@ class AbstractScorer(ABC):
         pass
 
 
-class AbstractRefinement(ABC):
+class BaseRefinement(metaclass=ABCMeta):
     @abstractmethod
     def __init__(self, kb):
         self.kb = kb
 
     @abstractmethod
-    def refine(self, concept):
+    def refine(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def refine_atomic_concept(self, concept):
+    def refine_atomic_concept(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def refine_complement_of(self, concept):
+    def refine_complement_of(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def refine_object_some_values_from(self, concept):
+    def refine_object_some_values_from(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def refine_object_all_values_from(self, concept):
+    def refine_object_all_values_from(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def refine_object_union_of(self, concept):
+    def refine_object_union_of(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def refine_object_intersection_of(self, concept):
+    def refine_object_intersection_of(self, *args, **kwargs):
         pass
 
 
-class AbstractNode(ABC):
-    pass
+class BaseNode(metaclass=ABCMeta):
+    """Base class for Concept."""
+    __slots__ = ['concept', '__heuristic_score', '__horizontal_expansion',
+                 '__quality_score', 'parent_node', '___refinement_count',
+                 '__refinement_count', '__depth', '__children']
+
+    @abstractmethod
+    def __init__(self, concept, parent_node, is_root=False):
+        self.__quality_score, self.__heuristic_score = None, None
+        self.__horizontal_expansion, self.__refinement_count = 0, 0
+        self.concept = concept
+        self.parent_node = parent_node
+        self.__children = set()
+
+        if self.parent_node is None:
+            assert len(concept) == 1 and is_root
+            self.__depth = 0
+        else:
+            self.__depth = self.parent_node.depth + 1
+
+    def __len__(self):
+        return len(self.concept)
+
+    @property
+    def children(self):
+        return self.__children
+
+    @children.setter
+    def children(self, n):
+        self.__children.add(n)
+
+    @property
+    def refinement_count(self):
+        return self.__refinement_count
+
+    @refinement_count.setter
+    def refinement_count(self, n):
+        self.__refinement_count = n
+
+    @property
+    def depth(self):
+        return self.__depth
+
+    @depth.setter
+    def depth(self, n: int):
+        self.__depth = n
+
+    @property
+    def h_exp(self):
+        return self.__horizontal_expansion
+
+    @property
+    def heuristic(self) -> float:
+        return self.__heuristic_score
+
+    @heuristic.setter
+    def heuristic(self, val: float):
+        self.__heuristic_score = val
+
+    @property
+    def quality(self) -> float:
+        return self.__quality_score
+
+    @quality.setter
+    def quality(self, val: float):
+        self.__quality_score = val
+
+    def increment_h_exp(self):
+        self.__horizontal_expansion += 1
 
 
 class AbstractTree(ABC):
-    pass
+    def __init__(self, quality_func, heuristic_func):
+        self.expressionTests = 0
+        self.quality_func = quality_func
+        self.heuristic_func = heuristic_func
