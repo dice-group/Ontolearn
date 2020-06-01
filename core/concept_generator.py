@@ -123,7 +123,6 @@ class ConceptGenerator:
 
             c.instances = self.get_instances_for_restrictions(True, relation, concept)
             self.log_of_existential_restriction[(concept, relation)] = c
-
             self.concepts[c.full_iri] = c
 
         return self.log_of_existential_restriction[(concept, relation)]
@@ -174,6 +173,7 @@ class ConceptGenerator:
         # Crude workaround
         if A.str == 'Nothing':
             return B
+
         if B.str == 'Nothing':
             return A
 
@@ -192,29 +192,7 @@ class ConceptGenerator:
             # self.executor.submit(self.type_enrichments, (A.instances | B.instances, new_concept))
 
             c = Concept(concept=new_concept, kwargs={'form': 'ObjectUnionOf', 'ConceptA': A, 'ConceptB': B})
-
             c.instances = A.instances | B.instances
-            """
-            print(A)
-            print(B)
-
-            print(id(A.instances))
-            print(id(B.instances))
-            print(id(c.instances))
-
-            for i in A.instances:
-                print('A:',id(i))
-            print('####')
-            for i in B.instances:
-                print('A:',id(i))
-            print('####')
-            for i in c.instances:
-                print('c:',id(i))
-
-            """
-
-
-
             self.log_of_unions[(A, B)] = c
 
             self.concepts[c.full_iri] = c

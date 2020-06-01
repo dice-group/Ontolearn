@@ -159,8 +159,7 @@ class BaseNode(metaclass=ABCMeta):
     def children(self):
         return self.__children
 
-    @children.setter
-    def children(self, n):
+    def add_children(self, n):
         self.__children.add(n)
 
     @property

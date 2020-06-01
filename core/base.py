@@ -1,7 +1,7 @@
 from collections import defaultdict
 from itertools import chain
 
-from owlready2 import get_ontology, Ontology, Thing, Nothing
+from owlready2 import get_ontology, Ontology, Thing, Nothing, prop
 from .concept_generator import ConceptGenerator
 from .concept import Concept
 from typing import Dict, Tuple, Set, Generator
@@ -151,8 +151,9 @@ class KnowledgeBase:
 
     def most_general_existential_restrictions(self, concept: Concept):
         """
-        TODO:
-        # TODO: Obtain the definition of being most general.
+
+        @param concept:
+        @return:
         """
         properties = self.property_hierarchy.get_most_general_property()
 
@@ -171,38 +172,23 @@ class KnowledgeBase:
             yield universal
 
     def union(self, conceptA, conceptB):
-        """Return {x | x ==(conceptA OR conceptA)}"""
+        """Return a concept c == (conceptA OR conceptA)"""
         return self.__concept_generator.union(conceptA, conceptB)
 
     def intersection(self, conceptA, conceptB):
-        """Return {x | x ==(conceptA AND conceptA)}"""
+        """Return a concept c == (conceptA AND conceptA)"""
         return self.__concept_generator.intersection(conceptA, conceptB)
 
-    def existential_restriction(self, concept: Concept, property_):
-        """
-        TODO:
-        """
+    def existential_restriction(self, concept: Concept, property_) -> Generator:
+        """Return a concept c == (Exist R.C)"""
         assert isinstance(concept, Concept)
-
-        direct_sub_concepts = [x for x in self.get_direct_sub_concepts(concept)]
-        result = set()
-        for sub_c in direct_sub_concepts:
-            ref_ = self.__concept_generator.existential_restriction(sub_c, property_)
-            result.add(ref_)
-        return result
+        assert isinstance(property_, prop.ObjectPropertyClass)
+        return self.__concept_generator.existential_restriction(concept, property_)
 
     def universal_restriction(self, concept: Concept, property_):
-        """
-        TODO:
-        """
+        """Return a concept c == (Forall R.C)"""
         assert isinstance(concept, Concept)
-
-        direct_sub_concepts = (x for x in self.get_direct_sub_concepts(concept))
-        result = set()
-        for sub_c in direct_sub_concepts:
-            ref_ = self.__concept_generator.universal_restriction(sub_c, property_)
-            result.add(ref_)
-        return result
+        return self.__concept_generator.universal_restriction(concept, property_)
 
     def num_concepts_generated(self):
 
