@@ -36,10 +36,10 @@ for refs in enumerate(rho.refine(kb.thing)):
 ```
 
 ```python
-from OntoPy import KnowledgeBase, Refinement,CELOE
+from OntoPy import KnowledgeBase,SampleConceptLearner
 
 kb = KnowledgeBase(path='../../family-benchmark_rich_background.owl')
-model = CELOE(knowledge_base=kb,iter_bound=100,verbose=False)
+model = SampleConceptLearner(knowledge_base=kb,iter_bound=100,verbose=False)
 
 p = {'http://www.benchmark.org/family#F10M173', 'http://www.benchmark.org/family#F10M183'}
 n = {'http://www.benchmark.org/family#F1F5', 'http://www.benchmark.org/family#F1F7'}
