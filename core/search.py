@@ -10,6 +10,7 @@ class Node(BaseNode):
         return 'Node at {0}\t{self.concept.str}\tQuality:{self.quality}\tHeuristic:{self.heuristic}\tDepth:{' \
                'self.depth}\tH_exp:{self.h_exp}\t|Children|:{self.refinement_count}'.format(hex(id(self)), self=self)
 
+
 class SearchTree(AbstractTree):
     def __init__(self, quality_func, heuristic_func):
         super().__init__(quality_func, heuristic_func)
@@ -42,17 +43,15 @@ class SearchTree(AbstractTree):
             self.quality_func.apply(n)  # AccuracyOrTooWeak(n)
             self.expressionTests += 1
             if n.quality == 0:  # > too weak
-                return False
-
-            try:
-                assert n.quality
-            except:
-                print(n)
-                exit(1)
+                return False, False
             self.heuristic_func.apply(n)
             self._nodes[n] = n
-            return True
-        return False
+
+            if n.quality == 1:  # goal found
+                return True, True
+
+            return True, False
+        return False, False
 
     def update_prepare(self, n: Node):
         self._nodes.pop(n)
@@ -74,9 +73,6 @@ class SearchTree(AbstractTree):
         We will use priorty queue
         @return:
         """
-
-        sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
-        self._nodes = OrderedDict(sorted_x)
         for n in self:
             return n
 
