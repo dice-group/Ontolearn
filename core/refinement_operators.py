@@ -1,12 +1,12 @@
 import copy
-from .abstracts import AbstractRefinement
+from .abstracts import BaseRefinement
 from .base import KnowledgeBase, Concept
 from typing import Set
 from itertools import chain, tee
 from .util import parametrized_performance_debugger
 
 
-class Refinement(AbstractRefinement):
+class Refinement(BaseRefinement):
     """
      A top down/downward refinement operator refinement operator in ALC.
     """
@@ -112,19 +112,17 @@ class Refinement(AbstractRefinement):
     def refine(self, concept: Concept):
         assert isinstance(concept, Concept)
 
-        result = set()
         if concept.is_atomic:
-            result.update(self.refine_atomic_concept(concept))
+            yield from self.refine_atomic_concept(concept)
         elif concept.form == 'ObjectComplementOf':
-            result.update(self.refine_complement_of(concept))
+            yield from self.refine_complement_of(concept)
         elif concept.form == 'ObjectSomeValuesFrom':
-            result.update(self.refine_object_some_values_from(concept))
+            yield from self.refine_object_some_values_from(concept)
         elif concept.form == 'ObjectAllValuesFrom':
-            result.update(self.refine_object_all_values_from(concept))
+            yield from self.refine_object_all_values_from(concept)
         elif concept.form == 'ObjectUnionOf':
-            result.update(self.refine_object_union_of(concept))
+            yield from self.refine_object_union_of(concept)
         elif concept.form == 'ObjectIntersectionOf':
-            result.update(self.refine_object_intersection_of(concept))
+            yield from self.refine_object_intersection_of(concept)
         else:
             raise ValueError
-        return result

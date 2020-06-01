@@ -227,7 +227,7 @@ class Data:
 
             concepts.append(x)
 
-        return concepts, torch.tensor(sampled_instances), y[jth:jth + kwargs['batch_size']]
+        return concepts, sampled_instances, y[jth:jth + kwargs['batch_size']]
 
 
 class PriorityQueue:

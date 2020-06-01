@@ -27,11 +27,24 @@ pyton setup.py install
 ## Usage
 
 ```python
-from OntoPy import KnowledgeBase, Refinement, Data
+from OntoPy import KnowledgeBase, Refinement
 
 kb = KnowledgeBase(path='../../family-benchmark_rich_background.owl')
 rho = Refinement(kb)
 for refs in enumerate(rho.refine(kb.thing)):
     print(refs)
+```
+
+```python
+from OntoPy import KnowledgeBase, Refinement,CELOE
+
+kb = KnowledgeBase(path='../../family-benchmark_rich_background.owl')
+model = CELOE(knowledge_base=kb,iter_bound=100,verbose=False)
+
+p = {'http://www.benchmark.org/family#F10M173', 'http://www.benchmark.org/family#F10M183'}
+n = {'http://www.benchmark.org/family#F1F5', 'http://www.benchmark.org/family#F1F7'}
+model.predict(pos=p, neg=n)
+
+model.show_best_predictions(top_n=10)
 ```
 

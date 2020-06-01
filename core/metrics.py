@@ -4,86 +4,85 @@ from typing import Set
 
 
 class F1(AbstractScorer):
-    def __init__(self, pos, neg, N=None):
+    def __init__(self, pos, neg):
         super().__init__(pos, neg)
-        self.num_concept_tested=0
+        self.applied = 0
+        self.beta = 0
+        self.noise = 0
 
-    def get_quality(self, n: Node, beta=0, noise=0):
-        assert isinstance(n, Node)
+    def apply(self, node):
+        """
+        TODO: do it more intelligently so that we can use multiprocessing.
+        @param node:
+        @return:
+        """
+        self.applied += 1
 
-        individuals = n.ce.indvs
+        instances = node.concept.instances
+        if len(instances) == 0:
+            node.quality = 0
+            return False
 
-        if len(individuals) == 0:
-            return 0
-        tp = len(self.pos.intersection(individuals))
-        tn = len(self.neg.difference(individuals))
+        tp = len(self.pos.intersection(instances))
+        tn = len(self.neg.difference(instances))
 
-        fp = len(self.neg.intersection(individuals))
-        fn = len(self.pos.difference(individuals))
+        fp = len(self.neg.intersection(instances))
+        fn = len(self.pos.difference(instances))
 
         try:
             recall = tp / (tp + fn)
-        except:
-            recall = 0
-
-        if beta == 0:
-            if (recall == 0) or (recall < 1 - noise):
-                return 0
-        else:
-            raise NotImplemented
+        except ZeroDivisionError:
+            node.quality = 0
+            return False
 
         try:
             precision = tp / (tp + fp)
         except:
-            precision = 0
+            node.quality = 0
+            return False
 
-        if beta == 0:
-            f_1 = 2 * ((precision * recall) / (precision + recall))
+        if precision == 0 or recall == 0:
+            node.quality = 0
+            return False
+
+        f_1 = 2 * ((precision * recall) / (precision + recall))
+        node.quality = round(f_1, 5)
+
+        assert node.quality
+
+
+class CELOEHeuristic:
+    def __init__(self):
+        self.gainBonusFactor = 0.3
+        self.startNodeBonus = 0.1
+        self.nodeRefinementPenalty = 0.001
+        self.expansionPenaltyFactor = 0.1
+        self.applied = 0
+
+    def apply(self, node):
+        self.applied += 1
+
+        try:
+            assert node.quality
+        except AssertionError:
+            print(node)
+            print(node.parent_node)
+            exit(1)
+        heuristic_val = 0
+        heuristic_val += node.quality
+
+        assert id(heuristic_val) != node.quality
+
+        if node.parent_node:
+            heuristic_val += (node.parent_node.quality - node.quality) * self.gainBonusFactor
         else:
-            raise NotImplemented
+            heuristic_val += self.startNodeBonus
 
-        return round(f_1, 5)
-
-    def apply(self, n):
-        self.num_concept_tested+=1
-        if isinstance(n, Set):
-            for i in n:
-                i.score = round(self.get_quality(i), 5)
-        elif isinstance(n, Node):
-            n.score = round(self.get_quality(n), 5)
-        else:
-            raise ValueError
-
-        """
-        individuals = n.ce.indvs
-
-        if len(individuals) == 0:
-            return 0
-
-        tp = len(self.pos.intersection(individuals))
-        tn = len(self.neg.difference(individuals))
-
-        fp = len(self.neg.intersection(individuals))
-        fn = len(self.pos.difference(individuals))
-
-        try:
-            recall = tp / (tp + fn)
-        except:
-            recall = 0
-
-        try:
-            precision = tp / (tp + fp)
-        except:
-            precision = 0
-
-        try:
-            f_1 = 2 * ((precision * recall) / (precision + recall))
-
-        except:
-            f_1 = 0
-
-        n.score = round(f_1, 5)
-        """
+        # penalty for horizontal expansion
+        heuristic_val -= node.h_exp * self.expansionPenaltyFactor
+        # // penalty for having many child nodes (stuck prevention)
+        heuristic_val -= node.refinement_count * self.nodeRefinementPenalty
+        node.heuristic = round(heuristic_val, 5)
 
 
 class PredictiveAccuracy(AbstractScorer):
@@ -122,7 +121,6 @@ class NoQuality(AbstractScorer):
             n.score = 0.0
         else:
             raise ValueError
-
 
 
 class CeloeMetric:
