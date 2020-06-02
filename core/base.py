@@ -46,8 +46,8 @@ class KnowledgeBase:
     def save(self, path, rdf_format='ntriples'):
         self.onto.save(file=path, format=rdf_format)
 
-    def get_individuals(self) -> Set:
-        return self.thing.instances()
+    def get_all_individuals(self) -> Set:
+        return self.thing.instances
 
     @staticmethod
     def __build_concepts_mapping(onto: Ontology) -> Tuple[Dict, Concept, Concept]:
