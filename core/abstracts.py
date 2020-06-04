@@ -1,9 +1,8 @@
-from abc import ABCMeta, abstractmethod, ABC
 from functools import total_ordering
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod,ABC
 from owlready2 import ThingClass
 from .util import get_full_iri
-from typing import Set, SupportsFloat
+from typing import Set
 
 
 @total_ordering
@@ -93,10 +92,6 @@ class AbstractScorer(ABC):
     def __init__(self, pos, neg):
         self.pos = pos
         self.neg = neg
-
-    def apply(self, n):
-        pass
-
 
 class BaseRefinement(metaclass=ABCMeta):
     @abstractmethod
