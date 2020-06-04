@@ -1,3 +1,6 @@
+"""
+multi_class_concept_learning.py illustrates one of our research idea.
+"""
 import torch
 import random
 import matplotlib.pyplot as plt

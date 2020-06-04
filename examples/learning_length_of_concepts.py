@@ -1,8 +1,11 @@
+"""
+learning_length_of_concepts.py illustrates one of our research idea.
+"""
 import torch
 from core.base import KnowledgeBase
 from core.refinement_operators import Refinement
 from core.data_struct import Data
-from learners.base import DCL, LengthClassifier
+from learners.base import LengthClassifier
 from sklearn.model_selection import train_test_split
 import numpy as np
 import matplotlib.pyplot as plt
