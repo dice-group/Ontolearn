@@ -70,7 +70,7 @@ class Refinement(BaseRefinement):
         refs = set()
         # rule 1: Forall r.D = > Forall r.E
         for i in self.refine(C.filler):
-            refs.update(self.kb.universal_restriction(i, C.role))
+            refs.add(self.kb.universal_restriction(i, C.role))
         return refs
 
     def refine_object_union_of(self, C: Concept):

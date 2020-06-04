@@ -67,14 +67,6 @@ class SearchTree(AbstractTree):
             for each in n.children:
                 self.update_done(each)
 
-    def get_most_prominent_node(self):
-        """
-        @todo This is naive implementation from DL-learner. Very inefficient
-        We will use priorty queue
-        @return:
-        """
-        for n in self:
-            return n
 
     def sort_search_tree_by_descending_heuristic_score(self):
 
