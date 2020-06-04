@@ -37,6 +37,19 @@ class ModifiedCELOERefinement(BaseRefinement):
 
     def refine_atomic_concept(self, node: Node, max_length: int = None, current_domain: Concept = None) -> Set:
         """
+        Refinement operator implementation in CELOE-DL-learner,
+        distinguishes the refinement of atomic concepts and start concept(they called Top concept)
+            1) An atomic concept is refined by returning all concepts that are subclass of A.
+            2) Top concept is refined by
+                        (2.1) Generate all direct_sub_concepts.
+                        (2.2) Create negation of all leaf_concepts
+                        (2.3) Create ∃.r.T where r is the most general relation.
+                        (2.4) Union direct_sub_concepts and negated_all_leaf_concepts
+                        (2.5) Create unions of each of direct_sub_concept with all other direct_sub_concepts
+                        (2.6) Create unions of all of direct_sub_concepts, and negated_all_leaf_concepts
+                        (2.7) Create \forall.r.T and \exists.r.T where r is the most general relation.
+                        (Currently we are not able to identify general relations.).
+
 
         @param node:
         @param max_length:
@@ -45,22 +58,22 @@ class ModifiedCELOERefinement(BaseRefinement):
         """
 
         iter_container = []
-        # (1) Generate all direct_sub_concepts
+        # (2.1) Generate all direct_sub_concepts
         sub_concepts, temp_sub_concepts = tee(self.kb.get_direct_sub_concepts(node.concept))
         iter_container.append(sub_concepts)
 
-        if max_length > 1 and len(node.concept) + 1 <= self.max_child_length:
-            # (2) Create negation of all leaf_concepts
+        if max_length >= 2 and (len(node.concept) + 1 <= self.max_child_length):
+            # (2.2) Create negation of all leaf_concepts
             iter_container.append(self.kb.negation_from_iterables(self.kb.get_leaf_concepts(node.concept)))
 
-        if max_length > 2 and len(node.concept) + 2 <= self.max_child_length:
-            # if max_child_length > 2:
-            # (3) Create ∃.r.T where r is the most general relation.
+        if max_length >= 3 and (len(node.concept) + 2 <= self.max_child_length):
+            # (2.3) Create ∀.r.T and ∃.r.T where r is the most general relation.
             iter_container.append(self.kb.most_general_existential_restrictions(node.concept))
             iter_container.append(self.kb.most_general_universal_restriction(node.concept))
 
         a, b = tee(chain.from_iterable(iter_container))
 
+        # Compute all possible combinations of the disjunction
         mem = set()
         for i in a:
             yield i
@@ -215,7 +228,7 @@ class SampleConceptLearner:
         (1) Implementation of Refinement operator.
     """
 
-    def __init__(self, knowledge_base, max_child_length=5, verbose=True, iter_bound=10):
+    def __init__(self, knowledge_base, max_child_length=5, terminate_on_goal=True,verbose=True, iter_bound=10):
         self.kb = knowledge_base
 
         self.concepts_to_nodes = dict()
@@ -227,8 +240,9 @@ class SampleConceptLearner:
         self.iter_bound = iter_bound
         self._start_class = self.kb.thing
         self.search_tree = None
-        self.maxdepth = 6
+        self.maxdepth = 10
         self.max_he, self.min_he = 0, 0
+        self.terminate_on_goal=terminate_on_goal
 
         self.heuristic = CELOEHeuristic()
 
@@ -240,7 +254,7 @@ class SampleConceptLearner:
     def show_best_predictions(self, top_n):
         sorted_x = sorted(self.search_tree._nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
         self.search_tree._nodes = OrderedDict(sorted_x)
-        self.show_search_tree('Final', top_n=top_n)
+        self.show_search_tree('Final', top_n=top_n+1)
 
     def show_search_tree(self, ith, top_n=1000):
 
@@ -260,7 +274,9 @@ class SampleConceptLearner:
         if self.verbose:
             self.show_search_tree(step)
 
-        return self.search_tree.get_most_prominent_node()
+        for n in self.search_tree:
+            if n.quality < 1 or (n.h_exp < len(n.concept)):
+                return n
 
     def apply_rho(self, node: Node):
         assert isinstance(node, Node)
@@ -327,6 +343,7 @@ class SampleConceptLearner:
                     if is_added:
                         node_to_expand.add_children(ref)
                     if goal_found:
-                        print('Goal found ', self.search_tree.expressionTests)
-                        return True
+                        print('Goal found after {0} number of concepts tested.'.format(self.search_tree.expressionTests))
+                        if self.terminate_on_goal:
+                            return True
             self.updateMinMaxHorizExp(node_to_expand)
