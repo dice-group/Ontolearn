@@ -3,11 +3,15 @@ import numpy as np
 from sklearn import preprocessing
 from typing import List
 import random
-
+from .metrics import F1
 from .util import create_experiment_folder, create_logger
 
 
 class Data:
+    """
+    A class for constructing supervised learning problem.
+    """
+
     def __init__(self, knowledge_base, logger=None):
         self.kb = knowledge_base
         if logger:
@@ -24,43 +28,51 @@ class Data:
 
         self.num_of_outputs = None
         self.lb = preprocessing.LabelBinarizer()
+        self.all_concepts = None
+        self.indx = dict(zip(self.kb.thing.instances, list(range(len(self.kb.thing.instances)))))
 
-    def generate_training_data(self, **params):
+        self.quality_func = F1()
+
+    def pos_neg_sampling_from_concept(self, c, number):
+        x_pos = random.sample(c.instances, number // 2)
+        x_neg = random.sample(self.kb.thing.instances - c.instances,
+                              number // 2)
+        return x_pos, x_neg
+
+    def generate_data(self, **params):
+        """
+
+        @param params:
+        @return:
+        """
 
         # Define the learning problem
         X = []
         y = []
 
-        all_concepts, kw = self.generate_concepts(**params)
-
-        self.logger.info('Number of concepts generated:{0}'.format(len(all_concepts)))
+        self.all_concepts, kw = self.generate_concepts(**params)
 
         params.update(kw)
 
         # Important decision:
-        self.labels = random.sample(all_concepts, 25)
+        self.labels = random.sample(self.all_concepts, params['num_of_outputs'])
 
         params['num_of_outputs'] = len(self.labels)
-        indx = dict(zip(self.kb.thing.instances, list(range(len(self.kb.thing.instances)))))
-
         # Generate Training Data
         for _ in range(params['num_of_times_sample_per_concept']):
-            for c in all_concepts:
+            for c in self.all_concepts:
                 try:
-                    x_pos = random.sample(c.instances, params['num_of_inputs_for_model'] // 2)
-                    x_neg = random.sample(self.kb.thing.instances - c.instances,
-                                          params['num_of_inputs_for_model'] // 2)
+                    x_pos, x_neg = self.pos_neg_sampling_from_concept(c, params['num_of_inputs_for_model'])
                 except ValueError:
-                    #self.logger.info('During training,{0} is ignored due due to number of instances {1}.'
+                    # self.logger.info('During training,{0} is ignored due due to number of instances {1}.'
                     #                 ''.format(c.str,len(c.instances)))
                     continue
                 vec_of_f_scores = self.score_with_labels(pos=x_pos, neg=x_neg, labels=self.labels)
                 y.append(vec_of_f_scores)
-                X.append([indx[i] for i in x_pos + x_neg])
-
+                X.append([self.indx[i] for i in x_pos + x_neg])
 
         assert len(X) == len(y)
-        return X,y,params
+        return X, y, params
 
     def concepts_for_training(self, m):
         self.labels = np.array(m)
@@ -90,6 +102,9 @@ class Data:
 
             y.append(round(f_1, 5))
         return y
+
+    def score_with_instances(self, *, pos, neg, instances):
+        return self.quality_func.score(pos=pos, neg=neg, instances=instances)
 
     def score_with_labels(self, *, pos, neg, labels):
         assert isinstance(pos, list)
@@ -196,16 +211,26 @@ class Data:
                                      rho=kwargs['refinement_operator'],
                                      max_concept=kwargs['num_of_concepts_refined'])
 
-        # prune concepts that do not satisfy the provided constraint.
-        x = [concept for concept in x if len(concept.instances) > kwargs['num_of_inputs_for_model']]
+        self.logger.info('Number of concepts generated:{0}'.format(len(x)))
+        return x
 
-        return x, {'num_instances': self.num_individuals}
+    def convert_data(self, concepts, labels, params):
 
-    def construct_labels(self, **kwargs):
+        X, y = [], []
+        # Generate Training Data
+        for _ in range(params['num_of_times_sample_per_concept']):
+            for c in concepts:
+                try:
+                    x_pos, x_neg = self.pos_neg_sampling_from_concept(c, params['num_of_inputs_for_model'])
+                except ValueError:
+                    # self.logger.info('During training,{0} is ignored due due to number of instances {1}.'
+                    #                 ''.format(c.str,len(c.instances)))
+                    continue
+                vec_of_f_scores = self.score_with_labels(pos=x_pos, neg=x_neg, labels=labels)
+                y.append(vec_of_f_scores)
+                X.append([self.indx[i] for i in x_pos + x_neg])
 
-        print('asd')
-        exit(1)
-        pass
+        return X, y
 
     def __get_index_from_iterable(self, x):
 
