@@ -4,11 +4,29 @@ from typing import Set
 
 
 class F1(AbstractScorer):
-    def __init__(self, pos, neg):
+    def __init__(self, pos=None, neg=None):
         super().__init__(pos, neg)
         self.applied = 0
         self.beta = 0
         self.noise = 0
+
+    def score(self, pos, neg, instances):
+        self.pos = pos
+        self.neg = neg
+
+        tp = len(self.pos.intersection(instances))
+        tn = len(self.neg.difference(instances))
+
+        fp = len(self.neg.intersection(instances))
+        fn = len(self.pos.difference(instances))
+        try:
+            recall = tp / (tp + fn)
+            precision = tp / (tp + fp)
+            f_1 = 2 * ((precision * recall) / (precision + recall))
+        except ValueError:
+            f_1 = 0
+
+        return round(f_1, 5)
 
     def apply(self, node):
         """
