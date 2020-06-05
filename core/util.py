@@ -4,6 +4,8 @@ import os
 import pickle
 import time
 import copy
+import torch
+from torch.utils.data import Dataset
 
 # DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
 DEFAULT_FMT = 'Func:{name} took {elapsed:0.8f}s'
@@ -156,3 +158,22 @@ def create_logger(*, name, p):
     logger.addHandler(fh)
 
     return logger
+
+
+class TorchData(Dataset):
+    """Face Landmarks dataset."""
+
+    def __init__(self, X: torch.Tensor, y: torch.Tensor):
+        self.X = X
+        self.y = y
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        x = self.X[idx]
+        y = self.y[idx]
+        return x, y
