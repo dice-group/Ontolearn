@@ -19,9 +19,8 @@ OntoPy is an open-source software library for structured machine learning in Pyt
 - [Installation](#installation)
 
 ## Installation
-
 ```
-pyton setup.py install
+python setup.py install
 ```
 
 ## Usage
