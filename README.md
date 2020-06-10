@@ -21,8 +21,8 @@ OntoPy is an open-source software library for structured machine learning in Pyt
 ## Installation
 ```
 1) git clone https://github.com/dice-group/OntoPy.git
-2) conda create -n temp_onto_py python=3.8.2 # Or be sure that your have Python 3.8.2.
-3) conda activate temp_onto_py
+2) conda create -n temp python=3.8.2 # Or be sure that your have Python 3.8.2.
+3) conda activate temp
 4) python OntoPy/setup.py install
 # After you receive this Finished processing dependencies for OntoPy==0.0.1
 5) python
