@@ -1,11 +1,6 @@
-from core.base import KnowledgeBase
-from core.refinement_operators import Refinement
-from core.data_struct import Data
+from OntoPy import KnowledgeBase, Refinement
 
-kb = KnowledgeBase(path='../data/family-benchmark_rich_background.owl')
-
-data = Data(knowledge_base=kb)
+kb = KnowledgeBase(path='OntoPy/data/family-benchmark_rich_background.owl')
 rho = Refinement(kb)
-
-for ith, refs in enumerate(rho.refine(kb.thing)):
+for refs in enumerate(rho.refine(kb.thing)):
     print(refs)
