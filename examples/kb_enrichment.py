@@ -1,8 +1,8 @@
 """ kb_enrichment.py illustrates extending Tbox of given KB and saving KB in different formats."""
-from OntoPy import KnowledgeBase, Refinement,Data
+from ontolearn import KnowledgeBase, Refinement,Data
 
 
-kb = KnowledgeBase(path='OntoPy/data/family-benchmark_rich_background.owl')
+kb = KnowledgeBase(path='../data/family-benchmark_rich_background.owl')
 data = Data(knowledge_base=kb)
 rho = Refinement(kb)
 

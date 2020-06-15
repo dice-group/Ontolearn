@@ -1,7 +1,7 @@
 """ Test the concept module"""
 
-from core.base import Concept
-from core.base import KnowledgeBase
+from ontolearn.base import Concept
+from ontolearn.base import KnowledgeBase
 
 
 def test_concept():

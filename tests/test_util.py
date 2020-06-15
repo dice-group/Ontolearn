@@ -1,7 +1,6 @@
 """ Test the util module"""
 
-from core.util import serializer, deserializer
-from core.base import KnowledgeBase
+from ontolearn.util import serializer, deserializer
 
 
 def test_serializer_deserializer():
