@@ -1,7 +1,7 @@
 """ Test for refinement_operators.py"""
 
-from core.base import KnowledgeBase
-from core.refinement_operators import Refinement
+from ontolearn.base import KnowledgeBase
+from ontolearn.refinement_operators import Refinement
 
 
 def test_refinement_operator():

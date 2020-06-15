@@ -1,54 +1,38 @@
-# OntoPy
+# Ontolearn
 
-OntoPy is an open-source software library for structured machine learning in Python. OntoPy includes modules for processing knowledge bases, representation learning, inductive logic programming and ontology engineering.
+Ontolearn is an open-source software library for structured machine learning in Python. Ontolearn includes modules for processing knowledge bases, representation learning, inductive logic programming and ontology engineering.
 
 - [Framework](#Framework)
-    - [Core](#Knowledgebase)
-        - [KnowledeBase](#Knowledgebase)
-        - [Concept](#Concept)        
-        - [Refinement Operator](#Refinements)
-        
-    - [Learners](#Learners)
-        - [Differentiable Concept Learner](#dcl) (We are currently working on the idea and research paper.)
-        - [Learning length of a concept](#length) (We are currently working on the idea and research paper.)
-        - TODO: [Reinforcement Algorithms](#rl)
-            - TODO: [Deep Q Learning](#dql)
-        - TODO: [Search Algorithms](#search_algo)
-            - TODO: [Breadth-First Search](#bfs)
-        
+    - [KnowledeBase](#Knowledgebase)
+    - [Concept](#Concept)        
+    - [Refinement Operator](#Refinements)
+            
 - [Installation](#installation)
 
 ## Installation
 ```
 1) git clone https://github.com/dice-group/OntoPy.git
-2) conda create -n temp python=3.8.2 # Or be sure that your have Python 3.8.2.
+2) conda create -n temp python=3.6.2 # Or be sure that your have Python => 3.6.
 3) conda activate temp
-4) python OntoPy/setup.py install
+4) python ontolearn/setup.py install
 # After you receive this Finished processing dependencies for OntoPy==0.0.1
-5) python
-from OntoPy import KnowledgeBase,SampleConceptLearner
-kb = KnowledgeBase(path='OntoPy/data/family-benchmark_rich_background.owl')
-model = SampleConceptLearner(knowledge_base=kb,iter_bound=100,verbose=False)
-p = {'http://www.benchmark.org/family#F10M173', 'http://www.benchmark.org/family#F10M183'}
-n = {'http://www.benchmark.org/family#F1F5', 'http://www.benchmark.org/family#F1F7'}
-model.predict(pos=p, neg=n)
-model.show_best_predictions(top_n=10)
+5) python -c "import ontolearn"
 ```
 
 ## Usage
 
 ```python
-from OntoPy import KnowledgeBase, Refinement
+from ontolearn import KnowledgeBase, Refinement
 
-kb = KnowledgeBase(path='OntoPy/data/family-benchmark_rich_background.owl')
+kb = KnowledgeBase(path='data/family-benchmark_rich_background.owl')
 rho = Refinement(kb)
 for refs in enumerate(rho.refine(kb.thing)):
     print(refs)
 ```
 
 ```python
-from OntoPy import KnowledgeBase,SampleConceptLearner
-kb = KnowledgeBase(path='OntoPy/data/family-benchmark_rich_background.owl')
+from ontolearn import KnowledgeBase,SampleConceptLearner
+kb = KnowledgeBase(path='data/family-benchmark_rich_background.owl')
 model = SampleConceptLearner(knowledge_base=kb,iter_bound=100,verbose=False)
 p = {'http://www.benchmark.org/family#F10M173', 'http://www.benchmark.org/family#F10M183'}
 n = {'http://www.benchmark.org/family#F1F5', 'http://www.benchmark.org/family#F1F7'}

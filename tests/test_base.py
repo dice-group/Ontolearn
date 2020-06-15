@@ -1,6 +1,6 @@
 """ Test the base module"""
 
-from core.base import KnowledgeBase
+from ontolearn.base import KnowledgeBase
 
 
 def test_knowledge_base():
