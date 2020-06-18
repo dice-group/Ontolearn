@@ -1,5 +1,5 @@
 from functools import total_ordering
-from abc import ABCMeta, abstractmethod,ABC
+from abc import ABCMeta, abstractmethod, ABC
 from owlready2 import ThingClass
 from .util import get_full_iri
 from typing import Set
@@ -92,6 +92,30 @@ class AbstractScorer(ABC):
     def __init__(self, pos, neg):
         self.pos = pos
         self.neg = neg
+        self.applied = 0
+
+    def set_positive_examples(self, instances):
+        self.pos = instances
+
+    def set_negative_examples(self, instances):
+        self.neg = instances
+
+class AbstractHeuristic(ABC):
+    @abstractmethod
+    def __init__(self, pos, neg,unlabelled):
+        self.pos = pos
+        self.neg = neg
+        self.unlabelled = unlabelled
+        self.applied = 0
+
+    def set_positive_examples(self, instances):
+        self.pos = instances
+
+    def set_negative_examples(self, instances):
+        self.neg = instances
+
+    def set_unlabelled_examples(self, instances):
+        self.unlabelled = instances
 
 class BaseRefinement(metaclass=ABCMeta):
     @abstractmethod
@@ -202,3 +226,9 @@ class AbstractTree(ABC):
         self.expressionTests = 0
         self.quality_func = quality_func
         self.heuristic_func = heuristic_func
+
+    def set_quality_func(self, f:AbstractScorer):
+        self.quality_func = f
+
+    def set_heuristic_func(self, h):
+        self.heuristic_func = h

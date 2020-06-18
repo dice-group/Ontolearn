@@ -1,4 +1,4 @@
-from .abstracts import AbstractScorer
+from .abstracts import AbstractScorer, AbstractHeuristic
 from .search import Node
 from typing import Set
 
@@ -6,7 +6,7 @@ from typing import Set
 class F1(AbstractScorer):
     def __init__(self, pos=None, neg=None):
         super().__init__(pos, neg)
-        self.applied = 0
+        self.name = 'F1'
         self.beta = 0
         self.noise = 0
 
@@ -29,11 +29,6 @@ class F1(AbstractScorer):
         return round(f_1, 5)
 
     def apply(self, node):
-        """
-        TODO: do it more intelligently so that we can use multiprocessing.
-        @param node:
-        @return:
-        """
         self.applied += 1
 
         instances = node.concept.instances
@@ -42,7 +37,7 @@ class F1(AbstractScorer):
             return False
 
         tp = len(self.pos.intersection(instances))
-        tn = len(self.neg.difference(instances))
+        # tn = len(self.neg.difference(instances))
 
         fp = len(self.neg.intersection(instances))
         fn = len(self.pos.difference(instances))
@@ -55,7 +50,7 @@ class F1(AbstractScorer):
 
         try:
             precision = tp / (tp + fp)
-        except:
+        except ZeroDivisionError:
             node.quality = 0
             return False
 
@@ -69,8 +64,56 @@ class F1(AbstractScorer):
         assert node.quality
 
 
-class CELOEHeuristic:
-    def __init__(self):
+class PredictiveAccuracy(AbstractScorer):
+    """
+    Accuracy is          acc = (tp + tn) / (tp + tn + fp+ fn). However,
+    Concept learning papers (e.g. Learning OWL Class expression) appear to invernt their own accuracy metrics.
+
+    In OCEL =>    Accuracy of a concept = 1 - ( |E^+ \ R(C)|+ |E^- AND R(C)|) / |E|)
+
+
+    In CELOE  =>    Accuracy of a concept C = 1 - ( |R(A) \ R(C)| + |R(C) \ R(A)|)/n
+
+
+
+    1) R(.) is the retrieval function, A is the class to describe and C in CELOE.
+
+    2) E^+ and E^- are the positive and negative examples probided. E = E^+ OR E^- .
+    """
+
+    def __init__(self, pos=None, neg=None):
+        super().__init__(pos, neg)
+        self.name = 'Accuracy'
+
+    def apply(self, node: Node):
+        assert isinstance(node, Node)
+        self.applied += 1
+
+        instances = node.concept.instances
+        if len(instances) == 0:
+            node.quality = 0
+            return False
+
+        tp = len(self.pos.intersection(instances))
+        tn = len(self.neg.difference(instances))
+
+        fp = len(self.neg.intersection(
+            instances))  # FP corresponds to CN in Learning OWL Class Expressions OCEL paper, i.e., cn = |R(C) \AND E^-| covered negatives
+        fn = len(self.pos.difference(
+            instances))  # FN corresponds to UP in Learning OWL Class Expressions OCEL paper, i.e., up = |E^+ \ R(C)|
+        # uncovered positives
+
+        acc = (tp + tn) / (tp + tn + fp + fn)
+        # acc = 1 - ((fp + fn) / len(self.pos) + len(self.neg)) # from Learning OWL Class Expressions.
+
+        node.quality = round(acc, 5)
+
+
+class CELOEHeuristic(AbstractHeuristic):
+    def __init__(self,pos=None,neg=None,unlabelled=None):
+        super().__init__(pos, neg,unlabelled)
+        self.name = 'CELOE'
+
         self.gainBonusFactor = 0.3
         self.startNodeBonus = 0.1
         self.nodeRefinementPenalty = 0.001
@@ -79,7 +122,6 @@ class CELOEHeuristic:
 
     def apply(self, node):
         self.applied += 1
-
         try:
             assert node.quality
         except AssertionError:
@@ -103,28 +145,45 @@ class CELOEHeuristic:
         node.heuristic = round(heuristic_val, 5)
 
 
-class PredictiveAccuracy(AbstractScorer):
-    def __init__(self, pos, neg, N):
-        super().__init__(pos, neg)
-        self.total_num_of_instances = N
+class DLFOILHeuristic(AbstractHeuristic):
+    def __init__(self, pos=None, neg=None, unlabelled=None):
+        super().__init__(pos, neg, unlabelled)
+        self.name = 'DL-FOIL'
 
-    def apply(self, n: Node):
-        assert isinstance(n, Node)
+    def apply(self, node):
+        self.applied += 1
 
-        individuals = n.ce.indvs
+        instances = node.concept.instances
+        if len(instances) == 0:
+            node.heuristic = 0
+            return False
 
-        positives = len(self.pos)
-        negatives = len(self.neg)
+        p_1 = len(self.pos.intersection(instances))  # number of positive examples covered by the concept
+        n_1 = len(self.neg.intersection(instances))  # number of negative examples covered by the concept
+        u_1 = len(self.unlabelled.intersection(instances))
 
-        tp = len(self.pos.intersection(individuals))
-        tn = len(self.neg.difference(individuals))
+        import numpy as np
 
-        fp = len(self.neg.intersection(individuals))
-        fn = len(self.neg.difference(individuals))
+        if node.parent_node:
+            parent_inst = node.parent_node.concept.instances
+            p_0 = len(self.pos.intersection(parent_inst))  # number of positive examples covered by the concept
+            n_0 = len(self.neg.intersection(parent_inst))  # number of negative examples covered by the concept
+            u_0 = len(self.unlabelled.intersection(parent_inst))
+        else:
+            p_0, n_0, u_0 = 0, 0, 0
 
-        acc = (tp + tn) / (positives + negatives)
+        try:
+            term1 = np.log((p_1) / (p_1 + n_1 + u_1))
+        except:
+            term1 = 0
 
-        n.score = round((2 * tp) / (2 * tp + fp + fn), 4)
+        try:
+            term2 = np.log((p_0) / (p_0 + n_0 + u_0))
+        except:
+            term2 = 0
+
+        gain = p_1 * (term1 - term2)
+        node.heuristic = round(gain, 5)
 
 
 class NoQuality(AbstractScorer):
@@ -139,15 +198,3 @@ class NoQuality(AbstractScorer):
             n.score = 0.0
         else:
             raise ValueError
-
-
-class CeloeMetric:
-    def __init__(self):
-        self.classLength = 1
-        self.objectComplementLength = 1
-        self.objectSomeValuesLength = 1
-        self.objectPropertyLength = 1
-
-        self.objectCardinalityLength = 2
-        self.objectAllValuesLength = 1
-        self.objectInverseLength = 2

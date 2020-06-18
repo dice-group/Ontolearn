@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from .abstracts import BaseNode, AbstractTree
+from .abstracts import BaseNode, AbstractTree, AbstractScorer
 
 
 class Node(BaseNode):
@@ -12,7 +12,7 @@ class Node(BaseNode):
 
 
 class SearchTree(AbstractTree):
-    def __init__(self, quality_func, heuristic_func):
+    def __init__(self, quality_func: AbstractScorer = None, heuristic_func=None):
         super().__init__(quality_func, heuristic_func)
         self._nodes = dict()
 
@@ -67,7 +67,6 @@ class SearchTree(AbstractTree):
             for each in n.children:
                 self.update_done(each)
 
-
     def sort_search_tree_by_descending_heuristic_score(self):
 
         sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
@@ -76,3 +75,42 @@ class SearchTree(AbstractTree):
     def sort_search_tree_by_descending_score(self):
         sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].score, reverse=True)
         self._nodes = OrderedDict(sorted_x)
+
+    @property
+    def nodes(self):
+        return self._nodes
+
+    def show_search_tree(self, ith, top_n=1000):
+        """
+        Show search tree.
+        """
+        print('\n\t\t\t\t\t######## ', ith, 'step Search Tree ###########')
+        counter = 1
+        for k, v in enumerate(self):
+            print(
+                '\t\t\t\t\t {0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(counter, v.concept.str, self.quality_func.name,
+                                                                        v.quality, v.heuristic))
+            # print('\t\t\t\t\t', counter, '-', v)  # , ' - acc:', v.accuracy)
+            counter += 1
+            if counter == top_n:
+                break
+        print('\t\t\t\t\t######## Search Tree ###########\n')
+
+
+    def set_positive_negative_examples(self, *, p, n,unlabelled):
+        self.quality_func.set_positive_examples(p)
+        self.quality_func.set_negative_examples(n)
+
+        self.heuristic_func.set_positive_examples(p)
+        self.heuristic_func.set_negative_examples(n)
+
+        self.heuristic_func.set_unlabelled_examples(unlabelled)
+
+
+    def show_best_nodes(self, top_n):
+        # TODO very inefficient implement priority queue.
+
+        print('Number of times quality function applied: ',self.quality_func.applied)
+        sorted_x = sorted(self.nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
+        self._nodes = OrderedDict(sorted_x)
+        self.show_search_tree('Final', top_n=top_n + 1)
