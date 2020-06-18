@@ -3,7 +3,28 @@ from owlready2 import Not, AllDisjoint
 from .concept import Concept
 import concurrent.futures
 
+
 class ConceptGenerator:
+    """
+
+    Let the followings be given,
+
+        * I=(\Delta, ^I) an interpretation
+        * \Delta the domain of the interpretation
+        * ^I  is the interpretation function
+        * C is a primitive concept
+        * R a relation/ property.
+
+        We refer to [1]
+
+
+
+        Resources
+        [1] DL-FOIL Concept Learning in Description Logics
+
+
+
+    """
 
     def __init__(self, concepts, T, Bottom, onto):
         self.concepts = concepts
@@ -67,7 +88,12 @@ class ConceptGenerator:
                     temp.add(o)
             return self.T.instances - temp
 
-    def negation(self, concept: Concept):
+    def negation(self, concept: Concept) -> Concept:
+        """
+        ¬C = \Delta^I \ C.
+        @param concept: an instance of Concept class
+        @return: ¬C: an instance of Concept class
+        """
 
         if concept in self.log_of_negations:
             return self.log_of_negations[concept]
@@ -99,7 +125,16 @@ class ConceptGenerator:
         else:
             raise ValueError
 
-    def existential_restriction(self, concept: Concept, relation, base=None):
+    def existential_restriction(self, concept: Concept, relation, base=None) -> Concept:
+        """
+
+        ∃R.C =>  {x \in \Delta | ∃y \in \Delta : (x, y) \in R^I AND y ∈ C^I }
+
+        @param concept: an instance of Concept
+        @param relation: an isntance of owlready2.prop.ObjectPropertyClass'
+        @param base:
+        @return:
+        """
 
         if (concept, relation) in self.log_of_existential_restriction:
             return self.log_of_existential_restriction[(concept, relation)]
@@ -129,11 +164,13 @@ class ConceptGenerator:
 
     def universal_restriction(self, concept: Concept, relation, base=None):
         """
-        The universal quantifier defines a class as
-        the set of all objects/individuals/instances
-        for which the given role "only" attains values from the given class.
 
-        which states that examiners must always be professors
+        ∀R.C => extension => {x \in \Delta | ∃y \in \Delta : (x, y) ∈ \in R^I \implies y ∈ C^I }
+
+        Brief explanation:
+                    The universal quantifier defines a class as
+                    *   The set of all instances for which the given role "only" attains values from the given class.
+
         :param concept:
         :param relation:
         :param base:

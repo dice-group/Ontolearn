@@ -1,12 +1,12 @@
 from collections import defaultdict
 from itertools import chain
-
 from owlready2 import get_ontology, Ontology, Thing, Nothing, prop
 from .concept_generator import ConceptGenerator
 from .concept import Concept
 from typing import Dict, Tuple, Set, Generator
 from .util import parametrized_performance_debugger
-
+import warnings
+warnings.filterwarnings("ignore")
 
 class KnowledgeBase:
     """Knowledge Base Class representing Tbox and Abox along with concept hierarchies"""
