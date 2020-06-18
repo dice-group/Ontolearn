@@ -25,6 +25,7 @@ class Concept(BaseConcept):
             elif self.form == 'ObjectComplementOf':
                 ''''''
             else:
+                print(self)
                 raise ValueError
 
 

@@ -84,17 +84,17 @@ class SearchTree(AbstractTree):
         """
         Show search tree.
         """
-        print('\n\t\t\t\t\t######## ', ith, 'step Search Tree ###########')
+        print('######## ', ith, 'step Search Tree ###########')
         counter = 1
         for k, v in enumerate(self):
             print(
-                '\t\t\t\t\t {0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(counter, v.concept.str, self.quality_func.name,
+                '{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(counter, v.concept.str, self.quality_func.name,
                                                                         v.quality, v.heuristic))
             # print('\t\t\t\t\t', counter, '-', v)  # , ' - acc:', v.accuracy)
             counter += 1
             if counter == top_n:
                 break
-        print('\t\t\t\t\t######## Search Tree ###########\n')
+        print('######## Search Tree ###########\n')
 
 
     def set_positive_negative_examples(self, *, p, n,unlabelled):
