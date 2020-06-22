@@ -1,10 +1,10 @@
 """ kb_enrichment.py illustrates extending Tbox of given KB and saving KB in different formats."""
-from ontolearn import KnowledgeBase, Refinement,Data
+from ontolearn import KnowledgeBase, CustomRefinementOperator,Data
 
 
 kb = KnowledgeBase(path='../data/family-benchmark_rich_background.owl')
 data = Data(knowledge_base=kb)
-rho = Refinement(kb)
+rho = CustomRefinementOperator(kb)
 
 enrichments = []
 for ith, refs in enumerate(rho.refine(kb.thing)):

@@ -135,25 +135,14 @@ class ModifiedCELOERefinement(BaseRefinement):
      A top down/downward refinement operator refinement operator in ALC.
     """
 
-    def __init__(self, kb, max_child_length):
+    def __init__(self, kb, max_child_length=20):
         super().__init__(kb)
-
         self.topRefinementsCumulative = dict()
         self.topRefinementsLength = 0
         self.max_child_length = max_child_length
-
         self.combos = dict()
         self.topRefinements = dict()
         self.topARefinements = dict()
-        self.concepts_to_nodes = dict()
-
-    def set_concepts_node_mapping(self, m: dict):
-        """
-
-        @param m:
-        @return:
-        """
-        self.concepts_to_nodes = m
 
     def refine_atomic_concept(self, node: Node, max_length: int = None, current_domain: Concept = None) -> Set:
         """
@@ -339,5 +328,121 @@ class ModifiedCELOERefinement(BaseRefinement):
             return self.refine_object_union_of(node, maxlength, current_domain)
         elif node.concept.form == 'ObjectIntersectionOf':
             return self.refine_object_intersection_of(node, maxlength, current_domain)
+        else:
+            raise ValueError
+
+
+class CustomRefinementOperator(BaseRefinement):
+    def __init__(self, kb: KnowledgeBase = None):
+        super().__init__(kb)
+
+    def getNode(self, c: Concept, parent_node=None, root=False):
+
+        if c in self.concepts_to_nodes:
+            return self.concepts_to_nodes[c]
+
+        if parent_node is None and root is False:
+            print(c)
+            raise ValueError
+
+        n = Node(concept=c, parent_node=parent_node, root=root)
+        self.concepts_to_nodes[c] = n
+        return n
+
+    def refine_complement_of(self, concept: Concept):
+        parents = self.kb.get_direct_parents(self.kb.negation(concept))
+        return self.kb.negation_from_iterables(parents)
+
+    def refine_object_some_values_from(self, concept: Concept):
+        refs = set()
+        for i in self.refine(concept.filler):
+            refs.update(self.kb.existential_restriction(i, concept.role))
+        return refs
+
+    def refine_object_all_values_from(self, C: Concept):
+        refs = set()
+        for i in self.refine(C.filler):
+            refs.add(self.kb.universal_restriction(i, C.role))
+        return refs
+
+    def refine_object_union_of(self, C: Concept):
+        """
+
+        :param C:
+        :return:
+        """
+
+        result = set()
+        concept_A = C.concept_a
+        concept_B = C.concept_b
+        for ref_concept_A in self.refine(concept_A):
+            result.add(self.kb.union(ref_concept_A, concept_B))
+
+        for concept_B in self.refine(concept_A):
+            result.add(self.kb.union(concept_B, concept_A))
+
+        return result
+
+    def refine_object_intersection_of(self, C: Concept):
+        """
+
+        :param C:
+        :return:
+        """
+
+        result = set()
+        concept_A = C.concept_a
+        concept_B = C.concept_b
+        for ref_concept_A in self.refine(concept_A):
+            result.add(self.kb.intersection(ref_concept_A, concept_B))
+
+        for concept_B in self.refine(concept_A):
+            result.add(self.kb.intersection(concept_B, concept_A))
+
+        return result
+
+    def refine_atomic_concept(self, concept: Concept) -> Set:
+        # (1) Generate all direct_sub_concepts
+        sub_concepts = self.kb.get_direct_sub_concepts(concept)
+        # (2) Create negation of all leaf_concepts
+        negs = self.kb.negation_from_iterables(self.kb.get_leaf_concepts(concept))
+        # (3) Create ∃.r.T where r is the most general relation.
+        existential_rest = self.kb.most_general_existential_restrictions(concept)
+        universal_rest = self.kb.most_general_universal_restriction(concept)
+        a, b = tee(chain(sub_concepts, negs, existential_rest, universal_rest))
+
+        mem = set()
+        for i in a:
+            yield i
+            for j in copy.copy(b):
+                if (i == j) or ((i.str, j.str) in mem) or ((j.str, i.str) in mem):
+                    continue
+                mem.add((j.str, i.str))
+                mem.add((i.str, j.str))
+                mem.add((j.str, i.str))
+
+                union = self.kb.union(i, j)
+                if not (concept.instances.issubset(union.instances)):
+                    yield union
+
+                if i.instances.isdisjoint(j.instances):
+                    continue
+                yield self.kb.intersection(i, j)
+
+    def refine(self, concept: Concept):
+        assert isinstance(concept, Concept)
+
+        if concept.is_atomic:
+            yield from self.refine_atomic_concept(concept)
+        elif concept.form == 'ObjectComplementOf':
+            yield from self.refine_complement_of(concept)
+        elif concept.form == 'ObjectSomeValuesFrom':
+            yield from self.refine_object_some_values_from(concept)
+        elif concept.form == 'ObjectAllValuesFrom':
+            yield from self.refine_object_all_values_from(concept)
+        elif concept.form == 'ObjectUnionOf':
+            yield from self.refine_object_union_of(concept)
+        elif concept.form == 'ObjectIntersectionOf':
+            yield from self.refine_object_intersection_of(concept)
         else:
             raise ValueError

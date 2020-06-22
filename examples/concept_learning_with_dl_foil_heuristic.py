@@ -1,9 +1,7 @@
-""" concept_learning.py"""
-from ontolearn import KnowledgeBase, SampleConceptLearner
-from ontolearn.metrics import F1, PredictiveAccuracy, DLFOILHeuristic
+from ontolearn import KnowledgeBase,CustomConceptLearner,CustomRefinementOperator,F1,DLFOILHeuristic,SearchTree
 import json
 
-with open('artifical_problems.json') as json_file:
+with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 
 kb = KnowledgeBase(path=settings['data_path'])
@@ -11,32 +9,15 @@ kb = KnowledgeBase(path=settings['data_path'])
 for str_target_concept, examples in settings['problems'].items():
     p = set(examples['positive_examples'])
     n = set(examples['negative_examples'])
-
-    model = SampleConceptLearner(knowledge_base=kb,
+    print('Target concept: ', str_target_concept)
+    model = CustomConceptLearner(knowledge_base=kb,
+                                 refinement_operator=CustomRefinementOperator(kb=kb),
                                  quality_func=F1(),
+                                 heuristic_func=DLFOILHeuristic(),
+                                 search_tree=SearchTree(),
                                  terminate_on_goal=True,
-                                 heuristic_func=DLFOILHeuristic(),
-                                 iter_bound=100,
-                                 verbose=False)
+                                 iter_bound=1_000,
+                                 verbose=True)
 
     model.predict(pos=p, neg=n)
     model.show_best_predictions(top_n=10)
-
-######################################################################
-
-for str_target_concept, examples in settings['problems'].items():
-    p = set(examples['positive_examples'])
-    n = set(examples['negative_examples'])
-
-    model = SampleConceptLearner(knowledge_base=kb,
-                                 quality_func=PredictiveAccuracy(),
-                                 terminate_on_goal=False,
-                                 heuristic_func=DLFOILHeuristic(),
-                                 iter_bound=1000,
-                                 verbose=False)
-
-    model.predict(pos=p, neg=n)
-
-    print('\tA target concept:',str_target_concept)
-    model.show_best_predictions(top_n=10)
-
