@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from .concept import Concept
 from .search import Node
-from .search import SearchTree
+from .search import CELOESearchTree
 from .metrics import F1, CELOEHeuristic
 from .abstracts import BaseRefinement
 import copy
@@ -328,7 +328,7 @@ class SampleConceptLearner:
         @param neg:
         @return:
         """
-        self.search_tree = SearchTree(quality_func=F1(pos=pos, neg=neg), heuristic_func=self.heuristic)
+        self.search_tree = CELOESearchTree(quality_func=F1(pos=pos, neg=neg), heuristic_func=self.heuristic)
 
         self.initialize_root()
 
