@@ -25,7 +25,7 @@ class CELOE(BaseConceptLearner):
         if self.verbose:
             self.search_tree.show_search_tree(step)
         for n in self.search_tree:
-            #if n.quality < 1:# or (n.h_exp < len(n.concept)):
+            # if n.quality < 1:# or (n.h_exp < len(n.concept)):
             return n
 
     def apply_rho(self, node: Node):
@@ -34,23 +34,20 @@ class CELOE(BaseConceptLearner):
         # TODO: Very inefficient computation flow as we do not make use of generator.
         # TODO: This chuck of code is obtained from DL-lerner as it is.
         # TODO: Number of refinements must be updated for heuristic value of node
-        refinements = [self.rho.getNode(i, parent_node=node)
-                       for i in self.rho.refine(node, maxlength=node.h_exp + 1 + self.h_exp_constant,
-                                                current_domain=self.start_class)
-                       if i.str not in self.concepts_to_ignore]
-        node.increment_h_exp()
+
+        refs = self.rho.refine(node, maxlength=node.h_exp + 1 + self.h_exp_constant, current_domain=self.start_class)
+
+        refinements = [self.rho.getNode(i, parent_node=node) for i in refs if i.str not in self.concepts_to_ignore]
+
+        node.increment_h_exp(self.h_exp_constant)
         node.refinement_count = len(refinements)  # This should be postpone so that we make make use of generator
-        self.heuristic.apply(node)
+        if node.parent_node is not None and node.parent_node.quality is None:
+            self.quality_func.apply(node.parent_node)
+        self.heuristic.apply(node, parent_node=node.parent_node)
         self.search_tree.update_done(node)
         return refinements
 
-    def predict(self, pos, neg):
-        """
-        @param pos
-        @param neg:
-        @return:
-        """
-
+    def predict(self, pos, neg=None):
         self.search_tree.set_positive_negative_examples(p=pos, n=neg,
                                                         unlabelled=self.kb.thing.instances - (pos.union(neg)))
 
@@ -59,10 +56,9 @@ class CELOE(BaseConceptLearner):
         for j in range(1, self.iter_bound):
 
             node_to_expand = self.next_node_to_expand(j)
-            #h_exp = node_to_expand.h_exp
-
+            # h_exp = node_to_expand.h_exp
             for ref in self.apply_rho(node_to_expand):
-                #if len(ref) > h_exp:
+                # if len(ref) > h_exp:
                 goal_found = self.search_tree.add_node(parent_node=node_to_expand, child_node=ref)
                 if goal_found:
                     if self.verbose:
@@ -70,7 +66,7 @@ class CELOE(BaseConceptLearner):
                             self.search_tree.expressionTests))
                     if self.terminate_on_goal:
                         return True
-            #self.updateMinMaxHorizExp(node_to_expand)
+            # self.updateMinMaxHorizExp(node_to_expand)
 
     def updateMinMaxHorizExp(self, node: Node):
         """

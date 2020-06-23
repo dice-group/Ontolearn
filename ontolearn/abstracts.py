@@ -4,6 +4,8 @@ from abc import ABCMeta, abstractmethod, ABC
 from owlready2 import ThingClass
 from .util import get_full_iri
 from typing import Set
+import random
+random.seed(0)
 
 
 @total_ordering
@@ -89,10 +91,14 @@ class BaseConcept(metaclass=ABCMeta):
 
 
 class AbstractScorer(ABC):
+    """
+    An abstract class for quality and heuristic functions.
+    """
     @abstractmethod
-    def __init__(self, pos, neg):
+    def __init__(self, pos, neg, unlabelled):
         self.pos = pos
         self.neg = neg
+        self.unlabelled = unlabelled
         self.applied = 0
 
     def set_positive_examples(self, instances):
@@ -101,7 +107,10 @@ class AbstractScorer(ABC):
     def set_negative_examples(self, instances):
         self.neg = instances
 
+    def set_unlabelled_examples(self, instances):
+        self.unlabelled = instances
 
+"""
 class AbstractHeuristic(ABC):
     @abstractmethod
     def __init__(self, pos, neg, unlabelled):
@@ -119,8 +128,29 @@ class AbstractHeuristic(ABC):
     def set_unlabelled_examples(self, instances):
         self.unlabelled = instances
 
-
+"""
 class BaseRefinement(metaclass=ABCMeta):
+    """
+    Base class for Refinement Operators.
+
+    Let C, D \in N_c where N_c os a finite set of concepts.
+
+    * Proposition 3.3 (Complete and Finite Refinement Operators) [1]
+        ** ρ(C) = {C ⊓ T} ∪ {D | D is not empty AND D \sqset C}
+        *** The operator is finite,
+        *** The operator is complete as given a concept C, we can reach an arbitrary concept D such that D subset of C.
+
+    *) Theoretical Foundations of Refinement Operators [1].
+
+
+
+
+    *) Defining a top-down refimenent operator that is a proper is crutial.
+        4.1.3 Achieving Properness [1]
+    *) Figure 4.1 [1] defines of the refinement operator
+
+    [1] Learning OWL Class Expressions
+    """
     @abstractmethod
     def __init__(self, kb):
         self.kb = kb
@@ -231,8 +261,8 @@ class BaseNode(metaclass=ABCMeta):
     def quality(self, val: float):
         self.__quality_score = val
 
-    def increment_h_exp(self):
-        self.__horizontal_expansion += 1
+    def increment_h_exp(self,val=1):
+        self.__horizontal_expansion += val
 
 
 class AbstractTree(ABC):
@@ -257,6 +287,10 @@ class AbstractTree(ABC):
         """
         Assing positives and negatives
         """
+        assert len(p)>0
+        if len(n)==0:
+            # randomly sample from unlabelled.
+            n=random.sample(unlabelled)
         self.quality_func.set_positive_examples(p)
         self.quality_func.set_negative_examples(n)
         self.heuristic_func.set_positive_examples(p)

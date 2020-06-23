@@ -42,7 +42,8 @@ class CELOESearchTree(AbstractTree):
             self.expressionTests += 1
             if child_node.quality == 0:  # > too weak
                 return False
-            self.heuristic_func.apply(child_node)
+
+            self.heuristic_func.apply(child_node,parent_node=parent_node)
             self._nodes[child_node] = child_node
             if parent_node:
                 parent_node.add_children(child_node)
