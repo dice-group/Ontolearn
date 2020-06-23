@@ -261,8 +261,8 @@ class BaseNode(metaclass=ABCMeta):
     def quality(self, val: float):
         self.__quality_score = val
 
-    def increment_h_exp(self,val=1):
-        self.__horizontal_expansion += val
+    def increment_h_exp(self,val=0):
+        self.__horizontal_expansion += val+1
 
 
 class AbstractTree(ABC):

@@ -16,7 +16,7 @@ def test_celoe():
         model = CELOE(knowledge_base=kb,
                       refinement_operator=ModifiedCELOERefinement(kb=kb),
                       quality_func=F1(),
-                      min_horiziontal_expansion=0,
+                      min_horizontal_expansion=0,
                       heuristic_func=CELOEHeuristic(),
                       search_tree=CELOESearchTree(),
                       terminate_on_goal=True,

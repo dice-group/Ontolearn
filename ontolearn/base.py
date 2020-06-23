@@ -1,13 +1,15 @@
 from collections import defaultdict
 from itertools import chain
-from owlready2 import Ontology,get_ontology
+from owlready2 import Ontology, get_ontology
 import owlready2
 from .concept_generator import ConceptGenerator
 from .concept import Concept
 from typing import Dict, Tuple, Set, Generator
 from .util import parametrized_performance_debugger
 import warnings
+
 warnings.filterwarnings("ignore")
+
 
 class KnowledgeBase:
     """Knowledge Base Class representing Tbox and Abox along with concept hierarchies"""
@@ -65,16 +67,16 @@ class KnowledgeBase:
         bottom = Concept(owlready2.Nothing, kwargs={'form': 'Class'})
 
         for i in onto.classes():
-            #i.is_a.append(T.owl)  # include T as most general class.
+            # i.is_a.append(T.owl)  # include T as most general class.
             try:
                 temp_concept = Concept(i, kwargs={'form': 'Class'})  # wrap owl object into AtomicConcept.
             except:
-                assert len(i.is_a)==2
+                assert len(i.is_a) == 2
 
-                class_=i.is_a[1]
+                class_ = i.is_a[1]
 
-                if isinstance(class_,owlready2.class_construct.Restriction):
-                    property_=class_.property
+                if isinstance(class_, owlready2.class_construct.Restriction):
+                    property_ = class_.property
                     print(property_)
                     print(class_)
                 else:
@@ -146,7 +148,7 @@ class KnowledgeBase:
 
     def negation(self, concept: Concept):
         """ Return a Concept object that is a negation of given concept."""
-        return self.__concept_generator.negation(concept)
+        yield self.__concept_generator.negation(concept)
 
     @parametrized_performance_debugger()
     def negation_from_iterables(self, s: Generator):
@@ -171,42 +173,33 @@ class KnowledgeBase:
             yield direct_parent
 
     def most_general_existential_restrictions(self, concept: Concept):
-        """
 
-        @param concept:
-        @return:
-        """
-        properties = self.property_hierarchy.get_most_general_property()
-
-        for prob in properties:
-            existential = self.__concept_generator.existential_restriction(concept, prob)
-            yield existential
+        for prob in self.property_hierarchy.get_most_general_property():
+            yield self.__concept_generator.existential_restriction(concept, prob)
 
     def most_general_universal_restriction(self, concept: Concept):
-        """
-        TODO:
-        """
-        properties = self.property_hierarchy.get_most_general_property()
+        assert isinstance(concept, Concept)
+        for prob in self.property_hierarchy.get_most_general_property():
+            yield self.__concept_generator.universal_restriction(concept, prob)
 
-        for prob in properties:
-            universal = self.__concept_generator.universal_restriction(concept, prob)
-            yield universal
-
-    def union(self, conceptA, conceptB):
+    def union(self, conceptA: Concept, conceptB: Concept):
         """Return a concept c == (conceptA OR conceptA)"""
+        assert isinstance(conceptA, Concept)
+        assert isinstance(conceptB, Concept)
         return self.__concept_generator.union(conceptA, conceptB)
 
-    def intersection(self, conceptA, conceptB):
+    def intersection(self, conceptA: Concept, conceptB: Concept) -> Generator:
         """Return a concept c == (conceptA AND conceptA)"""
-        if conceptA.str=='Thing' or conceptB.str=='Thing':
-            raise ValueError
+        assert isinstance(conceptA, Concept)
+        assert isinstance(conceptB, Concept)
         return self.__concept_generator.intersection(conceptA, conceptB)
+
     def existential_restriction(self, concept: Concept, property_) -> Generator:
         """Return a concept c == (Exist R.C)"""
         assert isinstance(concept, Concept)
         return self.__concept_generator.existential_restriction(concept, property_)
 
-    def universal_restriction(self, concept: Concept, property_):
+    def universal_restriction(self, concept: Concept, property_) -> Generator:
         """Return a concept c == (Forall R.C)"""
         assert isinstance(concept, Concept)
         return self.__concept_generator.universal_restriction(concept, property_)
@@ -237,8 +230,5 @@ class PropertyHierarchy:
         self.object_properties = [i for i in onto.object_properties()]
 
     def get_most_general_property(self):
-        """
-
-        """
         for i in self.all_properties:
             yield i
