@@ -9,7 +9,7 @@ kb = KnowledgeBase(path=settings['data_path'])
 for str_target_concept, examples in settings['problems'].items():
     p = set(examples['positive_examples'])
     n = set(examples['negative_examples'])
-    print('Target concept: ',str_target_concept)
+    print('Target concept: ', str_target_concept)
     model = CELOE(knowledge_base=kb,
                   refinement_operator=ModifiedCELOERefinement(kb=kb),
                   quality_func=F1(),

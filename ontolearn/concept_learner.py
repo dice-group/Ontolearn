@@ -25,8 +25,8 @@ class CELOE(BaseConceptLearner):
         if self.verbose:
             self.search_tree.show_search_tree(step)
         for n in self.search_tree:
-            if n.quality < 1 or (n.h_exp < len(n.concept)):
-                return n
+            #if n.quality < 1:# or (n.h_exp < len(n.concept)):
+            return n
 
     def apply_rho(self, node: Node):
         assert isinstance(node, Node)
@@ -38,11 +38,9 @@ class CELOE(BaseConceptLearner):
                        for i in self.rho.refine(node, maxlength=node.h_exp + 1 + self.h_exp_constant,
                                                 current_domain=self.start_class)
                        if i.str not in self.concepts_to_ignore]
-
         node.increment_h_exp()
         node.refinement_count = len(refinements)  # This should be postpone so that we make make use of generator
         self.heuristic.apply(node)
-
         self.search_tree.update_done(node)
         return refinements
 
@@ -61,18 +59,18 @@ class CELOE(BaseConceptLearner):
         for j in range(1, self.iter_bound):
 
             node_to_expand = self.next_node_to_expand(j)
-            h_exp = node_to_expand.h_exp
+            #h_exp = node_to_expand.h_exp
 
             for ref in self.apply_rho(node_to_expand):
-                if len(ref) > h_exp:
-                    goal_found = self.search_tree.add_node(parent_node=node_to_expand, child_node=ref)
-                    if goal_found:
-                        if self.verbose:  # TODO write a function for logging and output that integrates verbose.
-                            print('Goal found after {0} number of concepts tested.'.format(
-                                self.search_tree.expressionTests))
-                        if self.terminate_on_goal:
-                            return True
-            self.updateMinMaxHorizExp(node_to_expand)
+                #if len(ref) > h_exp:
+                goal_found = self.search_tree.add_node(parent_node=node_to_expand, child_node=ref)
+                if goal_found:
+                    if self.verbose:
+                        print('Goal found after {0} number of concepts tested.'.format(
+                            self.search_tree.expressionTests))
+                    if self.terminate_on_goal:
+                        return True
+            #self.updateMinMaxHorizExp(node_to_expand)
 
     def updateMinMaxHorizExp(self, node: Node):
         """
