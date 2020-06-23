@@ -22,10 +22,9 @@ class Concept(BaseConcept):
             elif self.form in ['ObjectUnionOf', 'ObjectIntersectionOf']:
                 self.concept_a = kwargs['ConceptA']
                 self.concept_b = kwargs['ConceptB']
-            elif self.form == 'ObjectComplementOf':
-                ''''''
+            elif self.form in ['ObjectComplementOf']:
+                self.concept_a=kwargs['root']
             else:
-                print(self)
                 raise ValueError
 
 

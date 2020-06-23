@@ -1,8 +1,9 @@
 from abc import ABCMeta, abstractmethod
 from .refinement_operators import ModifiedCELOERefinement
 from .search import Node
-from .search import SearchTree
-from .metrics import F1, CELOEHeuristic
+from .search import CELOESearchTree
+from .metrics import F1
+from .heuristics import CELOEHeuristic
 
 
 class BaseConceptLearner(metaclass=ABCMeta):
@@ -37,13 +38,16 @@ class BaseConceptLearner(metaclass=ABCMeta):
                  terminate_on_goal=True,
                  iter_bound=10,
                  max_child_length=10,
-                 verbose=True, ignored_concepts={}, root_concept=None):
+                 verbose=True, ignored_concepts=None, root_concept=None):
+        if ignored_concepts is None:
+            ignored_concepts = {}
         assert knowledge_base
         self.kb = knowledge_base
         self.heuristic = heuristic_func
         self.quality_func = quality_func
         self.rho = refinement_operator
         self.search_tree = search_tree
+
         self.concepts_to_ignore = ignored_concepts
         self.start_class = root_concept
 
@@ -64,14 +68,23 @@ class BaseConceptLearner(metaclass=ABCMeta):
             self.quality_func = F1()
 
         if self.search_tree is None:
-            self.search_tree = SearchTree(quality_func=self.quality_func, heuristic_func=self.heuristic)
+            self.search_tree = CELOESearchTree(quality_func=self.quality_func, heuristic_func=self.heuristic)
+        else:
+            self.search_tree.set_quality_func(self.quality_func)
+            self.search_tree.set_heuristic_func(self.heuristic)
 
         if self.start_class is None:
             self.start_class = self.kb.thing
 
+        assert self.start_class
+        assert self.search_tree is not None
+        assert self.quality_func
+        assert self.heuristic
+        assert self.rho
+
+    @abstractmethod
     def initialize_root(self):
-        root = self.rho.getNode(self.start_class, root=True)
-        self.search_tree.add_node(root)
+        pass
 
     def show_best_predictions(self, top_n=10):
         self.search_tree.show_best_nodes(top_n)
@@ -79,8 +92,9 @@ class BaseConceptLearner(metaclass=ABCMeta):
     @abstractmethod
     def next_node_to_expand(self, step):
         pass
+
     @abstractmethod
-    def apply_rho(self,args):
+    def apply_rho(self, args):
         pass
 
     @abstractmethod
@@ -90,7 +104,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         @param neg:
         @return:
         """
-        self.search_tree = SearchTree(quality_func=F1(pos=pos, neg=neg), heuristic_func=self.heuristic)
+        self.search_tree = CELOESearchTree(quality_func=F1(pos=pos, neg=neg), heuristic_func=self.heuristic)
 
         self.initialize_root()
 
@@ -187,7 +201,7 @@ class SampleConceptLearner:
         @param neg:
         @return:
         """
-        self.search_tree = SearchTree(quality_func=F1(pos=pos, neg=neg), heuristic_func=self.heuristic)
+        self.search_tree = CELOESearchTree(quality_func=F1(pos=pos, neg=neg), heuristic_func=self.heuristic)
 
         self.initialize_root()
 

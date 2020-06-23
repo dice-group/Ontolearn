@@ -107,7 +107,7 @@ class ConceptGenerator:
                 not_concept.equivalent_to.append(Not(concept.owl))
                 # self.type_enrichments(self.T.instances - concept.instances, not_concept)
 
-                c = Concept(concept=not_concept, kwargs={'form': 'ObjectComplementOf'})
+                c = Concept(concept=not_concept, kwargs={'form': 'ObjectComplementOf','root':concept})
                 c.instances = self.T.instances - concept.instances
 
                 self.log_of_negations[concept] = c
