@@ -60,7 +60,7 @@ model = CustomConceptLearner(knowledge_base=kb,
                              heuristic_func=DLFOILHeuristic(),
                              search_tree=SearchTree(),
                              terminate_on_goal=True,
-                             iter_bound=1_00,
+                             iter_bound=1_000,
                              verbose=True)
 model.predict(pos=p, neg=n)
 model.show_best_predictions(top_n=10)
