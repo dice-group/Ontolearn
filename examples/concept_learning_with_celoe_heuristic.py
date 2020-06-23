@@ -13,7 +13,7 @@ for str_target_concept, examples in settings['problems'].items():
     model = CELOE(knowledge_base=kb,
                   refinement_operator=ModifiedCELOERefinement(kb=kb),
                   quality_func=F1(),
-                  min_horiziontal_expansion=0,
+                  min_horiziontal_expansion=3,
                   heuristic_func=CELOEHeuristic(),
                   search_tree=CELOESearchTree(),
                   terminate_on_goal=True,

@@ -165,11 +165,15 @@ class ModifiedCELOERefinement(BaseRefinement):
         @param current_domain:
         @return:
         """
-
         iter_container = []
+        # (1) Generate all all_sub_concepts
+        for i in self.kb.get_all_sub_concepts(node.concept):
+            yield i
+
         # (2.1) Generate all direct_sub_concepts
-        sub_concepts, temp_sub_concepts = tee(self.kb.get_direct_sub_concepts(node.concept))
-        iter_container.append(sub_concepts)
+        if node.concept.str != 'Thing':
+            for i in self.kb.get_direct_sub_concepts(current_domain):
+                yield self.kb.intersection(node.concept, i)
 
         if max_length >= 2 and (len(node.concept) + 1 <= self.max_child_length):
             # (2.2) Create negation of all leaf_concepts
@@ -178,7 +182,6 @@ class ModifiedCELOERefinement(BaseRefinement):
         if max_length >= 3 and (len(node.concept) + 2 <= self.max_child_length):
             # (2.3) Create ∀.r.T and ∃.r.T where r is the most general relation.
             iter_container.append(self.kb.most_general_existential_restrictions(node.concept))
-            iter_container.append(self.kb.most_general_universal_restriction(node.concept))
 
         a, b = tee(chain.from_iterable(iter_container))
 
@@ -195,13 +198,13 @@ class ModifiedCELOERefinement(BaseRefinement):
 
                 if (max_length >= length) and (self.max_child_length >= length + 1):
 
-                    # if i or j is not == T
-                    if i.str != 'T' and j.str != 'T':
+                    if i.str != 'Thing' and j.str != 'Thing':
                         if (i.instances.union(j.instances)) != self.kb.thing.instances:
                             yield self.kb.union(i, j)
 
                     if not i.instances.isdisjoint(j.instances):
                         yield self.kb.intersection(i, j)
+
                 else:
                     continue
 
@@ -227,6 +230,8 @@ class ModifiedCELOERefinement(BaseRefinement):
         for i in self.refine(self.getNode(node.concept.filler, parent_node=node), maxlength=maxlength - 2,
                              current_domain=current_domain):
             yield self.kb.existential_restriction(i, node.concept.role)
+
+        yield self.kb.universal_restriction(node.concept.filler, node.concept.role)
 
     def refine_object_all_values_from(self, node: Node, maxlength: int, current_domain: Concept = None):
         """

@@ -1,6 +1,7 @@
 from collections import defaultdict
 from itertools import chain
-from owlready2 import get_ontology, Ontology, Thing, Nothing, prop
+from owlready2 import Ontology,get_ontology
+import owlready2
 from .concept_generator import ConceptGenerator
 from .concept import Concept
 from typing import Dict, Tuple, Set, Generator
@@ -12,10 +13,9 @@ class KnowledgeBase:
     """Knowledge Base Class representing Tbox and Abox along with concept hierarchies"""
 
     def __init__(self, path):
-
         self._kb_path = path
         self.property_hierarchy = None
-        self.onto = get_ontology(self._kb_path).load()
+        self.onto = get_ontology(self._kb_path).load(reload=True)
         self.name = self.onto.name
         self.concepts = dict()
         self.thing = None
@@ -60,14 +60,30 @@ class KnowledgeBase:
             2) Concept:
         """
         concepts = dict()
-        T = Concept(Thing, kwargs={'form': 'Class'})
-        T.owl.equivalent_to.append(Thing)
-        bottom = Concept(Nothing, kwargs={'form': 'Class'})
+        T = Concept(owlready2.Thing, kwargs={'form': 'Class'})
+        T.owl.equivalent_to.append(owlready2.Thing)
+        bottom = Concept(owlready2.Nothing, kwargs={'form': 'Class'})
 
         for i in onto.classes():
-            i.is_a.append(T.owl)  # include T as most general class.
+            #i.is_a.append(T.owl)  # include T as most general class.
+            try:
+                temp_concept = Concept(i, kwargs={'form': 'Class'})  # wrap owl object into AtomicConcept.
+            except:
+                assert len(i.is_a)==2
 
-            temp_concept = Concept(i, kwargs={'form': 'Class'})  # wrap owl object into AtomicConcept.
+                class_=i.is_a[1]
+
+                if isinstance(class_,owlready2.class_construct.Restriction):
+                    property_=class_.property
+                    print(property_)
+                    print(class_)
+                else:
+                    print(type(class_))
+                    exit(1)
+
+                exit(1)
+                # Restriction.cardinality, .value, .property
+
             concepts[temp_concept.full_iri] = temp_concept
 
         concepts[T.full_iri] = T
@@ -144,6 +160,11 @@ class KnowledgeBase:
         for v in self.top_down_direct_concept_hierarchy[concept]:
             yield v
 
+    def get_all_sub_concepts(self, concept: Concept):
+        """ Return : { x | ( x subClassOf concept ) OR ..."""
+        for v in self.top_down_concept_hierarchy[concept]:
+            yield v
+
     def get_direct_parents(self, concept: Concept):
         """ Return : { x | (concept subClassOf x)} """
         for direct_parent in self.down_top_direct_concept_hierarchy[concept]:
@@ -177,12 +198,12 @@ class KnowledgeBase:
 
     def intersection(self, conceptA, conceptB):
         """Return a concept c == (conceptA AND conceptA)"""
+        if conceptA.str=='Thing' or conceptB.str=='Thing':
+            raise ValueError
         return self.__concept_generator.intersection(conceptA, conceptB)
-
     def existential_restriction(self, concept: Concept, property_) -> Generator:
         """Return a concept c == (Exist R.C)"""
         assert isinstance(concept, Concept)
-        assert isinstance(property_, prop.ObjectPropertyClass)
         return self.__concept_generator.existential_restriction(concept, property_)
 
     def universal_restriction(self, concept: Concept, property_):

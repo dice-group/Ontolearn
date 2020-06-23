@@ -1,5 +1,7 @@
-from .abstracts import AbstractHeuristic
-class CELOEHeuristic(AbstractHeuristic):
+from .abstracts import AbstractScorer
+
+
+class CELOEHeuristic(AbstractScorer):
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
         self.name = 'CELOE'
@@ -10,7 +12,7 @@ class CELOEHeuristic(AbstractHeuristic):
         self.expansionPenaltyFactor = 0.1
         self.applied = 0
 
-    def apply(self, node):
+    def apply(self, node, parent_node=None):
         self.applied += 1
 
         heuristic_val = 0
@@ -19,13 +21,7 @@ class CELOEHeuristic(AbstractHeuristic):
         assert id(heuristic_val) != node.quality
 
         if node.parent_node is not None:
-            try:
-                heuristic_val += (node.parent_node.quality - node.quality) * self.gainBonusFactor
-            except TypeError as ty:
-                print(node)
-                print(node.parent_node)
-                raise ty
-
+            heuristic_val += (parent_node.quality - node.quality) * self.gainBonusFactor
         else:
             heuristic_val += self.startNodeBonus
 
@@ -36,7 +32,7 @@ class CELOEHeuristic(AbstractHeuristic):
         node.heuristic = round(heuristic_val, 5)
 
 
-class DLFOILHeuristic(AbstractHeuristic):
+class DLFOILHeuristic(AbstractScorer):
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
         self.name = 'DL-FOIL'
