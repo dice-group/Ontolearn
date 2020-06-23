@@ -15,8 +15,8 @@ Ontolearn is an open-source software library for structured machine learning in 
 1) git clone https://github.com/dice-group/OntoPy.git
 2) conda create -n temp python=3.6.2 # Or be sure that your have Python => 3.6.
 3) conda activate temp
-4) python ontolearn/setup.py install
-# After you receive this Finished processing dependencies for OntoPy==0.0.1
+4) pip install -e .
+# After you receive this Finished processing dependencies for OntoPy==0.X.X
 5) python -c "import ontolearn"
 ```
 ### Installation via pip
@@ -36,7 +36,7 @@ kb = KnowledgeBase(path='.../family-benchmark_rich_background.owl')
 model = CELOE(knowledge_base=kb,
               refinement_operator=ModifiedCELOERefinement(kb=kb),
               quality_func=F1(),
-              min_horiziontal_expansion=3,
+              min_horizontal_expansion=3,
               heuristic_func=CELOEHeuristic(),
               search_tree=CELOESearchTree(),
               terminate_on_goal=True,

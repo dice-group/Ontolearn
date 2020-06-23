@@ -4,7 +4,7 @@ from .search import Node
 
 class CELOE(BaseConceptLearner):
     def __init__(self, *, knowledge_base, refinement_operator, search_tree, quality_func, heuristic_func, iter_bound,
-                 verbose, terminate_on_goal=False, min_horiziontal_expansion=0,
+                 verbose, terminate_on_goal=False, min_horizontal_expansion=0,
                  ignored_concepts={}):
         super().__init__(knowledge_base=knowledge_base, refinement_operator=refinement_operator,
                          search_tree=search_tree,
@@ -13,7 +13,7 @@ class CELOE(BaseConceptLearner):
                          ignored_concepts=ignored_concepts,
                          terminate_on_goal=terminate_on_goal,
                          iter_bound=iter_bound, verbose=verbose)
-        self.h_exp_constant = min_horiziontal_expansion
+        self.h_exp_constant = min_horizontal_expansion
         self.max_he, self.min_he = self.h_exp_constant, self.h_exp_constant
 
     def initialize_root(self):
@@ -31,13 +31,12 @@ class CELOE(BaseConceptLearner):
     def apply_rho(self, node: Node):
         assert isinstance(node, Node)
         self.search_tree.update_prepare(node)
-        # TODO: Very inefficient computation flow as we do not make use of generator.
-        # TODO: This chuck of code is obtained from DL-lerner as it is.
-        # TODO: Number of refinements must be updated for heuristic value of node
 
-        refs = self.rho.refine(node, maxlength=node.h_exp + 1 + self.h_exp_constant, current_domain=self.start_class)
-
-        refinements = [self.rho.getNode(i, parent_node=node) for i in refs if i.str not in self.concepts_to_ignore]
+        refinements = [self.rho.getNode(i, parent_node=node) for i in
+                       self.rho.refine(node,
+                                       maxlength=node.h_exp + 1 + self.h_exp_constant,
+                                       current_domain=self.start_class)
+                       if i.str not in self.concepts_to_ignore]
 
         node.increment_h_exp(self.h_exp_constant)
         node.refinement_count = len(refinements)  # This should be postpone so that we make make use of generator
@@ -56,9 +55,7 @@ class CELOE(BaseConceptLearner):
         for j in range(1, self.iter_bound):
 
             node_to_expand = self.next_node_to_expand(j)
-            # h_exp = node_to_expand.h_exp
             for ref in self.apply_rho(node_to_expand):
-                # if len(ref) > h_exp:
                 goal_found = self.search_tree.add_node(parent_node=node_to_expand, child_node=ref)
                 if goal_found:
                     if self.verbose:
@@ -66,7 +63,6 @@ class CELOE(BaseConceptLearner):
                             self.search_tree.expressionTests))
                     if self.terminate_on_goal:
                         return True
-            # self.updateMinMaxHorizExp(node_to_expand)
 
     def updateMinMaxHorizExp(self, node: Node):
         """
