@@ -32,7 +32,11 @@ class CELOESearchTree(AbstractTree):
     def add_node(self, *, parent_node=None, child_node=None):
 
         if parent_node:
-            assert parent_node.quality is not None
+            try:
+                assert not (parent_node.quality is None)
+            except:
+                print(parent_node)
+                exit(1)
         if self.redundancy_check(child_node):
             self.quality_func.apply(child_node)  # AccuracyOrTooWeak(n)
             self.expressionTests += 1

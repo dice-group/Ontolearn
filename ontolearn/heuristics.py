@@ -24,6 +24,7 @@ class CELOEHeuristic(AbstractHeuristic):
             except TypeError as ty:
                 print(node)
                 print(node.parent_node)
+                raise ty
 
         else:
             heuristic_val += self.startNodeBonus
