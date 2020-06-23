@@ -1,8 +1,11 @@
+from collections import OrderedDict
 from functools import total_ordering
 from abc import ABCMeta, abstractmethod, ABC
 from owlready2 import ThingClass
 from .util import get_full_iri
 from typing import Set
+import random
+random.seed(0)
 
 
 @total_ordering
@@ -88,21 +91,11 @@ class BaseConcept(metaclass=ABCMeta):
 
 
 class AbstractScorer(ABC):
+    """
+    An abstract class for quality and heuristic functions.
+    """
     @abstractmethod
-    def __init__(self, pos, neg):
-        self.pos = pos
-        self.neg = neg
-        self.applied = 0
-
-    def set_positive_examples(self, instances):
-        self.pos = instances
-
-    def set_negative_examples(self, instances):
-        self.neg = instances
-
-class AbstractHeuristic(ABC):
-    @abstractmethod
-    def __init__(self, pos, neg,unlabelled):
+    def __init__(self, pos, neg, unlabelled):
         self.pos = pos
         self.neg = neg
         self.unlabelled = unlabelled
@@ -117,10 +110,61 @@ class AbstractHeuristic(ABC):
     def set_unlabelled_examples(self, instances):
         self.unlabelled = instances
 
+"""
+class AbstractHeuristic(ABC):
+    @abstractmethod
+    def __init__(self, pos, neg, unlabelled):
+        self.pos = pos
+        self.neg = neg
+        self.unlabelled = unlabelled
+        self.applied = 0
+
+    def set_positive_examples(self, instances):
+        self.pos = instances
+
+    def set_negative_examples(self, instances):
+        self.neg = instances
+
+    def set_unlabelled_examples(self, instances):
+        self.unlabelled = instances
+
+"""
 class BaseRefinement(metaclass=ABCMeta):
+    """
+    Base class for Refinement Operators.
+
+    Let C, D \in N_c where N_c os a finite set of concepts.
+
+    * Proposition 3.3 (Complete and Finite Refinement Operators) [1]
+        ** ρ(C) = {C ⊓ T} ∪ {D | D is not empty AND D \sqset C}
+        *** The operator is finite,
+        *** The operator is complete as given a concept C, we can reach an arbitrary concept D such that D subset of C.
+
+    *) Theoretical Foundations of Refinement Operators [1].
+
+
+
+
+    *) Defining a top-down refimenent operator that is a proper is crutial.
+        4.1.3 Achieving Properness [1]
+    *) Figure 4.1 [1] defines of the refinement operator
+
+    [1] Learning OWL Class Expressions
+    """
     @abstractmethod
     def __init__(self, kb):
         self.kb = kb
+        self.concepts_to_nodes = dict()
+
+    def set_kb(self, kb):
+        self.kb = kb
+
+    def set_concepts_node_mapping(self, m: dict):
+        self.concepts_to_nodes = m
+
+    @abstractmethod
+    def getNode(self, *args, **kwargs):
+        pass
 
     @abstractmethod
     def refine(self, *args, **kwargs):
@@ -217,18 +261,91 @@ class BaseNode(metaclass=ABCMeta):
     def quality(self, val: float):
         self.__quality_score = val
 
-    def increment_h_exp(self):
-        self.__horizontal_expansion += 1
+    def increment_h_exp(self,val=1):
+        self.__horizontal_expansion += val
 
 
 class AbstractTree(ABC):
+    @abstractmethod
     def __init__(self, quality_func, heuristic_func):
         self.expressionTests = 0
         self.quality_func = quality_func
         self.heuristic_func = heuristic_func
+        self._nodes = dict()
 
-    def set_quality_func(self, f:AbstractScorer):
+    def __len__(self):
+        return len(self._nodes)
+
+    def __getitem__(self, item):
+        return self._nodes[item]
+
+    def __iter__(self):
+        for k, node in self._nodes.items():
+            yield node
+
+    def set_positive_negative_examples(self, *, p, n, unlabelled):
+        """
+        Assing positives and negatives
+        """
+        assert len(p)>0
+        if len(n)==0:
+            # randomly sample from unlabelled.
+            n=random.sample(unlabelled)
+        self.quality_func.set_positive_examples(p)
+        self.quality_func.set_negative_examples(n)
+        self.heuristic_func.set_positive_examples(p)
+        self.heuristic_func.set_negative_examples(n)
+        self.heuristic_func.set_unlabelled_examples(unlabelled)
+
+    def set_quality_func(self, f: AbstractScorer):
         self.quality_func = f
 
     def set_heuristic_func(self, h):
         self.heuristic_func = h
+
+    def redundancy_check(self, n):
+        if n in self._nodes:
+            return False
+        return True
+
+    @property
+    def nodes(self):
+        return self._nodes
+
+    @abstractmethod
+    def add_node(self, *args, **kwargs):
+        pass
+
+    def sort_search_tree_by_descending_heuristic_score(self):
+
+        sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
+        self._nodes = OrderedDict(sorted_x)
+
+    def sort_search_tree_by_descending_score(self):
+        sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].score, reverse=True)
+        self._nodes = OrderedDict(sorted_x)
+
+    def show_search_tree(self, ith, top_n=10):
+        """
+        Show search tree.
+        """
+        print('######## ', ith, 'step Search Tree ###########')
+        counter = 1
+        for k, v in enumerate(self):
+            print(
+                '{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(counter, v.concept.str, self.quality_func.name,
+                                                            v.quality, v.heuristic))
+            # print('\t\t\t\t\t', counter, '-', v)  # , ' - acc:', v.accuracy)
+            counter += 1
+            if counter == top_n:
+                break
+        print('######## Search Tree ###########\n')
+
+    def show_best_nodes(self, top_n):
+        # TODO very inefficient implement priority queue.
+
+        print('Number of times quality function applied: ', self.quality_func.applied)
+        sorted_x = sorted(self.nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
+        self._nodes = OrderedDict(sorted_x)
+        self.show_search_tree('Final', top_n=top_n + 1)
+
