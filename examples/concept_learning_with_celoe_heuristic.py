@@ -29,4 +29,3 @@ for str_target_concept, examples in settings['problems'].items():
     model.predict(pos=p, neg=n)
     model.show_best_predictions(top_n=10)
     model.extend_ontology(top_n_concepts=10)
-    exit(1)
