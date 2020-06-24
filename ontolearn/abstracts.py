@@ -321,8 +321,8 @@ class AbstractTree(ABC):
         sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
         self._nodes = OrderedDict(sorted_x)
 
-    def sort_search_tree_by_descending_score(self):
-        sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].score, reverse=True)
+    def sort_search_tree_by_descending_quality(self):
+        sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
         self._nodes = OrderedDict(sorted_x)
 
     def show_search_tree(self, ith, top_n=10):

@@ -4,7 +4,7 @@ from owlready2 import Ontology, get_ontology
 import owlready2
 from .concept_generator import ConceptGenerator
 from .concept import Concept
-from typing import Dict, Tuple, Set, Generator
+from typing import Dict, Tuple, Set, Generator, Iterable
 from .util import parametrized_performance_debugger
 import warnings
 
@@ -15,9 +15,8 @@ class KnowledgeBase:
     """Knowledge Base Class representing Tbox and Abox along with concept hierarchies"""
 
     def __init__(self, path):
-        self._kb_path = path
-        self.property_hierarchy = None
-        self.onto = get_ontology(self._kb_path).load(reload=True)
+        self.path = path
+        self.onto = get_ontology(self.path).load(reload=True)
         self.name = self.onto.name
         self.concepts = dict()
         self.thing = None
@@ -27,13 +26,14 @@ class KnowledgeBase:
         self.down_top_concept_hierarchy = defaultdict(set)
         self.down_top_direct_concept_hierarchy = defaultdict(set)
         self.concepts_to_leafs = defaultdict(set)
+        self.property_hierarchy = None
         self.parse()
         # self.concepts = MappingProxyType(self.concepts)
         self.__concept_generator = ConceptGenerator(concepts=self.concepts, T=self.thing, Bottom=self.nothing,
                                                     onto=self.onto)
 
     @staticmethod
-    def apply_type_enrichment(concepts):
+    def apply_type_enrichment_from_iterable(concepts: Iterable[Concept]):
         """
         Extend ABOX by
         (1) Obtaining all instances of selected concepts.
@@ -44,6 +44,11 @@ class KnowledgeBase:
         for c in concepts:
             for ind in c.owl.instances():
                 ind.is_a.append(c.owl)
+
+    @staticmethod
+    def apply_type_enrichment(concept: Concept):
+        for ind in concept.owl.instances():
+            ind.is_a.append(concept.owl)
 
     def save(self, path, rdf_format='ntriples'):
         self.onto.save(file=path, format=rdf_format)

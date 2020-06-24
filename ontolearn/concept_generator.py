@@ -146,10 +146,11 @@ class ConceptGenerator:
             new_concept = types.new_class(name="(∃{0}.{1})".format(relation.name, concept.str), bases=(base,))
             new_concept.namespace = relation.namespace
             new_concept.is_a.append(relation.some(concept.owl))
-            new_concept.equivalent_to.append(relation.some(concept.owl))
+            #new_concept.equivalent_to.append(relation.some(concept.owl))
 
-            relation.range.append(concept.owl)
-            relation.domain.append(base)
+            #relation.range.append(concept.owl) # TODO is it really important ?
+            #relation.domain.append(base)# TODO: is it really important ?
+
             # self.type__restrictions_enrichments(True, relation, concept, new_concept)
             # self.executor.submit(self.type__restrictions_enrichments, (True, relation, concept, new_concept))
 
@@ -187,9 +188,9 @@ class ConceptGenerator:
             new_concept = types.new_class(name="(∀{0}.{1})".format(relation.name, concept.str), bases=(base,))
             new_concept.namespace = relation.namespace
             new_concept.is_a.append(relation.only(base))
-            new_concept.equivalent_to.append(relation.only(base))
-            relation.range.append(concept.owl)
-            relation.domain.append(base)
+            #new_concept.equivalent_to.append(relation.only(base))
+            #relation.range.append(concept.owl) # TODO is it really important ?
+            #relation.domain.append(base)# TODO: is it really important ?
 
             #            self.type__restrictions_enrichments(False, relation, concept, new_concept)
             # self.executor.submit(self.type__restrictions_enrichments, (False, relation, concept, new_concept))

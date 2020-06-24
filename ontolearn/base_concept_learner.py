@@ -89,6 +89,22 @@ class BaseConceptLearner(metaclass=ABCMeta):
     def show_best_predictions(self, top_n=10):
         self.search_tree.show_best_nodes(top_n)
 
+    def extend_ontology(self, top_n_concepts=10):
+        """
+        1) Obtain top N nodes from search tree.
+        2) Extend ABOX by including explicit type information for all instances belonging to concepts (1)
+        """
+        self.search_tree.sort_search_tree_by_descending_quality()
+        for (ith, node) in enumerate(self.search_tree):
+            if ith <= top_n_concepts:
+                self.kb.apply_type_enrichment(node.concept)
+            else:
+                break
+
+        folder = self.kb.path[:self.kb.path.rfind('/')] + '/'
+        kb_name = 'enrichted_' + self.kb.name
+        self.kb.save(folder + kb_name + '.owl', rdf_format="rdfxml")
+
     @abstractmethod
     def next_node_to_expand(self, step):
         pass
@@ -103,6 +119,8 @@ class BaseConceptLearner(metaclass=ABCMeta):
         @param pos:
         @param neg:
         @return:
+        """
+        pass
         """
         self.search_tree = CELOESearchTree(quality_func=F1(pos=pos, neg=neg), heuristic_func=self.heuristic)
 
@@ -123,6 +141,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
                         if self.terminate_on_goal:
                             return True
             self.updateMinMaxHorizExp(node_to_expand)
+        """
 
 
 class SampleConceptLearner:

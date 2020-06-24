@@ -11,6 +11,6 @@ for ith, refs in enumerate(rho.refine(kb.thing)):
     if len(refs) == 2 and len(refs.instances) < 150:  # selection criterion
         enrichments.append(refs)
 
-kb.apply_type_enrichment(enrichments)
+kb.apply_type_enrichment_from_iterable(enrichments)
 kb.save('enriched_kb.owl',rdf_format="rdfxml")
 kb.save('enriched_kb.nt',rdf_format="ntriples")
