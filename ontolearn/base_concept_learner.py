@@ -1,9 +1,13 @@
 from abc import ABCMeta, abstractmethod
+
+from owlready2 import get_ontology, rdfs,AnnotationPropertyClass
+
 from .refinement_operators import ModifiedCELOERefinement
 from .search import Node
 from .search import CELOESearchTree
 from .metrics import F1
 from .heuristics import CELOEHeuristic
+import types
 
 
 class BaseConceptLearner(metaclass=ABCMeta):
@@ -86,8 +90,21 @@ class BaseConceptLearner(metaclass=ABCMeta):
     def initialize_root(self):
         pass
 
-    def show_best_predictions(self, top_n=10):
-        self.search_tree.show_best_nodes(top_n)
+    def show_best_predictions(self, top_n=10,serialize_predictions=False,serialize_name='predictions.owl'):
+        predictions=self.search_tree.show_best_nodes(top_n)
+        if serialize_predictions:
+            onto = get_ontology(serialize_name)
+            with onto:
+                for i in predictions:
+                    owlready_obj=i.concept.owl
+
+                    bases=tuple(j for j in owlready_obj.mro()[:-1])
+
+                    new_concept = types.new_class(name=i.concept.str, bases=bases)
+                    new_concept.comment.append("{0}:{1}".format(self.quality_func.name,i.quality))
+
+            onto.save(serialize_name)
+
 
     def extend_ontology(self, top_n_concepts=10):
         """
@@ -102,7 +119,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
                 break
 
         folder = self.kb.path[:self.kb.path.rfind('/')] + '/'
-        kb_name = 'enrichted_' + self.kb.name
+        kb_name = 'enriched_' + self.kb.name
         self.kb.save(folder + kb_name + '.owl', rdf_format="rdfxml")
 
     @abstractmethod
