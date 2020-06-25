@@ -18,7 +18,9 @@ class CELOE(BaseConceptLearner):
 
     def initialize_root(self):
         root = self.rho.getNode(self.start_class, root=True)
-        self.search_tree.add_node(child_node=root)
+        self.search_tree.quality_func.apply(root)  # AccuracyOrTooWeak(n)
+        self.search_tree.heuristic_func.apply(root)  # AccuracyOrTooWeak(n)
+        self.search_tree[root]=root
 
     def next_node_to_expand(self, step):
         self.search_tree.sort_search_tree_by_descending_heuristic_score()

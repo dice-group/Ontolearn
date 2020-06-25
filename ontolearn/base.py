@@ -57,7 +57,32 @@ class KnowledgeBase:
         return self.thing.instances
 
     @staticmethod
-    def __build_concepts_mapping(onto: Ontology) -> Tuple[Dict, Concept, Concept]:
+    def is_atomic(c: owlready2.entity.ThingClass):
+        assert isinstance(c, owlready2.entity.ThingClass)
+        if '¬' in c.name and not (' ' in c.name):
+            return False
+        elif ' ' in c.name or '∃' in c.name or '∀' in c.name:
+            return False
+        else:
+            return True
+
+    def __parse_complex(self, c: owlready2.entity.ThingClass):
+        assert isinstance(c, owlready2.entity.ThingClass)
+        assert len(c.is_a) == 2
+        print(c)
+
+        owl_type = c.is_a[1]
+        print(owl_type)
+        print(type(owl_type))
+
+        print(owl_type.property)
+        print(owl_type.value)
+
+        exit(1)
+
+        return True
+
+    def __build_concepts_mapping(self, onto: Ontology) -> Tuple[Dict, Concept, Concept]:
         """
         Construct a mapping from full_iri to corresponding Concept objects.
 
@@ -70,28 +95,16 @@ class KnowledgeBase:
         T = Concept(owlready2.Thing, kwargs={'form': 'Class'})
         T.owl.equivalent_to.append(owlready2.Thing)
         bottom = Concept(owlready2.Nothing, kwargs={'form': 'Class'})
-
+        complex_classes = []
         for i in onto.classes():
-            # i.is_a.append(T.owl)  # include T as most general class.
-            try:
+            if self.is_atomic(i):
                 temp_concept = Concept(i, kwargs={'form': 'Class'})  # wrap owl object into AtomicConcept.
-            except:
-                assert len(i.is_a) == 2
+                concepts[temp_concept.full_iri] = temp_concept
+            else:
+                complex_classes.append(i)
 
-                class_ = i.is_a[1]
 
-                if isinstance(class_, owlready2.class_construct.Restriction):
-                    property_ = class_.property
-                    print(property_)
-                    print(class_)
-                else:
-                    print(type(class_))
-                    exit(1)
-
-                exit(1)
-                # Restriction.cardinality, .value, .property
-
-            concepts[temp_concept.full_iri] = temp_concept
+        #self.__parse_complex(complex_=complex_classes,concepts_dict)
 
         concepts[T.full_iri] = T
         concepts[bottom.full_iri] = bottom
