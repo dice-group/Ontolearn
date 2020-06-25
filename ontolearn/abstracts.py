@@ -5,6 +5,7 @@ from owlready2 import ThingClass
 from .util import get_full_iri
 from typing import Set
 import random
+
 random.seed(0)
 
 
@@ -25,7 +26,7 @@ class BaseConcept(metaclass=ABCMeta):
         self.str = concept.name
         self.form = kwargs['form']
 
-        self.is_atomic = self.__is_atomic()  # TODO consider the necessity.
+        self.is_atomic = True if self.form=='Class' else False#self.__is_atomic()  # TODO consider the necessity.
         self.length = self.__calculate_length()
 
         self.__instances = None
@@ -94,6 +95,7 @@ class AbstractScorer(ABC):
     """
     An abstract class for quality and heuristic functions.
     """
+
     @abstractmethod
     def __init__(self, pos, neg, unlabelled):
         self.pos = pos
@@ -109,6 +111,7 @@ class AbstractScorer(ABC):
 
     def set_unlabelled_examples(self, instances):
         self.unlabelled = instances
+
 
 """
 class AbstractHeuristic(ABC):
@@ -129,6 +132,8 @@ class AbstractHeuristic(ABC):
         self.unlabelled = instances
 
 """
+
+
 class BaseRefinement(metaclass=ABCMeta):
     """
     Base class for Refinement Operators.
@@ -151,6 +156,7 @@ class BaseRefinement(metaclass=ABCMeta):
 
     [1] Learning OWL Class Expressions
     """
+
     @abstractmethod
     def __init__(self, kb):
         self.kb = kb
@@ -261,8 +267,8 @@ class BaseNode(metaclass=ABCMeta):
     def quality(self, val: float):
         self.__quality_score = val
 
-    def increment_h_exp(self,val=0):
-        self.__horizontal_expansion += val+1
+    def increment_h_exp(self, val=0):
+        self.__horizontal_expansion += val + 1
 
 
 class AbstractTree(ABC):
@@ -279,6 +285,9 @@ class AbstractTree(ABC):
     def __getitem__(self, item):
         return self._nodes[item]
 
+    def __setitem__(self, k, v):
+        self._nodes[k] = v
+
     def __iter__(self):
         for k, node in self._nodes.items():
             yield node
@@ -287,10 +296,10 @@ class AbstractTree(ABC):
         """
         Assing positives and negatives
         """
-        assert len(p)>0
-        if len(n)==0:
+        assert len(p) > 0
+        if len(n) == 0:
             # randomly sample from unlabelled.
-            n=random.sample(unlabelled)
+            n = random.sample(unlabelled)
         self.quality_func.set_positive_examples(p)
         self.quality_func.set_negative_examples(n)
         self.heuristic_func.set_positive_examples(p)
@@ -331,21 +340,20 @@ class AbstractTree(ABC):
         """
         print('######## ', ith, 'step Search Tree ###########')
         counter = 1
+        predictions=[]
         for k, v in enumerate(self):
             print(
                 '{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(counter, v.concept.str, self.quality_func.name,
                                                             v.quality, v.heuristic))
             # print('\t\t\t\t\t', counter, '-', v)  # , ' - acc:', v.accuracy)
             counter += 1
+            predictions.append(v)
             if counter == top_n:
                 break
         print('######## Search Tree ###########\n')
-
+        return predictions
     def show_best_nodes(self, top_n):
-        # TODO very inefficient implement priority queue.
-
         print('Number of times quality function applied: ', self.quality_func.applied)
         sorted_x = sorted(self.nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
         self._nodes = OrderedDict(sorted_x)
-        self.show_search_tree('Final', top_n=top_n + 1)
-
+        return self.show_search_tree('Final', top_n=top_n + 1)

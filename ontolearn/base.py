@@ -5,7 +5,7 @@ import owlready2
 from .concept_generator import ConceptGenerator
 from .concept import Concept
 from typing import Dict, Tuple, Set, Generator, Iterable
-from .util import parametrized_performance_debugger
+from .util import parametrized_performance_debugger, get_full_iri
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -57,7 +57,119 @@ class KnowledgeBase:
         return self.thing.instances
 
     @staticmethod
-    def __build_concepts_mapping(onto: Ontology) -> Tuple[Dict, Concept, Concept]:
+    def is_atomic(c: owlready2.entity.ThingClass):
+        assert isinstance(c, owlready2.entity.ThingClass)
+        if '¬' in c.name and not (' ' in c.name):
+            return False
+        elif ' ' in c.name or '∃' in c.name or '∀' in c.name:
+            return False
+        else:
+            return True
+
+    @staticmethod
+    def __parse_complex(complex_concepts: Iterable[owlready2.entity.ThingClass], concept_mapping: Dict):
+        assert isinstance(complex_concepts, Iterable)
+
+        # TODO get all negations
+        negations = (c for c in complex_concepts
+                     if isinstance(c.is_a[1], owlready2.class_construct.Not))
+
+        restictions = (c for c in complex_concepts
+                       if isinstance(c.is_a[1], owlready2.class_construct.Restriction))
+
+        conj_and_disjunctions = (c for c in complex_concepts
+                                 if isinstance(c.is_a[1], owlready2.class_construct.And) or isinstance(c.is_a[1],
+                                                                                                       owlready2.class_construct.Or))
+        import re
+
+
+        for c in complex_concepts:
+            print(c)
+
+        exit(1)
+        for c in negations:
+            owl_obj = c.is_a[1]
+            # print(c)
+            # print(c.name)
+            # print(owl_obj.Class)
+            # print(concept_mapping[get_full_iri(owl_obj.Class)])
+            temp_concept = Concept(c, kwargs={'form': 'ObjectComplementOf',
+                                              'root': concept_mapping[get_full_iri(owl_obj.Class)]})
+            concept_mapping[temp_concept.full_iri] = temp_concept
+
+        for c in complex_concepts:
+            if isinstance(c.is_a[1], owlready2.class_construct.Not):
+                continue
+
+            #components = re.findall(r"\((.*?)\)", c.name)
+            #assert len(components)==1
+            #print(components)
+            print(c.name)
+            #text_in_list=c.name.split()
+
+#            print(text_in_list)
+            continue
+            if len(text_in_list)==3:
+                ## then this means that we have ['(A', '⊓', 'B)'] or  ['(A', 'OR', 'B)']
+                # where A or B can only be a negation or atomic concept.
+                owl_ready_concept = c.is_a[1]
+                if isinstance(owl_ready_concept,owlready2.class_construct.And):
+                    pass
+                elif isinstance(owl_ready_concept,owlready2.class_construct.Or):
+                    pass
+                else:
+                    print(c)
+                    print(text_in_list)
+                    raise ValueError
+
+
+                pass
+
+
+        exit(1)
+        for c in complex_concepts:
+            assert len(c.is_a) == 2  # [owl.Thing, XXXX]
+            owl_ready_concept = c.is_a[1]
+
+            if isinstance(owl_ready_concept, owlready2.class_construct.Restriction):
+                print(owl_ready_concept)
+                rel = owl_ready_concept.property
+                value = owl_ready_concept.value
+                type_of_restriction = owl_ready_concept.type  # TODO: For the love of goo, type of restriction is mapped to integer ?!!
+
+                if type_of_restriction == 24:  # Exists
+                    pass  # Concept(c,kwargs=)
+                elif type_of_restriction == 25:  # FORall
+                    pass
+                else:
+                    raise ValueError
+
+
+
+            elif isinstance(owl_ready_concept, owlready2.class_construct.And):
+                pass
+            elif isinstance(owl_ready_concept, owlready2.class_construct.Or):
+                pass
+            elif isinstance(owl_ready_concept, owlready2.class_construct.Not):
+                pass
+            else:
+                raise ValueError
+
+        exit(1)
+        print(c)
+
+        owl_type = c.is_a[1]
+        print(owl_type)
+        print(type(owl_type))
+
+        print(owl_type.property)
+        print(owl_type.value)
+
+        exit(1)
+
+        return True
+
+    def __build_concepts_mapping(self, onto: Ontology) -> Tuple[Dict, Concept, Concept]:
         """
         Construct a mapping from full_iri to corresponding Concept objects.
 
@@ -70,27 +182,8 @@ class KnowledgeBase:
         T = Concept(owlready2.Thing, kwargs={'form': 'Class'})
         T.owl.equivalent_to.append(owlready2.Thing)
         bottom = Concept(owlready2.Nothing, kwargs={'form': 'Class'})
-
         for i in onto.classes():
-            # i.is_a.append(T.owl)  # include T as most general class.
-            try:
-                temp_concept = Concept(i, kwargs={'form': 'Class'})  # wrap owl object into AtomicConcept.
-            except:
-                assert len(i.is_a) == 2
-
-                class_ = i.is_a[1]
-
-                if isinstance(class_, owlready2.class_construct.Restriction):
-                    property_ = class_.property
-                    print(property_)
-                    print(class_)
-                else:
-                    print(type(class_))
-                    exit(1)
-
-                exit(1)
-                # Restriction.cardinality, .value, .property
-
+            temp_concept = Concept(i, kwargs={'form': 'Class'})  # Regarless of concept length
             concepts[temp_concept.full_iri] = temp_concept
 
         concepts[T.full_iri] = T
