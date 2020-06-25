@@ -102,9 +102,9 @@ class ConceptGenerator:
             with self.onto:
                 not_concept = types.new_class(name="¬{0}".format(concept.owl.name), bases=(self.T.owl,))
                 not_concept.namespace = concept.owl.namespace
+
                 AllDisjoint([not_concept, concept.owl])
-                not_concept.is_a.append(self.T.owl)  # superclass
-                not_concept.equivalent_to.append(Not(concept.owl))
+                not_concept.is_a.append(Not(concept.owl))
                 # self.type_enrichments(self.T.instances - concept.instances, not_concept)
 
                 c = Concept(concept=not_concept, kwargs={'form': 'ObjectComplementOf','root':concept})
@@ -224,7 +224,7 @@ class ConceptGenerator:
         with self.onto:
             new_concept = types.new_class(name="({0} ⊔ {1})".format(A.str, B.str), bases=(base,))
             new_concept.namespace = A.owl.namespace
-            new_concept.equivalent_to.append(A.owl | B.owl)
+            new_concept.is_a.append(A.owl | B.owl)
 
             # self.type_enrichments(A.instances | B.instances, new_concept)
             # self.executor.submit(self.type_enrichments, (A.instances | B.instances, new_concept))
@@ -254,7 +254,7 @@ class ConceptGenerator:
         with self.onto:
             new_concept = types.new_class(name="({0}  ⊓  {1})".format(A.str, B.str), bases=(base,))
             new_concept.namespace = A.owl.namespace
-            new_concept.equivalent_to.append(A.owl & B.owl)
+            new_concept.is_a.append(A.owl & B.owl)
 
             # self.type_enrichments(A.instances & B.instances, new_concept)
             # self.executor.submit(self.type_enrichments, (A.instances & B.instances, new_concept))

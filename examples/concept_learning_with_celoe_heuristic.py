@@ -18,14 +18,14 @@ for str_target_concept, examples in settings['problems'].items():
     model = CELOE(knowledge_base=kb,
                   refinement_operator=ModifiedCELOERefinement(kb=kb),
                   quality_func=F1(),
-                  min_horizontal_expansion=3,
+                  min_horizontal_expansion=0,
                   heuristic_func=CELOEHeuristic(),
                   search_tree=CELOESearchTree(),
                   terminate_on_goal=True,
-                  iter_bound=1_000,
+                  iter_bound=100,
                   ignored_concepts=concepts_to_ignore,
                   verbose=False)
 
     model.predict(pos=p, neg=n)
-    model.show_best_predictions(top_n=10)
-    model.extend_ontology(top_n_concepts=10)
+    model.show_best_predictions(top_n=10,serialize_predictions=True,serialize_name=str_target_concept+'_structured_prediction.owl')
+    model.extend_ontology(top_n_concepts=20)

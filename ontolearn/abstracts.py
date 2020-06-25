@@ -26,7 +26,7 @@ class BaseConcept(metaclass=ABCMeta):
         self.str = concept.name
         self.form = kwargs['form']
 
-        self.is_atomic = self.__is_atomic()  # TODO consider the necessity.
+        self.is_atomic = True if self.form=='Class' else False#self.__is_atomic()  # TODO consider the necessity.
         self.length = self.__calculate_length()
 
         self.__instances = None
@@ -340,20 +340,20 @@ class AbstractTree(ABC):
         """
         print('######## ', ith, 'step Search Tree ###########')
         counter = 1
+        predictions=[]
         for k, v in enumerate(self):
             print(
                 '{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(counter, v.concept.str, self.quality_func.name,
                                                             v.quality, v.heuristic))
             # print('\t\t\t\t\t', counter, '-', v)  # , ' - acc:', v.accuracy)
             counter += 1
+            predictions.append(v)
             if counter == top_n:
                 break
         print('######## Search Tree ###########\n')
-
+        return predictions
     def show_best_nodes(self, top_n):
-        # TODO very inefficient implement priority queue.
-
         print('Number of times quality function applied: ', self.quality_func.applied)
         sorted_x = sorted(self.nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
         self._nodes = OrderedDict(sorted_x)
-        self.show_search_tree('Final', top_n=top_n + 1)
+        return self.show_search_tree('Final', top_n=top_n + 1)
