@@ -4,7 +4,7 @@ from ontolearn import *
 import json
 
 
-def test_celoe():
+def test_celoeminimal():
     with open('examples/synthetic_problems.json') as json_file:
         settings = json.load(json_file)
     kb = KnowledgeBase(path=settings['data_path'][3:]) # because '../data/family-benchmark_rich_background.owl'
@@ -24,7 +24,38 @@ def test_celoe():
                       verbose=False)
 
         model.predict(pos=p, neg=n)
-        model.show_best_predictions(top_n=10)
+
+        model.show_best_predictions(top_n=10, key='quality')
+
+
+def test_celoe():
+    with open('examples/synthetic_problems.json') as json_file:
+        settings = json.load(json_file)
+    kb = KnowledgeBase(path=settings['data_path'][3:]) # because '../data/family-benchmark_rich_background.owl'
+
+    for str_target_concept, examples in settings['problems'].items():
+        p = set(examples['positive_examples'])
+        n = set(examples['negative_examples'])
+        print('Target concept: ', str_target_concept)
+        concepts_to_ignore = set()
+        # lets inject more background info
+        if str_target_concept in ['Granddaughter', 'Aunt', 'Sister']:
+            concepts_to_ignore.update({'Brother', 'Father', 'Uncle', 'Grandparent'})
+
+        model = CELOE(knowledge_base=kb,
+                      refinement_operator=ModifiedCELOERefinement(kb=kb),
+                      quality_func=F1(),
+                      min_horizontal_expansion=0,
+                      heuristic_func=CELOEHeuristic(),
+                      search_tree=CELOESearchTree(),
+                      terminate_on_goal=True,
+                      iter_bound=100,
+                      ignored_concepts=concepts_to_ignore,
+                      verbose=False)
+
+        model.predict(pos=p, neg=n)
+        model.show_best_predictions(top_n=10_000, key='heuristic')
+
 
 def test_dfoil():
     with open('examples/synthetic_problems.json') as json_file:
@@ -46,4 +77,7 @@ def test_dfoil():
                                      verbose=True)
 
         model.predict(pos=p, neg=n)
-        model.show_best_predictions(top_n=10)
+        model.show_best_predictions(top_n=10_000, key='quality')
+        model.show_best_predictions(top_n=10_000, key='heuristic')
+
+
