@@ -26,7 +26,7 @@ class BaseConcept(metaclass=ABCMeta):
         self.str = concept.name
         self.form = kwargs['form']
 
-        self.is_atomic = True if self.form=='Class' else False#self.__is_atomic()  # TODO consider the necessity.
+        self.is_atomic = True if self.form == 'Class' else False  # self.__is_atomic()  # TODO consider the necessity.
         self.length = self.__calculate_length()
 
         self.__instances = None
@@ -113,27 +113,6 @@ class AbstractScorer(ABC):
         self.unlabelled = instances
 
 
-"""
-class AbstractHeuristic(ABC):
-    @abstractmethod
-    def __init__(self, pos, neg, unlabelled):
-        self.pos = pos
-        self.neg = neg
-        self.unlabelled = unlabelled
-        self.applied = 0
-
-    def set_positive_examples(self, instances):
-        self.pos = instances
-
-    def set_negative_examples(self, instances):
-        self.neg = instances
-
-    def set_unlabelled_examples(self, instances):
-        self.unlabelled = instances
-
-"""
-
-
 class BaseRefinement(metaclass=ABCMeta):
     """
     Base class for Refinement Operators.
@@ -204,8 +183,8 @@ class BaseRefinement(metaclass=ABCMeta):
 class BaseNode(metaclass=ABCMeta):
     """Base class for Concept."""
     __slots__ = ['concept', '__heuristic_score', '__horizontal_expansion',
-                 '__quality_score', 'parent_node', '___refinement_count',
-                 '__refinement_count', '__depth', '__children']
+                 '__quality_score', '___refinement_count',
+                 '__refinement_count', '__depth', '__children','length','parent_node']
 
     @abstractmethod
     def __init__(self, concept, parent_node, is_root=False):
@@ -214,6 +193,7 @@ class BaseNode(metaclass=ABCMeta):
         self.concept = concept
         self.parent_node = parent_node
         self.__children = set()
+        self.length=len(self.concept)
 
         if self.parent_node is None:
             assert len(concept) == 1 and is_root
@@ -292,6 +272,13 @@ class AbstractTree(ABC):
         for k, node in self._nodes.items():
             yield node
 
+    def get_top_n_nodes(self, n: int):
+        for ith, dict_ in enumerate(self._nodes.items()):
+            if ith > n:
+                break
+            k, node = dict_
+            yield node
+
     def set_positive_negative_examples(self, *, p, n, unlabelled):
         """
         Assing positives and negatives
@@ -325,6 +312,19 @@ class AbstractTree(ABC):
     def add_node(self, *args, **kwargs):
         pass
 
+    def sort_search_tree_by_decreasing_order(self, *,key: str):
+        if key == 'heuristic':
+            sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
+        elif key == 'quality':
+            sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
+        elif key == 'length':
+            sorted_x = sorted(self._nodes.items(), key=lambda kv: len(kv[1]), reverse=True)
+        else:
+            raise ValueError('Wrong Key. Key must be heuristic, quality or concept_length')
+
+        self._nodes = OrderedDict(sorted_x)
+
+    """
     def sort_search_tree_by_descending_heuristic_score(self):
 
         sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
@@ -333,27 +333,30 @@ class AbstractTree(ABC):
     def sort_search_tree_by_descending_quality(self):
         sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
         self._nodes = OrderedDict(sorted_x)
+    """
 
-    def show_search_tree(self, ith, top_n=10):
+    def show_search_tree(self, th, top_n=10):
         """
         Show search tree.
         """
-        print('######## ', ith, 'step Search Tree ###########')
-        counter = 1
-        predictions=[]
-        for k, v in enumerate(self):
-            print(
-                '{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(counter, v.concept.str, self.quality_func.name,
-                                                            v.quality, v.heuristic))
-            # print('\t\t\t\t\t', counter, '-', v)  # , ' - acc:', v.accuracy)
-            counter += 1
-            predictions.append(v)
-            if counter == top_n:
-                break
+        print('######## ', th, 'step Search Tree ###########')
+        predictions = list(self.get_top_n_nodes(top_n))
+        for ith, node in enumerate(predictions):
+            print('{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(ith + 1, node.concept.str,
+                                                              self.quality_func.name, node.quality, node.heuristic))
         print('######## Search Tree ###########\n')
         return predictions
-    def show_best_nodes(self, top_n):
-        print('Number of times quality function applied: ', self.quality_func.applied)
-        sorted_x = sorted(self.nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
-        self._nodes = OrderedDict(sorted_x)
+
+    def show_best_nodes(self, top_n,key=None):
+        assert key
+        self.sort_search_tree_by_decreasing_order(key=key)
         return self.show_search_tree('Final', top_n=top_n + 1)
+
+    def save_current_top_n_nodes(self, key=None, n=10, path=None):
+
+        """
+        Save current top_n nodes
+        """
+        assert path
+        assert key
+        pass

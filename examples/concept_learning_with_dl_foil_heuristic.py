@@ -1,5 +1,10 @@
-from ontolearn import KnowledgeBase,CustomConceptLearner,CustomRefinementOperator,F1,DLFOILHeuristic,SearchTree
 import json
+from ontolearn import KnowledgeBase
+from ontolearn.concept_learner import CustomConceptLearner
+from ontolearn.refinement_operators import CustomRefinementOperator
+from ontolearn.heuristics import DLFOILHeuristic
+from ontolearn.metrics import Precision,Accuracy,Recall,F1
+from ontolearn.search import SearchTree
 
 with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)
@@ -20,4 +25,11 @@ for str_target_concept, examples in settings['problems'].items():
                                  verbose=True)
 
     model.predict(pos=p, neg=n)
-    model.show_best_predictions(top_n=10)
+    model.show_best_predictions(top_n=10, key='quality',
+                                serialize_name=str_target_concept + '_quality_structured_prediction.owl')
+    model.show_best_predictions(top_n=10, key='heuristic',
+                                serialize_name=str_target_concept + '_heuristic_structured_prediction.owl')
+    model.show_best_predictions(top_n=10, key='length',
+                                serialize_name=str_target_concept + '_length_structured_prediction.owl')
+    model.extend_ontology(top_n_concepts=20)
+

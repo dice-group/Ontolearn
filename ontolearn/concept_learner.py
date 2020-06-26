@@ -23,7 +23,8 @@ class CELOE(BaseConceptLearner):
         self.search_tree[root]=root
 
     def next_node_to_expand(self, step):
-        self.search_tree.sort_search_tree_by_descending_heuristic_score()
+        #self.search_tree.sort_search_tree_by_descending_heuristic_score()
+        self.search_tree.sort_search_tree_by_decreasing_order(key='heuristic')
         if self.verbose:
             self.search_tree.show_search_tree(step)
         for n in self.search_tree:
@@ -111,10 +112,7 @@ class CustomConceptLearner(BaseConceptLearner):
         self.search_tree.add_node(child_node=root)
 
     def next_node_to_expand(self, step):
-        # TODO ADD prrioty que
-        self.search_tree.sort_search_tree_by_descending_heuristic_score()
-
-        # TODO Get directly
+        self.search_tree.sort_search_tree_by_decreasing_order(key='heuristic')
         for n in self.search_tree:
             return n
 
