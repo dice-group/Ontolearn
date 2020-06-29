@@ -2,6 +2,7 @@ import types
 from owlready2 import Not, AllDisjoint
 from .concept import Concept
 import concurrent.futures
+import owlready2
 
 
 class ConceptGenerator:
@@ -26,7 +27,11 @@ class ConceptGenerator:
 
     """
 
-    def __init__(self, concepts, T, Bottom, onto):
+    def __init__(self, concepts, T, Bottom, onto, min_size_of_concept=1, max_size_of_concept=1_000):
+
+        self.min_size_of_concept = min_size_of_concept
+        self.max_size_of_concept = max_size_of_concept
+
         self.concepts = concepts
         self.T = T
         self.Bottom = Bottom
@@ -52,10 +57,11 @@ class ConceptGenerator:
         return args[0], args[1]
 
     @staticmethod
-    def type_enrichments(instances, new_concept):
+    def type_enrichment(instances, new_concept):
         for i in instances:
             i.is_a.append(new_concept)
 
+    """
     def type__restrictions_enrichments(self, exist, role, filler, c):
         if exist:
             # {(x,y) | (x,r,y) \in G}.
@@ -71,6 +77,7 @@ class ConceptGenerator:
             temp = self.T.instances - temp
             for i in temp:
                 i.is_a.append(c)
+    """
 
     def get_instances_for_restrictions(self, exist, role, filler):
         if exist:
@@ -94,21 +101,25 @@ class ConceptGenerator:
         @param concept: an instance of Concept class
         @return: ¬C: an instance of Concept class
         """
-
         if concept in self.log_of_negations:
             return self.log_of_negations[concept]
 
         if concept.is_atomic and not (concept.owl.name == 'Thing'):
+            possible_instances_ = self.T.instances - concept.instances
+
+            if len(possible_instances_) == 0:
+                raise ValueError
+
             with self.onto:
                 not_concept = types.new_class(name="¬{0}".format(concept.owl.name), bases=(self.T.owl,))
-                not_concept.namespace = concept.owl.namespace
+                # not_concept.namespace = concept.owl.namespace
 
                 AllDisjoint([not_concept, concept.owl])
                 not_concept.is_a.append(Not(concept.owl))
                 # self.type_enrichments(self.T.instances - concept.instances, not_concept)
 
-                c = Concept(concept=not_concept, kwargs={'form': 'ObjectComplementOf','root':concept})
-                c.instances = self.T.instances - concept.instances
+                c = Concept(concept=not_concept, kwargs={'form': 'ObjectComplementOf', 'root': concept})
+                c.instances = possible_instances_  # self.T.instances - concept.instances
 
                 self.log_of_negations[concept] = c
                 self.concepts[c.full_iri] = c
@@ -127,7 +138,6 @@ class ConceptGenerator:
 
     def existential_restriction(self, concept: Concept, relation, base=None) -> Concept:
         """
-
         ∃R.C =>  {x \in \Delta | ∃y \in \Delta : (x, y) \in R^I AND y ∈ C^I }
 
         @param concept: an instance of Concept
@@ -142,28 +152,34 @@ class ConceptGenerator:
         if not base:
             base = self.T.owl
 
+        possible_instances_ = self.get_instances_for_restrictions(True, relation, concept)
+
+        if not (self.max_size_of_concept >= len(possible_instances_) >= self.min_size_of_concept):
+            return self.Bottom
+
         with self.onto:
             new_concept = types.new_class(name="(∃{0}.{1})".format(relation.name, concept.str), bases=(base,))
-            new_concept.namespace = relation.namespace
+            # new_concept.namespace = relation.namespace
             new_concept.is_a.append(relation.some(concept.owl))
-            #new_concept.equivalent_to.append(relation.some(concept.owl))
-
-            #relation.range.append(concept.owl) # TODO is it really important ?
-            #relation.domain.append(base)# TODO: is it really important ?
-
+            # new_concept.equivalent_to.append(relation.some(concept.owl))
+            # relation.range.append(concept.owl) # TODO is it really important ?
+            # relation.domain.append(base)# TODO: is it really important ?
             # self.type__restrictions_enrichments(True, relation, concept, new_concept)
             # self.executor.submit(self.type__restrictions_enrichments, (True, relation, concept, new_concept))
 
             c = Concept(concept=new_concept,
                         kwargs={'form': 'ObjectSomeValuesFrom', 'Role': relation, 'Filler': concept})
 
-            c.instances = self.get_instances_for_restrictions(True, relation, concept)
+            for i in possible_instances_:
+                assert type(i) is not str
+            c.instances = possible_instances_  # self.get_instances_for_restrictions(True, relation, concept)
+
             self.log_of_existential_restriction[(concept, relation)] = c
             self.concepts[c.full_iri] = c
 
         return self.log_of_existential_restriction[(concept, relation)]
 
-    def universal_restriction(self, concept: Concept, relation, base=None):
+    def universal_restriction(self, concept: Concept, relation, base=None)-> Concept:
         """
 
         ∀R.C => extension => {x \in \Delta | ∃y \in \Delta : (x, y) ∈ \in R^I \implies y ∈ C^I }
@@ -184,19 +200,27 @@ class ConceptGenerator:
         if not base:
             base = self.T.owl
 
+        possible_instances_ = self.get_instances_for_restrictions(False, relation, concept)
+
+        if not (self.max_size_of_concept >= len(possible_instances_) >= self.min_size_of_concept):
+            return self.Bottom
+
         with self.onto:
             new_concept = types.new_class(name="(∀{0}.{1})".format(relation.name, concept.str), bases=(base,))
-            new_concept.namespace = relation.namespace
+            # new_concept.namespace = relation.namespace
             new_concept.is_a.append(relation.only(base))
-            #new_concept.equivalent_to.append(relation.only(base))
-            #relation.range.append(concept.owl) # TODO is it really important ?
-            #relation.domain.append(base)# TODO: is it really important ?
+            # new_concept.equivalent_to.append(relation.only(base))
+            # relation.range.append(concept.owl) # TODO is it really important ?
+            # relation.domain.append(base)# TODO: is it really important ?
+            # self.type__restrictions_enrichments(False, relation, concept, new_concept)
 
-            #            self.type__restrictions_enrichments(False, relation, concept, new_concept)
             # self.executor.submit(self.type__restrictions_enrichments, (False, relation, concept, new_concept))
             c = Concept(concept=new_concept,
                         kwargs={'form': 'ObjectAllValuesFrom', 'Role': relation, 'Filler': concept})
-            c.instances = self.get_instances_for_restrictions(False, relation, concept)
+
+            for i in possible_instances_:
+                assert type(i) is not str
+            c.instances = possible_instances_  # self.get_instances_for_restrictions(False, relation, concept)
 
             self.log_of_universal_restriction[(concept, relation)] = c
 
@@ -221,46 +245,64 @@ class ConceptGenerator:
         if not base:
             base = self.T.owl
 
+        possible_instances_ = A.instances | B.instances
+
+        if not (self.max_size_of_concept >= len(possible_instances_) >= self.min_size_of_concept):
+            return None
+
         with self.onto:
             new_concept = types.new_class(name="({0} ⊔ {1})".format(A.str, B.str), bases=(base,))
-            new_concept.namespace = A.owl.namespace
+            # new_concept.namespace = A.owl.namespace
             new_concept.is_a.append(A.owl | B.owl)
 
-            # self.type_enrichments(A.instances | B.instances, new_concept)
+            # self.type_enrichments(A.owl.instances() | B.owl.instances(), new_concept)
             # self.executor.submit(self.type_enrichments, (A.instances | B.instances, new_concept))
 
             c = Concept(concept=new_concept, kwargs={'form': 'ObjectUnionOf', 'ConceptA': A, 'ConceptB': B})
-            c.instances = A.instances | B.instances
+
+            for i in possible_instances_:
+                assert type(i) is not str
+
+            c.instances = possible_instances_  # A.instances | B.instances
             self.log_of_unions[(A, B)] = c
 
             self.concepts[c.full_iri] = c
         return self.log_of_unions[(A, B)]
 
-    def intersection(self, A: Concept, B: Concept, base=None):
+    def intersection(self, A: Concept, B: Concept, base=None) -> Concept:
         A, B = self.__concepts_sorter(A, B)
 
-        # Crude workaround
-        if A.str == 'Nothing':
-            return B
-        if B.str == 'Nothing':
-            return A
-
         if (A, B) in self.log_of_intersections:
+            return self.log_of_intersections[(A, B)]
+
+        # Crude workaround
+        if A.str == 'Nothing' or B.str == 'Nothing':
+            self.log_of_intersections[(A, B)]=self.Bottom
             return self.log_of_intersections[(A, B)]
 
         if not base:
             base = self.T.owl
 
+        possible_instances_ = A.instances & B.instances
+
+        if not (self.max_size_of_concept >= len(possible_instances_) >= self.min_size_of_concept):
+            return self.Bottom
+
         with self.onto:
             new_concept = types.new_class(name="({0}  ⊓  {1})".format(A.str, B.str), bases=(base,))
-            new_concept.namespace = A.owl.namespace
+
+            # new_concept.namespace = A.owl.namespace
             new_concept.is_a.append(A.owl & B.owl)
 
             # self.type_enrichments(A.instances & B.instances, new_concept)
             # self.executor.submit(self.type_enrichments, (A.instances & B.instances, new_concept))
 
             c = Concept(concept=new_concept, kwargs={'form': 'ObjectIntersectionOf', 'ConceptA': A, 'ConceptB': B})
-            c.instances = A.instances & B.instances
+
+            for i in possible_instances_:
+                assert type(i) is not str
+
+            c.instances = possible_instances_  # A.instances & B.instances
             self.log_of_intersections[(A, B)] = c
             self.concepts[c.full_iri] = c
 

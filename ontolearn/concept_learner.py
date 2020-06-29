@@ -23,7 +23,7 @@ class CELOE(BaseConceptLearner):
         self.search_tree[root]=root
 
     def next_node_to_expand(self, step):
-        self.search_tree.sort_search_tree_by_descending_heuristic_score()
+        self.search_tree.sort_search_tree_by_decreasing_order(key='heuristic')
         if self.verbose:
             self.search_tree.show_search_tree(step)
         for n in self.search_tree:
@@ -38,7 +38,7 @@ class CELOE(BaseConceptLearner):
                        self.rho.refine(node,
                                        maxlength=node.h_exp + 1 + self.h_exp_constant,
                                        current_domain=self.start_class)
-                       if i.str not in self.concepts_to_ignore]
+                       if i is not None and i.str not in self.concepts_to_ignore]
 
         node.increment_h_exp(self.h_exp_constant)
         node.refinement_count = len(refinements)  # This should be postpone so that we make make use of generator
@@ -49,8 +49,7 @@ class CELOE(BaseConceptLearner):
         return refinements
 
     def predict(self, pos, neg=None):
-        self.search_tree.set_positive_negative_examples(p=pos, n=neg,
-                                                        unlabelled=self.kb.thing.instances - (pos.union(neg)))
+        self.search_tree.set_positive_negative_examples(p=pos, n=neg,all_instances=self.kb.thing.instances)
 
         self.initialize_root()
 
@@ -111,10 +110,7 @@ class CustomConceptLearner(BaseConceptLearner):
         self.search_tree.add_node(child_node=root)
 
     def next_node_to_expand(self, step):
-        # TODO ADD prrioty que
-        self.search_tree.sort_search_tree_by_descending_heuristic_score()
-
-        # TODO Get directly
+        self.search_tree.sort_search_tree_by_decreasing_order(key='heuristic')
         for n in self.search_tree:
             return n
 
@@ -122,7 +118,9 @@ class CustomConceptLearner(BaseConceptLearner):
         assert isinstance(node, Node)
 
         refinements = (self.rho.getNode(i, parent_node=node)
-                       for i in self.rho.refine(node.concept) if i.str not in self.concepts_to_ignore)
+                       for i in self.rho.refine(node.concept) if i is not None and i.str not in self.concepts_to_ignore)
+
+
         # Depending on the heuristic function one can modefiy node.
         # self.heuristic.apply(node)
         return refinements
@@ -134,8 +132,7 @@ class CustomConceptLearner(BaseConceptLearner):
         @return:
         """
 
-        self.search_tree.set_positive_negative_examples(p=pos, n=neg,
-                                                        unlabelled=self.kb.thing.instances - (pos.union(neg)))
+        self.search_tree.set_positive_negative_examples(p=pos, n=neg,all_instances=self.kb.thing.instances)
 
         self.initialize_root()
 

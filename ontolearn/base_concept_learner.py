@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
-from owlready2 import get_ontology, rdfs,AnnotationPropertyClass
+from owlready2 import get_ontology, rdfs, AnnotationPropertyClass
 
 from .refinement_operators import ModifiedCELOERefinement
 from .search import Node
@@ -90,28 +90,43 @@ class BaseConceptLearner(metaclass=ABCMeta):
     def initialize_root(self):
         pass
 
-    def show_best_predictions(self, top_n=10,serialize_predictions=False,serialize_name='predictions.owl'):
-        predictions=self.search_tree.show_best_nodes(top_n)
-        if serialize_predictions:
+    def show_best_predictions(self, key, top_n=10, serialize_name=None):
+        """
+        top_n:int
+        serialize_name= XXX.owl
+        """
+        predictions = self.search_tree.show_best_nodes(top_n, key=key)
+        if serialize_name is not None:
             onto = get_ontology(serialize_name)
+            if key == 'quality':
+                metric = self.quality_func.name
+                attribute = key
+            elif key == 'heuristic':
+                metric = self.heuristic.name
+                attribute = key
+            elif key == 'length':
+                metric = key
+                attribute = key
+            else:
+                raise ValueError
+
             with onto:
                 for i in predictions:
-                    owlready_obj=i.concept.owl
+                    owlready_obj = i.concept.owl
 
-                    bases=tuple(j for j in owlready_obj.mro()[:-1])
+                    bases = tuple(j for j in owlready_obj.mro()[:-1])
 
                     new_concept = types.new_class(name=i.concept.str, bases=bases)
-                    new_concept.comment.append("{0}:{1}".format(self.quality_func.name,i.quality))
+                    new_concept.comment.append("{0}:{1}".format(metric, getattr(i, attribute)))
 
             onto.save(serialize_name)
 
-
-    def extend_ontology(self, top_n_concepts=10):
+    def extend_ontology(self, top_n_concepts=10,key='quality'):
         """
         1) Obtain top N nodes from search tree.
         2) Extend ABOX by including explicit type information for all instances belonging to concepts (1)
         """
-        self.search_tree.sort_search_tree_by_descending_quality()
+        self.search_tree.sort_search_tree_by_decreasing_order(key=key)
         for (ith, node) in enumerate(self.search_tree):
             if ith <= top_n_concepts:
                 self.kb.apply_type_enrichment(node.concept)

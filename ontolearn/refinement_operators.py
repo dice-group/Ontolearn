@@ -180,8 +180,10 @@ class ModifiedCELOERefinement(BaseRefinement):
         # Compute all possible combinations of the disjunction and conjunctions.
         mem = set()
         for i in a:
+            assert i is not None
             yield i
             for j in copy.copy(b):
+                assert j is not None
                 if (i == j) or ((i.str, j.str) in mem) or ((j.str, i.str) in mem):
                     continue
                 mem.add((j.str, i.str))
@@ -217,7 +219,8 @@ class ModifiedCELOERefinement(BaseRefinement):
         # rule 1: EXISTS r.D = > EXISTS r.E
         for i in self.refine(self.getNode(node.concept.filler, parent_node=node), maxlength=maxlength - 2,
                              current_domain=current_domain):
-            yield self.kb.existential_restriction(i, node.concept.role)
+            if i is not None:
+                yield self.kb.existential_restriction(i, node.concept.role)
 
         yield self.kb.universal_restriction(node.concept.filler, node.concept.role)
 
@@ -233,7 +236,8 @@ class ModifiedCELOERefinement(BaseRefinement):
         # rule 1: Forall r.D = > Forall r.E
         for i in self.refine(self.getNode(node.concept.filler, parent_node=node), maxlength=maxlength - 2,
                              current_domain=current_domain):
-            yield self.kb.universal_restriction(i, node.concept.role)
+            if i is not None:
+                yield self.kb.universal_restriction(i, node.concept.role)
         # if (node.concept.filler.str != 'Nothing') and node.concept.filler.isatomic and (len(refs) == 0):
         #    refs.update(self.kb.universal_restriction(i, node.concept.role))# TODO find a way to include nothig concept
 
@@ -310,24 +314,28 @@ class ModifiedCELOERefinement(BaseRefinement):
         """
         assert isinstance(node, Node)
         if node.concept.is_atomic:
-            yield from self.refine_atomic_concept(node, maxlength, current_domain)
+            refinement =self.refine_atomic_concept(node, maxlength, current_domain)
         elif node.concept.form == 'ObjectComplementOf':
-            yield from self.refine_complement_of(node, maxlength, current_domain)
+            refinement =self.refine_complement_of(node, maxlength, current_domain)
         elif node.concept.form == 'ObjectSomeValuesFrom':
-            yield from self.refine_object_some_values_from(node, maxlength, current_domain)
+            refinement =self.refine_object_some_values_from(node, maxlength, current_domain)
         elif node.concept.form == 'ObjectAllValuesFrom':
-            yield from self.refine_object_all_values_from(node, maxlength, current_domain)
+            refinement =self.refine_object_all_values_from(node, maxlength, current_domain)
         elif node.concept.form == 'ObjectUnionOf':
-            yield from self.refine_object_union_of(node, maxlength, current_domain)
+            refinement =self.refine_object_union_of(node, maxlength, current_domain)
         elif node.concept.form == 'ObjectIntersectionOf':
-            yield from self.refine_object_intersection_of(node, maxlength, current_domain)
+            refinement =self.refine_object_intersection_of(node, maxlength, current_domain)
         else:
             raise ValueError
 
+        for i in refinement:
+            if i is not None:
+                yield i
+
 
 class CustomRefinementOperator(BaseRefinement):
-    def __init__(self, kb: KnowledgeBase = None):
-        super().__init__(kb)
+    def __init__(self, kb: KnowledgeBase = None,max_size_of_concept=1000,min_size_of_concept=1):
+        super().__init__(kb,max_size_of_concept,min_size_of_concept)
 
     def getNode(self, c: Concept, parent_node=None, root=False):
 
@@ -343,8 +351,8 @@ class CustomRefinementOperator(BaseRefinement):
         return n
 
     def refine_atomic_concept(self, concept: Concept) -> Set:
-        # (1) Generate all direct_sub_concepts
-        sub_concepts = self.kb.get_direct_sub_concepts(concept)
+        # (1) Generate all all sub_concepts
+        sub_concepts = self.kb.get_all_sub_concepts(concept)
         # (2) Create negation of all leaf_concepts
         negs = self.kb.negation_from_iterables(self.kb.get_leaf_concepts(concept))
         # (3) Create ∃.r.T where r is the most general relation.
@@ -354,8 +362,12 @@ class CustomRefinementOperator(BaseRefinement):
 
         mem = set()
         for i in a:
+            if i is None:
+                continue
             yield i
             for j in copy.copy(b):
+                if j is None:
+                    continue
                 if (i == j) or ((i.str, j.str) in mem) or ((j.str, i.str) in mem):
                     continue
                 mem.add((j.str, i.str))
@@ -363,12 +375,16 @@ class CustomRefinementOperator(BaseRefinement):
                 mem.add((j.str, i.str))
 
                 union = self.kb.union(i, j)
-                if not (concept.instances.issubset(union.instances)):
-                    yield union
+                if union:
+                    if not (concept.instances.issubset(union.instances)):
+                        yield union
 
                 if i.instances.isdisjoint(j.instances):
                     continue
-                yield self.kb.intersection(i, j)
+                inter=self.kb.intersection(i, j)
+
+                if inter:
+                    yield inter
 
     def refine_complement_of(self, concept: Concept):
         """
@@ -380,8 +396,10 @@ class CustomRefinementOperator(BaseRefinement):
             yield i
 
     def refine_object_some_values_from(self, concept: Concept):
+        assert isinstance(concept,Concept)
         for i in self.refine(concept.filler):
-            yield self.kb.existential_restriction(i, concept.role)
+            if isinstance(i, Concept):
+                yield self.kb.existential_restriction(i, concept.role)
 
     def refine_object_all_values_from(self, C: Concept):
         """
@@ -402,10 +420,12 @@ class CustomRefinementOperator(BaseRefinement):
         concept_A = C.concept_a
         concept_B = C.concept_b
         for ref_concept_A in self.refine(concept_A):
-            yield self.kb.union(ref_concept_A, concept_B)
+            if isinstance(ref_concept_A, Concept):
+                yield self.kb.union(ref_concept_A, concept_B)
 
-        for concept_B in self.refine(concept_A):
-            yield self.kb.union(concept_B, concept_A)
+        for ref_concept_B in self.refine(concept_B):
+            if isinstance(ref_concept_B, Concept):
+                yield self.kb.union(ref_concept_B, concept_A)
 
     def refine_object_intersection_of(self, C: Concept):
         """
@@ -417,10 +437,12 @@ class CustomRefinementOperator(BaseRefinement):
         concept_A = C.concept_a
         concept_B = C.concept_b
         for ref_concept_A in self.refine(concept_A):
-            yield self.kb.intersection(ref_concept_A, concept_B)
+            if isinstance(ref_concept_A, Concept):
+                yield self.kb.intersection(ref_concept_A, concept_B)
 
-        for concept_B in self.refine(concept_A):
-            yield self.kb.intersection(concept_B, concept_A)
+        for ref_concept_B in self.refine(concept_A):
+            if isinstance(ref_concept_B, Concept):
+                yield self.kb.intersection(ref_concept_B, concept_A)
 
 
     def refine(self, concept: Concept):

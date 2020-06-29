@@ -4,13 +4,16 @@ from .abstracts import AbstractScorer
 class CELOEHeuristic(AbstractScorer):
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
-        self.name = 'CELOE'
+        self.name = 'CELOE_Heuristic'
 
         self.gainBonusFactor = 0.3
         self.startNodeBonus = 0.1
         self.nodeRefinementPenalty = 0.001
         self.expansionPenaltyFactor = 0.1
         self.applied = 0
+
+    def score(self):
+        pass
 
     def apply(self, node, parent_node=None):
         self.applied += 1
@@ -35,7 +38,10 @@ class CELOEHeuristic(AbstractScorer):
 class DLFOILHeuristic(AbstractScorer):
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
-        self.name = 'DL-FOIL'
+        self.name = 'DL-FOIL_Heuristic'
+
+    def score(self):
+        pass
 
     def apply(self, node):
         self.applied += 1
