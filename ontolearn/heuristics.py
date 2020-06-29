@@ -12,6 +12,9 @@ class CELOEHeuristic(AbstractScorer):
         self.expansionPenaltyFactor = 0.1
         self.applied = 0
 
+    def score(self):
+        pass
+
     def apply(self, node, parent_node=None):
         self.applied += 1
 
@@ -36,6 +39,9 @@ class DLFOILHeuristic(AbstractScorer):
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
         self.name = 'DL-FOIL_Heuristic'
+
+    def score(self):
+        pass
 
     def apply(self, node):
         self.applied += 1
