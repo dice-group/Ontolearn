@@ -3,7 +3,7 @@ from functools import total_ordering
 from abc import ABCMeta, abstractmethod, ABC
 from owlready2 import ThingClass
 from .util import get_full_iri
-from typing import Set
+from typing import Set, AnyStr
 import random
 
 random.seed(0)
@@ -36,7 +36,8 @@ class BaseConcept(metaclass=ABCMeta):
         """ Returns all instances belonging to the concept."""
         if self.__instances:
             return self.__instances
-        self.__instances = {get_full_iri(jjj) for jjj in self.owl.instances()}  # be sure of the memory usage.
+        # self.__instances = {get_full_iri(jjj) for jjj in self.owl.instances()}  # be sure of the memory usage.
+        self.__instances = {jjj for jjj in self.owl.instances()}  # be sure of the memory usage.
         return self.__instances
 
     @instances.setter
@@ -112,6 +113,10 @@ class AbstractScorer(ABC):
     def set_unlabelled_examples(self, instances):
         self.unlabelled = instances
 
+    @abstractmethod
+    def score(self, *args, **kwargs):
+        pass
+
 
 class BaseRefinement(metaclass=ABCMeta):
     """
@@ -137,8 +142,10 @@ class BaseRefinement(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def __init__(self, kb):
+    def __init__(self, kb, max_size_of_concept=10_000, min_size_of_concept=0):
         self.kb = kb
+        self.max_size_of_concept = max_size_of_concept
+        self.min_size_of_concept = min_size_of_concept
         self.concepts_to_nodes = dict()
 
     def set_kb(self, kb):
@@ -184,7 +191,7 @@ class BaseNode(metaclass=ABCMeta):
     """Base class for Concept."""
     __slots__ = ['concept', '__heuristic_score', '__horizontal_expansion',
                  '__quality_score', '___refinement_count',
-                 '__refinement_count', '__depth', '__children','length','parent_node']
+                 '__refinement_count', '__depth', '__children', 'length', 'parent_node']
 
     @abstractmethod
     def __init__(self, concept, parent_node, is_root=False):
@@ -193,7 +200,7 @@ class BaseNode(metaclass=ABCMeta):
         self.concept = concept
         self.parent_node = parent_node
         self.__children = set()
-        self.length=len(self.concept)
+        self.length = len(self.concept)
 
         if self.parent_node is None:
             assert len(concept) == 1 and is_root
@@ -259,6 +266,8 @@ class AbstractTree(ABC):
         self.heuristic_func = heuristic_func
         self._nodes = dict()
 
+        self.str_to_obj_instance_mapping=dict()
+
     def __len__(self):
         return len(self._nodes)
 
@@ -279,10 +288,21 @@ class AbstractTree(ABC):
             k, node = dict_
             yield node
 
-    def set_positive_negative_examples(self, *, p, n, unlabelled):
+    def set_positive_negative_examples(self, p: Set[AnyStr], n: Set[AnyStr], all_instances: Set):
         """
         Assing positives and negatives
         """
+        assert p
+        assert all_instances
+
+        # From string to owlready2 instance type conversion
+        for i in all_instances:
+            self.str_to_obj_instance_mapping[get_full_iri(i)]=i
+
+        p={self.str_to_obj_instance_mapping[i] for i in p}
+        n={self.str_to_obj_instance_mapping[i] for i in n}
+
+        unlabelled = all_instances - (p.union(n))
         assert len(p) > 0
         if len(n) == 0:
             # randomly sample from unlabelled.
@@ -312,7 +332,7 @@ class AbstractTree(ABC):
     def add_node(self, *args, **kwargs):
         pass
 
-    def sort_search_tree_by_decreasing_order(self, *,key: str):
+    def sort_search_tree_by_decreasing_order(self, *, key: str):
         if key == 'heuristic':
             sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
         elif key == 'quality':
@@ -347,7 +367,7 @@ class AbstractTree(ABC):
         print('######## Search Tree ###########\n')
         return predictions
 
-    def show_best_nodes(self, top_n,key=None):
+    def show_best_nodes(self, top_n, key=None):
         assert key
         self.sort_search_tree_by_decreasing_order(key=key)
         return self.show_search_tree('Final', top_n=top_n + 1)

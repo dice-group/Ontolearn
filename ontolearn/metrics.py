@@ -78,7 +78,7 @@ class F1(AbstractScorer):
         self.beta = 0
         self.noise = 0
 
-    def __score(self, pos, neg, instances):
+    def score(self, pos, neg, instances):
         self.pos = pos
         self.neg = neg
 
@@ -91,7 +91,7 @@ class F1(AbstractScorer):
             recall = tp / (tp + fn)
             precision = tp / (tp + fp)
             f_1 = 2 * ((precision * recall) / (precision + recall))
-        except ValueError:
+        except ZeroDivisionError:
             f_1 = 0
 
         return round(f_1, 5)
@@ -238,14 +238,6 @@ class UAV(AbstractScorer):
         node.quality = round(f_1, 5)
 
         assert node.quality
-
-
-
-
-
-
-
-
 
 
 class NoQuality(AbstractScorer):

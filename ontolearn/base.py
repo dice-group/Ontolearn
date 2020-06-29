@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore")
 class KnowledgeBase:
     """Knowledge Base Class representing Tbox and Abox along with concept hierarchies"""
 
-    def __init__(self, path):
+    def __init__(self, path, min_size_of_concept=0, max_size_of_concept=None):
         self.path = path
         self.onto = get_ontology(self.path).load(reload=True)
         self.name = self.onto.name
@@ -28,9 +28,19 @@ class KnowledgeBase:
         self.concepts_to_leafs = defaultdict(set)
         self.property_hierarchy = None
         self.parse()
-        # self.concepts = MappingProxyType(self.concepts)
-        self.__concept_generator = ConceptGenerator(concepts=self.concepts, T=self.thing, Bottom=self.nothing,
-                                                    onto=self.onto)
+
+        self.min_size_of_concept = min_size_of_concept
+
+        if max_size_of_concept is None:
+            self.max_size_of_concept = len(self.thing.instances)
+        else:
+            self.max_size_of_concept = max_size_of_concept
+        self.__concept_generator = ConceptGenerator(concepts=self.concepts,
+                                                    T=self.thing,
+                                                    Bottom=self.nothing,
+                                                    onto=self.onto,
+                                                    min_size_of_concept=self.min_size_of_concept,
+                                                    max_size_of_concept=self.max_size_of_concept)
 
     @staticmethod
     def apply_type_enrichment_from_iterable(concepts: Iterable[Concept]):
@@ -47,7 +57,7 @@ class KnowledgeBase:
 
     @staticmethod
     def apply_type_enrichment(concept: Concept):
-        for ind in concept.owl.instances():
+        for ind in concept.instances:
             ind.is_a.append(concept.owl)
 
     def save(self, path, rdf_format='ntriples'):
@@ -55,6 +65,12 @@ class KnowledgeBase:
 
     def get_all_individuals(self) -> Set:
         return self.thing.instances
+
+    def set_min_size_of_concept(self, n):
+        self.min_size_of_concept = n
+
+    def max_size_of_concept(self, n):
+        self.max_size_of_concept = n
 
     @staticmethod
     def is_atomic(c: owlready2.entity.ThingClass):
@@ -66,6 +82,7 @@ class KnowledgeBase:
         else:
             return True
 
+    """
     @staticmethod
     def __parse_complex(complex_concepts: Iterable[owlready2.entity.ThingClass], concept_mapping: Dict):
         assert isinstance(complex_concepts, Iterable)
@@ -81,7 +98,6 @@ class KnowledgeBase:
                                  if isinstance(c.is_a[1], owlready2.class_construct.And) or isinstance(c.is_a[1],
                                                                                                        owlready2.class_construct.Or))
         import re
-
 
         for c in complex_concepts:
             print(c)
@@ -101,30 +117,28 @@ class KnowledgeBase:
             if isinstance(c.is_a[1], owlready2.class_construct.Not):
                 continue
 
-            #components = re.findall(r"\((.*?)\)", c.name)
-            #assert len(components)==1
-            #print(components)
+            # components = re.findall(r"\((.*?)\)", c.name)
+            # assert len(components)==1
+            # print(components)
             print(c.name)
-            #text_in_list=c.name.split()
+            # text_in_list=c.name.split()
 
-#            print(text_in_list)
+            #            print(text_in_list)
             continue
-            if len(text_in_list)==3:
+            if len(text_in_list) == 3:
                 ## then this means that we have ['(A', '⊓', 'B)'] or  ['(A', 'OR', 'B)']
                 # where A or B can only be a negation or atomic concept.
                 owl_ready_concept = c.is_a[1]
-                if isinstance(owl_ready_concept,owlready2.class_construct.And):
+                if isinstance(owl_ready_concept, owlready2.class_construct.And):
                     pass
-                elif isinstance(owl_ready_concept,owlready2.class_construct.Or):
+                elif isinstance(owl_ready_concept, owlready2.class_construct.Or):
                     pass
                 else:
                     print(c)
                     print(text_in_list)
                     raise ValueError
 
-
                 pass
-
 
         exit(1)
         for c in complex_concepts:
@@ -168,6 +182,7 @@ class KnowledgeBase:
         exit(1)
 
         return True
+    """
 
     def __build_concepts_mapping(self, onto: Ontology) -> Tuple[Dict, Concept, Concept]:
         """
@@ -268,6 +283,8 @@ class KnowledgeBase:
     def get_direct_parents(self, concept: Concept):
         """ Return : { x | (concept subClassOf x)} """
         for direct_parent in self.down_top_direct_concept_hierarchy[concept]:
+            print(direct_parent)
+            exit(1)
             yield direct_parent
 
     def most_general_existential_restrictions(self, concept: Concept):
@@ -275,29 +292,29 @@ class KnowledgeBase:
         for prob in self.property_hierarchy.get_most_general_property():
             yield self.__concept_generator.existential_restriction(concept, prob)
 
-    def most_general_universal_restriction(self, concept: Concept):
+    def most_general_universal_restriction(self, concept: Concept) -> Concept:
         assert isinstance(concept, Concept)
         for prob in self.property_hierarchy.get_most_general_property():
             yield self.__concept_generator.universal_restriction(concept, prob)
 
-    def union(self, conceptA: Concept, conceptB: Concept):
+    def union(self, conceptA: Concept, conceptB: Concept) -> Concept:
         """Return a concept c == (conceptA OR conceptA)"""
         assert isinstance(conceptA, Concept)
         assert isinstance(conceptB, Concept)
         return self.__concept_generator.union(conceptA, conceptB)
 
-    def intersection(self, conceptA: Concept, conceptB: Concept) -> Generator:
+    def intersection(self, conceptA: Concept, conceptB: Concept) -> Concept:
         """Return a concept c == (conceptA AND conceptA)"""
         assert isinstance(conceptA, Concept)
         assert isinstance(conceptB, Concept)
         return self.__concept_generator.intersection(conceptA, conceptB)
 
-    def existential_restriction(self, concept: Concept, property_) -> Generator:
+    def existential_restriction(self, concept: Concept, property_) -> Concept:
         """Return a concept c == (Exist R.C)"""
         assert isinstance(concept, Concept)
         return self.__concept_generator.existential_restriction(concept, property_)
 
-    def universal_restriction(self, concept: Concept, property_) -> Generator:
+    def universal_restriction(self, concept: Concept, property_) -> Concept:
         """Return a concept c == (Forall R.C)"""
         assert isinstance(concept, Concept)
         return self.__concept_generator.universal_restriction(concept, property_)
@@ -310,12 +327,12 @@ class KnowledgeBase:
                len(self.__concept_generator.log_of_negations) + len(self.concepts)
 
     def get_all_concepts(self):
-        return set(chain(self.concepts,
-                         self.__concept_generator.log_of_universal_restriction.values(),
-                         self.__concept_generator.log_of_negations.values(),
-                         self.__concept_generator.log_of_intersections.values(),
-                         self.__concept_generator.log_of_universal_restriction.values(),
-                         self.__concept_generator.log_of_existential_restriction.values()))
+        return self.concepts.values()  # set(chain(self.concepts.values()))
+        # self.__concept_generator.log_of_universal_restriction.values(),
+        # self.__concept_generator.log_of_negations.values(),
+        # self.__concept_generator.log_of_intersections.values(),
+        # self.__concept_generator.log_of_universal_restriction.values(),
+        # self.__concept_generator.log_of_existential_restriction.values()))
 
 
 class PropertyHierarchy:
