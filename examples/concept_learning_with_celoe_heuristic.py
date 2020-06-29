@@ -1,4 +1,10 @@
-from ontolearn import *
+from ontolearn import KnowledgeBase
+from ontolearn.concept_learner import CELOE
+from ontolearn.metrics import F1
+from ontolearn.heuristics import CELOEHeuristic
+from ontolearn.search import CELOESearchTree
+from ontolearn.refinement_operators import ModifiedCELOERefinement
+
 import json
 
 with open('synthetic_problems.json') as json_file:
@@ -13,7 +19,7 @@ for str_target_concept, examples in settings['problems'].items():
     concepts_to_ignore = set()
     # lets inject more background info
     if str_target_concept in ['Granddaughter', 'Aunt', 'Sister']:
-        concepts_to_ignore.update({'Brother', 'Father', 'Uncle','Grandparent'})
+        concepts_to_ignore.update({'Brother', 'Father', 'Uncle', 'Grandparent'})
 
     model = CELOE(knowledge_base=kb,
                   refinement_operator=ModifiedCELOERefinement(kb=kb),
@@ -27,5 +33,6 @@ for str_target_concept, examples in settings['problems'].items():
                   verbose=False)
 
     model.predict(pos=p, neg=n)
-    model.show_best_predictions(top_n=10,serialize_predictions=True,serialize_name=str_target_concept+'_structured_prediction.owl')
-    model.extend_ontology(top_n_concepts=20)
+    model.show_best_predictions(top_n=10, key='quality',  # heuristic, length
+                                serialize_name=str_target_concept + '_quality_structured_prediction.owl')
+    model.extend_ontology(top_n_concepts=20, key='quality')  # TBOX extended by top n concepts.

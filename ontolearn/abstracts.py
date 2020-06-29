@@ -3,7 +3,7 @@ from functools import total_ordering
 from abc import ABCMeta, abstractmethod, ABC
 from owlready2 import ThingClass
 from .util import get_full_iri
-from typing import Set
+from typing import Set, AnyStr
 import random
 
 random.seed(0)
@@ -26,7 +26,7 @@ class BaseConcept(metaclass=ABCMeta):
         self.str = concept.name
         self.form = kwargs['form']
 
-        self.is_atomic = True if self.form=='Class' else False#self.__is_atomic()  # TODO consider the necessity.
+        self.is_atomic = True if self.form == 'Class' else False  # self.__is_atomic()  # TODO consider the necessity.
         self.length = self.__calculate_length()
 
         self.__instances = None
@@ -36,7 +36,8 @@ class BaseConcept(metaclass=ABCMeta):
         """ Returns all instances belonging to the concept."""
         if self.__instances:
             return self.__instances
-        self.__instances = {get_full_iri(jjj) for jjj in self.owl.instances()}  # be sure of the memory usage.
+        # self.__instances = {get_full_iri(jjj) for jjj in self.owl.instances()}  # be sure of the memory usage.
+        self.__instances = {jjj for jjj in self.owl.instances()}  # be sure of the memory usage.
         return self.__instances
 
     @instances.setter
@@ -112,26 +113,9 @@ class AbstractScorer(ABC):
     def set_unlabelled_examples(self, instances):
         self.unlabelled = instances
 
-
-"""
-class AbstractHeuristic(ABC):
     @abstractmethod
-    def __init__(self, pos, neg, unlabelled):
-        self.pos = pos
-        self.neg = neg
-        self.unlabelled = unlabelled
-        self.applied = 0
-
-    def set_positive_examples(self, instances):
-        self.pos = instances
-
-    def set_negative_examples(self, instances):
-        self.neg = instances
-
-    def set_unlabelled_examples(self, instances):
-        self.unlabelled = instances
-
-"""
+    def score(self, *args, **kwargs):
+        pass
 
 
 class BaseRefinement(metaclass=ABCMeta):
@@ -158,8 +142,10 @@ class BaseRefinement(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def __init__(self, kb):
+    def __init__(self, kb, max_size_of_concept=10_000, min_size_of_concept=0):
         self.kb = kb
+        self.max_size_of_concept = max_size_of_concept
+        self.min_size_of_concept = min_size_of_concept
         self.concepts_to_nodes = dict()
 
     def set_kb(self, kb):
@@ -204,8 +190,8 @@ class BaseRefinement(metaclass=ABCMeta):
 class BaseNode(metaclass=ABCMeta):
     """Base class for Concept."""
     __slots__ = ['concept', '__heuristic_score', '__horizontal_expansion',
-                 '__quality_score', 'parent_node', '___refinement_count',
-                 '__refinement_count', '__depth', '__children']
+                 '__quality_score', '___refinement_count',
+                 '__refinement_count', '__depth', '__children', 'length', 'parent_node']
 
     @abstractmethod
     def __init__(self, concept, parent_node, is_root=False):
@@ -214,6 +200,7 @@ class BaseNode(metaclass=ABCMeta):
         self.concept = concept
         self.parent_node = parent_node
         self.__children = set()
+        self.length = len(self.concept)
 
         if self.parent_node is None:
             assert len(concept) == 1 and is_root
@@ -279,6 +266,8 @@ class AbstractTree(ABC):
         self.heuristic_func = heuristic_func
         self._nodes = dict()
 
+        self.str_to_obj_instance_mapping=dict()
+
     def __len__(self):
         return len(self._nodes)
 
@@ -292,10 +281,28 @@ class AbstractTree(ABC):
         for k, node in self._nodes.items():
             yield node
 
-    def set_positive_negative_examples(self, *, p, n, unlabelled):
+    def get_top_n_nodes(self, n: int):
+        for ith, dict_ in enumerate(self._nodes.items()):
+            if ith > n:
+                break
+            k, node = dict_
+            yield node
+
+    def set_positive_negative_examples(self, p: Set[AnyStr], n: Set[AnyStr], all_instances: Set):
         """
         Assing positives and negatives
         """
+        assert p
+        assert all_instances
+
+        # From string to owlready2 instance type conversion
+        for i in all_instances:
+            self.str_to_obj_instance_mapping[get_full_iri(i)]=i
+
+        p={self.str_to_obj_instance_mapping[i] for i in p}
+        n={self.str_to_obj_instance_mapping[i] for i in n}
+
+        unlabelled = all_instances - (p.union(n))
         assert len(p) > 0
         if len(n) == 0:
             # randomly sample from unlabelled.
@@ -325,6 +332,19 @@ class AbstractTree(ABC):
     def add_node(self, *args, **kwargs):
         pass
 
+    def sort_search_tree_by_decreasing_order(self, *, key: str):
+        if key == 'heuristic':
+            sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
+        elif key == 'quality':
+            sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
+        elif key == 'length':
+            sorted_x = sorted(self._nodes.items(), key=lambda kv: len(kv[1]), reverse=True)
+        else:
+            raise ValueError('Wrong Key. Key must be heuristic, quality or concept_length')
+
+        self._nodes = OrderedDict(sorted_x)
+
+    """
     def sort_search_tree_by_descending_heuristic_score(self):
 
         sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
@@ -333,27 +353,30 @@ class AbstractTree(ABC):
     def sort_search_tree_by_descending_quality(self):
         sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
         self._nodes = OrderedDict(sorted_x)
+    """
 
-    def show_search_tree(self, ith, top_n=10):
+    def show_search_tree(self, th, top_n=10):
         """
         Show search tree.
         """
-        print('######## ', ith, 'step Search Tree ###########')
-        counter = 1
-        predictions=[]
-        for k, v in enumerate(self):
-            print(
-                '{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(counter, v.concept.str, self.quality_func.name,
-                                                            v.quality, v.heuristic))
-            # print('\t\t\t\t\t', counter, '-', v)  # , ' - acc:', v.accuracy)
-            counter += 1
-            predictions.append(v)
-            if counter == top_n:
-                break
+        print('######## ', th, 'step Search Tree ###########')
+        predictions = list(self.get_top_n_nodes(top_n))
+        for ith, node in enumerate(predictions):
+            print('{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(ith + 1, node.concept.str,
+                                                              self.quality_func.name, node.quality, node.heuristic))
         print('######## Search Tree ###########\n')
         return predictions
-    def show_best_nodes(self, top_n):
-        print('Number of times quality function applied: ', self.quality_func.applied)
-        sorted_x = sorted(self.nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
-        self._nodes = OrderedDict(sorted_x)
+
+    def show_best_nodes(self, top_n, key=None):
+        assert key
+        self.sort_search_tree_by_decreasing_order(key=key)
         return self.show_search_tree('Final', top_n=top_n + 1)
+
+    def save_current_top_n_nodes(self, key=None, n=10, path=None):
+
+        """
+        Save current top_n nodes
+        """
+        assert path
+        assert key
+        pass
