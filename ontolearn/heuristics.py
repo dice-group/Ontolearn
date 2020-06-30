@@ -1,5 +1,5 @@
 from .abstracts import AbstractScorer
-
+import numpy as np
 
 class CELOEHeuristic(AbstractScorer):
     def __init__(self, pos=None, neg=None, unlabelled=None):
@@ -55,7 +55,7 @@ class DLFOILHeuristic(AbstractScorer):
         n_1 = len(self.neg.intersection(instances))  # number of negative examples covered by the concept
         u_1 = len(self.unlabelled.intersection(instances))
 
-        import numpy as np
+
 
         if node.parent_node:
             parent_inst = node.parent_node.concept.instances
