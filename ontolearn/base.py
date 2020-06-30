@@ -12,64 +12,107 @@ warnings.filterwarnings("ignore")
 
 
 class KnowledgeBase:
-    """Knowledge Base Class representing Tbox and Abox along with concept hierarchies"""
+    """Knowledge Base (KB) Class representing Tbox and Abox along with concept hierarchies"""
 
     @property
     def path(self) -> str:
+        """
+        Path to the file that contains the KB.
+        """
         return self._path
 
     @property
     def onto(self) -> Ontology:
+        """
+        The ontology of the KB
+        """
         return self._onto
 
     @property
     def name(self) -> str:
+        """
+        The name of the ontology of the knowledge base.
+        TODO: necessary?
+        """
         return self._name
 
     @property
     def concepts(self) -> Dict[str, Concept]:
+        """
+        A mapping from resource IRI to concepts for all concepts in the KB
+        :return:
+        """
         return self._concepts
 
     @property
     def thing(self) -> Concept:
+        """
+        The top concept in the KB
+        TODO: is that right? rename it to top_concept?
+        """
         return self._thing
 
     @property
     def nothing(self) -> Concept:
+        """
+        The bottom concept in the KB.
+        TODO: is that right? rename it to bottom_concept?
+        """
         return self._nothing
 
     @property
     def top_down_concept_hierarchy(self) -> Dict[Concept, Set[Concept]]:
+        """
+        top down hierarchy of concepts that maps a concept A from the KB to a set of sub concepts B such that ∀b ∊ B: b ⊑ A.
+        """
         return self._top_down_concept_hierarchy
 
     @property
     def top_down_direct_concept_hierarchy(self) -> Dict[Concept, Set[Concept]]:
+        """
+        top down hierarchy of concepts that maps a concept A from the KB to a set of sub concepts B such that ∀b ∊ B: b ⊑ A if b is a most specific sub concept.
+        """
         return self._top_down_direct_concept_hierarchy
 
     @property
     def down_top_concept_hierarchy(self) -> Dict[Concept, Set[Concept]]:
+        """
+        bottom up down hierarchy of concepts that maps a concept A from the KB to a set of super concepts B such that ∀b ∊ B: A ⊑ b.
+        """
         return self._down_top_concept_hierarchy
 
     @property
     def down_top_direct_concept_hierarchy(self) -> Dict[Concept, Set[Concept]]:
+        """
+        bottom up down hierarchy of concepts that maps a concept A from the KB to a set of super concepts B such that ∀b ∊ B: A ⊑ b is a most specific super concept.
+        """
         return self._down_top_direct_concept_hierarchy
 
     @property
     def concepts_to_leafs(self) -> Dict[Concept, Set[Concept]]:
+        """
+        maps from concept A to a set of concepts B = { x | (x subClassOf A) AND not exist y: y subClassOf x )}
+        """
         return self._concepts_to_leafs
 
     @property
-    def property_hierarchy(self):
+    def property_hierarchy(self) -> 'PropertyHierarchy':
+        # TODO: obsolete or stub?
         return self._property_hierarchy
 
     @property
     def min_size_of_concept(self) -> int:
+        """
+        minimal size of concepts that are inferred
+        """
         return self._min_size_of_concept
 
     @property
     def max_size_of_concept(self) -> int:
+        """
+        minimal size of concepts that are inferred
+        """
         return self._max_size_of_concept
-
 
     def __init__(self, path, min_size_of_concept=0, max_size_of_concept=None):
         self._path: str = path
@@ -141,6 +184,7 @@ class KnowledgeBase:
         else:
             return True
 
+    # TODO: remove this code?
     """
     @staticmethod
     def __parse_complex(complex_concepts: Iterable[owlready2.entity.ThingClass], concept_mapping: Dict):
@@ -285,7 +329,7 @@ class KnowledgeBase:
 
         """
 
-        self.concepts, self.thing, self.nothing = self.__build_concepts_mapping(onto)
+        self._concepts, self._thing, self._nothing = self.__build_concepts_mapping(onto)
 
         self.down_top_concept_hierarchy[self.thing] = set()
         self.top_down_concept_hierarchy[self.thing] = {_ for _ in self.concepts.values()}
@@ -395,7 +439,9 @@ class KnowledgeBase:
                len(self.__concept_generator.log_of_negations) + len(self.concepts)
 
     def get_all_concepts(self):
-        return self.concepts.values()  # set(chain(self.concepts.values()))
+        return self.concepts.values()
+        # TODO: remove commented code
+        # set(chain(self.concepts.values()))
         # self.__concept_generator.log_of_universal_restriction.values(),
         # self.__concept_generator.log_of_negations.values(),
         # self.__concept_generator.log_of_intersections.values(),
@@ -404,6 +450,7 @@ class KnowledgeBase:
 
 
 class PropertyHierarchy:
+    # TODO: is this class a stub? it doesn't seem to be used anywhere productively?
 
     def __init__(self, onto):
         self.all_properties = [i for i in onto.properties()]
@@ -413,5 +460,6 @@ class PropertyHierarchy:
         self.object_properties = [i for i in onto.object_properties()]
 
     def get_most_general_property(self):
+        # TODO: what is this good for? is it actually implemented correctly?
         for i in self.all_properties:
             yield i
