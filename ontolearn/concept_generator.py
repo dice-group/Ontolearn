@@ -29,8 +29,8 @@ class ConceptGenerator:
 
     def __init__(self, concepts, T, Bottom, onto, min_size_of_concept=1, max_size_of_concept=1_000):
 
-        self.min_size_of_concept = min_size_of_concept
-        self.max_size_of_concept = max_size_of_concept
+        self.min_size_of_concept:int = min_size_of_concept
+        self.max_size_of_concept:int = max_size_of_concept
 
         self.concepts = concepts
         self.T = T

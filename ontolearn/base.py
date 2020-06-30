@@ -14,33 +14,90 @@ warnings.filterwarnings("ignore")
 class KnowledgeBase:
     """Knowledge Base Class representing Tbox and Abox along with concept hierarchies"""
 
+    @property
+    def path(self) -> str:
+        return self._path
+
+    @property
+    def onto(self) -> Ontology:
+        return self._onto
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def concepts(self) -> Dict[str, Concept]:
+        return self._concepts
+
+    @property
+    def thing(self) -> Concept:
+        return self._thing
+
+    @property
+    def nothing(self) -> Concept:
+        return self._nothing
+
+    @property
+    def top_down_concept_hierarchy(self) -> Dict[Concept, Set[Concept]]:
+        return self._top_down_concept_hierarchy
+
+    @property
+    def top_down_direct_concept_hierarchy(self) -> Dict[Concept, Set[Concept]]:
+        return self._top_down_direct_concept_hierarchy
+
+    @property
+    def down_top_concept_hierarchy(self) -> Dict[Concept, Set[Concept]]:
+        return self._down_top_concept_hierarchy
+
+    @property
+    def down_top_direct_concept_hierarchy(self) -> Dict[Concept, Set[Concept]]:
+        return self._down_top_direct_concept_hierarchy
+
+    @property
+    def concepts_to_leafs(self) -> Dict[Concept, Set[Concept]]:
+        return self._concepts_to_leafs
+
+    @property
+    def property_hierarchy(self):
+        return self._property_hierarchy
+
+    @property
+    def min_size_of_concept(self) -> int:
+        return self._min_size_of_concept
+
+    @property
+    def max_size_of_concept(self) -> int:
+        return self._max_size_of_concept
+
+
     def __init__(self, path, min_size_of_concept=0, max_size_of_concept=None):
-        self.path = path
-        self.onto = get_ontology(self.path).load(reload=True)
-        self.name = self.onto.name
-        self.concepts = dict()
-        self.thing = None
-        self.nothing = None
-        self.top_down_concept_hierarchy = defaultdict(set)  # Next time thing about including this into Concepts.
-        self.top_down_direct_concept_hierarchy = defaultdict(set)
-        self.down_top_concept_hierarchy = defaultdict(set)
-        self.down_top_direct_concept_hierarchy = defaultdict(set)
-        self.concepts_to_leafs = defaultdict(set)
-        self.property_hierarchy = None
+        self._path: str = path
+        self._onto: Ontology = get_ontology(self.path).load(reload=True)
+        self._name: str = self.onto.name
+        self._concepts: Dict[str, Concept] = dict()
+        self._thing: Concept = None
+        self._nothing: Concept = None
+        self._top_down_concept_hierarchy: Dict[Concept, Set[Concept]] = defaultdict(
+            set)  # Next time thing about including this into Concepts.
+        self._top_down_direct_concept_hierarchy: Dict[Concept, Set[Concept]] = defaultdict(set)
+        self._down_top_concept_hierarchy: Dict[Concept, Set[Concept]] = defaultdict(set)
+        self._down_top_direct_concept_hierarchy: Dict[Concept, Set[Concept]] = defaultdict(set)
+        self._concepts_to_leafs: Dict[Concept, Set[Concept]] = defaultdict(set)
+        self._property_hierarchy = None
         self.parse()
 
-        self.min_size_of_concept = min_size_of_concept
+        self._min_size_of_concept: int = min_size_of_concept
 
-        if max_size_of_concept is None:
-            self.max_size_of_concept = len(self.thing.instances)
-        else:
-            self.max_size_of_concept = max_size_of_concept
-        self.__concept_generator = ConceptGenerator(concepts=self.concepts,
-                                                    T=self.thing,
-                                                    Bottom=self.nothing,
-                                                    onto=self.onto,
-                                                    min_size_of_concept=self.min_size_of_concept,
-                                                    max_size_of_concept=self.max_size_of_concept)
+        self._max_size_of_concept = len(self.thing.instances) if max_size_of_concept is None else max_size_of_concept
+        if type(self._max_size_of_concept) is not int:
+            print()
+        self.__concept_generator: ConceptGenerator = ConceptGenerator(concepts=self.concepts,
+                                                                      T=self.thing,
+                                                                      Bottom=self.nothing,
+                                                                      onto=self.onto,
+                                                                      min_size_of_concept=self.min_size_of_concept,
+                                                                      max_size_of_concept=self.max_size_of_concept)
 
     @staticmethod
     def apply_type_enrichment_from_iterable(concepts: Iterable[Concept]):
@@ -66,11 +123,13 @@ class KnowledgeBase:
     def get_all_individuals(self) -> Set:
         return self.thing.instances
 
-    def set_min_size_of_concept(self, n):
-        self.min_size_of_concept = n
+    @min_size_of_concept.setter
+    def min_size_of_concept(self, n: int):
+        self._min_size_of_concept = n
 
-    def max_size_of_concept(self, n):
-        self.max_size_of_concept = n
+    @max_size_of_concept.setter
+    def max_size_of_concept(self, n: int):
+        self._max_size_of_concept = n
 
     @staticmethod
     def is_atomic(c: owlready2.entity.ThingClass):
@@ -184,7 +243,7 @@ class KnowledgeBase:
         return True
     """
 
-    def __build_concepts_mapping(self, onto: Ontology) -> Tuple[Dict, Concept, Concept]:
+    def __build_concepts_mapping(self, onto: Ontology) -> Tuple[Dict[str, Concept], Concept, Concept]:
         """
         Construct a mapping from full_iri to corresponding Concept objects.
 
@@ -203,15 +262,16 @@ class KnowledgeBase:
             concepts[temp_concept.full_iri] = temp_concept
 
             individuals.update(temp_concept.instances)
+        # check that the top concept contains individuals
         try:
-            assert T.instances
+            assert top.instances
         except:
             print('owlready2.Thing does not contains any individuals.\t')
-            T.instances=individuals
-
-        concepts[T.full_iri] = T
+            top.instances = individuals
+        # add top and bottom concepts
+        concepts[top.full_iri] = top
         concepts[bottom.full_iri] = bottom
-        return concepts, T, bottom
+        return concepts, top, bottom
 
     def __build_hierarchy(self, onto: Ontology) -> None:
         """
@@ -260,7 +320,7 @@ class KnowledgeBase:
         Top-down and bottom up hierarchies are constructed from from owlready2.Ontology
         """
         self.__build_hierarchy(self.onto)
-        self.property_hierarchy = PropertyHierarchy(self.onto)
+        self._property_hierarchy = PropertyHierarchy(self.onto)
 
     def get_leaf_concepts(self, concept: Concept):
         """ Return : { x | (x subClassOf concept) AND not exist y: y subClassOf x )} """

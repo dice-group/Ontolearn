@@ -1,3 +1,5 @@
+from owlready2 import ThingClass
+
 from .abstracts import BaseConcept
 
 class Concept(BaseConcept):
