@@ -118,6 +118,11 @@ class AbstractScorer(ABC):
         pass
 
 
+    @abstractmethod
+    def apply(self, *args, **kwargs):
+        pass
+
+
 class BaseRefinement(metaclass=ABCMeta):
     """
     Base class for Refinement Operators.
