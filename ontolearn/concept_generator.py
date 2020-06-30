@@ -100,7 +100,7 @@ class ConceptGenerator:
                 not_concept.is_a.append(Not(concept.owl))
                 # self.type_enrichments(self.T.instances - concept.instances, not_concept)
 
-                c = Concept(concept=not_concept, kwargs={'form': 'ObjectComplementOf', 'root': concept})
+                c = Concept(concept=not_concept, form='ObjectComplementOf', root=concept)
                 c.instances = possible_instances_  # self.T.instances - concept.instances
 
                 self.log_of_negations[concept] = c
@@ -149,8 +149,7 @@ class ConceptGenerator:
             # self.type__restrictions_enrichments(True, relation, concept, new_concept)
             # self.executor.submit(self.type__restrictions_enrichments, (True, relation, concept, new_concept))
 
-            c = Concept(concept=new_concept,
-                        kwargs={'form': 'ObjectSomeValuesFrom', 'Role': relation, 'Filler': concept})
+            c = Concept(concept=new_concept, form='ObjectSomeValuesFrom', Role=relation, Filler=concept)
 
             for i in possible_instances_:
                 assert type(i) is not str
@@ -197,8 +196,7 @@ class ConceptGenerator:
             # self.type__restrictions_enrichments(False, relation, concept, new_concept)
 
             # self.executor.submit(self.type__restrictions_enrichments, (False, relation, concept, new_concept))
-            c = Concept(concept=new_concept,
-                        kwargs={'form': 'ObjectAllValuesFrom', 'Role': relation, 'Filler': concept})
+            c = Concept(concept=new_concept, form='ObjectAllValuesFrom', Role=relation, Filler=concept)
 
             for i in possible_instances_:
                 assert type(i) is not str
@@ -240,7 +238,7 @@ class ConceptGenerator:
             # self.type_enrichments(A.owl.instances() | B.owl.instances(), new_concept)
             # self.executor.submit(self.type_enrichments, (A.instances | B.instances, new_concept))
 
-            c = Concept(concept=new_concept, kwargs={'form': 'ObjectUnionOf', 'ConceptA': A, 'ConceptB': B})
+            c = Concept(concept=new_concept, form='ObjectUnionOf', ConceptA=A, ConceptB=B)
 
             for i in possible_instances_:
                 assert type(i) is not str
@@ -279,7 +277,7 @@ class ConceptGenerator:
             # self.type_enrichments(A.instances & B.instances, new_concept)
             # self.executor.submit(self.type_enrichments, (A.instances & B.instances, new_concept))
 
-            c = Concept(concept=new_concept, kwargs={'form': 'ObjectIntersectionOf', 'ConceptA': A, 'ConceptB': B})
+            c = Concept(concept=new_concept, form='ObjectIntersectionOf',ConceptA=A, ConceptB=B)
 
             for i in possible_instances_:
                 assert type(i) is not str

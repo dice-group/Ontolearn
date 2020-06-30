@@ -193,13 +193,13 @@ class KnowledgeBase:
             1) full_iri:= owlready2.ThingClass.namespace.base_iri + owlready2.ThingClass.name
             2) Concept:
         """
-        concepts = dict()
-        individuals=set()
-        T = Concept(owlready2.Thing, kwargs={'form': 'Class'})
+        concepts: Dict[str, Concept] = dict()
+        individuals: Set[Concept] = set()
+        top: Concept = Concept(owlready2.Thing, form='Class')
 
-        bottom = Concept(owlready2.Nothing, kwargs={'form': 'Class'})
-        for i in onto.classes():
-            temp_concept = Concept(i, kwargs={'form': 'Class'})  # Regarless of concept length
+        bottom: Concept = Concept(owlready2.Nothing, form='Class')
+        for thing_class in onto.classes():
+            temp_concept: Concept = Concept(thing_class, form='Class')  # Regardless of concept length
             concepts[temp_concept.full_iri] = temp_concept
 
             individuals.update(temp_concept.instances)

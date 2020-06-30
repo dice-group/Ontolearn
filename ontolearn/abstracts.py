@@ -16,7 +16,7 @@ class BaseConcept(metaclass=ABCMeta):
                  'concept_b']
 
     @abstractmethod
-    def __init__(self, concept: ThingClass, kwargs):
+    def __init__(self, concept: ThingClass, **kwargs):
         assert isinstance(concept, ThingClass)
         assert kwargs['form'] in ['Class', 'ObjectIntersectionOf', 'ObjectUnionOf', 'ObjectComplementOf',
                                   'ObjectSomeValuesFrom', 'ObjectAllValuesFrom']
