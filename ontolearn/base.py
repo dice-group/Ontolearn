@@ -119,15 +119,16 @@ class KnowledgeBase:
         self._onto: Ontology = get_ontology(self.path).load(reload=True)
         self._name: str = self.onto.name
         self._concepts: Dict[str, Concept] = dict()
-        self._thing: Concept = None
-        self._nothing: Concept = None
+
         self._top_down_concept_hierarchy: Dict[Concept, Set[Concept]] = defaultdict(
             set)  # Next time thing about including this into Concepts.
         self._top_down_direct_concept_hierarchy: Dict[Concept, Set[Concept]] = defaultdict(set)
         self._down_top_concept_hierarchy: Dict[Concept, Set[Concept]] = defaultdict(set)
         self._down_top_direct_concept_hierarchy: Dict[Concept, Set[Concept]] = defaultdict(set)
         self._concepts_to_leafs: Dict[Concept, Set[Concept]] = defaultdict(set)
-        self._property_hierarchy = None
+        self._property_hierarchy: PropertyHierarchy
+        self._thing: Concept
+        self._nothing: Concept
         self.parse()
 
         self._min_size_of_concept: int = min_size_of_concept
