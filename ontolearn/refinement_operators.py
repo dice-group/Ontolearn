@@ -1,4 +1,4 @@
-from .base import KnowledgeBase
+from .knowledge_base import KnowledgeBase
 from .util import parametrized_performance_debugger
 from .concept import Concept
 from .search import Node

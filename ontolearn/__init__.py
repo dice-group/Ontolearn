@@ -13,7 +13,7 @@ __version__ = '0.0.2'
 import warnings
 warnings.filterwarnings("ignore")
 
-from .base import KnowledgeBase
+from .knowledge_base import KnowledgeBase
 from .refinement_operators import *
 from .data_struct import Data
 from .concept import Concept
