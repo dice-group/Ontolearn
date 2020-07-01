@@ -165,20 +165,17 @@ class KnowledgeBase:
     @staticmethod
     def apply_type_enrichment_from_iterable(concepts: Iterable[Concept]):
         """
-        TODO: method docu and code seem not to match
         Extend ABOX by
         (1) Obtaining all instances of selected concepts.
         (2) For all instances in (1) include type information into ABOX.
-        @param concepts:
         """
         for c in concepts:
-            for ind in c.owl.instances():
-                ind.is_a.append(c.owl)
+            KnowledgeBase.apply_type_enrichment(c)
 
     @staticmethod
     def apply_type_enrichment(concept: Concept):
         """
-        TODO: what exactly does it do?
+        For all instances in the concept include type information into ABOX.
         """
         for ind in concept.instances:
             ind.is_a.append(concept.owl)
