@@ -5,7 +5,7 @@ from .search import Node
 class CELOE(BaseConceptLearner):
     def __init__(self, *, knowledge_base, refinement_operator, search_tree, quality_func, heuristic_func, iter_bound,
                  verbose, terminate_on_goal=False, min_horizontal_expansion=0,
-                 ignored_concepts={}):
+                 ignored_concepts=None):
         super().__init__(knowledge_base=knowledge_base, refinement_operator=refinement_operator,
                          search_tree=search_tree,
                          quality_func=quality_func,
@@ -96,7 +96,7 @@ class CELOE(BaseConceptLearner):
 class CustomConceptLearner(BaseConceptLearner):
     def __init__(self, *, knowledge_base, refinement_operator, search_tree, quality_func, heuristic_func, iter_bound,
                  verbose, terminate_on_goal=False,
-                 ignored_concepts={}):
+                 ignored_concepts=None):
         super().__init__(knowledge_base=knowledge_base, refinement_operator=refinement_operator,
                          search_tree=search_tree,
                          quality_func=quality_func,
