@@ -8,7 +8,7 @@ def test_concept():
     assert len(kb.concepts) > 1
     for k, v in kb.concepts.items():
         assert len(v) == 1
-        assert v.instances.issubset(kb.get_all_individuals())
+        assert v.instances.issubset(kb.all_individuals)
 
 
 
