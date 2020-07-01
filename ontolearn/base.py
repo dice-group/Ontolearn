@@ -1,5 +1,4 @@
 from collections import defaultdict
-from itertools import chain
 from owlready2 import Ontology, get_ontology
 import owlready2
 from .concept_generator import ConceptGenerator
@@ -97,7 +96,9 @@ class KnowledgeBase:
 
     @property
     def property_hierarchy(self) -> 'PropertyHierarchy':
-        # TODO: obsolete or stub?
+        """
+        Hierarchy of concepts
+        """
         return self._property_hierarchy
 
     @property
@@ -107,6 +108,10 @@ class KnowledgeBase:
         """
         return self._min_size_of_concept
 
+    @min_size_of_concept.setter
+    def min_size_of_concept(self, n: int):
+        self._min_size_of_concept = n
+
     @property
     def max_size_of_concept(self) -> int:
         """
@@ -114,7 +119,23 @@ class KnowledgeBase:
         """
         return self._max_size_of_concept
 
+    @max_size_of_concept.setter
+    def max_size_of_concept(self, n: int):
+        self._max_size_of_concept = n
+
+    @property
+    def all_individuals(self) -> Set[owlready2.entity.ThingClass]:
+        """
+        all individuals in the KB
+        """
+        return self.thing.instances
+
     def __init__(self, path, min_size_of_concept=0, max_size_of_concept=None):
+        """
+        :param path: path to the RDF file containing the knowledge base
+        :param min_size_of_concept: the minimum size of concepts that are inferred
+        :param max_size_of_concept: the maximum size of concepts that are inferred
+        """
         self._path: str = path
         self._onto: Ontology = get_ontology(self.path).load(reload=True)
         self._name: str = self.onto.name
@@ -134,8 +155,6 @@ class KnowledgeBase:
         self._min_size_of_concept: int = min_size_of_concept
 
         self._max_size_of_concept = len(self.thing.instances) if max_size_of_concept is None else max_size_of_concept
-        if type(self._max_size_of_concept) is not int:
-            print()
         self.__concept_generator: ConceptGenerator = ConceptGenerator(concepts=self.concepts,
                                                                       T=self.thing,
                                                                       Bottom=self.nothing,
@@ -146,11 +165,11 @@ class KnowledgeBase:
     @staticmethod
     def apply_type_enrichment_from_iterable(concepts: Iterable[Concept]):
         """
+        TODO: method docu and code seem not to match
         Extend ABOX by
         (1) Obtaining all instances of selected concepts.
         (2) For all instances in (1) include type information into ABOX.
         @param concepts:
-        @return:
         """
         for c in concepts:
             for ind in c.owl.instances():
@@ -158,25 +177,25 @@ class KnowledgeBase:
 
     @staticmethod
     def apply_type_enrichment(concept: Concept):
+        """
+        TODO: what exactly does it do?
+        """
         for ind in concept.instances:
             ind.is_a.append(concept.owl)
 
     def save(self, path, rdf_format='ntriples'):
+        """
+        serializes the knowledge base to RDF
+        :param path: file path to store the file
+        :param rdf_format: available formats are 'rdfxml' and 'ntriples'
+        """
         self.onto.save(file=path, format=rdf_format)
 
-    def get_all_individuals(self) -> Set:
-        return self.thing.instances
-
-    @min_size_of_concept.setter
-    def min_size_of_concept(self, n: int):
-        self._min_size_of_concept = n
-
-    @max_size_of_concept.setter
-    def max_size_of_concept(self, n: int):
-        self._max_size_of_concept = n
-
     @staticmethod
-    def is_atomic(c: owlready2.entity.ThingClass):
+    def is_atomic(c: owlready2.entity.ThingClass) -> bool:
+        """
+        check wheather a concept is atomic
+        """
         assert isinstance(c, owlready2.entity.ThingClass)
         if '¬' in c.name and not (' ' in c.name):
             return False
@@ -288,7 +307,7 @@ class KnowledgeBase:
         return True
     """
 
-    def __build_concepts_mapping(self, onto: Ontology) -> Tuple[Dict[str, Concept], Concept, Concept]:
+    def __build_concepts_mapping(self) -> Tuple[Dict[str, Concept], Concept, Concept]:
         """
         Construct a mapping from full_iri to corresponding Concept objects.
 
@@ -297,28 +316,30 @@ class KnowledgeBase:
             1) full_iri:= owlready2.ThingClass.namespace.base_iri + owlready2.ThingClass.name
             2) Concept:
         """
-        concepts: Dict[str, Concept] = dict()
         individuals: Set[Concept] = set()
-        top: Concept = Concept(owlready2.Thing, form='Class')
 
-        bottom: Concept = Concept(owlready2.Nothing, form='Class')
-        for thing_class in onto.classes():
+        self._concepts: Dict[str, Concept] = dict()
+
+        self._thing: Concept = Concept(owlready2.Thing, form='Class')
+        self._nothing: Concept = Concept(owlready2.Nothing, form='Class')
+
+        for thing_class in self.onto.classes():
             temp_concept: Concept = Concept(thing_class, form='Class')  # Regardless of concept length
-            concepts[temp_concept.full_iri] = temp_concept
+            self._concepts[temp_concept.full_iri] = temp_concept
 
             individuals.update(temp_concept.instances)
-        # check that the top concept contains individuals
+        # check that the _thing concept contains individuals
         try:
-            assert top.instances
+            assert self._thing.instances
         except:
             print('owlready2.Thing does not contains any individuals.\t')
-            top.instances = individuals
-        # add top and bottom concepts
-        concepts[top.full_iri] = top
-        concepts[bottom.full_iri] = bottom
-        return concepts, top, bottom
+            self._thing.instances = individuals
+        # add _thing and _nothing concepts
+        self._concepts[self._thing.full_iri] = self._thing
+        self._concepts[self._nothing.full_iri] = self._nothing
+        return self._concepts, self._thing, self._nothing
 
-    def __build_hierarchy(self, onto: Ontology) -> None:
+    def __build_hierarchy(self) -> None:
         """
         Builds concept sub and super classes hierarchies.
 
@@ -330,16 +351,14 @@ class KnowledgeBase:
 
         """
 
-        self._concepts, self._thing, self._nothing = self.__build_concepts_mapping(onto)
-
         self.down_top_concept_hierarchy[self.thing] = set()
-        self.top_down_concept_hierarchy[self.thing] = {_ for _ in self.concepts.values()}
+        self.top_down_concept_hierarchy[self.thing] = set(self.concepts.values())
 
-        for str_, concept_A in self.concepts.items():  # second loop over concepts in the execution,
+        for concept_A in self.concepts.values():  # second loop over concepts in the execution,
 
             for desc in concept_A.owl.descendants(include_self=False):
 
-                wrapped_desc = self.concepts[desc.namespace.base_iri + desc.name]
+                wrapped_desc: Concept = self.concepts[desc.namespace.base_iri + desc.name]
 
                 # Include all sub class that are wrapped with AtomicConcept class into hierarchy.
                 self.top_down_concept_hierarchy[concept_A].add(wrapped_desc)
@@ -364,7 +383,8 @@ class KnowledgeBase:
         """
         Top-down and bottom up hierarchies are constructed from from owlready2.Ontology
         """
-        self.__build_hierarchy(self.onto)
+        self.__build_concepts_mapping()
+        self.__build_hierarchy()
         self._property_hierarchy = PropertyHierarchy(self.onto)
 
     def get_leaf_concepts(self, concept: Concept):
@@ -377,7 +397,7 @@ class KnowledgeBase:
         yield self.__concept_generator.negation(concept)
 
     @parametrized_performance_debugger()
-    def negation_from_iterables(self, s: Generator):
+    def negation_from_iterables(self, s: Generator[Concept, None, None]):
         """ Return : { x | ( x \equv not s} """
         for item in s:
             yield self.__concept_generator.negation(item)
@@ -401,14 +421,22 @@ class KnowledgeBase:
             yield direct_parent
 
     def most_general_existential_restrictions(self, concept: Concept):
-
-        for prob in self.property_hierarchy.get_most_general_property():
-            yield self.__concept_generator.existential_restriction(concept, prob)
+        """
+        R is the most general property
+        ∃R.C = {x ∊ Δ | ∃y ∊ Δ: (x, y) ∊ R^I AND y ∊ C^I }
+        """
+        for prop in self.property_hierarchy.get_most_general_property():
+            yield self.__concept_generator.existential_restriction(concept, prop)
 
     def most_general_universal_restriction(self, concept: Concept) -> Concept:
+        """
+        TODO: might be wrong. see PropertyHierarchy TODO
+        R is the most general property
+        ∀R.C => extension => {x ∊ Δ | ∃y ∊ Δ : (x, y) ∊ R^I ⇒ y ∊ C^I }
+        """
         assert isinstance(concept, Concept)
-        for prob in self.property_hierarchy.get_most_general_property():
-            yield self.__concept_generator.universal_restriction(concept, prob)
+        for prop in self.property_hierarchy.get_most_general_property():
+            yield self.__concept_generator.universal_restriction(concept, prop)
 
     def union(self, conceptA: Concept, conceptB: Concept) -> Concept:
         """Return a concept c == (conceptA OR conceptA)"""
@@ -433,13 +461,21 @@ class KnowledgeBase:
         return self.__concept_generator.universal_restriction(concept, property_)
 
     def num_concepts_generated(self):
-
-        return len(self.__concept_generator.log_of_universal_restriction) + len(
-            self.__concept_generator.log_of_existential_restriction) + \
-               len(self.__concept_generator.log_of_intersections) + len(self.__concept_generator.log_of_unions) + \
-               len(self.__concept_generator.log_of_negations) + len(self.concepts)
+        """
+        total number of concepts generated
+        """
+        # TODO: review this after reviewing concept generator
+        return len(self.__concept_generator.log_of_universal_restriction) + \
+               len(self.__concept_generator.log_of_existential_restriction) + \
+               len(self.__concept_generator.log_of_intersections) + \
+               len(self.__concept_generator.log_of_unions) + \
+               len(self.__concept_generator.log_of_negations) + \
+               len(self.concepts)
 
     def get_all_concepts(self):
+        """
+        get all concepts of the KB
+        """
         return self.concepts.values()
         # TODO: remove commented code
         # set(chain(self.concepts.values()))
@@ -462,5 +498,6 @@ class PropertyHierarchy:
 
     def get_most_general_property(self):
         # TODO: what is this good for? is it actually implemented correctly?
+        # I would assume there should only be one most general property, right?
         for i in self.all_properties:
             yield i
