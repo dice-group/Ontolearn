@@ -49,7 +49,7 @@ class CELOE(BaseConceptLearner):
         return refinements
 
     def predict(self, pos, neg=None):
-        self.search_tree.set_positive_negative_examples(p=pos, n=neg,all_instances=self.kb.thing.instances)
+        self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.all_individuals)
 
         self.initialize_root()
 
@@ -132,7 +132,7 @@ class CustomConceptLearner(BaseConceptLearner):
         @return:
         """
 
-        self.search_tree.set_positive_negative_examples(p=pos, n=neg,all_instances=self.kb.thing.instances)
+        self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.all_individuals)
 
         self.initialize_root()
 
