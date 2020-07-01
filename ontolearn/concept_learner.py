@@ -9,7 +9,7 @@ class CELOE(BaseConceptLearner):
     [1] Lehmann, J., Auer, S., Bühmann, L., & Tramp, S. (2011). Class expression learning for ontology engineering. Journal of Web Semantics, 9(1), 71-81.
     """
 
-    def __init__(self, knowledge_base, refinement_operator, search_tree, quality_func, heuristic_func, iter_bound,
+    def __init__(self, *, knowledge_base, refinement_operator, search_tree, quality_func, heuristic_func, iter_bound,
                  verbose, terminate_on_goal=False, min_horizontal_expansion=0,
                  ignored_concepts=None):
         super().__init__(knowledge_base=knowledge_base, refinement_operator=refinement_operator,
