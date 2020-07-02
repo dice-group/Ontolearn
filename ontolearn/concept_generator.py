@@ -61,24 +61,6 @@ class ConceptGenerator:
         for i in instances:
             i.is_a.append(new_concept)
 
-    """
-    def type__restrictions_enrichments(self, exist, role, filler, c):
-        if exist:
-            # {(x,y) | (x,r,y) \in G}.
-            for x, y in role.get_relations():
-                if y in filler.instances:
-                    x.is_a.append(c)
-        else:
-            temp = set()
-            # {(s,o) | (s,r,o) \in G}.
-            for s, o in role.get_relations():
-                if not (o in filler.instances):
-                    temp.add(o)
-            temp = self.T.instances - temp
-            for i in temp:
-                i.is_a.append(c)
-    """
-
     def get_instances_for_restrictions(self, exist, role, filler):
         if exist:
             temp = set()

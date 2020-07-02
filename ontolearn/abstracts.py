@@ -117,6 +117,10 @@ class AbstractScorer(ABC):
     def score(self, *args, **kwargs):
         pass
 
+    @abstractmethod
+    def apply(self, *args, **kwargs):
+        pass
+
 
 class BaseRefinement(metaclass=ABCMeta):
     """
@@ -266,7 +270,7 @@ class AbstractTree(ABC):
         self.heuristic_func = heuristic_func
         self._nodes = dict()
 
-        self.str_to_obj_instance_mapping=dict()
+        self.str_to_obj_instance_mapping = dict()
 
     def __len__(self):
         return len(self._nodes)
@@ -290,23 +294,23 @@ class AbstractTree(ABC):
 
     def set_positive_negative_examples(self, p: Set[AnyStr], n: Set[AnyStr], all_instances: Set):
         """
-        Assing positives and negatives
+
         """
-        assert p
-        assert all_instances
+
+        assert isinstance(p, set) and isinstance(n, set) and isinstance(all_instances, set)
+        assert len(p) > 0 and len(all_instances) >= len(p)
 
         # From string to owlready2 instance type conversion
         for i in all_instances:
-            self.str_to_obj_instance_mapping[get_full_iri(i)]=i
+            self.str_to_obj_instance_mapping[get_full_iri(i)] = i
 
-        p={self.str_to_obj_instance_mapping[i] for i in p}
-        n={self.str_to_obj_instance_mapping[i] for i in n}
+        p = {self.str_to_obj_instance_mapping[i] for i in p}
+        n = {self.str_to_obj_instance_mapping[i] for i in n}
 
-        unlabelled = all_instances - (p.union(n))
-        assert len(p) > 0
         if len(n) == 0:
-            # randomly sample from unlabelled.
-            n = random.sample(unlabelled)
+            n = set(random.sample(all_instances, len(p)))
+        unlabelled = all_instances - (p.union(n))
+
         self.quality_func.set_positive_examples(p)
         self.quality_func.set_negative_examples(n)
         self.heuristic_func.set_positive_examples(p)
