@@ -42,7 +42,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
                  terminate_on_goal=True,
                  iter_bound=10,
                  max_child_length=10,
-                 verbose=True, ignored_concepts=None, root_concept=None):
+                 verbose=True, max_num_of_concepts_tested=None, ignored_concepts=None, root_concept=None):
         if ignored_concepts is None:
             ignored_concepts = {}
         assert knowledge_base
@@ -51,6 +51,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.quality_func = quality_func
         self.rho = refinement_operator
         self.search_tree = search_tree
+        self.max_num_of_concepts_tested=max_num_of_concepts_tested
 
         self.concepts_to_ignore = ignored_concepts
         self.start_class = root_concept
@@ -175,6 +176,9 @@ class BaseConceptLearner(metaclass=ABCMeta):
             self.updateMinMaxHorizExp(node_to_expand)
         """
 
+    @property
+    def number_of_tested_concepts(self):
+        return self.quality_func.applied
 
 class SampleConceptLearner:
     """
