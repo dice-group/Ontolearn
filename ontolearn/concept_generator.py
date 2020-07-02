@@ -27,7 +27,10 @@ class ConceptGenerator:
 
     """
 
-    def __init__(self, concepts, T, Bottom, onto, min_size_of_concept=1, max_size_of_concept=1_000):
+    def __init__(self, concepts, T, Bottom, onto, max_size_of_concept, min_size_of_concept):
+
+        assert max_size_of_concept
+        assert min_size_of_concept
 
         self.min_size_of_concept = min_size_of_concept
         self.max_size_of_concept = max_size_of_concept
@@ -86,11 +89,8 @@ class ConceptGenerator:
         if concept in self.log_of_negations:
             return self.log_of_negations[concept]
 
-        if concept.is_atomic and not (concept.owl.name == 'Thing'):
+        if not (concept.owl.name == 'Thing'):
             possible_instances_ = self.T.instances - concept.instances
-
-            if len(possible_instances_) == 0:
-                raise ValueError
 
             with self.onto:
                 not_concept = types.new_class(name="¬{0}".format(concept.owl.name), bases=(self.T.owl,))
@@ -161,7 +161,7 @@ class ConceptGenerator:
 
         return self.log_of_existential_restriction[(concept, relation)]
 
-    def universal_restriction(self, concept: Concept, relation, base=None)-> Concept:
+    def universal_restriction(self, concept: Concept, relation, base=None) -> Concept:
         """
 
         ∀R.C => extension => {x \in \Delta | ∃y \in \Delta : (x, y) ∈ \in R^I \implies y ∈ C^I }
@@ -230,7 +230,7 @@ class ConceptGenerator:
         possible_instances_ = A.instances | B.instances
 
         if not (self.max_size_of_concept >= len(possible_instances_) >= self.min_size_of_concept):
-            return None
+            return self.Bottom
 
         with self.onto:
             new_concept = types.new_class(name="({0} ⊔ {1})".format(A.str, B.str), bases=(base,))
@@ -259,7 +259,7 @@ class ConceptGenerator:
 
         # Crude workaround
         if A.str == 'Nothing' or B.str == 'Nothing':
-            self.log_of_intersections[(A, B)]=self.Bottom
+            self.log_of_intersections[(A, B)] = self.Bottom
             return self.log_of_intersections[(A, B)]
 
         if not base:

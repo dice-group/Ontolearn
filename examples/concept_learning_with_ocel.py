@@ -27,11 +27,10 @@ for str_target_concept, examples in settings['problems'].items():
                  heuristic_func=OCELHeuristic(),
                  search_tree=CELOESearchTree(),
                  terminate_on_goal=True,
-                 iter_bound=100,
+                 iter_bound=1000,
+                 max_num_of_concepts_tested=300,
                  ignored_concepts=concepts_to_ignore,
                  verbose=False)
 
-    model.predict(pos=p, neg=set())
-    model.show_best_predictions(top_n=10, key='quality',  # heuristic, length
-                                serialize_name=str_target_concept + '_quality_structured_prediction.owl')
-    model.extend_ontology(top_n_concepts=20, key='quality')  # TBOX extended by top n concepts.
+    best_pred=model.predict(pos=p, neg=n)
+    model.show_best_predictions(top_n=10, key='quality')

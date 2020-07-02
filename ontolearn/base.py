@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore")
 class KnowledgeBase:
     """Knowledge Base Class representing Tbox and Abox along with concept hierarchies"""
 
-    def __init__(self, path, min_size_of_concept=0, max_size_of_concept=None):
+    def __init__(self, path, min_size_of_concept=1, max_concept_size_ratio=1.0):
         self.path = path
         self.onto = get_ontology(self.path).load(reload=True)
         self.name = self.onto.name
@@ -29,19 +29,18 @@ class KnowledgeBase:
         self.property_hierarchy = None
         self.parse()
 
+        self.str_to_instance_obj=dict(zip([get_full_iri(i) for i in self.thing.instances], self.thing.instances))
+
         self.min_size_of_concept = min_size_of_concept
 
-        if max_size_of_concept is None:
-            self.max_size_of_concept = len(self.thing.instances)
-        else:
-            self.max_size_of_concept = max_size_of_concept
+        self.max_size_of_concept = len(self.thing.instances)*max_concept_size_ratio
+
         self.__concept_generator = ConceptGenerator(concepts=self.concepts,
                                                     T=self.thing,
                                                     Bottom=self.nothing,
                                                     onto=self.onto,
                                                     min_size_of_concept=self.min_size_of_concept,
                                                     max_size_of_concept=self.max_size_of_concept)
-
     @staticmethod
     def apply_type_enrichment_from_iterable(concepts: Iterable[Concept]):
         """

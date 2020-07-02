@@ -21,15 +21,15 @@ for str_target_concept, examples in settings['problems'].items():
                                  heuristic_func=DLFOILHeuristic(),
                                  search_tree=SearchTree(),
                                  terminate_on_goal=True,
+                                 max_num_of_concepts_tested=300,
                                  iter_bound=1_000,
                                  verbose=True)
 
-    model.predict(pos=p, neg=n)
+    best_pred=model.predict(pos=p, neg=n)
     model.show_best_predictions(top_n=10, key='quality',
                                 serialize_name=str_target_concept + '_quality_structured_prediction.owl')
-    model.show_best_predictions(top_n=10, key='heuristic',
-                                serialize_name=str_target_concept + '_heuristic_structured_prediction.owl')
-    model.show_best_predictions(top_n=10, key='length',
-                                serialize_name=str_target_concept + '_length_structured_prediction.owl')
-    model.extend_ontology(top_n_concepts=20)
+    # model.show_best_predictions(top_n=10, key='heuristic',serialize_name=str_target_concept +
+    # '_heuristic_structured_prediction.owl') model.show_best_predictions(top_n=10, key='length',
+    # serialize_name=str_target_concept + '_length_structured_prediction.owl')
+    # model.extend_ontology(top_n_concepts=20)
 
