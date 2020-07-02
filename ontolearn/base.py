@@ -291,8 +291,6 @@ class KnowledgeBase:
     def get_direct_parents(self, concept: Concept):
         """ Return : { x | (concept subClassOf x)} """
         for direct_parent in self.down_top_direct_concept_hierarchy[concept]:
-            print(direct_parent)
-            exit(1)
             yield direct_parent
 
     def most_general_existential_restrictions(self, concept: Concept):
