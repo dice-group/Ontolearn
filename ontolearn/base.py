@@ -194,12 +194,20 @@ class KnowledgeBase:
             2) Concept:
         """
         concepts = dict()
+        individuals=set()
         T = Concept(owlready2.Thing, kwargs={'form': 'Class'})
-        T.owl.equivalent_to.append(owlready2.Thing)
+
         bottom = Concept(owlready2.Nothing, kwargs={'form': 'Class'})
         for i in onto.classes():
             temp_concept = Concept(i, kwargs={'form': 'Class'})  # Regarless of concept length
             concepts[temp_concept.full_iri] = temp_concept
+
+            individuals.update(temp_concept.instances)
+        try:
+            assert T.instances
+        except:
+            print('owlready2.Thing does not contains any individuals.\t')
+            T.instances=individuals
 
         concepts[T.full_iri] = T
         concepts[bottom.full_iri] = bottom
@@ -283,8 +291,6 @@ class KnowledgeBase:
     def get_direct_parents(self, concept: Concept):
         """ Return : { x | (concept subClassOf x)} """
         for direct_parent in self.down_top_direct_concept_hierarchy[concept]:
-            print(direct_parent)
-            exit(1)
             yield direct_parent
 
     def most_general_existential_restrictions(self, concept: Concept):

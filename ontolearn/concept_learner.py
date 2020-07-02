@@ -1,5 +1,6 @@
 from .base_concept_learner import BaseConceptLearner
 from .search import Node
+from typing import Set, AnyStr
 
 
 class CELOE(BaseConceptLearner):
@@ -20,7 +21,7 @@ class CELOE(BaseConceptLearner):
         root = self.rho.getNode(self.start_class, root=True)
         self.search_tree.quality_func.apply(root)  # AccuracyOrTooWeak(n)
         self.search_tree.heuristic_func.apply(root)  # AccuracyOrTooWeak(n)
-        self.search_tree[root]=root
+        self.search_tree[root] = root
 
     def next_node_to_expand(self, step):
         self.search_tree.sort_search_tree_by_decreasing_order(key='heuristic')
@@ -48,8 +49,8 @@ class CELOE(BaseConceptLearner):
         self.search_tree.update_done(node)
         return refinements
 
-    def predict(self, pos, neg=None):
-        self.search_tree.set_positive_negative_examples(p=pos, n=neg,all_instances=self.kb.thing.instances)
+    def predict(self, pos: Set[AnyStr], neg: Set[AnyStr]):
+        self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.thing.instances)
 
         self.initialize_root()
 
@@ -93,6 +94,21 @@ class CELOE(BaseConceptLearner):
             print("minimum horizontal expansion is now ", self.min_he)
 
 
+class OCEL(CELOE):
+    def __init__(self, *, knowledge_base, refinement_operator, search_tree, quality_func, heuristic_func, iter_bound,
+                 verbose, terminate_on_goal=False, min_horizontal_expansion=0,
+                 ignored_concepts={}):
+        super().__init__(knowledge_base=knowledge_base, refinement_operator=refinement_operator,
+                         search_tree=search_tree,
+                         quality_func=quality_func,
+                         heuristic_func=heuristic_func,
+                         ignored_concepts=ignored_concepts,
+                         terminate_on_goal=terminate_on_goal,
+                         iter_bound=iter_bound, verbose=verbose)
+        self.h_exp_constant = min_horizontal_expansion
+        self.max_he, self.min_he = self.h_exp_constant, self.h_exp_constant
+
+
 class CustomConceptLearner(BaseConceptLearner):
     def __init__(self, *, knowledge_base, refinement_operator, search_tree, quality_func, heuristic_func, iter_bound,
                  verbose, terminate_on_goal=False,
@@ -120,7 +136,6 @@ class CustomConceptLearner(BaseConceptLearner):
         refinements = (self.rho.getNode(i, parent_node=node)
                        for i in self.rho.refine(node.concept) if i is not None and i.str not in self.concepts_to_ignore)
 
-
         # Depending on the heuristic function one can modefiy node.
         # self.heuristic.apply(node)
         return refinements
@@ -132,7 +147,7 @@ class CustomConceptLearner(BaseConceptLearner):
         @return:
         """
 
-        self.search_tree.set_positive_negative_examples(p=pos, n=neg,all_instances=self.kb.thing.instances)
+        self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.thing.instances)
 
         self.initialize_root()
 
