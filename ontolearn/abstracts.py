@@ -92,6 +92,77 @@ class BaseConcept(metaclass=ABCMeta):
         return self.length > other.length
 
 
+class BaseNode(metaclass=ABCMeta):
+    """Base class for Concept."""
+    __slots__ = ['concept', '__heuristic_score', '__horizontal_expansion',
+                 '__quality_score', '___refinement_count',
+                 '__refinement_count', '__depth', '__children', 'length', 'parent_node']
+
+    @abstractmethod
+    def __init__(self, concept, parent_node, is_root=False):
+        self.__quality_score, self.__heuristic_score = None, None
+        self.__horizontal_expansion, self.__refinement_count = 0, 0
+        self.concept = concept
+        self.parent_node = parent_node
+        self.__children = set()
+        self.length = len(self.concept)
+
+        if self.parent_node is None:
+            assert len(concept) == 1 and is_root
+            self.__depth = 0
+        else:
+            self.__depth = self.parent_node.depth + 1
+
+    def __len__(self):
+        return len(self.concept)
+
+    @property
+    def children(self):
+        return self.__children
+
+    def add_children(self, n):
+        self.__children.add(n)
+
+    @property
+    def refinement_count(self):
+        return self.__refinement_count
+
+    @refinement_count.setter
+    def refinement_count(self, n):
+        self.__refinement_count = n
+
+    @property
+    def depth(self):
+        return self.__depth
+
+    @depth.setter
+    def depth(self, n: int):
+        self.__depth = n
+
+    @property
+    def h_exp(self):
+        return self.__horizontal_expansion
+
+    @property
+    def heuristic(self) -> float:
+        return self.__heuristic_score
+
+    @heuristic.setter
+    def heuristic(self, val: float):
+        self.__heuristic_score = val
+
+    @property
+    def quality(self) -> float:
+        return self.__quality_score
+
+    @quality.setter
+    def quality(self, val: float):
+        self.__quality_score = val
+
+    def increment_h_exp(self, val=0):
+        self.__horizontal_expansion += val + 1
+
+
 class AbstractScorer(ABC):
     """
     An abstract class for quality and heuristic functions.
@@ -189,77 +260,6 @@ class BaseRefinement(metaclass=ABCMeta):
     @abstractmethod
     def refine_object_intersection_of(self, *args, **kwargs):
         pass
-
-
-class BaseNode(metaclass=ABCMeta):
-    """Base class for Concept."""
-    __slots__ = ['concept', '__heuristic_score', '__horizontal_expansion',
-                 '__quality_score', '___refinement_count',
-                 '__refinement_count', '__depth', '__children', 'length', 'parent_node']
-
-    @abstractmethod
-    def __init__(self, concept, parent_node, is_root=False):
-        self.__quality_score, self.__heuristic_score = None, None
-        self.__horizontal_expansion, self.__refinement_count = 0, 0
-        self.concept = concept
-        self.parent_node = parent_node
-        self.__children = set()
-        self.length = len(self.concept)
-
-        if self.parent_node is None:
-            assert len(concept) == 1 and is_root
-            self.__depth = 0
-        else:
-            self.__depth = self.parent_node.depth + 1
-
-    def __len__(self):
-        return len(self.concept)
-
-    @property
-    def children(self):
-        return self.__children
-
-    def add_children(self, n):
-        self.__children.add(n)
-
-    @property
-    def refinement_count(self):
-        return self.__refinement_count
-
-    @refinement_count.setter
-    def refinement_count(self, n):
-        self.__refinement_count = n
-
-    @property
-    def depth(self):
-        return self.__depth
-
-    @depth.setter
-    def depth(self, n: int):
-        self.__depth = n
-
-    @property
-    def h_exp(self):
-        return self.__horizontal_expansion
-
-    @property
-    def heuristic(self) -> float:
-        return self.__heuristic_score
-
-    @heuristic.setter
-    def heuristic(self, val: float):
-        self.__heuristic_score = val
-
-    @property
-    def quality(self) -> float:
-        return self.__quality_score
-
-    @quality.setter
-    def quality(self, val: float):
-        self.__quality_score = val
-
-    def increment_h_exp(self, val=0):
-        self.__horizontal_expansion += val + 1
 
 
 class AbstractTree(ABC):

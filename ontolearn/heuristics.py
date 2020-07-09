@@ -44,7 +44,7 @@ class DLFOILHeuristic(AbstractScorer):
     def score(self):
         pass
 
-    def apply(self, node):
+    def apply(self, node,parent_node=None):
         self.applied += 1
 
         instances = node.concept.instances

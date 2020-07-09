@@ -22,6 +22,9 @@ class Refinement(BaseRefinement):
         # (1) Create all direct sub concepts of C that are defined in TBOX.
         # (2) Create negations of all leaf concepts in  the concept hierarchy.
         # (3) Create ∀.r.T and ∃.r.T where r is the most general relation.
+        # (4) Intersect and union set of concepts that are generated in (1-3).
+        # Note that this is modified implementation of refinemenet operator proposed in
+        Concept Learning in Description Logics Using Refinement Operators
 
         :param concept: Concept
         :return: A set of refinements.
