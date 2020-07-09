@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from queue import PriorityQueue
 from .abstracts import BaseNode, AbstractTree, AbstractScorer
 
 
@@ -30,20 +31,13 @@ class CELOESearchTree(AbstractTree):
                 self.update_done(each)
 
     def add_node(self, *, parent_node=None, child_node=None):
-
-        if parent_node:
-            try:
-                assert not (parent_node.quality is None)
-            except:
-                print(parent_node)
-                exit(1)
         if self.redundancy_check(child_node):
             self.quality_func.apply(child_node)  # AccuracyOrTooWeak(n)
             self.expressionTests += 1
             if child_node.quality == 0:  # > too weak
                 return False
 
-            self.heuristic_func.apply(child_node,parent_node=parent_node)
+            self.heuristic_func.apply(child_node, parent_node=parent_node)
             self._nodes[child_node] = child_node
 
             if parent_node:
@@ -72,3 +66,58 @@ class SearchTree(AbstractTree):
             if child_node.quality == 1:  # goal found
                 return True
             return False
+
+
+class SearchTreePriorityQueue(AbstractTree):
+    """
+    TODO: NOT yet TESTED.
+    SearchTree structure should leverage Concept Learning algorithm and heuristic as good as possible.
+    """
+
+    def __init__(self, quality_func=None, heuristic_func=None):
+        super().__init__(quality_func, heuristic_func)
+        self._nodes = PriorityQueue()
+        self.items_in_queue = OrderedDict()  # as memory
+
+    def __len__(self):
+        return len(self.items_in_queue)
+
+    def add_root(self, node: Node):
+        assert isinstance(node, Node)
+        self.quality_func.apply(node)
+        self.heuristic_func.apply(node)
+        self._nodes.put((-node.heuristic, node.concept.str))  # gets the smallest one.
+        self.items_in_queue[node.concept.str] = node
+
+    def get_most_promising(self):
+        _, most_promising_str = self._nodes.get()
+        node = self.items_in_queue[most_promising_str]
+        self._nodes.put((-node.heuristic, node.concept.str))  # put it again
+        return node
+
+    def get_current_highest_quality(self):
+        return max(self.items_in_queue.values(), key=lambda n: n.quality)
+
+    def add_node(self, *, parent_node: Node, child_node=Node):
+        assert isinstance(child_node, Node)
+        assert isinstance(parent_node, Node)
+
+        if child_node.concept.str in self.items_in_queue:  # must correspond to redundancy check
+            # Compare the parents get look at its parent
+            # TODO not yet completed
+            return False
+
+        else:
+            self.quality_func.apply(child_node)
+            if child_node.quality == 0:  # implies too weak
+                return False
+            parent_node.add_children(child_node)
+            self.heuristic_func.apply(child_node, parent_node)
+            # Depending on the definition of heuristic function, one might recalculate the heuristic value of parent.
+            self._nodes.put((-child_node.heuristic, child_node.concept.str))  # gets the smallest one.
+            self.items_in_queue[child_node.concept.str] = child_node
+            if child_node.quality == 1:  # implies goal found
+                return True
+            else:
+                return False
+

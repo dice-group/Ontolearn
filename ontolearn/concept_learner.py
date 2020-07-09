@@ -66,7 +66,7 @@ class CELOE(BaseConceptLearner):
                     if self.terminate_on_goal:
                         self.search_tree.sort_search_tree_by_decreasing_order(key='quality')
                         return list(self.search_tree.get_top_n_nodes(1))[0]
-            if self.number_of_tested_concepts>= self.max_num_of_concepts_tested:
+            if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 break
         return list(self.search_tree.get_top_n_nodes(1))[0]
 
@@ -100,7 +100,7 @@ class CELOE(BaseConceptLearner):
 
 class OCEL(CELOE):
     def __init__(self, *, knowledge_base, refinement_operator, search_tree, quality_func, heuristic_func, iter_bound,
-                 verbose, terminate_on_goal=False, min_horizontal_expansion=0,max_num_of_concepts_tested=10_000,
+                 verbose, terminate_on_goal=False, min_horizontal_expansion=0, max_num_of_concepts_tested=10_000,
                  ignored_concepts={}):
         super().__init__(knowledge_base=knowledge_base, refinement_operator=refinement_operator,
                          search_tree=search_tree,
@@ -115,7 +115,7 @@ class OCEL(CELOE):
 
 class CustomConceptLearner(BaseConceptLearner):
     def __init__(self, *, knowledge_base, refinement_operator, search_tree, quality_func, heuristic_func, iter_bound,
-                 verbose, terminate_on_goal=False,max_num_of_concepts_tested=10_000,
+                 verbose, terminate_on_goal=False, max_num_of_concepts_tested=10_000,
                  ignored_concepts={}):
         super().__init__(knowledge_base=knowledge_base, refinement_operator=refinement_operator,
                          search_tree=search_tree,
@@ -127,7 +127,9 @@ class CustomConceptLearner(BaseConceptLearner):
 
     def initialize_root(self):
         root = self.rho.getNode(self.start_class, root=True)
-        self.search_tree.add_node(child_node=root)
+        self.search_tree.quality_func.apply(root)  # AccuracyOrTooWeak(n)
+        self.search_tree.heuristic_func.apply(root)  # AccuracyOrTooWeak(n)
+        self.search_tree[root] = root
 
     def next_node_to_expand(self, step):
         self.search_tree.sort_search_tree_by_decreasing_order(key='heuristic')
@@ -142,12 +144,6 @@ class CustomConceptLearner(BaseConceptLearner):
         return refinements
 
     def predict(self, pos, neg):
-        """
-        @param pos
-        @param neg:
-        @return:
-        """
-
         self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.thing.instances)
 
         self.initialize_root()
@@ -155,16 +151,15 @@ class CustomConceptLearner(BaseConceptLearner):
         for j in range(1, self.iter_bound):
 
             node_to_expand = self.next_node_to_expand(j)
-
             for ref in self.apply_rho(node_to_expand):
                 goal_found = self.search_tree.add_node(parent_node=node_to_expand, child_node=ref)
                 if goal_found:
-                    if self.verbose:  # TODO write a function for logging and output that integrates verbose.
+                    if self.verbose:
                         print('Goal found after {0} number of concepts tested.'.format(
                             self.search_tree.expressionTests))
                     if self.terminate_on_goal:
                         self.search_tree.sort_search_tree_by_decreasing_order(key='quality')
                         return list(self.search_tree.get_top_n_nodes(1))[0]
-            if self.number_of_tested_concepts>= self.max_num_of_concepts_tested:
+            if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 break
-        return list(self.search_tree.get_top_n_nodes(1))[0]
+        return list(self.search_tree.get_top_n_nodes(1))[0] # in eficicent.
