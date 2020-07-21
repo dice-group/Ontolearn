@@ -66,3 +66,13 @@ model.predict(pos=p, neg=n)
 model.show_best_predictions(top_n=10)
 ```
 
+## Poor people's CI
+
+For testing we use [docker](https://docs.docker.com/engine/install/). 
+
+We have a docker image [`CI/Dockerfile`](./CI/Dockerfile) which builds the package and runs all tests. 
+
+Build it with:
+```shell script
+docker build --no-cache -f CI/Dockerfile .
+```
