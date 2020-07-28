@@ -74,5 +74,10 @@ We have a docker image [`CI/Dockerfile`](./CI/Dockerfile) which builds the packa
 
 Build it with:
 ```shell script
-docker build --no-cache -f CI/Dockerfile .
+docker build -f CI/Dockerfile . --tag ontopy-test
+```
+
+Run it with:
+```shell script
+docker run ontopy-test
 ```
