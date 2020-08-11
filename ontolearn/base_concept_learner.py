@@ -154,28 +154,6 @@ class BaseConceptLearner(metaclass=ABCMeta):
         @return:
         """
         pass
-        """
-        self.search_tree = CELOESearchTree(quality_func=F1(pos=pos, neg=neg), heuristic_func=self.heuristic)
-
-        self.initialize_root()
-
-        for j in range(1, self.iter_bound):
-
-            node_to_expand = self.next_node_to_expand(j)
-            h_exp = node_to_expand.h_exp
-            for ref in self.apply_rho(node_to_expand):
-                if (len(ref) > h_exp) and ref.depth < self.maxdepth:
-                    is_added, goal_found = self.search_tree.add_node(ref)
-                    if is_added:
-                        node_to_expand.add_children(ref)
-                    if goal_found:
-                        print(
-                            'Goal found after {0} number of concepts tested.'.format(self.search_tree.expressionTests))
-                        if self.terminate_on_goal:
-                            return True
-            self.updateMinMaxHorizExp(node_to_expand)
-        """
-
     @property
     def number_of_tested_concepts(self):
         return self.quality_func.applied
@@ -234,8 +212,8 @@ class SampleConceptLearner:
 
         if self.min_he == he - 1:
             threshold_score = node.heuristic + 1 - node.quality
-            sorted_x = sorted(self.search_tree._nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
-            self.search_tree._nodes = dict(sorted_x)
+            sorted_x = sorted(self.search_tree.nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
+            self.search_tree.nodes = dict(sorted_x)
 
             for item in self.search_tree:
                 if node.concept.str != item.concept.str:
