@@ -71,6 +71,7 @@ class Precision(AbstractScorer):
             node.quality = 0
             return False
 
+
 class F1(AbstractScorer):
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
@@ -149,6 +150,9 @@ class Accuracy(AbstractScorer):
     2) E^+ and E^- are the positive and negative examples probided. E = E^+ OR E^- .
     """
 
+    def score(self, *args, **kwargs):
+        pass
+
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
         self.name = 'Accuracy'
@@ -182,6 +186,7 @@ class UAV(AbstractScorer):
         Learning From Examples with Unspecified Attribute Values.
 
     """
+
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
         self.name = 'UAV'
@@ -190,8 +195,10 @@ class UAV(AbstractScorer):
         self.pos = pos
         self.neg = neg
 
-        correct_c = len(self.pos.intersection(instances))/len(self.pos) # MATCH RATE cases of text examples with correct coverage
-        commission_error_rate = len(self.neg.intersection(instances))/ len(self.neg) # cases of text examples with correct coverage
+        correct_c = len(self.pos.intersection(instances)) / len(
+            self.pos)  # MATCH RATE cases of text examples with correct coverage
+        commission_error_rate = len(self.neg.intersection(instances)) / len(
+            self.neg)  # cases of text examples with correct coverage
 
         fp = len(self.neg.intersection(instances))
         fn = len(self.pos.difference(instances))

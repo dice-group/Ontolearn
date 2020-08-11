@@ -44,7 +44,7 @@ class DLFOILHeuristic(AbstractScorer):
     def score(self):
         pass
 
-    def apply(self, node,parent_node=None):
+    def apply(self, node, parent_node=None):
         self.applied += 1
 
         instances = node.concept.instances
@@ -88,7 +88,6 @@ class OCELHeuristic(AbstractScorer):
         self.expansionPenaltyFactor = 0.02  # called beta in the paper
         self.applied = 0
 
-
     def score(self):
         pass
 
@@ -102,7 +101,8 @@ class OCELHeuristic(AbstractScorer):
         uncovered_positives = len(self.pos.difference(node.concept.instances))
         covered_negatives = len(self.neg.intersection(node.concept.instances))
 
-        accuracy += 1 - (uncovered_positives + covered_negatives) / (len(self.pos)+len(self.neg))  # ACCURACY of Concept
+        accuracy += 1 - (uncovered_positives + covered_negatives) / (
+                    len(self.pos) + len(self.neg))  # ACCURACY of Concept
 
         accuracy_gain += accuracy
         if node.parent_node is not None:
@@ -110,7 +110,8 @@ class OCELHeuristic(AbstractScorer):
             covered_negatives_parent = len(self.neg.intersection(node.parent_node.concept.instances))
 
             parent_accuracy = 1 - (
-                    uncovered_positives_parent + covered_negatives_parent) / (len(self.pos)+len(self.neg))  # ACCURACY of Concept
+                    uncovered_positives_parent + covered_negatives_parent) / (
+                                          len(self.pos) + len(self.neg))  # ACCURACY of Concept
             accuracy_gain -= parent_accuracy
 
         heuristic_val += accuracy + self.gainBonusFactor * accuracy_gain - node.h_exp * self.expansionPenaltyFactor

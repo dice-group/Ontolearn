@@ -4,6 +4,8 @@ import os
 import pickle
 import time
 import copy
+from owlready2 import get_ontology
+import types
 
 # DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
 DEFAULT_FMT = 'Func:{name} took {elapsed:0.8f}s'
@@ -156,3 +158,4 @@ def create_logger(*, name, p):
     logger.addHandler(fh)
 
     return logger
+
