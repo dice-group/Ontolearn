@@ -113,9 +113,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
             with onto:
                 for i in predictions:
-                    owlready_obj = i.concept.owl
-
-                    bases = tuple(j for j in owlready_obj.mro()[:-1])
+                    bases = tuple(j for j in i.concept.owl.mro()[:-1])
 
                     new_concept = types.new_class(name=i.concept.str, bases=bases)
                     new_concept.comment.append("{0}:{1}".format(metric, getattr(i, attribute)))
@@ -154,39 +152,12 @@ class BaseConceptLearner(metaclass=ABCMeta):
         @return:
         """
         pass
-        """
-        self.search_tree = CELOESearchTree(quality_func=F1(pos=pos, neg=neg), heuristic_func=self.heuristic)
-
-        self.initialize_root()
-
-        for j in range(1, self.iter_bound):
-
-            node_to_expand = self.next_node_to_expand(j)
-            h_exp = node_to_expand.h_exp
-            for ref in self.apply_rho(node_to_expand):
-                if (len(ref) > h_exp) and ref.depth < self.maxdepth:
-                    is_added, goal_found = self.search_tree.add_node(ref)
-                    if is_added:
-                        node_to_expand.add_children(ref)
-                    if goal_found:
-                        print(
-                            'Goal found after {0} number of concepts tested.'.format(self.search_tree.expressionTests))
-                        if self.terminate_on_goal:
-                            return True
-            self.updateMinMaxHorizExp(node_to_expand)
-        """
-
     @property
     def number_of_tested_concepts(self):
         return self.quality_func.applied
 
-class SampleConceptLearner:
-    """
-    SampleConceptLearner that is inspired by The CELOE (Class Expression Learner for Ontology Engineering) algorithm.
-    Modifications:
-        (1) Implementation of Refinement operator.
-    """
-
+# TODO Remove SampleConceptLearner in the next refactoring.
+"""class SampleConceptLearner:
     def __init__(self, knowledge_base, max_child_length=5, terminate_on_goal=True, verbose=True, iter_bound=10):
         self.kb = knowledge_base
 
@@ -208,10 +179,6 @@ class SampleConceptLearner:
     def apply_rho(self, node: Node):
         assert isinstance(node, Node)
         self.search_tree.update_prepare(node)
-        # TODO: Very inefficient computation flow as we do not make use of generator.
-        # TODO: This chuck of code is obtained from DL-lerner as it is.
-        # TODO: Number of refinements must be updated for heuristic value of node
-
         refinements = [self.rho.getNode(i, parent_node=node)
                        for i in self.rho.refine(node, maxlength=node.h_exp + 1, current_domain=self._start_class)]
 
@@ -223,39 +190,26 @@ class SampleConceptLearner:
         return refinements
 
     def updateMinMaxHorizExp(self, node: Node):
-        """
-        @todo Very inefficient. This chunk of code is obtained from DL-learner as it is.
-        @param node:
-        @return:
-        """
         he = node.h_exp
         # update maximum value
         self.max_he = self.max_he if self.max_he > he else he
 
         if self.min_he == he - 1:
             threshold_score = node.heuristic + 1 - node.quality
-            sorted_x = sorted(self.search_tree._nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
-            self.search_tree._nodes = dict(sorted_x)
+            sorted_x = sorted(self.search_tree.nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
+            self.search_tree.nodes = dict(sorted_x)
 
             for item in self.search_tree:
                 if node.concept.str != item.concept.str:
                     if item.h_exp == self.min_he:
-                        """ we can stop instantly when another node with min. """
                         return
                     if self.search_tree[item].heuristic < threshold_score:
-                        """ we can stop traversing nodes when their score is too low. """
                         break
             # inc. minimum since we found no other node which also has min. horiz. exp.
             self.min_he += 1
             print("minimum horizontal expansion is now ", self.min_he)
 
     def predict(self, pos, neg):
-        """
-
-        @param pos:
-        @param neg:
-        @return:
-        """
         self.search_tree = CELOESearchTree(quality_func=F1(pos=pos, neg=neg), heuristic_func=self.heuristic)
 
         self.initialize_root()
@@ -274,4 +228,4 @@ class SampleConceptLearner:
                             'Goal found after {0} number of concepts tested.'.format(self.search_tree.expressionTests))
                         if self.terminate_on_goal:
                             return True
-            self.updateMinMaxHorizExp(node_to_expand)
+            self.updateMinMaxHorizExp(node_to_expand)"""

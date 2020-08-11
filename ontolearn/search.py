@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from queue import PriorityQueue
 from .abstracts import BaseNode, AbstractTree, AbstractScorer
+from typing import List
 
 
 class Node(BaseNode):
@@ -15,18 +16,19 @@ class Node(BaseNode):
 class CELOESearchTree(AbstractTree):
     def __init__(self, quality_func: AbstractScorer = None, heuristic_func=None):
         super().__init__(quality_func, heuristic_func)
+        self.expressionTests = 0
 
     def update_prepare(self, n):
-        self._nodes.pop(n)
+        self.nodes.pop(n)
         for each in n.children:
-            if each in self._nodes:
+            if each in self.nodes:
                 self.update_prepare(each)
 
     def update_done(self, n):
         if not n.children:
-            self._nodes[n] = n
+            self.nodes[n] = n
         else:
-            self._nodes[n] = n
+            self.nodes[n] = n
             for each in n.children:
                 self.update_done(each)
 
@@ -38,7 +40,7 @@ class CELOESearchTree(AbstractTree):
                 return False
 
             self.heuristic_func.apply(child_node, parent_node=parent_node)
-            self._nodes[child_node] = child_node
+            self.nodes[child_node] = child_node
 
             if parent_node:
                 parent_node.add_children(child_node)
@@ -60,7 +62,7 @@ class SearchTree(AbstractTree):
             if child_node.quality == 0:  # > too weak
                 return False
             self.heuristic_func.apply(child_node)
-            self._nodes[child_node] = child_node
+            self.nodes[child_node] = child_node
             if parent_node:
                 parent_node.add_children(child_node)
             if child_node.quality == 1:  # goal found
@@ -70,54 +72,122 @@ class SearchTree(AbstractTree):
 
 class SearchTreePriorityQueue(AbstractTree):
     """
-    TODO: NOT yet TESTED.
-    SearchTree structure should leverage Concept Learning algorithm and heuristic as good as possible.
-    """
 
+    Search tree based on priority queue.
+
+    Parameters
+    ----------
+    quality_func : An instance of a subclass of AbstractScorer that measures the quality of a node.
+    heuristic_func : An instance of a subclass of AbstractScorer that measures the promise of a node.
+
+    Attributes
+    ----------
+    quality_func : An instance of a subclass of AbstractScorer that measures the quality of a node.
+    heuristic_func : An instance of a subclass of AbstractScorer that measures the promise of a node.
+    items_in_queue: An instance of PriorityQueue Class.
+    .nodes: A dictionary where keys are string representation of nodes and values are corresponding node objects.
+    nodes: A property method for ._nodes.
+    expressionTests: not being used .
+    str_to_obj_instance_mapping: not being used.
+    """
     def __init__(self, quality_func=None, heuristic_func=None):
         super().__init__(quality_func, heuristic_func)
-        self._nodes = PriorityQueue()
-        self.items_in_queue = OrderedDict()  # as memory
-
-    def __len__(self):
-        return len(self.items_in_queue)
+        from queue import PriorityQueue
+        self.items_in_queue = PriorityQueue()
+        # self.nodes serves as a gate.
 
     def add_root(self, node: Node):
-        assert isinstance(node, Node)
+        """
+        Adds a root node into the search tree.
+
+        Parameters
+        ----------
+        node : A Node object
+        Returns
+        -------
+        None
+        """
         self.quality_func.apply(node)
         self.heuristic_func.apply(node)
-        self._nodes.put((-node.heuristic, node.concept.str))  # gets the smallest one.
-        self.items_in_queue[node.concept.str] = node
+        self.items_in_queue.put((-node.heuristic, node.concept.str))  # gets the smallest one.
+        self.nodes[node.concept.str] = node
 
-    def get_most_promising(self):
-        _, most_promising_str = self._nodes.get()
-        node = self.items_in_queue[most_promising_str]
-        self._nodes.put((-node.heuristic, node.concept.str))  # put it again
-        return node
+    def add_node(self, *, node: Node, refined_node=Node):
+        """
+        Adds a node into the search tree.
 
-    def get_current_highest_quality(self):
-        return max(self.items_in_queue.values(), key=lambda n: n.quality)
+        Parameters
+        ----------
+        node : A Node object
+        refined_node : A Node object
 
-    def add_node(self, *, parent_node: Node, child_node=Node):
-        assert isinstance(child_node, Node)
-        assert isinstance(parent_node, Node)
+        Returns
+        -------
+        True if node is a "goal node", i.e. quality_metric(node)=1.0
+        False if node is a "weak node", i.e. quality_metric(node)=0.0
+        None otherwise
 
-        if child_node.concept.str in self.items_in_queue:  # must correspond to redundancy check
-            # Compare the parents get look at its parent
-            # TODO not yet completed
-            return False
-
+        Notes
+        -----
+        node is a refinement of refined_node
+        """
+        if node.concept.str in self.nodes and node.parent_node != refined_node:
+            old_heuristic = node.heuristic
+            self.heuristic_func.apply(node, parent_node=refined_node)
+            new_heuristic = node.heuristic
+            if new_heuristic > old_heuristic:
+                node.parent_node.children.remove(node)
+                node.parent_node = refined_node
+                refined_node.add_children(node)
+                self.items_in_queue.put((-node.heuristic, node.concept.str))  # gets the smallest one.
+                self.nodes[node.concept.str] = node
         else:
-            self.quality_func.apply(child_node)
-            if child_node.quality == 0:  # implies too weak
+            self.quality_func.apply(node)
+            if node.quality == 0:
                 return False
-            parent_node.add_children(child_node)
-            self.heuristic_func.apply(child_node, parent_node)
-            # Depending on the definition of heuristic function, one might recalculate the heuristic value of parent.
-            self._nodes.put((-child_node.heuristic, child_node.concept.str))  # gets the smallest one.
-            self.items_in_queue[child_node.concept.str] = child_node
-            if child_node.quality == 1:  # implies goal found
+            self.heuristic_func.apply(node, parent_node=refined_node)
+            self.items_in_queue.put((-node.heuristic, node.concept.str))  # gets the smallest one.
+            self.nodes[node.concept.str] = node
+            refined_node.add_children(node)
+            if node.quality == 1:
                 return True
-            else:
-                return False
 
+    def get_most_promising(self) -> Node:
+        """
+        Gets the current most promising node from Queue.
+
+        Returns
+        -------
+        node: A node object
+        """
+        _, most_promising_str = self.items_in_queue.get()  # get
+        try:
+            node = self.nodes[most_promising_str]
+            self.items_in_queue.put((-node.heuristic, node.concept.str))  # put again into queue.
+            return node
+        except KeyError:
+            print(most_promising_str, 'is not found')
+            print('####')
+            for k, v in self.nodes.items():
+                print(k)
+            exit(1)
+
+    def get_top_n(self, n: int, key='quality') -> List[Node]:
+        """
+        Gets the top n nodes determined by key from the search tree.
+
+        Returns
+        -------
+        top_n_predictions: A list of node objects
+        """
+
+        if key == 'quality':
+            top_n_predictions = sorted(self.nodes.values(), key=lambda node: node.quality, reverse=True)[:n]
+        elif key == 'heuristic':
+            top_n_predictions = sorted(self.nodes.values(), key=lambda node: node.heuristic, reverse=True)[:n]
+        elif key == 'length':
+            top_n_predictions = sorted(self.nodes.values(), key=lambda node: len(node), reverse=True)[:n]
+        else:
+            print('Wrong Key:{0}\tProgram exist.'.format(key))
+            raise KeyError
+        return top_n_predictions

@@ -29,11 +29,11 @@ class KnowledgeBase:
         self.property_hierarchy = None
         self.parse()
 
-        self.str_to_instance_obj=dict(zip([get_full_iri(i) for i in self.thing.instances], self.thing.instances))
+        self.str_to_instance_obj = dict(zip([get_full_iri(i) for i in self.thing.instances], self.thing.instances))
 
         self.min_size_of_concept = min_size_of_concept
 
-        self.max_size_of_concept = len(self.thing.instances)*max_concept_size_ratio
+        self.max_size_of_concept = len(self.thing.instances) * max_concept_size_ratio
 
         self.__concept_generator = ConceptGenerator(concepts=self.concepts,
                                                     T=self.thing,
@@ -41,6 +41,7 @@ class KnowledgeBase:
                                                     onto=self.onto,
                                                     min_size_of_concept=self.min_size_of_concept,
                                                     max_size_of_concept=self.max_size_of_concept)
+
     @staticmethod
     def apply_type_enrichment_from_iterable(concepts: Iterable[Concept]):
         """
@@ -81,109 +82,8 @@ class KnowledgeBase:
         else:
             return True
 
-    """
     @staticmethod
-    def __parse_complex(complex_concepts: Iterable[owlready2.entity.ThingClass], concept_mapping: Dict):
-        assert isinstance(complex_concepts, Iterable)
-
-        # TODO get all negations
-        negations = (c for c in complex_concepts
-                     if isinstance(c.is_a[1], owlready2.class_construct.Not))
-
-        restictions = (c for c in complex_concepts
-                       if isinstance(c.is_a[1], owlready2.class_construct.Restriction))
-
-        conj_and_disjunctions = (c for c in complex_concepts
-                                 if isinstance(c.is_a[1], owlready2.class_construct.And) or isinstance(c.is_a[1],
-                                                                                                       owlready2.class_construct.Or))
-        import re
-
-        for c in complex_concepts:
-            print(c)
-
-        exit(1)
-        for c in negations:
-            owl_obj = c.is_a[1]
-            # print(c)
-            # print(c.name)
-            # print(owl_obj.Class)
-            # print(concept_mapping[get_full_iri(owl_obj.Class)])
-            temp_concept = Concept(c, kwargs={'form': 'ObjectComplementOf',
-                                              'root': concept_mapping[get_full_iri(owl_obj.Class)]})
-            concept_mapping[temp_concept.full_iri] = temp_concept
-
-        for c in complex_concepts:
-            if isinstance(c.is_a[1], owlready2.class_construct.Not):
-                continue
-
-            # components = re.findall(r"\((.*?)\)", c.name)
-            # assert len(components)==1
-            # print(components)
-            print(c.name)
-            # text_in_list=c.name.split()
-
-            #            print(text_in_list)
-            continue
-            if len(text_in_list) == 3:
-                ## then this means that we have ['(A', '⊓', 'B)'] or  ['(A', 'OR', 'B)']
-                # where A or B can only be a negation or atomic concept.
-                owl_ready_concept = c.is_a[1]
-                if isinstance(owl_ready_concept, owlready2.class_construct.And):
-                    pass
-                elif isinstance(owl_ready_concept, owlready2.class_construct.Or):
-                    pass
-                else:
-                    print(c)
-                    print(text_in_list)
-                    raise ValueError
-
-                pass
-
-        exit(1)
-        for c in complex_concepts:
-            assert len(c.is_a) == 2  # [owl.Thing, XXXX]
-            owl_ready_concept = c.is_a[1]
-
-            if isinstance(owl_ready_concept, owlready2.class_construct.Restriction):
-                print(owl_ready_concept)
-                rel = owl_ready_concept.property
-                value = owl_ready_concept.value
-                type_of_restriction = owl_ready_concept.type  # TODO: For the love of goo, type of restriction is mapped to integer ?!!
-
-                if type_of_restriction == 24:  # Exists
-                    pass  # Concept(c,kwargs=)
-                elif type_of_restriction == 25:  # FORall
-                    pass
-                else:
-                    raise ValueError
-
-
-
-            elif isinstance(owl_ready_concept, owlready2.class_construct.And):
-                pass
-            elif isinstance(owl_ready_concept, owlready2.class_construct.Or):
-                pass
-            elif isinstance(owl_ready_concept, owlready2.class_construct.Not):
-                pass
-            else:
-                raise ValueError
-
-        exit(1)
-        print(c)
-
-        owl_type = c.is_a[1]
-        print(owl_type)
-        print(type(owl_type))
-
-        print(owl_type.property)
-        print(owl_type.value)
-
-        exit(1)
-
-        return True
-    """
-
-    def __build_concepts_mapping(self, onto: Ontology) -> Tuple[Dict, Concept, Concept]:
+    def __build_concepts_mapping(onto: Ontology) -> Tuple[Dict, Concept, Concept]:
         """
         Construct a mapping from full_iri to corresponding Concept objects.
 
@@ -193,7 +93,7 @@ class KnowledgeBase:
             2) Concept:
         """
         concepts = dict()
-        individuals=set()
+        individuals = set()
         T = Concept(owlready2.Thing, kwargs={'form': 'Class'})
 
         bottom = Concept(owlready2.Nothing, kwargs={'form': 'Class'})
@@ -206,7 +106,7 @@ class KnowledgeBase:
             assert T.instances
         except:
             print('owlready2.Thing does not contains any individuals.\t')
-            T.instances=individuals
+            T.instances = individuals
 
         concepts[T.full_iri] = T
         concepts[bottom.full_iri] = bottom
@@ -332,12 +232,7 @@ class KnowledgeBase:
                len(self.__concept_generator.log_of_negations) + len(self.concepts)
 
     def get_all_concepts(self):
-        return self.concepts.values()  # set(chain(self.concepts.values()))
-        # self.__concept_generator.log_of_universal_restriction.values(),
-        # self.__concept_generator.log_of_negations.values(),
-        # self.__concept_generator.log_of_intersections.values(),
-        # self.__concept_generator.log_of_universal_restriction.values(),
-        # self.__concept_generator.log_of_existential_restriction.values()))
+        return self.concepts.values()
 
 
 class PropertyHierarchy:
