@@ -27,6 +27,7 @@ pip install ontolearn
 
 ## Usage
 
+### CELOE Heuristic
 
 ```python
 from ontolearn import *
@@ -44,10 +45,10 @@ model = CELOE(knowledge_base=kb,
               verbose=False)
 
 model.predict(pos=p, neg=n)
-model.show_best_predictions(top_n=10)
+model.show_best_predictions(top_n=10, key='quality')
 
 ```
-
+### DLFoil Heuristic
 
 ```python
 from ontolearn import *
@@ -63,10 +64,20 @@ model = CustomConceptLearner(knowledge_base=kb,
                              iter_bound=1_000,
                              verbose=True)
 model.predict(pos=p, neg=n)
-model.show_best_predictions(top_n=10)
+model.show_best_predictions(top_n=10, key='quality')
 ```
 
-## Poor people's CI
+## Testing
+
+### Simple Linting and Testing
+
+Run
+```shell script
+flake8
+pylint
+```
+
+### Integration Testing with Docker
 
 For testing we use [docker](https://docs.docker.com/engine/install/). 
 
