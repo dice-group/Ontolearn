@@ -1,13 +1,21 @@
 """ Test the default pipeline for structured machine learning"""
 
-from ontolearn import *
 import json
+
+from ontolearn import CELOE
+from ontolearn import CELOEHeuristic
+from ontolearn import CELOESearchTree
+from ontolearn import F1
+from ontolearn import KnowledgeBase
+from ontolearn import ModifiedCELOERefinement
 
 
 def test_celoeminimal():
     with open('examples/synthetic_problems.json') as json_file:
         settings = json.load(json_file)
-    kb = KnowledgeBase(path=settings['data_path'][3:]) # because '../data/family-benchmark_rich_background.owl'
+
+    # because '../data/family-benchmark_rich_background.owl'
+    kb = KnowledgeBase(path=settings['data_path'][3:])
 
     for str_target_concept, examples in settings['problems'].items():
         p = set(examples['positive_examples'])
@@ -31,7 +39,9 @@ def test_celoeminimal():
 def test_celoe():
     with open('examples/synthetic_problems.json') as json_file:
         settings = json.load(json_file)
-    kb = KnowledgeBase(path=settings['data_path'][3:]) # because '../data/family-benchmark_rich_background.owl'
+
+    # because '../data/family-benchmark_rich_background.owl'
+    kb = KnowledgeBase(path=settings['data_path'][3:])
 
     for str_target_concept, examples in settings['problems'].items():
         p = set(examples['positive_examples'])
@@ -40,7 +50,8 @@ def test_celoe():
         concepts_to_ignore = set()
         # lets inject more background info
         if str_target_concept in ['Granddaughter', 'Aunt', 'Sister']:
-            concepts_to_ignore.update({'Brother', 'Father', 'Uncle', 'Grandparent'})
+            concepts_to_ignore.update(
+                {'Brother', 'Father', 'Uncle', 'Grandparent'})
 
         model = CELOE(knowledge_base=kb,
                       refinement_operator=ModifiedCELOERefinement(kb=kb),
