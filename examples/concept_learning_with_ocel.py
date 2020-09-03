@@ -1,10 +1,12 @@
+import json
+
 from ontolearn import KnowledgeBase
 from ontolearn.concept_learner import OCEL
+from ontolearn.heuristics import OCELHeuristic
 from ontolearn.metrics import F1
-from ontolearn.heuristics import CELOEHeuristic, OCELHeuristic
-from ontolearn.search import CELOESearchTree
 from ontolearn.refinement_operators import ModifiedCELOERefinement
-import json
+from ontolearn.search import CELOESearchTree
+
 
 with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)
@@ -18,7 +20,8 @@ for str_target_concept, examples in settings['problems'].items():
     concepts_to_ignore = set()
     # lets inject more background info
     if str_target_concept in ['Granddaughter', 'Aunt', 'Sister']:
-        concepts_to_ignore.update({'Brother', 'Father', 'Uncle', 'Grandparent'})
+        concepts_to_ignore.update(
+            {'Brother', 'Father', 'Uncle', 'Grandparent'})
 
     model = OCEL(knowledge_base=kb,
                  refinement_operator=ModifiedCELOERefinement(kb=kb),
@@ -32,5 +35,5 @@ for str_target_concept, examples in settings['problems'].items():
                  ignored_concepts=concepts_to_ignore,
                  verbose=False)
 
-    best_pred=model.predict(pos=p, neg=n)
+    best_pred = model.predict(pos=p, neg=n)
     model.show_best_predictions(top_n=10, key='quality')
