@@ -70,6 +70,7 @@ class CELOE(BaseConceptLearner):
                         return list(self.search_tree.get_top_n_nodes(1))[0]
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 break
+        self.search_tree.sort_search_tree_by_decreasing_order(key='quality')
         return list(self.search_tree.get_top_n_nodes(1))[0]
 
     def updateMinMaxHorizExp(self, node: Node):
@@ -271,4 +272,5 @@ class CustomConceptLearner(BaseConceptLearner):
                         return list(self.search_tree.get_top_n_nodes(1))[0]
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 break
+        self.search_tree.sort_search_tree_by_decreasing_order(key='quality')
         return list(self.search_tree.get_top_n_nodes(1))[0]  # in eficicent.
