@@ -3,7 +3,7 @@ from functools import total_ordering
 from abc import ABCMeta, abstractmethod, ABC
 from owlready2 import ThingClass
 from .util import get_full_iri
-from typing import Set, AnyStr
+from typing import Set, AnyStr, Dict
 import random
 
 random.seed(0)
@@ -293,10 +293,8 @@ class AbstractTree(ABC):
             yield node
 
     def set_positive_negative_examples(self, p: Set[AnyStr], n: Set[AnyStr], all_instances: Set):
-        """
-
-        """
-
+        # TODO: this method should not be here, I suppose as setting positive negative and unlabelled examples
+        # are related to learning algorithm not search tree.
         assert isinstance(p, set) and isinstance(n, set) and isinstance(all_instances, set)
         assert len(p) > 0 and len(all_instances) >= len(p)
 

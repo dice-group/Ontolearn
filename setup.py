@@ -11,7 +11,8 @@ setup(
     version='0.0.2',
     packages=find_packages(exclude=('tests', 'test.*', 'examples.*')),
     install_requires=['scikit-learn>=0.22.1',
-                      'owlready2>=0.23'],
+                      'owlready2>=0.23',
+                      'torch'],
     author='Caglar Demir',
     author_email='caglardemir8@gmail.com',
     classifiers=[

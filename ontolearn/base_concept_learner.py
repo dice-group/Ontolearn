@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
-from owlready2 import get_ontology, rdfs, AnnotationPropertyClass
+from owlready2 import get_ontology,World, rdfs, AnnotationPropertyClass
 
 from .refinement_operators import ModifiedCELOERefinement
 from .search import Node
@@ -51,7 +51,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.quality_func = quality_func
         self.rho = refinement_operator
         self.search_tree = search_tree
-        self.max_num_of_concepts_tested=max_num_of_concepts_tested
+        self.max_num_of_concepts_tested = max_num_of_concepts_tested
 
         self.concepts_to_ignore = ignored_concepts
         self.start_class = root_concept
@@ -87,17 +87,25 @@ class BaseConceptLearner(metaclass=ABCMeta):
         assert self.heuristic
         assert self.rho
 
-    @abstractmethod
-    def initialize_root(self):
-        pass
+    def __get_metric_key(self, key: str):
+        if key == 'quality':
+            metric = self.quality_func.name
+            attribute = key
+        elif key == 'heuristic':
+            metric = self.heuristic.name
+            attribute = key
+        elif key == 'length':
+            metric = key
+            attribute = key
+        else:
+            raise ValueError
+        return metric, attribute
 
-    def show_best_predictions(self, key, top_n=10, serialize_name=None):
-        """
-        top_n:int
-        serialize_name= XXX.owl
-        """
+    def show_best_predictions(self, key='quality', top_n=10, serialize_name=None):
+        """ """
         predictions = self.search_tree.show_best_nodes(top_n, key=key)
         if serialize_name is not None:
+            #onto = World().get_ontology(serialize_name)
             onto = get_ontology(serialize_name)
             if key == 'quality':
                 metric = self.quality_func.name
@@ -120,7 +128,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
             onto.save(serialize_name)
 
-    def extend_ontology(self, top_n_concepts=10,key='quality'):
+    def extend_ontology(self, top_n_concepts=10, key='quality'):
         """
         1) Obtain top N nodes from search tree.
         2) Extend ABOX by including explicit type information for all instances belonging to concepts (1)
@@ -137,24 +145,25 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.kb.save(folder + kb_name + '.owl', rdf_format="rdfxml")
 
     @abstractmethod
-    def next_node_to_expand(self, step):
+    def initialize_root(self):
         pass
 
     @abstractmethod
-    def apply_rho(self, args):
+    def next_node_to_expand(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def predict(self, pos, neg):
-        """
-        @param pos:
-        @param neg:
-        @return:
-        """
+    def apply_rho(self, *args, **kwargs):
         pass
+
+    @abstractmethod
+    def predict(self, *args, **kwargs):
+        pass
+
     @property
     def number_of_tested_concepts(self):
         return self.quality_func.applied
+
 
 # TODO Remove SampleConceptLearner in the next refactoring.
 """class SampleConceptLearner:
