@@ -101,6 +101,7 @@ class BaseNode(metaclass=ABCMeta):
     @abstractmethod
     def __init__(self, concept, parent_node, is_root=False):
         self.__quality_score, self.__heuristic_score = None, None
+        self.__is_root = is_root
         self.__horizontal_expansion, self.__refinement_count = 0, 0
         self.concept = concept
         self.parent_node = parent_node
@@ -108,7 +109,7 @@ class BaseNode(metaclass=ABCMeta):
         self.length = len(self.concept)
 
         if self.parent_node is None:
-            assert len(concept) == 1 and is_root
+            assert len(concept) == 1 and self.__is_root
             self.__depth = 0
         else:
             self.__depth = self.parent_node.depth + 1
@@ -162,6 +163,9 @@ class BaseNode(metaclass=ABCMeta):
     def increment_h_exp(self, val=0):
         self.__horizontal_expansion += val + 1
 
+    @property
+    def is_root(self):
+        return self.__is_root
 
 class AbstractScorer(ABC):
     """
