@@ -34,8 +34,6 @@ for str_target_concept, examples in settings['problems'].items():
                   verbose=False)
 
     best_pred=model.predict(pos=p, neg=n)
-    print(best_pred)
-    exit(1)
     model.show_best_predictions(top_n=10, key='quality',  # heuristic, length
                                 serialize_name=str_target_concept + '_quality_structured_prediction.owl')
     model.extend_ontology(top_n_concepts=20, key='quality')  # TBOX extended by top n concepts.
