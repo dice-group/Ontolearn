@@ -12,7 +12,7 @@ random.seed(0)
 @total_ordering
 class BaseConcept(metaclass=ABCMeta):
     """Base class for Concept."""
-    __slots__ = ['owl', 'full_iri', 'str', 'is_atomic', '__instances', 'length', 'form', 'role', 'filler', 'concept_a',
+    __slots__ = ['owl', 'full_iri', 'str', 'is_atomic', '__instances', '__idx_instances','length', 'form', 'role', 'filler', 'concept_a',
                  'concept_b']
 
     @abstractmethod
@@ -30,6 +30,7 @@ class BaseConcept(metaclass=ABCMeta):
         self.length = self.__calculate_length()
 
         self.__instances = None
+        self.__idx_instances = None
 
     @property
     def instances(self) -> Set:
@@ -44,6 +45,16 @@ class BaseConcept(metaclass=ABCMeta):
     def instances(self, x: Set):
         """ Setter of instances."""
         self.__instances = x
+
+    @property
+    def idx_instances(self):
+        """ Getter of integer indexes of instances."""
+        return self.__idx_instances
+
+    @idx_instances.setter
+    def idx_instances(self, x):
+        """ Setter of idx_instances."""
+        self.__idx_instances = x
 
     def __str__(self):
         return '{self.__repr__}\t{self.full_iri}'.format(self=self)
@@ -166,6 +177,7 @@ class BaseNode(metaclass=ABCMeta):
     @property
     def is_root(self):
         return self.__is_root
+
 
 class AbstractScorer(ABC):
     """
