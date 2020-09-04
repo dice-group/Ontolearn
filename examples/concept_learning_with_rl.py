@@ -1,5 +1,6 @@
 from ontolearn import KnowledgeBase, LengthBasedRefinement, SearchTreePriorityQueue, AbstractScorer
 from ontolearn.rl import DQLTrainer
+from ontolearn.metrics import F1
 import json
 import numpy as np
 
@@ -10,7 +11,7 @@ with open('synthetic_problems.json') as json_file:
 kb = KnowledgeBase(path=settings['data_path'])
 
 
-class F1Reward(AbstractScorer):
+class SampleReward(AbstractScorer):
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
         self.name = 'F1'
@@ -82,16 +83,14 @@ class F1Reward(AbstractScorer):
         discrepancy = next_state.quality - current_state.quality
         if discrepancy > 0.0:
             return discrepancy*self.alpha
-        return discrepancy
+        return 0
 
 
-# 1.First Train RL Agent
 trainer = DQLTrainer(
     knowledge_base=kb,
     refinement_operator=LengthBasedRefinement(kb=kb),
-    reward_func=F1Reward(),
+    quality_func=F1(),
+    reward_func=SampleReward(),
     search_tree=SearchTreePriorityQueue(),
     train_data=settings['problems'])
 trainer.start()
-
-# 2. Test RL agent with synthetic problems

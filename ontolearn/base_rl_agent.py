@@ -10,6 +10,7 @@ class BaseRLTrainer(metaclass=ABCMeta):
                  kb,
                  rho,
                  search_tree,
+                 quality_func,
                  reward_func,
                  train_data, iter_bound=1000):
         assert isinstance(kb, KnowledgeBase)
@@ -22,6 +23,7 @@ class BaseRLTrainer(metaclass=ABCMeta):
         self.reward_func = reward_func
         self.rho = rho
         self.search_tree = search_tree
+        self.search_tree.quality_func = quality_func
         self.train_data = train_data
 
         self.start_class = self.kb.thing
