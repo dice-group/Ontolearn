@@ -1,6 +1,6 @@
 from collections import defaultdict
 from itertools import chain
-from owlready2 import Ontology, get_ontology,World
+from owlready2 import Ontology, get_ontology, World
 import owlready2
 from .concept_generator import ConceptGenerator
 from .concept import Concept
@@ -16,9 +16,6 @@ class KnowledgeBase:
 
     def __init__(self, path, min_size_of_concept=1, max_concept_size_ratio=1.0):
         self.path = path
-        #world=World()
-        #self.onto = world.get_ontology(self.path).load(reload=True)
-        #self.onto = World().get_ontology(self.path).load(reload=True)
         self.onto = get_ontology(self.path).load(reload=True)
         self.name = self.onto.name
         self.concepts = dict()
@@ -33,7 +30,7 @@ class KnowledgeBase:
         self.parse()
 
         self.str_to_instance_obj = dict(zip([get_full_iri(i) for i in self.thing.instances], self.thing.instances))
-        self.idx_of_instances=dict(zip(self.thing.instances,range(len(self.str_to_instance_obj))))
+        self.idx_of_instances = dict(zip(self.thing.instances, range(len(self.str_to_instance_obj))))
 
         self.min_size_of_concept = min_size_of_concept
 
@@ -131,7 +128,8 @@ class KnowledgeBase:
         self.concepts, self.thing, self.nothing = self.__build_concepts_mapping(onto)
 
         self.down_top_concept_hierarchy[self.thing] = set()
-        self.top_down_concept_hierarchy[self.thing] = {_ for _ in self.concepts.values()}
+        # T should not subsume itself.
+        self.top_down_concept_hierarchy[self.thing] = {_ for _ in self.concepts.values() if _ is not self.thing}
 
         for str_, concept_A in self.concepts.items():  # second loop over concepts in the execution,
 
