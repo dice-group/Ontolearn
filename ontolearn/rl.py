@@ -4,10 +4,15 @@ from .search import Node
 import random
 import torch
 from torch import nn
+import torch.optim as optim
 import numpy as np
 import functools
 from torch.functional import F
 from typing import List
+from collections import namedtuple
+
+Transition = namedtuple('Transition',
+                        ('state', 'next_state', 'reward'))
 
 
 class DQLTrainer(BaseRLTrainer):
@@ -24,6 +29,10 @@ class DQLTrainer(BaseRLTrainer):
                          train_data=train_data)
 
         self.model = Drill(num_of_indv=len(self.kb.thing.instances))
+        self.model.eval()
+
+        self.optimizer = optim.RMSprop(self.model.parameters())
+        self.memory = ReplayMemory(10000)
 
         self.str_to_obj_instance_mapping = dict()
         self.iter_bound = 1000
@@ -120,27 +129,39 @@ class DQLTrainer(BaseRLTrainer):
         # to break the correlation.
         random.shuffle(self.experiences)
 
-        self.mo
+        self.model.train()
         for exp in self.experiences:
-            s,s_prime,pos,neg,q_val=exp
+            s, s_prime, pos, neg, q_val = exp
+            q_val = torch.Tensor([q_val])
 
-            predicted_q_val= self.model.forward(s, s_prime, pos, neg)
-
-            loss=self.model.loss(predicted_q_val,q_val)
+            predicted_q_val = self.model.forward(s, s_prime, pos, neg).squeeze()
+            loss = self.model.loss(predicted_q_val, q_val)
+            # Optimize the model
+            self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
 
+    def test(self):
 
-        exit(1)
+        print(self.kb)
+        print(self.rho)
+        print(self.search_tree)
 
-        pass
+        print(root)
 
-    def train(self):
-        """
-        Agent trains on quasi ordered concept environment until one of the stopping criterion is fulfilled.
-        """
-
+        self.search_tree.set_positive_negative_examples(p=self.pos, n=self.neg, all_instances=self.kb.thing.instances)
+        # init root
         root = self.rho.getNode(self.start_class, root=True)
+        self.search_tree.quality_func.apply(root)  # AccuracyOrTooWeak(n)
+        self.search_tree.heuristic_func.apply(root)  # AccuracyOrTooWeak(n)
+        self.search_tree[root] = root
+
+        # 1. Enter search loop
+        # 2. Get next most promissing node
+        # 3. Refine it
+        # 4. Add them into search tree if critertion are fulfilled.
+        # 5. Go to 2.
+
         # training loop.
         for th in range(1, self.iter_bound):
             path_of_concepts, rewards = self.sequence_of_actions(root)
@@ -152,6 +173,28 @@ class DQLTrainer(BaseRLTrainer):
             if th == 10:
                 self.learn_from_replay_memory()
 
+        pass
+
+    def train(self):
+        """
+        Agent trains on quasi ordered concept environment until one of the stopping criterion is fulfilled.
+        """
+        print('Training starts.')
+        root = self.rho.getNode(self.start_class, root=True)
+
+        # training loop.
+        for th in range(1, self.iter_bound):
+            path_of_concepts, rewards = self.sequence_of_actions(root)
+            self.epsilon -= 0.01
+            if self.epsilon < 0:
+                print('Epsilon', self.epsilon)
+                break
+            # Collect experiences
+            self.experiences.extend(self.form_experiences(path_of_concepts, rewards))
+            if th == 10:
+                print('Learning from replay memory starts.')
+                self.learn_from_replay_memory()
+                print('Learning from replay memory ends.')
 
     def start(self):
         for str_target_concept, examples in self.train_data.items():
@@ -175,6 +218,8 @@ class DQLTrainer(BaseRLTrainer):
             self.reward_func.set_negative_examples(self.neg)
 
             self.train()  # Let model to train to solve given problem
+
+            self.test()  # Let test model to train to solve given problem
 
 
 class Drill(nn.Module):
@@ -226,3 +271,24 @@ class Drill(nn.Module):
         x = self.fc3(self.fc2(self.fc1(x)))
 
         return F.relu(x)
+
+
+class ReplayMemory(object):
+
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.memory = []
+        self.position = 0
+
+    def push(self, *args):
+        """Saves a transition."""
+        if len(self.memory) < self.capacity:
+            self.memory.append(None)
+        self.memory[self.position] = Transition(*args)
+        self.position = (self.position + 1) % self.capacity
+
+    def sample(self, batch_size):
+        return random.sample(self.memory, batch_size)
+
+    def __len__(self):
+        return len(self.memory)
