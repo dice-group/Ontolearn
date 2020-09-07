@@ -34,6 +34,7 @@ class ConceptGenerator:
 
         self.min_size_of_concept = min_size_of_concept
         self.max_size_of_concept = max_size_of_concept
+        self.namespace_base_iri='https://dice-research.org/'
 
         self.concepts = concepts
         self.T = T
@@ -94,11 +95,9 @@ class ConceptGenerator:
 
             with self.onto:
                 not_concept = types.new_class(name="¬{0}".format(concept.owl.name), bases=(self.T.owl,))
-                # not_concept.namespace = concept.owl.namespace
-
+                not_concept.namespace.base_iri = self.namespace_base_iri#concept.owl.namespace.base_iri
                 AllDisjoint([not_concept, concept.owl])
                 not_concept.is_a.append(Not(concept.owl))
-                # self.type_enrichments(self.T.instances - concept.instances, not_concept)
 
                 c = Concept(concept=not_concept, kwargs={'form': 'ObjectComplementOf', 'root': concept})
                 c.instances = possible_instances_  # self.T.instances - concept.instances
@@ -141,7 +140,7 @@ class ConceptGenerator:
 
         with self.onto:
             new_concept = types.new_class(name="(∃{0}.{1})".format(relation.name, concept.str), bases=(base,))
-            # new_concept.namespace = relation.namespace
+            new_concept.namespace.base_iri = self.namespace_base_iri
             new_concept.is_a.append(relation.some(concept.owl))
             # new_concept.equivalent_to.append(relation.some(concept.owl))
             # relation.range.append(concept.owl) # TODO is it really important ?
@@ -189,7 +188,8 @@ class ConceptGenerator:
 
         with self.onto:
             new_concept = types.new_class(name="(∀{0}.{1})".format(relation.name, concept.str), bases=(base,))
-            # new_concept.namespace = relation.namespace
+            new_concept.namespace.base_iri = self.namespace_base_iri
+
             new_concept.is_a.append(relation.only(base))
             # new_concept.equivalent_to.append(relation.only(base))
             # relation.range.append(concept.owl) # TODO is it really important ?
@@ -234,12 +234,9 @@ class ConceptGenerator:
 
         with self.onto:
             new_concept = types.new_class(name="({0} ⊔ {1})".format(A.str, B.str), bases=(base,))
-            # new_concept.namespace = A.owl.namespace
+            new_concept.namespace.base_iri = self.namespace_base_iri
+
             new_concept.is_a.append(A.owl | B.owl)
-
-            # self.type_enrichments(A.owl.instances() | B.owl.instances(), new_concept)
-            # self.executor.submit(self.type_enrichments, (A.instances | B.instances, new_concept))
-
             c = Concept(concept=new_concept, kwargs={'form': 'ObjectUnionOf', 'ConceptA': A, 'ConceptB': B})
 
             for i in possible_instances_:
@@ -272,12 +269,9 @@ class ConceptGenerator:
 
         with self.onto:
             new_concept = types.new_class(name="({0}  ⊓  {1})".format(A.str, B.str), bases=(base,))
+            new_concept.namespace.base_iri = self.namespace_base_iri
 
-            # new_concept.namespace = A.owl.namespace
             new_concept.is_a.append(A.owl & B.owl)
-
-            # self.type_enrichments(A.instances & B.instances, new_concept)
-            # self.executor.submit(self.type_enrichments, (A.instances & B.instances, new_concept))
 
             c = Concept(concept=new_concept, kwargs={'form': 'ObjectIntersectionOf', 'ConceptA': A, 'ConceptB': B})
 

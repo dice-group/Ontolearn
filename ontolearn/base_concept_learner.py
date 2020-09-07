@@ -1,6 +1,9 @@
 from abc import ABCMeta, abstractmethod
 
-from owlready2 import get_ontology,World, rdfs, AnnotationPropertyClass
+from rdflib import Graph, Literal, RDF, URIRef
+from rdflib.namespace import OWL, RDFS
+from collections import deque
+from owlready2 import get_ontology, World, rdfs, AnnotationPropertyClass
 
 from .refinement_operators import ModifiedCELOERefinement
 from .search import Node
@@ -105,8 +108,6 @@ class BaseConceptLearner(metaclass=ABCMeta):
         """ """
         predictions = self.search_tree.show_best_nodes(top_n, key=key)
         if serialize_name is not None:
-            #onto = World().get_ontology(serialize_name)
-            onto = get_ontology(serialize_name)
             if key == 'quality':
                 metric = self.quality_func.name
                 attribute = key
@@ -119,14 +120,33 @@ class BaseConceptLearner(metaclass=ABCMeta):
             else:
                 raise ValueError
 
-            with onto:
-                for i in predictions:
-                    bases = tuple(j for j in i.concept.owl.mro()[:-1])
+            # create a Graph
+            g = Graph()
+            for pred_node in predictions:
+                concept_hiearhy = deque()
+                concept_hiearhy.appendleft(pred_node.parent_node)
+                # get a path of hierhary.
+                while concept_hiearhy[-1].parent_node is not None:
+                    concept_hiearhy.append(concept_hiearhy[-1].parent_node)
 
-                    new_concept = types.new_class(name=i.concept.str, bases=bases)
-                    new_concept.comment.append("{0}:{1}".format(metric, getattr(i, attribute)))
+                concept_hiearhy.appendleft(pred_node)
 
-            onto.save(serialize_name)
+                p_quality = URIRef('https://dice-research.org/' + attribute + ':' + metric)
+
+                integer_mapping = {p: str(th) for th, p in enumerate(concept_hiearhy)}
+                for th, i in enumerate(concept_hiearhy):
+                    # default encoding to utf-8
+                    concept = URIRef('https://dice-research.org/' + integer_mapping[i])
+                    g.add((concept, RDF.type, RDFS.Class))  # s type Class.
+                    g.add((concept, RDFS.label, Literal(i.concept.str)))
+                    val = round(getattr(i, attribute), 3)
+                    g.add((concept, p_quality, Literal(val)))
+
+                    if i.parent_node:
+                        g.add((concept, RDFS.subClassOf,
+                               URIRef('https://dice-research.org/' + integer_mapping[i.parent_node])))
+
+                g.serialize(destination=serialize_name, format='nt')
 
     def extend_ontology(self, top_n_concepts=10, key='quality'):
         """
