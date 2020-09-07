@@ -1,8 +1,4 @@
 from abc import ABCMeta, abstractmethod
-
-from rdflib import Graph, Literal, RDF, URIRef
-from rdflib.namespace import OWL, RDFS
-from collections import deque
 from owlready2 import get_ontology, World, rdfs, AnnotationPropertyClass
 
 from .refinement_operators import ModifiedCELOERefinement
@@ -12,6 +8,7 @@ from .metrics import F1
 from .heuristics import CELOEHeuristic
 import types
 
+from .util import serialize_concepts
 
 class BaseConceptLearner(metaclass=ABCMeta):
     """
@@ -120,33 +117,10 @@ class BaseConceptLearner(metaclass=ABCMeta):
             else:
                 raise ValueError
 
-            # create a Graph
-            g = Graph()
-            for pred_node in predictions:
-                concept_hiearhy = deque()
-                concept_hiearhy.appendleft(pred_node.parent_node)
-                # get a path of hierhary.
-                while concept_hiearhy[-1].parent_node is not None:
-                    concept_hiearhy.append(concept_hiearhy[-1].parent_node)
-
-                concept_hiearhy.appendleft(pred_node)
-
-                p_quality = URIRef('https://dice-research.org/' + attribute + ':' + metric)
-
-                integer_mapping = {p: str(th) for th, p in enumerate(concept_hiearhy)}
-                for th, i in enumerate(concept_hiearhy):
-                    # default encoding to utf-8
-                    concept = URIRef('https://dice-research.org/' + integer_mapping[i])
-                    g.add((concept, RDF.type, RDFS.Class))  # s type Class.
-                    g.add((concept, RDFS.label, Literal(i.concept.str)))
-                    val = round(getattr(i, attribute), 3)
-                    g.add((concept, p_quality, Literal(val)))
-
-                    if i.parent_node:
-                        g.add((concept, RDFS.subClassOf,
-                               URIRef('https://dice-research.org/' + integer_mapping[i.parent_node])))
-
-                g.serialize(destination=serialize_name, format='nt')
+            serialize_concepts(concepts=predictions,
+                               serialize_name=serialize_name,
+                               metric=metric,
+                               attribute=attribute,format='nt')
 
     def extend_ontology(self, top_n_concepts=10, key='quality'):
         """

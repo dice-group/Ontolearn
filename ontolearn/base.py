@@ -16,7 +16,7 @@ class KnowledgeBase:
 
     def __init__(self, path, min_size_of_concept=1, max_concept_size_ratio=1.0):
         self.path = path
-        self.onto = get_ontology(self.path).load(reload=True)
+        self.onto = World().get_ontology(self.path).load(reload=True)
         self.name = self.onto.name
         self.concepts = dict()
         self.thing = None
