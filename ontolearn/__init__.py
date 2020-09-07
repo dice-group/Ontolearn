@@ -22,3 +22,4 @@ from .rl import *
 from .search import *
 from .metrics import *
 from .heuristics import *
+from .learning_problem_generator import *
