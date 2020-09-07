@@ -14,7 +14,11 @@ class LearningProblemGenerator:
         self.min_length = min_length
 
     def apply_rho(self, node):
-        refinements= [self.rho.getNode(i, parent_node=node) for i in self.rho.refine(node, maxlength=len(node) + self.min_length)]
+        refinements = [self.rho.getNode(i, parent_node=node) for i in
+                       self.rho.refine(node, maxlength=
+                       len(node) + self.min_length
+                       if len(node) <= self.min_length
+                       else len(node))]
         return random.sample(refinements, 1)[0]
 
     def apply(self):
@@ -23,9 +27,9 @@ class LearningProblemGenerator:
         path = [current_state]
         for _ in range(self.depth):
             try:
-                current_state = self.apply_rho(current_state)
+                current_state = self.apply_rho(path[-1])
             except ValueError:
-                print('Dead End. No refinement found under the constraints provided by refinement operator.')
+                print('Dead End. Applying refinement operator on {0} yield empty no refinements under the provided constraints.'.format(current_state))
                 return path
             path.append(current_state)
         return path

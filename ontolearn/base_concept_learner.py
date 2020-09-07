@@ -120,7 +120,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
             serialize_concepts(concepts=predictions,
                                serialize_name=serialize_name,
                                metric=metric,
-                               attribute=attribute,format='nt')
+                               attribute=attribute, rdf_format='nt')
 
     def extend_ontology(self, top_n_concepts=10, key='quality'):
         """
@@ -157,78 +157,3 @@ class BaseConceptLearner(metaclass=ABCMeta):
     @property
     def number_of_tested_concepts(self):
         return self.quality_func.applied
-
-
-# TODO Remove SampleConceptLearner in the next refactoring.
-"""class SampleConceptLearner:
-    def __init__(self, knowledge_base, max_child_length=5, terminate_on_goal=True, verbose=True, iter_bound=10):
-        self.kb = knowledge_base
-
-        self.concepts_to_nodes = dict()
-        self.rho = ModifiedCELOERefinement(self.kb, max_child_length=max_child_length)
-        self.rho.set_concepts_node_mapping(self.concepts_to_nodes)
-
-        self.verbose = verbose
-        # Default values
-        self.iter_bound = iter_bound
-        self._start_class = self.kb.thing
-        self.search_tree = None
-        self.maxdepth = 10
-        self.max_he, self.min_he = 0, 0
-        self.terminate_on_goal = terminate_on_goal
-
-        self.heuristic = CELOEHeuristic()
-
-    def apply_rho(self, node: Node):
-        assert isinstance(node, Node)
-        self.search_tree.update_prepare(node)
-        refinements = [self.rho.getNode(i, parent_node=node)
-                       for i in self.rho.refine(node, maxlength=node.h_exp + 1, current_domain=self._start_class)]
-
-        node.increment_h_exp()
-        node.refinement_count = len(refinements)  # This should be postpone so that we make make use of generator
-        self.heuristic.apply(node)
-
-        self.search_tree.update_done(node)
-        return refinements
-
-    def updateMinMaxHorizExp(self, node: Node):
-        he = node.h_exp
-        # update maximum value
-        self.max_he = self.max_he if self.max_he > he else he
-
-        if self.min_he == he - 1:
-            threshold_score = node.heuristic + 1 - node.quality
-            sorted_x = sorted(self.search_tree.nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
-            self.search_tree.nodes = dict(sorted_x)
-
-            for item in self.search_tree:
-                if node.concept.str != item.concept.str:
-                    if item.h_exp == self.min_he:
-                        return
-                    if self.search_tree[item].heuristic < threshold_score:
-                        break
-            # inc. minimum since we found no other node which also has min. horiz. exp.
-            self.min_he += 1
-            print("minimum horizontal expansion is now ", self.min_he)
-
-    def predict(self, pos, neg):
-        self.search_tree = CELOESearchTree(quality_func=F1(pos=pos, neg=neg), heuristic_func=self.heuristic)
-
-        self.initialize_root()
-
-        for j in range(1, self.iter_bound):
-
-            node_to_expand = self.next_node_to_expand(j)
-            h_exp = node_to_expand.h_exp
-            for ref in self.apply_rho(node_to_expand):
-                if (len(ref) > h_exp) and ref.depth < self.maxdepth:
-                    is_added, goal_found = self.search_tree.add_node(ref)
-                    if is_added:
-                        node_to_expand.add_children(ref)
-                    if goal_found:
-                        print(
-                            'Goal found after {0} number of concepts tested.'.format(self.search_tree.expressionTests))
-                        if self.terminate_on_goal:
-                            return True
-            self.updateMinMaxHorizExp(node_to_expand)"""

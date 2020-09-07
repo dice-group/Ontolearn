@@ -168,6 +168,8 @@ def create_logger(*, name, p):
 def retrieve_concept_hierarchy(c) -> Iterable:
     """
     c: a node object
+
+    hierarchy: an iterable containing a path of concepts from c to T.
     """
     hierarchy = deque()
     hierarchy.appendleft(c.parent_node)
@@ -177,29 +179,32 @@ def retrieve_concept_hierarchy(c) -> Iterable:
     return hierarchy
 
 
-def serialize_concepts(concepts: Iterable, serialize_name: str, metric: str, attribute:str,format:str):
+def serialize_concepts(concepts: Iterable, serialize_name: str, metric: str, attribute: str, rdf_format: str):
     """
     Given a set of node objects containing concepts.
     1) For each concept obtain its hierarchy based on subsumption.
     2) Serialize each object with its hierarchy including quality.
     """
-    # create a Graph
     g = Graph()
     for c in concepts:
-        hierarchy = retrieve_concept_hierarchy(c)
+        hierarchy = retrieve_concept_hierarchy(c) # retrieve concept subsuming c.
         p_quality = URIRef('https://dice-research.org/' + attribute + ':' + metric)
 
         integer_mapping = {p: str(th) for th, p in enumerate(hierarchy)}
         for th, i in enumerate(hierarchy):
-            # default encoding to utf-8
-            concept = URIRef('https://dice-research.org/' + integer_mapping[i])
-            g.add((concept, RDF.type, RDFS.Class))  # s type Class.
-            g.add((concept, RDFS.label, Literal(i.concept.str)))
-            val = round(getattr(i, attribute), 3)
-            g.add((concept, p_quality, Literal(val)))
+
+            subject = URIRef('https://dice-research.org/' + integer_mapping[i])
+            g.add((subject, RDF.type, RDFS.Class))  # https://dice-research.org/1 type Class.
+            g.add((subject, RDFS.label,
+                   Literal(i.concept.str)))  # https://dice-research.org/1 type (Mother ⊔ (Son ⊔ ¬Daughter)).
+            try: # if a concept has not been tested.
+                val = round(getattr(i, attribute), 3)
+            except TypeError:  # if attribute is None.
+                val = 0.0
+            g.add((subject, p_quality, Literal(val)))
 
             if i.parent_node:
-                g.add((concept, RDFS.subClassOf,
+                g.add((subject, RDFS.subClassOf,
                        URIRef('https://dice-research.org/' + integer_mapping[i.parent_node])))
 
-        g.serialize(destination=serialize_name, format=format)
+        g.serialize(destination=serialize_name, format=rdf_format)
