@@ -6,6 +6,11 @@ import time
 import copy
 from owlready2 import get_ontology
 import types
+from typing import Iterable
+
+from rdflib import Graph, Literal, RDF, URIRef
+from rdflib.namespace import OWL, RDFS
+from collections import deque
 
 # DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
 DEFAULT_FMT = 'Func:{name} took {elapsed:0.8f}s'
@@ -159,3 +164,42 @@ def create_logger(*, name, p):
 
     return logger
 
+
+def retrieve_concept_hierarchy(c) -> Iterable:
+    """
+    c: a node object
+    """
+    hierarchy = deque()
+    hierarchy.appendleft(c.parent_node)
+    while hierarchy[-1].parent_node is not None:
+        hierarchy.append(hierarchy[-1].parent_node)
+    hierarchy.appendleft(c)
+    return hierarchy
+
+
+def serialize_concepts(concepts: Iterable, serialize_name: str, metric: str, attribute:str,format:str):
+    """
+    Given a set of node objects containing concepts.
+    1) For each concept obtain its hierarchy based on subsumption.
+    2) Serialize each object with its hierarchy including quality.
+    """
+    # create a Graph
+    g = Graph()
+    for c in concepts:
+        hierarchy = retrieve_concept_hierarchy(c)
+        p_quality = URIRef('https://dice-research.org/' + attribute + ':' + metric)
+
+        integer_mapping = {p: str(th) for th, p in enumerate(hierarchy)}
+        for th, i in enumerate(hierarchy):
+            # default encoding to utf-8
+            concept = URIRef('https://dice-research.org/' + integer_mapping[i])
+            g.add((concept, RDF.type, RDFS.Class))  # s type Class.
+            g.add((concept, RDFS.label, Literal(i.concept.str)))
+            val = round(getattr(i, attribute), 3)
+            g.add((concept, p_quality, Literal(val)))
+
+            if i.parent_node:
+                g.add((concept, RDFS.subClassOf,
+                       URIRef('https://dice-research.org/' + integer_mapping[i.parent_node])))
+
+        g.serialize(destination=serialize_name, format=format)
