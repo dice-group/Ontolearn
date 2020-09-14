@@ -19,21 +19,21 @@ class LearningProblemGenerator:
                        len(node) + self.min_length
                        if len(node) <= self.min_length
                        else len(node))]
-        return random.sample(refinements, 1)[0]
+        if len(refinements) > 0:
+            return random.sample(refinements, 1)[0]
 
     def apply(self):
         root = self.rho.getNode(self.kb.thing, root=True)
         current_state = root
-        path = [current_state]
+        path = []
         for _ in range(self.depth):
-            try:
-                current_state = self.apply_rho(path[-1])
-            except ValueError:
-                print('Dead End. Applying refinement operator on {0} yield empty no refinements under the provided constraints.'.format(current_state))
+            current_state = self.apply_rho(current_state)
+            if current_state is None:
                 return path
             path.append(current_state)
         return path
 
     def __iter__(self):
         for _ in range(self.num_problems):
-            yield self.apply()
+            yield from self.apply()
+
