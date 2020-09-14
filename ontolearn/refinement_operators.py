@@ -29,6 +29,9 @@ class LengthBasedRefinement(BaseRefinement):
         return n
 
     def refine_atomic_concept(self, node: Node, max_length: int = None) -> Set:
+        if node.concept.str=='Nothing':
+            print(node,' is set to be refined.')
+            yield from {node.concept}
         # Get all subsumption hierarchy
         generator_container = [self.kb.get_all_sub_concepts(node.concept)]
         # GET all negations.
