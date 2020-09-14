@@ -12,7 +12,8 @@ random.seed(0)
 @total_ordering
 class BaseConcept(metaclass=ABCMeta):
     """Base class for Concept."""
-    __slots__ = ['owl', 'full_iri', 'str', 'is_atomic', '__instances', '__idx_instances','length', 'form', 'role', 'filler', 'concept_a',
+    __slots__ = ['owl', 'full_iri', 'str', 'is_atomic', '__instances', '__idx_instances', 'embeddings', 'length',
+                 'form', 'role', 'filler', 'concept_a',
                  'concept_b']
 
     @abstractmethod
@@ -32,6 +33,7 @@ class BaseConcept(metaclass=ABCMeta):
         self.__instances = None
         self.__idx_instances = None
 
+        self.embeddings = None
     @property
     def instances(self) -> Set:
         """ Returns all instances belonging to the concept."""
