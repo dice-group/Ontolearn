@@ -7,10 +7,12 @@ import copy
 from owlready2 import get_ontology
 import types
 from typing import Iterable
-
+import matplotlib.pyplot as plt
 from rdflib import Graph, Literal, RDF, URIRef
 from rdflib.namespace import OWL, RDFS
 from collections import deque
+from sklearn.manifold import TSNE
+import random
 
 # DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
 DEFAULT_FMT = 'Func:{name} took {elapsed:0.8f}s'
@@ -187,7 +189,7 @@ def serialize_concepts(concepts: Iterable, serialize_name: str, metric: str, att
     """
     g = Graph()
     for c in concepts:
-        hierarchy = retrieve_concept_hierarchy(c) # retrieve concept subsuming c.
+        hierarchy = retrieve_concept_hierarchy(c)  # retrieve concept subsuming c.
         p_quality = URIRef('https://dice-research.org/' + attribute + ':' + metric)
 
         integer_mapping = {p: str(th) for th, p in enumerate(hierarchy)}
@@ -197,7 +199,7 @@ def serialize_concepts(concepts: Iterable, serialize_name: str, metric: str, att
             g.add((subject, RDF.type, RDFS.Class))  # https://dice-research.org/1 type Class.
             g.add((subject, RDFS.label,
                    Literal(i.concept.str)))  # https://dice-research.org/1 type (Mother ⊔ (Son ⊔ ¬Daughter)).
-            try: # if a concept has not been tested.
+            try:  # if a concept has not been tested.
                 val = round(getattr(i, attribute), 3)
             except TypeError:  # if attribute is None.
                 val = 0.0
@@ -208,3 +210,22 @@ def serialize_concepts(concepts: Iterable, serialize_name: str, metric: str, att
                        URIRef('https://dice-research.org/' + integer_mapping[i.parent_node])))
 
         g.serialize(destination=serialize_name, format=rdf_format)
+
+
+def apply_TSNE_on_df(df)-> None:
+    low_emb = TSNE(n_components=2).fit_transform(df)
+    plt.scatter(low_emb[:, 0], low_emb[:, 1])
+    plt.title('Instance Representatons via TSNE')
+    plt.show()
+
+
+def balanced_sets(a: set, b: set) -> (set, set):
+    if len(a) > len(b):
+        sampled_a = random.sample(a, len(b))
+        return sampled_a, b
+    elif len(b) > len(a):
+        sampled_b = random.sample(b, len(a))
+        return a, sampled_b
+    else:
+        assert len(a) == len(b)
+        return a, b

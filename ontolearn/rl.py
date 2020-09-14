@@ -1,7 +1,7 @@
 from abc import ABCMeta
 
 from .base_rl_agent import BaseRLTrainer
-from .util import get_full_iri
+from .util import get_full_iri, balanced_sets
 from .search import Node
 import random
 import torch
@@ -13,7 +13,12 @@ from torch.functional import F
 from typing import List, Any
 from collections import namedtuple
 from .abstracts import AbstractScorer
-from typing import Set, AnyStr
+from typing import Set, AnyStr, Tuple
+from torch.nn.init import xavier_normal_
+from itertools import chain
+from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
+from torch.optim.lr_scheduler import ExponentialLR
 
 
 class DrillHeuristic(AbstractScorer):
@@ -31,8 +36,7 @@ class DrillHeuristic(AbstractScorer):
     def score(self, node, parent_node=None):
         """ Compute and return predicted Q-value"""
         if parent_node is None and node.is_root:
-            return torch.FloatTensor([.0001])  # How to quantifiy heuristc value of a node ?
-
+            return torch.FloatTensor([.0001]).squeeze()
         with torch.no_grad():
             return self.model.forward(parent_node.concept.idx_instances, node.concept.idx_instances, self.pos,
                                       self.neg).squeeze()
@@ -43,7 +47,86 @@ class DrillHeuristic(AbstractScorer):
         node.heuristic = predicted_q_val
 
 
-class DQLTrainer(BaseRLTrainer):
+class Drill(nn.Module, metaclass=ABCMeta):
+    """
+    A neural model for Deep Q-Learning.
+
+    An input Drill has the following form
+            1. indexes of individuals belonging to current state (s).
+            2. indexes of individuals belonging to next state state (s_prime).
+            3. indexes of individuals provided as positive examples.
+            4. indexes of individuals provided as negative examples.
+
+    Given such input, we from a sparse 3D Tensor where  each slice is a **** N *** by ***D***
+    where N is the number of individuals and D is the number of dimension of embeddings.
+    Given that N on the current benchmark datasets < 10^3, we can get away with this computation. By doing so
+    we do not need to subsample from given inputs.
+
+    """
+
+    def __init__(self):
+        super(Drill, self).__init__()
+        self.loss = nn.MSELoss()
+
+        self.conv1 = nn.Conv1d(in_channels=4,
+                               out_channels=32,
+                               kernel_size=3,
+                               padding=1,
+                               stride=1,
+                               bias=True)
+        self.pool = nn.MaxPool2d(kernel_size=3,
+                                 padding=1,
+                                 stride=1)
+        self.bn1 = nn.BatchNorm1d(32)
+
+        self.conv2 = nn.Conv1d(in_channels=32,
+                               out_channels=16,
+                               kernel_size=3,
+                               padding=1,
+                               stride=1,
+                               bias=True)
+        self.bn2 = nn.BatchNorm1d(16)
+
+        self.conv3 = nn.Conv1d(in_channels=16,
+                               out_channels=8,
+                               kernel_size=3,
+                               padding=1,
+                               stride=1,
+                               bias=True)
+
+        self.fc1 = nn.Linear(in_features=800, out_features=200)
+        self.bn3 = nn.BatchNorm1d(8)
+        self.fc2 = nn.Linear(in_features=200, out_features=50)
+        self.bn4 = nn.BatchNorm1d(200)
+        self.fc3 = nn.Linear(in_features=50, out_features=1)
+        self.bn5 = nn.BatchNorm1d(50)
+
+    def init(self):
+        xavier_normal_(self.fc1.weight.data)
+        xavier_normal_(self.fc2.weight.data)
+        xavier_normal_(self.fc3.weight.data)
+
+        xavier_normal_(self.conv1.weight.data)
+        xavier_normal_(self.conv2.weight.data)
+        xavier_normal_(self.conv3.weight.data)
+
+    def forward(self, X: torch.FloatTensor):
+        # X => torch.Size([batchsize, 4, dim])
+        X = self.bn1(self.pool(F.relu(self.conv1(X))))
+
+        # X => torch.Size([batchsize, 32, dim]) # 32 kernels.
+        X = self.bn2(self.pool(F.relu(self.conv2(X))))
+        # X => torch.Size([batchsize, 16, dim]) # 16 kernels.
+        X = self.bn3(self.pool(F.relu(self.conv3(X))))
+        # X => torch.Size([batchsize, 8, dim]) # 16 kernels.
+        X = X.view(-1, X.shape[1] * X.shape[2])
+
+        X = self.bn4(F.relu(self.fc1(X)))
+        X = self.bn5(F.relu(self.fc2(X)))
+        return self.fc3(X)
+
+
+class DrillTrainer(BaseRLTrainer):
     """
     A training for DQL agent.
     GOAL:
@@ -68,7 +151,9 @@ class DQLTrainer(BaseRLTrainer):
                  quality_func,
                  search_tree,
                  reward_func,
-                 train_data):
+                 train_data, pre_trained_drill, relearn_rate_per_problem, learning_problem_generator,
+                 instance_embeddings
+                 ):
         super().__init__(kb=knowledge_base,
                          rho=refinement_operator,
                          quality_func=quality_func,
@@ -76,60 +161,78 @@ class DQLTrainer(BaseRLTrainer):
                          reward_func=reward_func,
                          train_data=train_data)
 
-        self.model = Drill(num_of_indv=len(self.kb.thing.instances))
-        self.model.eval()
-        self.optimizer = optim.RMSprop(self.model.parameters())
-        self.memory = ReplayMemory(10000)
+        if pre_trained_drill:
+            self.model = pre_trained_drill
+        else:
+            self.model = Drill()
+            self.model.init()
 
-        self.iter_bound = 10
-        self.learn_per_modulo_iter = 2  # 50%10==0 > 5 times.
-        self.min_length = 1
+        self.lp_gen = learning_problem_generator
+        self.instance_embeddings = instance_embeddings
+        # Normalize input
+        self.instance_embeddings = (self.instance_embeddings - self.instance_embeddings.min()) / (
+                self.instance_embeddings.max() - self.instance_embeddings.min())
+
+        self.relearn_rate_per_problem = relearn_rate_per_problem
+        self.decay_rate = 1.0
+        self.optimizer = optim.Adam(self.model.parameters(), lr=.0001)
+        self.scheduler = ExponentialLR(self.optimizer, self.decay_rate)
+        self.iter_bound = 100
+        self.learn_per_modulo_iter = 10  # 50%10==0 > 5 times.
+        self.num_epoch_per_replay = 3
+        self.batch_size = 1024
+        self.min_length = 2
         self.size_of_path = 4
-        self.epsilon, self.epsilon_decay, self.epsilon_min = 1, 0.999, 0.01
+        self.epsilon, self.epsilon_decay, self.epsilon_min = 1, 0.99, 0.01
         self.experiences = []
 
         self.pos, self.neg = None, None
-        self.idx_pos, self.idx_neg = None, None
+        self.emb_pos, self.emb_neg = None, None
 
     def initialize_root(self):
         root = self.rho.getNode(self.start_class, root=True)
         self.search_tree.quality_func.apply(root)
         self.search_tree.add_root(root)
 
-    def apply_rho(self, node: Node):
+    def apply_rho(self, node: Node) -> List:
         assert isinstance(node, Node)
-        return (self.rho.getNode(i, parent_node=node) for i in
-                self.rho.refine(node, maxlength=len(node) + self.min_length))
+        return [self.rho.getNode(i, parent_node=node) for i in
+                self.rho.refine(node, maxlength=len(node) + self.min_length)]
 
     def next_node_to_expand(self, current_state, next_states) -> Node:
         """
         Exploration vs Exploitation tradeoff at finding next state.
-        TODO: vectorized the computation of exploitation.
         """
         if np.random.random() < self.epsilon:  # Exploration vs Exploitation
             next_state = random.choice(next_states)
-            self.assign_idx_instances(next_state)
+            self.assign_embeddings(next_state)
             return next_state
         else:
-            self.assign_idx_instances(current_state)
-            pred_q_max, next_state = -1, None
+            self.assign_embeddings(current_state)
             with torch.no_grad():
                 self.model.eval()
-                # Later, we can remove looping and generate predicted Q values in one step.
-                for s_prime in next_states:
-                    self.assign_idx_instances(s_prime)
-                    pred = \
-                        self.model.forward(current_state.concept.idx_instances, s_prime.concept.idx_instances,
-                                           self.idx_pos,
-                                           self.idx_neg).numpy()[0]
-                    if pred > pred_q_max:
-                        pred_q_max = pred
-                        next_state = s_prime
+                # create batch batch.
+                next_state_batch = []
+                for _ in next_states:
+                    self.assign_embeddings(_)
+                    next_state_batch.append(_.concept.embeddings)
+                next_state_batch = torch.cat(next_state_batch, dim=0)
+
+                ds = PrepareBatchOfPrediction(current_state.concept.embeddings,
+                                              next_state_batch,
+                                              self.emb_pos,
+                                              self.emb_neg)
+                predictions = self.model.forward(ds.get_all())
+                next_state = next_states[torch.argmax(predictions)]
             return next_state
 
-    def assign_idx_instances(self, node: Node):
-        if node.concept.idx_instances is None:
-            node.concept.idx_instances = torch.LongTensor([self.kb.idx_of_instances[i] for i in node.concept.instances])
+    def assign_embeddings(self, node: Node):
+        if node.concept.embeddings is None:
+            str_idx = [get_full_iri(i).replace('\n', '') for i in node.concept.instances]
+            emb = torch.tensor(self.instance_embeddings.loc[str_idx].values, dtype=torch.float32)
+            emb = torch.mean(emb, dim=0)
+            emb = emb.view(1, 1, emb.shape[0])
+            node.concept.embeddings = emb
 
     def sequence_of_actions(self, root):
         current_state = root
@@ -137,69 +240,81 @@ class DQLTrainer(BaseRLTrainer):
         rewards = []
 
         for _ in range(self.size_of_path):
-            next_states = [i for i in self.apply_rho(current_state)]
-
+            next_states = self.apply_rho(current_state)
             if len(next_states) == 0:  # DEAD END, what to do ?
                 break
-
             next_state = self.next_node_to_expand(current_state, next_states)
+            assert next_state
+            assert current_state
+            if next_state.concept.str == 'Nothing':  # Dead END
+                break
             path_of_concepts.append((current_state, next_state))
             rewards.append(self.reward_func.calculate(current_state, next_state))
             current_state = next_state
 
         return path_of_concepts, rewards
 
-    def form_experiences(self, state_pairs: List, rewards: List) -> List:
+    def form_experiences(self, state_pairs: List, rewards: List) -> None:
         """
         Form experiences from a sequence of concepts and corresponding rewards.
 
         state_pairs - a list of tuples containing two consecutive states
         reward      - a list of reward.
+
+        Return
+        X - a list of embeddings of current concept, next concept, positive examples, negative examples
+        y - argmax Q value.
         """
 
-        temp_exp = []
-        my_temp = []
-        for th, experience in enumerate(state_pairs):
-            e, e_next = experience
-            my_temp.append((e, e_next, max(rewards[th:])))
+        for th, consecutive_states in enumerate(state_pairs):
+            e, e_next = consecutive_states
+            self.experiences.append(
+                (e, e_next, max(rewards[th:])))  # given e, e_next, Q val is the max Q value reachable.
 
-            assert e.concept.idx_instances is not None
-            assert e_next.concept.idx_instances is not None
-            assert self.idx_pos is not None
-            assert self.idx_neg is not None
+    def learn_from_replay_memory(self) -> None:
 
-            temp_exp.append([e.concept.idx_instances,
-                             e_next.concept.idx_instances,
-                             self.idx_pos,  # we might not need to store individual. at training time, we can stack it.
-                             self.idx_neg,  #
-                             max(rewards[th:])])  # given e, e_next, Q val is the max Q value reachable.
+        current_state_batch = []
+        next_state_batch = []
+        q_values = []
 
-        """
-        # For debugging purposes.
-        for i in my_temp:
-            s,s_prime,qmax=i
-            print(s,'\t',s_prime,'\t',qmax)
-        """
+        for experience in self.experiences:
+            s, s_prime, q = experience
+            current_state_batch.append(s.concept.embeddings)
+            next_state_batch.append(s_prime.concept.embeddings)
+            q_values.append(q)
 
-        return temp_exp
+        current_state_batch = torch.cat(current_state_batch, dim=0)
+        next_state_batch = torch.cat(next_state_batch, dim=0)
+        q_values = torch.Tensor(q_values)
 
-    def learn_from_replay_memory(self):
-        # to break the correlation.
-        random.shuffle(self.experiences)
-
+        ds = PrepareBatchOfTraining(current_state_batch=current_state_batch,
+                                    next_state_batch=next_state_batch,
+                                    p=self.emb_pos, n=self.emb_neg, q=q_values)
         self.model.train()
-        for m in range(10):
+        for m in range(self.num_epoch_per_replay):
             total_loss = 0
-            for exp in self.experiences:
-                self.optimizer.zero_grad()
-                s, s_prime, pos, neg, q_val = exp
-                q_val = torch.Tensor([q_val])
+            for X, y in DataLoader(ds, batch_size=self.batch_size, shuffle=True, num_workers=1):
+                if torch.isnan(X).any() or torch.isinf(X).any():
+                    print('invalid input detected')
+                    exit(1)
 
-                predicted_q_val = self.model.forward(s, s_prime, pos, neg)
-                loss = self.model.loss(predicted_q_val, q_val)
-                loss.backward()
-                self.optimizer.step()
+                if torch.isnan(y).any() or torch.isinf(y).any():
+                    print('invalid q val detected')
+                    exit(1)
+
+                self.optimizer.zero_grad()  # zero the gradient buffers
+
+                # forward
+                predicted_q = self.model.forward(X)
+                # loss
+                loss = self.model.loss(predicted_q, y)
                 total_loss += loss.item()
+                # compute the derivative of the loss w.r.t. the parameters using backpropagation
+                loss.backward()
+                # clip gradients.
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
+                self.optimizer.step()
+            print(total_loss)
 
     def start(self):
         """
@@ -208,26 +323,37 @@ class DQLTrainer(BaseRLTrainer):
         1) Train RL agent.
         2) Use RL agent as Heuristic function.
         """
-        for _ in range(10):
-            for str_target_concept, examples in self.train_data.items():
-                string_pos = set(examples['positive_examples'])
-                string_neg = set(examples['negative_examples'])
-                print('Target concept: {0}\t|Pos. Ex|:{1}\t|Neg. Ex|:{2}:'.format(str_target_concept, len(string_pos),
-                                                                                  len(string_neg)))
 
-                # string to owlready2 object conversion
-                self.pos = {self.kb.str_to_instance_obj[i] for i in string_pos}
-                self.neg = {self.kb.str_to_instance_obj[i] for i in string_neg}
-                self.reward_func.pos = self.pos
-                self.reward_func.neg = self.neg
+        for example_node in self.lp_gen:
+            # string_pos
+            string_all_pos = {get_full_iri(i) for i in example_node.concept.instances}
+            string_all_neg = {get_full_iri(i) for i in
+                              self.kb.get_all_individuals().difference(example_node.concept.instances)}
+            print('Target Concept:', example_node.concept.str, '\t |E+|', len(string_all_pos), '\t |E-|',
+                  len(string_all_neg))
+            # create balanced setting
+            string_balanced_pos, string_balanced_neg = balanced_sets(string_all_pos, string_all_neg)
+            print('|Pos. Ex|:{0}\t|Neg. Ex|:{1}:'.format(len(string_balanced_pos), len(string_balanced_neg)))
 
-                # owlready obj to  integer conversion
-                self.idx_pos = torch.from_numpy(np.array([self.kb.idx_of_instances[_] for _ in self.pos]))
-                self.idx_neg = torch.from_numpy(np.array([self.kb.idx_of_instances[_] for _ in self.neg]))
+            # string to owlready2 object conversion
+            self.pos = {self.kb.str_to_instance_obj[i] for i in string_balanced_pos}
+            self.neg = {self.kb.str_to_instance_obj[i] for i in string_balanced_neg}
+            self.reward_func.pos = self.pos
+            self.reward_func.neg = self.neg
 
-                self.train()  # Let model to train to solve given problem
+            self.emb_pos = torch.tensor(self.instance_embeddings.loc[list(string_balanced_pos)].values,
+                                        dtype=torch.float32)
+            self.emb_neg = torch.tensor(self.instance_embeddings.loc[list(string_balanced_neg)].values,
+                                        dtype=torch.float32)
+            # take mean and reshape it into (1,1,embedding_dim) for mini batching.
+            self.emb_pos = torch.mean(self.emb_pos, dim=0)
+            self.emb_pos = self.emb_pos.view(1, 1, self.emb_pos.shape[0])
+            self.emb_neg = torch.mean(self.emb_neg, dim=0)
+            self.emb_neg = self.emb_neg.view(1, 1, self.emb_neg.shape[0])
 
-                self.test(string_pos, string_neg)  # Let test model to train to solve given problem
+            self.train()  # Let model to train to solve given problem
+
+            self.test(string_pos, string_neg)  # Let test model to train to solve given problem
 
     def train(self):
         """
@@ -235,19 +361,25 @@ class DQLTrainer(BaseRLTrainer):
         """
         print('Training starts.')
         root = self.rho.getNode(self.start_class, root=True)
-
-        self.assign_idx_instances(root)
+        self.assign_embeddings(root)
 
         # training loop.
         for th in range(1, self.iter_bound):
             path_of_concepts, rewards = self.sequence_of_actions(root)
-            self.epsilon -= 0.01
+            print('{0}.th iteration total reward: {1:.2f}\tEpsilon:{2:.2f}\t Num.Exp:{3}'.format(th, sum(rewards),
+                                                                                                 self.epsilon,
+                                                                                                 len(self.experiences)))
+
+            self.epsilon -= 0.001
             if self.epsilon < 0:
                 break
-            # Collect experiences
-            self.experiences.extend(self.form_experiences(path_of_concepts, rewards))
+
+            self.form_experiences(path_of_concepts, rewards)
+
             if th % self.learn_per_modulo_iter == 0:
                 self.learn_from_replay_memory()
+
+        exit(1)
 
     def test(self, pos: Set[AnyStr], neg: Set[AnyStr]):
         """ use agent as heuristic function in the concept learning problem. Note that
@@ -271,94 +403,76 @@ class DQLTrainer(BaseRLTrainer):
         assert len(self.search_tree) == 0  # search tree is empty.
         # init pretrained agent as heuristic func.
         root = self.rho.getNode(self.start_class, root=True)
-        self.assign_idx_instances(root)
+        self.assign_embeddings(root)
 
-        root.heuristic = 0.0  # workaround.
         self.search_tree.quality_func.apply(root)
         self.search_tree.add_root(root)
-
+        goal_found = False
         for _ in range(10):
             node_to_expand = self.search_tree.get_most_promising()
             for ref in self.apply_rho(node_to_expand):
 
-                self.assign_idx_instances(ref)
+                self.assign_embeddings(ref)
                 goal_found = self.search_tree.add_node(node=ref, refined_node=node_to_expand)
                 if goal_found:
                     print(
                         'Goal found after {0} number of concepts tested.'.format(self.search_tree.quality_func.applied))
                     break
-
-        print('#### Top predictions after {0} number of concepts tested. ###'.format(self.search_tree.quality_func.applied))
+            if goal_found:
+                break
+        print('#### Top predictions after {0} number of concepts tested. ###'.format(
+            self.search_tree.quality_func.applied))
         for i in self.search_tree.get_top_n(n=10):
             print(i)
-
         print('#######')
 
 
-class Drill(nn.Module, metaclass=ABCMeta):
-    def __init__(self, num_of_indv, n_dim=50):
-        super(Drill, self).__init__()
-        self.num_of_indv = num_of_indv
-        self.n_dim = n_dim
-        self.loss = torch.nn.MSELoss()
+class PrepareBatchOfPrediction(torch.utils.data.Dataset):
 
-        self.embeddings = torch.nn.Embedding(self.num_of_indv, n_dim, padding_idx=0)
-        self.conv1 = nn.Conv2d(in_channels=4, out_channels=4, kernel_size=4)
-        self.maxpool2d_1 = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(in_channels=4, out_channels=1, kernel_size=4)
-
-        self.bn1 = torch.nn.BatchNorm2d(4)
-        self.bn2 = torch.nn.BatchNorm2d(4)
-        self.fc1 = nn.Linear(in_features=480, out_features=1)
-
-    def forward(self, s, s_prime, p, n):
-        # considering all and masking indv.
-        emb_s = torch.zeros(self.num_of_indv, self.n_dim)
-        emb_s_prime = torch.zeros(self.num_of_indv, self.n_dim)
-        emb_p = torch.zeros(self.num_of_indv, self.n_dim)
-        emb_n = torch.zeros(self.num_of_indv, self.n_dim)
-
-        emb_s[s] = self.embeddings(s)
-        emb_s_prime[s_prime] = self.embeddings(s_prime)
-        emb_p[p] = self.embeddings(p)
-        emb_n[n] = self.embeddings(n)
-
-        x = torch.cat([emb_s.view(1, -1, self.num_of_indv, self.n_dim),
-                       emb_s_prime.view(1, -1, self.num_of_indv, self.n_dim),
-                       emb_p.view(1, -1, self.num_of_indv, self.n_dim),
-                       emb_n.view(1, -1, self.num_of_indv, self.n_dim)], 1)
-
-        x = self.bn1(x)
-        x = self.conv1(x)
-        x = F.relu(x)
-        x = self.maxpool2d_1(x)
-        x = self.bn2(x)
-        x = self.conv2(x)
-        x = F.relu(x)
-        x = self.maxpool2d_1(x)
-
-        x = x.view(x.shape[0], -1)
-        return self.fc1(x)  # F.relu(self.fc1(x))
-
-
-class ReplayMemory(object):
-    Transition = namedtuple('Transition',
-                            ('state', 'next_state', 'reward'))
-
-    def __init__(self, capacity):
-        self.capacity = capacity
-        self.memory = []
-        self.position = 0
-
-    def push(self, *args):
-        """Saves a transition."""
-        if len(self.memory) < self.capacity:
-            self.memory.append(None)
-        self.memory[self.position] = Transition(*args)
-        self.position = (self.position + 1) % self.capacity
-
-    def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
+    def __init__(self, current_state: torch.FloatTensor, next_state_batch: torch.Tensor, p: torch.FloatTensor,
+                 n: torch.FloatTensor):
+        self.S_Prime = next_state_batch
+        self.S = current_state.expand(self.S_Prime.shape)
+        self.Positives = p.expand(next_state_batch.shape)
+        self.Negatives = n.expand(next_state_batch.shape)
+        assert self.S.shape == self.S_Prime.shape == self.Positives.shape == self.Negatives.shape
+        assert self.S.dtype == self.S_Prime.dtype == self.Positives.dtype == self.Negatives.dtype == torch.float32
+        # X.shape()=> batch_size,4,embeddingdim)
+        self.X = torch.cat([self.S, self.S_Prime, self.Positives, self.Negatives], 1)
+        num_points, depth, dim = self.X.shape
+        self.X = self.X.view(num_points, depth, dim)
 
     def __len__(self):
-        return len(self.memory)
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return self.X[idx]
+
+    def get_all(self):
+        return self.X
+
+
+class PrepareBatchOfTraining(torch.utils.data.Dataset):
+
+    def __init__(self, current_state_batch: torch.Tensor, next_state_batch: torch.Tensor, p: torch.Tensor,
+                 n: torch.Tensor, q: torch.Tensor):
+        self.S = current_state_batch
+        self.S_Prime = next_state_batch
+        self.y = q.view(len(q), 1)
+        assert self.S.shape == self.S_Prime.shape
+        assert len(self.y) == len(self.S)
+
+        self.Positives = p.expand(next_state_batch.shape)
+        self.Negatives = n.expand(next_state_batch.shape)
+        assert self.S.shape == self.S_Prime.shape == self.Positives.shape == self.Negatives.shape
+        assert self.S.dtype == self.S_Prime.dtype == self.Positives.dtype == self.Negatives.dtype == torch.float32
+        # X.shape()=> batch_size,4,embeddingdim)
+        self.X = torch.cat([self.S, self.S_Prime, self.Positives, self.Negatives], 1)
+        num_points, depth, dim = self.X.shape
+        self.X = self.X.view(num_points, depth, dim)
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return self.X[idx], self.y[idx]
