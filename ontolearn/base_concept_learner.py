@@ -136,7 +136,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
         folder = self.kb.path[:self.kb.path.rfind('/')] + '/'
         kb_name = 'enriched_' + self.kb.name
-        self.kb.save(folder + kb_name + '.owl', rdf_format="rdfxml")
+        self.kb.save(folder + kb_name + '.owl', rdf_format="ntriples")
 
     @abstractmethod
     def initialize_root(self):
