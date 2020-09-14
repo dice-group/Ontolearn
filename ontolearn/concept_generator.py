@@ -185,7 +185,7 @@ class ConceptGenerator:
 
         if not (self.max_size_of_concept >= len(possible_instances_) >= self.min_size_of_concept):
             return self.Bottom
-
+        # TODO BOTTLENECK
         with self.onto:
             new_concept = types.new_class(name="(∀{0}.{1})".format(relation.name, concept.str), bases=(base,))
             new_concept.namespace.base_iri = self.namespace_base_iri
@@ -231,12 +231,12 @@ class ConceptGenerator:
 
         if not (self.max_size_of_concept >= len(possible_instances_) >= self.min_size_of_concept):
             return self.Bottom
-
+        # TODO BOTTLENECK
         with self.onto:
             new_concept = types.new_class(name="({0} ⊔ {1})".format(A.str, B.str), bases=(base,))
             new_concept.namespace.base_iri = self.namespace_base_iri
 
-            new_concept.is_a.append(A.owl | B.owl)
+            #new_concept.is_a.append(A.owl | B.owl) # TODO: investigate, it appears to take too much of time.
             c = Concept(concept=new_concept, kwargs={'form': 'ObjectUnionOf', 'ConceptA': A, 'ConceptB': B})
 
             for i in possible_instances_:
@@ -270,14 +270,10 @@ class ConceptGenerator:
         with self.onto:
             new_concept = types.new_class(name="({0}  ⊓  {1})".format(A.str, B.str), bases=(base,))
             new_concept.namespace.base_iri = self.namespace_base_iri
-
-            new_concept.is_a.append(A.owl & B.owl)
-
+            #new_concept.is_a.append(A.owl & B.owl) # TODO: investigate, it appears to take too much of time.
             c = Concept(concept=new_concept, kwargs={'form': 'ObjectIntersectionOf', 'ConceptA': A, 'ConceptB': B})
-
             for i in possible_instances_:
                 assert type(i) is not str
-
             c.instances = possible_instances_  # A.instances & B.instances
             self.log_of_intersections[(A, B)] = c
             self.concepts[c.full_iri] = c
