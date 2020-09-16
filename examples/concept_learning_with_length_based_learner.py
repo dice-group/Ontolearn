@@ -1,8 +1,13 @@
-from ontolearn import KnowledgeBase, LengthBaseLearner, LengthBasedRefinement, SearchTreePriorityQueue
-from ontolearn.metrics import F1
-from ontolearn.heuristics import CELOEHeuristic
-
 import json
+
+from ontolearn import LengthBaseLearner
+from ontolearn import LengthBasedRefinement
+from ontolearn import KnowledgeBase
+from ontolearn import SearchTreePriorityQueue
+
+from ontolearn.heuristics import CELOEHeuristic
+from ontolearn.metrics import F1
+
 
 with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)
@@ -16,12 +21,13 @@ for str_target_concept, examples in settings['problems'].items():
     concepts_to_ignore = set()
     # lets inject more background info
     if str_target_concept in ['Granddaughter', 'Aunt', 'Sister']:
-        concepts_to_ignore.update({'Brother', 'Father', 'Uncle', 'Grandparent'})
+        concepts_to_ignore.update(
+            {'Brother', 'Father', 'Uncle', 'Grandparent'})
 
     model = LengthBaseLearner(knowledge_base=kb,
                               refinement_operator=LengthBasedRefinement(kb=kb),
                               quality_func=F1(),
-                              min_length=1, # think better variable name
+                              min_length=1,  # think better variable name
                               heuristic_func=CELOEHeuristic(),
                               search_tree=SearchTreePriorityQueue(),
                               terminate_on_goal=True,
@@ -30,4 +36,10 @@ for str_target_concept, examples in settings['problems'].items():
                               ignored_concepts={},
                               verbose=True)
 
-    model.predict(pos=p, neg=n, n=10)
+    predictions = model.predict(pos=p, neg=n, n=10)
+
+    model.save_predictions(
+        predictions,
+        key='quality',
+        serialize_name=(str_target_concept +
+                        '_quality_structured_prediction.owl'))
