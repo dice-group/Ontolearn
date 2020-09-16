@@ -125,8 +125,8 @@ class Reward(AbstractScorer):
         self.beta = 0
         self.noise = 0
 
-        self.reward_of_goal = 10.0
-        self.gainBonusFactor = .3
+        self.reward_of_goal = 100.0
+        self.gainBonusFactor = self.reward_of_goal*.1
 
     def score(self, pos, neg, instances):
         self.pos = pos
