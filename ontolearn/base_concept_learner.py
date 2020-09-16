@@ -87,7 +87,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         assert self.heuristic
         assert self.rho
 
-    def __get_metric_key(self, key: str):
+    def get_metric_key(self, key: str):
         if key == 'quality':
             metric = self.quality_func.name
             attribute = key
