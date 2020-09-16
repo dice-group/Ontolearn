@@ -34,7 +34,8 @@ class DrillHeuristic(AbstractScorer):
     def __init__(self, pos=None, neg=None, model=None):
         super().__init__(pos, neg, unlabelled=None)
         self.name = 'DrillHeuristic'
-        assert isinstance(model, torch.nn.Module)
+        self.model=model
+        assert isinstance(self.model, torch.nn.Module)
         self.model = model
         self.model.eval()
 
@@ -91,7 +92,6 @@ class DrillConceptLearner(BaseConceptLearner):
 
     def initialize_root(self):
         root = self.rho.getNode(self.start_class, root=True)
-
         self.search_tree.quality_func.apply(root)  # AccuracyOrTooWeak(n)
         self.search_tree.heuristic_func.apply(root)  # AccuracyOrTooWeak(n)
         self.search_tree.add_root(root)
@@ -228,7 +228,7 @@ class DrillTrainer(BaseRLTrainer):
                  quality_func,
                  search_tree,
                  reward_func,
-                 pre_trained_drill,
+                 path_pretrained_agent,
                  learning_problem_generator,
                  instance_embeddings,
                  num_epochs_per_replay=10,
@@ -259,8 +259,9 @@ class DrillTrainer(BaseRLTrainer):
         self.num_epochs_per_replay = 5
         # DQL related.
         self.replay_modulo_per_episode = 10
-        if pre_trained_drill:
-            self.model = pre_trained_drill
+        if path_pretrained_agent:
+            self.model = Drill()
+            self.model.load_state_dict(torch.load(path_pretrained_agent + '/model.pth'))
         else:
             self.model = Drill()
             self.model.init()
@@ -475,6 +476,7 @@ class DrillTrainer(BaseRLTrainer):
         root = self.rho.getNode(self.start_class, root=True)
         self.assign_embeddings(root)
         sum_of_rewards_per_actions = []
+        self.epsilon = 1
         for th in range(self.num_episode):  # Inner training loop
             path_of_concepts, rewards = self.sequence_of_actions(root)
 
