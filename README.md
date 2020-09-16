@@ -27,7 +27,7 @@ pip install ontolearn
 
 ## Usage
 
-### Drill- A convolutional deep Q-learning approach that prunes the search space of refinement operators for class expression learning.
+### Drill- A convolutional deep Q-learning approach for concept learning.
 
 ```python
 from ontolearn import *
