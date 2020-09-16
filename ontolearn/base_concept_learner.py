@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
-
-from owlready2 import get_ontology, rdfs, AnnotationPropertyClass
+from owlready2 import get_ontology, World, rdfs, AnnotationPropertyClass
 
 from .refinement_operators import ModifiedCELOERefinement
 from .search import Node
@@ -9,6 +8,7 @@ from .metrics import F1
 from .heuristics import CELOEHeuristic
 import types
 
+from .util import serialize_concepts
 
 class BaseConceptLearner(metaclass=ABCMeta):
     """
@@ -51,7 +51,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.quality_func = quality_func
         self.rho = refinement_operator
         self.search_tree = search_tree
-        self.max_num_of_concepts_tested=max_num_of_concepts_tested
+        self.max_num_of_concepts_tested = max_num_of_concepts_tested
 
         self.concepts_to_ignore = ignored_concepts
         self.start_class = root_concept
@@ -87,18 +87,24 @@ class BaseConceptLearner(metaclass=ABCMeta):
         assert self.heuristic
         assert self.rho
 
-    @abstractmethod
-    def initialize_root(self):
-        pass
+    def get_metric_key(self, key: str):
+        if key == 'quality':
+            metric = self.quality_func.name
+            attribute = key
+        elif key == 'heuristic':
+            metric = self.heuristic.name
+            attribute = key
+        elif key == 'length':
+            metric = key
+            attribute = key
+        else:
+            raise ValueError
+        return metric, attribute
 
-    def show_best_predictions(self, key, top_n=10, serialize_name=None):
-        """
-        top_n:int
-        serialize_name= XXX.owl
-        """
+    def show_best_predictions(self, key='quality', top_n=10, serialize_name=None):
+        """ """
         predictions = self.search_tree.show_best_nodes(top_n, key=key)
         if serialize_name is not None:
-            onto = get_ontology(serialize_name)
             if key == 'quality':
                 metric = self.quality_func.name
                 attribute = key
@@ -111,16 +117,12 @@ class BaseConceptLearner(metaclass=ABCMeta):
             else:
                 raise ValueError
 
-            with onto:
-                for i in predictions:
-                    bases = tuple(j for j in i.concept.owl.mro()[:-1])
+            serialize_concepts(concepts=predictions,
+                               serialize_name=serialize_name,
+                               metric=metric,
+                               attribute=attribute, rdf_format='nt')
 
-                    new_concept = types.new_class(name=i.concept.str, bases=bases)
-                    new_concept.comment.append("{0}:{1}".format(metric, getattr(i, attribute)))
-
-            onto.save(serialize_name)
-
-    def extend_ontology(self, top_n_concepts=10,key='quality'):
+    def extend_ontology(self, top_n_concepts=10, key='quality'):
         """
         1) Obtain top N nodes from search tree.
         2) Extend ABOX by including explicit type information for all instances belonging to concepts (1)
@@ -134,98 +136,24 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
         folder = self.kb.path[:self.kb.path.rfind('/')] + '/'
         kb_name = 'enriched_' + self.kb.name
-        self.kb.save(folder + kb_name + '.owl', rdf_format="rdfxml")
+        self.kb.save(folder + kb_name + '.owl', rdf_format="ntriples")
 
     @abstractmethod
-    def next_node_to_expand(self, step):
+    def initialize_root(self):
         pass
 
     @abstractmethod
-    def apply_rho(self, args):
+    def next_node_to_expand(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def predict(self, pos, neg):
-        """
-        @param pos:
-        @param neg:
-        @return:
-        """
+    def apply_rho(self, *args, **kwargs):
         pass
+
+    @abstractmethod
+    def predict(self, *args, **kwargs):
+        pass
+
     @property
     def number_of_tested_concepts(self):
         return self.quality_func.applied
-
-# TODO Remove SampleConceptLearner in the next refactoring.
-"""class SampleConceptLearner:
-    def __init__(self, knowledge_base, max_child_length=5, terminate_on_goal=True, verbose=True, iter_bound=10):
-        self.kb = knowledge_base
-
-        self.concepts_to_nodes = dict()
-        self.rho = ModifiedCELOERefinement(self.kb, max_child_length=max_child_length)
-        self.rho.set_concepts_node_mapping(self.concepts_to_nodes)
-
-        self.verbose = verbose
-        # Default values
-        self.iter_bound = iter_bound
-        self._start_class = self.kb.thing
-        self.search_tree = None
-        self.maxdepth = 10
-        self.max_he, self.min_he = 0, 0
-        self.terminate_on_goal = terminate_on_goal
-
-        self.heuristic = CELOEHeuristic()
-
-    def apply_rho(self, node: Node):
-        assert isinstance(node, Node)
-        self.search_tree.update_prepare(node)
-        refinements = [self.rho.getNode(i, parent_node=node)
-                       for i in self.rho.refine(node, maxlength=node.h_exp + 1, current_domain=self._start_class)]
-
-        node.increment_h_exp()
-        node.refinement_count = len(refinements)  # This should be postpone so that we make make use of generator
-        self.heuristic.apply(node)
-
-        self.search_tree.update_done(node)
-        return refinements
-
-    def updateMinMaxHorizExp(self, node: Node):
-        he = node.h_exp
-        # update maximum value
-        self.max_he = self.max_he if self.max_he > he else he
-
-        if self.min_he == he - 1:
-            threshold_score = node.heuristic + 1 - node.quality
-            sorted_x = sorted(self.search_tree.nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
-            self.search_tree.nodes = dict(sorted_x)
-
-            for item in self.search_tree:
-                if node.concept.str != item.concept.str:
-                    if item.h_exp == self.min_he:
-                        return
-                    if self.search_tree[item].heuristic < threshold_score:
-                        break
-            # inc. minimum since we found no other node which also has min. horiz. exp.
-            self.min_he += 1
-            print("minimum horizontal expansion is now ", self.min_he)
-
-    def predict(self, pos, neg):
-        self.search_tree = CELOESearchTree(quality_func=F1(pos=pos, neg=neg), heuristic_func=self.heuristic)
-
-        self.initialize_root()
-
-        for j in range(1, self.iter_bound):
-
-            node_to_expand = self.next_node_to_expand(j)
-            h_exp = node_to_expand.h_exp
-            for ref in self.apply_rho(node_to_expand):
-                if (len(ref) > h_exp) and ref.depth < self.maxdepth:
-                    is_added, goal_found = self.search_tree.add_node(ref)
-                    if is_added:
-                        node_to_expand.add_children(ref)
-                    if goal_found:
-                        print(
-                            'Goal found after {0} number of concepts tested.'.format(self.search_tree.expressionTests))
-                        if self.terminate_on_goal:
-                            return True
-            self.updateMinMaxHorizExp(node_to_expand)"""

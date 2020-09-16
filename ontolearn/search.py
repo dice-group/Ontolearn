@@ -191,3 +191,8 @@ class SearchTreePriorityQueue(AbstractTree):
             print('Wrong Key:{0}\tProgram exist.'.format(key))
             raise KeyError
         return top_n_predictions
+
+    def reset_tree(self):
+        self.items_in_queue = PriorityQueue()
+        self._nodes.clear()
+

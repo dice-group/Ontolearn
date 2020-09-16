@@ -29,6 +29,8 @@ class LengthBasedRefinement(BaseRefinement):
         return n
 
     def refine_atomic_concept(self, node: Node, max_length: int = None) -> Set:
+        if node.concept.str == 'Nothing':
+            yield from {node.concept}
         # Get all subsumption hierarchy
         generator_container = [self.kb.get_all_sub_concepts(node.concept)]
         # GET all negations.
@@ -87,7 +89,6 @@ class LengthBasedRefinement(BaseRefinement):
         assert isinstance(node.concept.filler, Concept)
         # rule 1: EXISTS r.D = > EXISTS r.E
         for i in self.refine(self.getNode(node.concept.filler, parent_node=node), maxlength=maxlength):
-            assert i
             yield self.kb.existential_restriction(i, node.concept.role)
 
         yield self.kb.universal_restriction(node.concept.filler, node.concept.role)
@@ -95,37 +96,32 @@ class LengthBasedRefinement(BaseRefinement):
     def refine_object_all_values_from(self, node: Node, maxlength: int):
         # rule 1: for all r.D = > for all r.E
         for i in self.refine(self.getNode(node.concept.filler, parent_node=node), maxlength=maxlength):
-            assert i
             yield self.kb.universal_restriction(i, node.concept.role)
 
     def refine_object_union_of(self, node: Node, maxlength: int):
         concept_A = node.concept.concept_a
         concept_B = node.concept.concept_b
 
-        for ref_concept_A in self.refine(self.getNode(concept_A, parent_node=node),
-                                         maxlength=maxlength):
+        for ref_concept_A in self.refine(self.getNode(concept_A, parent_node=node), maxlength=maxlength):
             if maxlength >= len(concept_B) + len(ref_concept_A):
                 yield self.kb.union(concept_B, ref_concept_A)
 
-        for ref_concept_B in self.refine(self.getNode(concept_B, parent_node=node),
-                                         maxlength=maxlength):
+        for ref_concept_B in self.refine(self.getNode(concept_B, parent_node=node), maxlength=maxlength):
             if maxlength >= len(concept_A) + len(ref_concept_B):
                 yield self.kb.union(concept_A, ref_concept_B)
 
     def refine_object_intersection_of(self, node: Node, maxlength: int):
         concept_A = node.concept.concept_a
         concept_B = node.concept.concept_b
-        for ref_concept_A in self.refine(self.getNode(concept_A, parent_node=node),
-                                         maxlength=maxlength):
+        for ref_concept_A in self.refine(self.getNode(concept_A, parent_node=node), maxlength=maxlength):
             if maxlength >= len(concept_B) + len(ref_concept_A):
                 yield self.kb.intersection(concept_B, ref_concept_A)
 
-        for ref_concept_B in self.refine(self.getNode(concept_B, parent_node=node),
-                                         maxlength=maxlength):
+        for ref_concept_B in self.refine(self.getNode(concept_B, parent_node=node), maxlength=maxlength):
             if maxlength >= len(concept_A) + len(ref_concept_B):
                 yield self.kb.intersection(concept_A, ref_concept_B)
 
-    def refine(self, node, maxlength):
+    def refine(self, node, maxlength) -> Generator:
         assert isinstance(node, Node)
         if node.concept.is_atomic:
             yield from self.refine_atomic_concept(node, maxlength)
