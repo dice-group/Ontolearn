@@ -26,7 +26,7 @@ trainer = DrillTrainer(
     quality_func=F1(),
     reward_func=Reward(),
     search_tree=SearchTreePriorityQueue(),
-    pre_trained_drill=None,
+    path_pretrained_agent='../agent_pre_trained',  # for Incremental/Continual learning.
     learning_problem_generator=lp_gen,
     instance_embeddings=instance_emb,
     verbose=False)
@@ -55,4 +55,4 @@ for str_target_concept, examples in settings['problems'].items():
                                 verbose=True)
     model.predict(pos=p, neg=n)
     model.best_hypotheses(top_n=10)
-    model.save_best_hypotheses(file_path=str_target_concept + '_best_hypothesis.owl', top_n=10)
+    model.save_best_hypotheses(file_path=str_target_concept + '_best_hypothesis.owl', rdf_format='xml', top_n=10)
