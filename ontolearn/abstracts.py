@@ -3,7 +3,7 @@ from functools import total_ordering
 from abc import ABCMeta, abstractmethod, ABC
 from owlready2 import ThingClass
 from .util import get_full_iri
-from typing import Set, AnyStr
+from typing import Set, AnyStr, Dict
 import random
 
 random.seed(0)
@@ -12,7 +12,8 @@ random.seed(0)
 @total_ordering
 class BaseConcept(metaclass=ABCMeta):
     """Base class for Concept."""
-    __slots__ = ['owl', 'full_iri', 'str', 'is_atomic', '__instances', 'length', 'form', 'role', 'filler', 'concept_a',
+    __slots__ = ['owl', 'full_iri', 'str', 'is_atomic', '__instances', '__idx_instances', 'embeddings', 'length',
+                 'form', 'role', 'filler', 'concept_a',
                  'concept_b']
 
     @abstractmethod
@@ -30,7 +31,9 @@ class BaseConcept(metaclass=ABCMeta):
         self.length = self.__calculate_length()
 
         self.__instances = None
+        self.__idx_instances = None
 
+        self.embeddings = None
     @property
     def instances(self) -> Set:
         """ Returns all instances belonging to the concept."""
@@ -44,6 +47,16 @@ class BaseConcept(metaclass=ABCMeta):
     def instances(self, x: Set):
         """ Setter of instances."""
         self.__instances = x
+
+    @property
+    def idx_instances(self):
+        """ Getter of integer indexes of instances."""
+        return self.__idx_instances
+
+    @idx_instances.setter
+    def idx_instances(self, x):
+        """ Setter of idx_instances."""
+        self.__idx_instances = x
 
     def __str__(self):
         return '{self.__repr__}\t{self.full_iri}'.format(self=self)
@@ -101,6 +114,7 @@ class BaseNode(metaclass=ABCMeta):
     @abstractmethod
     def __init__(self, concept, parent_node, is_root=False):
         self.__quality_score, self.__heuristic_score = None, None
+        self.__is_root = is_root
         self.__horizontal_expansion, self.__refinement_count = 0, 0
         self.concept = concept
         self.parent_node = parent_node
@@ -108,7 +122,7 @@ class BaseNode(metaclass=ABCMeta):
         self.length = len(self.concept)
 
         if self.parent_node is None:
-            assert len(concept) == 1 and is_root
+            assert len(concept) == 1 and self.__is_root
             self.__depth = 0
         else:
             self.__depth = self.parent_node.depth + 1
@@ -161,6 +175,10 @@ class BaseNode(metaclass=ABCMeta):
 
     def increment_h_exp(self, val=0):
         self.__horizontal_expansion += val + 1
+
+    @property
+    def is_root(self):
+        return self.__is_root
 
 
 class AbstractScorer(ABC):
@@ -293,10 +311,8 @@ class AbstractTree(ABC):
             yield node
 
     def set_positive_negative_examples(self, p: Set[AnyStr], n: Set[AnyStr], all_instances: Set):
-        """
-
-        """
-
+        # TODO: this method should not be here, I suppose as setting positive negative and unlabelled examples
+        # are related to learning algorithm not search tree.
         assert isinstance(p, set) and isinstance(n, set) and isinstance(all_instances, set)
         assert len(p) > 0 and len(all_instances) >= len(p)
 

@@ -164,25 +164,11 @@ class LengthBaseLearner(BaseConceptLearner):
                 break
         return self.search_tree.get_top_n(n=n)
 
-    def __get_metric_key(self, key: str):
-        if key == 'quality':
-            metric = self.quality_func.name
-            attribute = key
-        elif key == 'heuristic':
-            metric = self.heuristic.name
-            attribute = key
-        elif key == 'length':
-            metric = key
-            attribute = key
-        else:
-            raise ValueError
-        return metric, attribute
-
     def save_predictions(self, predictions, key: str, serialize_name: str):
         assert serialize_name
         assert key
         assert len(predictions)
-        metric, attribute = self.__get_metric_key(key)
+        metric, attribute = self.get_metric_key(key)
         onto = get_ontology(serialize_name)
         with onto:
             for i in predictions:
