@@ -119,7 +119,7 @@ def incCrossProduct(baseset, newset, exp_gen):
     return retset
 
 
-def create_experiment_folder(folder_name='Logs'):
+def create_experiment_folder(folder_name='Log'):
     directory = os.getcwd() + '/' + folder_name + '/'
     folder_name = str(datetime.datetime.now())
     path_of_folder = directory + folder_name
@@ -174,10 +174,11 @@ def retrieve_concept_hierarchy(c) -> Iterable:
     hierarchy: an iterable containing a path of concepts from c to T.
     """
     hierarchy = deque()
-    hierarchy.appendleft(c.parent_node)
-    while hierarchy[-1].parent_node is not None:
-        hierarchy.append(hierarchy[-1].parent_node)
-    hierarchy.appendleft(c)
+    if c.parent_node:
+        hierarchy.appendleft(c.parent_node)
+        while hierarchy[-1].parent_node is not None:
+            hierarchy.append(hierarchy[-1].parent_node)
+        hierarchy.appendleft(c)
     return hierarchy
 
 
