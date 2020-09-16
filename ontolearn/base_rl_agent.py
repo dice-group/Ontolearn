@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from .base import KnowledgeBase
 from .abstracts import *
+from .util import create_experiment_folder
 
 
 class BaseRLTrainer(metaclass=ABCMeta):
@@ -12,11 +13,15 @@ class BaseRLTrainer(metaclass=ABCMeta):
                  search_tree,
                  quality_func,
                  reward_func,
-                 train_data, iter_bound=1000):
+                 num_epochs_per_replay,
+                 num_episode,
+                 epsilon, epsilon_decay,
+                 max_len_replay_memory):
         assert isinstance(kb, KnowledgeBase)
         assert isinstance(rho, BaseRefinement)
         assert isinstance(search_tree, AbstractTree)
-        assert isinstance(iter_bound, int)
+        assert isinstance(num_epochs_per_replay, int)
+        assert isinstance(num_episode, int)
         assert isinstance(reward_func, AbstractScorer)
 
         self.kb = kb
@@ -24,22 +29,16 @@ class BaseRLTrainer(metaclass=ABCMeta):
         self.rho = rho
         self.search_tree = search_tree
         self.search_tree.quality_func = quality_func
-        self.train_data = train_data
+        self.num_episode = num_episode
+        self.num_epochs_per_replay = num_epochs_per_replay
+        self.epsilon, self.epsilon_decay, self.epsilon_min = epsilon, epsilon_decay, 0
+
+        self.max_len_replay_memory = max_len_replay_memory
 
         self.start_class = self.kb.thing
         self.concepts_to_nodes = dict()
         self.rho.set_concepts_node_mapping(self.concepts_to_nodes)
-
-        if train_data:
-            assert isinstance(train_data, Dict)
-            example_types = {'positive_examples', 'negative_examples'}
-            for k, v in train_data.items():
-                assert isinstance(k, str)
-                try:
-                    assert example_types.issubset(set(v.keys()))
-                except AssertionError:
-                    print(example_types, 'not found in v.keys()')
-                    exit(1)
+        self.storage_path, _ = create_experiment_folder()
 
     @abstractmethod
     def start(self, *args, **kwargs):
