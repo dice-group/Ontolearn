@@ -30,7 +30,4 @@ for str_target_concept, examples in settings['problems'].items():
                               ignored_concepts={},
                               verbose=True)
 
-    predictions = model.predict(pos=p, neg=n, n=10)
-
-    model.save_predictions(predictions, key='quality',
-                           serialize_name=str_target_concept + '_quality_structured_prediction.owl')
+    model.predict(pos=p, neg=n, n=10)
