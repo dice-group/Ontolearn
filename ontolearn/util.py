@@ -189,31 +189,35 @@ def serialize_concepts(concepts: Iterable, serialize_name: str, metric: str, att
     2) Serialize each object with its hierarchy including quality.
     """
     g = Graph()
+
+    integer_mapped_concepts = dict()
+
     for c in concepts:
         hierarchy = retrieve_concept_hierarchy(c)  # retrieve concept subsuming c.
         p_quality = URIRef('https://dice-research.org/' + attribute + ':' + metric)
 
-        integer_mapping = {p: str(th) for th, p in enumerate(hierarchy)}
-        for th, i in enumerate(hierarchy):
+        for h in hierarchy:
+            integer_mapped_concepts.setdefault(h, str(len(integer_mapped_concepts)))
 
-            subject = URIRef('https://dice-research.org/' + integer_mapping[i])
+        for node, int_map in integer_mapped_concepts.items():
+            subject = URIRef('https://dice-research.org/' + int_map)
             g.add((subject, RDF.type, RDFS.Class))  # https://dice-research.org/1 type Class.
             g.add((subject, RDFS.label,
-                   Literal(i.concept.str)))  # https://dice-research.org/1 type (Mother ⊔ (Son ⊔ ¬Daughter)).
+                   Literal(node.concept.str)))  # https://dice-research.org/1 type (Mother ⊔ (Son ⊔ ¬Daughter)).
             try:  # if a concept has not been tested.
-                val = round(getattr(i, attribute), 3)
+                val = round(getattr(node, attribute), 3)
             except TypeError:  # if attribute is None.
                 val = 0.0
             g.add((subject, p_quality, Literal(val)))
 
-            if i.parent_node:
+            if node.parent_node:
                 g.add((subject, RDFS.subClassOf,
-                       URIRef('https://dice-research.org/' + integer_mapping[i.parent_node])))
+                       URIRef('https://dice-research.org/' + integer_mapped_concepts[node.parent_node])))
 
         g.serialize(destination=serialize_name, format=rdf_format)
 
 
-def apply_TSNE_on_df(df)-> None:
+def apply_TSNE_on_df(df) -> None:
     low_emb = TSNE(n_components=2).fit_transform(df)
     plt.scatter(low_emb[:, 0], low_emb[:, 1])
     plt.title('Instance Representatons via TSNE')
