@@ -8,7 +8,6 @@ from ontolearn import SearchTreePriorityQueue
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.metrics import F1
 
-
 with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 
@@ -40,6 +39,4 @@ for str_target_concept, examples in settings['problems'].items():
 
     model.save_predictions(
         predictions,
-        key='quality',
-        serialize_name=(str_target_concept +
-                        '_quality_structured_prediction.owl'))
+        key='quality', serialize_name=(str_target_concept + '_quality_structured_prediction.owl'))
