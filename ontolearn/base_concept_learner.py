@@ -10,6 +10,7 @@ import types
 
 from .util import serialize_concepts
 
+
 class BaseConceptLearner(metaclass=ABCMeta):
     """
     Base class for Concept Learning approaches
@@ -101,7 +102,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
             raise ValueError
         return metric, attribute
 
-    def show_best_predictions(self, key='quality', top_n=10, serialize_name=None):
+    def show_best_predictions(self, key='quality', top_n=10, serialize_name=None, rdf_format='xml'):
         """ """
         predictions = self.search_tree.show_best_nodes(top_n, key=key)
         if serialize_name is not None:
@@ -120,13 +121,17 @@ class BaseConceptLearner(metaclass=ABCMeta):
             serialize_concepts(concepts=predictions,
                                serialize_name=serialize_name,
                                metric=metric,
-                               attribute=attribute, rdf_format='nt')
+                               attribute=attribute, rdf_format=rdf_format)
 
-    def extend_ontology(self, top_n_concepts=10, key='quality'):
+    def extend_ontology(self, top_n_concepts=10, key='quality', rdf_format='xml'):
         """
         1) Obtain top N nodes from search tree.
         2) Extend ABOX by including explicit type information for all instances belonging to concepts (1)
         """
+        raise NotImplementedError
+        # This module needs to be tested
+        # if World().get_ontology(self.path).load(reload=True) used
+        # saving owlready ontology is not working.
         self.search_tree.sort_search_tree_by_decreasing_order(key=key)
         for (ith, node) in enumerate(self.search_tree):
             if ith <= top_n_concepts:
@@ -136,7 +141,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
         folder = self.kb.path[:self.kb.path.rfind('/')] + '/'
         kb_name = 'enriched_' + self.kb.name
-        self.kb.save(folder + kb_name + '.owl', rdf_format="ntriples")
+        self.kb.save(folder + kb_name + '.owl', rdf_format=rdf_format)
 
     @abstractmethod
     def initialize_root(self):
