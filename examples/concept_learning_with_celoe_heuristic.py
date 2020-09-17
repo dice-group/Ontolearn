@@ -41,6 +41,3 @@ for str_target_concept, examples in settings['problems'].items():
         key='quality',  # heuristic, length
         serialize_name=(str_target_concept +
                         '_quality_structured_prediction.owl'))
-
-    # TBOX extended by top n concepts.
-    model.extend_ontology(top_n_concepts=20, key='quality')
