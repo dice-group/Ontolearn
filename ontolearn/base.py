@@ -44,7 +44,7 @@ class KnowledgeBase:
                                                     max_size_of_concept=self.max_size_of_concept)
 
     @staticmethod
-    def apply_type_enrichment_from_iterable(concepts: Iterable[Concept]):
+    def apply_type_enrichment_from_iterable(concepts: Iterable[Concept], world):
         """
         Extend ABOX by
         (1) Obtaining all instances of selected concepts.
@@ -53,7 +53,7 @@ class KnowledgeBase:
         @return:
         """
         for c in concepts:
-            for ind in c.owl.instances():
+            for ind in c.owl.instances(world=world):
                 ind.is_a.append(c.owl)
 
     @staticmethod
@@ -133,14 +133,14 @@ class KnowledgeBase:
 
         for str_, concept_A in self.concepts.items():  # second loop over concepts in the execution,
 
-            for desc in concept_A.owl.descendants(include_self=False):
+            for desc in concept_A.owl.descendants(include_self=False, world=onto.world):
 
                 wrapped_desc = self.concepts[desc.namespace.base_iri + desc.name]
 
                 # Include all sub class that are wrapped with AtomicConcept class into hierarchy.
                 self.top_down_concept_hierarchy[concept_A].add(wrapped_desc)
                 if len(wrapped_desc.owl.descendants(
-                        include_self=False)) == 0:  # if no descendant, then it is a leaf concept.
+                        include_self=False, world=onto.world)) == 0:  # if no descendant, then it is a leaf concept.
                     self.concepts_to_leafs.setdefault(concept_A, set()).add(wrapped_desc)
 
             for ans in concept_A.owl.ancestors(include_self=False):
@@ -148,7 +148,7 @@ class KnowledgeBase:
                 # Include all superclasses into down top hierarchy
                 self.down_top_concept_hierarchy[concept_A].add(wrapped_ans)
 
-            for subs in concept_A.owl.subclasses():  # returns direct subclasses
+            for subs in concept_A.owl.subclasses(world=onto.world):  # returns direct subclasses
                 if concept_A.owl == subs:
                     continue
                 wrapped_subs = self.concepts[subs.namespace.base_iri + subs.name]

@@ -93,6 +93,4 @@ def test_celoe_predictions():
             best_pred = model.predict(pos=p, neg=n)
             model.show_best_predictions(top_n=10, key='quality')
 
-            # TODO: The quality should be at least 0.8 as in the previous
-            #  version (without the world object)
-            assert (best_pred.quality > 0.6)
+            assert (best_pred.quality > 0.8)
