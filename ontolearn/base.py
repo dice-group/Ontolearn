@@ -99,7 +99,7 @@ class KnowledgeBase:
 
         bottom = Concept(owlready2.Nothing, kwargs={'form': 'Class'}, world=onto.world)
         for i in onto.classes():
-            temp_concept = Concept(i, kwargs={'form': 'Class'})  # Regarless of concept length
+            temp_concept = Concept(i, kwargs={'form': 'Class'}, world=onto.world)  # Regarless of concept length
             concepts[temp_concept.full_iri] = temp_concept
 
             individuals.update(temp_concept.instances)
