@@ -17,12 +17,13 @@ class BaseConcept(metaclass=ABCMeta):
                  'concept_b']
 
     @abstractmethod
-    def __init__(self, concept: ThingClass, kwargs):
+    def __init__(self, concept: ThingClass, kwargs, world=None):
         assert isinstance(concept, ThingClass)
         assert kwargs['form'] in ['Class', 'ObjectIntersectionOf', 'ObjectUnionOf', 'ObjectComplementOf',
                                   'ObjectSomeValuesFrom', 'ObjectAllValuesFrom']
 
         self.owl = concept
+        self.world = world
         self.full_iri = get_full_iri(concept)  # .namespace.base_iri + concept.name
         self.str = concept.name
         self.form = kwargs['form']
@@ -39,8 +40,7 @@ class BaseConcept(metaclass=ABCMeta):
         """ Returns all instances belonging to the concept."""
         if self.__instances:
             return self.__instances
-        # self.__instances = {get_full_iri(jjj) for jjj in self.owl.instances()}  # be sure of the memory usage.
-        self.__instances = {jjj for jjj in self.owl.instances()}  # be sure of the memory usage.
+        self.__instances = {jjj for jjj in self.owl.instances(world=self.world)}
         return self.__instances
 
     @instances.setter

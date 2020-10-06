@@ -95,9 +95,9 @@ class KnowledgeBase:
         """
         concepts = dict()
         individuals = set()
-        T = Concept(owlready2.Thing, kwargs={'form': 'Class'})
+        T = Concept(owlready2.Thing, kwargs={'form': 'Class'}, world=onto.world)
 
-        bottom = Concept(owlready2.Nothing, kwargs={'form': 'Class'})
+        bottom = Concept(owlready2.Nothing, kwargs={'form': 'Class'}, world=onto.world)
         for i in onto.classes():
             temp_concept = Concept(i, kwargs={'form': 'Class'})  # Regarless of concept length
             concepts[temp_concept.full_iri] = temp_concept
