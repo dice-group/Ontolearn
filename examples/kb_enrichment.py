@@ -1,6 +1,6 @@
 """
 kb_enrichment.py illustrates extending Tbox of given KB and saving KB in
-different formats.
+different formats. This is not tested.
 """
 
 from ontolearn import CustomRefinementOperator

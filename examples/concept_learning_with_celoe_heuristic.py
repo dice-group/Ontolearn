@@ -6,8 +6,10 @@ from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.metrics import F1
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.search import CELOESearchTree
+import random
+from sklearn.metrics import confusion_matrix
 
-
+import numpy as np
 with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 
@@ -35,9 +37,7 @@ for str_target_concept, examples in settings['problems'].items():
                   ignored_concepts=concepts_to_ignore,
                   verbose=False)
 
-    best_pred = model.predict(pos=p, neg=n)
-    model.show_best_predictions(
-        top_n=10,
-        key='quality',  # heuristic, length
-        serialize_name=(str_target_concept +
-                        '_quality_structured_prediction.owl'))
+    model.fit(pos=p, neg=n)
+    hypotheses=model.best_hypotheses(n=2)
+    predictions=model.predict(individuals=list(p),hypotheses=hypotheses)
+    print(predictions)

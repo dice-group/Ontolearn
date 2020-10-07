@@ -35,5 +35,7 @@ for str_target_concept, examples in settings['problems'].items():
                  ignored_concepts=concepts_to_ignore,
                  verbose=False)
 
-    best_pred = model.predict(pos=p, neg=n)
-    model.show_best_predictions(top_n=10, key='quality')
+    model.fit(pos=p, neg=n)
+    hypotheses=model.best_hypotheses(n=10)
+    predictions=model.predict(individuals=list(p),hypotheses=hypotheses)
+    print(predictions)
