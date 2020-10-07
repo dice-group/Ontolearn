@@ -9,13 +9,14 @@ from ontolearn import ModifiedCELOERefinement
 from ontolearn import OCEL
 from ontolearn import OCELHeuristic
 
+with open('examples/synthetic_problems.json') as json_file:
+    settings = json.load(json_file)
+
+# because '../data/family-benchmark_rich_background.owl'
+kb = KnowledgeBase(path=settings['data_path'][3:])
 
 def test_ocel():
-    with open('examples/synthetic_problems.json') as json_file:
-        settings = json.load(json_file)
 
-    # because '../data/family-benchmark_rich_background.owl'
-    kb = KnowledgeBase(path=settings['data_path'][3:])
 
     for str_target_concept, examples in settings['problems'].items():
         p = set(examples['positive_examples'])
@@ -38,5 +39,4 @@ def test_ocel():
                      ignored_concepts=concepts_to_ignore,
                      verbose=False)
 
-        model.predict(pos=p, neg=n)
-        model.show_best_predictions(top_n=10_000, key='heuristic')
+        model.fit(pos=p, neg=n)
