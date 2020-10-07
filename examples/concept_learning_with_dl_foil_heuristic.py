@@ -27,9 +27,7 @@ for str_target_concept, examples in settings['problems'].items():
         iter_bound=1_000,
         verbose=True)
 
-    best_pred = model.predict(pos=p, neg=n)
-    model.show_best_predictions(
-        top_n=10,
-        key='quality',
-        serialize_name=(str_target_concept +
-                        '_quality_structured_prediction.owl'))
+    model.fit(pos=p, neg=n)
+    hypotheses=model.best_hypotheses(n=2)
+    predictions=model.predict(individuals=list(n),hypotheses=hypotheses)
+    print(predictions)

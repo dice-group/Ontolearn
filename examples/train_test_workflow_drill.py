@@ -69,6 +69,4 @@ for str_target_concept, examples in settings['problems'].items():
                                 max_num_of_concepts_tested=5_000,
                                 ignored_concepts={},
                                 verbose=True)
-    model.predict(pos=p, neg=n)
-    model.best_hypotheses(top_n=10)
-    model.save_best_hypotheses(file_path=str_target_concept + '_best_hypothesis.owl', rdf_format='xml', top_n=10)
+    model.fit(pos=p, neg=n)

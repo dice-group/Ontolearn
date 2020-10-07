@@ -1,9 +1,12 @@
 from .base_concept_learner import BaseConceptLearner
 from .search import Node
-from typing import Set, AnyStr
+from typing import Set, AnyStr, Iterable, List
 from owlready2 import get_ontology
+from owlready2.entity import ThingClass
 import types
-
+import numpy as np
+import pandas as pd
+pd.set_option('display.max_columns', 100)
 
 class CELOE(BaseConceptLearner):
     def __init__(self, *, knowledge_base, refinement_operator, search_tree, quality_func, heuristic_func, iter_bound,
@@ -51,7 +54,7 @@ class CELOE(BaseConceptLearner):
         self.search_tree.update_done(node)
         return refinements
 
-    def predict(self, pos: Set[AnyStr], neg: Set[AnyStr]):
+    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr]) -> bool:
         self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.thing.instances)
 
         self.initialize_root()
@@ -66,12 +69,16 @@ class CELOE(BaseConceptLearner):
                         print('Goal found after {0} number of concepts tested.'.format(
                             self.search_tree.expressionTests))
                     if self.terminate_on_goal:
-                        self.search_tree.sort_search_tree_by_decreasing_order(key='quality')
-                        return list(self.search_tree.get_top_n_nodes(1))[0]
+                        print('Goal found search is stopped.')
+                        return True
+                        # self.search_tree.sort_search_tree_by_decreasing_order(key='quality')
+                        # return list(self.search_tree.get_top_n_nodes(1))[0]
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 break
-        self.search_tree.sort_search_tree_by_decreasing_order(key='quality')
-        return list(self.search_tree.get_top_n_nodes(1))[0]
+        # self.search_tree.sort_search_tree_by_decreasing_order(key='quality')
+        # return list(self.search_tree.get_top_n_nodes(1))[0]
+        return False
+
 
     def updateMinMaxHorizExp(self, node: Node):
         """
@@ -147,7 +154,7 @@ class LengthBaseLearner(BaseConceptLearner):
                        if i.str not in self.concepts_to_ignore)
         return refinements
 
-    def predict(self, pos: Set[AnyStr], neg: Set[AnyStr], n=10):
+    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], n=10):
         self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.thing.instances)
         self.initialize_root()
 
@@ -159,12 +166,13 @@ class LengthBaseLearner(BaseConceptLearner):
                     if self.verbose:
                         print('Goal found after {0} number of concepts tested.'.format(self.number_of_tested_concepts))
                     if self.terminate_on_goal:
-                        break
+                        # TODO find a generic way to terminate
+                        return True
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 break
-        return self.search_tree.get_top_n(n=n)
 
     def save_predictions(self, predictions, key: str, serialize_name: str):
+        raise NotImplementedError
         assert serialize_name
         assert key
         assert len(predictions)
@@ -239,7 +247,7 @@ class CustomConceptLearner(BaseConceptLearner):
                        for i in self.rho.refine(node.concept) if i is not None and i.str not in self.concepts_to_ignore)
         return refinements
 
-    def predict(self, pos, neg):
+    def fit(self, pos, neg):
         self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.thing.instances)
 
         self.initialize_root()
@@ -258,5 +266,3 @@ class CustomConceptLearner(BaseConceptLearner):
                         return list(self.search_tree.get_top_n_nodes(1))[0]
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 break
-        self.search_tree.sort_search_tree_by_decreasing_order(key='quality')
-        return list(self.search_tree.get_top_n_nodes(1))[0]  # in eficicent.

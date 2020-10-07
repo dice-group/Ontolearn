@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ExponentialLR
 import json
 import pandas as pd
-from .util import serialize_concepts
+#from .util import serialize_concepts
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -135,7 +135,7 @@ class DrillConceptLearner(BaseConceptLearner):
         if torch.isnan(node.concept.embeddings).any() or torch.isinf(node.concept.embeddings).any():
             node.concept.embeddings = torch.zeros((1, 1, self.instance_embeddings.shape[1]))
 
-    def predict(self, pos: Set[AnyStr], neg: Set[AnyStr], n=10):
+    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], n=10):
         self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.thing.instances)
         self.initialize_root()
 
@@ -182,12 +182,14 @@ class DrillConceptLearner(BaseConceptLearner):
         for i in self.search_tree.get_top_n(n=top_n):
             print(i)
 
+    """
     def save_best_hypotheses(self, file_path='best_hypothesis', rdf_format='nt', key='quality', top_n=10):
         metric, attribute = self.get_metric_key(key)
         serialize_concepts(concepts=self.search_tree.get_top_n(n=top_n),
                            serialize_name=file_path,
                            metric=metric,
                            attribute=attribute, rdf_format=rdf_format)
+    """
 
     def save_predictions(self, predictions, key: str, serialize_name: str):
         assert serialize_name

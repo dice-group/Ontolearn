@@ -16,7 +16,8 @@ class KnowledgeBase:
 
     def __init__(self, path, min_size_of_concept=1, max_concept_size_ratio=1.0):
         self.path = path
-        self.onto = World().get_ontology(self.path).load(reload=True)
+        # TODO: find a solution for World()
+        self.onto = get_ontology(self.path).load(reload=True)
         self.name = self.onto.name
         self.concepts = dict()
         self.thing = None
@@ -28,7 +29,6 @@ class KnowledgeBase:
         self.concepts_to_leafs = defaultdict(set)
         self.property_hierarchy = None
         self.parse()
-
         self.str_to_instance_obj = dict(zip([get_full_iri(i) for i in self.thing.instances], self.thing.instances))
         self.idx_of_instances = dict(zip(self.thing.instances, range(len(self.str_to_instance_obj))))
 
@@ -66,6 +66,16 @@ class KnowledgeBase:
 
     def get_all_individuals(self) -> Set:
         return self.thing.instances
+
+    def convert_uri_instance_to_obj(self, str_ind: str):
+        try:
+            return self.str_to_instance_obj[str_ind]
+        except KeyError:
+            print(str_ind,'not found')
+            print(self.str_to_instance_obj)
+
+    def convert_uri_instance_to_obj_from_iterable(self, l: Iterable):
+        return [self.convert_uri_instance_to_obj(i) for i in l]
 
     def set_min_size_of_concept(self, n):
         self.min_size_of_concept = n

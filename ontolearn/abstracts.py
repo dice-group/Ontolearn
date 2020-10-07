@@ -3,7 +3,7 @@ from functools import total_ordering
 from abc import ABCMeta, abstractmethod, ABC
 from owlready2 import ThingClass
 from .util import get_full_iri
-from typing import Set, AnyStr, Dict
+from typing import Set, AnyStr, Dict,List
 import random
 
 random.seed(0)
@@ -34,6 +34,7 @@ class BaseConcept(metaclass=ABCMeta):
         self.__idx_instances = None
 
         self.embeddings = None
+
     @property
     def instances(self) -> Set:
         """ Returns all instances belonging to the concept."""
@@ -303,9 +304,10 @@ class AbstractTree(ABC):
         for k, node in self._nodes.items():
             yield node
 
-    def get_top_n_nodes(self, n: int):
+    def get_top_n_nodes(self, n: int, key='quality'):
+        self.sort_search_tree_by_decreasing_order(key=key)
         for ith, dict_ in enumerate(self._nodes.items()):
-            if ith > n:
+            if ith >= n:
                 break
             k, node = dict_
             yield node
@@ -374,6 +376,10 @@ class AbstractTree(ABC):
         sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
         self._nodes = OrderedDict(sorted_x)
     """
+    def best_hypotheses(self, n=10) -> List[BaseNode]:
+        assert self.search_tree is not None
+        assert len(self.search_tree) > 1
+        return [i for i in self.search_tree.get_top_n_nodes(n)]
 
     def show_search_tree(self, th, top_n=10):
         """
