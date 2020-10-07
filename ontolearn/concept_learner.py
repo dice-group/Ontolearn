@@ -8,7 +8,7 @@ import types
 class CELOE(BaseConceptLearner):
     def __init__(self, *, knowledge_base, refinement_operator, search_tree, quality_func, heuristic_func, iter_bound,
                  verbose, terminate_on_goal=False, max_num_of_concepts_tested=10_000, min_horizontal_expansion=0,
-                 ignored_concepts={}):
+                 ignored_concepts=None):
         super().__init__(knowledge_base=knowledge_base, refinement_operator=refinement_operator,
                          search_tree=search_tree,
                          quality_func=quality_func,
