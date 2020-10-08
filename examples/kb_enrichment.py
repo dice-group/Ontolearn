@@ -6,7 +6,6 @@ different formats. This is not tested.
 from ontolearn import CustomRefinementOperator
 from ontolearn import Data
 from ontolearn import KnowledgeBase
-
 kb = KnowledgeBase(path='../data/family-benchmark_rich_background.owl')
 data = Data(knowledge_base=kb)
 rho = CustomRefinementOperator(kb)
