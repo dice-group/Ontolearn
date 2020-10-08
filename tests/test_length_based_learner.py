@@ -37,4 +37,4 @@ def test_lengthbasedlearner():
                 ignored_concepts=concepts_to_ignore,
                 verbose=True)
 
-            model.fit(pos=p, neg=n, n=10)
+            model.fit(pos=p, neg=n)
