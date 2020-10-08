@@ -16,18 +16,10 @@ for str_target_concept, examples in settings['problems'].items():
     p = set(examples['positive_examples'])
     n = set(examples['negative_examples'])
     print('Target concept: ', str_target_concept)
-    model = CustomConceptLearner(
-        knowledge_base=kb,
-        refinement_operator=CustomRefinementOperator(kb=kb),
-        quality_func=F1(),
-        heuristic_func=DLFOILHeuristic(),
-        search_tree=SearchTree(),
-        terminate_on_goal=True,
-        max_num_of_concepts_tested=300,
-        iter_bound=1_000,
-        verbose=True)
+    model = CustomConceptLearner(knowledge_base=kb)
 
     model.fit(pos=p, neg=n)
-    hypotheses=model.best_hypotheses(n=2)
-    predictions=model.predict(individuals=list(n),hypotheses=hypotheses)
-    print(predictions)
+    hypotheses = model.best_hypotheses(n=2)
+    for h in hypotheses:
+        print(h)
+    predictions = model.predict(individuals=list(n), hypotheses=hypotheses)

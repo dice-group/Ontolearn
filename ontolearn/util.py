@@ -181,13 +181,9 @@ def retrieve_concept_hierarchy(c) -> Iterable:
         hierarchy.appendleft(c)
     return hierarchy
 
-
+"""
 def serialize_concepts(concepts: Iterable, serialize_name: str, metric: str, attribute: str, rdf_format: str):
-    """
-    Given a set of node objects containing concepts.
-    1) For each concept obtain its hierarchy based on subsumption.
-    2) Serialize each object with its hierarchy including quality.
-    """
+    raise NotImplementedError
     g = Graph()
 
     integer_mapped_concepts = dict()
@@ -215,7 +211,7 @@ def serialize_concepts(concepts: Iterable, serialize_name: str, metric: str, att
                        URIRef('https://dice-research.org/' + integer_mapped_concepts[node.parent_node])))
 
         g.serialize(destination=serialize_name, format=rdf_format)
-
+"""
 
 def apply_TSNE_on_df(df) -> None:
     low_emb = TSNE(n_components=2).fit_transform(df)
