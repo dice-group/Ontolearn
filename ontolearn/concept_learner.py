@@ -15,8 +15,8 @@ pd.set_option('display.max_columns', 100)
 
 class CELOE(BaseConceptLearner):
     def __init__(self, *, knowledge_base, refinement_operator=None,
-                 search_tree=None, quality_func=None, heuristic_func=None, iter_bound=100,
-                 verbose=False, terminate_on_goal=False, max_num_of_concepts_tested=100, min_horizontal_expansion=0,
+                 search_tree=None, quality_func=None, heuristic_func=None, iter_bound=1000,
+                 verbose=False, terminate_on_goal=False, max_num_of_concepts_tested=1000, min_horizontal_expansion=0,
                  ignored_concepts=None):
 
         if refinement_operator is None:
