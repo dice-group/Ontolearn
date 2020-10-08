@@ -22,7 +22,7 @@ Ontolearn is an open-source software library for structured machine learning in 
 ### Installation via pip
 
 ```python
-pip install ontolearn
+pip install ontolearn # https://pypi.org/project/ontolearn/ only a place holder.
 ```
 
 ## Usage
@@ -77,7 +77,7 @@ for str_target_concept, examples in settings['problems'].items():
                                 max_num_of_concepts_tested=5_000,
                                 ignored_concepts={},
                                 verbose=True)
-    model.predict(pos=p, neg=n)
+    model.fit(pos=p, neg=n)
     model.best_hypotheses(top_n=10)
     model.save_best_hypotheses(file_path=str_target_concept + '_best_hypothesis.owl', rdf_format='xml', top_n=10)
 ```
@@ -99,7 +99,7 @@ model = CELOE(knowledge_base=kb,
               iter_bound=1_000,
               verbose=False)
 
-model.predict(pos=p, neg=n)
+model.fit(pos=p, neg=n)
 model.show_best_predictions(top_n=10, key='quality')
 
 ```
@@ -118,7 +118,7 @@ model = CustomConceptLearner(knowledge_base=kb,
                              terminate_on_goal=True,
                              iter_bound=1_000,
                              verbose=True)
-model.predict(pos=p, neg=n)
+model.fit(pos=p, neg=n)
 model.show_best_predictions(top_n=10, key='quality')
 ```
 

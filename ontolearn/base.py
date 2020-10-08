@@ -16,7 +16,7 @@ class KnowledgeBase:
 
     def __init__(self, path, min_size_of_concept=1, max_concept_size_ratio=1.0):
         self.path = path
-        self.onto = World().get_ontology(self.path).load(reload=True)
+        self.onto = get_ontology(self.path).load(reload=True)
         self.name = self.onto.name
         self.concepts = dict()
         self.thing = None
@@ -29,8 +29,11 @@ class KnowledgeBase:
         self.property_hierarchy = None
         self.parse()
 
-        self.str_to_instance_obj = dict(zip([get_full_iri(i) for i in self.thing.instances], self.thing.instances))
-        self.idx_of_instances = dict(zip(self.thing.instances, range(len(self.str_to_instance_obj))))
+        self.__str_to_instance_obj = dict(zip([get_full_iri(i) for i in self.thing.instances], self.thing.instances))
+
+        self.__obj_to_str_iri_instances = dict(
+            zip(self.__str_to_instance_obj.values(), self.__str_to_instance_obj.keys()))
+        self.idx_of_instances = dict(zip(self.thing.instances, range(len(self.__str_to_instance_obj))))
 
         self.min_size_of_concept = min_size_of_concept
 
@@ -67,6 +70,22 @@ class KnowledgeBase:
     def get_all_individuals(self) -> Set:
         return self.thing.instances
 
+    def convert_uri_instance_to_obj(self, str_ind: str):
+        assert isinstance(str_ind, str)
+        try:
+            return self.__str_to_instance_obj[str_ind]
+        except KeyError:
+            KeyError('{0} is not found in vocabulary of URI instances'.format(str_ind))
+
+    def convert_uri_instance_to_obj_from_iterable(self, l: Iterable):
+        return [self.convert_uri_instance_to_obj(i) for i in l]
+
+    def convert_owlready2_individuals_to_uri(self, instance):
+        return self.__obj_to_str_iri_instances[instance]
+
+    def convert_owlready2_individuals_to_uri_from_iterable(self, l: Iterable):
+        return [self.convert_owlready2_individuals_to_uri(i) for i in l]
+
     def set_min_size_of_concept(self, n):
         self.min_size_of_concept = n
 
@@ -96,17 +115,18 @@ class KnowledgeBase:
         concepts = dict()
         individuals = set()
         T = Concept(owlready2.Thing, kwargs={'form': 'Class'})
-
         bottom = Concept(owlready2.Nothing, kwargs={'form': 'Class'})
+        # TODO: Think about removing owlready2 instances and use string representation.
         for i in onto.classes():
-            temp_concept = Concept(i, kwargs={'form': 'Class'})  # Regarless of concept length
+            temp_concept = Concept(i, kwargs={'form': 'Class'})
             concepts[temp_concept.full_iri] = temp_concept
-
             individuals.update(temp_concept.instances)
         try:
-            assert T.instances
-        except:
-            print('owlready2.Thing does not contains any individuals.\t')
+            assert T.instances  # if empty throw error.
+            assert individuals.issubset(T.instances)
+        except AssertionError:
+            print(
+                'Sanity checking failed: owlready2.Thing does not contain any individual. To allivate this issue, we explicitly assign all individuals/instances to concept T.')
             T.instances = individuals
 
         concepts[T.full_iri] = T
@@ -122,7 +142,6 @@ class KnowledgeBase:
 
         2) self.down_top_concept_hierarchy is a mapping from Concept objects to set of Concept objects that are
         direct superclasses of given Concept object.
-
         """
 
         self.concepts, self.thing, self.nothing = self.__build_concepts_mapping(onto)

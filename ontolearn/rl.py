@@ -2,7 +2,7 @@ from abc import ABCMeta
 from .concept_learner import BaseConceptLearner
 from .base_rl_agent import BaseRLTrainer
 from .util import get_full_iri, balanced_sets, performance_debugger, create_logger
-from .search import Node
+from .search import Node,SearchTreePriorityQueue
 import random
 import torch
 from torch import nn
@@ -21,9 +21,11 @@ import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ExponentialLR
 import json
 import pandas as pd
-from .util import serialize_concepts
+from .refinement_operators import LengthBasedRefinement
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+from .metrics import F1
+from .heuristics import Reward
+#device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class DrillHeuristic(AbstractScorer):
@@ -34,7 +36,7 @@ class DrillHeuristic(AbstractScorer):
     def __init__(self, pos=None, neg=None, model=None):
         super().__init__(pos, neg, unlabelled=None)
         self.name = 'DrillHeuristic'
-        self.model=model
+        self.model = model
         assert isinstance(self.model, torch.nn.Module)
         self.model = model
         self.model.eval()
@@ -59,9 +61,6 @@ class DrillHeuristic(AbstractScorer):
             self.X = torch.cat([self.S, self.S_Prime, self.Positives, self.Negatives], 1)
             num_points, depth, dim = self.X.shape
             self.X = self.X.view(num_points, depth, dim)
-            self.X = self.X.to(device)
-
-            self.model
 
             raise ValueError()
 
@@ -72,10 +71,18 @@ class DrillHeuristic(AbstractScorer):
 
 
 class DrillConceptLearner(BaseConceptLearner):
-    def __init__(self, *, knowledge_base, refinement_operator, search_tree, quality_func, heuristic_func, iter_bound,
-                 verbose, terminate_on_goal=False, max_num_of_concepts_tested=10_000, min_length=1, instance_emb,
-                 ignored_concepts={}):
-
+    def __init__(self, *, knowledge_base, refinement_operator=None, search_tree=None, quality_func=None, heuristic_func, iter_bound=1000,
+                 verbose=True, terminate_on_goal=True, max_num_of_concepts_tested=1_000, min_length=1, instance_emb,ignored_concepts=None):
+        if ignored_concepts is None:
+            ignored_concepts = {}
+        if refinement_operator is None:
+            refinement_operator = LengthBasedRefinement(kb=knowledge_base)
+        if quality_func is None:
+            quality_func = F1()
+        if search_tree is None:
+            search_tree = SearchTree()
+        assert instance_emb is not None
+        assert heuristic_func
         super().__init__(knowledge_base=knowledge_base, refinement_operator=refinement_operator,
                          search_tree=search_tree,
                          quality_func=quality_func,
@@ -135,12 +142,13 @@ class DrillConceptLearner(BaseConceptLearner):
         if torch.isnan(node.concept.embeddings).any() or torch.isinf(node.concept.embeddings).any():
             node.concept.embeddings = torch.zeros((1, 1, self.instance_embeddings.shape[1]))
 
-    def predict(self, pos: Set[AnyStr], neg: Set[AnyStr], n=10):
+    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr])-> bool:
         self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.thing.instances)
         self.initialize_root()
 
-        # Quick implementation of testing.
+        # TODO: We need to restructre of the all code below for the sake of readability.
 
+        # Quick implementation of testing.
         self.emb_pos = torch.tensor(self.instance_embeddings.loc[list(pos)].values,
                                     dtype=torch.float32)
         self.emb_neg = torch.tensor(self.instance_embeddings.loc[list(neg)].values,
@@ -152,56 +160,27 @@ class DrillConceptLearner(BaseConceptLearner):
         self.emb_neg = torch.mean(self.emb_neg, dim=0)
         self.emb_neg = self.emb_neg.view(1, 1, self.emb_neg.shape[0])
 
-        goal_found = False
         for j in range(1, self.iter_bound):
             node_to_expand = self.next_node_to_expand(j)
 
             refinements = [ref for ref in self.apply_rho(node_to_expand)]
 
             q_values = self.exploitation(current_state=node_to_expand, next_states=refinements)
+            # TODO:Below for loop needs to be done in paralel.
             for child_node, qval in zip(refinements, q_values):
                 child_node.heuristic = qval
-
                 self.search_tree.quality_func.apply(child_node)  # AccuracyOrTooWeak(n)
                 self.search_tree.expressionTests += 1
                 if child_node.quality == 0:  # > too weak
                     continue
-
                 self.search_tree.nodes[child_node] = child_node
 
                 if child_node.quality == 1:  # goal found
-                    print('Goal found in ')
-                    goal_found = True
-                    break
-            if goal_found:
-                break
+                    print('Number of concepts tested: ',self.number_of_tested_concepts)
+                    return True
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
-                break
-
-    def best_hypotheses(self, top_n=10):
-        for i in self.search_tree.get_top_n(n=top_n):
-            print(i)
-
-    def save_best_hypotheses(self, file_path='best_hypothesis', rdf_format='nt', key='quality', top_n=10):
-        metric, attribute = self.get_metric_key(key)
-        serialize_concepts(concepts=self.search_tree.get_top_n(n=top_n),
-                           serialize_name=file_path,
-                           metric=metric,
-                           attribute=attribute, rdf_format=rdf_format)
-
-    def save_predictions(self, predictions, key: str, serialize_name: str):
-        assert serialize_name
-        assert key
-        assert len(predictions)
-        metric, attribute = self.get_metric_key(key)
-        onto = get_ontology(serialize_name)
-        with onto:
-            for i in predictions:
-                bases = tuple(j for j in i.concept.owl.mro()[:-1])
-                new_concept = types.new_class(name=i.concept.str, bases=bases)
-                new_concept.comment.append("{0}:{1}".format(metric, getattr(i, attribute)))
-        onto.save(serialize_name)
-
+                return False
+        return False
 
 class DrillTrainer(BaseRLTrainer):
     """
@@ -225,12 +204,12 @@ class DrillTrainer(BaseRLTrainer):
     def __init__(self,
                  knowledge_base,
                  refinement_operator,
-                 quality_func,
-                 search_tree,
-                 reward_func,
-                 path_pretrained_agent,
-                 learning_problem_generator,
-                 instance_embeddings,
+                 quality_func=F1(),
+                 search_tree=SearchTreePriorityQueue(),
+                 reward_func=Reward(),
+                 path_pretrained_agent=None,
+                 learning_problem_generator=None,
+                 instance_embeddings=None,
                  num_epochs_per_replay=10,
                  num_episode=759,
                  epsilon=1.0,
@@ -265,7 +244,6 @@ class DrillTrainer(BaseRLTrainer):
         else:
             self.model = Drill()
             self.model.init()
-        self.model.to(device)
         self.lp_gen = learning_problem_generator
         self.instance_embeddings = instance_embeddings  # Normalize input if necessary
 
@@ -278,8 +256,6 @@ class DrillTrainer(BaseRLTrainer):
 
         # Logging and using cuda.
         self.logger = create_logger(name='Drill', p=self.storage_path)
-        self.logger.info('Device:{0}'.format(device))
-        self.logger.info('# of cuda device:{0}'.format(torch.cuda.device_count()))
         settings = dict()
 
         settings.update({'batch_size': self.batch_size,
@@ -429,10 +405,12 @@ class DrillTrainer(BaseRLTrainer):
         """
 
         for example_node in self.lp_gen:
-            # string_pos
-            string_all_pos = {get_full_iri(i) for i in example_node.concept.instances}
-            string_all_neg = {get_full_iri(i) for i in
-                              self.kb.get_all_individuals().difference(example_node.concept.instances)}
+            # Instances of example concept conversion to URIs in string format.
+            # All concept learners must be able to perform on string representations of instances.
+            string_all_pos = set(
+                self.kb.convert_owlready2_individuals_to_uri_from_iterable(example_node.concept.instances))
+            string_all_neg = set(self.kb.convert_owlready2_individuals_to_uri_from_iterable(
+                self.kb.get_all_individuals().difference(example_node.concept.instances)))
             data_set_info = 'Target Concept:{0}\t |E+|:{1}\t |E-|'.format(example_node.concept.str, len(string_all_pos),
                                                                           len(string_all_neg))
             # create balanced setting
@@ -445,8 +423,8 @@ class DrillTrainer(BaseRLTrainer):
                 self.logger.info('Balancing is not possible. Example will be skiped.')
                 continue
             # string to owlready2 object conversion
-            self.pos = {self.kb.str_to_instance_obj[i] for i in string_balanced_pos}
-            self.neg = {self.kb.str_to_instance_obj[i] for i in string_balanced_neg}
+            self.pos = set(self.kb.convert_uri_instance_to_obj_from_iterable(string_balanced_pos))
+            self.neg = set(self.kb.convert_uri_instance_to_obj_from_iterable(string_balanced_neg))
             self.reward_func.pos = self.pos
             self.reward_func.neg = self.neg
 
@@ -460,6 +438,7 @@ class DrillTrainer(BaseRLTrainer):
             self.emb_neg = torch.mean(self.emb_neg, dim=0)
             self.emb_neg = self.emb_neg.view(1, 1, self.emb_neg.shape[0])
 
+            # Sanity checking
             if torch.isnan(self.emb_pos).any() or torch.isinf(self.emb_pos).any():
                 print(string_balanced_pos)
                 raise ValueError('invalid value detected in E+,\n{0}'.format(self.emb_pos))
@@ -511,8 +490,8 @@ class DrillTrainer(BaseRLTrainer):
         this method later on should be executable without pretraining."""
         print('Test start.')
         # string to owlready2 object conversion
-        self.pos = {self.kb.str_to_instance_obj[i] for i in pos}
-        self.neg = {self.kb.str_to_instance_obj[i] for i in neg}
+        self.pos = {self.kb.__str_to_instance_obj[i] for i in pos}
+        self.neg = {self.kb.__str_to_instance_obj[i] for i in neg}
 
         self.search_tree.quality_func.set_positive_examples(self.pos)
         self.search_tree.quality_func.set_negative_examples(self.neg)
@@ -644,7 +623,7 @@ class PrepareBatchOfPrediction(torch.utils.data.Dataset):
         self.X = torch.cat([self.S, self.S_Prime, self.Positives, self.Negatives], 1)
         num_points, depth, dim = self.X.shape
         self.X = self.X.view(num_points, depth, dim)
-        self.X = self.X.to(device)
+        #self.X = self.X.to(device)
 
     def __len__(self):
         return len(self.X)
