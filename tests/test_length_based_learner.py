@@ -9,13 +9,12 @@ from ontolearn import LengthBasedRefinement
 from ontolearn import LengthBaseLearner
 from ontolearn import SearchTreePriorityQueue
 
+with open('examples/synthetic_problems.json') as json_file:
+    settings = json.load(json_file)
+# because '../data/family-benchmark_rich_background.owl'
+kb = KnowledgeBase(path=settings['data_path'][3:])
 
 def test_lengthbasedlearner():
-    with open('examples/synthetic_problems.json') as json_file:
-        settings = json.load(json_file)
-
-    # because '../data/family-benchmark_rich_background.owl'
-    kb = KnowledgeBase(path=settings['data_path'][3:])
     for str_target_concept, examples in settings['problems'].items():
         p = set(examples['positive_examples'])
         n = set(examples['negative_examples'])
@@ -38,5 +37,4 @@ def test_lengthbasedlearner():
                 ignored_concepts=concepts_to_ignore,
                 verbose=True)
 
-            preds = model.predict(pos=p, neg=n, n=10)
-            assert len(preds) > 0
+            model.fit(pos=p, neg=n)

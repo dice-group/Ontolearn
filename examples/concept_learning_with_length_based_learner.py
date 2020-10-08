@@ -23,20 +23,8 @@ for str_target_concept, examples in settings['problems'].items():
         concepts_to_ignore.update(
             {'Brother', 'Father', 'Uncle', 'Grandparent'})
 
-    model = LengthBaseLearner(knowledge_base=kb,
-                              refinement_operator=LengthBasedRefinement(kb=kb),
-                              quality_func=F1(),
-                              min_length=1,  # think better variable name
-                              heuristic_func=CELOEHeuristic(),
-                              search_tree=SearchTreePriorityQueue(),
-                              terminate_on_goal=True,
-                              iter_bound=1_000,
-                              max_num_of_concepts_tested=5_000,
-                              ignored_concepts={},
-                              verbose=True)
+    model = LengthBaseLearner(knowledge_base=kb)
 
-    predictions = model.predict(pos=p, neg=n, n=10)
-
-    model.save_predictions(
-        predictions,
-        key='quality', serialize_name=(str_target_concept + '_quality_structured_prediction.owl'))
+    model.fit(pos=p, neg=n)
+    hypotheses = model.best_hypotheses(n=10)
+    predictions = model.predict(individuals=list(p), hypotheses=hypotheses)

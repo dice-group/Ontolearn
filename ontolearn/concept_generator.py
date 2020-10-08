@@ -34,8 +34,10 @@ class ConceptGenerator:
 
         self.min_size_of_concept = min_size_of_concept
         self.max_size_of_concept = max_size_of_concept
-        self.namespace_base_iri='https://dice-research.org/'
+        self.namespace_base_iri = 'https://dice-research.org/' # TODO this is not a must. and we need tests.
 
+        # TODO: at concept generation, we may be able to remove owlready2 dependecny.
+        #  Concept class of ours do not necesseary need owlready2 instance.
         self.concepts = concepts
         self.T = T
         self.Bottom = Bottom
@@ -89,13 +91,12 @@ class ConceptGenerator:
         """
         if concept in self.log_of_negations:
             return self.log_of_negations[concept]
-
         if not (concept.owl.name == 'Thing'):
             possible_instances_ = self.T.instances - concept.instances
 
             with self.onto:
                 not_concept = types.new_class(name="¬{0}".format(concept.owl.name), bases=(self.T.owl,))
-                not_concept.namespace.base_iri = self.namespace_base_iri#concept.owl.namespace.base_iri
+                not_concept.namespace.base_iri = self.namespace_base_iri  # concept.owl.namespace.base_iri
                 AllDisjoint([not_concept, concept.owl])
                 not_concept.is_a.append(Not(concept.owl))
 
@@ -236,7 +237,7 @@ class ConceptGenerator:
             new_concept = types.new_class(name="({0} ⊔ {1})".format(A.str, B.str), bases=(base,))
             new_concept.namespace.base_iri = self.namespace_base_iri
 
-            #new_concept.is_a.append(A.owl | B.owl) # TODO: investigate, it appears to take too much of time.
+            # new_concept.is_a.append(A.owl | B.owl) # TODO: investigate, it appears to take too much of time.
             c = Concept(concept=new_concept, kwargs={'form': 'ObjectUnionOf', 'ConceptA': A, 'ConceptB': B})
 
             for i in possible_instances_:
@@ -270,7 +271,7 @@ class ConceptGenerator:
         with self.onto:
             new_concept = types.new_class(name="({0}  ⊓  {1})".format(A.str, B.str), bases=(base,))
             new_concept.namespace.base_iri = self.namespace_base_iri
-            #new_concept.is_a.append(A.owl & B.owl) # TODO: investigate, it appears to take too much of time.
+            # new_concept.is_a.append(A.owl & B.owl) # TODO: investigate, it appears to take too much of time.
             c = Concept(concept=new_concept, kwargs={'form': 'ObjectIntersectionOf', 'ConceptA': A, 'ConceptB': B})
             for i in possible_instances_:
                 assert type(i) is not str

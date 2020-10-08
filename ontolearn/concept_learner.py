@@ -1,14 +1,33 @@
 from .base_concept_learner import BaseConceptLearner
-from .search import Node
-from typing import Set, AnyStr
+from .search import Node, CELOESearchTree, SearchTree, SearchTreePriorityQueue
+from typing import Set, AnyStr, Iterable, List
 from owlready2 import get_ontology
+from owlready2.entity import ThingClass
 import types
+import numpy as np
+import pandas as pd
+from .heuristics import CELOEHeuristic, DLFOILHeuristic, OCELHeuristic
+from .refinement_operators import ModifiedCELOERefinement, CustomRefinementOperator, LengthBasedRefinement
+from .metrics import F1, Accuracy, Recall
+
+pd.set_option('display.max_columns', 100)
 
 
 class CELOE(BaseConceptLearner):
-    def __init__(self, *, knowledge_base, refinement_operator, search_tree, quality_func, heuristic_func, iter_bound,
-                 verbose, terminate_on_goal=False, max_num_of_concepts_tested=10_000, min_horizontal_expansion=0,
-                 ignored_concepts={}):
+    def __init__(self, *, knowledge_base, refinement_operator=None,
+                 search_tree=None, quality_func=None, heuristic_func=None, iter_bound=1000,
+                 verbose=False, terminate_on_goal=False, max_num_of_concepts_tested=1000, min_horizontal_expansion=0,
+                 ignored_concepts=None):
+
+        if refinement_operator is None:
+            refinement_operator = ModifiedCELOERefinement(kb=knowledge_base)
+        if quality_func is None:
+            quality_func = F1()
+        if heuristic_func is None:
+            heuristic_func = CELOEHeuristic()
+        if search_tree is None:
+            search_tree = CELOESearchTree()
+
         super().__init__(knowledge_base=knowledge_base, refinement_operator=refinement_operator,
                          search_tree=search_tree,
                          quality_func=quality_func,
@@ -51,7 +70,7 @@ class CELOE(BaseConceptLearner):
         self.search_tree.update_done(node)
         return refinements
 
-    def predict(self, pos: Set[AnyStr], neg: Set[AnyStr]):
+    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr]) -> bool:
         self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.thing.instances)
 
         self.initialize_root()
@@ -66,12 +85,11 @@ class CELOE(BaseConceptLearner):
                         print('Goal found after {0} number of concepts tested.'.format(
                             self.search_tree.expressionTests))
                     if self.terminate_on_goal:
-                        self.search_tree.sort_search_tree_by_decreasing_order(key='quality')
-                        return list(self.search_tree.get_top_n_nodes(1))[0]
+                        print('Goal found search is stopped.')
+                        return True
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
-                break
-        self.search_tree.sort_search_tree_by_decreasing_order(key='quality')
-        return list(self.search_tree.get_top_n_nodes(1))[0]
+                return False
+        return False
 
     def updateMinMaxHorizExp(self, node: Node):
         """
@@ -102,9 +120,21 @@ class CELOE(BaseConceptLearner):
 
 
 class OCEL(CELOE):
-    def __init__(self, *, knowledge_base, refinement_operator, search_tree, quality_func, heuristic_func, iter_bound,
-                 verbose, terminate_on_goal=False, min_horizontal_expansion=0, max_num_of_concepts_tested=10_000,
-                 ignored_concepts={}):
+    def __init__(self, *, knowledge_base, refinement_operator=None, search_tree=None, quality_func=None,
+                 heuristic_func=None, iter_bound=100,
+                 verbose=False, terminate_on_goal=False, min_horizontal_expansion=0, max_num_of_concepts_tested=1000,
+                 ignored_concepts=None):
+
+        if ignored_concepts is None:
+            ignored_concepts = {}
+        if refinement_operator is None:
+            refinement_operator = ModifiedCELOERefinement(kb=knowledge_base)
+        if quality_func is None:
+            quality_func = F1()
+        if heuristic_func is None:
+            heuristic_func = OCELHeuristic()
+        if search_tree is None:
+            search_tree = CELOESearchTree()
         super().__init__(knowledge_base=knowledge_base, refinement_operator=refinement_operator,
                          search_tree=search_tree,
                          quality_func=quality_func,
@@ -117,9 +147,21 @@ class OCEL(CELOE):
 
 
 class LengthBaseLearner(BaseConceptLearner):
-    def __init__(self, *, knowledge_base, refinement_operator, search_tree, quality_func, heuristic_func, iter_bound,
-                 verbose, terminate_on_goal=False, max_num_of_concepts_tested=10_000, min_length=1,
-                 ignored_concepts={}):
+    def __init__(self, *, knowledge_base, refinement_operator=None, search_tree=None, quality_func=None,
+                 heuristic_func=None, iter_bound=1000,
+                 verbose=False, terminate_on_goal=False, max_num_of_concepts_tested=10_000, min_length=1,
+                 ignored_concepts=None):
+
+        if ignored_concepts is None:
+            ignored_concepts = {}
+        if refinement_operator is None:
+            refinement_operator = LengthBasedRefinement(kb=knowledge_base)
+        if quality_func is None:
+            quality_func = Recall()
+        if heuristic_func is None:
+            heuristic_func = CELOEHeuristic()
+        if search_tree is None:
+            search_tree = SearchTreePriorityQueue()
 
         super().__init__(knowledge_base=knowledge_base, refinement_operator=refinement_operator,
                          search_tree=search_tree,
@@ -147,7 +189,7 @@ class LengthBaseLearner(BaseConceptLearner):
                        if i.str not in self.concepts_to_ignore)
         return refinements
 
-    def predict(self, pos: Set[AnyStr], neg: Set[AnyStr], n=10):
+    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr]) -> bool:
         self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.thing.instances)
         self.initialize_root()
 
@@ -159,12 +201,13 @@ class LengthBaseLearner(BaseConceptLearner):
                     if self.verbose:
                         print('Goal found after {0} number of concepts tested.'.format(self.number_of_tested_concepts))
                     if self.terminate_on_goal:
-                        break
+                        return True
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
-                break
-        return self.search_tree.get_top_n(n=n)
+                return False
+        return False
 
     def save_predictions(self, predictions, key: str, serialize_name: str):
+        raise NotImplementedError
         assert serialize_name
         assert key
         assert len(predictions)
@@ -210,9 +253,22 @@ class LengthBaseLearner(BaseConceptLearner):
 
 
 class CustomConceptLearner(BaseConceptLearner):
-    def __init__(self, *, knowledge_base, refinement_operator, search_tree, quality_func, heuristic_func, iter_bound,
-                 verbose, terminate_on_goal=False, max_num_of_concepts_tested=10_000,
-                 ignored_concepts={}):
+    def __init__(self, *, knowledge_base, refinement_operator=None, search_tree=None, quality_func=None,
+                 heuristic_func=None, iter_bound=1000,
+                 verbose=False, terminate_on_goal=True, max_num_of_concepts_tested=1000,
+                 ignored_concepts=None):
+
+        if ignored_concepts is None:
+            ignored_concepts = {}
+        if refinement_operator is None:
+            refinement_operator = CustomRefinementOperator(kb=knowledge_base)
+        if quality_func is None:
+            quality_func = Accuracy()
+        if heuristic_func is None:
+            heuristic_func = DLFOILHeuristic()
+        if search_tree is None:
+            search_tree = SearchTree()
+
         super().__init__(knowledge_base=knowledge_base, refinement_operator=refinement_operator,
                          search_tree=search_tree,
                          quality_func=quality_func,
@@ -239,11 +295,9 @@ class CustomConceptLearner(BaseConceptLearner):
                        for i in self.rho.refine(node.concept) if i is not None and i.str not in self.concepts_to_ignore)
         return refinements
 
-    def predict(self, pos, neg):
+    def fit(self, pos, neg) -> bool:
         self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.thing.instances)
-
         self.initialize_root()
-
         for j in range(1, self.iter_bound):
 
             node_to_expand = self.next_node_to_expand(j)
@@ -254,9 +308,7 @@ class CustomConceptLearner(BaseConceptLearner):
                         print('Goal found after {0} number of concepts tested.'.format(
                             self.search_tree.expressionTests))
                     if self.terminate_on_goal:
-                        self.search_tree.sort_search_tree_by_decreasing_order(key='quality')
-                        return list(self.search_tree.get_top_n_nodes(1))[0]
+                        return True
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
-                break
-        self.search_tree.sort_search_tree_by_decreasing_order(key='quality')
-        return list(self.search_tree.get_top_n_nodes(1))[0]  # in eficicent.
+                return False
+        return False
