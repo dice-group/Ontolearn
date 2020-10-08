@@ -31,7 +31,8 @@ class KnowledgeBase:
 
         self.__str_to_instance_obj = dict(zip([get_full_iri(i) for i in self.thing.instances], self.thing.instances))
 
-        self.__obj_to_str_iri_instances = dict(zip(self.__str_to_instance_obj.values(),self.__str_to_instance_obj.keys()))
+        self.__obj_to_str_iri_instances = dict(
+            zip(self.__str_to_instance_obj.values(), self.__str_to_instance_obj.keys()))
         self.idx_of_instances = dict(zip(self.thing.instances, range(len(self.__str_to_instance_obj))))
 
         self.min_size_of_concept = min_size_of_concept
@@ -70,7 +71,7 @@ class KnowledgeBase:
         return self.thing.instances
 
     def convert_uri_instance_to_obj(self, str_ind: str):
-        assert isinstance(str_ind,str)
+        assert isinstance(str_ind, str)
         try:
             return self.__str_to_instance_obj[str_ind]
         except KeyError:
@@ -124,7 +125,9 @@ class KnowledgeBase:
             assert T.instances  # if empty throw error.
             assert individuals.issubset(T.instances)
         except AssertionError:
-            raise AssertionError('Sanity checking failed.')
+            print(
+                'Sanity checking failed: owlready2.Thing does not contain any individual. To allivate this issue, we explicitly assign all individuals/instances to concept T.')
+            T.instances = individuals
 
         concepts[T.full_iri] = T
         concepts[bottom.full_iri] = bottom
