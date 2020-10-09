@@ -23,7 +23,7 @@ def test_lengthbasedlearner():
         # lets inject more background info
         if str_target_concept in ['Granddaughter', 'Aunt', 'Sister']:
             concepts_to_ignore.update(
-                {'Brother', 'Father', 'Uncle', 'Grandparent'})
+                {'Brother', 'Father', 'Grandparent'})
             model = LengthBaseLearner(
                 knowledge_base=kb,
                 refinement_operator=LengthBasedRefinement(kb=kb),

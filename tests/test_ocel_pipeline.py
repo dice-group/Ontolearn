@@ -26,7 +26,7 @@ def test_ocel():
         # lets inject more background info
         if str_target_concept in ['Granddaughter', 'Aunt', 'Sister']:
             concepts_to_ignore.update(
-                {'Brother', 'Father', 'Uncle', 'Grandparent'})
+                {'Brother', 'Father', 'Grandparent'})
 
         model = OCEL(knowledge_base=kb,
                      refinement_operator=ModifiedCELOERefinement(kb=kb),
