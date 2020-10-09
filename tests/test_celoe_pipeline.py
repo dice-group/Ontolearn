@@ -45,7 +45,7 @@ def test_celoe():
         # lets inject more background info
         if str_target_concept in ['Granddaughter', 'Aunt', 'Sister']:
             concepts_to_ignore.update(
-                {'Brother', 'Father', 'Uncle', 'Grandparent'})
+                {'Brother', 'Father', 'Grandparent'})
 
         model = CELOE(knowledge_base=kb,
                       refinement_operator=ModifiedCELOERefinement(kb=kb),
