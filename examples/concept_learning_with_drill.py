@@ -45,7 +45,8 @@ for str_target_concept, examples in settings['problems'].items():
     concepts_to_ignore = set()
     # lets inject more background info
     if str_target_concept in ['Granddaughter', 'Aunt', 'Sister']:
-        concepts_to_ignore.update({'Brother', 'Father', 'Uncle', 'Grandparent'})
+        concepts_to_ignore.update(
+            {'http://www.benchmark.org/family#Brother', 'Father', 'Grandparent'}) # Use URI, or concept with length 1.
 
     model = DrillConceptLearner(knowledge_base=kb,
                                 refinement_operator=rho,

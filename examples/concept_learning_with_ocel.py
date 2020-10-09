@@ -20,8 +20,7 @@ for str_target_concept, examples in settings['problems'].items():
     # lets inject more background info
     if str_target_concept in ['Granddaughter', 'Aunt', 'Sister']:
         concepts_to_ignore.update(
-            {'Brother', 'Father', 'Uncle', 'Grandparent'})
-
+            {'http://www.benchmark.org/family#Brother', 'Father', 'Grandparent'}) # Use URI, or concept with length 1.
     model = OCEL(knowledge_base=kb)
 
     model.fit(pos=p, neg=n)
