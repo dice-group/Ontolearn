@@ -1,0 +1,4 @@
+include LICENSE
+recursive-include data *.owl
+recursive-include examples *.py
+recursive-include tests *.py
