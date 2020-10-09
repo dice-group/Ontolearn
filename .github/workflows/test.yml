@@ -3,7 +3,7 @@ name: Test
 on: [push]
 
 jobs:
-  build-linux:
+  test:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 5
