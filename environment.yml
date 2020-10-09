@@ -4,6 +4,7 @@ channels:
   - defaults
   - pytorch
 dependencies:
+  - matplotlib=3.3.1
   - owlready2=0.24
   - pandas=1.0.5
   - pytorch=1.6
