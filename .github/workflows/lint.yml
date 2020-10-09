@@ -3,7 +3,7 @@ name: Lint
 on: [push]
 
 jobs:
-  build-linux:
+  lint:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 5
