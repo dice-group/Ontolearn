@@ -7,10 +7,11 @@ from .search import CELOESearchTree
 from .metrics import F1
 from .heuristics import CELOEHeuristic
 import types
-from typing import List,AnyStr
-#from .util import serialize_concepts
+from typing import List, AnyStr
+# from .util import serialize_concepts
 import numpy as np
 import pandas as pd
+
 
 class BaseConceptLearner(metaclass=ABCMeta):
     """
@@ -47,7 +48,6 @@ class BaseConceptLearner(metaclass=ABCMeta):
                  verbose=True, max_num_of_concepts_tested=None, ignored_concepts=None, root_concept=None):
         if ignored_concepts is None:
             ignored_concepts = {}
-        assert knowledge_base
         self.kb = knowledge_base
         self.heuristic = heuristic_func
         self.quality_func = quality_func
@@ -83,11 +83,28 @@ class BaseConceptLearner(metaclass=ABCMeta):
         if self.start_class is None:
             self.start_class = self.kb.thing
 
+        self.__sanity_checking()
+
+    def __sanity_checking(self):
         assert self.start_class
         assert self.search_tree is not None
         assert self.quality_func
         assert self.heuristic
         assert self.rho
+        assert self.kb
+
+        owl_concepts_to_ignore = set()
+        for i in self.concepts_to_ignore:  # i can be a URI or class expression in ALC.
+            found = False
+            for k, v in self.kb.concepts.items():
+                if (i == k) or (i == v.str):
+                    found = True
+                    owl_concepts_to_ignore.add(v)
+                    break
+            if found is False:
+                raise ValueError('{0} could not found in \n{1} \n{2}.'.format(i,[_.str for _ in self.kb.concepts.values()],
+                                                                              [uri for uri in self.kb.concepts.keys()]))
+        self.concepts_to_ignore=owl_concepts_to_ignore # use ALC concept representation instead of URI.
 
     def get_metric_key(self, key: str):
         if key == 'quality':
@@ -204,4 +221,3 @@ class BaseConceptLearner(metaclass=ABCMeta):
     @property
     def number_of_tested_concepts(self):
         return self.quality_func.applied
-
