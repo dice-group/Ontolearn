@@ -1,12 +1,15 @@
 import random
-
+from .refinement_operators import LengthBasedRefinement
 
 class LearningProblemGenerator:
     """
     Learning problem generator.
     """
 
-    def __init__(self, knowledge_base, refinement_operator, num_problems=10, depth=2, min_length=2):
+    def __init__(self, knowledge_base, refinement_operator=None, num_problems=10, depth=2, min_length=2):
+        if refinement_operator is None:
+            refinement_operator = LengthBasedRefinement(kb=knowledge_base)
+
         self.kb = knowledge_base
         self.rho = refinement_operator
         self.num_problems = num_problems

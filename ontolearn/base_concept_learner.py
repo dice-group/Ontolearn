@@ -7,8 +7,10 @@ from .search import CELOESearchTree
 from .metrics import F1
 from .heuristics import CELOEHeuristic
 import types
-
-from .util import serialize_concepts
+from typing import List, AnyStr
+# from .util import serialize_concepts
+import numpy as np
+import pandas as pd
 
 
 class BaseConceptLearner(metaclass=ABCMeta):
@@ -46,7 +48,6 @@ class BaseConceptLearner(metaclass=ABCMeta):
                  verbose=True, max_num_of_concepts_tested=None, ignored_concepts=None, root_concept=None):
         if ignored_concepts is None:
             ignored_concepts = {}
-        assert knowledge_base
         self.kb = knowledge_base
         self.heuristic = heuristic_func
         self.quality_func = quality_func
@@ -82,11 +83,28 @@ class BaseConceptLearner(metaclass=ABCMeta):
         if self.start_class is None:
             self.start_class = self.kb.thing
 
+        self.__sanity_checking()
+
+    def __sanity_checking(self):
         assert self.start_class
         assert self.search_tree is not None
         assert self.quality_func
         assert self.heuristic
         assert self.rho
+        assert self.kb
+
+        owl_concepts_to_ignore = set()
+        for i in self.concepts_to_ignore:  # i can be a URI or class expression in ALC.
+            found = False
+            for k, v in self.kb.concepts.items():
+                if (i == k) or (i == v.str):
+                    found = True
+                    owl_concepts_to_ignore.add(v)
+                    break
+            if found is False:
+                raise ValueError('{0} could not found in \n{1} \n{2}.'.format(i,[_.str for _ in self.kb.concepts.values()],
+                                                                              [uri for uri in self.kb.concepts.keys()]))
+        self.concepts_to_ignore=owl_concepts_to_ignore # use ALC concept representation instead of URI.
 
     def get_metric_key(self, key: str):
         if key == 'quality':
@@ -99,11 +117,11 @@ class BaseConceptLearner(metaclass=ABCMeta):
             metric = key
             attribute = key
         else:
-            raise ValueError
+            raise ValueError('Invalid key:{0}'.format(key))
         return metric, attribute
 
     def show_best_predictions(self, key='quality', top_n=10, serialize_name=None, rdf_format='xml'):
-        """ """
+        raise NotImplementedError('Use best_hypotheses method to obtain predictions.')
         predictions = self.search_tree.show_best_nodes(top_n, key=key)
         if serialize_name is not None:
             if key == 'quality':
@@ -118,6 +136,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
             else:
                 raise ValueError
 
+            print('Currently. Serialization is not available')
             serialize_concepts(concepts=predictions,
                                serialize_name=serialize_name,
                                metric=metric,
@@ -128,7 +147,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         1) Obtain top N nodes from search tree.
         2) Extend ABOX by including explicit type information for all instances belonging to concepts (1)
         """
-        raise NotImplementedError
+        raise NotImplementedError('Not yet implemented.')
         # This module needs to be tested
         # if World().get_ontology(self.path).load(reload=True) used
         # saving owlready ontology is not working.
@@ -156,8 +175,48 @@ class BaseConceptLearner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def predict(self, *args, **kwargs):
+    def fit(self, *args, **kwargs):
         pass
+
+    def best_hypotheses(self, n=10) -> List[Node]:
+        assert self.search_tree is not None
+        assert len(self.search_tree) > 1
+        return [i for i in self.search_tree.get_top_n_nodes(n)]
+
+    def predict(self, individuals: List[AnyStr], hypotheses: List[Node] = None, n: int = None):
+        assert isinstance(hypotheses, List)  # set would not work.
+        if hypotheses:
+
+            for ith, ind in enumerate(individuals):
+                if isinstance(ind, str):
+                    try:
+                        individuals[ith] = self.kb.convert_uri_instance_to_obj(ind)
+                    except KeyError:
+                        print('Item in individuals: {0} can not be found in the ontology'.format(ind))
+                elif isinstance(type(ind), ThingClass):
+                    continue  # is
+                else:
+                    raise ValueError('Wrong format individual **{0}**,\t type:{1}'.format(ind, type(ind)))
+
+            labels = np.zeros((len(individuals), len(hypotheses)))
+            for ith_ind in range(len(individuals)):
+                for jth_hypo in range(len(hypotheses)):
+                    if individuals[ith_ind] in hypotheses[jth_hypo].concept.instances:
+                        labels[ith_ind][jth_hypo] = 1
+        else:
+            try:
+                assert isinstance(n, int) and n > 0
+            except AssertionError:
+                print('**n** must be positive integer.')
+                exit(1)
+            hypotheses = self.best_hypotheses(n)
+            labels = np.zeros((len(individuals), len(hypotheses)))
+            for ith_ind in range(len(individuals)):
+                for jth_hypo in range(len(hypotheses)):
+                    if individuals[ith_ind] in hypotheses[jth_hypo].concept.instances:
+                        labels[ith_ind][jth_hypo] = 1
+
+        return pd.DataFrame(labels, index=individuals, columns=[c.concept.str for c in hypotheses])
 
     @property
     def number_of_tested_concepts(self):
