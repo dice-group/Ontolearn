@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 
 from owlready2 import sync_reasoner
@@ -8,11 +9,11 @@ from ontolearn import F1, Accuracy
 from ontolearn import KnowledgeBase
 from ontolearn import ModifiedCELOERefinement, LengthBasedRefinement
 
-PATH_DATA = '../../data/father.owl'
+PATH_DATA = '../data/father.owl'
 settings = {}
 settings['data_path'] = PATH_DATA
 
-def test_father():
+def test_celoe_father():
     kb = KnowledgeBase(path=settings['data_path'])
     #with (kb.onto):
     #    sync_reasoner()
@@ -39,6 +40,8 @@ def test_father():
               ignored_concepts=concepts_to_ignore,
               verbose=False)
 
-    best_pred = model.predict(pos=p, neg=n)
+    model.fit(pos=p, neg=n)
+    best_pred = model.best_hypotheses(n=1)[0]
+    print(best_pred)
     assert(best_pred.quality == 1.0)
     assert(best_pred.concept.str == '(male  ⊓  (∃hasChild.Thing))')
