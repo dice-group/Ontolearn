@@ -14,7 +14,7 @@ settings = {}
 settings['data_path'] = PATH_DATA
 
 def test_celoe_father():
-    kb = KnowledgeBase(path=settings['data_path'])
+    kb = KnowledgeBase(path=settings['data_path'][3:])
     #with (kb.onto):
     #    sync_reasoner()
     #sync_reasoner()
