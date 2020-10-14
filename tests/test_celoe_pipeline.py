@@ -82,6 +82,5 @@ def test_celoe_predictions():
 
             model.fit(pos=p, neg=n)
 
-            # TODO:
-            #best_pred = model.predict(p.union(n))
-            #assert (best_pred.quality > 0.8)
+            best_preds = model.best_hypotheses(n=1)
+            assert best_preds[0].quality > 0.8
