@@ -1,6 +1,5 @@
 from collections import defaultdict
-from itertools import chain
-from owlready2 import Ontology, get_ontology, World
+from owlready2 import Ontology, World
 import owlready2
 from .concept_generator import ConceptGenerator
 from .concept import Concept
@@ -16,7 +15,7 @@ class KnowledgeBase:
 
     def __init__(self, path, min_size_of_concept=1, max_concept_size_ratio=1.0):
         self.path = path
-        self.onto = get_ontology(self.path).load(reload=True)
+        self.onto = World().get_ontology(self.path).load(reload=True)
         self.name = self.onto.name
         self.concepts = dict()
         self.thing = None
