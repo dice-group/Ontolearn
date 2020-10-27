@@ -25,7 +25,8 @@ class CELOEHeuristic(AbstractScorer):
         assert id(heuristic_val) != node.quality
 
         if node.parent_node is not None:
-            heuristic_val += (parent_node.quality - node.quality) * self.gainBonusFactor
+            #heuristic_val += (parent_node.quality - node.quality) * self.gainBonusFactor
+            heuristic_val += (node.quality-parent_node.quality) * self.gainBonusFactor
         else:
             heuristic_val += self.startNodeBonus
 
