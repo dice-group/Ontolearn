@@ -30,6 +30,6 @@ class TestCeloe:
             returned_val = model.fit(pos=p, neg=n)
             assert returned_val == model
             hypotheses = model.best_hypotheses(n=3)
-            assert regression_test_celoe[str_target_concept] == hypotheses[0].quality
+            assert hypotheses[0].quality >= regression_test_celoe[str_target_concept]
             assert hypotheses[0].quality >= hypotheses[1].quality
             assert hypotheses[1].quality >= hypotheses[2].quality

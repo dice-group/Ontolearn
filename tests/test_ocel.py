@@ -13,7 +13,7 @@ class TestOcel:
     def test_regression(self):
         regression_test_celoe = {'Aunt': .73529, 'Brother': .96774,
                                  'Cousin': .72081, 'Granddaughter': .97368,
-                                 'Uncle': .68468, 'Grandgrandfather': 0.94444}
+                                 'Uncle': .68468, 'Grandgrandfather': .94444}
         for str_target_concept, examples in settings['problems'].items():
             p = set(examples['positive_examples'])
             n = set(examples['negative_examples'])
