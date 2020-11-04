@@ -18,7 +18,7 @@ for str_target_concept, examples in settings['problems'].items():
              'Father', 'http://www.benchmark.org/family#Grandparent'})  # Use URI, or concept with length 1.
 
     model = OCEL(knowledge_base=kb,
-                 ignored_concepts=concepts_to_ignore)
+                 ignored_concepts=concepts_to_ignore, verbose=1)
 
     model.fit(pos=p, neg=n)
     hypotheses = model.best_hypotheses(n=1)

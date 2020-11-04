@@ -18,9 +18,9 @@ for str_target_concept, examples in settings['problems'].items():
              'Father', 'http://www.benchmark.org/family#Grandparent'})  # Use URI, or concept with length 1.
 
     model = CELOE(knowledge_base=kb,
-                  ignored_concepts=concepts_to_ignore,max_num_of_concepts_tested=10)
+                  ignored_concepts=concepts_to_ignore, verbose=1)
     model.fit(pos=p, neg=n)
     hypotheses = model.best_hypotheses(n=2)
     print(hypotheses[0])
     predictions = model.predict(individuals=list(p), hypotheses=hypotheses)
-    print(predictions)
+    # print(predictions)
