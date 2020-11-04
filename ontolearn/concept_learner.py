@@ -49,19 +49,18 @@ class CELOE(BaseConceptLearner):
         if self.verbose:
             self.search_tree.show_search_tree(step)
         for n in self.search_tree:
+            # TODO: Currently this is ignored.
             # if n.quality < 1:# or (n.h_exp < len(n.concept)):
             return n
 
     def apply_rho(self, node: Node):
         assert isinstance(node, Node)
         self.search_tree.update_prepare(node)
-
         refinements = [self.rho.getNode(i, parent_node=node) for i in
                        self.rho.refine(node,
                                        maxlength=node.h_exp + 1 + self.h_exp_constant,
                                        current_domain=self.start_class)
                        if i is not None and i.str not in self.concepts_to_ignore]
-
         node.increment_h_exp(self.h_exp_constant)
         node.refinement_count = len(refinements)  # This should be postpone so that we make make use of generator
         if node.parent_node is not None and node.parent_node.quality is None:
@@ -72,11 +71,8 @@ class CELOE(BaseConceptLearner):
 
     def fit(self, pos: Set[AnyStr], neg: Set[AnyStr]) -> bool:
         self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.thing.instances)
-
         self.initialize_root()
-
         for j in range(1, self.iter_bound):
-
             node_to_expand = self.next_node_to_expand(j)
             for ref in self.apply_rho(node_to_expand):
                 goal_found = self.search_tree.add_node(parent_node=node_to_expand, child_node=ref)
@@ -86,10 +82,10 @@ class CELOE(BaseConceptLearner):
                             self.search_tree.expressionTests))
                     if self.terminate_on_goal:
                         print('Goal found search is stopped.')
-                        return True
+                        return self
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
-                return False
-        return False
+                return self
+        return self
 
     def updateMinMaxHorizExp(self, node: Node):
         """
@@ -183,7 +179,6 @@ class LengthBaseLearner(BaseConceptLearner):
 
     def apply_rho(self, node: Node):
         assert isinstance(node, Node)
-
         refinements = (self.rho.getNode(i, parent_node=node) for i in
                        self.rho.refine(node, maxlength=len(node) + 1 + self.min_length)
                        if i.str not in self.concepts_to_ignore)
@@ -192,7 +187,6 @@ class LengthBaseLearner(BaseConceptLearner):
     def fit(self, pos: Set[AnyStr], neg: Set[AnyStr]) -> bool:
         self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.thing.instances)
         self.initialize_root()
-
         for j in range(1, self.iter_bound):
             node_to_expand = self.next_node_to_expand(j)
             for ref in self.apply_rho(node_to_expand):
@@ -201,10 +195,10 @@ class LengthBaseLearner(BaseConceptLearner):
                     if self.verbose:
                         print('Goal found after {0} number of concepts tested.'.format(self.number_of_tested_concepts))
                     if self.terminate_on_goal:
-                        return True
+                        return self
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
-                return False
-        return False
+                return self
+        return self
 
     def save_predictions(self, predictions, key: str, serialize_name: str):
         raise NotImplementedError
@@ -308,7 +302,7 @@ class CustomConceptLearner(BaseConceptLearner):
                         print('Goal found after {0} number of concepts tested.'.format(
                             self.search_tree.expressionTests))
                     if self.terminate_on_goal:
-                        return True
+                        return self
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
-                return False
-        return False
+                return self
+        return self

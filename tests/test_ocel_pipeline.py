@@ -15,9 +15,8 @@ with open('examples/synthetic_problems.json') as json_file:
 # because '../data/family-benchmark_rich_background.owl'
 kb = KnowledgeBase(path=settings['data_path'][3:])
 
+
 def test_ocel():
-
-
     for str_target_concept, examples in settings['problems'].items():
         p = set(examples['positive_examples'])
         n = set(examples['negative_examples'])
@@ -39,4 +38,5 @@ def test_ocel():
                      ignored_concepts=concepts_to_ignore,
                      verbose=False)
 
-        model.fit(pos=p, neg=n)
+        returned_param = model.fit(pos=p, neg=n)
+        assert returned_param == model
