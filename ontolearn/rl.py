@@ -2,7 +2,7 @@ from abc import ABCMeta
 from .concept_learner import BaseConceptLearner
 from .base_rl_agent import BaseRLTrainer
 from .util import get_full_iri, balanced_sets, performance_debugger, create_logger
-from .search import Node,SearchTreePriorityQueue
+from .search import Node, SearchTreePriorityQueue
 import random
 import torch
 from torch import nn
@@ -10,10 +10,9 @@ import torch.optim as optim
 import numpy as np
 import functools
 from torch.functional import F
-from typing import List, Any
+from typing import List, Any, Set, AnyStr, Tuple
 from collections import namedtuple, deque
 from .abstracts import AbstractScorer
-from typing import Set, AnyStr, Tuple
 from torch.nn.init import xavier_normal_
 from itertools import chain
 from torch.utils.data import DataLoader
@@ -25,7 +24,8 @@ from .refinement_operators import LengthBasedRefinement
 
 from .metrics import F1
 from .heuristics import Reward
-#device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+from concurrent.futures import ThreadPoolExecutor
+import time
 
 
 class DrillHeuristic(AbstractScorer):
@@ -71,17 +71,15 @@ class DrillHeuristic(AbstractScorer):
 
 
 class DrillConceptLearner(BaseConceptLearner):
-    def __init__(self, *, knowledge_base, refinement_operator=None, search_tree=None, quality_func=None, heuristic_func, iter_bound=1000,
-                 verbose=True, terminate_on_goal=True, max_num_of_concepts_tested=1_000, min_length=1, instance_emb,ignored_concepts=None):
-        if ignored_concepts is None:
-            ignored_concepts = {}
+    def __init__(self, knowledge_base, refinement_operator=None, search_tree=None, quality_func=None,
+                 heuristic_func=None, iter_bound=None, max_num_of_concepts_tested=None, verbose=None,
+                 terminate_on_goal=None, instance_emb=None, ignored_concepts=None):
         if refinement_operator is None:
             refinement_operator = LengthBasedRefinement(kb=knowledge_base)
-        if quality_func is None:
-            quality_func = F1()
         if search_tree is None:
-            search_tree = SearchTree()
-        assert instance_emb is not None
+            search_tree = SearchTreePriorityQueue()
+
+        assert (instance_emb.all()).all()  # all columns and all rows are not none.
         assert heuristic_func
         super().__init__(knowledge_base=knowledge_base, refinement_operator=refinement_operator,
                          search_tree=search_tree,
@@ -90,23 +88,24 @@ class DrillConceptLearner(BaseConceptLearner):
                          ignored_concepts=ignored_concepts,
                          terminate_on_goal=terminate_on_goal,
                          iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested, verbose=verbose)
-        self.min_length = min_length
-
+        self.min_length = 2
         self.instance_embeddings = instance_emb
-        self.model = self.heuristic.model
-
+        self.model = self.heuristic_func.model
         assert isinstance(self.instance_embeddings, pd.DataFrame)
-
-    def initialize_root(self):
-        root = self.rho.getNode(self.start_class, root=True)
-        self.search_tree.quality_func.apply(root)  # AccuracyOrTooWeak(n)
-        self.search_tree.heuristic_func.apply(root)  # AccuracyOrTooWeak(n)
-        self.search_tree.add_root(root)
+        self.emb_pos, self.emb_neg = None, None
+        # @todos benchmark concurrence before using it.
+        self.executor = ThreadPoolExecutor(max_workers=2)
 
     def next_node_to_expand(self, step):
         return self.search_tree.get_most_promising()
 
-    def exploitation(self, current_state: Node, next_states: List[Node]) -> Node:
+    def predict_Q(self, current_state: Node, next_states: List[Node]) -> torch.Tensor:
+        """
+        Predict promise of next states given current state.
+        @param current_state:
+        @param next_states:
+        @return: predicted Q values.
+        """
         self.assign_embeddings(current_state)
         with torch.no_grad():
             self.model.eval()
@@ -116,7 +115,6 @@ class DrillConceptLearner(BaseConceptLearner):
                 self.assign_embeddings(_)
                 next_state_batch.append(_.concept.embeddings)
             next_state_batch = torch.cat(next_state_batch, dim=0)
-
             ds = PrepareBatchOfPrediction(current_state.concept.embeddings,
                                           next_state_batch,
                                           self.emb_pos,
@@ -126,13 +124,13 @@ class DrillConceptLearner(BaseConceptLearner):
 
     def apply_rho(self, node: Node):
         assert isinstance(node, Node)
-
         refinements = (self.rho.getNode(i, parent_node=node) for i in
                        self.rho.refine(node, maxlength=len(node) + 1 + self.min_length)
                        if i.str not in self.concepts_to_ignore)
         return refinements
 
-    def assign_embeddings(self, node: Node):
+    def assign_embeddings(self, node: Node) -> None:
+        assert isinstance(node, Node)
         if node.concept.embeddings is None:
             str_idx = [get_full_iri(i).replace('\n', '') for i in node.concept.instances]
             emb = torch.tensor(self.instance_embeddings.loc[str_idx].values, dtype=torch.float32)
@@ -142,45 +140,68 @@ class DrillConceptLearner(BaseConceptLearner):
         if torch.isnan(node.concept.embeddings).any() or torch.isinf(node.concept.embeddings).any():
             node.concept.embeddings = torch.zeros((1, 1, self.instance_embeddings.shape[1]))
 
-    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr])-> bool:
-        self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.thing.instances)
-        self.initialize_root()
+    def represent_examples(self, *, pos, neg) -> None:
+        """
 
-        # TODO: We need to restructre of the all code below for the sake of readability.
+        @param pos:
+        @param neg:
+        @return:
+        """
+        assert isinstance(pos, set) and isinstance(neg, set)
 
-        # Quick implementation of testing.
         self.emb_pos = torch.tensor(self.instance_embeddings.loc[list(pos)].values,
                                     dtype=torch.float32)
         self.emb_neg = torch.tensor(self.instance_embeddings.loc[list(neg)].values,
                                     dtype=torch.float32)
+        assert self.emb_pos.shape[0] == len(pos)
+        assert self.emb_neg.shape[0] == len(neg)
 
-        # take mean and reshape it into (1,1,embedding_dim) for mini batching.
+        # 1) CRUDE simplification:AVERAGE embeddings
+        # 2) Later, we will investigate the followings:
+        # 2.1) USE LSTM to map examples that have different sizes.
+        # 2.2) Sample examples to create 2 matrices denoteing positives and negatives
         self.emb_pos = torch.mean(self.emb_pos, dim=0)
         self.emb_pos = self.emb_pos.view(1, 1, self.emb_pos.shape[0])
         self.emb_neg = torch.mean(self.emb_neg, dim=0)
         self.emb_neg = self.emb_neg.view(1, 1, self.emb_neg.shape[0])
 
-        for j in range(1, self.iter_bound):
-            node_to_expand = self.next_node_to_expand(j)
-
-            refinements = [ref for ref in self.apply_rho(node_to_expand)]
-
-            q_values = self.exploitation(current_state=node_to_expand, next_states=refinements)
-            # TODO:Below for loop needs to be done in paralel.
-            for child_node, qval in zip(refinements, q_values):
-                child_node.heuristic = qval
-                self.search_tree.quality_func.apply(child_node)  # AccuracyOrTooWeak(n)
-                self.search_tree.expressionTests += 1
-                if child_node.quality == 0:  # > too weak
-                    continue
-                self.search_tree.nodes[child_node] = child_node
-
-                if child_node.quality == 1:  # goal found
-                    print('Number of concepts tested: ',self.number_of_tested_concepts)
-                    return True
-            if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
-                return False
+    def update_search(self, concepts, predicted_Q_values):
+        """
+        @param concepts:
+        @param predicted_Q_values:
+        @return:
+        """
+        # simple loop.
+        for child_node, pred_Q in zip(concepts, predicted_Q_values):
+            child_node.heuristic = pred_Q
+            self.search_tree.quality_func.apply(child_node)
+            if child_node.quality > 0:  # > too weak, ignore.
+                self.search_tree.add(parent_node=child_node)
+            if child_node.quality == 1:
+                return True
         return False
+
+    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr]):
+        """
+        @param pos: A set of str representations of given positive examples/individuals.
+        @param neg: A set of str representations of given negative examples/individuals.
+        @return:
+        """
+        self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances)
+        self.represent_examples(pos=pos, neg=neg)
+
+        for i in range(1, self.iter_bound):
+            most_promising = self.next_node_to_expand(i)
+            refinements = [ref for ref in self.apply_rho(most_promising)]
+            predicted_Q_values = self.predict_Q(current_state=most_promising, next_states=refinements)
+            goal_found = self.update_search(refinements, predicted_Q_values)
+            if goal_found:
+                if self.terminate_on_goal:
+                    return self.terminate()
+            if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
+                return self.terminate()
+        return self.terminate()
+
 
 class DrillTrainer(BaseRLTrainer):
     """
@@ -196,9 +217,6 @@ class DrillTrainer(BaseRLTrainer):
             Input tensor can have be consider  numberofinstances x 4 x embedding_dim denoted by X
             where slices represent current state, next state, pos and neg
             and rows of each slice is mask by 0 if the corresponding entity is not given.
-
-
-
     """
 
     def __init__(self,
@@ -502,7 +520,7 @@ class DrillTrainer(BaseRLTrainer):
         self.idx_pos = torch.LongTensor([self.kb.idx_of_instances[_] for _ in self.pos])
         self.idx_neg = torch.LongTensor([self.kb.idx_of_instances[_] for _ in self.neg])
         self.search_tree.heuristic_func = DrillHeuristic(pos=self.idx_pos, neg=self.idx_neg, model=self.model)
-        self.search_tree.reset_tree()
+        self.search_tree.clean()
         assert len(self.search_tree) == 0  # search tree is empty.
         # init pretrained agent as heuristic func.
         root = self.rho.getNode(self.start_class, root=True)
@@ -516,7 +534,7 @@ class DrillTrainer(BaseRLTrainer):
             for ref in self.apply_rho(node_to_expand):
 
                 self.assign_embeddings(ref)
-                goal_found = self.search_tree.add_node(node=ref, refined_node=node_to_expand)
+                goal_found = self.search_tree.add_node(node=ref, parent_node=node_to_expand)
                 if goal_found:
                     print(
                         'Goal found after {0} number of concepts tested.'.format(self.search_tree.quality_func.applied))
@@ -623,7 +641,7 @@ class PrepareBatchOfPrediction(torch.utils.data.Dataset):
         self.X = torch.cat([self.S, self.S_Prime, self.Positives, self.Negatives], 1)
         num_points, depth, dim = self.X.shape
         self.X = self.X.view(num_points, depth, dim)
-        #self.X = self.X.to(device)
+        # self.X = self.X.to(device)
 
     def __len__(self):
         return len(self.X)

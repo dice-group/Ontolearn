@@ -9,13 +9,12 @@ from ontolearn import F1
 from ontolearn import KnowledgeBase
 from ontolearn import SearchTree
 
-with open('examples/synthetic_problems.json') as json_file:
+with open('../examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)
-# because '../data/family-benchmark_rich_background.owl'
-kb = KnowledgeBase(path=settings['data_path'][3:])
+kb = KnowledgeBase(path=settings['data_path'])
+
 
 def test_dfoil():
-
     for str_target_concept, examples in settings['problems'].items():
         p = set(examples['positive_examples'])
         n = set(examples['negative_examples'])
@@ -30,4 +29,5 @@ def test_dfoil():
             iter_bound=1_00,
             verbose=True)
 
-        model.fit(pos=p, neg=n)
+        returned_param = model.fit(pos=p, neg=n)
+        assert returned_param == model
