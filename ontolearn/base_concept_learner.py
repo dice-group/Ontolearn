@@ -147,7 +147,8 @@ class BaseConceptLearner(metaclass=ABCMeta):
         root = self.rho.getNode(self.start_class, root=True)
         self.search_tree.quality_func.apply(root)
         self.search_tree.heuristic_func.apply(root)
-        self.search_tree[root] = root
+        self.search_tree.add(root)
+        assert len(self.search_tree) == 1
 
     def terminate(self):
         if self.verbose > 0:
