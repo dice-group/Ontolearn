@@ -83,10 +83,10 @@ class BaseConceptLearner(metaclass=ABCMeta):
         if self.start_class is None:
             self.start_class = self.kb.thing
         if self.iter_bound is None:
-            self.iter_bound = 5000
+            self.iter_bound = 1000
 
         if self.max_num_of_concepts_tested is None:
-            self.max_num_of_concepts_tested = 5000
+            self.max_num_of_concepts_tested = 1000
         if self.terminate_on_goal is None:
             self.terminate_on_goal = True
 
