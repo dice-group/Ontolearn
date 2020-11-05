@@ -17,12 +17,13 @@ class BaseConcept(metaclass=ABCMeta):
                  'concept_b']
 
     @abstractmethod
-    def __init__(self, concept: ThingClass, kwargs):
+    def __init__(self, concept: ThingClass, kwargs, world=None):
         assert isinstance(concept, ThingClass)
         assert kwargs['form'] in ['Class', 'ObjectIntersectionOf', 'ObjectUnionOf', 'ObjectComplementOf',
                                   'ObjectSomeValuesFrom', 'ObjectAllValuesFrom']
 
         self.owl = concept
+        self.world = world
         self.full_iri = get_full_iri(concept)  # .namespace.base_iri + concept.name
         self.str = concept.name
         self.form = kwargs['form']
