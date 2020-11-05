@@ -325,7 +325,7 @@ class AbstractTree(ABC):
         return self._nodes
 
     @abstractmethod
-    def add_node(self, *args, **kwargs):
+    def add(self, *args, **kwargs):
         pass
 
     def sort_search_tree_by_decreasing_order(self, *, key: str):
