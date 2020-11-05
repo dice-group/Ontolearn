@@ -1,6 +1,5 @@
 from collections import defaultdict
-from itertools import chain
-from owlready2 import Ontology, get_ontology, World
+from owlready2 import Ontology, World
 import owlready2
 from .concept_generator import ConceptGenerator
 from .concept import Concept
@@ -16,7 +15,7 @@ class KnowledgeBase:
 
     def __init__(self, path, min_size_of_concept=1, max_concept_size_ratio=1.0):
         self.path = path
-        self.onto = get_ontology(self.path).load(reload=True)
+        self.onto = World().get_ontology(self.path).load(reload=True)
         self.name = self.onto.name
         self.concepts = dict()
         self.thing = None
@@ -47,7 +46,7 @@ class KnowledgeBase:
                                                     max_size_of_concept=self.max_size_of_concept)
 
     @staticmethod
-    def apply_type_enrichment_from_iterable(concepts: Iterable[Concept]):
+    def apply_type_enrichment_from_iterable(concepts: Iterable[Concept], world):
         """
         Extend ABOX by
         (1) Obtaining all instances of selected concepts.
@@ -56,7 +55,7 @@ class KnowledgeBase:
         @return:
         """
         for c in concepts:
-            for ind in c.owl.instances():
+            for ind in c.owl.instances(world=world):
                 ind.is_a.append(c.owl)
 
     @staticmethod
@@ -120,11 +119,11 @@ class KnowledgeBase:
         """
         concepts = dict()
         individuals = set()
-        T = Concept(owlready2.Thing, kwargs={'form': 'Class'})
-        bottom = Concept(owlready2.Nothing, kwargs={'form': 'Class'})
+        T = Concept(owlready2.Thing, kwargs={'form': 'Class'}, world=onto.world)
+        bottom = Concept(owlready2.Nothing, kwargs={'form': 'Class'}, world=onto.world)
         # TODO: Think about removing owlready2 instances and use string representation.
         for i in onto.classes():
-            temp_concept = Concept(i, kwargs={'form': 'Class'})
+            temp_concept = Concept(i, kwargs={'form': 'Class'}, world=onto.world)
             concepts[temp_concept.full_iri] = temp_concept
             individuals.update(temp_concept.instances)
         try:
@@ -158,14 +157,14 @@ class KnowledgeBase:
 
         for str_, concept_A in self.concepts.items():  # second loop over concepts in the execution,
 
-            for desc in concept_A.owl.descendants(include_self=False):
+            for desc in concept_A.owl.descendants(include_self=False, world=onto.world):
 
                 wrapped_desc = self.concepts[desc.namespace.base_iri + desc.name]
 
                 # Include all sub class that are wrapped with AtomicConcept class into hierarchy.
                 self.top_down_concept_hierarchy[concept_A].add(wrapped_desc)
                 if len(wrapped_desc.owl.descendants(
-                        include_self=False)) == 0:  # if no descendant, then it is a leaf concept.
+                        include_self=False, world=onto.world)) == 0:  # if no descendant, then it is a leaf concept.
                     self.concepts_to_leafs.setdefault(concept_A, set()).add(wrapped_desc)
 
             for ans in concept_A.owl.ancestors(include_self=False):
@@ -173,7 +172,7 @@ class KnowledgeBase:
                 # Include all superclasses into down top hierarchy
                 self.down_top_concept_hierarchy[concept_A].add(wrapped_ans)
 
-            for subs in concept_A.owl.subclasses():  # returns direct subclasses
+            for subs in concept_A.owl.subclasses(world=onto.world):  # returns direct subclasses
                 if concept_A.owl == subs:
                     continue
                 wrapped_subs = self.concepts[subs.namespace.base_iri + subs.name]
