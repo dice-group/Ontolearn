@@ -24,7 +24,7 @@ class CELOEHeuristic(AbstractScorer):
 
         assert id(heuristic_val) != node.quality
 
-        if node.parent_node is not None:
+        if parent_node is not None:
             # heuristic_val += (parent_node.quality - node.quality) * self.gainBonusFactor
             heuristic_val += (node.quality - parent_node.quality) * self.gainBonusFactor
         else:
@@ -99,9 +99,9 @@ class OCELHeuristic(AbstractScorer):
                 len(self.pos) + len(self.neg))  # ACCURACY of Concept
 
         accuracy_gain += accuracy
-        if node.parent_node is not None:
-            uncovered_positives_parent = len(self.pos.difference(node.parent_node.concept.instances))
-            covered_negatives_parent = len(self.neg.intersection(node.parent_node.concept.instances))
+        if parent_node is not None:
+            uncovered_positives_parent = len(self.pos.difference(parent_node.concept.instances))
+            covered_negatives_parent = len(self.neg.intersection(parent_node.concept.instances))
 
             parent_accuracy = 1 - (
                     uncovered_positives_parent + covered_negatives_parent) / (
