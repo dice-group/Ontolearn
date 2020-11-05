@@ -10,7 +10,7 @@ kb = KnowledgeBase(path=settings['data_path'])
 
 class TestCeloe:
     def test_regression(self):
-        regression_test_celoe = {'Aunt': .91111, 'Brother': 1.0,
+        regression_test_celoe = {'Aunt': .80392, 'Brother': 1.0,
                                  'Cousin': .70064, 'Granddaughter': 1.0,
                                  'Uncle': .90476, 'Grandgrandfather': 1.0}
         for str_target_concept, examples in settings['problems'].items():
