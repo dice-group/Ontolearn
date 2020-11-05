@@ -135,6 +135,9 @@ class BaseNode(metaclass=ABCMeta):
     def add_children(self, n):
         self.__children.add(n)
 
+    def remove_child(self, n):
+        self.__children.remove(n)
+
     @property
     def refinement_count(self):
         return self.__refinement_count
