@@ -135,6 +135,9 @@ class BaseNode(metaclass=ABCMeta):
     def add_children(self, n):
         self.__children.add(n)
 
+    def remove_child(self, n):
+        self.__children.remove(n)
+
     @property
     def refinement_count(self):
         return self.__refinement_count
@@ -309,29 +312,6 @@ class AbstractTree(ABC):
             k, node = dict_
             yield node
 
-    def set_positive_negative_examples(self, p: Set[AnyStr], n: Set[AnyStr], all_instances: Set):
-        # TODO: this method should not be here, I suppose as setting positive negative and unlabelled examples
-        # are related to learning algorithm not search tree.
-        assert isinstance(p, set) and isinstance(n, set) and isinstance(all_instances, set)
-        assert len(p) > 0 and len(all_instances) >= len(p)
-
-        # From string to owlready2 instance type conversion
-        for i in all_instances:
-            self.str_to_obj_instance_mapping[get_full_iri(i)] = i
-
-        p = {self.str_to_obj_instance_mapping[i] for i in p}
-        n = {self.str_to_obj_instance_mapping[i] for i in n}
-
-        if len(n) == 0:
-            n = set(random.sample(all_instances, len(p)))
-        unlabelled = all_instances - (p.union(n))
-
-        self.quality_func.set_positive_examples(p)
-        self.quality_func.set_negative_examples(n)
-        self.heuristic_func.set_positive_examples(p)
-        self.heuristic_func.set_negative_examples(n)
-        self.heuristic_func.set_unlabelled_examples(unlabelled)
-
     def set_quality_func(self, f: AbstractScorer):
         self.quality_func = f
 
@@ -348,7 +328,7 @@ class AbstractTree(ABC):
         return self._nodes
 
     @abstractmethod
-    def add_node(self, *args, **kwargs):
+    def add(self, *args, **kwargs):
         pass
 
     def sort_search_tree_by_decreasing_order(self, *, key: str):
@@ -396,7 +376,8 @@ class AbstractTree(ABC):
         self.sort_search_tree_by_decreasing_order(key=key)
         return self.show_search_tree('Final', top_n=top_n + 1)
 
-    def save_current_top_n_nodes(self, key=None, n=10, path=None):
+    @staticmethod
+    def save_current_top_n_nodes(key=None, n=10, path=None):
 
         """
         Save current top_n nodes
