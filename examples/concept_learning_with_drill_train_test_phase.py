@@ -35,7 +35,7 @@ lp_gen = LearningProblemGenerator(knowledge_base=kb,
                                   refinement_operator=rho,
                                   num_problems=3, depth=2, min_length=2)
 
-instance_emb = pd.read_csv('../embeddings/instance_emb.csv', index_col=0)
+instance_emb = pd.read_csv('../embeddings/Dismult_family_benchmark/instance_emb.csv', index_col=0)
 # util.apply_TSNE_on_df(instance_emb) # if needed.
 trainer = DrillTrainer(
     knowledge_base=kb,
@@ -59,15 +59,8 @@ for str_target_concept, examples in settings['problems'].items():
         concepts_to_ignore.update(
             {'http://www.benchmark.org/family#Brother', 'Father', 'Grandparent'}) # Use URI, or concept with length 1.
 
-    model = DrillConceptLearner(knowledge_base=kb,
-                                refinement_operator=rho,
-                                quality_func=F1(),
-                                heuristic_func=DrillHeuristic(model=trainer.model),
-                                instance_emb=instance_emb,
-                                search_tree=SearchTreePriorityQueue(),
-                                terminate_on_goal=True,
-                                iter_bound=1_000,
-                                max_num_of_concepts_tested=5_000,
-                                ignored_concepts={},
-                                verbose=True)
+    model = DrillConceptLearner(knowledge_base=kb, refinement_operator=rho, quality_func=F1(),
+                                heuristic_func=DrillHeuristic(model=trainer.model), iter_bound=1_000,
+                                max_num_of_concepts_tested=5_000, terminate_on_goal=True,
+                                instance_emb=instance_emb, ignored_concepts=concepts_to_ignore)
     model.fit(pos=p, neg=n)
