@@ -3,7 +3,7 @@ from owlready2 import Ontology, World
 import owlready2
 from .concept_generator import ConceptGenerator
 from .concept import Concept
-from typing import Dict, Tuple, Set, Generator, Iterable
+from typing import Dict, Tuple, Set, Generator, Iterable, AnyStr, List
 from .util import parametrized_performance_debugger, get_full_iri
 import warnings
 
@@ -70,19 +70,25 @@ class KnowledgeBase:
         return self.thing.instances
 
     def convert_uri_instance_to_obj(self, str_ind: str):
-        assert isinstance(str_ind, str)
+        """
+        str_ind indicates string representation of an individual.
+        """
+        try:
+            assert isinstance(str_ind, str)
+        except AssertionError:
+            AssertionError('{0} is expected to be a string but it is  ****{1}****'.format(str_ind, type(str_ind)))
         try:
             return self.__str_to_instance_obj[str_ind]
         except KeyError:
             KeyError('{0} is not found in vocabulary of URI instances'.format(str_ind))
 
-    def convert_uri_instance_to_obj_from_iterable(self, l: Iterable):
-        return [self.convert_uri_instance_to_obj(i) for i in l]
+    def convert_uri_instance_to_obj_from_iterable(self, str_individuals: Iterable[AnyStr]) -> List:
+        return [self.convert_uri_instance_to_obj(i) for i in str_individuals]
 
     def convert_owlready2_individuals_to_uri(self, instance):
         return self.__obj_to_str_iri_instances[instance]
 
-    def convert_owlready2_individuals_to_uri_from_iterable(self, l: Iterable):
+    def convert_owlready2_individuals_to_uri_from_iterable(self, l: Iterable) -> List:
         return [self.convert_owlready2_individuals_to_uri(i) for i in l]
 
     def set_min_size_of_concept(self, n):

@@ -7,10 +7,11 @@ from .search import CELOESearchTree
 from .metrics import F1
 from .heuristics import CELOEHeuristic
 import types
-from typing import List, AnyStr
+from typing import List, AnyStr, Set
 # from .util import serialize_concepts
 import numpy as np
 import pandas as pd
+import time
 
 
 class BaseConceptLearner(metaclass=ABCMeta):
@@ -38,63 +39,72 @@ class BaseConceptLearner(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def __init__(self, knowledge_base=None, refinement_operator=None,
-                 quality_func=None,
-                 heuristic_func=None,
-                 search_tree=None,
-                 terminate_on_goal=True,
-                 iter_bound=10,
-                 max_child_length=10,
-                 verbose=True, max_num_of_concepts_tested=None, ignored_concepts=None, root_concept=None):
-        if ignored_concepts is None:
-            ignored_concepts = {}
+    def __init__(self, knowledge_base=None, refinement_operator=None, heuristic_func=None, quality_func=None,
+                 search_tree=None, max_num_of_concepts_tested=None, terminate_on_goal=None, ignored_concepts=None,
+                 iter_bound=None, max_child_length=None, root_concept=None, verbose=None):
+
         self.kb = knowledge_base
-        self.heuristic = heuristic_func
-        self.quality_func = quality_func
         self.rho = refinement_operator
+        self.heuristic_func = heuristic_func
+        self.quality_func = quality_func
         self.search_tree = search_tree
         self.max_num_of_concepts_tested = max_num_of_concepts_tested
-
+        self.terminate_on_goal = terminate_on_goal
         self.concepts_to_ignore = ignored_concepts
+        self.iter_bound = iter_bound
         self.start_class = root_concept
+        self.max_child_length = max_child_length
+        self.verbose = verbose
+        self.start_time = time.time()
+        self.__default_values()
+        self.__sanity_checking()
 
+    def __default_values(self):
+        """
+        Fill all params with plausible default values.
+        """
         # Memoization
         self.concepts_to_nodes = dict()
-        self.iter_bound = iter_bound
-        self.terminate_on_goal = terminate_on_goal
-        self.verbose = verbose
-
         if self.rho is None:
             self.rho = ModifiedCELOERefinement(self.kb, max_child_length=max_child_length)
         self.rho.set_concepts_node_mapping(self.concepts_to_nodes)
 
-        if self.heuristic is None:
-            self.heuristic = CELOEHeuristic()
+        if self.heuristic_func is None:
+            self.heuristic_func = CELOEHeuristic()
 
         if self.quality_func is None:
             self.quality_func = F1()
-
         if self.search_tree is None:
             self.search_tree = CELOESearchTree(quality_func=self.quality_func, heuristic_func=self.heuristic)
         else:
             self.search_tree.set_quality_func(self.quality_func)
-            self.search_tree.set_heuristic_func(self.heuristic)
+            self.search_tree.set_heuristic_func(self.heuristic_func)
 
         if self.start_class is None:
             self.start_class = self.kb.thing
+        if self.iter_bound is None:
+            self.iter_bound = 1000
 
-        self.__sanity_checking()
+        if self.max_num_of_concepts_tested is None:
+            self.max_num_of_concepts_tested = 1000
+        if self.terminate_on_goal is None:
+            self.terminate_on_goal = True
+
+        if self.concepts_to_ignore is None:
+            self.concepts_to_ignore = set()
+        if self.verbose is None:
+            self.verbose = 0
 
     def __sanity_checking(self):
         assert self.start_class
         assert self.search_tree is not None
         assert self.quality_func
-        assert self.heuristic
+        assert self.heuristic_func
         assert self.rho
         assert self.kb
 
         owl_concepts_to_ignore = set()
-        for i in self.concepts_to_ignore:  # i can be a URI or class expression in ALC.
+        for i in self.concepts_to_ignore:  # iterate over string representations of ALC concepts.
             found = False
             for k, v in self.kb.concepts.items():
                 if (i == k) or (i == v.str):
@@ -102,9 +112,48 @@ class BaseConceptLearner(metaclass=ABCMeta):
                     owl_concepts_to_ignore.add(v)
                     break
             if found is False:
-                raise ValueError('{0} could not found in \n{1} \n{2}.'.format(i,[_.str for _ in self.kb.concepts.values()],
-                                                                              [uri for uri in self.kb.concepts.keys()]))
-        self.concepts_to_ignore=owl_concepts_to_ignore # use ALC concept representation instead of URI.
+                raise ValueError(
+                    '{0} could not found in \n{1} \n{2}.'.format(i, [_.str for _ in self.kb.concepts.values()],
+                                                                 [uri for uri in self.kb.concepts.keys()]))
+        self.concepts_to_ignore = owl_concepts_to_ignore  # use ALC concept representation instead of URI.
+
+    def initialize_learning_problem(self, pos: Set[AnyStr], neg: Set[AnyStr], all_instances):
+        """
+        Determine the learning problem and initialize the search.
+        1) Convert the string representation of an individuals into the owlready2 representation.
+        2) Sample negative examples if necessary.
+        3) Initialize the root and search tree.
+        """
+        assert isinstance(pos, set) and isinstance(neg, set) and isinstance(all_instances, set)
+        assert 0 < len(pos) < len(all_instances) and len(all_instances) > len(neg)
+
+        owl_ready_pos = set(self.kb.convert_uri_instance_to_obj_from_iterable(pos))
+        if len(neg) == 0:  # if negatives are not provided, randomly sample.
+            owl_ready_neg = set(random.sample(all_instances, len(owl_ready_pos)))
+        else:
+            owl_ready_neg = set(self.kb.convert_uri_instance_to_obj_from_iterable(neg))
+
+        assert len(owl_ready_pos) == len(pos)
+        assert len(owl_ready_neg) == len(neg)
+
+        unlabelled = all_instances.difference(owl_ready_pos.union(owl_ready_neg))
+        self.quality_func.set_positive_examples(owl_ready_pos)
+        self.quality_func.set_negative_examples(owl_ready_neg)
+
+        self.heuristic_func.set_positive_examples(owl_ready_pos)
+        self.heuristic_func.set_negative_examples(owl_ready_neg)
+        self.heuristic_func.set_unlabelled_examples(unlabelled)
+
+        root = self.rho.getNode(self.start_class, root=True)
+        self.search_tree.quality_func.apply(root)
+        self.search_tree.heuristic_func.apply(root)
+        self.search_tree.add(root)
+        assert len(self.search_tree) == 1
+
+    def terminate(self):
+        if self.verbose > 0:
+            print('Elapsed runtime: {0} seconds'.format(round(time.time() - self.start_time, 4)))
+        return self
 
     def get_metric_key(self, key: str):
         if key == 'quality':
@@ -163,10 +212,6 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.kb.save(folder + kb_name + '.owl', rdf_format=rdf_format)
 
     @abstractmethod
-    def initialize_root(self):
-        pass
-
-    @abstractmethod
     def next_node_to_expand(self, *args, **kwargs):
         pass
 
@@ -183,40 +228,40 @@ class BaseConceptLearner(metaclass=ABCMeta):
         assert len(self.search_tree) > 1
         return [i for i in self.search_tree.get_top_n_nodes(n)]
 
-    def predict(self, individuals: List[AnyStr], hypotheses: List[Node] = None, n: int = None):
+    @staticmethod
+    def assign_labels_to_individuals(*, individuals: List, hypotheses: List[Node]) -> np.ndarray:
+        """
+        individuals: A list of owlready individuals.
+        hypotheses: A
+
+        Use each hypothesis as a binary function and assign 1 or 0 to each individual.
+
+        return matrix of |individuals| x |hypotheses|
+        """
+        labels = np.zeros((len(individuals), len(hypotheses)))
+        for ith_ind in range(len(individuals)):
+            for jth_hypo in range(len(hypotheses)):
+                if individuals[ith_ind] in hypotheses[jth_hypo].concept.instances:
+                    labels[ith_ind][jth_hypo] = 1
+        return labels
+
+    def predict(self, individuals: List[AnyStr], hypotheses: List[Node] = None, n: int = None) -> pd.DataFrame:
+        """
+        individuals: A list of individuals/instances where each item is a string.
+        hypotheses: A list of ALC concepts.
+        n: integer denoting number of ALC concepts to extract from search tree if hypotheses=None.
+        """
         assert isinstance(hypotheses, List)  # set would not work.
-        if hypotheses:
-
-            for ith, ind in enumerate(individuals):
-                if isinstance(ind, str):
-                    try:
-                        individuals[ith] = self.kb.convert_uri_instance_to_obj(ind)
-                    except KeyError:
-                        print('Item in individuals: {0} can not be found in the ontology'.format(ind))
-                elif isinstance(type(ind), ThingClass):
-                    continue  # is
-                else:
-                    raise ValueError('Wrong format individual **{0}**,\t type:{1}'.format(ind, type(ind)))
-
-            labels = np.zeros((len(individuals), len(hypotheses)))
-            for ith_ind in range(len(individuals)):
-                for jth_hypo in range(len(hypotheses)):
-                    if individuals[ith_ind] in hypotheses[jth_hypo].concept.instances:
-                        labels[ith_ind][jth_hypo] = 1
-        else:
+        individuals = self.kb.convert_uri_instance_to_obj_from_iterable(individuals)
+        if hypotheses is None:
             try:
                 assert isinstance(n, int) and n > 0
             except AssertionError:
-                print('**n** must be positive integer.')
-                exit(1)
+                raise AssertionError('**n** must be positive integer.')
             hypotheses = self.best_hypotheses(n)
-            labels = np.zeros((len(individuals), len(hypotheses)))
-            for ith_ind in range(len(individuals)):
-                for jth_hypo in range(len(hypotheses)):
-                    if individuals[ith_ind] in hypotheses[jth_hypo].concept.instances:
-                        labels[ith_ind][jth_hypo] = 1
 
-        return pd.DataFrame(labels, index=individuals, columns=[c.concept.str for c in hypotheses])
+        return pd.DataFrame(data=self.assign_labels_to_individuals(individuals=individuals, hypotheses=hypotheses),
+                            index=individuals, columns=[c.concept.str for c in hypotheses])
 
     @property
     def number_of_tested_concepts(self):
