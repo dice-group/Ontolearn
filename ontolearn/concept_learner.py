@@ -138,12 +138,6 @@ class LengthBaseLearner(BaseConceptLearner):
                          iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested, verbose=verbose)
         self.min_length = min_length
 
-    def initialize_root(self):
-        root = self.rho.getNode(self.start_class, root=True)
-        self.search_tree.quality_func.apply(root)  # AccuracyOrTooWeak(n)
-        self.search_tree.heuristic_func.apply(root)  # AccuracyOrTooWeak(n)
-        self.search_tree.add_root(root)
-
     def next_node_to_expand(self, step):
         return self.search_tree.get_most_promising()
 
@@ -155,8 +149,7 @@ class LengthBaseLearner(BaseConceptLearner):
         return refinements
 
     def fit(self, pos: Set[AnyStr], neg: Set[AnyStr]):
-        self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.thing.instances)
-        self.initialize_root()
+        self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances)
         for j in range(1, self.iter_bound):
             node_to_expand = self.next_node_to_expand(j)
             for ref in self.apply_rho(node_to_expand):

@@ -2,9 +2,10 @@
 import json
 from ontolearn import KnowledgeBase
 
-with open('../examples/synthetic_problems.json') as json_file:
+with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)
-kb = KnowledgeBase(path=settings['data_path'])
+# because '../data/family-benchmark_rich_background.owl'
+kb = KnowledgeBase(path=settings['data_path'][3:])
 
 def test_concept():
     # Processes input kb

@@ -9,9 +9,10 @@ from ontolearn import F1
 from ontolearn import KnowledgeBase
 from ontolearn import SearchTree
 
-with open('../examples/synthetic_problems.json') as json_file:
+with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)
-kb = KnowledgeBase(path=settings['data_path'])
+# because '../data/family-benchmark_rich_background.owl'
+kb = KnowledgeBase(path=settings['data_path'][3:])
 
 
 def test_dfoil():
@@ -21,10 +22,7 @@ def test_dfoil():
         print('Target concept: ', str_target_concept)
         model = CustomConceptLearner(
             knowledge_base=kb,
-            refinement_operator=CustomRefinementOperator(kb=kb),
             quality_func=F1(),
-            heuristic_func=DLFOILHeuristic(),
-            search_tree=SearchTree(),
             terminate_on_goal=True,
             iter_bound=1_00,
             verbose=True)
