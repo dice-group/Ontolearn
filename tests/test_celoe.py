@@ -3,16 +3,17 @@ import json
 from ontolearn import KnowledgeBase
 from ontolearn.concept_learner import CELOE
 
-with open('../examples/synthetic_problems.json') as json_file:
+with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)
-kb = KnowledgeBase(path=settings['data_path'])
+# because '../data/family-benchmark_rich_background.owl'
+kb = KnowledgeBase(path=settings['data_path'][3:])
 
 
 class TestCeloe:
     def test_regression(self):
         regression_test_celoe = {'Aunt': .80392, 'Brother': 1.0,
-                                 'Cousin': .70064, 'Granddaughter': 1.0,
-                                 'Uncle': .90476, 'Grandgrandfather': 1.0}
+                                 'Cousin': .68063, 'Granddaughter': 1.0,
+                                 'Uncle': .88372, 'Grandgrandfather': 0.94444 }
         for str_target_concept, examples in settings['problems'].items():
             p = set(examples['positive_examples'])
             n = set(examples['negative_examples'])

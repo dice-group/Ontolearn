@@ -3,17 +3,17 @@ import json
 from ontolearn import KnowledgeBase
 from ontolearn.concept_learner import OCEL
 
-with open('../examples/synthetic_problems.json') as json_file:
+with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 # because '../data/family-benchmark_rich_background.owl'
-kb = KnowledgeBase(path=settings['data_path'])
+kb = KnowledgeBase(path=settings['data_path'][3:])
 
 
 class TestOcel:
     def test_regression(self):
-        regression_test_celoe = {'Aunt': .71429, 'Brother': .96774,
-                                 'Cousin': .71357, 'Granddaughter': .97368,
-                                 'Uncle': .67857, 'Grandgrandfather': .94444}
+        regression_test_ocel = {'Aunt': .71429, 'Brother': .96774,
+                                'Cousin': .66667, 'Granddaughter': .97368,
+                                'Uncle': .67857, 'Grandgrandfather': .94444}
         for str_target_concept, examples in settings['problems'].items():
             p = set(examples['positive_examples'])
             n = set(examples['negative_examples'])
@@ -31,6 +31,6 @@ class TestOcel:
             returned_val = model.fit(pos=p, neg=n)
             assert returned_val == model
             hypotheses = model.best_hypotheses(n=3)
-            assert regression_test_celoe[str_target_concept] == hypotheses[0].quality
+            assert hypotheses[0].quality >= regression_test_ocel[str_target_concept]
             assert hypotheses[0].quality >= hypotheses[1].quality
             assert hypotheses[1].quality >= hypotheses[2].quality
