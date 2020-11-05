@@ -50,10 +50,8 @@ class CELOE(BaseConceptLearner):
                                        current_domain=self.start_class)
                        if i is not None and i.str not in self.concepts_to_ignore]
         node.increment_h_exp(self.h_exp_constant)
-        node.refinement_count = len(refinements)  # This should be postpone so that we make make use of generator
-        if node.parent_node is not None and node.parent_node.quality is None:
-            self.quality_func.apply(node.parent_node)
-        self.heuristic_func.apply(node, parent_node=node.parent_node)
+        node.refinement_count = len(refinements)
+        self.heuristic_func.apply(node, parent_node=node.parent_node)  # recompute heuristic new heurisitc value
         self.search_tree.update_done(node)
         return refinements
 
@@ -65,7 +63,7 @@ class CELOE(BaseConceptLearner):
         for j in range(1, self.iter_bound):
             most_promising = self.next_node_to_expand(j)
             for ref in self.apply_rho(most_promising):
-                goal_found = self.search_tree.add_node(parent_node=most_promising, child_node=ref)
+                goal_found = self.search_tree.add(node=ref, parent_node=most_promising)
                 if goal_found:
                     if self.terminate_on_goal:
                         return self.terminate()
@@ -156,21 +154,21 @@ class LengthBaseLearner(BaseConceptLearner):
                        if i.str not in self.concepts_to_ignore)
         return refinements
 
-    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr]) -> bool:
+    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr]):
         self.search_tree.set_positive_negative_examples(p=pos, n=neg, all_instances=self.kb.thing.instances)
         self.initialize_root()
         for j in range(1, self.iter_bound):
             node_to_expand = self.next_node_to_expand(j)
             for ref in self.apply_rho(node_to_expand):
-                goal_found = self.search_tree.add_node(node=ref, refined_node=node_to_expand)
+                goal_found = self.search_tree.add_node(node=ref, parent_node=node_to_expand)
                 if goal_found:
                     if self.verbose:
-                        print('Goal found after {0} number of concepts tested.'.format(self.number_of_tested_concepts))
+                        return self.terminate()
                     if self.terminate_on_goal:
-                        return self
+                        return self.terminate()
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
-                return self
-        return self
+                return self.terminate()
+        return self.terminate()
 
     def save_predictions(self, predictions, key: str, serialize_name: str):
         raise NotImplementedError
@@ -237,7 +235,6 @@ class CustomConceptLearner(BaseConceptLearner):
 
     def apply_rho(self, node: Node):
         assert isinstance(node, Node)
-
         refinements = (self.rho.getNode(i, parent_node=node)
                        for i in self.rho.refine(node.concept) if i is not None and i.str not in self.concepts_to_ignore)
         return refinements
@@ -245,15 +242,12 @@ class CustomConceptLearner(BaseConceptLearner):
     def fit(self, pos, neg):
         self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances)
         for j in range(1, self.iter_bound):
-            node_to_expand = self.next_node_to_expand(j)
-            for ref in self.apply_rho(node_to_expand):
-                goal_found = self.search_tree.add_node(parent_node=node_to_expand, child_node=ref)
+            most_promising = self.next_node_to_expand(j)
+            for ref in self.apply_rho(most_promising):
+                goal_found = self.search_tree.add(node=ref, parent_node=most_promising)
                 if goal_found:
-                    if self.verbose:
-                        print('Goal found after {0} number of concepts tested.'.format(
-                            self.search_tree.expressionTests))
                     if self.terminate_on_goal:
-                        return self
+                        return self.terminate()
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
-                return self
-        return self
+                return self.terminate()
+        return self.terminate()
