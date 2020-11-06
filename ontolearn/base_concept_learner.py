@@ -148,7 +148,13 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.search_tree.quality_func.apply(root)
         self.search_tree.heuristic_func.apply(root)
         self.search_tree.add(root)
-        assert len(self.search_tree) == 1
+        try:
+            assert len(self.search_tree) == 1
+        except AssertionError:
+            for i in self.search_tree:
+                print(i)
+            print(len(self.search_tree))
+            raise AssertionError('Search Tree does not only contains the root')
 
     def terminate(self):
         if self.verbose > 0:
