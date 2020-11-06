@@ -27,18 +27,16 @@ from .heuristics import Reward
 from concurrent.futures import ThreadPoolExecutor
 import time
 
-
 class DrillHeuristic(AbstractScorer):
     """
     Use pretrained agent as heuristic func.
     """
 
-    def __init__(self, pos=None, neg=None, model=None):
+    def __init__(self, pos=None, neg=None, model_path=None):
         super().__init__(pos, neg, unlabelled=None)
         self.name = 'DrillHeuristic'
-        self.model = model
-        assert isinstance(self.model, torch.nn.Module)
-        self.model = model
+        self.model = Drill()
+        self.model.load_state_dict(torch.load(model_path))
         self.model.eval()
 
     def score(self, node, parent_node=None):
@@ -71,18 +69,17 @@ class DrillHeuristic(AbstractScorer):
 
 
 class DrillConceptLearner(BaseConceptLearner):
-    def __init__(self, knowledge_base, refinement_operator=None, search_tree=None, quality_func=None,
+    def __init__(self, knowledge_base, refinement_operator=None, quality_func=None,
                  heuristic_func=None, iter_bound=None, max_num_of_concepts_tested=None, verbose=None,
                  terminate_on_goal=None, instance_emb=None, ignored_concepts=None):
+
         if refinement_operator is None:
             refinement_operator = LengthBasedRefinement(kb=knowledge_base)
-        if search_tree is None:
-            search_tree = SearchTreePriorityQueue()
 
         assert (instance_emb.all()).all()  # all columns and all rows are not none.
         assert heuristic_func
         super().__init__(knowledge_base=knowledge_base, refinement_operator=refinement_operator,
-                         search_tree=search_tree,
+                         search_tree=SearchTreePriorityQueue(),
                          quality_func=quality_func,
                          heuristic_func=heuristic_func,
                          ignored_concepts=ignored_concepts,
@@ -176,7 +173,7 @@ class DrillConceptLearner(BaseConceptLearner):
             child_node.heuristic = pred_Q
             self.search_tree.quality_func.apply(child_node)
             if child_node.quality > 0:  # > too weak, ignore.
-                self.search_tree.add(parent_node=child_node)
+                self.search_tree.add(child_node)
             if child_node.quality == 1:
                 return True
         return False
@@ -258,7 +255,7 @@ class DrillTrainer(BaseRLTrainer):
         self.replay_modulo_per_episode = 10
         if path_pretrained_agent:
             self.model = Drill()
-            self.model.load_state_dict(torch.load(path_pretrained_agent + '/model.pth'))
+            self.model.load_state_dict(torch.load(path_pretrained_agent))
         else:
             self.model = Drill()
             self.model.init()
@@ -291,10 +288,12 @@ class DrillTrainer(BaseRLTrainer):
 
         self.verbose = verbose
 
+    """    
     def initialize_root(self):
         root = self.rho.getNode(self.start_class, root=True)
         self.search_tree.quality_func.apply(root)
         self.search_tree.add_root(root)
+    """
 
     def apply_rho(self, node: Node) -> List:
         assert isinstance(node, Node)
@@ -689,7 +688,7 @@ class PrepareBatchOfTraining(torch.utils.data.Dataset):
         if torch.isnan(self.y).any() or torch.isinf(self.y).any():
             print('invalid Q value  detected during batching in Y')
             raise ValueError
-        self.X, self.y = self.X.to(device), self.y.to(device)
+        #self.X, self.y = self.X.to(device), self.y.to(device)
 
     def __len__(self):
         return len(self.X)
