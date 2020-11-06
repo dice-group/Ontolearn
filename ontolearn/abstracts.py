@@ -285,12 +285,9 @@ class BaseRefinement(metaclass=ABCMeta):
 class AbstractTree(ABC):
     @abstractmethod
     def __init__(self, quality_func, heuristic_func):
-        self.expressionTests = 0
         self.quality_func = quality_func
         self.heuristic_func = heuristic_func
         self._nodes = dict()
-
-        self.str_to_obj_instance_mapping = dict()
 
     def __len__(self):
         return len(self._nodes)
@@ -344,17 +341,6 @@ class AbstractTree(ABC):
 
         self._nodes = OrderedDict(sorted_x)
 
-    """
-    def sort_search_tree_by_descending_heuristic_score(self):
-
-        sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
-        self._nodes = OrderedDict(sorted_x)
-
-    def sort_search_tree_by_descending_quality(self):
-        sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
-        self._nodes = OrderedDict(sorted_x)
-    """
-
     def best_hypotheses(self, n=10) -> List[BaseNode]:
         assert self.search_tree is not None
         assert len(self.search_tree) > 1
@@ -385,4 +371,11 @@ class AbstractTree(ABC):
         """
         assert path
         assert key
+        pass
+
+    def clean(self):
+        """
+        Clearn
+        @return:
+        """
         pass
