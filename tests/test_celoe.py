@@ -3,12 +3,12 @@ import json
 from ontolearn import KnowledgeBase
 from ontolearn.concept_learner import CELOE
 
+PATH_FAMILY = 'data/family-benchmark_rich_background.owl'
+PATH_DATA_FATHER = 'data/father.owl'
+
 with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)
-# because '../data/family-benchmark_rich_background.owl'
-kb = KnowledgeBase(path=settings['data_path'][3:])
-
-PATH_DATA_FATHER = 'data/father.owl'
+kb = KnowledgeBase(PATH_FAMILY)
 
 
 class TestCeloe:
