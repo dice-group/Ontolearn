@@ -56,6 +56,8 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.max_child_length = max_child_length
         self.verbose = verbose
         self.start_time = time.time()
+        self.goal_found = False
+        self.max_length = 5
         self.__default_values()
         self.__sanity_checking()
 
@@ -124,6 +126,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         2) Sample negative examples if necessary.
         3) Initialize the root and search tree.
         """
+        self.reset_state()
         assert isinstance(pos, set) and isinstance(neg, set) and isinstance(all_instances, set)
         assert 0 < len(pos) < len(all_instances) and len(all_instances) > len(neg)
 
@@ -157,8 +160,17 @@ class BaseConceptLearner(metaclass=ABCMeta):
             raise AssertionError('Search Tree does not only contains the root')
 
     def terminate(self):
-        if self.verbose > 0:
-            print('Elapsed runtime: {0} seconds'.format(round(time.time() - self.start_time, 4)))
+        if self.verbose == 1:
+            t = 'Elapsed runtime: {0} seconds.\tNumber of concepts tested:{1}'.format(
+                round(time.time() - self.start_time, 4), self.number_of_tested_concepts)
+            if self.goal_found:
+                t += '\tGoal node found:{0}'.format(self.goal_found)
+
+            print(t)
+
+        if self.verbose > 1:
+            self.search_tree.show_search_tree('Final')
+
         return self
 
     def get_metric_key(self, key: str):
@@ -272,3 +284,14 @@ class BaseConceptLearner(metaclass=ABCMeta):
     @property
     def number_of_tested_concepts(self):
         return self.quality_func.applied
+
+    def reset_state(self):
+        """
+        At each problem initialization, we recent previous info if available.
+        @return:
+        """
+        for k, v in self.rho.concepts_to_nodes.items():
+            v.heuristic = None
+            v.quality = None
+        self.search_tree.clean()
+        self.goal_found = False

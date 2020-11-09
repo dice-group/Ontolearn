@@ -33,10 +33,10 @@ class TestDrill:
                     {'http://www.benchmark.org/family#Brother', 'Father',
                      'Grandparent'})  # Use URI, or concept with length 1.
 
-            model = DrillConceptLearner(knowledge_base=kb, refinement_operator=rho,
-                                        heuristic_func=DrillHeuristic(model_path=drill_pretrained_model_path),
-                                        terminate_on_goal=True, instance_emb=instance_emb,
-                                        ignored_concepts=concepts_to_ignore)
+            model = DrillAverage(knowledge_base=kb, refinement_operator=rho,
+                                 heuristic_func=DrillHeuristic(model_path=drill_pretrained_model_path),
+                                 terminate_on_goal=True, instance_embeddings=instance_emb,
+                                 ignored_concepts=concepts_to_ignore)
             returned_val = model.fit(pos=p, neg=n)
             assert returned_val == model
             hypotheses = model.best_hypotheses(n=3)

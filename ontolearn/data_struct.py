@@ -3,15 +3,12 @@ import numpy as np
 from sklearn import preprocessing
 from typing import List
 import random
-from .metrics import F1
-from .util import create_experiment_folder, create_logger
+import torch
+#from .metrics import F1
+#from .util import create_experiment_folder, create_logger
 
-
+"""
 class Data:
-    """
-    A class for constructing supervised learning problem.
-    """
-
     def __init__(self, knowledge_base, logger=None):
         self.kb = knowledge_base
         if logger:
@@ -40,11 +37,6 @@ class Data:
         return x_pos, x_neg
 
     def generate_data(self, **params):
-        """
-
-        @param params:
-        @return:
-        """
 
         # Define the learning problem
         X = []
@@ -146,11 +138,7 @@ class Data:
 
     @staticmethod
     def __generate_concepts(*, root_concept, rho, max_concept: int) -> List:
-        """
-        Generate a list of concepts that are randomly generated given root_concept
-        Given a root concept, and refinement operator
 
-        # ->If memory usage needs to be optimized,then one could leverage generators."""
         concepts_to_be_refined = set()
         refined_concepts = set()
 
@@ -201,12 +189,6 @@ class Data:
                       'num_of_outputs': y.shape[1]}
 
     def generate_concepts(self, **kwargs):
-        """
-        Generate concepts according to the provided settings.
-        Root concept:
-        An upperbound on the number of concepts.
-        """
-
         x = self.__generate_concepts(root_concept=kwargs['root_concept'],
                                      rho=kwargs['refinement_operator'],
                                      max_concept=kwargs['num_of_concepts_refined'])
@@ -253,6 +235,7 @@ class Data:
             concepts.append(x)
 
         return concepts, sampled_instances, y[jth:jth + kwargs['batch_size']]
+"""
 
 
 class PriorityQueue:
@@ -277,3 +260,41 @@ class PriorityQueue:
         node_to_return = self.struct.get()[1]
         self.items_in_queue.remove(node_to_return.ce.expression)
         return node_to_return
+
+
+class PropertyHierarchy:
+
+    def __init__(self, onto):
+        self.all_properties = [i for i in onto.properties()]
+
+        self.data_properties = [i for i in onto.data_properties()]
+
+        self.object_properties = [i for i in onto.object_properties()]
+
+    def get_most_general_property(self):
+        for i in self.all_properties:
+            yield i
+class PrepareBatchOfPrediction(torch.utils.data.Dataset):
+
+    def __init__(self, current_state: torch.FloatTensor, next_state_batch: torch.Tensor, p: torch.FloatTensor,
+                 n: torch.FloatTensor):
+        self.S_Prime = next_state_batch
+        self.S = current_state.expand(self.S_Prime.shape)
+        self.Positives = p.expand(next_state_batch.shape)
+        self.Negatives = n.expand(next_state_batch.shape)
+        assert self.S.shape == self.S_Prime.shape == self.Positives.shape == self.Negatives.shape
+        assert self.S.dtype == self.S_Prime.dtype == self.Positives.dtype == self.Negatives.dtype == torch.float32
+        # X.shape()=> batch_size,4, embedding dim)
+        self.X = torch.cat([self.S, self.S_Prime, self.Positives, self.Negatives], 1)
+        num_points, depth, dim = self.X.shape
+        self.X = self.X.view(num_points, depth, dim)
+        # self.X = self.X.to(device)
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return self.X[idx]
+
+    def get_all(self):
+        return self.X
