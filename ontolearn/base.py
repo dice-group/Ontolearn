@@ -34,6 +34,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
                                                     onto=self.onto,
                                                     min_size_of_concept=self.min_size_of_concept,
                                                     max_size_of_concept=self.max_size_of_concept)
+    def clean(self):
+        """ Return defaul state"""
+        self.__concept_generator.clean()
 
     def __build_hierarchy(self, onto: Ontology) -> None:
         """

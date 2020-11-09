@@ -7,7 +7,8 @@ from typing import Set, AnyStr, Dict, List, Tuple
 import random
 import pandas as pd
 import torch
-from .data_struct import PrepareBatchOfPrediction
+from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
+
 random.seed(0)
 
 
@@ -214,6 +215,12 @@ class AbstractScorer(ABC):
     def apply(self, *args, **kwargs):
         pass
 
+    def clean(self):
+        self.pos = None
+        self.neg = None
+        self.unlabelled = None
+        self.applied = 0
+
 
 class BaseRefinement(metaclass=ABCMeta):
     """
@@ -283,6 +290,9 @@ class BaseRefinement(metaclass=ABCMeta):
     def refine_object_intersection_of(self, *args, **kwargs):
         pass
 
+    @abstractmethod
+    def clean(self, *args, **kwargs):
+        pass
 
 class AbstractTree(ABC):
     @abstractmethod
@@ -380,7 +390,7 @@ class AbstractTree(ABC):
         Clearn
         @return:
         """
-        pass
+        self._nodes.clear()
 
 
 class AbstractKnowledgeBase(ABC):

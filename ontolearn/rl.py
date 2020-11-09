@@ -1,9 +1,17 @@
 from abc import ABCMeta
 from .concept_learner import BaseConceptLearner
-from .base_rl_agent import BaseRLTrainer
-from .abstracts import AbstractDrill
+from .base_rl_agent import BaseRLAgent
+from .abstracts import AbstractDrill, AbstractScorer
 from .util import *
 from .search import Node, SearchTreePriorityQueue
+from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
+from .refinement_operators import LengthBasedRefinement
+from .metrics import F1
+from .heuristics import Reward
+from concurrent.futures import ThreadPoolExecutor
+import time
+import json
+import pandas as pd
 import random
 import torch
 from torch import nn
@@ -12,20 +20,11 @@ import functools
 from torch.functional import F
 from typing import List, Any, Set, AnyStr, Tuple
 from collections import namedtuple, deque
-from .abstracts import AbstractScorer
 from torch.nn.init import xavier_normal_
 from itertools import chain
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ExponentialLR
-import json
-import pandas as pd
-from .refinement_operators import LengthBasedRefinement
-from .metrics import F1
-from .heuristics import Reward
-from .base_rl_agent import BaseRLAgent
-from concurrent.futures import ThreadPoolExecutor
-import time
 
 
 class DrillAverage(AbstractDrill, BaseConceptLearner, BaseRLAgent):
@@ -56,7 +55,6 @@ class DrillAverage(AbstractDrill, BaseConceptLearner, BaseRLAgent):
         self.storage_path, _ = create_experiment_folder()
         self.logger = create_logger(name='Drill', p=self.storage_path)
 
-
     def represent_examples(self, *, pos, neg) -> None:
         """
 
@@ -77,7 +75,6 @@ class DrillAverage(AbstractDrill, BaseConceptLearner, BaseRLAgent):
         self.emb_pos = self.emb_pos.view(1, 1, self.emb_pos.shape[0])
         self.emb_neg = torch.mean(self.emb_neg, dim=0)
         self.emb_neg = self.emb_neg.view(1, 1, self.emb_neg.shape[0])
-
 
     def fit(self, pos: Set[AnyStr], neg: Set[AnyStr]):
         """
@@ -283,7 +280,7 @@ class DrillAverage(AbstractDrill, BaseConceptLearner, BaseRLAgent):
             flag, pos, neg = self.__preprocess_examples(example_node)
             if flag is False:
                 continue
-            self.apply_demonstration(example_node)
+            # self.apply_demonstration(example_node)
             self.rl_learning_loop(pos_uri=pos, neg_uri=neg)
             # Save model.
             torch.save(self.model.state_dict(), self.storage_path + '/model.pth')
@@ -295,10 +292,6 @@ class DrillAverage(AbstractDrill, BaseConceptLearner, BaseRLAgent):
 
 
 class DrillHeuristic(AbstractScorer):
-    """
-    Use pretrained agent as heuristic func.
-    """
-
     def __init__(self, pos=None, neg=None, model_path=None, model=None):
         super().__init__(pos, neg, unlabelled=None)
         self.name = 'DrillHeuristic'
@@ -322,34 +315,94 @@ class DrillHeuristic(AbstractScorer):
         self.model.eval()
 
     def score(self, node, parent_node=None):
-        """ Compute and return predicted Q-value"""
+        """ Compute heuristic value of root node only"""
         if parent_node is None and node.is_root:
             return torch.FloatTensor([.0001]).squeeze()
-
-        print('asd')
-        with torch.no_grad():
-            print(node.concept.embeddings)
-            print(parent_node.concept.embeddings)
-
-            exit(1)
-
-            self.S_Prime = next_state_batch
-            self.S = current_state.expand(self.S_Prime.shape)
-            self.Positives = p.expand(next_state_batch.shape)
-            self.Negatives = n.expand(next_state_batch.shape)
-            assert self.S.shape == self.S_Prime.shape == self.Positives.shape == self.Negatives.shape
-            assert self.S.dtype == self.S_Prime.dtype == self.Positives.dtype == self.Negatives.dtype == torch.float32
-            # X.shape()=> batch_size,4, embedding dim)
-            self.X = torch.cat([self.S, self.S_Prime, self.Positives, self.Negatives], 1)
-            num_points, depth, dim = self.X.shape
-            self.X = self.X.view(num_points, depth, dim)
-
-            raise ValueError()
+        raise ValueError
 
     def apply(self, node, parent_node=None):
         """ Assign predicted Q-value to node object."""
         predicted_q_val = self.score(node, parent_node)
         node.heuristic = predicted_q_val
+
+
+class Drill(nn.Module, metaclass=ABCMeta):
+    """
+    A neural model for Deep Q-Learning.
+
+    An input Drill has the following form
+            1. indexes of individuals belonging to current state (s).
+            2. indexes of individuals belonging to next state state (s_prime).
+            3. indexes of individuals provided as positive examples.
+            4. indexes of individuals provided as negative examples.
+
+    Given such input, we from a sparse 3D Tensor where  each slice is a **** N *** by ***D***
+    where N is the number of individuals and D is the number of dimension of embeddings.
+    Given that N on the current benchmark datasets < 10^3, we can get away with this computation. By doing so
+    we do not need to subsample from given inputs.
+
+    """
+
+    def __init__(self):
+        super(Drill, self).__init__()
+        self.loss = nn.MSELoss()
+
+        self.conv1 = nn.Conv1d(in_channels=4,
+                               out_channels=32,
+                               kernel_size=3,
+                               padding=1,
+                               stride=1,
+                               bias=True)
+        self.pool = nn.MaxPool2d(kernel_size=3,
+                                 padding=1,
+                                 stride=1)
+        self.bn1 = nn.BatchNorm1d(32)
+
+        self.conv2 = nn.Conv1d(in_channels=32,
+                               out_channels=16,
+                               kernel_size=3,
+                               padding=1,
+                               stride=1,
+                               bias=True)
+        self.bn2 = nn.BatchNorm1d(16)
+
+        self.conv3 = nn.Conv1d(in_channels=16,
+                               out_channels=8,
+                               kernel_size=3,
+                               padding=1,
+                               stride=1,
+                               bias=True)
+
+        self.fc1 = nn.Linear(in_features=800, out_features=200)
+        self.bn3 = nn.BatchNorm1d(8)
+        self.fc2 = nn.Linear(in_features=200, out_features=50)
+        self.bn4 = nn.BatchNorm1d(200)
+        self.fc3 = nn.Linear(in_features=50, out_features=1)
+        self.bn5 = nn.BatchNorm1d(50)
+
+    def init(self):
+        xavier_normal_(self.fc1.weight.data)
+        xavier_normal_(self.fc2.weight.data)
+        xavier_normal_(self.fc3.weight.data)
+
+        xavier_normal_(self.conv1.weight.data)
+        xavier_normal_(self.conv2.weight.data)
+        xavier_normal_(self.conv3.weight.data)
+
+    def forward(self, X: torch.FloatTensor):
+        # X => torch.Size([batchsize, 4, dim])
+        X = self.bn1(self.pool(F.relu(self.conv1(X))))
+
+        # X => torch.Size([batchsize, 32, dim]) # 32 kernels.
+        X = self.bn2(self.pool(F.relu(self.conv2(X))))
+        # X => torch.Size([batchsize, 16, dim]) # 16 kernels.
+        X = self.bn3(self.pool(F.relu(self.conv3(X))))
+        # X => torch.Size([batchsize, 8, dim]) # 16 kernels.
+        X = X.view(-1, X.shape[1] * X.shape[2])
+
+        X = self.bn4(F.relu(self.fc1(X)))
+        X = self.bn5(F.relu(self.fc2(X)))
+        return F.relu(self.fc3(X))
 
 
 """
@@ -586,7 +639,7 @@ class DrillTrainer(BaseRLTrainer):
 
     # @performance_debugger(func_name='train')
     def train(self, TargetConcept: str) -> None:
-        
+
         root = self.rho.getNode(self.start_class, root=True)
         self.assign_embeddings(root)
         sum_of_rewards_per_actions = []
@@ -661,128 +714,3 @@ class DrillTrainer(BaseRLTrainer):
             print(i)
         print('#######')
 """
-
-
-class Drill(nn.Module, metaclass=ABCMeta):
-    """
-    A neural model for Deep Q-Learning.
-
-    An input Drill has the following form
-            1. indexes of individuals belonging to current state (s).
-            2. indexes of individuals belonging to next state state (s_prime).
-            3. indexes of individuals provided as positive examples.
-            4. indexes of individuals provided as negative examples.
-
-    Given such input, we from a sparse 3D Tensor where  each slice is a **** N *** by ***D***
-    where N is the number of individuals and D is the number of dimension of embeddings.
-    Given that N on the current benchmark datasets < 10^3, we can get away with this computation. By doing so
-    we do not need to subsample from given inputs.
-
-    """
-
-    def __init__(self):
-        super(Drill, self).__init__()
-        self.loss = nn.MSELoss()
-
-        self.conv1 = nn.Conv1d(in_channels=4,
-                               out_channels=32,
-                               kernel_size=3,
-                               padding=1,
-                               stride=1,
-                               bias=True)
-        self.pool = nn.MaxPool2d(kernel_size=3,
-                                 padding=1,
-                                 stride=1)
-        self.bn1 = nn.BatchNorm1d(32)
-
-        self.conv2 = nn.Conv1d(in_channels=32,
-                               out_channels=16,
-                               kernel_size=3,
-                               padding=1,
-                               stride=1,
-                               bias=True)
-        self.bn2 = nn.BatchNorm1d(16)
-
-        self.conv3 = nn.Conv1d(in_channels=16,
-                               out_channels=8,
-                               kernel_size=3,
-                               padding=1,
-                               stride=1,
-                               bias=True)
-
-        self.fc1 = nn.Linear(in_features=800, out_features=200)
-        self.bn3 = nn.BatchNorm1d(8)
-        self.fc2 = nn.Linear(in_features=200, out_features=50)
-        self.bn4 = nn.BatchNorm1d(200)
-        self.fc3 = nn.Linear(in_features=50, out_features=1)
-        self.bn5 = nn.BatchNorm1d(50)
-
-    def init(self):
-        xavier_normal_(self.fc1.weight.data)
-        xavier_normal_(self.fc2.weight.data)
-        xavier_normal_(self.fc3.weight.data)
-
-        xavier_normal_(self.conv1.weight.data)
-        xavier_normal_(self.conv2.weight.data)
-        xavier_normal_(self.conv3.weight.data)
-
-    def forward(self, X: torch.FloatTensor):
-        # X => torch.Size([batchsize, 4, dim])
-        X = self.bn1(self.pool(F.relu(self.conv1(X))))
-
-        # X => torch.Size([batchsize, 32, dim]) # 32 kernels.
-        X = self.bn2(self.pool(F.relu(self.conv2(X))))
-        # X => torch.Size([batchsize, 16, dim]) # 16 kernels.
-        X = self.bn3(self.pool(F.relu(self.conv3(X))))
-        # X => torch.Size([batchsize, 8, dim]) # 16 kernels.
-        X = X.view(-1, X.shape[1] * X.shape[2])
-
-        X = self.bn4(F.relu(self.fc1(X)))
-        X = self.bn5(F.relu(self.fc2(X)))
-        return F.relu(self.fc3(X))
-
-
-
-class PrepareBatchOfTraining(torch.utils.data.Dataset):
-
-    def __init__(self, current_state_batch: torch.Tensor, next_state_batch: torch.Tensor, p: torch.Tensor,
-                 n: torch.Tensor, q: torch.Tensor):
-        if torch.isnan(current_state_batch).any() or torch.isinf(current_state_batch).any():
-            raise ValueError('invalid value detected in current_state_batch,\n{0}'.format(current_state_batch))
-        if torch.isnan(next_state_batch).any() or torch.isinf(next_state_batch).any():
-            raise ValueError('invalid value detected in next_state_batch,\n{0}'.format(next_state_batch))
-        if torch.isnan(p).any() or torch.isinf(p).any():
-            raise ValueError('invalid value detected in p,\n{0}'.format(p))
-        if torch.isnan(n).any() or torch.isinf(n).any():
-            raise ValueError('invalid value detected in p,\n{0}'.format(n))
-        if torch.isnan(q).any() or torch.isinf(q).any():
-            raise ValueError('invalid Q value  detected during batching.')
-
-        self.S = current_state_batch
-        self.S_Prime = next_state_batch
-        self.y = q.view(len(q), 1)
-        assert self.S.shape == self.S_Prime.shape
-        assert len(self.y) == len(self.S)
-
-        self.Positives = p.expand(next_state_batch.shape)
-        self.Negatives = n.expand(next_state_batch.shape)
-        assert self.S.shape == self.S_Prime.shape == self.Positives.shape == self.Negatives.shape
-        assert self.S.dtype == self.S_Prime.dtype == self.Positives.dtype == self.Negatives.dtype == torch.float32
-        # X.shape()=> batch_size,4,embeddingdim)
-        self.X = torch.cat([self.S, self.S_Prime, self.Positives, self.Negatives], 1)
-        num_points, depth, dim = self.X.shape
-        self.X = self.X.view(num_points, depth, dim)
-
-        if torch.isnan(self.X).any() or torch.isinf(self.X).any():
-            print('invalid input detected during batching in X')
-            raise ValueError
-        if torch.isnan(self.y).any() or torch.isinf(self.y).any():
-            print('invalid Q value  detected during batching in Y')
-            raise ValueError
-        # self.X, self.y = self.X.to(device), self.y.to(device)
-
-    def __len__(self):
-        return len(self.X)
-
-    def __getitem__(self, idx):
-        return self.X[idx], self.y[idx]
