@@ -39,7 +39,7 @@ class TestDrill:
                                  ignored_concepts=concepts_to_ignore)
             returned_val = model.fit(pos=p, neg=n)
             assert returned_val == model
-            hypotheses = model.best_hypotheses(n=3)
+            hypotheses = model.best_hypotheses(n=5)
             assert hypotheses[0].quality >= exp_f1_scores[str_target_concept]
             assert hypotheses[0].quality >= hypotheses[1].quality
             assert hypotheses[1].quality >= hypotheses[2].quality
