@@ -147,7 +147,7 @@ class ModifiedCELOERefinement(BaseRefinement):
      A top down/downward refinement operator refinement operator in ALC.
     """
 
-    def __init__(self, kb, max_child_length=50):
+    def __init__(self, kb, max_child_length=10):
         super().__init__(kb)
         self.topRefinementsCumulative = dict()
         self.topRefinementsLength = 0
