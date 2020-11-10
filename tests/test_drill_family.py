@@ -3,6 +3,7 @@ from ontolearn import *
 import json
 import random
 import pandas as pd
+
 PATH_FAMILY = 'data/family-benchmark_rich_background.owl'
 drill_pretrained_model_path = 'agent_pre_trained/model.pth'
 family_embeddings_path = 'embeddings/Dismult_family_benchmark/instance_emb.csv'
@@ -42,4 +43,3 @@ class TestDrill:
             hypotheses = model.best_hypotheses(n=5)
             assert hypotheses[0].quality >= exp_f1_scores[str_target_concept]
             assert hypotheses[0].quality >= hypotheses[1].quality
-            assert hypotheses[1].quality >= hypotheses[2].quality
