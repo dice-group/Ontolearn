@@ -1,7 +1,10 @@
 import random
+from typing import List, Any
+
 from .refinement_operators import LengthBasedRefinement
 
 import sys
+
 
 class LearningProblemGenerator:
     """
@@ -21,6 +24,7 @@ class LearningProblemGenerator:
         self.learning_problems_generated = set()
         self.seen_concepts = set()
         self.depth = depth
+        self.valid_concepts = []
 
     def apply_rho(self, node):
         return {self.rho.getNode(i, parent_node=node) for i in
@@ -34,15 +38,17 @@ class LearningProblemGenerator:
             self.seen_concepts.update(refs)
             if refs:
                 current_state = random.sample(list(refs), 1)[0]  # random sample.
-        valid_concepts = []
         for i in self.seen_concepts:
             if self.min_length <= len(i) <= self.max_length and (i not in self.learning_problems_generated):
                 self.learning_problems_generated.add(i)
-                valid_concepts.append(i)
-        valid_concepts.sort(key=lambda x: len(x), reverse=False)
-        print('Number of concepts generated {0}'.format(len(valid_concepts)))
-        return valid_concepts[:self.num_problems]
+                self.valid_concepts.append(i)
+        self.valid_concepts.sort(key=lambda x: len(x), reverse=False)
 
     def __iter__(self):
-        for goal_node in self.apply():
+        if len(self.valid_concepts) == 0:
+            self.apply()
+        for goal_node in self.valid_concepts[:self.num_problems]:
             yield goal_node
+
+    def __len__(self):
+        return len(self.valid_concepts)
