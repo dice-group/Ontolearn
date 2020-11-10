@@ -4,15 +4,19 @@ import os
 import pickle
 import time
 import copy
-from owlready2 import get_ontology
+from owlready2 import get_ontology,ThingClass, Ontology
 import types
-from typing import Iterable
 import matplotlib.pyplot as plt
 from rdflib import Graph, Literal, RDF, URIRef
 from rdflib.namespace import OWL, RDFS
 from collections import deque
 from sklearn.manifold import TSNE
 import random
+from collections import OrderedDict, defaultdict
+from functools import total_ordering
+from abc import ABCMeta, abstractmethod, ABC
+from typing import Set, AnyStr, Dict, List, Tuple,Iterable
+
 
 # DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
 DEFAULT_FMT = 'Func:{name} took {elapsed:0.8f}s'

@@ -48,8 +48,14 @@ class ConceptGenerator:
         self.log_of_negations = dict()
         self.log_of_universal_restriction = dict()
         self.log_of_existential_restriction = dict()
+        #self.executor = concurrent.futures.ProcessPoolExecutor()
 
-        self.executor = concurrent.futures.ProcessPoolExecutor()
+    def clean(self):
+        self.log_of_intersections = dict()
+        self.log_of_unions = dict()
+        self.log_of_negations = dict()
+        self.log_of_universal_restriction = dict()
+        self.log_of_existential_restriction = dict()
 
     @staticmethod
     def __concepts_sorter(A, B):

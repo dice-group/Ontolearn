@@ -1,10 +1,13 @@
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from functools import total_ordering
 from abc import ABCMeta, abstractmethod, ABC
-from owlready2 import ThingClass
+from owlready2 import ThingClass, Ontology
 from .util import get_full_iri
-from typing import Set, AnyStr, Dict, List
+from typing import Set, AnyStr, Dict, List, Tuple
 import random
+import pandas as pd
+import torch
+from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
 
 random.seed(0)
 
@@ -212,6 +215,12 @@ class AbstractScorer(ABC):
     def apply(self, *args, **kwargs):
         pass
 
+    def clean(self):
+        self.pos = None
+        self.neg = None
+        self.unlabelled = None
+        self.applied = 0
+
 
 class BaseRefinement(metaclass=ABCMeta):
     """
@@ -281,16 +290,16 @@ class BaseRefinement(metaclass=ABCMeta):
     def refine_object_intersection_of(self, *args, **kwargs):
         pass
 
+    @abstractmethod
+    def clean(self, *args, **kwargs):
+        pass
 
 class AbstractTree(ABC):
     @abstractmethod
     def __init__(self, quality_func, heuristic_func):
-        self.expressionTests = 0
         self.quality_func = quality_func
         self.heuristic_func = heuristic_func
         self._nodes = dict()
-
-        self.str_to_obj_instance_mapping = dict()
 
     def __len__(self):
         return len(self._nodes)
@@ -344,17 +353,6 @@ class AbstractTree(ABC):
 
         self._nodes = OrderedDict(sorted_x)
 
-    """
-    def sort_search_tree_by_descending_heuristic_score(self):
-
-        sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
-        self._nodes = OrderedDict(sorted_x)
-
-    def sort_search_tree_by_descending_quality(self):
-        sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
-        self._nodes = OrderedDict(sorted_x)
-    """
-
     def best_hypotheses(self, n=10) -> List[BaseNode]:
         assert self.search_tree is not None
         assert len(self.search_tree) > 1
@@ -386,3 +384,162 @@ class AbstractTree(ABC):
         assert path
         assert key
         pass
+
+    def clean(self):
+        """
+        Clearn
+        @return:
+        """
+        self._nodes.clear()
+
+
+class AbstractKnowledgeBase(ABC):
+
+    def __init__(self):
+        self.concepts = dict()
+        self.thing = None
+        self.nothing = None
+        self.top_down_concept_hierarchy = defaultdict(set)  # Next time thing about including this into Concepts.
+        self.top_down_direct_concept_hierarchy = defaultdict(set)
+        self.down_top_concept_hierarchy = defaultdict(set)
+        self.down_top_direct_concept_hierarchy = defaultdict(set)
+        self.concepts_to_leafs = defaultdict(set)
+        self.property_hierarchy = None
+        self.individuals = None
+
+    def save(self, path, rdf_format='ntriples'):
+        self.onto.save(file=path, format=rdf_format)
+
+    def describe(self):
+        print('Number of individuals: {0}'.format(len(self.individuals)))
+        print('Number of concepts: {0}'.format(len(self.concepts)))
+
+
+class AbstractDrill(ABC):
+
+    def __init__(self, model, instance_embeddings, reward_func, learning_rate=None,
+                 num_episode=None, num_of_sequential_actions=None, max_len_replay_memory=None,
+                 batch_size=None, epsilon_decay=None, epsilon_min=None, num_epochs_per_replay=None):
+
+        assert isinstance(instance_embeddings, pd.DataFrame)
+        assert (instance_embeddings.all()).all()  # all columns and all rows are not none.
+        assert model
+        assert reward_func
+
+        self.model = model
+        self.instance_embeddings = instance_embeddings
+        self.reward_func = reward_func
+        self.search_tree = None
+
+        # constants
+        self.epsilon = 1
+        self.learning_rate = learning_rate
+        self.num_episode = num_episode
+        self.num_of_sequential_actions = num_of_sequential_actions
+        self.num_epochs_per_replay = num_epochs_per_replay
+        self.max_len_replay_memory = max_len_replay_memory
+        self.epsilon_decay = epsilon_decay
+        self.epsilon_min = epsilon_min
+        self.batch_size = batch_size
+
+        if self.learning_rate is None:
+            self.learning_rate = .001
+        if self.num_episode is None:
+            self.num_episode = 759
+        if self.max_len_replay_memory is None:
+            self.max_len_replay_memory = 1024
+        if self.num_of_sequential_actions is None:
+            self.num_of_sequential_actions = 10
+        if self.epsilon_decay is None:
+            self.epsilon_decay = .001
+        if self.epsilon_min is None:
+            self.epsilon_min = 0
+        if self.num_epochs_per_replay is None:
+            self.num_epochs_per_replay = 10
+        if self.batch_size is None:
+            self.batch_size = 1024
+
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+
+        self.seen_examples = dict()
+
+    def next_node_to_expand(self, step):
+        if self.verbose > 1:
+            self.search_tree.show_search_tree(step)
+        return self.search_tree.get_most_promising()
+
+    def update_search(self, concepts, predicted_Q_values):
+        """
+        @param concepts:
+        @param predicted_Q_values:
+        @return:
+        """
+        # simple loop.
+        for child_node, pred_Q in zip(concepts, predicted_Q_values):
+            child_node.heuristic = pred_Q
+            self.search_tree.quality_func.apply(child_node)
+            if child_node.quality > 0:  # > too weak, ignore.
+                self.search_tree.add(child_node)
+            if child_node.quality == 1:
+                return child_node
+
+    def predict_Q(self, current_state: BaseNode, next_states: List[BaseNode]) -> torch.Tensor:
+        """
+        Predict promise of next states given current state.
+        @param current_state:
+        @param next_states:
+        @return: predicted Q values.
+        """
+        self.assign_embeddings(current_state)
+        assert len(next_states) > 0
+        with torch.no_grad():
+            self.model.eval()
+            # create batch batch.
+            next_state_batch = []
+            for _ in next_states:
+                self.assign_embeddings(_)
+                next_state_batch.append(_.concept.embeddings)
+            next_state_batch = torch.cat(next_state_batch, dim=0)
+            ds = PrepareBatchOfPrediction(current_state.concept.embeddings,
+                                          next_state_batch,
+                                          self.emb_pos,
+                                          self.emb_neg)
+            predictions = self.model.forward(ds.get_all())
+        return predictions
+
+    def apply_rho(self, node: BaseNode):
+        assert isinstance(node, BaseNode)
+        refinements = (self.rho.getNode(i, parent_node=node) for i in
+                       self.rho.refine(node,
+                                       maxlength=len(node) + 3 if len(node) + 3 <= self.max_length else self.max_length)
+                       if i.str not in self.concepts_to_ignore)
+        return refinements
+
+    def assign_embeddings(self, node: BaseNode, mode='averaging', sample_size=None) -> None:
+        assert isinstance(node, BaseNode)
+        # (1) Detect mode
+        if mode == 'averaging':
+            # (2) if input node has not seen before, assign embeddings.
+            if node.concept.embeddings is None:
+                str_idx = [get_full_iri(i).replace('\n', '') for i in node.concept.instances]
+                emb = torch.tensor(self.instance_embeddings.loc[str_idx].values, dtype=torch.float32)
+                emb = torch.mean(emb, dim=0)
+                emb = emb.view(1, 1, emb.shape[0])
+                node.concept.embeddings = emb
+                sample_size = 1
+        elif mode == 'sampling':
+            if node.concept.embeddings is None:
+                str_idx = random.sample([get_full_iri(i).replace('\n', '') for i in node.concept.instances],
+                                        sample_size)
+                emb = torch.tensor(self.instance_embeddings.loc[str_idx].values, dtype=torch.float32)
+                emb = emb.view(1, emb.shape[0], emb.shape[1])
+                node.concept.embeddings = emb
+        else:
+            raise ValueError
+
+        # Sanity checking.
+        if torch.isnan(node.concept.embeddings).any() or torch.isinf(node.concept.embeddings).any():
+            # No individual contained in the input concept.
+            # Sanity checking.
+            assert len(node.concept.instances) == 0
+            node.concept.embeddings = torch.zeros((1, sample_size, self.instance_embeddings.shape[1]))

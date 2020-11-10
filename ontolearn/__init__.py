@@ -15,7 +15,6 @@ warnings.filterwarnings("ignore")
 
 from .base import KnowledgeBase
 from .refinement_operators import *
-from .data_struct import Data
 from .concept import Concept
 from .concept_learner import *
 from .rl import *
