@@ -24,19 +24,18 @@ from ontolearn import *
 import json
 import random
 import pandas as pd
+PATH_FAMILY = '../data/family-benchmark_rich_background.owl'
+drill_pretrained_model_path = '../agent_pre_trained/model.pth'
+family_embeddings_path = '../embeddings/Dismult_family_benchmark/instance_emb.csv'
+synthetic_problems_path = '../examples/synthetic_problems.json'
 
-with open('synthetic_problems.json') as json_file:
+with open(synthetic_problems_path) as json_file:
     settings = json.load(json_file)
-data_path = settings['data_path']
 
-kb = KnowledgeBase(path=data_path)
+kb = KnowledgeBase(PATH_FAMILY)
 rho = LengthBasedRefinement(kb=kb)
-instance_emb = pd.read_csv('../embeddings/Dismult_family_benchmark/instance_emb.csv', index_col=0)
-trainer = DrillTrainer(
-    knowledge_base=kb,
-    refinement_operator=rho,
-    path_pretrained_agent='../agent_pre_trained',  # for Incremental/Continual learning.
-    instance_embeddings=instance_emb)
+
+instance_emb = pd.read_csv(family_embeddings_path, index_col=0)
 
 for str_target_concept, examples in settings['problems'].items():
     p = set(examples['positive_examples'])
@@ -46,13 +45,12 @@ for str_target_concept, examples in settings['problems'].items():
     # lets inject more background info
     if str_target_concept in ['Granddaughter', 'Aunt', 'Sister']:
         concepts_to_ignore.update(
-            {'http://www.benchmark.org/family#Brother', 'Father', 'Grandparent'}) # Use URI, or concept with length 1.
+            {'http://www.benchmark.org/family#Brother', 'Father', 'Grandparent'})  # Use URI, or concept with length 1.
 
-    model = DrillConceptLearner(knowledge_base=kb, refinement_operator=rho,
-                                quality_func=F1(), heuristic_func=DrillHeuristic(model=trainer.model),
-                                terminate_on_goal=True, instance_emb=instance_emb, ignored_concepts=concepts_to_ignore)
+    model = DrillAverage(knowledge_base=kb, refinement_operator=rho,
+                         heuristic_func=DrillHeuristic(model_path=drill_pretrained_model_path),
+                         terminate_on_goal=True, instance_embeddings=instance_emb, ignored_concepts=concepts_to_ignore)
     model.fit(pos=p, neg=n)
     hypotheses = model.best_hypotheses(n=1)
     for h in hypotheses:
         print(h)
-

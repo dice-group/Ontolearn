@@ -10,7 +10,8 @@ class Node(BaseNode):
 
     def __str__(self):
         return 'Node at {0}\t{self.concept.str}\tQuality:{self.quality}\tHeuristic:{self.heuristic}\tDepth:{' \
-               'self.depth}\tH_exp:{self.h_exp}\t|Children|:{self.refinement_count}'.format(hex(id(self)), self=self)
+               'self.depth}\tH_exp:{self.h_exp}\t|Children|:{self.refinement_count}\t|Indv.|:{1}'.format(
+            hex(id(self)), len(self.concept.instances), self=self)
 
 
 class CELOESearchTree(AbstractTree):
@@ -87,7 +88,6 @@ class SearchTree(AbstractTree):
 
         if self.redundancy_check(node):
             self.quality_func.apply(node)  # AccuracyOrTooWeak(n)
-            self.expressionTests += 1
             if node.quality == 0:  # > too weak
                 return False
             self.heuristic_func.apply(node)
@@ -129,7 +129,6 @@ class SearchTreePriorityQueue(AbstractTree):
 
     def __init__(self, quality_func=None, heuristic_func=None):
         super().__init__(quality_func, heuristic_func)
-        from queue import PriorityQueue
         self.items_in_queue = PriorityQueue()
 
     def add(self, n: Node):
@@ -145,18 +144,9 @@ class SearchTreePriorityQueue(AbstractTree):
         self.items_in_queue.put((-n.heuristic, n.concept.str))  # gets the smallest one.
         self.nodes[n.concept.str] = n
 
-    """
-    def add_root(self, node: Node):
-        
-        self.quality_func.apply(node)
-        self.heuristic_func.apply(node)
-        self.items_in_queue.put((-node.heuristic, node.concept.str))  # gets the smallest one.
-        self.nodes[node.concept.str] = node
-    """
-
     def add_node(self, *, node: Node, parent_node: Node):
         """
-        Adds a node into the search tree.
+        Add a node into the search tree after calculating heuristic value given its parent.
 
         Parameters
         ----------
@@ -184,6 +174,7 @@ class SearchTreePriorityQueue(AbstractTree):
                 self.items_in_queue.put((-node.heuristic, node.concept.str))  # gets the smallest one.
                 self.nodes[node.concept.str] = node
         else:
+            # @todos reconsider it.
             self.quality_func.apply(node)
             if node.quality == 0:
                 return False
