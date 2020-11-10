@@ -15,6 +15,9 @@ class LengthBasedRefinement(BaseRefinement):
         super().__init__(kb)
         self.max_child_length = max_child_length
 
+    def clean(self, *args, **kwargs):
+        pass
+
     def getNode(self, c: Concept, parent_node=None, root=False):
 
         if c in self.concepts_to_nodes:
@@ -152,6 +155,13 @@ class ModifiedCELOERefinement(BaseRefinement):
         self.combos = dict()
         self.topRefinements = dict()
         self.topARefinements = dict()
+
+    def clean(self):
+        self.combos = dict()
+        self.topRefinements = dict()
+        self.topARefinements = dict()
+        self.topRefinementsCumulative = dict()
+        self.topRefinementsLength = 0
 
     def refine_atomic_concept(self, node: Node, max_length: int = None, current_domain: Concept = None) -> Set:
         """
@@ -355,6 +365,9 @@ class ModifiedCELOERefinement(BaseRefinement):
 class CustomRefinementOperator(BaseRefinement):
     def __init__(self, kb: KnowledgeBase = None, max_size_of_concept=1000, min_size_of_concept=1):
         super().__init__(kb, max_size_of_concept, min_size_of_concept)
+
+    def clean(self, *args, **kwargs):
+        pass
 
     def getNode(self, c: Concept, parent_node=None, root=False):
 

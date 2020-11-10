@@ -3,12 +3,12 @@ import json
 from ontolearn import KnowledgeBase
 from ontolearn.concept_learner import CELOE
 
+PATH_FAMILY = 'data/family-benchmark_rich_background.owl'
+PATH_DATA_FATHER = 'data/father.owl'
+
 with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)
-# because '../data/family-benchmark_rich_background.owl'
-kb = KnowledgeBase(path=settings['data_path'][3:])
-
-PATH_DATA_FATHER = 'data/father.owl'
+kb = KnowledgeBase(PATH_FAMILY)
 
 
 class TestCeloe:
@@ -81,3 +81,28 @@ class TestCeloe:
         print(best_pred)
         assert (best_pred.quality == 1.0)
         assert (best_pred.concept.str == '(male  ⊓  (∃hasChild.person))')
+
+    def test_multiple_fits(self):
+        pos_aunt = set(settings['problems']['Aunt']['positive_examples'])
+        neg_aunt = set(settings['problems']['Aunt']['negative_examples'])
+
+        pos_uncle = set(settings['problems']['Uncle']['positive_examples'])
+        neg_uncle = set(settings['problems']['Uncle']['negative_examples'])
+
+        model = CELOE(knowledge_base=kb)
+        model.fit(pos=pos_aunt, neg=neg_aunt)
+        model.fit(pos=pos_uncle, neg=neg_uncle)
+
+        print("First fitted on Aunt then on Uncle:")
+        hypotheses = model.best_hypotheses(n=2)
+        q, str_concept = hypotheses[0].quality, hypotheses[0].concept.str
+
+        model = CELOE(knowledge_base=kb)
+        model.fit(pos=pos_uncle, neg=neg_uncle)
+
+        print("Only fitted on Uncle:")
+        hypotheses = model.best_hypotheses(n=2)
+        q2, str_concept2 = hypotheses[0].quality, hypotheses[0].concept.str
+
+        assert q == q2
+        assert str_concept == str_concept2
