@@ -417,19 +417,51 @@ class AbstractKnowledgeBase(ABC):
 
 class AbstractDrill(ABC):
 
-    def __init__(self, model, instance_embeddings):
-        self.model = model
-        self.learning_rate, self.decay_rate, self.batch_size = .001, 1.0, 256
-        self.num_epochs_per_replay = 10
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        self.instance_embeddings = instance_embeddings
+    def __init__(self, model, instance_embeddings, reward_func, learning_rate=None,
+                 num_episode=None, num_of_sequential_actions=None, max_len_replay_memory=None,
+                 batch_size=None, epsilon_decay=None, epsilon_min=None, num_epochs_per_replay=None):
 
-        assert isinstance(self.instance_embeddings, pd.DataFrame)
+        assert isinstance(instance_embeddings, pd.DataFrame)
         assert (instance_embeddings.all()).all()  # all columns and all rows are not none.
-        assert self.model
+        assert model
+        assert reward_func
 
-        # attributes will initialized by other abstract methods.
+        self.model = model
+        self.instance_embeddings = instance_embeddings
+        self.reward_func = reward_func
         self.search_tree = None
+
+        # constants
+        self.epsilon = 1
+        self.learning_rate = learning_rate
+        self.num_episode = num_episode
+        self.num_of_sequential_actions = num_of_sequential_actions
+        self.num_epochs_per_replay = num_epochs_per_replay
+        self.max_len_replay_memory = max_len_replay_memory
+        self.epsilon_decay = epsilon_decay
+        self.epsilon_min = epsilon_min
+        self.batch_size = batch_size
+
+        if self.learning_rate is None:
+            self.learning_rate = .001
+        if self.num_episode is None:
+            self.num_episode = 759
+        if self.max_len_replay_memory is None:
+            self.max_len_replay_memory = 1024
+        if self.num_of_sequential_actions is None:
+            self.num_of_sequential_actions = 10
+        if self.epsilon_decay is None:
+            self.epsilon_decay = .001
+        if self.epsilon_min is None:
+            self.epsilon_min = 0
+        if self.num_epochs_per_replay is None:
+            self.num_epochs_per_replay = 10
+        if self.batch_size is None:
+            self.batch_size = 1024
+
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+
+        self.seen_examples = dict()
 
     def next_node_to_expand(self, step):
         if self.verbose > 1:
@@ -483,13 +515,31 @@ class AbstractDrill(ABC):
                        if i.str not in self.concepts_to_ignore)
         return refinements
 
-    def assign_embeddings(self, node: BaseNode) -> None:
+    def assign_embeddings(self, node: BaseNode, mode='averaging', sample_size=None) -> None:
         assert isinstance(node, BaseNode)
-        if node.concept.embeddings is None:
-            str_idx = [get_full_iri(i).replace('\n', '') for i in node.concept.instances]
-            emb = torch.tensor(self.instance_embeddings.loc[str_idx].values, dtype=torch.float32)
-            emb = torch.mean(emb, dim=0)
-            emb = emb.view(1, 1, emb.shape[0])
-            node.concept.embeddings = emb
+        # (1) Detect mode
+        if mode == 'averaging':
+            # (2) if input node has not seen before, assign embeddings.
+            if node.concept.embeddings is None:
+                str_idx = [get_full_iri(i).replace('\n', '') for i in node.concept.instances]
+                emb = torch.tensor(self.instance_embeddings.loc[str_idx].values, dtype=torch.float32)
+                emb = torch.mean(emb, dim=0)
+                emb = emb.view(1, 1, emb.shape[0])
+                node.concept.embeddings = emb
+                sample_size = 1
+        elif mode == 'sampling':
+            if node.concept.embeddings is None:
+                str_idx = random.sample([get_full_iri(i).replace('\n', '') for i in node.concept.instances],
+                                        sample_size)
+                emb = torch.tensor(self.instance_embeddings.loc[str_idx].values, dtype=torch.float32)
+                emb = emb.view(1, emb.shape[0], emb.shape[1])
+                node.concept.embeddings = emb
+        else:
+            raise ValueError
+
+        # Sanity checking.
         if torch.isnan(node.concept.embeddings).any() or torch.isinf(node.concept.embeddings).any():
-            node.concept.embeddings = torch.zeros((1, 1, self.instance_embeddings.shape[1]))
+            # No individual contained in the input concept.
+            # Sanity checking.
+            assert len(node.concept.instances) == 0
+            node.concept.embeddings = torch.zeros((1, sample_size, self.instance_embeddings.shape[1]))
