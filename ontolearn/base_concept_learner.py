@@ -68,7 +68,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         Fill all params with plausible default values.
         """
         if self.rho is None:
-            self.rho = ModifiedCELOERefinement(self.kb, max_child_length=max_child_length)
+            self.rho = ModifiedCELOERefinement(self.kb)
         self.rho.set_concepts_node_mapping(self.concepts_to_nodes)
 
         if self.heuristic_func is None:
