@@ -23,16 +23,18 @@ data_path = settings['data_path']
 kb = KnowledgeBase(PATH_FAMILY)
 rho = LengthBasedRefinement(kb=kb)
 lp_gen = LearningProblemGenerator(knowledge_base=kb, refinement_operator=rho,
-                                  num_problems=5, min_length=3, max_length=6)
+                                  num_problems=2, min_length=0, max_length=3)
 
 instance_emb = pd.read_csv(family_embeddings_path, index_col=0)
 # util.apply_TSNE_on_df(instance_emb) # if needed.
-model = DrillAverage(knowledge_base=kb, refinement_operator=rho,
-                     heuristic_func=DrillHeuristic(),
-                     # heuristic_func=DrillHeuristic(model_path=drill_pretrained_model_path),
-                     max_num_of_concepts_tested=50_000,
-                     instance_embeddings=instance_emb, verbose=1)
-# model.train(lp_gen)
+model_avg = DrillAverage(knowledge_base=kb, refinement_operator=rho,
+                         heuristic_func=DrillHeuristic(),
+                         num_episode=200,
+                         # heuristic_func=DrillHeuristic(model_path=drill_pretrained_model_path),
+                         max_num_of_concepts_tested=50_000,
+                         instance_embeddings=instance_emb, verbose=1)
+model_avg.train(lp_gen)
+
 for str_target_concept, examples in settings['problems'].items():
     p = set(examples['positive_examples'])
     n = set(examples['negative_examples'])
@@ -43,6 +45,6 @@ for str_target_concept, examples in settings['problems'].items():
         concepts_to_ignore.update(
             {'http://www.benchmark.org/family#Brother', 'Father', 'Grandparent'})  # Use URI, or concept with length 1.
 
-    model.fit(pos=p, neg=n)
-    hypotheses = model.best_hypotheses(n=1)
+    model_avg.fit(pos=p, neg=n)
+    hypotheses = model_avg.best_hypotheses(n=1)
     print(hypotheses[0])
