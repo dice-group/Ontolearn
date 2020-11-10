@@ -4,32 +4,7 @@ from sklearn import preprocessing
 from typing import List
 import random
 import torch
-#from .metrics import F1
-#from .util import create_experiment_folder, create_logger
-
-class PriorityQueue:
-    def __init__(self):
-        from queue import PriorityQueue
-        self.struct = PriorityQueue()
-        self.items_in_queue = set()
-        self.expressionTests = 0
-
-    def __len__(self):
-        return len(self.items_in_queue)
-
-    def add_into_queue(self, t: Tuple):
-        assert not isinstance(t[0], str)
-        if not (t[1].ce.expression in self.items_in_queue):
-            self.struct.put(t)
-            self.items_in_queue.add(t[1].ce.expression)
-            self.expressionTests += 1
-
-    def get_from_queue(self):
-        assert len(self.items_in_queue) > 0
-        node_to_return = self.struct.get()[1]
-        self.items_in_queue.remove(node_to_return.ce.expression)
-        return node_to_return
-
+from collections import deque
 
 class PropertyHierarchy:
 
@@ -44,7 +19,8 @@ class PropertyHierarchy:
         for i in self.all_properties:
             yield i
 
-#@Todo CD:Could we combine PrepareBatchOfPrediction and PrepareBatchOfTraining?
+
+# @Todo CD:Could we combine PrepareBatchOfPrediction and PrepareBatchOfTraining?
 
 class PrepareBatchOfPrediction(torch.utils.data.Dataset):
 
@@ -70,6 +46,7 @@ class PrepareBatchOfPrediction(torch.utils.data.Dataset):
 
     def get_all(self):
         return self.X
+
 
 class PrepareBatchOfTraining(torch.utils.data.Dataset):
 
@@ -114,3 +91,30 @@ class PrepareBatchOfTraining(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         return self.X[idx], self.y[idx]
+
+class Experience:
+    """
+    A class to model experiences for Replay Memory.
+    """
+    def __init__(self, maxlen: int):
+        self.current_states = deque(maxlen=maxlen)
+        self.next_states = deque(maxlen=maxlen)
+        self.rewards = deque(maxlen=maxlen)
+
+    def __len__(self):
+        assert len(self.current_states) == len(self.next_states) == len(self.rewards)
+        return len(self.current_states)
+
+    def append(self, e):
+        """
+        @param e: a tuple of s_i, s_j and reward, where s_i and s_j represent refining s_i and reaching s_j.
+        @return:
+        """
+        assert len(self.current_states) == len(self.next_states) == len(self.rewards)
+        s_i, s_j, r = e
+        self.current_states.append(s_i.concept.embeddings)
+        self.next_states.append(s_j.concept.embeddings)
+        self.rewards.append(r)
+
+    def retrieve(self):
+        return list(self.current_states), list(self.next_states), list(self.rewards)
