@@ -22,21 +22,24 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.property_hierarchy = PropertyHierarchy(self.onto)
         self.name = self.onto.name
         self.parse()
-        self.__str_to_instance_obj = dict(zip([get_full_iri(i) for i in self.thing.instances], self.thing.instances))
-        self.__obj_to_str_iri_instances = dict(
-            zip(self.__str_to_instance_obj.values(), self.__str_to_instance_obj.keys()))
-        self.idx_of_instances = dict(zip(self.thing.instances, range(len(self.__str_to_instance_obj))))
+        # @todo str_to_instance_obj and obj_to_str_iri_instances used? if so where and better namings?
+        self.str_to_instance_obj = dict(zip([get_full_iri(i) for i in self.thing.instances], self.thing.instances))
+        self.obj_to_str_iri_instances = dict(
+            zip(self.str_to_instance_obj.values(), self.str_to_instance_obj.keys()))
+        self.idx_of_instances = dict(zip(self.thing.instances, range(len(self.str_to_instance_obj))))
         self.min_size_of_concept = min_size_of_concept
-        self.max_size_of_concept = len(self.thing.instances) * 1.0
-        self.__concept_generator = ConceptGenerator(concepts=self.concepts,
-                                                    T=self.thing,
-                                                    Bottom=self.nothing,
-                                                    onto=self.onto,
-                                                    min_size_of_concept=self.min_size_of_concept,
-                                                    max_size_of_concept=self.max_size_of_concept)
+        self.max_size_of_concept = len(self.thing.instances) * 1
+        self.concept_generator = ConceptGenerator(concepts=self.concepts,
+                                                  thing=self.thing,
+                                                  nothing=self.nothing,
+                                                  onto=self.onto,
+                                                  min_size_of_concept=self.min_size_of_concept,
+                                                  max_size_of_concept=self.max_size_of_concept)
+
     def clean(self):
-        """ Return defaul state"""
-        self.__concept_generator.clean()
+        self.thing.embeddings = None
+        self.nothing.embeddings = None
+        self.concept_generator.clean()
 
     def __build_hierarchy(self, onto: Ontology) -> None:
         """
@@ -144,7 +147,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         except AssertionError:
             AssertionError('{0} is expected to be a string but it is  ****{1}****'.format(str_ind, type(str_ind)))
         try:
-            return self.__str_to_instance_obj[str_ind]
+            return self.str_to_instance_obj[str_ind]
         except KeyError:
             KeyError('{0} is not found in vocabulary of URI instances'.format(str_ind))
 
@@ -152,7 +155,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         return [self.convert_uri_instance_to_obj(i) for i in str_individuals]
 
     def convert_owlready2_individuals_to_uri(self, instance):
-        return self.__obj_to_str_iri_instances[instance]
+        return self.obj_to_str_iri_instances[instance]
 
     def convert_owlready2_individuals_to_uri_from_iterable(self, l: Iterable) -> List:
         return [self.convert_owlready2_individuals_to_uri(i) for i in l]
@@ -180,13 +183,13 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
     def negation(self, concept: Concept):
         """ Return a Concept object that is a negation of given concept."""
-        yield self.__concept_generator.negation(concept)
+        yield self.concept_generator.negation(concept)
 
     @parametrized_performance_debugger()
     def negation_from_iterables(self, s: Generator):
         """ Return : { x | ( x \equv not s} """
         for item in s:
-            yield self.__concept_generator.negation(item)
+            yield self.concept_generator.negation(item)
 
     @parametrized_performance_debugger()
     def get_direct_sub_concepts(self, concept: Concept):
@@ -207,41 +210,41 @@ class KnowledgeBase(AbstractKnowledgeBase):
     def most_general_existential_restrictions(self, concept: Concept):
 
         for prob in self.property_hierarchy.get_most_general_property():
-            yield self.__concept_generator.existential_restriction(concept, prob)
+            yield self.concept_generator.existential_restriction(concept, prob)
 
     def most_general_universal_restriction(self, concept: Concept) -> Concept:
         assert isinstance(concept, Concept)
         for prob in self.property_hierarchy.get_most_general_property():
-            yield self.__concept_generator.universal_restriction(concept, prob)
+            yield self.concept_generator.universal_restriction(concept, prob)
 
     def union(self, conceptA: Concept, conceptB: Concept) -> Concept:
         """Return a concept c == (conceptA OR conceptA)"""
         assert isinstance(conceptA, Concept)
         assert isinstance(conceptB, Concept)
-        return self.__concept_generator.union(conceptA, conceptB)
+        return self.concept_generator.union(conceptA, conceptB)
 
     def intersection(self, conceptA: Concept, conceptB: Concept) -> Concept:
         """Return a concept c == (conceptA AND conceptA)"""
         assert isinstance(conceptA, Concept)
         assert isinstance(conceptB, Concept)
-        return self.__concept_generator.intersection(conceptA, conceptB)
+        return self.concept_generator.intersection(conceptA, conceptB)
 
     def existential_restriction(self, concept: Concept, property_) -> Concept:
         """Return a concept c == (Exist R.C)"""
         assert isinstance(concept, Concept)
-        return self.__concept_generator.existential_restriction(concept, property_)
+        return self.concept_generator.existential_restriction(concept, property_)
 
     def universal_restriction(self, concept: Concept, property_) -> Concept:
         """Return a concept c == (Forall R.C)"""
         assert isinstance(concept, Concept)
-        return self.__concept_generator.universal_restriction(concept, property_)
+        return self.concept_generator.universal_restriction(concept, property_)
 
     def num_concepts_generated(self):
 
-        return len(self.__concept_generator.log_of_universal_restriction) + len(
-            self.__concept_generator.log_of_existential_restriction) + \
-               len(self.__concept_generator.log_of_intersections) + len(self.__concept_generator.log_of_unions) + \
-               len(self.__concept_generator.log_of_negations) + len(self.concepts)
+        return len(self.concept_generator.log_of_universal_restriction) + len(
+            self.concept_generator.log_of_existential_restriction) + \
+               len(self.concept_generator.log_of_intersections) + len(self.concept_generator.log_of_unions) + \
+               len(self.concept_generator.log_of_negations) + len(self.concepts)
 
     def get_all_concepts(self):
         return self.concepts.values()

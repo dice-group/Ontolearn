@@ -6,6 +6,7 @@ with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 
 kb = KnowledgeBase(path=settings['data_path'])
+model = OCEL(knowledge_base=kb, verbose=1)
 for str_target_concept, examples in settings['problems'].items():
     p = set(examples['positive_examples'])
     n = set(examples['negative_examples'])
@@ -17,9 +18,6 @@ for str_target_concept, examples in settings['problems'].items():
             {'http://www.benchmark.org/family#Brother',
              'Father', 'http://www.benchmark.org/family#Grandparent'})  # Use URI, or concept with length 1.
 
-    model = OCEL(knowledge_base=kb,
-                 ignored_concepts=concepts_to_ignore, verbose=1)
-
-    model.fit(pos=p, neg=n)
+    model.fit(pos=p, neg=n, ignore=concepts_to_ignore)
     hypotheses = model.best_hypotheses(n=1)
     print(hypotheses[0])

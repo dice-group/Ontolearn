@@ -4,7 +4,7 @@ import os
 import pickle
 import time
 import copy
-from owlready2 import get_ontology,ThingClass, Ontology
+from owlready2 import get_ontology, ThingClass, Ontology
 import types
 import matplotlib.pyplot as plt
 from rdflib import Graph, Literal, RDF, URIRef
@@ -15,8 +15,7 @@ import random
 from collections import OrderedDict, defaultdict
 from functools import total_ordering
 from abc import ABCMeta, abstractmethod, ABC
-from typing import Set, AnyStr, Dict, List, Tuple,Iterable
-
+from typing import Set, AnyStr, Dict, List, Tuple, Iterable
 
 # DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
 DEFAULT_FMT = 'Func:{name} took {elapsed:0.8f}s'
@@ -43,7 +42,7 @@ def parametrized_performance_debugger(fmt=DEFAULT_FMT):
 
 
 def performance_debugger(func_name):
-    def function_name_decoratir(func):
+    def function_name_decorator(func):
         def debug(*args, **kwargs):
             long_string = ''
             starT = time.time()
@@ -56,7 +55,7 @@ def performance_debugger(func_name):
 
         return debug
 
-    return function_name_decoratir
+    return function_name_decorator
 
 
 def decompose(number, upperlimit, bisher, combosTmp):
@@ -91,16 +90,6 @@ def decompose(number, upperlimit, bisher, combosTmp):
 
 def getCombos(length: int, max_length: int):
     """
-    	/**
-	 * Methods for computing combinations with the additional restriction
-	 * that <code>maxValue</code> is the highest natural number, which can
-	 * occur.
-	 * @see #getCombos(int)
-	 * @param length Length of construct.
-	 * @param maxValue Maximum value which can occur in sum.
-	 * @return A two dimensional list constructed in {@link #getCombos(int)}.
-	 */
-
     :param i:
     :param max_length:
     :return:
@@ -185,6 +174,7 @@ def retrieve_concept_hierarchy(c) -> Iterable:
         hierarchy.appendleft(c)
     return hierarchy
 
+
 """
 def serialize_concepts(concepts: Iterable, serialize_name: str, metric: str, attribute: str, rdf_format: str):
     raise NotImplementedError
@@ -217,6 +207,7 @@ def serialize_concepts(concepts: Iterable, serialize_name: str, metric: str, att
         g.serialize(destination=serialize_name, format=rdf_format)
 """
 
+
 def apply_TSNE_on_df(df) -> None:
     low_emb = TSNE(n_components=2).fit_transform(df)
     plt.scatter(low_emb[:, 0], low_emb[:, 1])
@@ -225,6 +216,13 @@ def apply_TSNE_on_df(df) -> None:
 
 
 def balanced_sets(a: set, b: set) -> (set, set):
+    """
+    Balance given two sets through sampling without replacement.
+    Returned sets have the same length.
+    @param a:
+    @param b:
+    @return:
+    """
     if len(a) > len(b):
         sampled_a = random.sample(a, len(b))
         return sampled_a, b

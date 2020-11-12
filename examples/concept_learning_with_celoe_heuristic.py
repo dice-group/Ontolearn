@@ -6,6 +6,7 @@ with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 
 kb = KnowledgeBase(path=settings['data_path'])
+model = CELOE(knowledge_base=kb)
 for str_target_concept, examples in settings['problems'].items():
     p = set(examples['positive_examples'])
     n = set(examples['negative_examples'])
@@ -16,11 +17,9 @@ for str_target_concept, examples in settings['problems'].items():
         concepts_to_ignore.update(
             {'http://www.benchmark.org/family#Brother',
              'Father', 'http://www.benchmark.org/family#Grandparent'})  # Use URI, or concept with length 1.
-
-    model = CELOE(knowledge_base=kb,
-                  ignored_concepts=concepts_to_ignore, verbose=1)
-    model.fit(pos=p, neg=n)
+    model.fit(pos=p, neg=n, ignore=concepts_to_ignore)
+    # Get Top n hypotheses
     hypotheses = model.best_hypotheses(n=2)
-    print(hypotheses[0])
-    predictions = model.predict(individuals=list(p), hypotheses=hypotheses)
-    # print(predictions)
+    # Use hypotheses as binary function to label individuals.
+    predictions = model.predict(individuals=list(p)+list(n), hypotheses=hypotheses)
+    print(predictions)
