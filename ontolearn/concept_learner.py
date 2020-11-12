@@ -9,6 +9,7 @@ import pandas as pd
 from .heuristics import CELOEHeuristic, DLFOILHeuristic, OCELHeuristic
 from .refinement_operators import ModifiedCELOERefinement, CustomRefinementOperator, LengthBasedRefinement
 from .metrics import F1, Accuracy, Recall
+import time
 
 pd.set_option('display.max_columns', 100)
 
@@ -25,7 +26,8 @@ class CELOE(BaseConceptLearner):
                          heuristic_func=heuristic_func,
                          ignored_concepts=ignored_concepts,
                          terminate_on_goal=terminate_on_goal,
-                         iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested, verbose=verbose)
+                         iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested, verbose=verbose,
+                         name='CELOE')
         self.h_exp_constant = 0  # add a constant for length of refinements.
         self.max_he, self.min_he = self.max_num_of_concepts_tested, 1
 
@@ -49,17 +51,27 @@ class CELOE(BaseConceptLearner):
                                        maxlength=node.h_exp + 1 + self.h_exp_constant,
                                        current_domain=self.start_class)
                        if i is not None and i.str not in self.concepts_to_ignore]
+
+        for i in refinements:
+            assert i.parent_node
+            try:
+                assert i.parent_node.heuristic
+            except:
+                print(i.parent_node)
+                print(node)
+                exit(1)
         node.increment_h_exp(self.h_exp_constant)
         node.refinement_count = len(refinements)
         self.heuristic_func.apply(node, parent_node=node.parent_node)  # recompute heuristic new heurisitc value
         self.search_tree.update_done(node)
         return refinements
 
-    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr]):
+    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], ignore: Set[AnyStr] = None):
         """
         Find hypotheses that explain pos and neg.
         """
-        self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances)
+        self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances, ignore=ignore)
+        self.start_time = time.time()
         for j in range(1, self.iter_bound):
             most_promising = self.next_node_to_expand(j)
             for ref in self.apply_rho(most_promising):
@@ -113,6 +125,11 @@ class OCEL(CELOE):
 
 
 class LengthBaseLearner(BaseConceptLearner):
+    """
+    CD: An idea for next possible work.
+    Propose a Heuristic func based on embeddings
+    Use LengthBasedRef.
+    """
     def __init__(self, *, knowledge_base, refinement_operator=None, search_tree=None, quality_func=None,
                  heuristic_func=None, iter_bound=10_000,
                  verbose=False, terminate_on_goal=False, max_num_of_concepts_tested=10_000, min_length=1,
@@ -123,7 +140,7 @@ class LengthBaseLearner(BaseConceptLearner):
         if refinement_operator is None:
             refinement_operator = LengthBasedRefinement(kb=knowledge_base)
         if quality_func is None:
-            quality_func = Recall()
+            quality_func = F1()
         if heuristic_func is None:
             heuristic_func = CELOEHeuristic()
         if search_tree is None:
@@ -135,7 +152,8 @@ class LengthBaseLearner(BaseConceptLearner):
                          heuristic_func=heuristic_func,
                          ignored_concepts=ignored_concepts,
                          terminate_on_goal=terminate_on_goal,
-                         iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested, verbose=verbose)
+                         iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested, verbose=verbose,
+                         name='LengthBaseLearner')
         self.min_length = min_length
 
     def next_node_to_expand(self, step):
@@ -148,15 +166,17 @@ class LengthBaseLearner(BaseConceptLearner):
                        if i.str not in self.concepts_to_ignore)
         return refinements
 
-    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr]):
-        self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances)
+    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], ignore: Set[AnyStr] = None):
+        """
+        Find hypotheses that explain pos and neg.
+        """
+        self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances, ignore=ignore)
+        self.start_time = time.time()
         for j in range(1, self.iter_bound):
-            node_to_expand = self.next_node_to_expand(j)
-            for ref in self.apply_rho(node_to_expand):
-                goal_found = self.search_tree.add_node(node=ref, parent_node=node_to_expand)
+            most_promising = self.next_node_to_expand(j)
+            for ref in self.apply_rho(most_promising):
+                goal_found = self.search_tree.add_node(node=ref, parent_node=most_promising)
                 if goal_found:
-                    if self.verbose:
-                        return self.terminate()
                     if self.terminate_on_goal:
                         return self.terminate()
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
@@ -232,8 +252,12 @@ class CustomConceptLearner(BaseConceptLearner):
                        for i in self.rho.refine(node.concept) if i is not None and i.str not in self.concepts_to_ignore)
         return refinements
 
-    def fit(self, pos, neg):
-        self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances)
+    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], ignore: Set[AnyStr] = None):
+        """
+        Find hypotheses that explain pos and neg.
+        """
+        self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances, ignore=ignore)
+        self.start_time = time.time()
         for j in range(1, self.iter_bound):
             most_promising = self.next_node_to_expand(j)
             for ref in self.apply_rho(most_promising):

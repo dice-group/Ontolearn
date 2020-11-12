@@ -55,8 +55,19 @@ class CELOESearchTree(AbstractTree):
             return False
         else:
             if not (node.parent_node is parent_node):
+                try:
+                    assert parent_node.heuristic is not None
+                    assert node.parent_node.heuristic is not None
+                except AssertionError:
+                    print('REFINED NODE:', parent_node)
+                    print('NODE TO BE ADDED:', node)
+                    print('previous parent of node to be added', node.parent_node)
+                    for k, v in self.nodes.items():
+                        print(k)
+                    raise ValueError()
+
                 if parent_node.heuristic > node.parent_node.heuristic:
-                    """"""
+                    """Ignore previous parent"""
                 else:
                     if node in node.parent_node.children:
                         node.parent_node.remove_child(node)
