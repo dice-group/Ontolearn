@@ -1,12 +1,11 @@
 from abc import ABCMeta, abstractmethod
-from owlready2 import get_ontology, World, rdfs, AnnotationPropertyClass
+from owlready2 import World
 
 from .refinement_operators import ModifiedCELOERefinement
 from .search import Node
 from .search import CELOESearchTree
 from .metrics import F1
 from .heuristics import CELOEHeuristic
-import types
 from typing import List, AnyStr, Set
 from .util import create_experiment_folder, create_logger
 import numpy as np

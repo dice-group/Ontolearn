@@ -2,12 +2,7 @@
 
 import json
 
-from ontolearn import CustomConceptLearner
-from ontolearn import CustomRefinementOperator
-from ontolearn import DLFOILHeuristic
-from ontolearn import F1
-from ontolearn import KnowledgeBase
-from ontolearn import SearchTree
+from ontolearn import CustomConceptLearner, KnowledgeBase, F1
 
 PATH_FAMILY = 'data/family-benchmark_rich_background.owl'
 with open('examples/synthetic_problems.json') as json_file:
