@@ -8,7 +8,7 @@ from .metrics import F1
 from .heuristics import CELOEHeuristic
 import types
 from typing import List, AnyStr, Set
-# from .util import serialize_concepts
+from .util import create_experiment_folder, create_logger
 import numpy as np
 import pandas as pd
 import time
@@ -41,7 +41,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
     @abstractmethod
     def __init__(self, knowledge_base=None, refinement_operator=None, heuristic_func=None, quality_func=None,
                  search_tree=None, max_num_of_concepts_tested=None, terminate_on_goal=None, ignored_concepts=None,
-                 iter_bound=None, max_child_length=None, root_concept=None, verbose=None):
+                 iter_bound=None, max_child_length=None, root_concept=None, verbose=None, name=None):
 
         self.kb = knowledge_base
         self.rho = refinement_operator
@@ -55,9 +55,12 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.start_class = root_concept
         self.max_child_length = max_child_length
         self.verbose = verbose
-        self.start_time = time.time()
+        self.start_time = None
         self.goal_found = False
         self.max_length = 5
+        self.storage_path, _ = create_experiment_folder()
+        self.logger = create_logger(name=name, p=self.storage_path)
+
         # Memoization
         self.concepts_to_nodes = dict()
         self.__default_values()
@@ -68,7 +71,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         Fill all params with plausible default values.
         """
         if self.rho is None:
-            self.rho = ModifiedCELOERefinement(self.kb, max_child_length=max_child_length)
+            self.rho = ModifiedCELOERefinement(self.kb)
         self.rho.set_concepts_node_mapping(self.concepts_to_nodes)
 
         if self.heuristic_func is None:
@@ -106,21 +109,26 @@ class BaseConceptLearner(metaclass=ABCMeta):
         assert self.rho
         assert self.kb
 
-        owl_concepts_to_ignore = set()
-        for i in self.concepts_to_ignore:  # iterate over string representations of ALC concepts.
-            found = False
-            for k, v in self.kb.concepts.items():
-                if (i == k) or (i == v.str):
-                    found = True
-                    owl_concepts_to_ignore.add(v)
-                    break
-            if found is False:
-                raise ValueError(
-                    '{0} could not found in \n{1} \n{2}.'.format(i, [_.str for _ in self.kb.concepts.values()],
-                                                                 [uri for uri in self.kb.concepts.keys()]))
-        self.concepts_to_ignore = owl_concepts_to_ignore  # use ALC concept representation instead of URI.
+        self.add_ignored_concepts(self.concepts_to_ignore)
 
-    def initialize_learning_problem(self, pos: Set[AnyStr], neg: Set[AnyStr], all_instances):
+    def add_ignored_concepts(self, ignore: Set[AnyStr]):
+
+        if ignore:
+            owl_concepts_to_ignore = set()
+            for i in ignore:  # iterate over string representations of ALC concepts.
+                found = False
+                for k, v in self.kb.concepts.items():
+                    if (i == k) or (i == v.str):
+                        found = True
+                        owl_concepts_to_ignore.add(v)
+                        break
+                if found is False:
+                    raise ValueError(
+                        '{0} could not found in \n{1} \n{2}.'.format(i, [_.str for _ in self.kb.concepts.values()],
+                                                                     [uri for uri in self.kb.concepts.keys()]))
+            self.concepts_to_ignore = owl_concepts_to_ignore  # use ALC concept representation instead of URI.
+
+    def initialize_learning_problem(self, pos: Set[AnyStr], neg: Set[AnyStr], all_instances, ignore: Set[AnyStr]):
         """
         Determine the learning problem and initialize the search.
         1) Convert the string representation of an individuals into the owlready2 representation.
@@ -130,6 +138,12 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.reset_state()
         assert isinstance(pos, set) and isinstance(neg, set) and isinstance(all_instances, set)
         assert 0 < len(pos) < len(all_instances) and len(all_instances) > len(neg)
+        if self.verbose > 1:
+            self.logger.info('E^+:[ {0} ]'.format(', '.join(pos)))
+            self.logger.info('E^-:[ {0}] '.format(', '.join(neg)))
+            if ignore:
+                self.logger.info('Concepts to ignore:{0}'.format(' '.join(ignore)))
+        self.add_ignored_concepts(ignore)
 
         owl_ready_pos = set(self.kb.convert_uri_instance_to_obj_from_iterable(pos))
         if len(neg) == 0:  # if negatives are not provided, randomly sample.
@@ -156,10 +170,13 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
     def terminate(self):
         if self.verbose == 1:
-            t = 'Elapsed runtime: {0} seconds.\tNumber of concepts tested:{1}'.format(
-                round(time.time() - self.start_time, 4), self.number_of_tested_concepts)
+            self.logger.info('Elapsed runtime: {0} seconds'.format(round(time.time() - self.start_time, 4)))
+            self.logger.info('Number of concepts tested:{0}'.format(self.number_of_tested_concepts))
             if self.goal_found:
-                t += '\tGoal node found:{0}'.format(self.goal_found)
+                t = 'A goal concept found:{0}'.format(self.goal_found)
+            else:
+                t = 'Current best concept:{0}'.format(self.best_hypotheses(n=1)[0])
+            self.logger.info(t)
         if self.verbose > 1:
             self.search_tree.show_search_tree('Final')
         return self
@@ -276,17 +293,14 @@ class BaseConceptLearner(metaclass=ABCMeta):
     def number_of_tested_concepts(self):
         return self.quality_func.applied
 
-    def clean(self):
-        self.concepts_to_nodes.clear()
-
     def reset_state(self):
         """
         At each problem initialization, we recent previous info if available.
         @return:
         """
-        self.clean()
+        self.concepts_to_nodes.clear()
+        self.concepts_to_ignore.clear()
         self.kb.clean()
         self.search_tree.clean()
-        self.rho.clean()
         self.quality_func.clean()
         self.heuristic_func.clean()

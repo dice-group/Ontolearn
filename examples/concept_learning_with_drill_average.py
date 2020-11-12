@@ -24,8 +24,9 @@ from ontolearn import *
 import json
 import random
 import pandas as pd
+
 PATH_FAMILY = '../data/family-benchmark_rich_background.owl'
-drill_pretrained_model_path = '../agent_pre_trained/model.pth'
+#drill_pretrained_model_path = '../agent_pre_trained/model.pth'
 family_embeddings_path = '../embeddings/Dismult_family_benchmark/instance_emb.csv'
 synthetic_problems_path = '../examples/synthetic_problems.json'
 
@@ -36,7 +37,7 @@ kb = KnowledgeBase(PATH_FAMILY)
 rho = LengthBasedRefinement(kb=kb)
 
 instance_emb = pd.read_csv(family_embeddings_path, index_col=0)
-
+model = DrillAverage(knowledge_base=kb, refinement_operator=rho, instance_embeddings=instance_emb)
 for str_target_concept, examples in settings['problems'].items():
     p = set(examples['positive_examples'])
     n = set(examples['negative_examples'])
@@ -46,11 +47,9 @@ for str_target_concept, examples in settings['problems'].items():
     if str_target_concept in ['Granddaughter', 'Aunt', 'Sister']:
         concepts_to_ignore.update(
             {'http://www.benchmark.org/family#Brother', 'Father', 'Grandparent'})  # Use URI, or concept with length 1.
-
-    model = DrillAverage(knowledge_base=kb, refinement_operator=rho,
-                         heuristic_func=DrillHeuristic(model_path=drill_pretrained_model_path),
-                         terminate_on_goal=True, instance_embeddings=instance_emb, ignored_concepts=concepts_to_ignore)
-    model.fit(pos=p, neg=n)
-    hypotheses = model.best_hypotheses(n=1)
-    for h in hypotheses:
-        print(h)
+    model.fit(pos=p, neg=n, ignore=concepts_to_ignore)
+    # Get Top n hypotheses
+    hypotheses = model.best_hypotheses(n=2)
+    # Use hypotheses as binary function to label individuals.
+    predictions = model.predict(individuals=list(p) + list(n), hypotheses=hypotheses)
+    print(predictions)

@@ -23,6 +23,9 @@ class TestDrill:
         exp_f1_scores = {'Aunt': .80392, 'Brother': 1.0,
                          'Cousin': .72626, 'Granddaughter': 1.0,
                          'Uncle': .88372, 'Grandgrandfather': 0.94444}
+        model = DrillAverage(knowledge_base=kb, refinement_operator=rho,
+                             terminate_on_goal=True, instance_embeddings=instance_emb)
+
         for str_target_concept, examples in settings['problems'].items():
             p = set(examples['positive_examples'])
             n = set(examples['negative_examples'])
@@ -34,11 +37,7 @@ class TestDrill:
                     {'http://www.benchmark.org/family#Brother', 'Father',
                      'Grandparent'})  # Use URI, or concept with length 1.
 
-            model = DrillAverage(knowledge_base=kb, refinement_operator=rho,
-                                 heuristic_func=DrillHeuristic(model_path=drill_pretrained_model_path),
-                                 terminate_on_goal=True, instance_embeddings=instance_emb,
-                                 ignored_concepts=concepts_to_ignore)
-            returned_val = model.fit(pos=p, neg=n)
+            returned_val = model.fit(pos=p, neg=n,ignore=concepts_to_ignore)
             assert returned_val == model
             hypotheses = model.best_hypotheses(n=5)
             assert hypotheses[0].quality >= exp_f1_scores[str_target_concept]
