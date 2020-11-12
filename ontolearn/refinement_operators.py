@@ -15,8 +15,10 @@ class LengthBasedRefinement(BaseRefinement):
         super().__init__(kb)
         self.max_child_length = max_child_length
 
-    def clean(self, *args, **kwargs):
-        pass
+    def clean(self):
+        for k, v in self.concepts_to_nodes.items():
+            v.clean()
+            k.embeddings = None
 
     def getNode(self, c: Concept, parent_node=None, root=False):
 
@@ -147,21 +149,14 @@ class ModifiedCELOERefinement(BaseRefinement):
      A top down/downward refinement operator refinement operator in ALC.
     """
 
-    def __init__(self, kb, max_child_length=50):
+    def __init__(self, kb, max_child_length=10):
         super().__init__(kb)
-        self.topRefinementsCumulative = dict()
-        self.topRefinementsLength = 0
+        # self.topRefinementsCumulative = dict()
+        # self.topRefinementsLength = 0
+        # self.combos = dict()
+        # self.topRefinements = dict()
+        # self.topARefinements = dict()
         self.max_child_length = max_child_length
-        self.combos = dict()
-        self.topRefinements = dict()
-        self.topARefinements = dict()
-
-    def clean(self):
-        self.combos = dict()
-        self.topRefinements = dict()
-        self.topARefinements = dict()
-        self.topRefinementsCumulative = dict()
-        self.topRefinementsLength = 0
 
     def refine_atomic_concept(self, node: Node, max_length: int = None, current_domain: Concept = None) -> Set:
         """
