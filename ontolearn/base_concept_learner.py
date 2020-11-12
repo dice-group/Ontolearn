@@ -12,6 +12,7 @@ from .util import create_experiment_folder, create_logger
 import numpy as np
 import pandas as pd
 import time
+import random
 
 
 class BaseConceptLearner(metaclass=ABCMeta):
@@ -194,28 +195,6 @@ class BaseConceptLearner(metaclass=ABCMeta):
         else:
             raise ValueError('Invalid key:{0}'.format(key))
         return metric, attribute
-
-    def show_best_predictions(self, key='quality', top_n=10, serialize_name=None, rdf_format='xml'):
-        raise NotImplementedError('Use best_hypotheses method to obtain predictions.')
-        predictions = self.search_tree.show_best_nodes(top_n, key=key)
-        if serialize_name is not None:
-            if key == 'quality':
-                metric = self.quality_func.name
-                attribute = key
-            elif key == 'heuristic':
-                metric = self.heuristic.name
-                attribute = key
-            elif key == 'length':
-                metric = key
-                attribute = key
-            else:
-                raise ValueError
-
-            print('Currently. Serialization is not available')
-            serialize_concepts(concepts=predictions,
-                               serialize_name=serialize_name,
-                               metric=metric,
-                               attribute=attribute, rdf_format=rdf_format)
 
     def extend_ontology(self, top_n_concepts=10, key='quality', rdf_format='xml'):
         """
