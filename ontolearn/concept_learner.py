@@ -10,7 +10,7 @@ from .heuristics import CELOEHeuristic, DLFOILHeuristic, OCELHeuristic
 from .refinement_operators import ModifiedCELOERefinement, CustomRefinementOperator, LengthBasedRefinement
 from .metrics import F1, Accuracy, Recall
 import time
-
+from .util import get_full_iri
 pd.set_option('display.max_columns', 100)
 
 
@@ -52,14 +52,6 @@ class CELOE(BaseConceptLearner):
                                        current_domain=self.start_class)
                        if i is not None and i.str not in self.concepts_to_ignore]
 
-        for i in refinements:
-            assert i.parent_node
-            try:
-                assert i.parent_node.heuristic
-            except:
-                print(i.parent_node)
-                print(node)
-                exit(1)
         node.increment_h_exp(self.h_exp_constant)
         node.refinement_count = len(refinements)
         self.heuristic_func.apply(node, parent_node=node.parent_node)  # recompute heuristic new heurisitc value
@@ -130,6 +122,7 @@ class LengthBaseLearner(BaseConceptLearner):
     Propose a Heuristic func based on embeddings
     Use LengthBasedRef.
     """
+
     def __init__(self, *, knowledge_base, refinement_operator=None, search_tree=None, quality_func=None,
                  heuristic_func=None, iter_bound=10_000,
                  verbose=False, terminate_on_goal=False, max_num_of_concepts_tested=10_000, min_length=1,
@@ -182,51 +175,6 @@ class LengthBaseLearner(BaseConceptLearner):
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 return self.terminate()
         return self.terminate()
-
-    def save_predictions(self, predictions, key: str, serialize_name: str):
-        raise NotImplementedError
-        assert serialize_name
-        assert key
-        assert len(predictions)
-        metric, attribute = self.get_metric_key(key)
-        onto = get_ontology(serialize_name)
-        with onto:
-            for i in predictions:
-                bases = tuple(j for j in i.concept.owl.mro()[:-1])
-                new_concept = types.new_class(name=i.concept.str, bases=bases)
-                new_concept.comment.append("{0}:{1}".format(metric, getattr(i, attribute)))
-        onto.save(serialize_name)
-
-    def show_best_predictions(self, key, top_n=10, serialize_name=None):
-        """
-        top_n:int
-        serialize_name= XXX.owl
-        """
-        predictions = self.search_tree.show_best_nodes(top_n, key=key)
-        if serialize_name is not None:
-            onto = get_ontology(serialize_name)
-            if key == 'quality':
-                metric = self.quality_func.name
-                attribute = key
-            elif key == 'heuristic':
-                metric = self.heuristic.name
-                attribute = key
-            elif key == 'length':
-                metric = key
-                attribute = key
-            else:
-                raise ValueError
-
-            with onto:
-                for i in predictions:
-                    owlready_obj = i.concept.owl
-
-                    bases = tuple(j for j in owlready_obj.mro()[:-1])
-
-                    new_concept = types.new_class(name=i.concept.str, bases=bases)
-                    new_concept.comment.append("{0}:{1}".format(metric, getattr(i, attribute)))
-
-            onto.save(serialize_name)
 
 
 class CustomConceptLearner(BaseConceptLearner):

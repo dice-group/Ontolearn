@@ -8,6 +8,7 @@ from .util import parametrized_performance_debugger, get_full_iri
 from .abstracts import AbstractKnowledgeBase
 from .data_struct import PropertyHierarchy
 import warnings
+from .static_funcs import build_concepts_mapping
 
 warnings.filterwarnings("ignore")
 
@@ -22,7 +23,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.property_hierarchy = PropertyHierarchy(self.onto)
         self.name = self.onto.name
         self.parse()
-        # @todo str_to_instance_obj and obj_to_str_iri_instances used? if so where and better namings?
         self.str_to_instance_obj = dict(zip([get_full_iri(i) for i in self.thing.instances], self.thing.instances))
         self.obj_to_str_iri_instances = dict(
             zip(self.str_to_instance_obj.values(), self.str_to_instance_obj.keys()))
@@ -32,9 +32,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.concept_generator = ConceptGenerator(concepts=self.concepts,
                                                   thing=self.thing,
                                                   nothing=self.nothing,
-                                                  onto=self.onto,
-                                                  min_size_of_concept=self.min_size_of_concept,
-                                                  max_size_of_concept=self.max_size_of_concept)
+                                                  onto=self.onto)
 
     def clean(self):
         self.thing.embeddings = None
@@ -52,7 +50,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         direct superclasses of given Concept object.
         """
 
-        self.concepts, self.thing, self.nothing = self.build_concepts_mapping(onto)
+        self.concepts, self.thing, self.nothing = build_concepts_mapping(onto)
         self.individuals = self.thing.instances
         self.down_top_concept_hierarchy[self.thing] = set()
         # T should not subsume itself.
@@ -88,55 +86,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Top-down and bottom up hierarchies are constructed from from owlready2.Ontology
         """
         self.__build_hierarchy(self.onto)
-
-    @staticmethod
-    def build_concepts_mapping(onto: Ontology) -> Tuple[Dict, Concept, Concept]:
-        """
-        Construct a mapping from full_iri to corresponding Concept objects.
-
-        concept.namespace.base_iri + concept.name
-        mappings from concepts uri to concept objects
-            1) full_iri:= owlready2.ThingClass.namespace.base_iri + owlready2.ThingClass.name
-            2) Concept:
-        """
-        concepts = dict()
-        individuals = set()
-        T = Concept(owlready2.Thing, kwargs={'form': 'Class'}, world=onto.world)
-        bottom = Concept(owlready2.Nothing, kwargs={'form': 'Class'}, world=onto.world)
-        # TODO: Think about removing owlready2 instances and use string representation.
-        for i in onto.classes():
-            temp_concept = Concept(i, kwargs={'form': 'Class'}, world=onto.world)
-            concepts[temp_concept.full_iri] = temp_concept
-            individuals.update(temp_concept.instances)
-        try:
-            assert T.instances  # if empty throw error.
-            assert individuals.issubset(T.instances)
-        except AssertionError:
-            print(
-                'Sanity checking failed: owlready2.Thing does not contain any individual. To allivate this issue, we explicitly assign all individuals/instances to concept T.')
-            T.instances = individuals
-
-        concepts[T.full_iri] = T
-        concepts[bottom.full_iri] = bottom
-        return concepts, T, bottom
-
-    @staticmethod
-    def apply_type_enrichment_from_iterable(concepts: Iterable[Concept], world):
-        """
-        Extend ABOX by
-        (1) Obtaining all instances of selected concepts.
-        (2) For all instances in (1) include type information into ABOX.
-        @param concepts:
-        @return:
-        """
-        for c in concepts:
-            for ind in c.owl.instances(world=world):
-                ind.is_a.append(c.owl)
-
-    @staticmethod
-    def apply_type_enrichment(concept: Concept):
-        for ind in concept.instances:
-            ind.is_a.append(concept.owl)
 
     def convert_uri_instance_to_obj(self, str_ind: str):
         """
@@ -208,6 +157,11 @@ class KnowledgeBase(AbstractKnowledgeBase):
             yield direct_parent
 
     def most_general_existential_restrictions(self, concept: Concept):
+        """
+
+        @param concept:
+        @return:
+        """
 
         for prob in self.property_hierarchy.get_most_general_property():
             yield self.concept_generator.existential_restriction(concept, prob)
