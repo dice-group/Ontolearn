@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from owlready2 import World
+from owlready2 import World, get_ontology
 
 from .refinement_operators import ModifiedCELOERefinement
 from .search import Node
@@ -7,11 +7,14 @@ from .search import CELOESearchTree
 from .metrics import F1
 from .heuristics import CELOEHeuristic
 from typing import List, AnyStr, Set
-from .util import create_experiment_folder, create_logger
+from .util import create_experiment_folder, create_logger, get_full_iri
 import numpy as np
 import pandas as pd
 import time
 import random
+import types
+
+from .static_funcs import apply_type_enrichment, retrieve_concept_chain, add_classes_to_ontology, add_concept_to_onto
 
 
 class BaseConceptLearner(metaclass=ABCMeta):
@@ -60,7 +63,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.max_length = 5
         self.storage_path, _ = create_experiment_folder()
         self.logger = create_logger(name=name, p=self.storage_path)
-
+        self.last_path=None # path of lastly stored onto.
         # Memoization
         self.concepts_to_nodes = dict()
         self.__default_values()
@@ -151,7 +154,14 @@ class BaseConceptLearner(metaclass=ABCMeta):
         else:
             owl_ready_neg = set(self.kb.convert_uri_instance_to_obj_from_iterable(neg))
 
-        assert len(owl_ready_pos) == len(pos)
+        try:
+            assert len(owl_ready_pos) == len(pos)
+        except:
+            print(pos)
+            print(owl_ready_pos)
+            print(all_instances)
+            print(self.kb.str_to_instance_obj)
+            exit(1)
         assert len(owl_ready_neg) == len(neg)
 
         unlabelled = all_instances.difference(owl_ready_pos.union(owl_ready_neg))
@@ -168,7 +178,28 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.search_tree.add(root)
         assert len(self.search_tree) == 1
 
+    def store_ontology(self):
+        """
+
+        @return:
+        """
+        # sanity checking.
+        # (1) get all concepts
+        # (2) serialize current kb.
+        # (3) reload (2).
+        # (4) get all reloaded concepts.
+        # (5) (1) and (4) must be same.
+        uri_all_concepts = set([get_full_iri(i) for i in self.kb.onto.classes()])
+        self.last_path = self.storage_path + '/' + self.kb.name + str(time.time()) + '.owl'
+        self.kb.save(path=self.last_path)  # save
+        d = get_ontology(self.last_path).load()  # load it.
+        uri_all_concepts_loaded = set([get_full_iri(i) for i in d.classes()])
+        assert uri_all_concepts == uri_all_concepts_loaded
+        # check the base iri of ontologeis
+
     def terminate(self):
+
+        self.store_ontology()
         if self.verbose == 1:
             self.logger.info('Elapsed runtime: {0} seconds'.format(round(time.time() - self.start_time, 4)))
             self.logger.info('Number of concepts tested:{0}'.format(self.number_of_tested_concepts))
@@ -194,26 +225,6 @@ class BaseConceptLearner(metaclass=ABCMeta):
         else:
             raise ValueError('Invalid key:{0}'.format(key))
         return metric, attribute
-
-    def extend_ontology(self, top_n_concepts=10, key='quality', rdf_format='xml'):
-        """
-        1) Obtain top N nodes from search tree.
-        2) Extend ABOX by including explicit type information for all instances belonging to concepts (1)
-        """
-        raise NotImplementedError('Not yet implemented.')
-        # This module needs to be tested
-        # if World().get_ontology(self.path).load(reload=True) used
-        # saving owlready ontology is not working.
-        self.search_tree.sort_search_tree_by_decreasing_order(key=key)
-        for (ith, node) in enumerate(self.search_tree):
-            if ith <= top_n_concepts:
-                self.kb.apply_type_enrichment(node.concept)
-            else:
-                break
-
-        folder = self.kb.path[:self.kb.path.rfind('/')] + '/'
-        kb_name = 'enriched_' + self.kb.name
-        self.kb.save(folder + kb_name + '.owl', rdf_format=rdf_format)
 
     @abstractmethod
     def next_node_to_expand(self, *args, **kwargs):
@@ -282,3 +293,47 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.search_tree.clean()
         self.quality_func.clean()
         self.heuristic_func.clean()
+
+    def save_best_hypothesis(self, n: int = 10, path='Predictions', rdf_format='rdfxml') -> None:
+        try:
+            assert len(self.search_tree) > n
+        except AssertionError:
+            print('|Search Tree|:{0}'.format(len(self.search_tree)))
+
+        o1 = get_ontology('predictions')
+        o2 = get_ontology(self.last_path).load()  # reload
+        o1.imported_ontologies.append(o2)
+        from owlready2 import Thing, DataProperty, FunctionalProperty
+        with o1:
+            class f1_score(DataProperty, FunctionalProperty):  # Each drug has a single cost
+                domain = [Thing]
+                range = [float]
+
+        classes_ = list(o2.classes())
+        classes_str_iri = [get_full_iri(i) for i in classes_]
+
+        for ith, h in enumerate(self.best_hypotheses(n=n)):
+            assert get_full_iri(h.concept.owl) in classes_str_iri
+            add_concept_to_onto('Prediction_' + str(ith), h, o1, classes_, classes_str_iri)
+
+        o1.save(file=self.storage_path + '/' + path + '.owl', format=rdf_format)
+
+    def extend_ontology(self, top_n_concepts=10, key='quality', rdf_format='xml'):
+        """
+        1) Obtain top N nodes from search tree.
+        2) Extend ABOX by including explicit type information for all instances belonging to concepts (1)
+        """
+        raise NotImplementedError('Not yet implemented.')
+        # This module needs to be tested
+        # if World().get_ontology(self.path).load(reload=True) used
+        # saving owlready ontology is not working.
+        self.search_tree.sort_search_tree_by_decreasing_order(key=key)
+        for (ith, node) in enumerate(self.search_tree):
+            if ith <= top_n_concepts:
+                self.kb.apply_type_enrichment(node.concept)
+            else:
+                break
+
+        folder = self.kb.path[:self.kb.path.rfind('/')] + '/'
+        kb_name = 'enriched_' + self.kb.name
+        self.kb.save(folder + kb_name + '.owl', rdf_format=rdf_format)

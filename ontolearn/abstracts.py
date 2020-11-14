@@ -187,6 +187,7 @@ class BaseNode(metaclass=ABCMeta):
     def is_root(self):
         return self.__is_root
 
+
 class AbstractScorer(ABC):
     """
     An abstract class for quality and heuristic functions.
@@ -405,8 +406,15 @@ class AbstractKnowledgeBase(ABC):
         self.property_hierarchy = None
         self.individuals = None
 
-    def save(self, path, rdf_format='ntriples'):
+    def save(self, path, rdf_format="rdfxml"):
+        """
+        path .owl
+        @param path:
+        @param rdf_format:
+        @return:
+        """
         self.onto.save(file=path, format=rdf_format)
+
 
     def describe(self):
         print('Number of individuals: {0}'.format(len(self.individuals)))
@@ -414,6 +422,7 @@ class AbstractKnowledgeBase(ABC):
 
     def clean(self):
         raise NotImplementedError
+
 
 class AbstractDrill(ABC):
 
