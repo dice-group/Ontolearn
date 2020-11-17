@@ -19,5 +19,6 @@ for str_target_concept, examples in settings['problems'].items():
              'Father', 'http://www.benchmark.org/family#Grandparent'})  # Use URI, or concept with length 1.
 
     model.fit(pos=p, neg=n, ignore=concepts_to_ignore)
+    model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
     hypotheses = model.best_hypotheses(n=1)
     print(hypotheses[0])
