@@ -1,12 +1,6 @@
 import json
 
-from ontolearn import LengthBaseLearner
-from ontolearn import LengthBasedRefinement
-from ontolearn import KnowledgeBase
-from ontolearn import SearchTreePriorityQueue
-
-from ontolearn.heuristics import CELOEHeuristic
-from ontolearn.metrics import F1
+from ontolearn import LengthBaseLearner, KnowledgeBase
 
 with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)

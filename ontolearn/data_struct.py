@@ -68,9 +68,15 @@ class PrepareBatchOfTraining(torch.utils.data.Dataset):
         self.y = q.view(len(q), 1)
         assert self.S.shape == self.S_Prime.shape
         assert len(self.y) == len(self.S)
-
-        self.Positives = p.expand(next_state_batch.shape)
+        try:
+            self.Positives = p.expand(next_state_batch.shape)
+        except RuntimeError as e:
+            print(p.shape)
+            print(next_state_batch.shape)
+            print(e)
+            exit(1)
         self.Negatives = n.expand(next_state_batch.shape)
+
         assert self.S.shape == self.S_Prime.shape == self.Positives.shape == self.Negatives.shape
         assert self.S.dtype == self.S_Prime.dtype == self.Positives.dtype == self.Negatives.dtype == torch.float32
         # X.shape()=> batch_size,4,embeddingdim)
@@ -92,10 +98,12 @@ class PrepareBatchOfTraining(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         return self.X[idx], self.y[idx]
 
+
 class Experience:
     """
     A class to model experiences for Replay Memory.
     """
+
     def __init__(self, maxlen: int):
         self.current_states = deque(maxlen=maxlen)
         self.next_states = deque(maxlen=maxlen)
@@ -112,9 +120,15 @@ class Experience:
         """
         assert len(self.current_states) == len(self.next_states) == len(self.rewards)
         s_i, s_j, r = e
+        assert s_i.concept.embeddings.shape == s_j.concept.embeddings.shape
         self.current_states.append(s_i.concept.embeddings)
         self.next_states.append(s_j.concept.embeddings)
         self.rewards.append(r)
 
     def retrieve(self):
         return list(self.current_states), list(self.next_states), list(self.rewards)
+
+    def clear(self):
+        self.current_states.clear()
+        self.next_states.clear()
+        self.rewards.clear()
