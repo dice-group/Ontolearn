@@ -7,6 +7,7 @@ from typing import Dict
 from .static_funcs import concepts_sorter
 from .util import get_full_iri
 
+
 class ConceptGenerator:
     def __init__(self, concepts: Dict, thing: Concept, nothing: Concept, onto):
 
@@ -84,7 +85,6 @@ class ConceptGenerator:
 
             with self.onto:
                 not_concept = types.new_class(name="¬{0}".format(concept.owl.name), bases=(self.thing.owl,))
-                #not_concept.namespace.base_iri = self.namespace_base_iri
                 AllDisjoint([not_concept, concept.owl])
                 not_concept.equivalent_to.append(Not(concept.owl))
 
@@ -123,20 +123,9 @@ class ConceptGenerator:
             base = self.thing.owl
 
         possible_instances_ = self.get_instances_for_restrictions(True, relation, concept)
-
-        #if not (self.max_size_of_concept >= len(possible_instances_) >= self.min_size_of_concept):
-        #    return self.nothing
-
-
         with self.onto:
             new_concept = types.new_class(name="(∃{0}.{1})".format(relation.name, concept.str), bases=(base,))
-            #new_concept.namespace.base_iri = self.namespace_base_iri
-            #new_concept.is_a.append(relation.some(concept.owl))
             new_concept.equivalent_to.append(relation.some(concept.owl))
-            # relation.range.append(concept.owl) # TODO is it really important ?
-            # relation.domain.append(base)# TODO: is it really important ?
-            # self.type__restrictions_enrichments(True, relation, concept, new_concept)
-            # self.executor.submit(self.type__restrictions_enrichments, (True, relation, concept, new_concept))
 
             c = Concept(concept=new_concept,
                         kwargs={'form': 'ObjectSomeValuesFrom', 'Role': relation, 'Filler': concept})
@@ -172,21 +161,9 @@ class ConceptGenerator:
             base = self.thing.owl
 
         possible_instances_ = self.get_instances_for_restrictions(False, relation, concept)
-
-        #if not (self.max_size_of_concept >= len(possible_instances_) >= self.min_size_of_concept):
-        #    return self.nothing
-
         with self.onto:
             new_concept = types.new_class(name="(∀{0}.{1})".format(relation.name, concept.str), bases=(base,))
-            #new_concept.namespace.base_iri = self.namespace_base_iri
-
-            #new_concept.is_a.append(relation.only(base))
             new_concept.equivalent_to.append(relation.only(base))
-            # relation.range.append(concept.owl) # TODO is it really important ?
-            # relation.domain.append(base)# TODO: is it really important ?
-            # self.type__restrictions_enrichments(False, relation, concept, new_concept)
-
-            # self.executor.submit(self.type__restrictions_enrichments, (False, relation, concept, new_concept))
             c = Concept(concept=new_concept,
                         kwargs={'form': 'ObjectAllValuesFrom', 'Role': relation, 'Filler': concept})
 
@@ -218,17 +195,10 @@ class ConceptGenerator:
             base = self.thing.owl
 
         possible_instances_ = A.instances | B.instances
-
-        #if not (self.max_size_of_concept >= len(possible_instances_) >= self.min_size_of_concept):
-        #    return self.nothing
-
         with self.onto:
             new_concept = types.new_class(name="({0} ⊔ {1})".format(A.str, B.str), bases=(base,))
-            #new_concept.namespace.base_iri = self.namespace_base_iri
             new_concept.equivalent_to.append(A.owl | B.owl)
-            # new_concept.is_a.append(A.owl | B.owl) # TODO: investigate, it appears to take too much of time.
             c = Concept(concept=new_concept, kwargs={'form': 'ObjectUnionOf', 'ConceptA': A, 'ConceptB': B})
-
             for i in possible_instances_:
                 assert type(i) is not str
 
@@ -256,9 +226,7 @@ class ConceptGenerator:
 
         with self.onto:
             new_concept = types.new_class(name="({0}  ⊓  {1})".format(A.str, B.str), bases=(base,))
-            #new_concept.namespace.base_iri = self.namespace_base_iri
             new_concept.equivalent_to.append(A.owl & B.owl)
-            # new_concept.is_a.append(A.owl & B.owl) # TODO: investigate, it appears to take too much of time.
             c = Concept(concept=new_concept, kwargs={'form': 'ObjectIntersectionOf', 'ConceptA': A, 'ConceptB': B})
             for i in possible_instances_:
                 assert type(i) is not str
