@@ -352,6 +352,7 @@ class ModifiedCELOERefinement(BaseRefinement):
         else:
             raise ValueError
 
+        # @todos could it be possible?
         for i in refinement:
             if i is not None:
                 yield i
