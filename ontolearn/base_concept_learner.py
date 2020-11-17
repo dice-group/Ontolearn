@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from owlready2 import World, get_ontology
-
+from owlready2 import World, get_ontology, Thing, DataProperty, FunctionalProperty, AnnotationProperty
 from .refinement_operators import ModifiedCELOERefinement
 from .search import Node
 from .search import CELOESearchTree
@@ -14,7 +13,8 @@ import time
 import random
 import types
 
-from .static_funcs import apply_type_enrichment, retrieve_concept_chain, add_classes_to_ontology, add_concept_to_onto
+from .static_funcs import apply_type_enrichment, retrieve_concept_chain, add_classes_to_ontology, decompose_to_atomic, \
+    add_concept_to_onto
 
 
 class BaseConceptLearner(metaclass=ABCMeta):
@@ -43,7 +43,8 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, knowledge_base=None, refinement_operator=None, heuristic_func=None, quality_func=None,
-                 search_tree=None, max_num_of_concepts_tested=None, terminate_on_goal=None, ignored_concepts=None,
+                 search_tree=None, max_num_of_concepts_tested=None, max_run_time=None, terminate_on_goal=None,
+                 ignored_concepts=None,
                  iter_bound=None, max_child_length=None, root_concept=None, verbose=None, name=None):
 
         self.kb = knowledge_base
@@ -53,17 +54,19 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.search_tree = search_tree
         self.max_num_of_concepts_tested = max_num_of_concepts_tested
         self.terminate_on_goal = terminate_on_goal
+        self.max_run_time = max_run_time
         self.concepts_to_ignore = ignored_concepts
         self.iter_bound = iter_bound
         self.start_class = root_concept
         self.max_child_length = max_child_length
         self.verbose = verbose
+        self.store_onto_flag = False
         self.start_time = None
         self.goal_found = False
         self.max_length = 5
         self.storage_path, _ = create_experiment_folder()
         self.logger = create_logger(name=name, p=self.storage_path)
-        self.last_path=None # path of lastly stored onto.
+        self.last_path = None  # path of lastly stored onto.
         # Memoization
         self.concepts_to_nodes = dict()
         self.__default_values()
@@ -92,12 +95,14 @@ class BaseConceptLearner(metaclass=ABCMeta):
         if self.start_class is None:
             self.start_class = self.kb.thing
         if self.iter_bound is None:
-            self.iter_bound = 1000
+            self.iter_bound = 10_000
 
         if self.max_num_of_concepts_tested is None:
-            self.max_num_of_concepts_tested = 1000
+            self.max_num_of_concepts_tested = 10_000
         if self.terminate_on_goal is None:
             self.terminate_on_goal = True
+        if self.max_run_time is None:
+            self.max_run_time = 5
 
         if self.concepts_to_ignore is None:
             self.concepts_to_ignore = set()
@@ -198,8 +203,12 @@ class BaseConceptLearner(metaclass=ABCMeta):
         # check the base iri of ontologeis
 
     def terminate(self):
+        """
 
-        self.store_ontology()
+        @return:
+        """
+        if self.store_onto_flag:
+            self.store_ontology()
         if self.verbose == 1:
             self.logger.info('Elapsed runtime: {0} seconds'.format(round(time.time() - self.start_time, 4)))
             self.logger.info('Number of concepts tested:{0}'.format(self.number_of_tested_concepts))
@@ -300,21 +309,30 @@ class BaseConceptLearner(metaclass=ABCMeta):
         except AssertionError:
             print('|Search Tree|:{0}'.format(len(self.search_tree)))
 
-        o1 = get_ontology('predictions')
-        o2 = get_ontology(self.last_path).load()  # reload
-        o1.imported_ontologies.append(o2)
-        from owlready2 import Thing, DataProperty, FunctionalProperty
+        o1 = self.kb.world.get_ontology('https://dice-research.org/predictions/'+str(time.time()))
+        o1.imported_ontologies.append(self.kb.onto)
         with o1:
-            class f1_score(DataProperty, FunctionalProperty):  # Each drug has a single cost
+            class f1_score(AnnotationProperty):  # Each concept has single f1 score
                 domain = [Thing]
                 range = [float]
 
-        classes_ = list(o2.classes())
-        classes_str_iri = [get_full_iri(i) for i in classes_]
+            class accuracy(AnnotationProperty):  # Each concept has single f1 score
+                domain = [Thing]
+                range = [float]
 
         for ith, h in enumerate(self.best_hypotheses(n=n)):
-            assert get_full_iri(h.concept.owl) in classes_str_iri
-            add_concept_to_onto('Prediction_' + str(ith), h, o1, classes_, classes_str_iri)
+            with o1:
+                w = types.new_class(name='Pred_' + str(ith), bases=(Thing,))
+                w.is_a.remove(Thing)
+                w.label.append(h.concept.str)
+                try:
+                    w.equivalent_to.append(decompose_to_atomic(h.concept))
+                except AttributeError as e:
+                    print(e)
+                    continue
+
+                w.f1_score = h.quality
+                # @Todo add assertion to check whether h.quality is F1-score
 
         o1.save(file=self.storage_path + '/' + path + '.owl', format=rdf_format)
 
