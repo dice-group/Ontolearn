@@ -160,7 +160,6 @@ def create_logger(*, name, p):
     return logger
 
 
-
 def apply_TSNE_on_df(df) -> None:
     low_emb = TSNE(n_components=2).fit_transform(df)
     plt.scatter(low_emb[:, 0], low_emb[:, 1])
@@ -176,12 +175,13 @@ def balanced_sets(a: set, b: set) -> (set, set):
     @param b:
     @return:
     """
+
     if len(a) > len(b):
         sampled_a = random.sample(a, len(b))
-        return sampled_a, b
+        return set(sampled_a), b
     elif len(b) > len(a):
         sampled_b = random.sample(b, len(a))
-        return a, sampled_b
+        return a, set(sampled_b)
     else:
         assert len(a) == len(b)
         return a, b
