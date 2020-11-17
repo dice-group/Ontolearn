@@ -33,10 +33,13 @@ class DrillAverage(AbstractDrill, BaseConceptLearner):
                  terminate_on_goal=True, instance_embeddings=None, ignored_concepts=None,
                  max_len_replay_memory=None, batch_size=None, epsilon_decay=None, epsilon_min=None,
                  num_epochs_per_replay=None, learning_rate=None,
+                 max_run_time=5,
                  num_of_sequential_actions=None, num_episode=None):
         self.sample_size = 1
         self.heuristic_func = DrillHeuristic(mode='average',
                                              input_shape=(4 * self.sample_size, instance_embeddings.shape[1]))
+        if refinement_operator is None:
+            refinement_operator = LengthBasedRefinement(kb=knowledge_base)
         AbstractDrill.__init__(self, model=self.heuristic_func.model, reward_func=Reward(),
                                max_len_replay_memory=max_len_replay_memory,
                                batch_size=batch_size, epsilon_min=epsilon_min,
@@ -54,6 +57,7 @@ class DrillAverage(AbstractDrill, BaseConceptLearner):
                                     terminate_on_goal=terminate_on_goal,
                                     iter_bound=iter_bound,
                                     max_num_of_concepts_tested=max_num_of_concepts_tested,
+                                    max_run_time=max_run_time,
                                     verbose=verbose, name='DrillAverage')
 
         self.experiences = Experience(maxlen=self.max_len_replay_memory)
@@ -102,11 +106,22 @@ class DrillAverage(AbstractDrill, BaseConceptLearner):
             if self.goal_found:
                 if self.terminate_on_goal:
                     return self.terminate()
+            if time.time() - self.start_time > self.max_run_time:
+                return self.terminate()
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 return self.terminate()
         return self.terminate()
 
-    def train(self, learning_problems, n: int = 1):
+    def train(self, *args, **kwargs):
+        raise ValueError
+
+    def train_on_single_example(self, pos, neg, n: int = 1):
+        for _ in range(n):  # repeat training over learning problems.
+            self.rl_learning_loop(pos_uri=pos, neg_uri=neg)
+        self.reset_state()
+        return self
+
+    def train_on_concepts(self, learning_problems, n: int = 1):
         """
         Train RL agent on input learning problems n times.
         For each learning problem:
@@ -185,14 +200,19 @@ class DrillAverage(AbstractDrill, BaseConceptLearner):
             raise ValueError('invalid value detected in E-,\n{0}'.format(self.emb_neg))
         self.epsilon = 1
 
+
 class DrillSample(AbstractDrill, BaseConceptLearner):
-    def __init__(self, knowledge_base, refinement_operator,
+    def __init__(self, knowledge_base, refinement_operator=None,
                  quality_func=F1(), iter_bound=None, num_episode=None, max_num_of_concepts_tested=None, verbose=None,
                  sample_size=10, terminate_on_goal=True, instance_embeddings=None,
+                 max_run_time=5,
                  ignored_concepts=None, num_of_sequential_actions=None):
         self.sample_size = sample_size
         self.heuristic_func = DrillHeuristic(mode='sample',
                                              input_shape=(4 * self.sample_size, instance_embeddings.shape[1]))
+        if refinement_operator is None:
+            refinement_operator = LengthBasedRefinement(kb=knowledge_base)
+
         AbstractDrill.__init__(self, model=self.heuristic_func.model,
                                instance_embeddings=instance_embeddings,
                                reward_func=Reward(), num_episode=num_episode,
@@ -207,6 +227,7 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
                                     terminate_on_goal=terminate_on_goal,
                                     iter_bound=iter_bound,
                                     max_num_of_concepts_tested=max_num_of_concepts_tested,
+                                    max_run_time=max_run_time,
                                     verbose=verbose,
                                     name='DrillSample')
         self.experiences = Experience(maxlen=self.max_len_replay_memory)
@@ -220,8 +241,12 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
         @return:
         """
         assert isinstance(pos, set) and isinstance(neg, set)
-
-        assert len(pos) >= self.sample_size and len(neg) >= self.sample_size
+        try:
+            assert len(pos) >= self.sample_size and len(neg) >= self.sample_size
+        except:
+            print(len(pos))
+            print(len(neg))
+            exit(1)
         sampled_pos = random.sample(pos, self.sample_size)
         sampled_neg = random.sample(neg, self.sample_size)
 
@@ -232,7 +257,7 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
         self.emb_pos = self.emb_pos.view(1, self.sample_size, self.instance_embeddings.shape[1])
         self.emb_neg = self.emb_neg.view(1, self.sample_size, self.instance_embeddings.shape[1])
 
-    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], ignore: Set[AnyStr]):
+    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], ignore: Set[AnyStr] = None):
         """
         Find hypotheses that explain pos and neg.
         """
@@ -251,11 +276,13 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
             if self.goal_found:
                 if self.terminate_on_goal:
                     return self.terminate()
+            if time.time() - self.start_time > self.max_run_time:
+                return self.terminate()
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 return self.terminate()
         return self.terminate()
 
-    def train(self, learning_problems, n: int = 1):
+    def old_train(self, learning_problems: Iterable[Node], n: int = 1):
         """
         Train RL agent on input learning problems n times.
         For each learning problem:
@@ -281,6 +308,43 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
         self.reset_state()
         return self
 
+    def train(self, dataset: Iterable, n: int = 1):
+        """
+
+        @param dataset:
+        @param n:
+        @return:
+        """
+        for _ in range(n):  # repeat training over learning problems.
+            for (alc_concept_str, positives, negatives) in dataset:
+                self.logger.info(
+                    'Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
+                self.rl_learning_loop(pos_uri=positives, neg_uri=negatives)
+
+    def test(self, dataset: Iterable, max_run_time: int = None):
+        """
+
+        @param dataset:
+        @param n:
+        @return:
+        """
+
+        results = []
+        assert isinstance(dataset, Iterable)
+        for (alc_concept_str, positives, negatives) in dataset:
+            self.logger.info(
+                'Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
+            self.fit(pos=positives, neg=negatives)
+            h = self.best_hypotheses(1)[0]
+
+            results.append({'Target.': alc_concept_str,
+                            'pos': positives,
+                            'neg': negatives,
+                            'Pred.': h.concept.str,
+                            'Quality': h.quality,
+                            'Ind.': h.concept.instances})
+        return results
+
     def init_training(self, pos_uri: Set[AnyStr], neg_uri: Set[AnyStr]):
         """
 
@@ -288,26 +352,43 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
         @param neg_uri:
         @return:
         """
-        self.reset_state()
+        # @todos Do we need to reset ?!
+        # self.reset_state()
 
         # (1) Sample from positive and negative examples without replacement.
-        pos_uri_sub = random.sample(pos_uri, self.sample_size)
-        neg_uri_sub = random.sample(neg_uri, self.sample_size)
+        if self.sample_size > len(pos_uri):
+            print('positive examples less than ', self.sample_size)
+            pos_uri = list(pos_uri)
+        else:
+            pos_uri = random.sample(pos_uri, self.sample_size)
+        if self.sample_size > len(neg_uri):
+            print('negative examples less than ', self.sample_size)
+            neg_uri = list(neg_uri)
+        else:
+            neg_uri = random.sample(neg_uri, self.sample_size)
+
+        self.logger.info('Sampled E^+:[{0}] \t Sampled E^-:[{1}]'.format(len(pos_uri), len(neg_uri)))
 
         # (2) Convert (1) into owlready2 objects.
-        pos = set(self.kb.convert_uri_instance_to_obj_from_iterable(pos_uri_sub))
-        neg = set(self.kb.convert_uri_instance_to_obj_from_iterable(neg_uri_sub))
+        self.reward_func.pos = set(self.kb.convert_uri_instance_to_obj_from_iterable(pos_uri))
+        self.reward_func.neg = set(self.kb.convert_uri_instance_to_obj_from_iterable(neg_uri))
 
-        # (3) Assign (2) to reward function to calculate rewards.
-        self.reward_func.pos = pos
-        self.reward_func.neg = neg
+        # (3) Assign embeddings from (1).
+        self.emb_pos = torch.tensor(self.instance_embeddings.loc[pos_uri].values, dtype=torch.float32)
+        self.emb_neg = torch.tensor(self.instance_embeddings.loc[neg_uri].values, dtype=torch.float32)
 
-        # (4) Assign embeddings from (1).
-        self.emb_pos = torch.tensor(self.instance_embeddings.loc[pos_uri_sub].values, dtype=torch.float32)
-        self.emb_neg = torch.tensor(self.instance_embeddings.loc[neg_uri_sub].values, dtype=torch.float32)
+        # add zeros. if necessary.
+        if len(self.emb_pos) < self.sample_size:
+            num_rows_to_fill = self.sample_size - len(self.emb_pos)
+            self.emb_pos = torch.cat((torch.zeros(num_rows_to_fill, self.instance_embeddings.shape[1]), self.emb_pos))
+
+        if len(self.emb_neg) < self.sample_size:
+            num_rows_to_fill = self.sample_size - len(self.emb_neg)
+            self.emb_neg = torch.cat((torch.zeros(num_rows_to_fill, self.instance_embeddings.shape[1]), self.emb_neg))
 
         self.emb_pos = self.emb_pos.view(1, self.emb_pos.shape[0], self.emb_pos.shape[1])
         self.emb_neg = self.emb_neg.view(1, self.emb_neg.shape[0], self.emb_neg.shape[1])
+
         # Sanity checking
         if torch.isnan(self.emb_pos).any() or torch.isinf(self.emb_pos).any():
             print(string_balanced_pos)
@@ -339,26 +420,6 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
                                           self.emb_neg)
             predictions = self.model.forward(ds.get_all())
         return predictions
-
-    """
-    def sequence_of_actions(self, root: Node) -> Tuple[List[Tuple[Node, Node]], List]:
-        current_state = root
-        path_of_concepts = []
-        rewards = []
-        for _ in range(self.num_of_sequential_actions):
-            next_states = list(self.apply_rho(current_state))
-            if len(next_states) == 0:  # DEAD END
-                break
-            next_state = self.exploration_exploitation_tradeoff(current_state, next_states)
-            assert next_state
-            assert current_state
-            if next_state.concept.str == 'Nothing':  # Dead END
-                break
-            path_of_concepts.append((current_state, next_state))
-            rewards.append(self.reward_func.calculate(current_state, next_state))
-            current_state = next_state
-        return path_of_concepts, rewards
-    """
 
 
 class DrillHeuristic(AbstractScorer):
