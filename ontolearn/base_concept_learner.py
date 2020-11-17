@@ -12,9 +12,7 @@ import pandas as pd
 import time
 import random
 import types
-
-from .static_funcs import apply_type_enrichment, retrieve_concept_chain, add_classes_to_ontology, decompose_to_atomic, \
-    add_concept_to_onto
+from .static_funcs import apply_type_enrichment, retrieve_concept_chain, decompose_to_atomic
 
 
 class BaseConceptLearner(metaclass=ABCMeta):

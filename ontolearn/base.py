@@ -16,10 +16,11 @@ warnings.filterwarnings("ignore")
 class KnowledgeBase(AbstractKnowledgeBase):
     """Knowledge Base Class representing Tbox and Abox along with concept hierarchies"""
 
-    def __init__(self, path, min_size_of_concept=1):
+    def __init__(self, path):
         super().__init__()
         self.path = path
-        self.onto = World().get_ontology(self.path).load(reload=True)
+        self.world = World()
+        self.onto = self.world.get_ontology(self.path).load(reload=True)
         self.property_hierarchy = PropertyHierarchy(self.onto)
         self.name = self.onto.name
         self.parse()
@@ -27,8 +28,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.obj_to_str_iri_instances = dict(
             zip(self.str_to_instance_obj.values(), self.str_to_instance_obj.keys()))
         self.idx_of_instances = dict(zip(self.thing.instances, range(len(self.str_to_instance_obj))))
-        self.min_size_of_concept = min_size_of_concept
-        self.max_size_of_concept = len(self.thing.instances) * 1
+        self.uri_individuals = list(self.str_to_instance_obj.keys())
         self.concept_generator = ConceptGenerator(concepts=self.concepts,
                                                   thing=self.thing,
                                                   nothing=self.nothing,
@@ -104,7 +104,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
         return [self.convert_uri_instance_to_obj(i) for i in str_individuals]
 
     def convert_owlready2_individuals_to_uri(self, instance):
-        return self.obj_to_str_iri_instances[instance]
+        try:
+            return self.obj_to_str_iri_instances[instance]
+        except KeyError as e:
+            print('{0} owlready2 instance with {1} memory space could not be found '.format(instance, id(instance)))
+            print([(i, id(i)) for i in self.obj_to_str_iri_instances.keys()])
+            exit(1)
 
     def convert_owlready2_individuals_to_uri_from_iterable(self, l: Iterable) -> List:
         return [self.convert_owlready2_individuals_to_uri(i) for i in l]
