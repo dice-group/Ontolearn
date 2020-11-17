@@ -3,7 +3,7 @@ from typing import Tuple, Dict, Iterable
 from .concept import Concept
 from .abstracts import BaseNode
 from collections import deque
-from owlready2 import Thing, get_ontology
+from owlready2 import Thing, get_ontology, Not
 import types
 from .util import get_full_iri
 
@@ -19,6 +19,8 @@ def build_concepts_mapping(onto: Ontology) -> Tuple[Dict, Concept, Concept]:
     """
     concepts = dict()
     individuals = set()
+    # @TODO why onto.world is given as parameter ?
+    # @TODO if onto.world is important and has to be given as parameter why it has not being used in all other concept generation.
     T = Concept(Thing, kwargs={'form': 'Class'}, world=onto.world)
     bottom = Concept(Nothing, kwargs={'form': 'Class'}, world=onto.world)
     # TODO: Think about removing owlready2 instances and use string representation.
@@ -89,60 +91,21 @@ def retrieve_concept_chain(node: BaseNode) -> Iterable:
         hierarchy.appendleft(node)
     return hierarchy
 
-
-def add_classes_to_ontology(node: BaseNode, onto):
-    """
-
-    @param node:
-    @param onto:
-    @return:
-    """
-    current_defined_classes = list(onto.classes())
-    if node.concept.owl == Thing:
-        return
-    base_nodes = list(i for i in retrieve_concept_chain(node))
-    assert base_nodes[0].concept.owl == node.concept.owl  # must be equal to itself.
-    assert base_nodes[-1].concept.owl == Thing  # must be equal to T.
-
-    if len(base_nodes) == 1:
-        assert base_nodes[0].concept.owl == Thing
-        return
-    base_nodes.pop(0)  # itself.
-    base_nodes.pop(-1)  # Thing.
-    for b in base_nodes:
-        if b.concept.owl not in current_defined_classes:
-            print(b)
-            add_classes_to_ontology(b, onto)
-
-    # bases
-    bases = tuple([i.concept.owl for i in base_nodes] + [Thing])
-
-    with onto:  # Add into TBOX.
-        new_concept = types.new_class(name=node.concept.str, bases=bases)
-        # new_concept.equivalent_to = node.concept.owl.equivalent_to
-
-
-def dl_syntax_to_word(x):
-    """
-    Given dl syntax, convert it to workds.
-    @param x:
-    @return:
-    """
-    return x
-
-
-def add_concept_to_onto(name_of_concept, node, onto, classes_, classes_str_iri):
-    x = classes_[classes_str_iri.index(get_full_iri(node.concept.owl))]
-    # For sanity checking.
-    assert get_full_iri(x) == get_full_iri(node.concept.owl)
-
-    #concept_chain_of_h = list(retrieve_concept_chain(node))[1:-1]  # first is h. and last is Thing
-    #bases = tuple([classes_[classes_str_iri.index(get_full_iri(i.concept.owl))] for i in concept_chain_of_h])
-    #if len(bases) == 0:
-    bases = (Thing,)
-
-    with onto:
-        w = types.new_class(name=name_of_concept+node.concept.str, bases=bases)
-        w.label.append(dl_syntax_to_word(node.concept.str))
-        w.equivalent_to.extend(x.equivalent_to)
-        w.f1_score = [node.quality]
+def decompose_to_atomic(C):
+    if C.is_atomic:
+        return C.owl
+    elif C.form == 'ObjectComplementOf':
+        concept_a = C.concept_a
+        return Not(decompose_to_atomic(concept_a))
+    elif C.form == 'ObjectUnionOf':
+        return decompose_to_atomic(C.concept_a) | decompose_to_atomic(C.concept_b)
+    elif C.form == 'ObjectIntersectionOf':
+        return decompose_to_atomic(C.concept_a) & decompose_to_atomic(C.concept_b)
+    elif C.form == 'ObjectSomeValuesFrom':
+        return C.role.some(decompose_to_atomic(C.filler))
+    elif C.form == 'ObjectAllValuesFrom':
+        return C.role.only(decompose_to_atomic(C.filler))
+    else:
+        print('Someting wrong')
+        print(C)
+        raise ValueError
