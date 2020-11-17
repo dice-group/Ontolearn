@@ -33,95 +33,45 @@ import json
 import random
 import pandas as pd
 
-with open('synthetic_problems.json') as json_file:
-    settings = json.load(json_file)
-data_path = settings['data_path']
+path_kb= '....' # owl
+embedding_path = '...'# csv
 
-kb = KnowledgeBase(path=data_path)
+kb = KnowledgeBase(path_kb)
 rho = LengthBasedRefinement(kb=kb)
-lp_gen = LearningProblemGenerator(knowledge_base=kb,
-                                  refinement_operator=rho,
-                                  num_problems=3, depth=2, min_length=2)
+# Generate learning problems.
+lp_gen = LearningProblemGenerator(knowledge_base=kb, refinement_operator=rho,
+                                  num_problems=2, max_length=3)
+instance_emb = pd.read_csv(embedding_path, index_col=0)
 
-instance_emb = pd.read_csv('../embeddings/instance_emb.csv', index_col=0)
-# apply_TSNE_on_df(instance_emb)
-trainer = DrillTrainer(
-    knowledge_base=kb,
-    refinement_operator=rho,
-    quality_func=F1(),
-    reward_func=Reward(),  # Reward func.
-    search_tree=SearchTreePriorityQueue(),
-    path_pretrained_agent='../agent_pre_trained',  # for Incremental/Continual learning.
-    learning_problem_generator=lp_gen,
-    instance_embeddings=instance_emb,
-    verbose=False)
-trainer.start()
+model_avg = DrillAverage(knowledge_base=kb, refinement_operator=rho,
+                         instance_embeddings=instance_emb).train(lp_gen)
 
-for str_target_concept, examples in settings['problems'].items():
-    p = set(examples['positive_examples'])
-    n = set(examples['negative_examples'])
-    print('Target concept: ', str_target_concept)
-    concepts_to_ignore = set()
-    # lets inject more background info
-    if str_target_concept in ['Granddaughter', 'Aunt', 'Sister']:
-        concepts_to_ignore.update({'Brother', 'Father', 'Uncle', 'Grandparent'})
+model_sub = DrillSample(knowledge_base=kb, refinement_operator=rho,
+                        instance_embeddings=instance_emb).train(lp_gen)
 
-    model = DrillConceptLearner(knowledge_base=kb,
-                                refinement_operator=rho,
-                                quality_func=F1(),
-                                heuristic_func=DrillHeuristic(model=trainer.model),
-                                instance_emb=instance_emb,
-                                search_tree=SearchTreePriorityQueue(),
-                                terminate_on_goal=True,
-                                iter_bound=1_000,
-                                max_num_of_concepts_tested=5_000,
-                                ignored_concepts={},
-                                verbose=True)
-    model.fit(pos=p, neg=n)
-    model.best_hypotheses(top_n=10)
-    model.save_best_hypotheses(file_path=str_target_concept + '_best_hypothesis.owl', rdf_format='xml', top_n=10)
+# Such concepts will be ignored during the search.
+concepts_to_ignore={'http://www.benchmark.org/family#Brother', 'Father', 'Grandparent'}
+model_avg.fit(pos=p, neg=n, ignore=concepts_to_ignore)
+model_sub.fit(pos=p, neg=n, ignore=concepts_to_ignore)
+
+print(model_sub.best_hypotheses(n=1)[0])
+print(model_avg.best_hypotheses(n=1)[0])
 ```
 
 ### CELOE
 
 ```python
-from ontolearn import *
+from ontolearn import KnowledgeBase
+from ontolearn.concept_learner import CELOE
+
 p = {} # set of positive instances
 n = {} # set of negative instances
-kb = KnowledgeBase(path='.../family-benchmark_rich_background.owl') 
-model = CELOE(knowledge_base=kb,
-              refinement_operator=ModifiedCELOERefinement(kb=kb),
-              quality_func=F1(),
-              min_horizontal_expansion=3,
-              heuristic_func=CELOEHeuristic(),
-              search_tree=CELOESearchTree(),
-              terminate_on_goal=True,
-              iter_bound=1_000,
-              verbose=False)
-
-model.fit(pos=p, neg=n)
-model.show_best_predictions(top_n=10, key='quality')
-
+kb = KnowledgeBase(path='...')
+model = CELOE(knowledge_base=kb)
+model.fit(pos=p, neg=n, ignore=concepts_to_ignore)
+# Get Top n hypotheses
+hypotheses = model.best_hypotheses(n=3)
 ```
-### CustomConceptLearner with DLFoil Heuristic
-
-```python
-from ontolearn import *
-p = {} # set of positive instances
-n = {} # set of negative instances
-kb = KnowledgeBase(path='.../family-benchmark_rich_background.owl') 
-model = CustomConceptLearner(knowledge_base=kb,
-                             refinement_operator=CustomRefinementOperator(kb=kb),
-                             quality_func=F1(), # Precision, Recall, Accuracy
-                             heuristic_func=DLFOILHeuristic(),
-                             search_tree=SearchTree(),
-                             terminate_on_goal=True,
-                             iter_bound=1_000,
-                             verbose=True)
-model.fit(pos=p, neg=n)
-model.show_best_predictions(top_n=10, key='quality')
-```
-
 ## Testing
 
 ### Simple Linting and Testing

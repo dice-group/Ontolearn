@@ -1,17 +1,18 @@
 from abc import ABCMeta, abstractmethod
-from owlready2 import get_ontology, World, rdfs, AnnotationPropertyClass
-
+from owlready2 import World, get_ontology, Thing, DataProperty, FunctionalProperty, AnnotationProperty
 from .refinement_operators import ModifiedCELOERefinement
 from .search import Node
 from .search import CELOESearchTree
 from .metrics import F1
 from .heuristics import CELOEHeuristic
-import types
 from typing import List, AnyStr, Set
-from .util import create_experiment_folder, create_logger
+from .util import create_experiment_folder, create_logger, get_full_iri
 import numpy as np
 import pandas as pd
 import time
+import random
+import types
+from .static_funcs import apply_type_enrichment, retrieve_concept_chain, decompose_to_atomic
 
 
 class BaseConceptLearner(metaclass=ABCMeta):
@@ -40,7 +41,8 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, knowledge_base=None, refinement_operator=None, heuristic_func=None, quality_func=None,
-                 search_tree=None, max_num_of_concepts_tested=None, terminate_on_goal=None, ignored_concepts=None,
+                 search_tree=None, max_num_of_concepts_tested=None, max_run_time=None, terminate_on_goal=None,
+                 ignored_concepts=None,
                  iter_bound=None, max_child_length=None, root_concept=None, verbose=None, name=None):
 
         self.kb = knowledge_base
@@ -50,17 +52,19 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.search_tree = search_tree
         self.max_num_of_concepts_tested = max_num_of_concepts_tested
         self.terminate_on_goal = terminate_on_goal
+        self.max_run_time = max_run_time
         self.concepts_to_ignore = ignored_concepts
         self.iter_bound = iter_bound
         self.start_class = root_concept
         self.max_child_length = max_child_length
         self.verbose = verbose
+        self.store_onto_flag = False
         self.start_time = None
         self.goal_found = False
         self.max_length = 5
         self.storage_path, _ = create_experiment_folder()
         self.logger = create_logger(name=name, p=self.storage_path)
-
+        self.last_path = None  # path of lastly stored onto.
         # Memoization
         self.concepts_to_nodes = dict()
         self.__default_values()
@@ -89,12 +93,14 @@ class BaseConceptLearner(metaclass=ABCMeta):
         if self.start_class is None:
             self.start_class = self.kb.thing
         if self.iter_bound is None:
-            self.iter_bound = 1000
+            self.iter_bound = 10_000
 
         if self.max_num_of_concepts_tested is None:
-            self.max_num_of_concepts_tested = 1000
+            self.max_num_of_concepts_tested = 10_000
         if self.terminate_on_goal is None:
             self.terminate_on_goal = True
+        if self.max_run_time is None:
+            self.max_run_time = 5
 
         if self.concepts_to_ignore is None:
             self.concepts_to_ignore = set()
@@ -151,7 +157,14 @@ class BaseConceptLearner(metaclass=ABCMeta):
         else:
             owl_ready_neg = set(self.kb.convert_uri_instance_to_obj_from_iterable(neg))
 
-        assert len(owl_ready_pos) == len(pos)
+        try:
+            assert len(owl_ready_pos) == len(pos)
+        except:
+            print(pos)
+            print(owl_ready_pos)
+            print(all_instances)
+            print(self.kb.str_to_instance_obj)
+            exit(1)
         assert len(owl_ready_neg) == len(neg)
 
         unlabelled = all_instances.difference(owl_ready_pos.union(owl_ready_neg))
@@ -168,7 +181,32 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.search_tree.add(root)
         assert len(self.search_tree) == 1
 
+    def store_ontology(self):
+        """
+
+        @return:
+        """
+        # sanity checking.
+        # (1) get all concepts
+        # (2) serialize current kb.
+        # (3) reload (2).
+        # (4) get all reloaded concepts.
+        # (5) (1) and (4) must be same.
+        uri_all_concepts = set([get_full_iri(i) for i in self.kb.onto.classes()])
+        self.last_path = self.storage_path + '/' + self.kb.name + str(time.time()) + '.owl'
+        self.kb.save(path=self.last_path)  # save
+        d = get_ontology(self.last_path).load()  # load it.
+        uri_all_concepts_loaded = set([get_full_iri(i) for i in d.classes()])
+        assert uri_all_concepts == uri_all_concepts_loaded
+        # check the base iri of ontologeis
+
     def terminate(self):
+        """
+
+        @return:
+        """
+        if self.store_onto_flag:
+            self.store_ontology()
         if self.verbose == 1:
             self.logger.info('Elapsed runtime: {0} seconds'.format(round(time.time() - self.start_time, 4)))
             self.logger.info('Number of concepts tested:{0}'.format(self.number_of_tested_concepts))
@@ -194,48 +232,6 @@ class BaseConceptLearner(metaclass=ABCMeta):
         else:
             raise ValueError('Invalid key:{0}'.format(key))
         return metric, attribute
-
-    def show_best_predictions(self, key='quality', top_n=10, serialize_name=None, rdf_format='xml'):
-        raise NotImplementedError('Use best_hypotheses method to obtain predictions.')
-        predictions = self.search_tree.show_best_nodes(top_n, key=key)
-        if serialize_name is not None:
-            if key == 'quality':
-                metric = self.quality_func.name
-                attribute = key
-            elif key == 'heuristic':
-                metric = self.heuristic.name
-                attribute = key
-            elif key == 'length':
-                metric = key
-                attribute = key
-            else:
-                raise ValueError
-
-            print('Currently. Serialization is not available')
-            serialize_concepts(concepts=predictions,
-                               serialize_name=serialize_name,
-                               metric=metric,
-                               attribute=attribute, rdf_format=rdf_format)
-
-    def extend_ontology(self, top_n_concepts=10, key='quality', rdf_format='xml'):
-        """
-        1) Obtain top N nodes from search tree.
-        2) Extend ABOX by including explicit type information for all instances belonging to concepts (1)
-        """
-        raise NotImplementedError('Not yet implemented.')
-        # This module needs to be tested
-        # if World().get_ontology(self.path).load(reload=True) used
-        # saving owlready ontology is not working.
-        self.search_tree.sort_search_tree_by_decreasing_order(key=key)
-        for (ith, node) in enumerate(self.search_tree):
-            if ith <= top_n_concepts:
-                self.kb.apply_type_enrichment(node.concept)
-            else:
-                break
-
-        folder = self.kb.path[:self.kb.path.rfind('/')] + '/'
-        kb_name = 'enriched_' + self.kb.name
-        self.kb.save(folder + kb_name + '.owl', rdf_format=rdf_format)
 
     @abstractmethod
     def next_node_to_expand(self, *args, **kwargs):
@@ -304,3 +300,56 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.search_tree.clean()
         self.quality_func.clean()
         self.heuristic_func.clean()
+
+    def save_best_hypothesis(self, n: int = 10, path='Predictions', rdf_format='rdfxml') -> None:
+        try:
+            assert len(self.search_tree) > n
+        except AssertionError:
+            print('|Search Tree|:{0}'.format(len(self.search_tree)))
+
+        o1 = self.kb.world.get_ontology('https://dice-research.org/predictions/'+str(time.time()))
+        o1.imported_ontologies.append(self.kb.onto)
+        with o1:
+            class f1_score(AnnotationProperty):  # Each concept has single f1 score
+                domain = [Thing]
+                range = [float]
+
+            class accuracy(AnnotationProperty):  # Each concept has single f1 score
+                domain = [Thing]
+                range = [float]
+
+        for ith, h in enumerate(self.best_hypotheses(n=n)):
+            with o1:
+                w = types.new_class(name='Pred_' + str(ith), bases=(Thing,))
+                w.is_a.remove(Thing)
+                w.label.append(h.concept.str)
+                try:
+                    w.equivalent_to.append(decompose_to_atomic(h.concept))
+                except AttributeError as e:
+                    print(e)
+                    continue
+
+                w.f1_score = h.quality
+                # @Todo add assertion to check whether h.quality is F1-score
+
+        o1.save(file=self.storage_path + '/' + path + '.owl', format=rdf_format)
+
+    def extend_ontology(self, top_n_concepts=10, key='quality', rdf_format='xml'):
+        """
+        1) Obtain top N nodes from search tree.
+        2) Extend ABOX by including explicit type information for all instances belonging to concepts (1)
+        """
+        raise NotImplementedError('Not yet implemented.')
+        # This module needs to be tested
+        # if World().get_ontology(self.path).load(reload=True) used
+        # saving owlready ontology is not working.
+        self.search_tree.sort_search_tree_by_decreasing_order(key=key)
+        for (ith, node) in enumerate(self.search_tree):
+            if ith <= top_n_concepts:
+                self.kb.apply_type_enrichment(node.concept)
+            else:
+                break
+
+        folder = self.kb.path[:self.kb.path.rfind('/')] + '/'
+        kb_name = 'enriched_' + self.kb.name
+        self.kb.save(folder + kb_name + '.owl', rdf_format=rdf_format)

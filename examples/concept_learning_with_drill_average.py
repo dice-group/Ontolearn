@@ -20,13 +20,12 @@ In this example, we illustrates a default workflow of Drill.
 """
 # Authors: Caglar Demir
 
-from ontolearn import *
+from ontolearn import KnowledgeBase, LengthBasedRefinement, DrillAverage
 import json
-import random
 import pandas as pd
 
 PATH_FAMILY = '../data/family-benchmark_rich_background.owl'
-#drill_pretrained_model_path = '../agent_pre_trained/model.pth'
+# drill_pretrained_model_path = '../agent_pre_trained/model.pth'
 family_embeddings_path = '../embeddings/Dismult_family_benchmark/instance_emb.csv'
 synthetic_problems_path = '../examples/synthetic_problems.json'
 

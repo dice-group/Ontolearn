@@ -4,6 +4,7 @@ from typing import List, Any
 from .refinement_operators import LengthBasedRefinement
 
 import sys
+from .util import balanced_sets
 
 
 class LearningProblemGenerator:
@@ -11,20 +12,58 @@ class LearningProblemGenerator:
     Learning problem generator.
     """
 
-    def __init__(self, knowledge_base, refinement_operator=None, num_problems=sys.maxsize, depth=3,
-                 min_length=0, max_length=5):
+    def __init__(self, knowledge_base, refinement_operator=None, num_problems=sys.maxsize, depth=2,
+                 min_num_ind=15,
+                 min_length=0, max_length=10):
         if refinement_operator is None:
             refinement_operator = LengthBasedRefinement(kb=knowledge_base)
 
         self.kb = knowledge_base
         self.rho = refinement_operator
         self.num_problems = num_problems
+
+        self.min_num_ind = min_num_ind
         self.min_length = min_length
         self.max_length = max_length
         self.learning_problems_generated = set()
         self.seen_concepts = set()
         self.depth = depth
         self.valid_concepts = []
+
+    @property
+    def concepts(self):
+        if len(self.valid_concepts) == 0:
+            self.apply()
+        return self.valid_concepts[:self.num_problems]
+
+    @property
+    def balanced_examples(self):
+        if len(self.valid_concepts) == 0:
+            self.apply()
+        results = list()
+        counter = 0
+        for example_node in self.valid_concepts:
+            if counter == self.num_problems:
+                break
+            string_all_pos = set(
+                self.kb.convert_owlready2_individuals_to_uri_from_iterable(example_node.concept.instances))
+            string_all_neg = set(self.kb.convert_owlready2_individuals_to_uri_from_iterable(
+                self.kb.individuals.difference(example_node.concept.instances)))
+            # create balanced setting
+            string_balanced_pos, string_balanced_neg = balanced_sets(string_all_pos, string_all_neg)
+            if len(string_balanced_pos) > 0 and len(string_balanced_neg) > 0:
+                results.append((example_node.concept.str, string_balanced_pos, string_balanced_neg))
+                counter += 1
+            else:
+                continue
+
+        return results
+
+    @property
+    def examples(self):
+        if len(self.valid_concepts) == 0:
+            self.apply()
+        return self.valid_concepts[:self.num_problems]
 
     def apply_rho(self, node):
         return {self.rho.getNode(i, parent_node=node) for i in
@@ -39,10 +78,15 @@ class LearningProblemGenerator:
             if refs:
                 current_state = random.sample(list(refs), 1)[0]  # random sample.
         for i in self.seen_concepts:
-            if self.min_length <= len(i) <= self.max_length and (i not in self.learning_problems_generated):
+            if self.min_length <= len(i) <= self.max_length and \
+                    (i not in self.learning_problems_generated) and \
+                    self.min_num_ind < len(i.concept.instances) < (len(self.kb.thing.instances)-self.min_num_ind):
                 self.learning_problems_generated.add(i)
                 self.valid_concepts.append(i)
-        self.valid_concepts.sort(key=lambda x: len(x), reverse=False)
+
+        if len(self.valid_concepts) < self.num_problems:
+            self.apply()
+        # self.valid_concepts.sort(key=lambda x: len(x), reverse=True)
 
     def __iter__(self):
         if len(self.valid_concepts) == 0:

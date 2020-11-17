@@ -187,6 +187,7 @@ class BaseNode(metaclass=ABCMeta):
     def is_root(self):
         return self.__is_root
 
+
 class AbstractScorer(ABC):
     """
     An abstract class for quality and heuristic functions.
@@ -404,8 +405,15 @@ class AbstractKnowledgeBase(ABC):
         self.concepts_to_leafs = defaultdict(set)
         self.property_hierarchy = None
         self.individuals = None
+        self.uri_individuals = None  # string representation of uris
 
-    def save(self, path, rdf_format='ntriples'):
+    def save(self, path, rdf_format="rdfxml"):
+        """
+        path .owl
+        @param path:
+        @param rdf_format:
+        @return:
+        """
         self.onto.save(file=path, format=rdf_format)
 
     def describe(self):
@@ -414,6 +422,7 @@ class AbstractKnowledgeBase(ABC):
 
     def clean(self):
         raise NotImplementedError
+
 
 class AbstractDrill(ABC):
 
@@ -491,6 +500,21 @@ class AbstractDrill(ABC):
         current_state_batch = torch.cat(current_state_batch, dim=0)
         next_state_batch = torch.cat(next_state_batch, dim=0)
         q_values = torch.Tensor(q_values)
+
+        try:
+            assert current_state_batch.shape[1] == next_state_batch.shape[1] == self.emb_pos.shape[1] == \
+                   self.emb_neg.shape[1]
+        except AssertionError as e:
+            print(current_state_batch.shape)
+            print(next_state_batch.shape)
+            print(self.emb_pos.shape)
+            print(self.emb_neg.shape)
+            print('Wrong format.')
+            print(e)
+            exit(1)
+
+        assert current_state_batch.shape[2] == next_state_batch.shape[2] == self.emb_pos.shape[2] == \
+               self.emb_neg.shape[2]
 
         ds = PrepareBatchOfTraining(current_state_batch=current_state_batch,
                                     next_state_batch=next_state_batch,
@@ -647,7 +671,7 @@ class AbstractDrill(ABC):
         sum_of_rewards_per_actions = []
         for th in range(self.num_episode):  # Inner training loop
             path_of_concepts, rewards = self.sequence_of_actions(root)
-            if th % 10 == 0:
+            if th % 100 == 0:
                 self.logger.info(
                     '{0}.th iter. SumOfRewards: {1:.2f}\tEpsilon:{2:.2f}\t|ReplayMem.|:{3}'.format(th, sum(rewards),
                                                                                                    self.epsilon,
