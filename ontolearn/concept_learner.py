@@ -11,12 +11,13 @@ from .refinement_operators import ModifiedCELOERefinement, CustomRefinementOpera
 from .metrics import F1, Accuracy, Recall
 import time
 from .util import get_full_iri
+
 pd.set_option('display.max_columns', 100)
 
 
 class CELOE(BaseConceptLearner):
     def __init__(self, knowledge_base, heuristic_func=None, quality_func=None, iter_bound=None,
-                 max_num_of_concepts_tested=None,
+                 max_num_of_concepts_tested=None, max_run_time=None,
                  ignored_concepts=None, verbose=None, terminate_on_goal=None):
         if heuristic_func is None:
             heuristic_func = CELOEHeuristic()
@@ -26,9 +27,9 @@ class CELOE(BaseConceptLearner):
                          heuristic_func=heuristic_func,
                          ignored_concepts=ignored_concepts,
                          terminate_on_goal=terminate_on_goal,
-                         iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested, verbose=verbose,
-                         name='CELOE')
-        self.h_exp_constant = 0  # add a constant for length of refinements.
+                         iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested,
+                         max_run_time=max_run_time,
+                         verbose=verbose, name='CELOE')
         self.max_he, self.min_he = self.max_num_of_concepts_tested, 1
 
     def next_node_to_expand(self, step: int) -> Node:
@@ -48,13 +49,12 @@ class CELOE(BaseConceptLearner):
         self.search_tree.update_prepare(node)
         refinements = [self.rho.getNode(i, parent_node=node) for i in
                        self.rho.refine(node,
-                                       maxlength=node.h_exp + 1 + self.h_exp_constant,
+                                       maxlength=node.h_exp + 1,
                                        current_domain=self.start_class)
                        if i is not None and i.str not in self.concepts_to_ignore]
-
-        node.increment_h_exp(self.h_exp_constant)
+        node.increment_h_exp()
         node.refinement_count = len(refinements)
-        self.heuristic_func.apply(node, parent_node=node.parent_node)  # recompute heuristic new heurisitc value
+        self.heuristic_func.apply(node, parent_node=node.parent_node)
         self.search_tree.update_done(node)
         return refinements
 
@@ -71,6 +71,8 @@ class CELOE(BaseConceptLearner):
                 if goal_found:
                     if self.terminate_on_goal:
                         return self.terminate()
+            if time.time() - self.start_time > self.max_run_time:
+                return self.terminate()
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 return self.terminate()
         return self.terminate()
@@ -213,6 +215,8 @@ class CustomConceptLearner(BaseConceptLearner):
                 if goal_found:
                     if self.terminate_on_goal:
                         return self.terminate()
+            if time.time() - self.start_time > self.max_run_time:
+                return self.terminate()
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 return self.terminate()
         return self.terminate()
