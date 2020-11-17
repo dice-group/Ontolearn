@@ -160,54 +160,6 @@ def create_logger(*, name, p):
     return logger
 
 
-def retrieve_concept_hierarchy(c) -> Iterable:
-    """
-    c: a node object
-
-    hierarchy: an iterable containing a path of concepts from c to T.
-    """
-    hierarchy = deque()
-    if c.parent_node:
-        hierarchy.appendleft(c.parent_node)
-        while hierarchy[-1].parent_node is not None:
-            hierarchy.append(hierarchy[-1].parent_node)
-        hierarchy.appendleft(c)
-    return hierarchy
-
-
-"""
-def serialize_concepts(concepts: Iterable, serialize_name: str, metric: str, attribute: str, rdf_format: str):
-    raise NotImplementedError
-    g = Graph()
-
-    integer_mapped_concepts = dict()
-
-    for c in concepts:
-        hierarchy = retrieve_concept_hierarchy(c)  # retrieve concept subsuming c.
-        p_quality = URIRef('https://dice-research.org/' + attribute + ':' + metric)
-
-        for h in hierarchy:
-            integer_mapped_concepts.setdefault(h, str(len(integer_mapped_concepts)))
-
-        for node, int_map in integer_mapped_concepts.items():
-            subject = URIRef('https://dice-research.org/' + int_map)
-            g.add((subject, RDF.type, RDFS.Class))  # https://dice-research.org/1 type Class.
-            g.add((subject, RDFS.label,
-                   Literal(node.concept.str)))  # https://dice-research.org/1 type (Mother ⊔ (Son ⊔ ¬Daughter)).
-            try:  # if a concept has not been tested.
-                val = round(getattr(node, attribute), 3)
-            except TypeError:  # if attribute is None.
-                val = 0.0
-            g.add((subject, p_quality, Literal(val)))
-
-            if node.parent_node:
-                g.add((subject, RDFS.subClassOf,
-                       URIRef('https://dice-research.org/' + integer_mapped_concepts[node.parent_node])))
-
-        g.serialize(destination=serialize_name, format=rdf_format)
-"""
-
-
 def apply_TSNE_on_df(df) -> None:
     low_emb = TSNE(n_components=2).fit_transform(df)
     plt.scatter(low_emb[:, 0], low_emb[:, 1])
@@ -223,12 +175,13 @@ def balanced_sets(a: set, b: set) -> (set, set):
     @param b:
     @return:
     """
+
     if len(a) > len(b):
         sampled_a = random.sample(a, len(b))
-        return sampled_a, b
+        return set(sampled_a), b
     elif len(b) > len(a):
         sampled_b = random.sample(b, len(a))
-        return a, sampled_b
+        return a, set(sampled_b)
     else:
         assert len(a) == len(b)
         return a, b

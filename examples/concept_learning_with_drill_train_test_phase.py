@@ -7,9 +7,8 @@ In this example, we illustrates a default workflow of Drill.
 """
 # Authors: Caglar Demir
 
-from ontolearn import *
+from ontolearn import KnowledgeBase, LengthBasedRefinement, LearningProblemGenerator, DrillAverage, DrillSample
 import json
-import random
 import pandas as pd
 
 PATH_FAMILY = '../data/family-benchmark_rich_background.owl'
