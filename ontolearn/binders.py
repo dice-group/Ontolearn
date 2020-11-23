@@ -1,9 +1,10 @@
 import subprocess
-
+from typing import List
 
 class DLLearnerBinder:
-    def __init__(self, path):
+    def __init__(self, path=None, model=None):
         assert path
+        assert model
         self.execute_dl_learner_path = path
 
     def generate_config(self, knowledge_base_path, algorithm, positives, negatives, config_path
@@ -109,7 +110,6 @@ class DLLearnerBinder:
             if 'solutions' in lines:
                 top_predictions = results[ith:]
 
-
         print(top_predictions[0])
         print(top_predictions[1])
         # top_predictions must have the following form
@@ -176,3 +176,17 @@ class DLLearnerBinder:
         output_of_dl.extend(lines)
 
         return self.parse_output(output_of_dl, config_path=config_path, serialize=False)
+
+    def train(self, dataset: List = None)-> None:
+        assert len(dataset) > 0
+        print('No training for Dl-learner algorithms')
+
+    def test(self, dataset: List = None, max_run_time=None):
+        assert len(dataset) > 0
+        if max_run_time is None:
+            print('Max run time is set to 3')
+            max_run_time = 3
+
+        for i in dataset:
+            print(i)
+            exit(1)

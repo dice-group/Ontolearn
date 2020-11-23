@@ -138,6 +138,12 @@ def get_full_iri(x):
 
 
 def create_logger(*, name, p):
+    """
+    @todos We should create a better logging.
+    @param name:
+    @param p:
+    @return:
+    """
     logger = logging.getLogger(name)
 
     logger.setLevel(logging.INFO)

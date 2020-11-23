@@ -123,15 +123,16 @@ class BaseConceptLearner(metaclass=ABCMeta):
             owl_concepts_to_ignore = set()
             for i in ignore:  # iterate over string representations of ALC concepts.
                 found = False
-                for k, v in self.kb.concepts.items():
+                for k, v in self.kb.uri_to_concepts.items():
                     if (i == k) or (i == v.str):
                         found = True
                         owl_concepts_to_ignore.add(v)
                         break
                 if found is False:
                     raise ValueError(
-                        '{0} could not found in \n{1} \n{2}.'.format(i, [_.str for _ in self.kb.concepts.values()],
-                                                                     [uri for uri in self.kb.concepts.keys()]))
+                        '{0} could not found in \n{1} \n{2}.'.format(i,
+                                                                     [_.str for _ in self.kb.uri_to_concepts.values()],
+                                                                     [uri for uri in self.kb.uri_to_concepts.keys()]))
             self.concepts_to_ignore = owl_concepts_to_ignore  # use ALC concept representation instead of URI.
 
     def initialize_learning_problem(self, pos: Set[AnyStr], neg: Set[AnyStr], all_instances, ignore: Set[AnyStr]):
@@ -141,7 +142,10 @@ class BaseConceptLearner(metaclass=ABCMeta):
         2) Sample negative examples if necessary.
         3) Initialize the root and search tree.
         """
-        self.reset_state()
+        self.default_state_concept_learner()
+
+        assert len(self.kb.uri_to_concepts) > 0
+
         assert isinstance(pos, set) and isinstance(neg, set) and isinstance(all_instances, set)
         assert 0 < len(pos) < len(all_instances) and len(all_instances) > len(neg)
         if self.verbose > 1:
@@ -200,6 +204,10 @@ class BaseConceptLearner(metaclass=ABCMeta):
         assert uri_all_concepts == uri_all_concepts_loaded
         # check the base iri of ontologeis
 
+    def clean(self):
+        self.concepts_to_nodes.clear()
+        self.concepts_to_ignore.clear()
+
     def terminate(self):
         """
 
@@ -217,6 +225,8 @@ class BaseConceptLearner(metaclass=ABCMeta):
             self.logger.info(t)
         if self.verbose > 1:
             self.search_tree.show_search_tree('Final')
+
+        self.clean()
         return self
 
     def get_metric_key(self, key: str):
@@ -289,14 +299,14 @@ class BaseConceptLearner(metaclass=ABCMeta):
     def number_of_tested_concepts(self):
         return self.quality_func.applied
 
-    def reset_state(self):
+    def default_state_concept_learner(self):
         """
         At each problem initialization, we recent previous info if available.
         @return:
         """
         self.concepts_to_nodes.clear()
         self.concepts_to_ignore.clear()
-        self.kb.clean()
+        # self.kb.clean()
         self.search_tree.clean()
         self.quality_func.clean()
         self.heuristic_func.clean()
@@ -307,7 +317,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         except AssertionError:
             print('|Search Tree|:{0}'.format(len(self.search_tree)))
 
-        o1 = self.kb.world.get_ontology('https://dice-research.org/predictions/'+str(time.time()))
+        o1 = self.kb.world.get_ontology('https://dice-research.org/predictions/' + str(time.time()))
         o1.imported_ontologies.append(self.kb.onto)
         with o1:
             class f1_score(AnnotationProperty):  # Each concept has single f1 score

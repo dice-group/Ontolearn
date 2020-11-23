@@ -29,18 +29,23 @@ random.seed(1)
 
 class DrillAverage(AbstractDrill, BaseConceptLearner):
     def __init__(self, knowledge_base, refinement_operator=None, quality_func=F1(),
+                 pretrained_model_path=None,
                  iter_bound=None, max_num_of_concepts_tested=None, verbose=None,
                  terminate_on_goal=True, instance_embeddings=None, ignored_concepts=None,
                  max_len_replay_memory=None, batch_size=None, epsilon_decay=None, epsilon_min=None,
                  num_epochs_per_replay=None, learning_rate=None,
-                 max_run_time=5,
-                 num_of_sequential_actions=None, num_episode=None):
+                 max_run_time=5, num_of_sequential_actions=None, num_episode=None):
         self.sample_size = 1
         self.heuristic_func = DrillHeuristic(mode='average',
                                              input_shape=(4 * self.sample_size, instance_embeddings.shape[1]))
+        if pretrained_model_path :
+            m = torch.load(pretrained_model_path, torch.device('cpu'))
+            self.heuristic_func.model.load_state_dict(m)
+
         if refinement_operator is None:
             refinement_operator = LengthBasedRefinement(kb=knowledge_base)
-        AbstractDrill.__init__(self, model=self.heuristic_func.model, reward_func=Reward(),
+        AbstractDrill.__init__(self,
+                               drill_heuristic=self.heuristic_func, reward_func=Reward(),
                                max_len_replay_memory=max_len_replay_memory,
                                batch_size=batch_size, epsilon_min=epsilon_min,
                                num_epochs_per_replay=num_epochs_per_replay,
@@ -59,9 +64,7 @@ class DrillAverage(AbstractDrill, BaseConceptLearner):
                                     max_num_of_concepts_tested=max_num_of_concepts_tested,
                                     max_run_time=max_run_time,
                                     verbose=verbose, name='DrillAverage')
-
         self.experiences = Experience(maxlen=self.max_len_replay_memory)
-        self.emb_pos, self.emb_neg = None, None
 
     def represent_examples(self, *, pos: Set[AnyStr], neg: Set[AnyStr]) -> Tuple[torch.Tensor, torch.Tensor]:
         """
@@ -87,10 +90,49 @@ class DrillAverage(AbstractDrill, BaseConceptLearner):
         emb_neg = emb_neg.view(1, 1, emb_neg.shape[0])
         return emb_pos, emb_neg
 
+    def init_training(self, pos_uri: Set[AnyStr], neg_uri: Set[AnyStr]) -> None:
+        """
+
+        @param pos_uri: A set of positive examples where each example corresponds to a string representation of an individual/instance.
+        @param neg_uri: A set of negative examples where each example corresponds to a string representation of an individual/instance.
+        @return:
+        """
+        # (1) String to Owlready2 conversion of examples.
+        self.reward_func.pos = set(self.kb.convert_uri_instance_to_obj_from_iterable(pos_uri))
+        self.reward_func.neg = set(self.kb.convert_uri_instance_to_obj_from_iterable(neg_uri))
+
+        # (3) Obtain embeddings of positive and negative examples.
+        self.emb_pos = torch.tensor(self.instance_embeddings.loc[list(pos_uri)].values, dtype=torch.float32)
+        self.emb_neg = torch.tensor(self.instance_embeddings.loc[list(neg_uri)].values, dtype=torch.float32)
+
+        # (3) Take the mean of positive and negative examples and reshape it into (1,1,embedding_dim) for mini batching.
+        self.emb_pos = torch.mean(self.emb_pos, dim=0)
+        self.emb_pos = self.emb_pos.view(1, 1, self.emb_pos.shape[0])
+        self.emb_neg = torch.mean(self.emb_neg, dim=0)
+        self.emb_neg = self.emb_neg.view(1, 1, self.emb_neg.shape[0])
+        # Sanity checking
+        if torch.isnan(self.emb_pos).any() or torch.isinf(self.emb_pos).any():
+            print(string_balanced_pos)
+            raise ValueError('invalid value detected in E+,\n{0}'.format(self.emb_pos))
+        if torch.isnan(self.emb_neg).any() or torch.isinf(self.emb_neg).any():
+            raise ValueError('invalid value detected in E-,\n{0}'.format(self.emb_neg))
+
+        # Default exploration exploitation tradeoff.
+        self.epsilon = 1
+
+    def terminate_training(self):
+        self.save_weights()
+        # json serialize
+        with open(self.storage_path + '/seen_lp.json', 'w') as file_descriptor:
+            json.dump(self.seen_examples, file_descriptor, indent=3)
+        self.kb.clean()
+        return self
+
     def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], ignore: Set[AnyStr] = None):
         """
         Find hypotheses that explain pos and neg.
         """
+        self.default_state_rl()
         self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances, ignore=ignore)
         self.emb_pos, self.emb_neg = self.represent_examples(pos=pos, neg=neg)
         self.start_time = time.time()
@@ -112,108 +154,27 @@ class DrillAverage(AbstractDrill, BaseConceptLearner):
                 return self.terminate()
         return self.terminate()
 
-    def train(self, *args, **kwargs):
-        raise ValueError
-
-    def train_on_single_example(self, pos, neg, n: int = 1):
-        for _ in range(n):  # repeat training over learning problems.
-            self.rl_learning_loop(pos_uri=pos, neg_uri=neg)
-        self.reset_state()
-        return self
-
-    def train_on_concepts(self, learning_problems, n: int = 1):
-        """
-        Train RL agent on input learning problems n times.
-        For each learning problem:
-        (1) Obtain balanced E+ and E- from a syntactic goal node.
-        (2) Input E+ and E- into rl agent learning loop.
-        (3) Store parameterized model/net/Drill/Pytorch model.
-        (4) Store E+ and E-.
-
-        @param learning_problems:
-        @param n:
-        @return:
-        """
-        for _ in range(n):  # repeat training over learning problems.
-            for (balanced_pos, balanced_neg, goal_concept) in self.preprocess_lp(learning_problems):
-                self.rl_learning_loop(pos_uri=balanced_pos, neg_uri=balanced_neg)
-                # Save model.
-                torch.save(self.model.state_dict(), self.storage_path + '/model.pth')
-                self.seen_examples.setdefault(str(n) + '_' + goal_concept.concept.str, dict()).update(
-                    {'Positives': list(balanced_pos), 'Negatives': list(balanced_neg)})
-        # json serialize
-        with open(self.storage_path + '/seen_lp.json', 'w') as file_descriptor:
-            json.dump(self.seen_examples, file_descriptor, indent=3)
-        self.reset_state()
-        return self
-
-    def predict_Q(self, current_state: Node, next_states: List[Node]) -> torch.Tensor:
-        """
-        Predict promise of next states given current state.
-        @param current_state:
-        @param next_states:
-        @return: predicted Q values.
-        """
-        self.assign_embeddings(current_state)
-        assert len(next_states) > 0
-        with torch.no_grad():
-            self.model.eval()
-            # create batch batch.
-            next_state_batch = []
-            for _ in next_states:
-                self.assign_embeddings(_)
-                next_state_batch.append(_.concept.embeddings)
-            next_state_batch = torch.cat(next_state_batch, dim=0)
-            ds = PrepareBatchOfPrediction(current_state.concept.embeddings,
-                                          next_state_batch,
-                                          self.emb_pos,
-                                          self.emb_neg)
-            predictions = self.model.forward(ds.get_all())
-        return predictions
-
-    def init_training(self, pos_uri: Set[AnyStr], neg_uri: Set[AnyStr]):
-        """
-
-        @param pos_uri:
-        @param neg_uri:
-        @return:
-        """
-        self.reset_state()
-        # string to owlready2 object conversion
-        self.reward_func.pos = set(self.kb.convert_uri_instance_to_obj_from_iterable(pos_uri))
-        self.reward_func.neg = set(self.kb.convert_uri_instance_to_obj_from_iterable(neg_uri))
-
-        self.emb_pos = torch.tensor(self.instance_embeddings.loc[list(pos_uri)].values,
-                                    dtype=torch.float32)
-        self.emb_neg = torch.tensor(self.instance_embeddings.loc[list(neg_uri)].values,
-                                    dtype=torch.float32)
-        # take mean and reshape it into (1,1,embedding_dim) for mini batching.
-        self.emb_pos = torch.mean(self.emb_pos, dim=0)
-        self.emb_pos = self.emb_pos.view(1, 1, self.emb_pos.shape[0])
-        self.emb_neg = torch.mean(self.emb_neg, dim=0)
-        self.emb_neg = self.emb_neg.view(1, 1, self.emb_neg.shape[0])
-        # Sanity checking
-        if torch.isnan(self.emb_pos).any() or torch.isinf(self.emb_pos).any():
-            print(string_balanced_pos)
-            raise ValueError('invalid value detected in E+,\n{0}'.format(self.emb_pos))
-        if torch.isnan(self.emb_neg).any() or torch.isinf(self.emb_neg).any():
-            raise ValueError('invalid value detected in E-,\n{0}'.format(self.emb_neg))
-        self.epsilon = 1
-
 
 class DrillSample(AbstractDrill, BaseConceptLearner):
     def __init__(self, knowledge_base, refinement_operator=None,
+                 pretrained_model_path=None,
                  quality_func=F1(), iter_bound=None, num_episode=None, max_num_of_concepts_tested=None, verbose=None,
                  sample_size=10, terminate_on_goal=True, instance_embeddings=None,
                  max_run_time=5,
                  ignored_concepts=None, num_of_sequential_actions=None):
         self.sample_size = sample_size
-        self.heuristic_func = DrillHeuristic(mode='sample',
-                                             input_shape=(4 * self.sample_size, instance_embeddings.shape[1]))
+        if pretrained_model_path is None:
+            self.heuristic_func = DrillHeuristic(mode='sample',
+                                                 input_shape=(4 * self.sample_size, instance_embeddings.shape[1]))
+        else:
+            self.heuristic_func = DrillHeuristic(mode='sample',
+                                                 input_shape=(4 * self.sample_size, instance_embeddings.shape[1]))
+            m = torch.load(pretrained_model_path, torch.device('cpu'))
+            self.heuristic_func.model.load_state_dict(m)
         if refinement_operator is None:
             refinement_operator = LengthBasedRefinement(kb=knowledge_base)
 
-        AbstractDrill.__init__(self, model=self.heuristic_func.model,
+        AbstractDrill.__init__(self, drill_heuristic=self.heuristic_func,
                                instance_embeddings=instance_embeddings,
                                reward_func=Reward(), num_episode=num_episode,
                                representation_mode='sampling',
@@ -231,9 +192,8 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
                                     verbose=verbose,
                                     name='DrillSample')
         self.experiences = Experience(maxlen=self.max_len_replay_memory)
-        self.emb_pos, self.emb_neg = None, None
 
-    def represent_examples(self, *, pos, neg) -> None:
+    def represent_examples(self, *, pos, neg) -> Tuple[torch.Tensor, torch.Tensor]:
         """
 
         @param pos:
@@ -243,26 +203,78 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
         assert isinstance(pos, set) and isinstance(neg, set)
         try:
             assert len(pos) >= self.sample_size and len(neg) >= self.sample_size
-        except:
+        except AssertionError:
             print(len(pos))
             print(len(neg))
             exit(1)
         sampled_pos = random.sample(pos, self.sample_size)
         sampled_neg = random.sample(neg, self.sample_size)
 
-        self.emb_pos = torch.tensor(self.instance_embeddings.loc[sampled_pos].values,
-                                    dtype=torch.float32)
-        self.emb_neg = torch.tensor(self.instance_embeddings.loc[list(sampled_neg)].values,
-                                    dtype=torch.float32)
-        self.emb_pos = self.emb_pos.view(1, self.sample_size, self.instance_embeddings.shape[1])
-        self.emb_neg = self.emb_neg.view(1, self.sample_size, self.instance_embeddings.shape[1])
+        emb_pos = torch.tensor(self.instance_embeddings.loc[sampled_pos].values,
+                               dtype=torch.float32)
+        emb_neg = torch.tensor(self.instance_embeddings.loc[list(sampled_neg)].values,
+                               dtype=torch.float32)
+        emb_pos = emb_pos.view(1, self.sample_size, self.instance_embeddings.shape[1])
+        emb_neg = emb_neg.view(1, self.sample_size, self.instance_embeddings.shape[1])
+        return emb_pos, emb_neg
+
+    def init_training(self, pos_uri: Set[AnyStr], neg_uri: Set[AnyStr]) -> None:
+        """
+        Initialize training for DrillSample.
+
+        @param pos_uri: A set of positive examples where each example corresponds to a string representation of an individual/instance.
+        @param neg_uri: A set of negative examples where each example corresponds to a string representation of an individual/instance.
+        @return:
+        """
+        # (1) Sample from positive and negative examples without replacement.
+        if self.sample_size > len(pos_uri):
+            print('positive examples less than ', self.sample_size)
+            pos_uri = list(pos_uri)
+        else:
+            pos_uri = random.sample(pos_uri, self.sample_size)
+
+        if self.sample_size > len(neg_uri):
+            print('negative examples less than ', self.sample_size)
+            neg_uri = list(neg_uri)
+        else:
+            neg_uri = random.sample(neg_uri, self.sample_size)
+
+        self.logger.info('Sampled E^+:[{0}] \t Sampled E^-:[{1}]'.format(len(pos_uri), len(neg_uri)))
+
+        # (2) String to Owlready2 conversion of SAMPLED examples
+        self.reward_func.pos = set(self.kb.convert_uri_instance_to_obj_from_iterable(pos_uri))
+        self.reward_func.neg = set(self.kb.convert_uri_instance_to_obj_from_iterable(neg_uri))
+
+        # (3) Assign embeddings of sampled examples.
+        self.emb_pos = torch.tensor(self.instance_embeddings.loc[pos_uri].values, dtype=torch.float32)
+        self.emb_neg = torch.tensor(self.instance_embeddings.loc[neg_uri].values, dtype=torch.float32)
+        # (3.1) ADD ZEROS if lengths of the provided positive or negative examples are less than the required sample size
+        if len(self.emb_pos) < self.sample_size:
+            num_rows_to_fill = self.sample_size - len(self.emb_pos)
+            self.emb_pos = torch.cat((torch.zeros(num_rows_to_fill, self.instance_embeddings.shape[1]), self.emb_pos))
+        if len(self.emb_neg) < self.sample_size:
+            num_rows_to_fill = self.sample_size - len(self.emb_neg)
+            self.emb_neg = torch.cat((torch.zeros(num_rows_to_fill, self.instance_embeddings.shape[1]), self.emb_neg))
+
+        self.emb_pos = self.emb_pos.view(1, self.emb_pos.shape[0], self.emb_pos.shape[1])
+        self.emb_neg = self.emb_neg.view(1, self.emb_neg.shape[0], self.emb_neg.shape[1])
+
+        # Sanity checking
+        if torch.isnan(self.emb_pos).any() or torch.isinf(self.emb_pos).any():
+            print(string_balanced_pos)
+            raise ValueError('invalid value detected in E+,\n{0}'.format(self.emb_pos))
+        if torch.isnan(self.emb_neg).any() or torch.isinf(self.emb_neg).any():
+            raise ValueError('invalid value detected in E-,\n{0}'.format(self.emb_neg))
+        # Default exploration exploitation tradeoff.
+        self.epsilon = 1
 
     def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], ignore: Set[AnyStr] = None):
         """
         Find hypotheses that explain pos and neg.
         """
+        self.default_state_rl()
         self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances, ignore=ignore)
-        self.represent_examples(pos=pos, neg=neg)
+        self.emb_pos, self.emb_neg = self.represent_examples(pos=pos, neg=neg)
         self.start_time = time.time()
         for i in range(1, self.iter_bound):
             most_promising = self.next_node_to_expand(i)
@@ -282,85 +294,94 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
                 return self.terminate()
         return self.terminate()
 
-    def old_train(self, learning_problems: Iterable[Node], n: int = 1):
-        """
-        Train RL agent on input learning problems n times.
-        For each learning problem:
-        (1) Obtain balanced E+ and E- from a syntactic goal node.
-        (2) Input E+ and E- into rl agent learning loop.
-        (3) Store parameterized model/net/Drill/Pytorch model.
-        (4) Store E+ and E-.
-
-        @param learning_problems:
-        @param n:
-        @return:
-        """
-        for _ in range(n):  # repeat training over learning problems.
-            for (balanced_pos, balanced_neg, goal_concept) in self.preprocess_lp(learning_problems):
-                self.rl_learning_loop(pos_uri=balanced_pos, neg_uri=balanced_neg)
-                # Save model.
-                torch.save(self.model.state_dict(), self.storage_path + '/model.pth')
-                self.seen_examples.setdefault(str(n) + '_' + goal_concept.concept.str, dict()).update(
-                    {'Positives': list(balanced_pos), 'Negatives': list(balanced_neg)})
+    def terminate_training(self):
+        self.save_weights()
         # json serialize
         with open(self.storage_path + '/seen_lp.json', 'w') as file_descriptor:
             json.dump(self.seen_examples, file_descriptor, indent=3)
-        self.reset_state()
+        self.concepts_to_nodes.clear()
         return self
 
-    def train(self, dataset: Iterable, n: int = 1):
+class DrillRecurrent(AbstractDrill, BaseConceptLearner):
+    def __init__(self, knowledge_base, refinement_operator=None,
+                 pretrained_model_path=None,
+                 quality_func=F1(), iter_bound=None, num_episode=None, max_num_of_concepts_tested=None, verbose=None,
+                 sample_size=10, terminate_on_goal=True, instance_embeddings=None,
+                 max_run_time=5,
+                 ignored_concepts=None, num_of_sequential_actions=None):
+
+        raise ValueError
+        self.sample_size = sample_size
+        if pretrained_model_path is None:
+            self.heuristic_func = DrillHeuristic(mode='sample',
+                                                 input_shape=(4 * self.sample_size, instance_embeddings.shape[1]))
+        else:
+            self.heuristic_func = DrillHeuristic(mode='sample',
+                                                 input_shape=(4 * self.sample_size, instance_embeddings.shape[1]))
+            m = torch.load(pretrained_model_path, torch.device('cpu'))
+            self.heuristic_func.model.load_state_dict(m)
+        if refinement_operator is None:
+            refinement_operator = LengthBasedRefinement(kb=knowledge_base)
+
+        AbstractDrill.__init__(self, drill_heuristic=self.heuristic_func,
+                               instance_embeddings=instance_embeddings,
+                               reward_func=Reward(), num_episode=num_episode,
+                               representation_mode='sampling',
+                               num_of_sequential_actions=num_of_sequential_actions)
+        BaseConceptLearner.__init__(self, knowledge_base=knowledge_base,
+                                    refinement_operator=refinement_operator,
+                                    search_tree=SearchTreePriorityQueue(),
+                                    quality_func=quality_func,
+                                    heuristic_func=self.heuristic_func,
+                                    ignored_concepts=ignored_concepts,
+                                    terminate_on_goal=terminate_on_goal,
+                                    iter_bound=iter_bound,
+                                    max_num_of_concepts_tested=max_num_of_concepts_tested,
+                                    max_run_time=max_run_time,
+                                    verbose=verbose,
+                                    name='DrillSample')
+        self.experiences = Experience(maxlen=self.max_len_replay_memory)
+
+    def represent_examples(self, *, pos, neg) -> Tuple[torch.Tensor, torch.Tensor]:
         """
 
-        @param dataset:
-        @param n:
+        @param pos:
+        @param neg:
         @return:
         """
-        for _ in range(n):  # repeat training over learning problems.
-            for (alc_concept_str, positives, negatives) in dataset:
-                self.logger.info(
-                    'Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
-                self.rl_learning_loop(pos_uri=positives, neg_uri=negatives)
+        assert isinstance(pos, set) and isinstance(neg, set)
+        try:
+            assert len(pos) >= self.sample_size and len(neg) >= self.sample_size
+        except AssertionError:
+            print(len(pos))
+            print(len(neg))
+            exit(1)
+        sampled_pos = random.sample(pos, self.sample_size)
+        sampled_neg = random.sample(neg, self.sample_size)
 
-    def test(self, dataset: Iterable, max_run_time: int = None):
+        emb_pos = torch.tensor(self.instance_embeddings.loc[sampled_pos].values,
+                               dtype=torch.float32)
+        emb_neg = torch.tensor(self.instance_embeddings.loc[list(sampled_neg)].values,
+                               dtype=torch.float32)
+        emb_pos = emb_pos.view(1, self.sample_size, self.instance_embeddings.shape[1])
+        emb_neg = emb_neg.view(1, self.sample_size, self.instance_embeddings.shape[1])
+        return emb_pos, emb_neg
+
+    def init_training(self, pos_uri: Set[AnyStr], neg_uri: Set[AnyStr]) -> None:
         """
+        Initialize training for DrillSample.
 
-        @param dataset:
-        @param n:
+        @param pos_uri: A set of positive examples where each example corresponds to a string representation of an individual/instance.
+        @param neg_uri: A set of negative examples where each example corresponds to a string representation of an individual/instance.
         @return:
         """
-
-        results = []
-        assert isinstance(dataset, Iterable)
-        for (alc_concept_str, positives, negatives) in dataset:
-            self.logger.info(
-                'Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
-            self.fit(pos=positives, neg=negatives)
-            h = self.best_hypotheses(1)[0]
-
-            results.append({'Target.': alc_concept_str,
-                            'pos': positives,
-                            'neg': negatives,
-                            'Pred.': h.concept.str,
-                            'Quality': h.quality,
-                            'Ind.': h.concept.instances})
-        return results
-
-    def init_training(self, pos_uri: Set[AnyStr], neg_uri: Set[AnyStr]):
-        """
-
-        @param pos_uri:
-        @param neg_uri:
-        @return:
-        """
-        # @todos Do we need to reset ?!
-        # self.reset_state()
-
         # (1) Sample from positive and negative examples without replacement.
         if self.sample_size > len(pos_uri):
             print('positive examples less than ', self.sample_size)
             pos_uri = list(pos_uri)
         else:
             pos_uri = random.sample(pos_uri, self.sample_size)
+
         if self.sample_size > len(neg_uri):
             print('negative examples less than ', self.sample_size)
             neg_uri = list(neg_uri)
@@ -369,19 +390,17 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
 
         self.logger.info('Sampled E^+:[{0}] \t Sampled E^-:[{1}]'.format(len(pos_uri), len(neg_uri)))
 
-        # (2) Convert (1) into owlready2 objects.
+        # (2) String to Owlready2 conversion of SAMPLED examples
         self.reward_func.pos = set(self.kb.convert_uri_instance_to_obj_from_iterable(pos_uri))
         self.reward_func.neg = set(self.kb.convert_uri_instance_to_obj_from_iterable(neg_uri))
 
-        # (3) Assign embeddings from (1).
+        # (3) Assign embeddings of sampled examples.
         self.emb_pos = torch.tensor(self.instance_embeddings.loc[pos_uri].values, dtype=torch.float32)
         self.emb_neg = torch.tensor(self.instance_embeddings.loc[neg_uri].values, dtype=torch.float32)
-
-        # add zeros. if necessary.
+        # (3.1) ADD ZEROS if lengths of the provided positive or negative examples are less than the required sample size
         if len(self.emb_pos) < self.sample_size:
             num_rows_to_fill = self.sample_size - len(self.emb_pos)
             self.emb_pos = torch.cat((torch.zeros(num_rows_to_fill, self.instance_embeddings.shape[1]), self.emb_pos))
-
         if len(self.emb_neg) < self.sample_size:
             num_rows_to_fill = self.sample_size - len(self.emb_neg)
             self.emb_neg = torch.cat((torch.zeros(num_rows_to_fill, self.instance_embeddings.shape[1]), self.emb_neg))
@@ -395,48 +414,205 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
             raise ValueError('invalid value detected in E+,\n{0}'.format(self.emb_pos))
         if torch.isnan(self.emb_neg).any() or torch.isinf(self.emb_neg).any():
             raise ValueError('invalid value detected in E-,\n{0}'.format(self.emb_neg))
+        # Default exploration exploitation tradeoff.
         self.epsilon = 1
 
-    def predict_Q(self, current_state: Node, next_states: List[Node]) -> torch.Tensor:
+    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], ignore: Set[AnyStr] = None):
         """
-        Predict promise of next states given current state.
-        @param current_state:
-        @param next_states:
-        @return: predicted Q values.
+        Find hypotheses that explain pos and neg.
         """
-        self.assign_embeddings(current_state)
-        assert len(next_states) > 0
-        with torch.no_grad():
-            self.model.eval()
-            # create batch batch.
-            next_state_batch = []
-            for _ in next_states:
-                self.assign_embeddings(_)
-                next_state_batch.append(_.concept.embeddings)
-            next_state_batch = torch.cat(next_state_batch, dim=0)
-            ds = PrepareBatchOfPrediction(current_state.concept.embeddings,
-                                          next_state_batch,
-                                          self.emb_pos,
-                                          self.emb_neg)
-            predictions = self.model.forward(ds.get_all())
-        return predictions
+        self.default_state_rl()
+        self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances, ignore=ignore)
+        self.emb_pos, self.emb_neg = self.represent_examples(pos=pos, neg=neg)
+        self.start_time = time.time()
+        for i in range(1, self.iter_bound):
+            most_promising = self.next_node_to_expand(i)
+            refinements = [ref for ref in self.apply_rho(most_promising)]
+            if len(refinements) == 0:
+                most_promising.heuristic = -1
+                self.search_tree.add(most_promising)
+                continue
+            predicted_Q_values = self.predict_Q(current_state=most_promising, next_states=refinements)
+            self.goal_found = self.update_search(refinements, predicted_Q_values)
+            if self.goal_found:
+                if self.terminate_on_goal:
+                    return self.terminate()
+            if time.time() - self.start_time > self.max_run_time:
+                return self.terminate()
+            if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
+                return self.terminate()
+        return self.terminate()
 
+    def terminate_training(self):
+        self.save_weights()
+        # json serialize
+        with open(self.storage_path + '/seen_lp.json', 'w') as file_descriptor:
+            json.dump(self.seen_examples, file_descriptor, indent=3)
+        self.concepts_to_nodes.clear()
+        return self
+
+class DrillTransformer(AbstractDrill, BaseConceptLearner):
+    def __init__(self, knowledge_base, refinement_operator=None,
+                 pretrained_model_path=None,
+                 quality_func=F1(), iter_bound=None, num_episode=None, max_num_of_concepts_tested=None, verbose=None,
+                 sample_size=10, terminate_on_goal=True, instance_embeddings=None,
+                 max_run_time=5,
+                 ignored_concepts=None, num_of_sequential_actions=None):
+
+        raise ValueError
+        self.sample_size = sample_size
+        if pretrained_model_path is None:
+            self.heuristic_func = DrillHeuristic(mode='sample',
+                                                 input_shape=(4 * self.sample_size, instance_embeddings.shape[1]))
+        else:
+            self.heuristic_func = DrillHeuristic(mode='sample',
+                                                 input_shape=(4 * self.sample_size, instance_embeddings.shape[1]))
+            m = torch.load(pretrained_model_path, torch.device('cpu'))
+            self.heuristic_func.model.load_state_dict(m)
+        if refinement_operator is None:
+            refinement_operator = LengthBasedRefinement(kb=knowledge_base)
+
+        AbstractDrill.__init__(self, drill_heuristic=self.heuristic_func,
+                               instance_embeddings=instance_embeddings,
+                               reward_func=Reward(), num_episode=num_episode,
+                               representation_mode='sampling',
+                               num_of_sequential_actions=num_of_sequential_actions)
+        BaseConceptLearner.__init__(self, knowledge_base=knowledge_base,
+                                    refinement_operator=refinement_operator,
+                                    search_tree=SearchTreePriorityQueue(),
+                                    quality_func=quality_func,
+                                    heuristic_func=self.heuristic_func,
+                                    ignored_concepts=ignored_concepts,
+                                    terminate_on_goal=terminate_on_goal,
+                                    iter_bound=iter_bound,
+                                    max_num_of_concepts_tested=max_num_of_concepts_tested,
+                                    max_run_time=max_run_time,
+                                    verbose=verbose,
+                                    name='DrillSample')
+        self.experiences = Experience(maxlen=self.max_len_replay_memory)
+
+    def represent_examples(self, *, pos, neg) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+
+        @param pos:
+        @param neg:
+        @return:
+        """
+        assert isinstance(pos, set) and isinstance(neg, set)
+        try:
+            assert len(pos) >= self.sample_size and len(neg) >= self.sample_size
+        except AssertionError:
+            print(len(pos))
+            print(len(neg))
+            exit(1)
+        sampled_pos = random.sample(pos, self.sample_size)
+        sampled_neg = random.sample(neg, self.sample_size)
+
+        emb_pos = torch.tensor(self.instance_embeddings.loc[sampled_pos].values,
+                               dtype=torch.float32)
+        emb_neg = torch.tensor(self.instance_embeddings.loc[list(sampled_neg)].values,
+                               dtype=torch.float32)
+        emb_pos = emb_pos.view(1, self.sample_size, self.instance_embeddings.shape[1])
+        emb_neg = emb_neg.view(1, self.sample_size, self.instance_embeddings.shape[1])
+        return emb_pos, emb_neg
+
+    def init_training(self, pos_uri: Set[AnyStr], neg_uri: Set[AnyStr]) -> None:
+        """
+        Initialize training for DrillSample.
+
+        @param pos_uri: A set of positive examples where each example corresponds to a string representation of an individual/instance.
+        @param neg_uri: A set of negative examples where each example corresponds to a string representation of an individual/instance.
+        @return:
+        """
+        # (1) Sample from positive and negative examples without replacement.
+        if self.sample_size > len(pos_uri):
+            print('positive examples less than ', self.sample_size)
+            pos_uri = list(pos_uri)
+        else:
+            pos_uri = random.sample(pos_uri, self.sample_size)
+
+        if self.sample_size > len(neg_uri):
+            print('negative examples less than ', self.sample_size)
+            neg_uri = list(neg_uri)
+        else:
+            neg_uri = random.sample(neg_uri, self.sample_size)
+
+        self.logger.info('Sampled E^+:[{0}] \t Sampled E^-:[{1}]'.format(len(pos_uri), len(neg_uri)))
+
+        # (2) String to Owlready2 conversion of SAMPLED examples
+        self.reward_func.pos = set(self.kb.convert_uri_instance_to_obj_from_iterable(pos_uri))
+        self.reward_func.neg = set(self.kb.convert_uri_instance_to_obj_from_iterable(neg_uri))
+
+        # (3) Assign embeddings of sampled examples.
+        self.emb_pos = torch.tensor(self.instance_embeddings.loc[pos_uri].values, dtype=torch.float32)
+        self.emb_neg = torch.tensor(self.instance_embeddings.loc[neg_uri].values, dtype=torch.float32)
+        # (3.1) ADD ZEROS if lengths of the provided positive or negative examples are less than the required sample size
+        if len(self.emb_pos) < self.sample_size:
+            num_rows_to_fill = self.sample_size - len(self.emb_pos)
+            self.emb_pos = torch.cat((torch.zeros(num_rows_to_fill, self.instance_embeddings.shape[1]), self.emb_pos))
+        if len(self.emb_neg) < self.sample_size:
+            num_rows_to_fill = self.sample_size - len(self.emb_neg)
+            self.emb_neg = torch.cat((torch.zeros(num_rows_to_fill, self.instance_embeddings.shape[1]), self.emb_neg))
+
+        self.emb_pos = self.emb_pos.view(1, self.emb_pos.shape[0], self.emb_pos.shape[1])
+        self.emb_neg = self.emb_neg.view(1, self.emb_neg.shape[0], self.emb_neg.shape[1])
+
+        # Sanity checking
+        if torch.isnan(self.emb_pos).any() or torch.isinf(self.emb_pos).any():
+            print(string_balanced_pos)
+            raise ValueError('invalid value detected in E+,\n{0}'.format(self.emb_pos))
+        if torch.isnan(self.emb_neg).any() or torch.isinf(self.emb_neg).any():
+            raise ValueError('invalid value detected in E-,\n{0}'.format(self.emb_neg))
+        # Default exploration exploitation tradeoff.
+        self.epsilon = 1
+
+    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], ignore: Set[AnyStr] = None):
+        """
+        Find hypotheses that explain pos and neg.
+        """
+        self.default_state_rl()
+        self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances, ignore=ignore)
+        self.emb_pos, self.emb_neg = self.represent_examples(pos=pos, neg=neg)
+        self.start_time = time.time()
+        for i in range(1, self.iter_bound):
+            most_promising = self.next_node_to_expand(i)
+            refinements = [ref for ref in self.apply_rho(most_promising)]
+            if len(refinements) == 0:
+                most_promising.heuristic = -1
+                self.search_tree.add(most_promising)
+                continue
+            predicted_Q_values = self.predict_Q(current_state=most_promising, next_states=refinements)
+            self.goal_found = self.update_search(refinements, predicted_Q_values)
+            if self.goal_found:
+                if self.terminate_on_goal:
+                    return self.terminate()
+            if time.time() - self.start_time > self.max_run_time:
+                return self.terminate()
+            if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
+                return self.terminate()
+        return self.terminate()
+
+    def terminate_training(self):
+        self.save_weights()
+        # json serialize
+        with open(self.storage_path + '/seen_lp.json', 'w') as file_descriptor:
+            json.dump(self.seen_examples, file_descriptor, indent=3)
+        self.concepts_to_nodes.clear()
+        return self
 
 class DrillHeuristic(AbstractScorer):
-    def __init__(self, pos=None, neg=None, model_path=None, model=None, mode=None, input_shape=None):
+    def __init__(self, pos=None, neg=None,model=None, mode=None, input_shape=None):
         super().__init__(pos, neg, unlabelled=None)
-        self.name = 'DrillHeuristic'
         self.mode = mode
-        self.length, self.width = input_shape
+        self.name = 'DrillHeuristic_' + mode
         if model:
             self.model = model
         elif self.mode == 'average':
+            self.length, self.width = input_shape
             self.model = Drill(input_shape=(self.length, self.width))
         elif self.mode == 'sample':
-
+            self.length, self.width = input_shape
             self.model = Drill(input_shape=(self.length, self.width))
-        elif model_path:
-            raise ValueError
         else:
             raise ValueError
         """

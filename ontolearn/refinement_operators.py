@@ -15,11 +15,6 @@ class LengthBasedRefinement(BaseRefinement):
         super().__init__(kb)
         self.max_child_length = max_child_length
 
-    def clean(self):
-        for k, v in self.concepts_to_nodes.items():
-            v.clean()
-            k.embeddings = None
-
     def getNode(self, c: Concept, parent_node=None, root=False):
 
         if c in self.concepts_to_nodes:
@@ -352,7 +347,7 @@ class ModifiedCELOERefinement(BaseRefinement):
         else:
             raise ValueError
 
-        # @todos could it be possible?
+        # @Todo could it be possible? Investigate.
         for i in refinement:
             if i is not None:
                 yield i
@@ -361,9 +356,6 @@ class ModifiedCELOERefinement(BaseRefinement):
 class CustomRefinementOperator(BaseRefinement):
     def __init__(self, kb: KnowledgeBase = None, max_size_of_concept=1000, min_size_of_concept=1):
         super().__init__(kb, max_size_of_concept, min_size_of_concept)
-
-    def clean(self, *args, **kwargs):
-        pass
 
     def getNode(self, c: Concept, parent_node=None, root=False):
 
@@ -491,11 +483,7 @@ class CustomRefinementOperator(BaseRefinement):
             raise ValueError
 
 
-class ExampleRefinement(BaseRefinement):
-    """
-     A top down/downward refinement operator refinement operator in ALC.
-    """
-
+class oldExampleRefinement(BaseRefinement):
     def getNode(self, *args, **kwargs):
         pass
 
@@ -504,17 +492,6 @@ class ExampleRefinement(BaseRefinement):
 
     @parametrized_performance_debugger()
     def refine_atomic_concept(self, concept: Concept) -> Set:
-        """
-        # (1) Create all direct sub concepts of C that are defined in TBOX.
-        # (2) Create negations of all leaf concepts in  the concept hierarchy.
-        # (3) Create ∀.r.T and ∃.r.T where r is the most general relation.
-        # (4) Intersect and union set of concepts that are generated in (1-3).
-        # Note that this is modified implementation of refinemenet operator proposed in
-        Concept Learning in Description Logics Using Refinement Operators
-
-        :param concept: Concept
-        :return: A set of refinements.
-        """
         # (1) Generate all direct_sub_concepts
         sub_concepts = self.kb.get_direct_sub_concepts(concept)
         # (2) Create negation of all leaf_concepts
