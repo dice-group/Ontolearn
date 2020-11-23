@@ -24,8 +24,7 @@ for str_target_concept, examples in settings['problems'].items():
         algorithm=algorithm,
         positives=positives,
         negatives=negatives,
-        path_name=str_target_concept,
-        num_of_concepts_tested=200)
+        path_name=str_target_concept,)
 
     print('JAVA:{0}:BestPrediction:\t{1}\tF-score:{2}'.format(
         algorithm, str_best_concept, f_1score))

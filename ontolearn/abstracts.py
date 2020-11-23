@@ -10,6 +10,7 @@ import torch
 from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
 import json
 import numpy as np
+import time
 
 random.seed(0)
 
@@ -17,9 +18,8 @@ random.seed(0)
 @total_ordering
 class BaseConcept(metaclass=ABCMeta):
     """Base class for Concept."""
-    __slots__ = ['owl', 'full_iri', 'str', 'is_atomic', '__instances', '__idx_instances', 'embeddings', 'length',
-                 'form', 'role', 'filler', 'concept_a',
-                 'concept_b']
+    __slots__ = ['owl', 'full_iri', 'str', 'is_atomic', '__instances', '__idx_instances', 'length',
+                 'form', 'role', 'filler', 'concept_a', 'concept_b']
 
     @abstractmethod
     def __init__(self, concept: ThingClass, kwargs, world=None):
@@ -37,7 +37,6 @@ class BaseConcept(metaclass=ABCMeta):
         self.length = self.__calculate_length()
         self.__idx_instances = None
 
-        self.embeddings = None
         self.__instances = {jjj for jjj in self.owl.instances()}  # be sure of the memory usage.
         if self.__instances is None:
             self.__instances = set()
@@ -111,9 +110,9 @@ class BaseConcept(metaclass=ABCMeta):
 
 class BaseNode(metaclass=ABCMeta):
     """Base class for Concept."""
-    __slots__ = ['concept', '__heuristic_score', '__horizontal_expansion',
-                 '__quality_score', '___refinement_count',
-                 '__refinement_count', '__depth', '__children', 'length', 'parent_node']
+    __slots__ = ['concept', '__heuristic_score', '__horizontal_expansion', '__quality_score',
+                 '___refinement_count', '__refinement_count', '__depth', '__children', '__embeddings', 'length',
+                 'parent_node']
 
     @abstractmethod
     def __init__(self, concept, parent_node, is_root=False):
@@ -122,6 +121,7 @@ class BaseNode(metaclass=ABCMeta):
         self.__horizontal_expansion, self.__refinement_count = 0, 0
         self.concept = concept
         self.parent_node = parent_node
+        self.__embeddings = None
         self.__children = set()
         self.length = len(self.concept)
 
@@ -135,14 +135,16 @@ class BaseNode(metaclass=ABCMeta):
         return len(self.concept)
 
     @property
+    def embeddings(self):
+        return self.__embeddings
+
+    @embeddings.setter
+    def embeddings(self, value):
+        self.__embeddings = value
+
+    @property
     def children(self):
         return self.__children
-
-    def add_children(self, n):
-        self.__children.add(n)
-
-    def remove_child(self, n):
-        self.__children.remove(n)
 
     @property
     def refinement_count(self):
@@ -180,12 +182,18 @@ class BaseNode(metaclass=ABCMeta):
     def quality(self, val: float):
         self.__quality_score = val
 
-    def increment_h_exp(self, val=0):
-        self.__horizontal_expansion += val + 1
-
     @property
     def is_root(self):
         return self.__is_root
+
+    def add_children(self, n):
+        self.__children.add(n)
+
+    def remove_child(self, n):
+        self.__children.remove(n)
+
+    def increment_h_exp(self, val=0):
+        self.__horizontal_expansion += val + 1
 
 
 class AbstractScorer(ABC):
@@ -395,7 +403,7 @@ class AbstractTree(ABC):
 class AbstractKnowledgeBase(ABC):
 
     def __init__(self):
-        self.concepts = dict()
+        self.uri_to_concepts = dict()
         self.thing = None
         self.nothing = None
         self.top_down_concept_hierarchy = defaultdict(set)  # Next time thing about including this into Concepts.
@@ -418,25 +426,30 @@ class AbstractKnowledgeBase(ABC):
 
     def describe(self):
         print('Number of individuals: {0}'.format(len(self.individuals)))
-        print('Number of concepts: {0}'.format(len(self.concepts)))
+        print('Number of concepts: {0}'.format(len(self.uri_to_concepts)))
 
+    @abstractmethod
     def clean(self):
         raise NotImplementedError
 
 
 class AbstractDrill(ABC):
 
-    def __init__(self, model, instance_embeddings, reward_func, learning_rate=None,
+    def __init__(self, drill_heuristic, instance_embeddings, reward_func, learning_rate=None,
                  num_episode=None, num_of_sequential_actions=None, max_len_replay_memory=None,
                  representation_mode=None, batch_size=None, epsilon_decay=None, epsilon_min=None,
                  num_epochs_per_replay=None):
 
         assert isinstance(instance_embeddings, pd.DataFrame)
         assert (instance_embeddings.all()).all()  # all columns and all rows are not none.
-        assert model
+        assert drill_heuristic
+        assert drill_heuristic.model
+
         assert reward_func
         self.representation_mode = representation_mode
-        self.model = model
+        self.drill_heuristic = drill_heuristic
+        self.model_name = self.drill_heuristic.name
+        self.model_net = self.drill_heuristic.model
         self.instance_embeddings = instance_embeddings
         self.reward_func = reward_func
 
@@ -468,16 +481,45 @@ class AbstractDrill(ABC):
         if self.batch_size is None:
             self.batch_size = 1024
 
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.optimizer = torch.optim.Adam(self.model_net.parameters(), lr=self.learning_rate)
 
         self.seen_examples = dict()
+        self.emb_pos, self.emb_neg = None, None
+        self.start_time = None
+        self.goal_found = False
 
-    def next_node_to_expand(self, step):
+    def default_state_rl(self):
+        self.emb_pos, self.emb_neg = None, None
+        self.goal_found = False
+        self.start_time = None
+        self.kb.thing
+
+    @abstractmethod
+    def init_training(self, *args, **kwargs):
+        """
+        Initialize training for a given E+,E- and K.
+        @param args:
+        @param kwargs:
+        @return:
+        """
+
+    @abstractmethod
+    def terminate_training(self):
+        """
+        Save weights and training data after training phase.
+        @return:
+        """
+
+    def next_node_to_expand(self, t: int = None) -> BaseNode:
+        """
+        Return a node that maximizes the heuristic function at time t
+        @param t:
+        @return:
+        """
         if self.verbose > 1:
-            self.search_tree.show_search_tree(step)
+            self.search_tree.show_search_tree(t)
         return self.search_tree.get_most_promising()
 
-    # RL starts
     def form_experiences(self, state_pairs: List, rewards: List) -> None:
         """
         Form experiences from a sequence of concepts and corresponding rewards.
@@ -519,7 +561,7 @@ class AbstractDrill(ABC):
         ds = PrepareBatchOfTraining(current_state_batch=current_state_batch,
                                     next_state_batch=next_state_batch,
                                     p=self.emb_pos, n=self.emb_neg, q=q_values)
-        self.model.train()
+        self.model_net.train()
         for m in range(self.num_epochs_per_replay):
             total_loss = 0
             for X, y in torch.utils.data.DataLoader(ds, batch_size=self.batch_size, shuffle=True, num_workers=4):
@@ -527,15 +569,15 @@ class AbstractDrill(ABC):
                     continue
                 self.optimizer.zero_grad()  # zero the gradient buffers
                 # forward
-                predicted_q = self.model.forward(X)
+                predicted_q = self.model_net.forward(X)
                 # loss
-                loss = self.model.loss(predicted_q, y)
+                loss = self.model_net.loss(predicted_q, y)
                 total_loss += loss.item()
                 # compute the derivative of the loss w.r.t. the parameters using backpropagation
                 loss.backward()
                 # clip gradients if gradients are killed. =>torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
                 self.optimizer.step()
-        self.model.eval()
+        self.model_net.eval()
 
     def sequence_of_actions(self, root):
         current_state = root
@@ -579,18 +621,11 @@ class AbstractDrill(ABC):
         return refinements
 
     def assign_embeddings(self, node: BaseNode) -> None:
-        """
-
-        @param node:
-        @param mode:
-        @param sample_size:
-        @return:
-        """
         assert isinstance(node, BaseNode)
         # (1) Detect mode
         if self.representation_mode == 'averaging':
             # (2) if input node has not seen before, assign embeddings.
-            if node.concept.embeddings is None:
+            if node.embeddings is None:
                 str_idx = [get_full_iri(i).replace('\n', '') for i in node.concept.instances]
                 if len(str_idx) == 0:
                     emb = torch.zeros(self.sample_size, self.instance_embeddings.shape[1])
@@ -598,17 +633,18 @@ class AbstractDrill(ABC):
                     emb = torch.tensor(self.instance_embeddings.loc[str_idx].values, dtype=torch.float32)
                     emb = torch.mean(emb, dim=0)
                 emb = emb.view(1, self.sample_size, self.instance_embeddings.shape[1])
-                node.concept.embeddings = emb
+                node.embeddings = emb
             else:
                 """ Embeddings already assigned."""
                 try:
-                    assert node.concept.embeddings.shape == (1, self.sample_size, self.instance_embeddings.shape[1])
+                    assert node.embeddings.shape == (1, self.sample_size, self.instance_embeddings.shape[1])
                 except AssertionError as e:
                     print(node)
-                    print(node.concept.embeddings.shape)
-                    raise ValueError
+                    print(node.embeddings.shape)
+                    print((1, self.sample_size, self.instance_embeddings.shape[1]))
+                    exit(1)
         elif self.representation_mode == 'sampling':
-            if node.concept.embeddings is None:
+            if node.embeddings is None:
                 str_idx = [get_full_iri(i).replace('\n', '') for i in node.concept.instances]
                 if len(str_idx) >= self.sample_size:
                     sampled_str_idx = random.sample(str_idx, self.sample_size)
@@ -618,58 +654,49 @@ class AbstractDrill(ABC):
                     emb = torch.tensor(self.instance_embeddings.loc[str_idx].values, dtype=torch.float32)
                     emb = torch.cat((torch.zeros(num_rows_to_fill, self.instance_embeddings.shape[1]), emb))
                 emb = emb.view(1, self.sample_size, self.instance_embeddings.shape[1])
-                node.concept.embeddings = emb
+                node.embeddings = emb
             else:
                 """ Embeddings already assigned."""
                 try:
-                    assert node.concept.embeddings.shape == (1, self.sample_size, self.instance_embeddings.shape[1])
+                    assert node.embeddings.shape == (1, self.sample_size, self.instance_embeddings.shape[1])
                 except AssertionError:
                     print(node)
                     print(self.sample_size)
-                    print(node.concept.embeddings.shape)
+                    print(node.embeddings.shape)
                     print((1, self.sample_size, self.instance_embeddings.shape[1]))
                     raise ValueError
         else:
             raise ValueError
 
         # @todo remove this testing in experiments.
-        if torch.isnan(node.concept.embeddings).any() or torch.isinf(node.concept.embeddings).any():
+        if torch.isnan(node.embeddings).any() or torch.isinf(node.embeddings).any():
             # No individual contained in the input concept.
             # Sanity checking.
             raise ValueError
-            # node.concept.embeddings = torch.zeros((1, sample_size, self.instance_embeddings.shape[1]))
 
-    @abstractmethod
-    def init_training(self, *args, **kwargs):
+    def save_weights(self):
         """
-        Initialize training for a given E+,E- and K.
-        @param args:
-        @param kwargs:
+        Save pytorch weights.
         @return:
         """
+        # Save model.
+        torch.save(self.model_net.state_dict(), self.storage_path + '/{0}_{1}.pth'.format(time.time(), self.model_name))
 
-    @abstractmethod
-    def train(self, *args, **kwargs):
+    def rl_learning_loop(self, pos_uri: Set[AnyStr], neg_uri: Set[AnyStr]) -> List[float]:
         """
-        Train an RL agent given rho, reward func  E+,E- and K.
+        RL agent training loop over given positive and negative examples.
 
-        @param args:
-        @param kwargs:
-        @return:
-        """
 
-    def rl_learning_loop(self, pos_uri: Set[AnyStr], neg_uri: Set[AnyStr]) -> List:
+        @return: List of sum of rewards per episode.
         """
-
-        @param pos_uri:
-        @param neg_uri:
-        @return:
-        """
+        # (1) initialize training.
         self.init_training(pos_uri=pos_uri, neg_uri=neg_uri)
         root = self.rho.getNode(self.start_class, root=True)
+        # (2) Assign embeddings of root/first state.
         self.assign_embeddings(root)
         sum_of_rewards_per_actions = []
-        for th in range(self.num_episode):  # Inner training loop
+        for th in range(self.num_episode):
+            # (3) Take sequence of actions.
             path_of_concepts, rewards = self.sequence_of_actions(root)
             if th % 100 == 0:
                 self.logger.info(
@@ -677,21 +704,20 @@ class AbstractDrill(ABC):
                                                                                                    self.epsilon,
                                                                                                    len(
                                                                                                        self.experiences)))
+            # (4) Decrease exploration rate.
             self.epsilon -= self.epsilon_decay
             if self.epsilon < self.epsilon_min:
                 break
+            # (5) Form experience.
             self.form_experiences(path_of_concepts, rewards)
+            # (6) Adjust weights through experience replay.
             if th % self.num_epochs_per_replay == 0 and len(self.experiences) > 1:
                 self.learn_from_replay_memory()
             sum_of_rewards_per_actions.append(sum(rewards))
         return sum_of_rewards_per_actions
 
+    """
     def preprocess_lp(self, lp):
-        """
-
-        @param lp:
-        @return:
-        """
         for example_node in lp:
             # Instances of example concept conversion to URIs in string format.
             # All concept learners must be able to perform on string representations of instances.
@@ -712,32 +738,7 @@ class AbstractDrill(ABC):
             else:
                 self.logger.info('Balancing is not possible. Example will be skipped.')
                 continue
-
-    def exploitation(self, current_state: BaseNode, next_states: List[BaseNode]) -> BaseNode:
-        """
-
-        @param current_state:
-        @param next_states:
-        @return:
-        """
-        self.assign_embeddings(current_state)
-        with torch.no_grad():
-            self.model.eval()
-            # create batch batch.
-            next_state_batch = []
-            for n in next_states:
-                self.assign_embeddings(n)
-                next_state_batch.append(n.concept.embeddings)
-            next_state_batch = torch.cat(next_state_batch, dim=0)
-
-            ds = PrepareBatchOfPrediction(current_state.concept.embeddings,
-                                          next_state_batch,
-                                          self.emb_pos,
-                                          self.emb_neg)
-            predictions = self.model.forward(ds.get_all())
-            argmax_id = int(torch.argmax(predictions))
-            next_state = next_states[argmax_id]
-        return next_state
+    """
 
     def exploration_exploitation_tradeoff(self, current_state: BaseNode, next_states: List[BaseNode]) -> BaseNode:
         """
@@ -749,3 +750,113 @@ class AbstractDrill(ABC):
         else:  # Exploitation
             next_state = self.exploitation(current_state, next_states)
         return next_state
+
+    def exploitation(self, current_state: BaseNode, next_states: List[BaseNode]) -> BaseNode:
+        """
+
+        @param current_state:
+        @param next_states:
+        @return:
+        """
+        self.assign_embeddings(current_state)
+        with torch.no_grad():
+            self.model_net.eval()
+            # create batch batch.
+            next_state_batch = []
+            for n in next_states:
+                self.assign_embeddings(n)
+                next_state_batch.append(n.embeddings)
+            next_state_batch = torch.cat(next_state_batch, dim=0)
+
+            ds = PrepareBatchOfPrediction(current_state.embeddings,
+                                          next_state_batch,
+                                          self.emb_pos,
+                                          self.emb_neg)
+            predictions = self.model_net.forward(ds.get_all())
+            argmax_id = int(torch.argmax(predictions))
+            next_state = next_states[argmax_id]
+        return next_state
+
+    def predict_Q(self, current_state: BaseNode, next_states: List[BaseNode]) -> torch.Tensor:
+        """
+        Predict promise of next states given current state.
+        @param current_state:
+        @param next_states:
+        @return: predicted Q values.
+        """
+        self.assign_embeddings(current_state)
+        assert len(next_states) > 0
+        with torch.no_grad():
+            self.model_net.eval()
+            # create batch batch.
+            next_state_batch = []
+            for _ in next_states:
+                self.assign_embeddings(_)
+                next_state_batch.append(_.embeddings)
+            next_state_batch = torch.cat(next_state_batch, dim=0)
+            ds = PrepareBatchOfPrediction(current_state.embeddings,
+                                          next_state_batch,
+                                          self.emb_pos,
+                                          self.emb_neg)
+            predictions = self.model_net.forward(ds.get_all())
+        return predictions
+
+    def train(self, dataset: List[Tuple[AnyStr, Set, Set]], relearn_ratio: int = 1):
+        """
+        Train RL agent on learning problems with relearn_ratio.
+
+        @param dataset: An iterable containing training data. Each item corresponds to a tuple of string representation
+        of target concept, a set of positive examples in the form of URIs amd a set of negative examples in the form of
+        URIs, respectively.
+        @param relearn_ratio: An integer indicating the number of times dataset is iterated.
+        @return: itself
+        """
+        assert len(dataset) > 0
+
+        counter = 0
+        for _ in range(relearn_ratio):  # repeat training over learning problems.
+            for (alc_concept_str, positives, negatives) in dataset:
+                self.logger.info(
+                    'Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
+                self.rl_learning_loop(pos_uri=positives, neg_uri=negatives)
+                self.seen_examples.setdefault(alc_concept_str, dict()).update(
+                    {'Positives': list(positives), 'Negatives': list(negatives)})
+
+                counter += 1
+                if counter % 100 == 0:
+                    self.save_weights()
+        self.concepts_to_nodes.clear()
+
+        return self.terminate_training()
+
+    def test(self, dataset: List[Tuple[AnyStr, Set, Set]], max_run_time: int = None) -> List[Dict]:
+        """
+
+        @param dataset:
+        @param n:
+        @return:
+        """
+        if max_run_time:
+            # @TODO: self.max_run_time indicates the max runtime during fitting/testing.
+            # This attribute is defined in abstract class of concept learner
+            # and also used in here.
+            # Investigate the best way of using an attributed defined in one of the super classes
+            # Class C inherents from Class A and Class B in respective order.
+            # Class A uses Class B's attributed via Class C. I reckon it does not comply with OOP.
+            self.max_run_time = max_run_time
+
+        results = []
+        assert isinstance(dataset, List)
+        for (alc_concept_str, positives, negatives) in dataset:
+            self.logger.info(
+                'Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
+            self.fit(pos=positives, neg=negatives)
+            h = self.best_hypotheses(1)[0]
+
+            results.append({'TargetConcept': alc_concept_str,
+                            'PositiveExp': positives,
+                            'NegativeExp': negatives,
+                            'Prediction': h.concept.str,
+                            'Quality': h.quality,
+                            'Instances': self.kb.convert_owlready2_individuals_to_uri_from_iterable(h.concept.instances)})
+        return results

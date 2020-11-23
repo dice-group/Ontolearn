@@ -120,9 +120,9 @@ class Experience:
         """
         assert len(self.current_states) == len(self.next_states) == len(self.rewards)
         s_i, s_j, r = e
-        assert s_i.concept.embeddings.shape == s_j.concept.embeddings.shape
-        self.current_states.append(s_i.concept.embeddings)
-        self.next_states.append(s_j.concept.embeddings)
+        assert s_i.embeddings.shape == s_j.embeddings.shape
+        self.current_states.append(s_i.embeddings)
+        self.next_states.append(s_j.embeddings)
         self.rewards.append(r)
 
     def retrieve(self):
