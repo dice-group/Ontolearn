@@ -1,13 +1,12 @@
 """ Test for refinement_operators.py"""
-
-from core.base import KnowledgeBase
-from core.refinement_operators import Refinement
-
+from ontolearn import KnowledgeBase, CustomRefinementOperator
+import json
+with open('examples/synthetic_problems.json') as json_file:
+    settings = json.load(json_file)
+# because '../data/family-benchmark_rich_background.owl'
+kb = KnowledgeBase(path=settings['data_path'][3:])
 
 def test_refinement_operator():
-    path_of_example_kb = 'data/family-benchmark_rich_background.owl'
-    kb = KnowledgeBase(path_of_example_kb)
-    rho = Refinement(kb)
-
-    for _ in rho.refine(kb.thing):
-        assert _ # refinements can not be None.
+    rho = CustomRefinementOperator(kb)
+    for _ in enumerate(rho.refine(kb.thing)):
+        pass
