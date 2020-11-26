@@ -3,7 +3,7 @@ from owlready2 import Ontology, World
 import owlready2
 from .concept_generator import ConceptGenerator
 from .concept import Concept
-from typing import Dict, Tuple, Set, Generator, Iterable, AnyStr, List
+from typing import Dict, Tuple, Set, Generator, Iterable, List
 from .util import parametrized_performance_debugger, get_full_iri
 from .abstracts import AbstractKnowledgeBase
 from .data_struct import PropertyHierarchy
@@ -101,7 +101,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         except KeyError:
             KeyError('{0} is not found in vocabulary of URI instances'.format(str_ind))
 
-    def convert_uri_instance_to_obj_from_iterable(self, str_individuals: Iterable[AnyStr]) -> List:
+    def convert_uri_instance_to_obj_from_iterable(self, str_individuals: Iterable[str]) -> List:
         return [self.convert_uri_instance_to_obj(i) for i in str_individuals]
 
     def convert_owlready2_individuals_to_uri(self, instance):

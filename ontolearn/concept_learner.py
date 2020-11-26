@@ -1,6 +1,6 @@
 from .base_concept_learner import BaseConceptLearner
 from .search import Node, CELOESearchTree, SearchTree, SearchTreePriorityQueue
-from typing import Set, AnyStr, Iterable, List
+from typing import Set, Iterable, List
 from owlready2 import get_ontology
 from owlready2.entity import ThingClass
 import types
@@ -17,7 +17,7 @@ pd.set_option('display.max_columns', 100)
 
 class CELOE(BaseConceptLearner):
     def __init__(self, knowledge_base, heuristic_func=None, quality_func=None, iter_bound=None,
-                 max_num_of_concepts_tested=None, max_run_time=None,
+                 max_num_of_concepts_tested=None, max_runtime=None,
                  ignored_concepts=None, verbose=None, terminate_on_goal=None):
         if heuristic_func is None:
             heuristic_func = CELOEHeuristic()
@@ -28,7 +28,7 @@ class CELOE(BaseConceptLearner):
                          ignored_concepts=ignored_concepts,
                          terminate_on_goal=terminate_on_goal,
                          iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested,
-                         max_run_time=max_run_time,
+                         max_runtime=max_runtime,
                          verbose=verbose, name='CELOE')
         self.max_he, self.min_he = self.max_num_of_concepts_tested, 1
 
@@ -58,10 +58,12 @@ class CELOE(BaseConceptLearner):
         self.search_tree.update_done(node)
         return refinements
 
-    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], ignore: Set[AnyStr] = None):
+    def fit(self, pos: Set[str], neg: Set[str], ignore: Set[str] = None, max_runtime: int = None):
         """
         Find hypotheses that explain pos and neg.
         """
+        if max_runtime:
+            self.max_runtime = max_runtime
         self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances, ignore=ignore)
         self.start_time = time.time()
         for j in range(1, self.iter_bound):
@@ -71,7 +73,7 @@ class CELOE(BaseConceptLearner):
                 if goal_found:
                     if self.terminate_on_goal:
                         return self.terminate()
-            if time.time() - self.start_time > self.max_run_time:
+            if time.time() - self.start_time > self.max_runtime:
                 return self.terminate()
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 return self.terminate()
@@ -161,7 +163,7 @@ class LengthBaseLearner(BaseConceptLearner):
                        if i.str not in self.concepts_to_ignore)
         return refinements
 
-    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], ignore: Set[AnyStr] = None):
+    def fit(self, pos: Set[str], neg: Set[str], ignore: Set[str] = None):
         """
         Find hypotheses that explain pos and neg.
         """
@@ -179,44 +181,13 @@ class LengthBaseLearner(BaseConceptLearner):
         return self.terminate()
 
 
-class CustomConceptLearner(BaseConceptLearner):
-
+class CustomConceptLearner(CELOE):
     def __init__(self, knowledge_base, quality_func=None, iter_bound=None, max_num_of_concepts_tested=None,
+                 heuristic_func=None,
                  ignored_concepts=None, verbose=None, terminate_on_goal=None):
-        super().__init__(knowledge_base=knowledge_base, refinement_operator=CustomRefinementOperator(kb=knowledge_base),
-                         search_tree=SearchTree(),
+        super().__init__(knowledge_base=knowledge_base,
                          quality_func=quality_func,
-                         heuristic_func=DLFOILHeuristic(),
+                         heuristic_func=heuristic_func,
                          ignored_concepts=ignored_concepts,
                          terminate_on_goal=terminate_on_goal,
                          iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested, verbose=verbose)
-
-    def next_node_to_expand(self, step):
-        self.search_tree.sort_search_tree_by_decreasing_order(key='heuristic')
-        for n in self.search_tree:
-            return n
-
-    def apply_rho(self, node: Node):
-        assert isinstance(node, Node)
-        refinements = (self.rho.getNode(i, parent_node=node)
-                       for i in self.rho.refine(node.concept) if i is not None and i.str not in self.concepts_to_ignore)
-        return refinements
-
-    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], ignore: Set[AnyStr] = None):
-        """
-        Find hypotheses that explain pos and neg.
-        """
-        self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances, ignore=ignore)
-        self.start_time = time.time()
-        for j in range(1, self.iter_bound):
-            most_promising = self.next_node_to_expand(j)
-            for ref in self.apply_rho(most_promising):
-                goal_found = self.search_tree.add(node=ref, parent_node=most_promising)
-                if goal_found:
-                    if self.terminate_on_goal:
-                        return self.terminate()
-            if time.time() - self.start_time > self.max_run_time:
-                return self.terminate()
-            if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
-                return self.terminate()
-        return self.terminate()

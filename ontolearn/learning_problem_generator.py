@@ -26,7 +26,7 @@ class LearningProblemGenerator:
         self.max_length = max_length
         self.valid_learning_problems = set()
         self.seen_concepts = set()
-        self.depth = depth
+        self.num_apply_rho = depth
 
     @property
     def concepts(self):
@@ -73,7 +73,7 @@ class LearningProblemGenerator:
         @return:
         """
         current_state = self.rho.getNode(self.kb.thing, root=True)
-        for _ in range(self.depth):
+        for _ in range(self.num_apply_rho):
             refs = self.apply_rho(current_state)
             for i in refs:
                 if self.min_length <= len(i) <= self.max_length and \

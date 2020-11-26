@@ -3,7 +3,7 @@ from functools import total_ordering
 from abc import ABCMeta, abstractmethod, ABC
 from owlready2 import ThingClass, Ontology
 from .util import get_full_iri, balanced_sets
-from typing import Set, AnyStr, Dict, List, Tuple
+from typing import Set, Dict, List, Tuple
 import random
 import pandas as pd
 import torch
@@ -37,7 +37,7 @@ class BaseConcept(metaclass=ABCMeta):
         self.length = self.__calculate_length()
         self.__idx_instances = None
 
-        self.__instances = {jjj for jjj in self.owl.instances()}  # be sure of the memory usage.
+        self.__instances = {jjj for jjj in self.owl.instances(world=self.world)}  # be sure of the memory usage.
         if self.__instances is None:
             self.__instances = set()
 
@@ -260,13 +260,13 @@ class BaseRefinement(metaclass=ABCMeta):
         self.kb = kb
         self.max_size_of_concept = max_size_of_concept
         self.min_size_of_concept = min_size_of_concept
-        self.concepts_to_nodes = dict()
+        #self.concepts_to_nodes = dict()
 
     def set_kb(self, kb):
         self.kb = kb
 
-    def set_concepts_node_mapping(self, m: dict):
-        self.concepts_to_nodes = m
+    #def set_concepts_node_mapping(self, m: dict):
+    #    self.concepts_to_nodes = m
 
     @abstractmethod
     def getNode(self, *args, **kwargs):
@@ -492,7 +492,6 @@ class AbstractDrill(ABC):
         self.emb_pos, self.emb_neg = None, None
         self.goal_found = False
         self.start_time = None
-        self.kb.thing
 
     @abstractmethod
     def init_training(self, *args, **kwargs):
@@ -682,7 +681,7 @@ class AbstractDrill(ABC):
         # Save model.
         torch.save(self.model_net.state_dict(), self.storage_path + '/{0}_{1}.pth'.format(time.time(), self.model_name))
 
-    def rl_learning_loop(self, pos_uri: Set[AnyStr], neg_uri: Set[AnyStr]) -> List[float]:
+    def rl_learning_loop(self, pos_uri: Set[str], neg_uri: Set[str]) -> List[float]:
         """
         RL agent training loop over given positive and negative examples.
 
@@ -801,7 +800,7 @@ class AbstractDrill(ABC):
             predictions = self.model_net.forward(ds.get_all())
         return predictions
 
-    def train(self, dataset: List[Tuple[AnyStr, Set, Set]], relearn_ratio: int = 1):
+    def train(self, dataset: List[Tuple[str, Set, Set]], relearn_ratio: int = 1):
         """
         Train RL agent on learning problems with relearn_ratio.
 
@@ -825,38 +824,5 @@ class AbstractDrill(ABC):
                 counter += 1
                 if counter % 100 == 0:
                     self.save_weights()
-        self.concepts_to_nodes.clear()
 
         return self.terminate_training()
-
-    def test(self, dataset: List[Tuple[AnyStr, Set, Set]], max_run_time: int = None) -> List[Dict]:
-        """
-
-        @param dataset:
-        @param n:
-        @return:
-        """
-        if max_run_time:
-            # @TODO: self.max_run_time indicates the max runtime during fitting/testing.
-            # This attribute is defined in abstract class of concept learner
-            # and also used in here.
-            # Investigate the best way of using an attributed defined in one of the super classes
-            # Class C inherents from Class A and Class B in respective order.
-            # Class A uses Class B's attributed via Class C. I reckon it does not comply with OOP.
-            self.max_run_time = max_run_time
-
-        results = []
-        assert isinstance(dataset, List)
-        for (alc_concept_str, positives, negatives) in dataset:
-            self.logger.info(
-                'Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
-            self.fit(pos=positives, neg=negatives)
-            h = self.best_hypotheses(1)[0]
-
-            results.append({'TargetConcept': alc_concept_str,
-                            'PositiveExp': positives,
-                            'NegativeExp': negatives,
-                            'Prediction': h.concept.str,
-                            'Quality': h.quality,
-                            'Instances': self.kb.convert_owlready2_individuals_to_uri_from_iterable(h.concept.instances)})
-        return results

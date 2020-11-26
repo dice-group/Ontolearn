@@ -150,8 +150,26 @@ class Accuracy(AbstractScorer):
     2) E^+ and E^- are the positive and negative examples probided. E = E^+ OR E^- .
     """
 
-    def score(self, *args, **kwargs):
-        pass
+    def score(self, pos, neg, instances):
+        self.pos = pos
+        self.neg = neg
+
+        tp = len(self.pos.intersection(instances))
+        tn = len(self.neg.difference(instances))
+
+        fp = len(self.neg.intersection(instances))
+        fn = len(self.pos.difference(instances))
+        try:
+            acc = (tp + tn) / (tp + tn + fp + fn)
+        except ZeroDivisionError as e:
+            print(e)
+            print(tp)
+            print(tn)
+            print(fp)
+            print(fn)
+            acc=0
+        return acc
+
 
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
