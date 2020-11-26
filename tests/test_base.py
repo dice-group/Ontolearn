@@ -1,14 +1,26 @@
 """ Test the base module"""
 
-from core.base import KnowledgeBase
+from ontolearn import KnowledgeBase
+
+PATH_FAMILY = 'data/family-benchmark_rich_background.owl'
+PATH_FATHER = 'data/father.owl'
 
 
 def test_knowledge_base():
-    path_of_example_kb = 'data/family-benchmark_rich_background.owl'
-    kb = KnowledgeBase(path_of_example_kb)
+    kb = KnowledgeBase(PATH_FAMILY)
     assert kb.name == 'family-benchmark_rich_background'
 
     assert kb.property_hierarchy
     assert kb.property_hierarchy.all_properties
-    assert len(kb.property_hierarchy.all_properties) >= len(kb.property_hierarchy.data_properties)
-    assert len(kb.property_hierarchy.all_properties) >= len(kb.property_hierarchy.object_properties)
+    assert len(kb.property_hierarchy.all_properties) >=\
+        len(kb.property_hierarchy.data_properties)
+    assert len(kb.property_hierarchy.all_properties) >=\
+        len(kb.property_hierarchy.object_properties)
+
+
+def test_multiple_knowledge_bases():
+    KnowledgeBase(PATH_FAMILY)
+
+    # There should not be an exception here
+    # (that refers to the family ontology)
+    KnowledgeBase(PATH_FATHER)
