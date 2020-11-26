@@ -12,7 +12,7 @@ kb = KnowledgeBase(path=settings['data_path'][3:])
 class TestOcel:
     def test_regression(self):
         regression_test_ocel = {'Aunt': .71429, 'Brother': .96774,
-                                'Cousin': .66667, 'Granddaughter': .97368,
+                                'Cousin': .66667, 'Granddaughter': .86047,
                                 'Uncle': .67857, 'Grandgrandfather': .94444}
         for str_target_concept, examples in settings['problems'].items():
             p = set(examples['positive_examples'])
@@ -25,10 +25,9 @@ class TestOcel:
                     {'http://www.benchmark.org/family#Brother',
                      'Father', 'http://www.benchmark.org/family#Grandparent'})  # Use URI, or concept with length 1.
 
-            model = OCEL(knowledge_base=kb,
-                         ignored_concepts=concepts_to_ignore)
+            model = OCEL(knowledge_base=kb)
 
-            returned_val = model.fit(pos=p, neg=n)
+            returned_val = model.fit(pos=p, neg=n, ignore=concepts_to_ignore)
             assert returned_val == model
             hypotheses = model.best_hypotheses(n=3)
             assert hypotheses[0].quality >= regression_test_ocel[str_target_concept]

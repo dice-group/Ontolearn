@@ -3,9 +3,9 @@ from owlready2 import World, get_ontology, Thing, DataProperty, FunctionalProper
 from .refinement_operators import ModifiedCELOERefinement
 from .search import Node
 from .search import CELOESearchTree
-from .metrics import F1
+from .metrics import F1, Accuracy
 from .heuristics import CELOEHeuristic
-from typing import List, AnyStr, Set
+from typing import List, Set, Tuple, Dict
 from .util import create_experiment_folder, create_logger, get_full_iri
 import numpy as np
 import pandas as pd
@@ -41,7 +41,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, knowledge_base=None, refinement_operator=None, heuristic_func=None, quality_func=None,
-                 search_tree=None, max_num_of_concepts_tested=None, max_run_time=None, terminate_on_goal=None,
+                 search_tree=None, max_num_of_concepts_tested=None, max_runtime=None, terminate_on_goal=None,
                  ignored_concepts=None,
                  iter_bound=None, max_child_length=None, root_concept=None, verbose=None, name=None):
 
@@ -52,7 +52,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.search_tree = search_tree
         self.max_num_of_concepts_tested = max_num_of_concepts_tested
         self.terminate_on_goal = terminate_on_goal
-        self.max_run_time = max_run_time
+        self.max_runtime = max_runtime
         self.concepts_to_ignore = ignored_concepts
         self.iter_bound = iter_bound
         self.start_class = root_concept
@@ -63,10 +63,9 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.goal_found = False
         self.max_length = 5
         self.storage_path, _ = create_experiment_folder()
-        self.logger = create_logger(name=name, p=self.storage_path)
+        self.name = name
+        self.logger = create_logger(name=self.name, p=self.storage_path)
         self.last_path = None  # path of lastly stored onto.
-        # Memoization
-        self.concepts_to_nodes = dict()
         self.__default_values()
         self.__sanity_checking()
 
@@ -76,7 +75,6 @@ class BaseConceptLearner(metaclass=ABCMeta):
         """
         if self.rho is None:
             self.rho = ModifiedCELOERefinement(self.kb)
-        self.rho.set_concepts_node_mapping(self.concepts_to_nodes)
 
         if self.heuristic_func is None:
             self.heuristic_func = CELOEHeuristic()
@@ -99,8 +97,8 @@ class BaseConceptLearner(metaclass=ABCMeta):
             self.max_num_of_concepts_tested = 10_000
         if self.terminate_on_goal is None:
             self.terminate_on_goal = True
-        if self.max_run_time is None:
-            self.max_run_time = 5
+        if self.max_runtime is None:
+            self.max_runtime = 5
 
         if self.concepts_to_ignore is None:
             self.concepts_to_ignore = set()
@@ -117,7 +115,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
         self.add_ignored_concepts(self.concepts_to_ignore)
 
-    def add_ignored_concepts(self, ignore: Set[AnyStr]):
+    def add_ignored_concepts(self, ignore: Set[str]):
 
         if ignore:
             owl_concepts_to_ignore = set()
@@ -135,7 +133,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
                                                                      [uri for uri in self.kb.uri_to_concepts.keys()]))
             self.concepts_to_ignore = owl_concepts_to_ignore  # use ALC concept representation instead of URI.
 
-    def initialize_learning_problem(self, pos: Set[AnyStr], neg: Set[AnyStr], all_instances, ignore: Set[AnyStr]):
+    def initialize_learning_problem(self, pos: Set[str], neg: Set[str], all_instances, ignore: Set[str]):
         """
         Determine the learning problem and initialize the search.
         1) Convert the string representation of an individuals into the owlready2 representation.
@@ -163,7 +161,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
         try:
             assert len(owl_ready_pos) == len(pos)
-        except:
+        except AssertionError:
             print(pos)
             print(owl_ready_pos)
             print(all_instances)
@@ -205,7 +203,6 @@ class BaseConceptLearner(metaclass=ABCMeta):
         # check the base iri of ontologeis
 
     def clean(self):
-        self.concepts_to_nodes.clear()
         self.concepts_to_ignore.clear()
 
     def terminate(self):
@@ -255,6 +252,29 @@ class BaseConceptLearner(metaclass=ABCMeta):
     def fit(self, *args, **kwargs):
         pass
 
+    def fit_from_iterable(self, dataset: List[Tuple[str, Set, Set]], max_runtime: int = None) -> List[Dict]:
+        if max_runtime:
+            self.max_runtime = max_runtime
+
+        results = []
+        assert isinstance(dataset, List)
+        for (alc_concept_str, positives, negatives) in dataset:
+            self.logger.info(
+                'Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
+
+            start_time = time.time()
+            self.fit(pos=positives, neg=negatives)
+            h = self.best_hypotheses(1)[0]
+            individuals = self.kb.convert_owlready2_individuals_to_uri_from_iterable(h.concept.instances)
+
+            f_measure = F1().score(pos=positives, neg=negatives, instances=individuals)
+            accuracy = Accuracy().score(pos=positives, neg=negatives, instances=individuals)
+            results.append({'Prediction': h.concept.str,
+                            'F-measure': f_measure,
+                            'Accuracy': accuracy,
+                            'Runtime': time.time() - start_time})
+        return results
+
     def best_hypotheses(self, n=10) -> List[Node]:
         assert self.search_tree is not None
         assert len(self.search_tree) > 1
@@ -277,7 +297,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
                     labels[ith_ind][jth_hypo] = 1
         return labels
 
-    def predict(self, individuals: List[AnyStr], hypotheses: List[Node] = None, n: int = None) -> pd.DataFrame:
+    def predict(self, individuals: List[str], hypotheses: List[Node] = None, n: int = None) -> pd.DataFrame:
         """
         individuals: A list of individuals/instances where each item is a string.
         hypotheses: A list of ALC concepts.
@@ -304,9 +324,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         At each problem initialization, we recent previous info if available.
         @return:
         """
-        self.concepts_to_nodes.clear()
         self.concepts_to_ignore.clear()
-        # self.kb.clean()
         self.search_tree.clean()
         self.quality_func.clean()
         self.heuristic_func.clean()

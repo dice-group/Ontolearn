@@ -16,7 +16,7 @@ from torch import nn
 import numpy as np
 import functools
 from torch.functional import F
-from typing import List, Any, Set, AnyStr, Tuple
+from typing import List, Any, Set, Tuple
 from collections import namedtuple, deque
 from torch.nn.init import xavier_normal_
 from itertools import chain
@@ -34,11 +34,11 @@ class DrillAverage(AbstractDrill, BaseConceptLearner):
                  terminate_on_goal=True, instance_embeddings=None, ignored_concepts=None,
                  max_len_replay_memory=None, batch_size=None, epsilon_decay=None, epsilon_min=None,
                  num_epochs_per_replay=None, learning_rate=None,
-                 max_run_time=5, num_of_sequential_actions=None, num_episode=None):
+                 max_runtime=5, num_of_sequential_actions=None, num_episode=None):
         self.sample_size = 1
         self.heuristic_func = DrillHeuristic(mode='average',
                                              input_shape=(4 * self.sample_size, instance_embeddings.shape[1]))
-        if pretrained_model_path :
+        if pretrained_model_path:
             m = torch.load(pretrained_model_path, torch.device('cpu'))
             self.heuristic_func.model.load_state_dict(m)
 
@@ -62,11 +62,11 @@ class DrillAverage(AbstractDrill, BaseConceptLearner):
                                     terminate_on_goal=terminate_on_goal,
                                     iter_bound=iter_bound,
                                     max_num_of_concepts_tested=max_num_of_concepts_tested,
-                                    max_run_time=max_run_time,
+                                    max_runtime=max_runtime,
                                     verbose=verbose, name='DrillAverage')
         self.experiences = Experience(maxlen=self.max_len_replay_memory)
 
-    def represent_examples(self, *, pos: Set[AnyStr], neg: Set[AnyStr]) -> Tuple[torch.Tensor, torch.Tensor]:
+    def represent_examples(self, *, pos: Set[str], neg: Set[str]) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Represent E+ and E- by using embeddings of individuals.
         Here, we take the average of embeddings of individuals.
@@ -90,7 +90,7 @@ class DrillAverage(AbstractDrill, BaseConceptLearner):
         emb_neg = emb_neg.view(1, 1, emb_neg.shape[0])
         return emb_pos, emb_neg
 
-    def init_training(self, pos_uri: Set[AnyStr], neg_uri: Set[AnyStr]) -> None:
+    def init_training(self, pos_uri: Set[str], neg_uri: Set[str]) -> None:
         """
 
         @param pos_uri: A set of positive examples where each example corresponds to a string representation of an individual/instance.
@@ -128,7 +128,7 @@ class DrillAverage(AbstractDrill, BaseConceptLearner):
         self.kb.clean()
         return self
 
-    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], ignore: Set[AnyStr] = None):
+    def fit(self, pos: Set[str], neg: Set[str], ignore: Set[str] = None):
         """
         Find hypotheses that explain pos and neg.
         """
@@ -148,7 +148,7 @@ class DrillAverage(AbstractDrill, BaseConceptLearner):
             if self.goal_found:
                 if self.terminate_on_goal:
                     return self.terminate()
-            if time.time() - self.start_time > self.max_run_time:
+            if time.time() - self.start_time > self.max_runtime:
                 return self.terminate()
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 return self.terminate()
@@ -160,8 +160,7 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
                  pretrained_model_path=None,
                  quality_func=F1(), iter_bound=None, num_episode=None, max_num_of_concepts_tested=None, verbose=None,
                  sample_size=10, terminate_on_goal=True, instance_embeddings=None,
-                 max_run_time=5,
-                 ignored_concepts=None, num_of_sequential_actions=None):
+                 max_runtime=5,ignored_concepts=None, num_of_sequential_actions=None):
         self.sample_size = sample_size
         if pretrained_model_path is None:
             self.heuristic_func = DrillHeuristic(mode='sample',
@@ -188,7 +187,7 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
                                     terminate_on_goal=terminate_on_goal,
                                     iter_bound=iter_bound,
                                     max_num_of_concepts_tested=max_num_of_concepts_tested,
-                                    max_run_time=max_run_time,
+                                    max_runtime=max_runtime,
                                     verbose=verbose,
                                     name='DrillSample')
         self.experiences = Experience(maxlen=self.max_len_replay_memory)
@@ -218,7 +217,7 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
         emb_neg = emb_neg.view(1, self.sample_size, self.instance_embeddings.shape[1])
         return emb_pos, emb_neg
 
-    def init_training(self, pos_uri: Set[AnyStr], neg_uri: Set[AnyStr]) -> None:
+    def init_training(self, pos_uri: Set[str], neg_uri: Set[str]) -> None:
         """
         Initialize training for DrillSample.
 
@@ -268,7 +267,7 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
         # Default exploration exploitation tradeoff.
         self.epsilon = 1
 
-    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], ignore: Set[AnyStr] = None):
+    def fit(self, pos: Set[str], neg: Set[str], ignore: Set[str] = None):
         """
         Find hypotheses that explain pos and neg.
         """
@@ -288,7 +287,7 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
             if self.goal_found:
                 if self.terminate_on_goal:
                     return self.terminate()
-            if time.time() - self.start_time > self.max_run_time:
+            if time.time() - self.start_time > self.max_runtime:
                 return self.terminate()
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 return self.terminate()
@@ -299,8 +298,8 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
         # json serialize
         with open(self.storage_path + '/seen_lp.json', 'w') as file_descriptor:
             json.dump(self.seen_examples, file_descriptor, indent=3)
-        self.concepts_to_nodes.clear()
         return self
+
 
 class DrillRecurrent(AbstractDrill, BaseConceptLearner):
     def __init__(self, knowledge_base, refinement_operator=None,
@@ -337,7 +336,7 @@ class DrillRecurrent(AbstractDrill, BaseConceptLearner):
                                     terminate_on_goal=terminate_on_goal,
                                     iter_bound=iter_bound,
                                     max_num_of_concepts_tested=max_num_of_concepts_tested,
-                                    max_run_time=max_run_time,
+                                    max_runtime=max_runtime,
                                     verbose=verbose,
                                     name='DrillSample')
         self.experiences = Experience(maxlen=self.max_len_replay_memory)
@@ -367,7 +366,7 @@ class DrillRecurrent(AbstractDrill, BaseConceptLearner):
         emb_neg = emb_neg.view(1, self.sample_size, self.instance_embeddings.shape[1])
         return emb_pos, emb_neg
 
-    def init_training(self, pos_uri: Set[AnyStr], neg_uri: Set[AnyStr]) -> None:
+    def init_training(self, pos_uri: Set[str], neg_uri: Set[str]) -> None:
         """
         Initialize training for DrillSample.
 
@@ -417,7 +416,7 @@ class DrillRecurrent(AbstractDrill, BaseConceptLearner):
         # Default exploration exploitation tradeoff.
         self.epsilon = 1
 
-    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], ignore: Set[AnyStr] = None):
+    def fit(self, pos: Set[str], neg: Set[str], ignore: Set[str] = None):
         """
         Find hypotheses that explain pos and neg.
         """
@@ -437,7 +436,7 @@ class DrillRecurrent(AbstractDrill, BaseConceptLearner):
             if self.goal_found:
                 if self.terminate_on_goal:
                     return self.terminate()
-            if time.time() - self.start_time > self.max_run_time:
+            if time.time() - self.start_time > self.max_runtime:
                 return self.terminate()
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 return self.terminate()
@@ -450,6 +449,7 @@ class DrillRecurrent(AbstractDrill, BaseConceptLearner):
             json.dump(self.seen_examples, file_descriptor, indent=3)
         self.concepts_to_nodes.clear()
         return self
+
 
 class DrillTransformer(AbstractDrill, BaseConceptLearner):
     def __init__(self, knowledge_base, refinement_operator=None,
@@ -486,7 +486,7 @@ class DrillTransformer(AbstractDrill, BaseConceptLearner):
                                     terminate_on_goal=terminate_on_goal,
                                     iter_bound=iter_bound,
                                     max_num_of_concepts_tested=max_num_of_concepts_tested,
-                                    max_run_time=max_run_time,
+                                    max_runtime=max_runtime,
                                     verbose=verbose,
                                     name='DrillSample')
         self.experiences = Experience(maxlen=self.max_len_replay_memory)
@@ -516,7 +516,7 @@ class DrillTransformer(AbstractDrill, BaseConceptLearner):
         emb_neg = emb_neg.view(1, self.sample_size, self.instance_embeddings.shape[1])
         return emb_pos, emb_neg
 
-    def init_training(self, pos_uri: Set[AnyStr], neg_uri: Set[AnyStr]) -> None:
+    def init_training(self, pos_uri: Set[str], neg_uri: Set[str]) -> None:
         """
         Initialize training for DrillSample.
 
@@ -566,7 +566,7 @@ class DrillTransformer(AbstractDrill, BaseConceptLearner):
         # Default exploration exploitation tradeoff.
         self.epsilon = 1
 
-    def fit(self, pos: Set[AnyStr], neg: Set[AnyStr], ignore: Set[AnyStr] = None):
+    def fit(self, pos: Set[str], neg: Set[str], ignore: Set[str] = None):
         """
         Find hypotheses that explain pos and neg.
         """
@@ -586,7 +586,7 @@ class DrillTransformer(AbstractDrill, BaseConceptLearner):
             if self.goal_found:
                 if self.terminate_on_goal:
                     return self.terminate()
-            if time.time() - self.start_time > self.max_run_time:
+            if time.time() - self.start_time > self.max_runtime:
                 return self.terminate()
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 return self.terminate()
@@ -600,8 +600,9 @@ class DrillTransformer(AbstractDrill, BaseConceptLearner):
         self.concepts_to_nodes.clear()
         return self
 
+
 class DrillHeuristic(AbstractScorer):
-    def __init__(self, pos=None, neg=None,model=None, mode=None, input_shape=None):
+    def __init__(self, pos=None, neg=None, model=None, mode=None, input_shape=None):
         super().__init__(pos, neg, unlabelled=None)
         self.mode = mode
         self.name = 'DrillHeuristic_' + mode
