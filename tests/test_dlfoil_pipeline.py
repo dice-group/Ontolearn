@@ -2,7 +2,7 @@
 
 import json
 
-from ontolearn import CustomConceptLearner, KnowledgeBase, F1
+from ontolearn import CustomConceptLearner, KnowledgeBase, F1, DLFOILHeuristic
 
 PATH_FAMILY = 'data/family-benchmark_rich_background.owl'
 with open('examples/synthetic_problems.json') as json_file:
@@ -18,6 +18,7 @@ def test_dfoil():
         model = CustomConceptLearner(
             knowledge_base=kb,
             quality_func=F1(),
+            heuristic_func=DLFOILHeuristic(),
             terminate_on_goal=True,
             iter_bound=1_00,
             verbose=True)

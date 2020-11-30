@@ -10,7 +10,7 @@ kb = KnowledgeBase(PATH_FAMILY)
 def test_concept():
     # Processes input kb
     assert kb.name == 'family-benchmark_rich_background'
-    assert len(kb.concepts) > 1
-    for _, v in kb.concepts.items():
+    assert len(kb.uri_to_concepts) > 1
+    for _, v in kb.uri_to_concepts.items():
         assert len(v) == 1
         assert v.instances.issubset(kb.individuals)

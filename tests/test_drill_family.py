@@ -6,7 +6,7 @@ import pandas as pd
 
 PATH_FAMILY = 'data/family-benchmark_rich_background.owl'
 drill_pretrained_model_path = 'agent_pre_trained/model.pth'
-family_embeddings_path = 'embeddings/Dismult_family_benchmark/instance_emb.csv'
+family_embeddings_path = 'embeddings/dismult_family_benchmark/instance_emb.csv'
 synthetic_problems_path = 'examples/synthetic_problems.json'
 
 with open(synthetic_problems_path) as json_file:

@@ -23,9 +23,7 @@ def build_concepts_mapping(onto: Ontology) -> Tuple[Dict, Concept, Concept]:
     # @TODO if onto.world is important and has to be given as parameter why it has not being used in all other concept generation.
     T = Concept(Thing, kwargs={'form': 'Class'}, world=onto.world)
     bottom = Concept(Nothing, kwargs={'form': 'Class'}, world=onto.world)
-    # TODO: Think about removing owlready2 instances and use string representation.
     for i in onto.classes():
-        # i.namespace.base_iri = namespace_base_iri
         temp_concept = Concept(i, kwargs={'form': 'Class'}, world=onto.world)
         concepts[temp_concept.full_iri] = temp_concept
         individuals.update(temp_concept.instances)
@@ -34,7 +32,7 @@ def build_concepts_mapping(onto: Ontology) -> Tuple[Dict, Concept, Concept]:
         assert individuals.issubset(T.instances)
     except AssertionError:
         print(
-            'Sanity checking failed: owlready2.Thing does not contain any individual. To allivate this issue, we explicitly assign all individuals/instances to concept T.')
+            'Sanity checking failed: owlready2.Thing does not contain any individual. To alleviate this issue, we explicitly assign all individuals/instances to concept T.')
         T.instances = individuals
 
     concepts[T.full_iri] = T
