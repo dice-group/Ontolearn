@@ -238,7 +238,7 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
         else:
             neg_uri = random.sample(neg_uri, self.sample_size)
 
-        self.logger.info('Sampled E^+:[{0}] \t Sampled E^-:[{1}]'.format(len(pos_uri), len(neg_uri)))
+        # self.logger.info('Sampled E^+:[{0}] \t Sampled E^-:[{1}]'.format(len(pos_uri), len(neg_uri)))
 
         # (2) String to Owlready2 conversion of SAMPLED examples
         self.reward_func.pos = set(self.kb.convert_uri_instance_to_obj_from_iterable(pos_uri))

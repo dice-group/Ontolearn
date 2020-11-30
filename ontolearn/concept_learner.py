@@ -29,7 +29,7 @@ class CELOE(BaseConceptLearner):
                          terminate_on_goal=terminate_on_goal,
                          iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested,
                          max_runtime=max_runtime,
-                         verbose=verbose, name='CELOE')
+                         verbose=verbose, name='celoe_python')
         self.max_he, self.min_he = self.max_num_of_concepts_tested, 1
 
     def next_node_to_expand(self, step: int) -> Node:
@@ -118,6 +118,7 @@ class OCEL(CELOE):
                          ignored_concepts=ignored_concepts,
                          terminate_on_goal=terminate_on_goal,
                          iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested, verbose=verbose)
+        self.name = 'ocel_python'
 
 
 class LengthBaseLearner(BaseConceptLearner):
@@ -191,3 +192,4 @@ class CustomConceptLearner(CELOE):
                          ignored_concepts=ignored_concepts,
                          terminate_on_goal=terminate_on_goal,
                          iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested, verbose=verbose)
+        self.name = heuristic_func.name

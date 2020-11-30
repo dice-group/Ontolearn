@@ -85,7 +85,7 @@ class LearningProblemGenerator:
             if refs:
                 current_state = random.sample(list(refs), 1)[0]  # random sample.
 
-        print('|Concepts generated|', len(self.valid_learning_problems))
+        #print('|Concepts generated|', len(self.valid_learning_problems))
         self.valid_learning_problems = list(self.valid_learning_problems)
 
         self.valid_learning_problems = sorted(self.valid_learning_problems, key=lambda x: len(x), reverse=True)

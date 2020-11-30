@@ -260,12 +260,12 @@ class BaseRefinement(metaclass=ABCMeta):
         self.kb = kb
         self.max_size_of_concept = max_size_of_concept
         self.min_size_of_concept = min_size_of_concept
-        #self.concepts_to_nodes = dict()
+        # self.concepts_to_nodes = dict()
 
     def set_kb(self, kb):
         self.kb = kb
 
-    #def set_concepts_node_mapping(self, m: dict):
+    # def set_concepts_node_mapping(self, m: dict):
     #    self.concepts_to_nodes = m
 
     @abstractmethod
@@ -698,11 +698,9 @@ class AbstractDrill(ABC):
             # (3) Take sequence of actions.
             path_of_concepts, rewards = self.sequence_of_actions(root)
             if th % 100 == 0:
-                self.logger.info(
-                    '{0}.th iter. SumOfRewards: {1:.2f}\tEpsilon:{2:.2f}\t|ReplayMem.|:{3}'.format(th, sum(rewards),
-                                                                                                   self.epsilon,
-                                                                                                   len(
-                                                                                                       self.experiences)))
+                """
+                self.logger.info('{0}.th iter. SumOfRewards: {1:.2f}\tEpsilon:{2:.2f}\t|ReplayMem.|:{3}'.format(th, sum(rewards),self.epsilon,len(self.experiences)))
+                """
             # (4) Decrease exploration rate.
             self.epsilon -= self.epsilon_decay
             if self.epsilon < self.epsilon_min:
@@ -714,30 +712,6 @@ class AbstractDrill(ABC):
                 self.learn_from_replay_memory()
             sum_of_rewards_per_actions.append(sum(rewards))
         return sum_of_rewards_per_actions
-
-    """
-    def preprocess_lp(self, lp):
-        for example_node in lp:
-            # Instances of example concept conversion to URIs in string format.
-            # All concept learners must be able to perform on string representations of instances.
-            string_all_pos = set(
-                self.kb.convert_owlready2_individuals_to_uri_from_iterable(example_node.concept.instances))
-            string_all_neg = set(self.kb.convert_owlready2_individuals_to_uri_from_iterable(
-                self.kb.individuals.difference(example_node.concept.instances)))
-            data_set_info = 'Target Concept:{0}\t |E+|:{1}\t |E-|:{2}'.format(example_node.concept.str,
-                                                                              len(string_all_pos),
-                                                                              len(string_all_neg))
-            # create balanced setting
-            string_balanced_pos, string_balanced_neg = balanced_sets(string_all_pos, string_all_neg)
-            data_set_info += '\tBalanced |E+|:{0}\t|E-|:{1}:'.format(len(string_balanced_pos), len(string_balanced_neg))
-            self.logger.info(data_set_info)
-
-            if len(string_balanced_pos) > 0 and len(string_balanced_neg) > 0:
-                yield string_balanced_pos, string_balanced_neg, example_node
-            else:
-                self.logger.info('Balancing is not possible. Example will be skipped.')
-                continue
-    """
 
     def exploration_exploitation_tradeoff(self, current_state: BaseNode, next_states: List[BaseNode]) -> BaseNode:
         """
@@ -815,12 +789,11 @@ class AbstractDrill(ABC):
         counter = 0
         for _ in range(relearn_ratio):  # repeat training over learning problems.
             for (alc_concept_str, positives, negatives) in dataset:
-                self.logger.info(
-                    'Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
+                # self.logger.info(
+                #    'Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
                 self.rl_learning_loop(pos_uri=positives, neg_uri=negatives)
                 self.seen_examples.setdefault(alc_concept_str, dict()).update(
                     {'Positives': list(positives), 'Negatives': list(negatives)})
-
                 counter += 1
                 if counter % 100 == 0:
                     self.save_weights()

@@ -245,11 +245,11 @@ class DLLearnerBinder:
         if max_runtime is None:
             print('Max run time is set to 3')
             self.max_runtime = 3
+        else:
+            self.max_runtime = max_runtime
         results = []
         for (s, p, n) in dataset:
-            best_pred = self.fit(pos=p, neg=n, max_runtime=3).best_hypotheses()
-            print(best_pred)
-            exit(1)
+            best_pred = self.fit(pos=p, neg=n, max_runtime=self.max_runtime).best_hypotheses()
             results.append(best_pred)
 
         return results

@@ -166,6 +166,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
             print(owl_ready_pos)
             print(all_instances)
             print(self.kb.str_to_instance_obj)
+            print('Assertion error. Exiting.')
             exit(1)
         assert len(owl_ready_neg) == len(neg)
 
@@ -205,6 +206,9 @@ class BaseConceptLearner(metaclass=ABCMeta):
     def clean(self):
         self.concepts_to_ignore.clear()
 
+    def train(self, *args, **kwargs):
+        pass
+
     def terminate(self):
         """
 
@@ -212,6 +216,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         """
         if self.store_onto_flag:
             self.store_ontology()
+
         if self.verbose == 1:
             self.logger.info('Elapsed runtime: {0} seconds'.format(round(time.time() - self.start_time, 4)))
             self.logger.info('Number of concepts tested:{0}'.format(self.number_of_tested_concepts))
@@ -220,6 +225,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
             else:
                 t = 'Current best concept:{0}'.format(self.best_hypotheses(n=1)[0])
             self.logger.info(t)
+
         if self.verbose > 1:
             self.search_tree.show_search_tree('Final')
 
@@ -259,9 +265,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         results = []
         assert isinstance(dataset, List)
         for (alc_concept_str, positives, negatives) in dataset:
-            self.logger.info(
-                'Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
-
+            #self.logger.info('Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
             start_time = time.time()
             self.fit(pos=positives, neg=negatives)
             h = self.best_hypotheses(1)[0]
