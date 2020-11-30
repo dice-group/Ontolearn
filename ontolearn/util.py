@@ -15,7 +15,7 @@ import random
 from collections import OrderedDict, defaultdict
 from functools import total_ordering
 from abc import ABCMeta, abstractmethod, ABC
-from typing import Set, AnyStr, Dict, List, Tuple, Iterable
+from typing import Set, Dict, List, Tuple, Iterable
 
 # DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
 DEFAULT_FMT = 'Func:{name} took {elapsed:0.8f}s'
@@ -138,8 +138,13 @@ def get_full_iri(x):
 
 
 def create_logger(*, name, p):
+    """
+    @todos We should create a better logging.
+    @param name:
+    @param p:
+    @return:
+    """
     logger = logging.getLogger(name)
-
     logger.setLevel(logging.INFO)
     # create file handler which logs even debug messages
     fh = logging.FileHandler(p + '/info.log')
