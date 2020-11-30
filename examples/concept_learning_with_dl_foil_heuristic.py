@@ -1,12 +1,13 @@
 import json
 from ontolearn import KnowledgeBase
 from ontolearn.concept_learner import CustomConceptLearner
+from ontolearn.heuristics import DLFOILHeuristic
 
 with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 
 kb = KnowledgeBase(path=settings['data_path'])
-model = CustomConceptLearner(knowledge_base=kb)
+model = CustomConceptLearner(knowledge_base=kb, heuristic_func=DLFOILHeuristic())
 
 for str_target_concept, examples in settings['problems'].items():
     p = set(examples['positive_examples'])
@@ -14,8 +15,7 @@ for str_target_concept, examples in settings['problems'].items():
     print('Target concept: ', str_target_concept)
     model.fit(pos=p, neg=n)
     # Get Top n hypotheses
-    hypotheses = model.best_hypotheses(n=2)
+    hypotheses = model.best_hypotheses(n=1)
     # Use hypotheses as binary function to label individuals.
-    predictions = model.predict(individuals=list(p)+list(n), hypotheses=hypotheses)
+    predictions = model.predict(individuals=list(p) + list(n), hypotheses=hypotheses)
     print(predictions)
-

@@ -61,8 +61,7 @@ print(model_avg.best_hypotheses(n=1)[0])
 ### CELOE
 
 ```python
-from ontolearn import KnowledgeBase
-from ontolearn.concept_learner import CELOE
+from ontolearn import KnowledgeBase, CELOE
 
 p = {} # set of positive instances
 n = {} # set of negative instances
