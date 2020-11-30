@@ -39,7 +39,7 @@ class CELOEHeuristic(AbstractScorer):
 class DLFOILHeuristic(AbstractScorer):
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
-        self.name = 'DL-FOIL_Heuristic'
+        self.name = 'custom_dl_foil'
         # @todo Needs to be tested.
 
     def score(self):

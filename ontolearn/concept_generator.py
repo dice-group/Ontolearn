@@ -11,7 +11,7 @@ from .util import get_full_iri
 class ConceptGenerator:
     def __init__(self, concepts: Dict, thing: Concept, nothing: Concept, onto):
 
-        self.concepts = concepts
+        self.uri_to_concepts = concepts
         self.thing = thing
         self.nothing = nothing
         self.onto = onto
@@ -21,40 +21,6 @@ class ConceptGenerator:
         self.log_of_negations = dict()
         self.log_of_universal_restriction = dict()
         self.log_of_existential_restriction = dict()
-
-    def clean(self):
-        """
-
-        @return:
-        """
-
-        # @todo temporray, next embedings will be stored in nodes
-        for k, v in self.log_of_intersections.items():
-            a, b = k
-            a.embeddings = None
-            b.embeddings = None
-            v.embeddings = None
-
-        for k, v in self.log_of_unions.items():
-            a, b = k
-            a.embeddings = None
-            b.embeddings = None
-            v.embeddings = None
-
-        for k, v in self.log_of_negations.items():
-            a = k
-            a.embeddings = None
-            v.embeddings = None
-
-        for k, v in self.log_of_universal_restriction.items():
-            a, b = k
-            a.embeddings = None
-            v.embeddings = None
-
-        for k, v in self.log_of_existential_restriction.items():
-            a, b = k
-            a.embeddings = None
-            v.embeddings = None
 
     def get_instances_for_restrictions(self, exist, role, filler):
         if exist:
@@ -92,13 +58,13 @@ class ConceptGenerator:
                 c.instances = possible_instances_  # self.T.instances - concept.instances
 
                 self.log_of_negations[concept] = c
-                self.concepts[c.full_iri] = c
+                self.uri_to_concepts[c.full_iri] = c
 
             return self.log_of_negations[concept]
         elif concept.form == 'ObjectComplementOf':
             assert concept.str[0] == '¬'
             full_iri = concept.owl.namespace.base_iri + concept.owl.name[1:]
-            return self.concepts[full_iri]
+            return self.uri_to_concepts[full_iri]
         elif concept.owl.name == 'Thing':
             self.log_of_negations[concept.full_iri] = self.nothing
             self.log_of_negations[self.nothing.full_iri] = concept
@@ -135,7 +101,7 @@ class ConceptGenerator:
             c.instances = possible_instances_  # self.get_instances_for_restrictions(True, relation, concept)
 
             self.log_of_existential_restriction[(concept, relation)] = c
-            self.concepts[c.full_iri] = c
+            self.uri_to_concepts[c.full_iri] = c
 
         return self.log_of_existential_restriction[(concept, relation)]
 
@@ -173,7 +139,7 @@ class ConceptGenerator:
 
             self.log_of_universal_restriction[(concept, relation)] = c
 
-            self.concepts[c.full_iri] = c
+            self.uri_to_concepts[c.full_iri] = c
 
         return self.log_of_universal_restriction[(concept, relation)]
 
@@ -205,7 +171,7 @@ class ConceptGenerator:
             c.instances = possible_instances_  # A.instances | B.instances
             self.log_of_unions[(A, B)] = c
 
-            self.concepts[c.full_iri] = c
+            self.uri_to_concepts[c.full_iri] = c
         return self.log_of_unions[(A, B)]
 
     def intersection(self, A: Concept, B: Concept, base=None) -> Concept:
@@ -232,6 +198,6 @@ class ConceptGenerator:
                 assert type(i) is not str
             c.instances = possible_instances_  # A.instances & B.instances
             self.log_of_intersections[(A, B)] = c
-            self.concepts[c.full_iri] = c
+            self.uri_to_concepts[c.full_iri] = c
 
         return self.log_of_intersections[(A, B)]
