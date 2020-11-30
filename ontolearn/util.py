@@ -145,7 +145,6 @@ def create_logger(*, name, p):
     @return:
     """
     logger = logging.getLogger(name)
-
     logger.setLevel(logging.INFO)
     # create file handler which logs even debug messages
     fh = logging.FileHandler(p + '/info.log')

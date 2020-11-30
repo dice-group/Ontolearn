@@ -9,8 +9,8 @@ The goal of ontolearn os to provide efficient solutions for concept learning on 
 """
 __version__ = '0.0.2'
 
-
 import warnings
+
 warnings.filterwarnings("ignore")
 
 from .base import KnowledgeBase
@@ -22,3 +22,4 @@ from .search import *
 from .metrics import *
 from .heuristics import *
 from .learning_problem_generator import *
+from .experiments import *
