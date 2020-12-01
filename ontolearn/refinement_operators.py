@@ -11,13 +11,14 @@ from itertools import chain, tee
 class LengthBasedRefinement(BaseRefinement):
     """ A top down refinement operator refinement operator in ALC."""
 
-    def __init__(self, kb, max_child_length=10):
+    def __init__(self, kb, max_child_length=10, apply_combinations=True):
         super().__init__(kb)
         self.max_child_length = max_child_length
+        self.apply_combinations = apply_combinations
 
     def getNode(self, c: Concept, parent_node=None, root=False):
 
-        #if c in self.concepts_to_nodes:
+        # if c in self.concepts_to_nodes:
         #    return self.concepts_to_nodes[c]
 
         if parent_node is None and root is False:
@@ -25,7 +26,7 @@ class LengthBasedRefinement(BaseRefinement):
             raise ValueError
 
         n = Node(concept=c, parent_node=parent_node, root=root)
-        #self.concepts_to_nodes[c] = n
+        # self.concepts_to_nodes[c] = n
         return n
 
     def refine_atomic_concept(self, node: Node, max_length: int = None) -> Set:
@@ -51,35 +52,35 @@ class LengthBasedRefinement(BaseRefinement):
             refinement_gate.add(i)
             cumulative_refinements.setdefault(len(i), set()).add(i)
 
-        if len(cumulative_refinements) > 0:
-            old_len_cumulative_refinements = len(cumulative_refinements)
-            while True:
-                temp = dict()
-                for k, v in cumulative_refinements.items():
-                    for kk, vv in cumulative_refinements.items():
-                        length = k + kk
-                        if (max_length > length) and (self.max_child_length > length + 1):
-                            for i in v:
-                                for j in vv:
+        if self.apply_combinations:
+            if len(cumulative_refinements) > 0:
+                old_len_cumulative_refinements = len(cumulative_refinements)
+                while True:
+                    temp = dict()
+                    for k, v in cumulative_refinements.items():
+                        for kk, vv in cumulative_refinements.items():
+                            length = k + kk
+                            if (max_length > length) and (self.max_child_length > length + 1):
+                                for i in v:
+                                    for j in vv:
 
-                                    if (i, j) in refinement_gate:
-                                        continue
+                                        if (i, j) in refinement_gate:
+                                            continue
 
-                                    refinement_gate.add((i, j))
-                                    refinement_gate.add((j, i))
-                                    union = self.kb.union(i, j)
-                                    temp.setdefault(len(union), set()).add(union)
-                                    intersect = self.kb.intersection(i, j)
-                                    temp.setdefault(len(intersect), set()).add(intersect)
+                                        refinement_gate.add((i, j))
+                                        refinement_gate.add((j, i))
+                                        union = self.kb.union(i, j)
+                                        temp.setdefault(len(union), set()).add(union)
+                                        intersect = self.kb.intersection(i, j)
+                                        temp.setdefault(len(intersect), set()).add(intersect)
 
-                cumulative_refinements.update(temp)
-                new_len_cumulative_refinements = len(cumulative_refinements)
-                if old_len_cumulative_refinements == new_len_cumulative_refinements:
-                    break
-                old_len_cumulative_refinements = new_len_cumulative_refinements
+                    cumulative_refinements.update(temp)
+                    new_len_cumulative_refinements = len(cumulative_refinements)
+                    if old_len_cumulative_refinements == new_len_cumulative_refinements:
+                        break
+                    old_len_cumulative_refinements = new_len_cumulative_refinements
 
-            for i in chain.from_iterable(cumulative_refinements.values()):
-                yield i
+        yield from chain.from_iterable(cumulative_refinements.values())
 
     def refine_complement_of(self, node: Node, maxlength: int) -> Generator:
         parents = self.kb.get_direct_parents(self.kb.negation(node.concept))
@@ -121,8 +122,10 @@ class LengthBasedRefinement(BaseRefinement):
             if maxlength >= len(concept_A) + len(ref_concept_B):
                 yield self.kb.intersection(concept_A, ref_concept_B)
 
-    def refine(self, node, maxlength) -> Generator:
+    def refine(self, node, maxlength, apply_combinations=None) -> Generator:
         assert isinstance(node, Node)
+        if apply_combinations:
+            self.apply_combinations = apply_combinations
         if node.concept.is_atomic:
             yield from self.refine_atomic_concept(node, maxlength)
         elif node.concept.form == 'ObjectComplementOf':
@@ -262,7 +265,7 @@ class ModifiedCELOERefinement(BaseRefinement):
 
     def getNode(self, c: Concept, parent_node=None, root=False):
 
-        #if c in self.concepts_to_nodes:
+        # if c in self.concepts_to_nodes:
         #    return self.concepts_to_nodes[c]
 
         if parent_node is None and root is False:
@@ -270,7 +273,7 @@ class ModifiedCELOERefinement(BaseRefinement):
             raise ValueError
 
         n = Node(concept=c, parent_node=parent_node, root=root)
-        #self.concepts_to_nodes[c] = n
+        # self.concepts_to_nodes[c] = n
         return n
 
     def refine_object_union_of(self, node: Node, maxlength: int, current_domain: Concept):
@@ -359,7 +362,7 @@ class CustomRefinementOperator(BaseRefinement):
 
     def getNode(self, c: Concept, parent_node=None, root=False):
 
-        #if c in self.concepts_to_nodes:
+        # if c in self.concepts_to_nodes:
         #    return self.concepts_to_nodes[c]
 
         if parent_node is None and root is False:
@@ -367,7 +370,7 @@ class CustomRefinementOperator(BaseRefinement):
             raise ValueError
 
         n = Node(concept=c, parent_node=parent_node, root=root)
-        #self.concepts_to_nodes[c] = n
+        # self.concepts_to_nodes[c] = n
         return n
 
     def refine_atomic_concept(self, concept: Concept) -> Set:
@@ -481,4 +484,3 @@ class CustomRefinementOperator(BaseRefinement):
             yield from self.refine_object_intersection_of(concept)
         else:
             raise ValueError
-

@@ -19,10 +19,7 @@ from typing import Set, Dict, List, Tuple, Iterable
 
 # DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
 DEFAULT_FMT = 'Func:{name} took {elapsed:0.8f}s'
-
 flag_for_performance = False
-
-
 def parametrized_performance_debugger(fmt=DEFAULT_FMT):
     def decorate(func):
         def clocked(*_args):
