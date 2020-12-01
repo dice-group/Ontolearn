@@ -139,3 +139,4 @@ cython_debug/
 
 # Pycharm IDE
 .idea/
+/data/dbpedia_2016-10.owl
