@@ -13,6 +13,7 @@ import time
 import random
 import types
 from .static_funcs import apply_type_enrichment, retrieve_concept_chain, decompose_to_atomic
+import string
 
 
 class BaseConceptLearner(metaclass=ABCMeta):
@@ -265,7 +266,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         results = []
         assert isinstance(dataset, List)
         for (alc_concept_str, positives, negatives) in dataset:
-            #self.logger.info('Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
+            # self.logger.info('Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
             start_time = time.time()
             self.fit(pos=positives, neg=negatives)
             h = self.best_hypotheses(1)[0]
@@ -339,6 +340,8 @@ class BaseConceptLearner(metaclass=ABCMeta):
         except AssertionError:
             print('|Search Tree|:{0}'.format(len(self.search_tree)))
 
+        # https://owlready2.readthedocs.io/en/latest/onto.html =>
+        # If an ontology has already been created for the same IRI, it will be returned.
         o1 = self.kb.world.get_ontology('https://dice-research.org/predictions/' + str(time.time()))
         o1.imported_ontologies.append(self.kb.onto)
         with o1:
