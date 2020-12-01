@@ -11,11 +11,10 @@ class LearningProblemGenerator:
     """
     Learning problem generator.
     """
-
-    def __init__(self, knowledge_base, refinement_operator=None, num_problems=500,
+    def __init__(self, knowledge_base, refinement_operator=None, num_problems=100,
                  min_num_ind=0, min_length=3, max_length=5):
         if refinement_operator is None:
-            refinement_operator = LengthBasedRefinement(kb=knowledge_base, apply_combinations=False)
+            refinement_operator = LengthBasedRefinement(kb=knowledge_base)
 
         self.kb = knowledge_base
         self.rho = refinement_operator
@@ -24,18 +23,23 @@ class LearningProblemGenerator:
         self.min_num_ind = min_num_ind
         self.min_length = min_length
         self.max_length = max_length
-        self.valid_learning_problems = set()
-        self.seen_concepts = set()
+        self.valid_learning_problems = []
         self.depth = 1 + (max_length // 3)
 
     @property
-    def concepts(self):
+    def concepts(self) -> List:
+        """
+        Return list of positive and negative examples from valid learning problems.
+        """
         if len(self.valid_learning_problems) == 0:
             self.apply()
-        return self.valid_learning_problems[:self.num_problems]
+        return self.valid_learning_problems
 
     @property
-    def balanced_examples(self):
+    def balanced_examples(self) -> List:
+        """
+        Return list of balanced positive and negative examples from valid learning problems.
+        """
         if len(self.valid_learning_problems) == 0:
             self.apply()
         results = list()
@@ -58,10 +62,10 @@ class LearningProblemGenerator:
         return results
 
     @property
-    def examples(self):
+    def examples(self) -> List:
         if len(self.valid_learning_problems) == 0:
             self.apply()
-        return self.valid_learning_problems[:self.num_problems]
+        return self.valid_learning_problems
 
     def apply_rho(self, node, len_constant=1):
         return {self.rho.getNode(i, parent_node=node) for i in
@@ -71,8 +75,11 @@ class LearningProblemGenerator:
     @performance_debugger('DFSGeneration')
     def __depth_first__base_generation(self) -> None:
         """
-        depth-first-search with backtracking concept generation.
+
+        Given the constraints (number of required problems/class expressions, min and max length),
+        search valid concepts in depth-first-search with backtracking manner.
         """
+        valid_examples = set()
         for _ in range(self.num_problems):
             path = []
             explored_state = list()
@@ -83,31 +90,31 @@ class LearningProblemGenerator:
             explored_state.extend(refinements)
 
             for i in range(self.depth):
-                path.append(state)  # Append expanded states.
+                path.append(state)  # Append state.
                 refinements = self.apply_rho(state, len_constant=3)
                 if len(refinements) > 0:
+                    # Only constraints.
                     valid_refs = set(filter(lambda x: self.max_length >= len(x) >= self.min_length, refinements))
-                    self.valid_learning_problems.update(valid_refs)
+                    # Early select valid examples.
+                    valid_examples.update(valid_refs)
                     if len(self.valid_learning_problems) >= self.num_problems:
                         break
                     state = refinements.pop()
                     explored_state.extend(refinements)  # Append explored state
                 else:
-                    state = explored_state.pop()  # backtrack.
-
-            if len(self.valid_learning_problems) >= self.num_problems:
+                    state = explored_state.pop()  # Backtrack.
+            if len(valid_examples) >= self.num_problems:
                 break
 
-        self.valid_learning_problems = list(self.valid_learning_problems)
+        self.valid_learning_problems = list(valid_examples)[:self.num_problems]
 
-    def apply(self):
+    def apply(self) -> None:
         """
         Generate concepts that satisfy the given constraints.
         @return:
         """
         self.__depth_first__base_generation()
-        return True
-
+        """
         current_state = self.rho.getNode(self.kb.thing, root=True)
         for _ in range(self.depth):
             refs = self.apply_rho(current_state)
@@ -130,6 +137,7 @@ class LearningProblemGenerator:
         self.valid_learning_problems = list(self.valid_learning_problems)
 
         self.valid_learning_problems = sorted(self.valid_learning_problems, key=lambda x: len(x), reverse=True)
+        """
 
     def __iter__(self):
         if len(self.valid_learning_problems) == 0:
