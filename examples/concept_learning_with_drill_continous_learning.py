@@ -2,7 +2,7 @@
 ====================================================================
 Drill -- Deep Reinforcement Learning for Refinement Operators in ALC
 ====================================================================
-Drill with continous training.
+Drill with continuous training.
 Author: Caglar Demir
 """
 

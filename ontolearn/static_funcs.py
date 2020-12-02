@@ -6,6 +6,7 @@ from collections import deque
 from owlready2 import Thing, get_ontology, Not
 import types
 from .util import get_full_iri
+import time
 
 
 def build_concepts_mapping(onto: Ontology) -> Tuple[Dict, Concept, Concept]:
@@ -31,8 +32,7 @@ def build_concepts_mapping(onto: Ontology) -> Tuple[Dict, Concept, Concept]:
         assert T.instances  # if empty throw error.
         assert individuals.issubset(T.instances)
     except AssertionError:
-        print(
-            'Sanity checking failed: owlready2.Thing does not contain any individual. To alleviate this issue, we explicitly assign all individuals/instances to concept T.')
+        # print('Sanity checking failed: owlready2.Thing does not contain any individual. To alleviate this issue, we explicitly assign all individuals/instances to concept T.')
         T.instances = individuals
 
     concepts[T.full_iri] = T
@@ -89,6 +89,7 @@ def retrieve_concept_chain(node: BaseNode) -> Iterable:
         hierarchy.appendleft(node)
     return hierarchy
 
+
 def decompose_to_atomic(C):
     if C.is_atomic:
         return C.owl
@@ -107,3 +108,21 @@ def decompose_to_atomic(C):
         print('Someting wrong')
         print(C)
         raise ValueError
+
+
+def export_concepts(kb, concepts, path='concepts.owl', rdf_format='rdfxml') -> None:
+    o1 = kb.world.get_ontology('https://dice-research.org/predictions/' + str(time.time()))
+    o1.imported_ontologies.append(kb.onto)
+
+    for ith, h in enumerate(concepts):
+        with o1:
+            w = types.new_class(name='Pred_' + str(ith), bases=(Thing,))
+            w.is_a.remove(Thing)
+            w.label.append(h.concept.str)
+            try:
+                w.equivalent_to.append(decompose_to_atomic(h.concept))
+            except AttributeError as e:
+                print(e)
+                continue
+
+    o1.save(file=path, format=rdf_format)
