@@ -14,14 +14,7 @@ class LearningProblemGenerator:
     def __init__(self, knowledge_base, refinement_operator=None, num_problems=10,
                  min_num_ind=0, min_length=3, max_length=5, num_of_concurrent_search=None):
         """
-
-        @param knowledge_base:
-        @param refinement_operator:
-        @param num_problems:
-        @param min_num_ind:
-        @param min_length:
-        @param max_length:
-        @param num_of_concurrent_search: Number of dfs applied with async coroutines.
+        Generate at least num_problems of concepts that has satisfy length constraints.
         """
         if refinement_operator is None:
             refinement_operator = LengthBasedRefinement(kb=knowledge_base)
@@ -117,7 +110,7 @@ class LearningProblemGenerator:
             if len(valid_examples) >= self.num_problems:
                 break
 
-        self.valid_learning_problems = list(valid_examples)[:self.num_problems]
+        self.valid_learning_problems = list(valid_examples)#[:self.num_problems]
 
     @staticmethod
     async def apply_dfs(*, state, apply_rho, depth, num_problems, max_length, min_length) -> set:
@@ -145,7 +138,6 @@ class LearningProblemGenerator:
         Given the constraints (number of required problems/class expressions, min and max length),
         search valid concepts in depth-first-search with backtracking manner.
         """
-
         async def async_dfs(X):
             c = [self.apply_dfs(state=x, apply_rho=self.apply_rho,
                                 depth=self.depth, num_problems=self.num_problems // self.num_of_concurrent_search,
@@ -163,10 +155,11 @@ class LearningProblemGenerator:
     def apply(self) -> None:
         """
         Generate concepts that satisfy the given constraints.
-        @return:
         """
         if self.num_of_concurrent_search:
-            self.concurrent_dfs_concept_generation()
+            print('Concurrent dfs is not production ready. We will use serial computation.')
+            self.dfs_concept_generation()
+            # self.concurrent_dfs_concept_generation()
         else:
             self.dfs_concept_generation()
 
