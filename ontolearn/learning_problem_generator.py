@@ -27,7 +27,7 @@ class LearningProblemGenerator:
             refinement_operator = LengthBasedRefinement(kb=knowledge_base)
 
         if num_of_concurrent_search:
-            assert isinstance(num_of_concurrent_search,int)
+            assert isinstance(num_of_concurrent_search, int)
         self.kb = knowledge_base
         self.rho = refinement_operator
         self.num_problems = num_problems
@@ -145,16 +145,18 @@ class LearningProblemGenerator:
         Given the constraints (number of required problems/class expressions, min and max length),
         search valid concepts in depth-first-search with backtracking manner.
         """
-        async def coros(X):
+
+        async def async_dfs(X):
             c = [self.apply_dfs(state=x, apply_rho=self.apply_rho,
-                                depth=self.depth, num_problems=self.num_problems//self.num_of_concurrent_search, max_length=self.max_length,
+                                depth=self.depth, num_problems=self.num_problems // self.num_of_concurrent_search,
+                                max_length=self.max_length,
                                 min_length=self.min_length) for x in X]
             return await asyncio.gather(*c)
 
         refinements = list(self.apply_rho(self.rho.getNode(self.kb.thing, root=True), len_constant=0))
         random.shuffle(refinements)
         loop = asyncio.get_event_loop()
-        results = loop.run_until_complete(coros(refinements[:self.num_of_concurrent_search]))
+        results = loop.run_until_complete(async_dfs(refinements[:self.num_of_concurrent_search]))
         valid_examples = set(list(itertools.chain.from_iterable(results)))
         self.valid_learning_problems = list(valid_examples)[:self.num_problems]
 
