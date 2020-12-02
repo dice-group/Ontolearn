@@ -20,7 +20,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         super().__init__()
         self.path = path
         self.world = World()
-        self.onto = self.world.get_ontology(self.path).load(reload=True)
+        self.onto = self.world.get_ontology('file://'+self.path).load(reload=True)
         self.property_hierarchy = PropertyHierarchy(self.onto)
         self.name = self.onto.name
         self.parse()
@@ -61,8 +61,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
             for desc in concept_A.owl.descendants(include_self=False, world=onto.world):
 
-                wrapped_desc = self.uri_to_concepts[desc.namespace.base_iri + desc.name]
-
+                try:
+                    wrapped_desc = self.uri_to_concepts[desc.namespace.base_iri + desc.name]
+                except KeyError:
+                    #p rint('###########')
+                    # print('IRI: {0} not found will be ignored.'.format(str(desc.namespace.base_iri + desc.name)))
+                    continue
                 # Include all sub class that are wrapped with AtomicConcept class into hierarchy.
                 self.top_down_concept_hierarchy[concept_A].add(wrapped_desc)
                 if len(wrapped_desc.owl.descendants(
@@ -70,7 +74,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
                     self.concepts_to_leafs.setdefault(concept_A, set()).add(wrapped_desc)
 
             for ans in concept_A.owl.ancestors(include_self=False):
-                wrapped_ans = self.uri_to_concepts[ans.namespace.base_iri + ans.name]
+                try:
+                    wrapped_ans = self.uri_to_concepts[ans.namespace.base_iri + ans.name]
+                except KeyError:
+                    # print('###########')
+                    # print('IRI: {0} not found will be ignored.'.format(str(ans.namespace.base_iri + ans.name)))
+                    continue
                 # Include all superclasses into down top hierarchy
                 self.down_top_concept_hierarchy[concept_A].add(wrapped_ans)
 

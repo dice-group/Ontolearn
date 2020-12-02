@@ -107,7 +107,7 @@ class BaseConcept(metaclass=ABCMeta):
     def __gt__(self, other):
         return self.length > other.length
 
-
+@total_ordering
 class BaseNode(metaclass=ABCMeta):
     """Base class for Concept."""
     __slots__ = ['concept', '__heuristic_score', '__horizontal_expansion', '__quality_score',
@@ -195,6 +195,11 @@ class BaseNode(metaclass=ABCMeta):
     def increment_h_exp(self, val=0):
         self.__horizontal_expansion += val + 1
 
+    def __lt__(self, other):
+        return self.concept.length < other.concept.length
+
+    def __gt__(self, other):
+        return self.concept.length > other.concept.length
 
 class AbstractScorer(ABC):
     """
