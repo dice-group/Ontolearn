@@ -1,5 +1,4 @@
 from ontolearn import KnowledgeBase, LearningProblemGenerator
-from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.static_funcs import export_concepts
 
 path_dbpedia = '../data/dbpedia_2016-10.owl'
