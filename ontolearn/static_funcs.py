@@ -113,7 +113,7 @@ def decompose_to_atomic(C):
 def export_concepts(kb, concepts, path='concepts.owl', rdf_format='rdfxml') -> None:
     o1 = kb.world.get_ontology('https://dice-research.org/predictions/' + str(time.time()))
     o1.imported_ontologies.append(kb.onto)
-
+    print('Number of concepts to be generated:', len(concepts))
     for ith, h in enumerate(concepts):
         with o1:
             w = types.new_class(name='Pred_' + str(ith), bases=(Thing,))
@@ -124,5 +124,4 @@ def export_concepts(kb, concepts, path='concepts.owl', rdf_format='rdfxml') -> N
             except AttributeError as e:
                 print(e)
                 continue
-
     o1.save(file=path, format=rdf_format)
