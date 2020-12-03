@@ -6,6 +6,10 @@ import time
 
 
 class DLLearnerBinder:
+    """
+    dl-learner python binder.
+    """
+
     def __init__(self, binary_path=None, model=None, kb_path=None, max_runtime=3):
         assert binary_path
         assert model
@@ -19,17 +23,23 @@ class DLLearnerBinder:
         self.logger = create_logger(name=self.name, p=self.storage_path)
         self.best_predictions = None
 
-    def generate_config(self, positives: List[str], negatives: List[str]):
-        assert len(positives) > 0
-        assert len(negatives) > 0
+    def write_dl_learner_config(self, pos: List[str], neg: List[str]) -> str:
+        """
+        Writes config file for dl-learner.
+        @param pos: A list of URIs of individuals indicating positive examples in concept learning problem.
+        @param neg: A list of URIs of individuals indicating negatives examples in concept learning problem.
+        @return: path of generated config file.
+        """
+        assert len(pos) > 0
+        assert len(neg) > 0
 
         Text = list()
         pos_string = "{ "
         neg_string = "{ "
-        for i in positives:
+        for i in pos:
             pos_string += "\"" + str(
                 i) + "\","
-        for j in negatives:
+        for j in neg:
             neg_string += "\"" + str(
                 j) + "\","
 
@@ -76,11 +86,6 @@ class DLLearnerBinder:
         Text.append("op.type = \"rho\"")
 
         Text.append("op.useCardinalityRestrictions = \"false\"")
-
-        # Text.append(
-        #     "alg.searchTreeFile =\"" + config_path + '_search_tree.txt\"')  # carcinogenesis/carcinogenesis.ow
-        # Text.append("alg.maxClassExpressionTests = " + str(num_of_concepts_tested))
-
         if self.name == 'celoe':
             Text.append("alg.type = \"celoe\"")
             Text.append("alg.stopOnFirstDefinition = \"true\"")
@@ -107,39 +112,40 @@ class DLLearnerBinder:
 
     def fit(self, pos: List[str], neg: List[str], max_runtime: int = None):
         """
-
-        @param pos:
-        @param neg:
+        Fit dl-learner model on a given positive and negative examples.
+        @param pos: A list of URIs of individuals indicating positive examples in concept learning problem
+        @param neg: A list of URIs of individuals indicating negatives examples in concept learning problem.
         @param max_runtime:
-        @return:
+        @return: self.
         """
         assert len(pos) > 0
         assert len(neg) > 0
 
         if max_runtime:
             self.max_runtime = max_runtime
-
-        pathToConfig = self.generate_config(positives=pos, negatives=neg)
-
+        pathToConfig = self.write_dl_learner_config(pos=pos, neg=neg)
         total_runtime = time.time()
         res = subprocess.run([self.binary_path + 'bin/cli', pathToConfig], stdout=subprocess.PIPE,
                              universal_newlines=True)
         total_runtime = round(time.time() - total_runtime, 3)
-
         self.best_predictions = self.parse_dl_learner_output(res.stdout.splitlines())
         self.best_predictions['Runtime'] = total_runtime
         return self
 
     def best_hypotheses(self):
-        return self.best_predictions
+        """
+        return predictions if exists.
+        """
+        if self.best_predictions:
+            return self.best_predictions
+        else:
+            print('Not prediction found.')
 
     def parse_dl_learner_output(self, output_of_dl_learner) -> Dict:
         """
-
-        @param output_of_dl_learner:
-        @return:
+        Parse the output received from executing dl-learner.
+        @return: A dictionary of {'Prediction': ..., 'Accuracy': ..., 'F-measure': ...}
         """
-
         solutions = None
         best_concept_str = None
         acc = -1.0
@@ -237,19 +243,17 @@ class DLLearnerBinder:
 
     def fit_from_iterable(self, dataset: List = None, max_runtime=None) -> List[Dict]:
         """
-        @param dataset:
+        Fit dl-learner model on a list of given positive and negative examples.
+        @param dataset:A list of tuple (s,p,n) where
+        s => string representation of target concept
+        p => positive examples, i.e. s(p)=1.
+        n => negative examples, i.e. s(n)=0.
         @param max_runtime:
         @return:
         """
         assert len(dataset) > 0
-        if max_runtime is None:
-            print('Max run time is set to 3')
-            self.max_runtime = 3
-        else:
+        if max_runtime:
+            assert isinstance(max_runtime, int)
             self.max_runtime = max_runtime
-        results = []
-        for (s, p, n) in dataset:
-            best_pred = self.fit(pos=p, neg=n, max_runtime=self.max_runtime).best_hypotheses()
-            results.append(best_pred)
 
-        return results
+        return [self.fit(pos=p, neg=n, max_runtime=self.max_runtime).best_hypotheses() for (s, p, n) in dataset]
