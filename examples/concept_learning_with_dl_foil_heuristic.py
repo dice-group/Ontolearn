@@ -18,4 +18,3 @@ for str_target_concept, examples in settings['problems'].items():
     hypotheses = model.best_hypotheses(n=1)
     # Use hypotheses as binary function to label individuals.
     predictions = model.predict(individuals=list(p) + list(n), hypotheses=hypotheses)
-    print(predictions)

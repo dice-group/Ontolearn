@@ -3,7 +3,7 @@ from functools import total_ordering
 from abc import ABCMeta, abstractmethod, ABC
 from owlready2 import ThingClass, Ontology
 from .util import get_full_iri, balanced_sets
-from typing import Set, Dict, List, Tuple
+from typing import Set, Dict, List, Tuple, Iterable
 import random
 import pandas as pd
 import torch
@@ -107,6 +107,7 @@ class BaseConcept(metaclass=ABCMeta):
     def __gt__(self, other):
         return self.length > other.length
 
+
 @total_ordering
 class BaseNode(metaclass=ABCMeta):
     """Base class for Concept."""
@@ -200,6 +201,7 @@ class BaseNode(metaclass=ABCMeta):
 
     def __gt__(self, other):
         return self.concept.length > other.concept.length
+
 
 class AbstractScorer(ABC):
     """
@@ -430,8 +432,9 @@ class AbstractKnowledgeBase(ABC):
         self.onto.save(file=path, format=rdf_format)
 
     def describe(self):
-        print('Number of individuals: {0}'.format(len(self.individuals)))
-        print('Number of concepts: {0}'.format(len(self.uri_to_concepts)))
+        print(f'Number of concepts: {len(self.uri_to_concepts)}\n'
+              f'Number of individuals: {len(self.individuals)}\n'
+              f'Number of properties: {len(self.property_hierarchy)}')
 
     @abstractmethod
     def clean(self):
@@ -779,7 +782,7 @@ class AbstractDrill(ABC):
             predictions = self.model_net.forward(ds.get_all())
         return predictions
 
-    def train(self, dataset: List[Tuple[str, Set, Set]], relearn_ratio: int = 1):
+    def train(self, dataset: Iterable[Tuple[str, Set, Set]], relearn_ratio: int = 1):
         """
         Train RL agent on learning problems with relearn_ratio.
 
@@ -789,13 +792,14 @@ class AbstractDrill(ABC):
         @param relearn_ratio: An integer indicating the number of times dataset is iterated.
         @return: itself
         """
-        assert len(dataset) > 0
 
+        self.logger.info('Training starts.')
         counter = 0
         for _ in range(relearn_ratio):  # repeat training over learning problems.
             for (alc_concept_str, positives, negatives) in dataset:
-                # self.logger.info(
-                #    'Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
+                self.logger.info(
+                    'Goal Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
+
                 self.rl_learning_loop(pos_uri=positives, neg_uri=negatives)
                 self.seen_examples.setdefault(alc_concept_str, dict()).update(
                     {'Positives': list(positives), 'Negatives': list(negatives)})

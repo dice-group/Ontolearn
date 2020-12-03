@@ -156,7 +156,7 @@ def create_logger(*, name, p):
     ch.setFormatter(formatter)
     fh.setFormatter(formatter)
     # add the handlers to logger
-    logger.addHandler(ch)
+    #logger.addHandler(ch) # do not print in console.
     logger.addHandler(fh)
 
     return logger
