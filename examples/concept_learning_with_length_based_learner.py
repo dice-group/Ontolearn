@@ -19,5 +19,3 @@ for str_target_concept, examples in settings['problems'].items():
             {'http://www.benchmark.org/family#Brother', 'Father', 'Grandparent'})  # Use URI, or concept with length 1.
     model.fit(pos=p, neg=n, ignore=concepts_to_ignore)
     hypotheses = model.best_hypotheses(n=10)
-    print(hypotheses[0])
-    # predictions = model.predict(individuals=list(p), hypotheses=hypotheses)

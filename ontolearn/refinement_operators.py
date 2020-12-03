@@ -20,7 +20,6 @@ class LengthBasedRefinement(BaseRefinement):
 
         # if c in self.concepts_to_nodes:
         #    return self.concepts_to_nodes[c]
-
         if parent_node is None and root is False:
             print(c)
             raise ValueError
@@ -52,7 +51,7 @@ class LengthBasedRefinement(BaseRefinement):
             refinement_gate.add(i)
             cumulative_refinements.setdefault(len(i), set()).add(i)
 
-        if self.apply_combinations:
+        if self.apply_combinations and len(refinement_gate) < 1000:  # CD: A possible heuristic. 03.12.2020.
             if len(cumulative_refinements) > 0:
                 old_len_cumulative_refinements = len(cumulative_refinements)
                 while True:
@@ -350,7 +349,7 @@ class ModifiedCELOERefinement(BaseRefinement):
         else:
             raise ValueError
 
-        # @Todo could it be possible? Investigate.
+        # @Todo Investigate whether we can avoid this for loop although originally rho in celoe returns none.
         for i in refinement:
             if i is not None:
                 yield i

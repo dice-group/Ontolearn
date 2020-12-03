@@ -6,6 +6,7 @@ import random
 import torch
 from collections import deque
 
+
 class PropertyHierarchy:
 
     def __init__(self, onto):
@@ -18,6 +19,9 @@ class PropertyHierarchy:
     def get_most_general_property(self):
         for i in self.all_properties:
             yield i
+
+    def __len__(self):
+        return len(self.all_properties)
 
 
 # @Todo CD:Could we combine PrepareBatchOfPrediction and PrepareBatchOfTraining?
