@@ -104,7 +104,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         if self.concepts_to_ignore is None:
             self.concepts_to_ignore = set()
         if self.verbose is None:
-            self.verbose = 0
+            self.verbose = 1
 
     def __sanity_checking(self):
         assert self.start_class
@@ -226,6 +226,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
             else:
                 t = 'Current best concept:{0}'.format(self.best_hypotheses(n=1)[0])
             self.logger.info(t)
+            print(t)
 
         if self.verbose > 1:
             self.search_tree.show_search_tree('Final')

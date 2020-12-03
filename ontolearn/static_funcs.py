@@ -110,7 +110,14 @@ def decompose_to_atomic(C):
         raise ValueError
 
 
-def export_concepts(kb, concepts, path='concepts.owl', rdf_format='rdfxml') -> None:
+def export_concepts(kb, concepts, path: str = 'concepts.owl', rdf_format: str = 'rdfxml') -> None:
+    """
+    @param kb: Knowledge Base object
+    @param concepts:
+    @param path:
+    @param rdf_format: serialization format. “rdf/xml” or “ntriples”.
+    @return:
+    """
     o1 = kb.world.get_ontology('https://dice-research.org/predictions/' + str(time.time()))
     o1.imported_ontologies.append(kb.onto)
     print('Number of concepts to be generated:', len(concepts))
@@ -122,6 +129,7 @@ def export_concepts(kb, concepts, path='concepts.owl', rdf_format='rdfxml') -> N
             try:
                 w.equivalent_to.append(decompose_to_atomic(h.concept))
             except AttributeError as e:
+                print('Attribute Error.')
                 print(e)
-                continue
+                print('exiting.')
     o1.save(file=path, format=rdf_format)

@@ -21,11 +21,11 @@ data_path = settings['data_path']
 kb = KnowledgeBase(PATH_FAMILY)
 rho = LengthBasedRefinement(kb=kb)
 
-balanced_examples = LearningProblemGenerator(knowledge_base=kb,  num_problems=1,min_num_ind=15).balanced_examples
+lp = LearningProblemGenerator(knowledge_base=kb)
+balanced_examples = lp.get_balanced_examples(num_problems=100, min_num_instances=15, num_diff_runs=10, search_algo='strict-dfs')
+
 instance_emb = pd.read_csv(family_embeddings_path, index_col=0)
 # apply_TSNE_on_df(instance_emb)  # if needed.
-
-
 model_sub = DrillSample(knowledge_base=kb, refinement_operator=rho,
                         num_episode=1,
                         instance_embeddings=instance_emb).train(balanced_examples)

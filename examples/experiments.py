@@ -11,7 +11,8 @@ dl_learner_path = '/home/demir/Desktop/DL/dllearner-1.4.0/'
 kb = KnowledgeBase(PATH_FAMILY)
 emb = pd.read_csv(family_embeddings_path, index_col=0)
 
-balanced_examples = LearningProblemGenerator(knowledge_base=kb, num_problems=10, min_num_ind=15).balanced_examples
+lp = LearningProblemGenerator(knowledge_base=kb, num_problems=5, min_num_instances=20)
+balanced_examples = lp.get_balanced_examples(num_problems=5, min_num_instances=20)
 
 # Initialize models
 celoe = DLLearnerBinder(binary_path=dl_learner_path, kb_path=PATH_FAMILY, model='celoe')
@@ -24,7 +25,7 @@ ocel_python = OCEL(knowledge_base=kb)
 dl_foil = CustomConceptLearner(knowledge_base=kb, heuristic_func=DLFOILHeuristic())
 
 exp = Experiments()
-k_fold_cross_validation = exp.start_KFold(k=10, dataset=balanced_examples,
+k_fold_cross_validation = exp.start_KFold(k=5, dataset=balanced_examples,
                                           models=[celoe_python, ocel_python, drill_average, drill_sample, dl_foil,
                                                   celoe, ocel, eltl],
                                           # celoe, ocel, eltl

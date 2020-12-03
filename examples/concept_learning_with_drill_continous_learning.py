@@ -25,9 +25,9 @@ data_path = settings['data_path']
 kb = KnowledgeBase(PATH_FAMILY)
 rho = LengthBasedRefinement(kb=kb)
 
-balanced_examples = LearningProblemGenerator(knowledge_base=kb,
-                                             num_problems=1,
-                                             min_num_ind=15).balanced_examples
+lp = LearningProblemGenerator(knowledge_base=kb)
+balanced_examples = lp.get_balanced_examples(num_problems=1000, min_num_instances=10, num_diff_runs=100, search_algo='dfs')
+
 
 instance_emb = pd.read_csv(family_embeddings_path, index_col=0)
 # apply_TSNE_on_df(instance_emb)  # if needed.
