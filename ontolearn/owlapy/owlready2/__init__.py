@@ -1,0 +1,1 @@
+from ontolearn.owlapy.owlready2.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
