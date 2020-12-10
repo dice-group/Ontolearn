@@ -9,9 +9,9 @@ The goal of ontolearn os to provide efficient solutions for concept learning on 
 """
 __version__ = '0.1.4.dev'
 
-import warnings
+# import warnings
 
-warnings.filterwarnings("ignore")
+# warnings.filterwarnings("ignore")
 
 from .base import KnowledgeBase
 from .refinement_operators import *
