@@ -15,18 +15,20 @@ class LengthBasedRefinement(BaseRefinement):
         super().__init__(kb)
         self.max_child_length = max_child_length
         self.apply_combinations = apply_combinations
+        self.min_num_instances = 0
 
     def getNode(self, c: Concept, parent_node=None, root=False):
+        """
 
-        # if c in self.concepts_to_nodes:
-        #    return self.concepts_to_nodes[c]
+        @param c:
+        @param parent_node:
+        @param root:
+        @return:
+        """
         if parent_node is None and root is False:
             print(c)
             raise ValueError
-
-        n = Node(concept=c, parent_node=parent_node, root=root)
-        # self.concepts_to_nodes[c] = n
-        return n
+        return Node(concept=c, parent_node=parent_node, root=root)
 
     def refine_atomic_concept(self, node: Node, max_length: int = None) -> Set:
         if node.concept.str == 'Nothing':
@@ -42,16 +44,21 @@ class LengthBasedRefinement(BaseRefinement):
             # (3) Create ∀.r.T and ∃.r.T where r is the most general relation.
             generator_container.append(self.kb.most_general_existential_restrictions(node.concept))
             generator_container.append(self.kb.most_general_universal_restriction(node.concept))
-
-        a, b = tee(chain.from_iterable(generator_container))
-
+        # a, b = tee(chain.from_iterable(generator_container))
+        a = chain.from_iterable(generator_container)
         refinement_gate = set()
         cumulative_refinements = dict()
-        for i in set(a):
-            refinement_gate.add(i)
-            cumulative_refinements.setdefault(len(i), set()).add(i)
+        for concept_ref in a:
+            if len(concept_ref.instances) >= self.min_num_instances:  # ignore "empty" concepts.
+                if concept_ref not in refinement_gate:
+                    refinement_gate.add(concept_ref)
+                    cumulative_refinements.setdefault(len(concept_ref), set()).add(concept_ref)
+                    yield concept_ref
+                else:
+                    print(f'{concept_ref} has already seen')  # Asses this state.
+                    exit(1)
 
-        if self.apply_combinations and len(refinement_gate) < 1000:  # CD: A possible heuristic. 03.12.2020.
+        if self.apply_combinations:  # TODO we may not need this.
             if len(cumulative_refinements) > 0:
                 old_len_cumulative_refinements = len(cumulative_refinements)
                 while True:
@@ -72,6 +79,8 @@ class LengthBasedRefinement(BaseRefinement):
                                         temp.setdefault(len(union), set()).add(union)
                                         intersect = self.kb.intersection(i, j)
                                         temp.setdefault(len(intersect), set()).add(intersect)
+                                        yield union
+                                        yield intersect
 
                     cumulative_refinements.update(temp)
                     new_len_cumulative_refinements = len(cumulative_refinements)
@@ -79,7 +88,7 @@ class LengthBasedRefinement(BaseRefinement):
                         break
                     old_len_cumulative_refinements = new_len_cumulative_refinements
 
-        yield from chain.from_iterable(cumulative_refinements.values())
+        # yield from chain.from_iterable(cumulative_refinements.values())
 
     def refine_complement_of(self, node: Node, maxlength: int) -> Generator:
         parents = self.kb.get_direct_parents(self.kb.negation(node.concept))
@@ -90,7 +99,6 @@ class LengthBasedRefinement(BaseRefinement):
         # rule 1: EXISTS r.D = > EXISTS r.E
         for i in self.refine(self.getNode(node.concept.filler, parent_node=node), maxlength=maxlength):
             yield self.kb.existential_restriction(i, node.concept.role)
-
         yield self.kb.universal_restriction(node.concept.filler, node.concept.role)
 
     def refine_object_all_values_from(self, node: Node, maxlength: int):
