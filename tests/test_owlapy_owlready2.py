@@ -132,5 +132,34 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
 
+class Owlapy_Owlready2_TempClasses_Test(unittest.TestCase):
+    def test_instances(self):
+        NS = "http://example.com/father#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://data/father.owl"))
+
+        male = OWLClass(IRI.create(NS, 'male'))
+        female = OWLClass(IRI.create(NS, 'female'))
+        has_child = OWLObjectProperty(IRI(NS, 'hasChild'))
+
+        # reasoner = OWLReasoner_Owlready2(onto)
+        reasoner = OWLReasoner_Owlready2_TempClasses(onto)
+
+        inst = frozenset(reasoner.instances(female))
+        target_inst = frozenset({OWLNamedIndividual(IRI(NS, 'anna')),
+                                 OWLNamedIndividual(IRI(NS, 'michelle'))})
+        self.assertEqual(inst, target_inst)
+
+        inst = frozenset(reasoner.instances(
+            OWLObjectIntersectionOf((male, OWLObjectSomeValuesFrom(property=has_child, filler=female)))))
+        target_inst = frozenset({OWLNamedIndividual(IRI(NS, 'markus'))})
+        self.assertEqual(inst, target_inst)
+
+        inst = frozenset(reasoner.instances(
+            OWLObjectIntersectionOf((female, OWLObjectSomeValuesFrom(property=has_child, filler=OWLThing)))))
+        target_inst = frozenset({OWLNamedIndividual(IRI(NS, 'anna'))})
+        self.assertEqual(inst, target_inst)
+
+
 if __name__ == '__main__':
     unittest.main()
