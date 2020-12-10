@@ -11,9 +11,8 @@ from collections import deque
 
 class LearningProblemGenerator:
     """ Learning problem generator. """
-
-    def __init__(self, knowledge_base, refinement_operator=None, num_problems=10, num_diff_runs=None,
-                 min_num_instances=None, max_num_instances=sys.maxsize, min_length=3, max_length=5, depth=None,
+    def __init__(self, knowledge_base, refinement_operator=None, num_problems=10_000, num_diff_runs=100,
+                 min_num_instances=None, max_num_instances=sys.maxsize, min_length=3, max_length=5, depth=10,
                  search_algo='strict-dfs'):
         """
         Generate concepts via search algorithm to satisfy constraints.
@@ -38,14 +37,8 @@ class LearningProblemGenerator:
         self.min_length = min_length
         self.max_length = max_length
         self.valid_learning_problems = []
-        if depth is None:
-            self.depth = 1 + (max_length // 3)
-        else:
-            self.depth = depth
-        if num_diff_runs is None:
-            self.num_diff_runs = int((num_problems * .01)) + 1  # quite expensive.
-        else:
-            self.num_diff_runs = num_diff_runs
+        self.depth = depth
+        self.num_diff_runs = num_diff_runs
         self.num_problems = num_problems // self.num_diff_runs
 
     def get_balanced_examples(self, *, num_problems=None, max_length=None, min_length=None,
@@ -122,25 +115,27 @@ class LearningProblemGenerator:
         return res
 
     def get_concepts(self, *, num_problems=None, max_length=None, min_length=None,
-                     num_diff_runs=None, min_num_ind=None, search_algo=None) -> set:
+                     max_num_instances=None, num_diff_runs=None, min_num_instances=None, search_algo=None) -> Generator:
         """
+        @param max_num_instances:
         @param num_problems:
         @param max_length:
         @param min_length:
         @param num_diff_runs:
-        @param min_num_ind:
+        @param min_num_instances:
         @param search_algo: 'dfs' or 'strict-'dfs=> strict-dfs considers num_problems as hard constriant.
         @return: A list of tuples (s,p,n) where s denotes the string representation of a concept,
         p and n denote a set of URIs of individuals indicating positive and negative examples.
         """
         return self.generate_examples(num_problems=num_problems,
                                       max_length=max_length, min_length=min_length,
-                                      num_diff_runs=num_diff_runs, min_num_instances=min_num_ind,
+                                      num_diff_runs=num_diff_runs,
+                                      max_num_instances=max_num_instances,
+                                      min_num_instances=min_num_instances,
                                       search_algo=search_algo)
 
-    @performance_debugger('generate_examples')
     def generate_examples(self, *, num_problems=None, max_length=None, min_length=None,
-                          num_diff_runs=None, min_num_instances=None, max_num_instances=None, search_algo=None):
+                          num_diff_runs=None, max_num_instances=None, min_num_instances=None, search_algo=None):
         """
         Generate examples via search algorithm that are valid examples w.r.t. given constraints
 
@@ -169,16 +164,19 @@ class LearningProblemGenerator:
             self.num_problems = num_problems // self.num_diff_runs
 
         if max_length:
-            assert isinstance(num_problems, int)
+            assert isinstance(max_length, int)
             self.max_length = max_length
         if min_length:
-            assert isinstance(num_problems, int)
+            assert isinstance(min_length, int)
             self.min_length = min_length
         if min_num_instances:
-            assert isinstance(num_problems, int)
+            assert isinstance(min_num_instances, int)
             self.min_num_instances = min_num_instances
+            # Do not generate concepts that do not define enough individuals.
+            self.rho.min_num_instances = self.min_num_instances
+
         if max_num_instances:
-            assert isinstance(num_problems, int)
+            assert isinstance(max_num_instances, int)
             self.max_num_instances = max_num_instances
         if search_algo:
             self.search_algo = search_algo
@@ -201,48 +199,61 @@ class LearningProblemGenerator:
 
         @return:
         """
-        # Generate all length 1 concepts.
-        refinements = self.apply_rho(self.rho.getNode(self.kb.thing, root=True), len_constant=0)
-        random.shuffle(refinements)
+        refinements = self.apply_rho(self.rho.getNode(self.kb.thing, root=True), len_constant=3)
 
         if self.min_num_instances:
             def constrain_func(x):
-                return (self.max_length >= len(x) >= self.min_length) and (
-                        self.max_num_instances >= len(x.concept.instances) >= self.min_num_instances)
+                a = self.max_length >= len(x) >= self.min_length
+                b = self.max_num_instances >= len(x.concept.instances) >= self.min_num_instances
+                return a and b
         else:
             def constrain_func(x):
                 return self.max_length >= len(x) >= self.min_length
 
-        valid_states_gate = {_ for _ in refinements if constrain_func(_)}
-
-        counter = self.num_diff_runs
+        valid_states_gate = set()
         while True:
-            state = refinements.pop()
+            try:
+                state = next(refinements)
+            except StopIteration:
+                print('All top concepts are refined.')
+                break
+
+            if constrain_func(state):
+                valid_states_gate.add(state)
+                yield state
+
+            temp_gate = set()
             for v in self._apply_dfs_on_state(state=state,
                                               apply_rho=self.apply_rho,
-                                              depth=self.depth,
-                                              num_problems=self.num_problems,
                                               constrain_func=constrain_func,
-                                              strict=strict):
-                valid_states_gate.add(v)
-                if len(valid_states_gate) == self.num_problems:
+                                              depth=self.depth,
+                                              patience_per_depth=(self.num_problems // 2)):
+                if v not in valid_states_gate:
+                    valid_states_gate.add(v)
+                    temp_gate.add(v)
+                    yield v
+                    if strict:
+                        if len(temp_gate) >= self.num_problems:
+                            break
+            if strict:
+                if len(valid_states_gate) >= self.num_problems*self.num_diff_runs:
                     break
-            counter -= 1
-            if counter == 0:
-                break
+
         # sanity checking after the search.
         try:
             assert len(valid_states_gate) >= self.num_diff_runs * self.num_problems
         except AssertionError:
             print(f'Number of valid concepts generated:{len(valid_states_gate)}.\n'
                   f'Required number of concepts: {self.num_diff_runs * self.num_problems}.\n'
-                  f'Increase the max length (Currently {self.max_length}) in order to generate more valid concepts..')
-
-        return valid_states_gate
+                  f'Please update the given constraints:'
+                  f'Increase the max length (Currently {self.max_length}).\n'
+                  f'Increase the max number of instances for concepts (Currently {self.max_num_instances}).\n'
+                  f'Decrease the min length (Currently {self.min_length}).\n'
+                  f'Decrease the max number of instances for concepts (Currently {self.min_num_instances}).\n')
 
     @staticmethod
     # @performance_debugger('_apply_dfs_on_state')
-    def _apply_dfs_on_state(state, depth, apply_rho, num_problems, constrain_func=None, strict=None) -> set:
+    def _apply_dfs_on_state(state, depth, apply_rho, constrain_func=None, patience_per_depth=None) -> set:
         """
 
         @param state:
@@ -256,36 +267,38 @@ class LearningProblemGenerator:
         @return:
         """
         valid_examples = set()
-        q = PriorityQueue(maxsize=1_000_000)
+        q = PriorityQueue()
         for _ in range(depth):
+            temp_patience = patience_per_depth  # patience for valid exam. per depth.
+            temp_not_valid_patience = patience_per_depth  # patience for not valid exam. per depth.
             for i in apply_rho(state, len_constant=2):
-                q.put((-len(i), i))  # higher length, higher priority.
-                if constrain_func(i):
+                if constrain_func(i):  # validity checking.
+                    # q.put((len(i), i))  # lower the length, higher priority.
                     if i not in valid_examples:
                         valid_examples.add(i)
+                        q.put((len(i), i))  # lower the length, higher priority.
+                        yield i
+                        temp_patience -= 1
+                        if temp_patience == 0:
+                            break
                 else:
-                    """ ignore concept"""
-                if strict:
-                    if len(valid_examples) >= num_problems:
-                        return valid_examples
+                    # Heuristic if, too many of them not valid, do not continue.
+                    temp_not_valid_patience -= 1
+                    if temp_not_valid_patience == 0:
+                        break
 
             if not q.empty():
                 _, state = q.get()
             else:
-                print('queue is empty. Break condition.')
-                return valid_examples
-            if strict:
-                if len(valid_examples) >= num_problems:
-                    return valid_examples
-
-        return valid_examples
+                return None
 
     def apply_rho(self, node, len_constant=1):
-        return [self.rho.getNode(i, parent_node=node) for i in self.rho.refine(node,
-                                                                               maxlength=len(
-                                                                                   node) + len_constant if len(
-                                                                                   node) < self.max_length else len(
-                                                                                   node))]
+        for i in self.rho.refine(node,
+                                 maxlength=len(
+                                     node) + len_constant if len(
+                                     node) < self.max_length else len(
+                                     node)):
+            yield self.rho.getNode(i, parent_node=node)
 
     """
     CD:Refactored.

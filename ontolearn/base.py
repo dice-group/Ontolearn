@@ -20,7 +20,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         super().__init__()
         self.path = path
         self.world = World()
-        self.onto = self.world.get_ontology('file://'+self.path).load(reload=True)
+        self.onto = self.world.get_ontology('file://' + self.path).load(reload=True)
         self.property_hierarchy = PropertyHierarchy(self.onto)
         self.name = self.onto.name
         self.parse()
@@ -33,6 +33,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                                                   thing=self.thing,
                                                   nothing=self.nothing,
                                                   onto=self.onto)
+        self.describe()
 
     def clean(self):
         """
@@ -64,7 +65,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                 try:
                     wrapped_desc = self.uri_to_concepts[desc.namespace.base_iri + desc.name]
                 except KeyError:
-                    #p rint('###########')
+                    # p rint('###########')
                     # print('IRI: {0} not found will be ignored.'.format(str(desc.namespace.base_iri + desc.name)))
                     continue
                 # Include all sub class that are wrapped with AtomicConcept class into hierarchy.
@@ -158,18 +159,17 @@ class KnowledgeBase(AbstractKnowledgeBase):
     @parametrized_performance_debugger()
     def get_direct_sub_concepts(self, concept: Concept):
         """ Return : { x | ( x subClassOf concept )} """
+        # USE yield from later.
         for v in self.top_down_direct_concept_hierarchy[concept]:
             yield v
 
     def get_all_sub_concepts(self, concept: Concept):
         """ Return : { x | ( x subClassOf concept ) OR ..."""
-        for v in self.top_down_concept_hierarchy[concept]:
-            yield v
+        yield from self.top_down_concept_hierarchy[concept]
 
     def get_direct_parents(self, concept: Concept):
         """ Return : { x | (concept subClassOf x)} """
-        for direct_parent in self.down_top_direct_concept_hierarchy[concept]:
-            yield direct_parent
+        yield from self.down_top_direct_concept_hierarchy[concept]
 
     def most_general_existential_restrictions(self, concept: Concept):
         """
@@ -216,4 +216,4 @@ class KnowledgeBase(AbstractKnowledgeBase):
                len(self.concept_generator.log_of_negations) + len(self.concepts)
 
     def get_all_concepts(self):
-        return self.concepts.values()
+        return set(self.uri_to_concepts.values())
