@@ -1,26 +1,33 @@
 from collections import defaultdict
-from owlready2 import Ontology, World
-import owlready2
 from .concept_generator import ConceptGenerator
 from .concept import Concept
-from typing import Generator, Iterable
+from typing import Dict, Tuple, Set, Generator, Iterable, List
+
+from .core.owl import ClassHierarchy
+from .owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner
+from .owlapy.owlready2 import OWLOntologyManager_Owlready2
 from .util import parametrized_performance_debugger, get_full_iri
 from .abstracts import AbstractKnowledgeBase
-from .data_struct import PropertyHierarchy
 import warnings
 from .static_funcs import build_concepts_mapping
 
-warnings.filterwarnings("ignore")
+#warnings.filterwarnings("ignore")
 
 
 class KnowledgeBase(AbstractKnowledgeBase):
     """ Knowledge Base Class representing Tbox and Abox along with the concept hierarchy """
 
+    manager: OWLOntologyManager
+    onto: OWLOntology
+    reasoner: OWLReasoner
+
     def __init__(self, path):
         super().__init__()
         self.path = path
-        self.world = World()
-        self.onto = self.world.get_ontology('file://' + self.path).load(reload=True)
+        self.manager = OWLOntologyManager_Owlready2()
+        self.onto = self.manager.load_ontology('file://' + self.path)
+        self.reasoner = OWLReasoner
+        self.class_hierarchy = ClassHierarchy(self.reasoner)
         self.property_hierarchy = PropertyHierarchy(self.onto)
         self.name = self.onto.name
         self.parse()
@@ -41,155 +48,11 @@ class KnowledgeBase(AbstractKnowledgeBase):
         @return:
         """
 
-    def __build_hierarchy(self, onto: Ontology) -> None:
-        """
-        Builds concept sub and super classes hierarchies.
-
-        1) self.top_down_concept_hierarchy is a mapping from Concept objects to a set of Concept objects that are
-        direct subclasses of given Concept object.
-
-        2) self.down_top_concept_hierarchy is a mapping from Concept objects to set of Concept objects that are
-        direct superclasses of given Concept object.
-        """
-
-        self.uri_to_concepts, self.thing, self.nothing = build_concepts_mapping(onto)
-        self.individuals = self.thing.instances
-        self.down_top_concept_hierarchy[self.thing] = set()
-        # T should not subsume itself.
-        self.top_down_concept_hierarchy[self.thing] = {_ for _ in self.uri_to_concepts.values() if _ is not self.thing}
-
-        for str_, concept_A in self.uri_to_concepts.items():  # second loop over concepts in the execution,
-
-            for desc in concept_A.owl.descendants(include_self=False, world=onto.world):
-
-                try:
-                    wrapped_desc = self.uri_to_concepts[desc.namespace.base_iri + desc.name]
-                except KeyError:
-                    # p rint('###########')
-                    # print('IRI: {0} not found will be ignored.'.format(str(desc.namespace.base_iri + desc.name)))
-                    continue
-                # Include all sub class that are wrapped with AtomicConcept class into hierarchy.
-                self.top_down_concept_hierarchy[concept_A].add(wrapped_desc)
-                if len(wrapped_desc.owl.descendants(
-                        include_self=False, world=onto.world)) == 0:  # if no descendant, then it is a leaf concept.
-                    self.concepts_to_leafs.setdefault(concept_A, set()).add(wrapped_desc)
-
-            for ans in concept_A.owl.ancestors(include_self=False):
-                try:
-                    wrapped_ans = self.uri_to_concepts[ans.namespace.base_iri + ans.name]
-                except KeyError:
-                    # print('###########')
-                    # print('IRI: {0} not found will be ignored.'.format(str(ans.namespace.base_iri + ans.name)))
-                    continue
-                # Include all superclasses into down top hierarchy
-                self.down_top_concept_hierarchy[concept_A].add(wrapped_ans)
-
-            for subs in concept_A.owl.subclasses(world=onto.world):  # returns direct subclasses
-                if concept_A.owl == subs:
-                    continue
-                wrapped_subs = self.uri_to_concepts[subs.namespace.base_iri + subs.name]
-
-                self.top_down_direct_concept_hierarchy[concept_A].add(wrapped_subs)
-                self.down_top_direct_concept_hierarchy[wrapped_subs].add(concept_A)
-
-    def parse(self):
-        """
-        Top-down and bottom up hierarchies are constructed from from owlready2.Ontology
-        """
-        self.__build_hierarchy(self.onto)
-
-    # OPERATIONS
-    def negation(self, concept: Concept) -> Concept:
-        """ Return a Concept object that is a negation of given concept."""
-        assert isinstance(concept, Concept)
-        return self.concept_generator.negation(concept)
-
-    def union(self, conceptA: Concept, conceptB: Concept) -> Concept:
-        """Return a concept c == (conceptA OR conceptA)"""
-        assert isinstance(conceptA, Concept) and isinstance(conceptB, Concept)
-        return self.concept_generator.union(conceptA, conceptB)
-
-    def intersection(self, conceptA: Concept, conceptB: Concept) -> Concept:
-        """Return a concept c == (conceptA AND conceptA)"""
-        assert isinstance(conceptA, Concept) and isinstance(conceptB, Concept)
-        return self.concept_generator.intersection(conceptA, conceptB)
-
-    def existential_restriction(self, concept: Concept, property_) -> Concept:
-        """Return a concept c == (Exist R.C)"""
-        assert isinstance(concept, Concept)
-        return self.concept_generator.existential_restriction(concept, property_)
-
-    def universal_restriction(self, concept: Concept, property_) -> Concept:
-        """Return a concept c == (Forall R.C)"""
-        assert isinstance(concept, Concept)
-        return self.concept_generator.universal_restriction(concept, property_)
-
-    #######################Do we need them ?###########################################################
     def set_min_size_of_concept(self, n):
         self.min_size_of_concept = n
 
     def max_size_of_concept(self, n):
         self.max_size_of_concept = n
-
-    ##################################################################################
-    def convert_uri_instance_to_obj(self, str_ind: str):
-        """
-        str_ind indicates string representation of an individual.
-        """
-        try:
-            assert isinstance(str_ind, str)
-        except AssertionError:
-            AssertionError('{0} is expected to be a string but it is  ****{1}****'.format(str_ind, type(str_ind)))
-        try:
-            return self.str_to_instance_obj[str_ind]
-        except KeyError:
-            KeyError('{0} is not found in vocabulary of URI instances'.format(str_ind))
-
-    def convert_uri_instance_to_obj_from_iterable(self, str_individuals: Iterable[str]) -> Iterable:
-        """
-        Given an iterable of string representation of individuals, return owlready2 individuals
-        @param str_individuals:
-        @return:
-        """
-        return [self.convert_uri_instance_to_obj(i) for i in str_individuals]
-
-    def convert_owlready2_individuals_to_uri(self, instance: str):
-        """
-        Given a string representation of an individual, return a owlready2 individual
-        @param instance:
-        @return:
-        """
-        try:
-            return self.obj_to_str_iri_instances[instance]
-        except KeyError as e:
-            print(e)
-            print('{0} owlready2 instance with {1} memory space could not be found '.format(instance, id(instance)))
-            print([(i, id(i)) for i in self.obj_to_str_iri_instances.keys()])
-            exit(1)
-
-    def convert_owlready2_individuals_to_uri_from_iterable(self, l: Iterable) -> Iterable:
-        """
-        Given an iterable of owlready2 individuals, string representation of them
-        @param l:
-        @return:
-        """
-        return [self.convert_owlready2_individuals_to_uri(i) for i in l]
-
-    @staticmethod
-    def is_atomic(c: owlready2.entity.ThingClass):
-        """
-        Check whether input owlready2 concept object is atomic concept.
-        This is a workaround
-        @param c:
-        @return:
-        """
-        assert isinstance(c, owlready2.entity.ThingClass)
-        if '¬' in c.name and not (' ' in c.name):
-            return False
-        elif ' ' in c.name or '∃' in c.name or '∀' in c.name:
-            return False
-        else:
-            return True
 
     def get_leaf_concepts(self, concept: Concept) -> Generator:
         """ Return : { x | (x subClassOf concept) AND not exist y: y subClassOf x )} """
@@ -210,16 +73,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         assert isinstance(concept, Concept)
         for v in self.top_down_direct_concept_hierarchy[concept]:
             yield v
-
-    def get_all_sub_concepts(self, concept: Concept):
-        """ Return : { x | ( x subClassOf concept ) OR ..."""
-        assert isinstance(concept, Concept)
-        yield from self.top_down_concept_hierarchy[concept]
-
-    def get_direct_parents(self, concept: Concept) -> Generator:
-        """ Return : { x | (concept subClassOf x)} """
-        assert isinstance(concept, Concept)
-        yield from self.down_top_direct_concept_hierarchy[concept]
 
     def most_general_existential_restrictions(self, concept: Concept) -> Generator:
         """ Return : { \exist.r.x | r \in MostGeneral r} """

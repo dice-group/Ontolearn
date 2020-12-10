@@ -1,4 +1,6 @@
-from ontolearn import KnowledgeBase, LearningProblemGenerator
+#from ontolearn import KnowledgeBase, LearningProblemGenerator
+from ontolearn.base import KnowledgeBase
+from ontolearn.learning_problem_generator import LearningProblemGenerator
 from ontolearn.static_funcs import export_concepts
 
 path = '../KGs/Biopax/biopax.owl'
