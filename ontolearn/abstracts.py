@@ -1,8 +1,9 @@
 from collections import OrderedDict, defaultdict
 from functools import total_ordering
 from abc import ABCMeta, abstractmethod, ABC
-from owlready2 import ThingClass, Ontology
+from .owlapy.model import OWLClassExpression
 from .util import get_full_iri, balanced_sets, read_csv
+
 from typing import Set, Dict, List, Tuple, Iterable, Generator, SupportsFloat
 import random
 import pandas as pd
@@ -116,7 +117,7 @@ class BaseNode(metaclass=ABCMeta):
                  'parent_node']
 
     @abstractmethod
-    def __init__(self, concept, parent_node, is_root=False):
+    def __init__(self, concept: OWLClassExpression, parent_node, is_root=False):
         self.__quality_score, self.__heuristic_score = None, None
         self.__is_root = is_root
         self.__horizontal_expansion, self.__refinement_count = 0, 0
@@ -411,26 +412,11 @@ class AbstractTree(ABC):
 class AbstractKnowledgeBase(ABC):
 
     def __init__(self):
-        self.uri_to_concepts = dict()
-        self.thing = None
-        self.nothing = None
-        self.top_down_concept_hierarchy = defaultdict(set)  # Next time thing about including this into Concepts.
-        self.top_down_direct_concept_hierarchy = defaultdict(set)
-        self.down_top_concept_hierarchy = defaultdict(set)
-        self.down_top_direct_concept_hierarchy = defaultdict(set)
-        self.concepts_to_leafs = defaultdict(set)
-        self.property_hierarchy = None
-        self.individuals = None
-        self.uri_individuals = None  # string representation of uris
+        pass
 
+    @abstractmethod
     def save(self, path: str, rdf_format="rdfxml"):
-        """
-        @param path: xxxx.nt
-        @param rdf_format:
-        @return:
-        """
-        # self.onto.save(file=path, format=rdf_format) => due to world object it only creates empty file.
-        self.world.as_rdflib_graph().serialize(destination=path + '.' + rdf_format, format=rdf_format)
+        pass
 
     def describe(self):
         print(f'Number of concepts: {len(self.uri_to_concepts)}\n'
