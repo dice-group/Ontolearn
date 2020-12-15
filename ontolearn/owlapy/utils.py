@@ -44,15 +44,12 @@ class IRIFixedSet:
 
     def _decode(self, v: int) -> Iterable[IRI]:
         i: int = 0
-        while v > 0:
-            if v & 1:
-                yield self._idx_iri[i]
-            v >>= 1
-            i += 1
+        for i in iter_bits(v):
+            yield self._idx_iri[i.bit_length() - 1]
 
     def _encode(self, i: IRI, ignore_missing: bool) -> int:
         if i in self._iri_idx:
-            return 2 ** self._iri_idx[i]
+            return 1 << self._iri_idx[i]
         elif ignore_missing:
             return 0
         else:
@@ -60,7 +57,7 @@ class IRIFixedSet:
 
     def items(self) -> Iterable[Tuple[int, IRI]]:
         for idx, i in enumerate(self._idx_iri):
-            yield 2 ** idx, i
+            yield 1 << idx, i
 
 
 class NamedFixedSet(Generic[_HasIRI]):
@@ -96,6 +93,13 @@ class NamedFixedSet(Generic[_HasIRI]):
             yield e, t(i)
 
 
-def popcount(v: int):
+def popcount(v: int) -> int:
     """Count the active bits in a number"""
     return bin(v).count("1")
+
+
+def iter_bits(v: int) -> Iterable[int]:
+    while v:
+        b = v & (~v + 1)
+        yield b
+        v ^= b

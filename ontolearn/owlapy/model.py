@@ -91,6 +91,11 @@ class OWLNamedObject(OWLObject, HasIRI, metaclass=ABCMeta):
             return self._iri == other._iri
         return NotImplemented
 
+    def __lt__(self, other):
+        if type(other) is type(self):
+            return self._iri.as_str() < other._iri.as_str()
+        return NotImplemented
+
     def __hash__(self):
         return hash(self._iri)
 
