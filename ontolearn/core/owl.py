@@ -9,6 +9,12 @@ from ontolearn.owlapy.utils import NamedFixedSet, iter_bits
 
 
 class ClassHierarchy(metaclass=ABCMeta):
+    """Representation of a class hierarchy
+
+    Args:
+        hierarchy_down: a downwards hierarchy given as a mapping of Class to sub-classes
+        reasoner: alternatively, a reasoner whose root_ontology is queried for classes and sub-classes
+        """
     __slots__ = '_cls_enc', '_parents_map', '_parents_map_trans', '_children_map', '_children_map_trans', \
                 '_leaf_set', '_root_set', \
                 # '_eq_set'
@@ -38,7 +44,17 @@ class ClassHierarchy(metaclass=ABCMeta):
     @staticmethod
     def restrict(hierarchy: 'ClassHierarchy', *, remove: Iterable[OWLClass] = None, allow: Iterable[OWLClass] = None) \
             -> 'ClassHierarchy':
-        """Restrict a given class hierarchy to a set of allowed/removed classes"""
+        """Restrict a given class hierarchy to a set of allowed/removed classes
+
+        Args:
+            hierarchy: an existing Class hierarchy to restrict
+            remove: set of Classes which should be ignored
+            allow: set of Classes which should be used
+
+        Returns:
+            the restricted class hierarchy
+
+        """
         remove_set = frozenset(remove) if remove is not None else None
         allow_set = frozenset(allow) if allow is not None else None
 
@@ -55,6 +71,10 @@ class ClassHierarchy(metaclass=ABCMeta):
 
     def restrict_and_copy(self, *, remove: Iterable[OWLClass] = None, allow: Iterable[OWLClass] = None) \
             -> 'ClassHierarchy':
+        """Restrict this class hierarchy
+
+        See restrict for more info
+        """
         return ClassHierarchy.restrict(self, remove=remove, allow=allow)
 
     def _init(self, hierarchy_down: Iterable[Tuple[OWLClass, Iterable[OWLClass]]]) -> None:
@@ -74,7 +94,7 @@ class ClassHierarchy(metaclass=ABCMeta):
 
         # calculate transitive children
         for cls_enc in self._children_map_trans:
-            _children_transitive(self._children_map_trans, cls_enc=cls_enc, seen_set=0, enc=enc)
+            _children_transitive(self._children_map_trans, cls_enc=cls_enc, seen_set=0)
 
         # TODO handling of eq_sets
         # sccs = list(_strongly_connected_components(self._children_map_trans))
@@ -97,16 +117,44 @@ class ClassHierarchy(metaclass=ABCMeta):
         self._parents_map, self._root_set = _reduce_transitive(self._parents_map_trans, self._children_map_trans)
 
     def parents(self, entity: OWLClass, direct: bool = True) -> Iterable[OWLClass]:
+        """Parents of a class
+
+        Args:
+            entity: class for which to query parent classes
+            direct: False to return transitive parents
+
+        Returns:
+            super-classes
+
+        """
         if not direct:
             yield from self._cls_enc(self._parents_map_trans[self._cls_enc(entity)])
         else:
             yield from self._cls_enc(self._parents_map[self._cls_enc(entity)])
 
     def children(self, entity: OWLClass, direct: bool = True) -> Iterable[OWLClass]:
+        """Children of a class
+
+        Args:
+            entity: class for which to query child classes
+            direct: False to return transitive children
+
+        Returns:
+            sub-classes
+
+        """
         if not direct:
             yield from self._cls_enc(self._children_map_trans[self._cls_enc(entity)])
         else:
             yield from self._cls_enc(self._children_map[self._cls_enc(entity)])
+
+    def siblings(self, entity: OWLClass) -> Iterable[OWLClass]:
+        seen_set = {entity}
+        for parent in self.parents(entity, direct=True):
+            for sibling in self.children(parent, direct=True):
+                if sibling not in seen_set:
+                    yield sibling
+                    seen_set.add(sibling)
 
     def items(self) -> Iterable[OWLClass]:
         for _, i in self._cls_enc.items():
@@ -117,7 +165,16 @@ class ClassHierarchy(metaclass=ABCMeta):
 
 
 def _children_transitive(map_trans: Dict[int, int], cls_enc: int, seen_set: int):
-    """add transitive links to map_trans"""
+    """add transitive links to map_trans
+
+    Note:
+        changes map_trans
+
+    Args:
+        map_trans: map to which transitive links are added
+        cls_enc: encoded class in map_trans for which to add transitive sub-classes
+
+    """
     sub_classes_enc = map_trans[cls_enc]
     for sub_enc in iter_bits(sub_classes_enc):
         if not sub_enc & seen_set:
@@ -127,6 +184,20 @@ def _children_transitive(map_trans: Dict[int, int], cls_enc: int, seen_set: int)
 
 
 def _reduce_transitive(map: Dict[int, int], map_inverse: Dict[int, int]) -> Tuple[Dict[int, int], int]:
+    """Remove all transitive links
+
+    Takes a downward hierarchy and an upward hierarchy with transitive links, and removes all links that can be
+    implicitly detected since they are transitive
+
+    Args:
+         map: downward hierarchy with all transitive links, from Class => sub-classes
+         map_inverse: upward hierarchy with all transitive links, from Class => super-classes
+
+    Returns:
+        thin map with only direct sub-classes
+        set of classes without sub-classes
+
+    """
     result_map: Dict[int, int] = dict()
     leaf_set = 0
     for enc, set_enc in map.items():
