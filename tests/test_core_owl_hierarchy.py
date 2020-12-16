@@ -37,21 +37,21 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
                                 OWLClass(IRI(NS, 'Son'))})
         self.assertEqual(frozenset(ch.children(OWLClass(IRI(NS, 'Child')))), target_cls)
 
-    def test_class_hierarchy2(self):
+    def test_class_hierarchy_children(self):
         NS = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
         onto = mgr.load_ontology(IRI.create("file://data/father.owl"))
         reasoner = OWLReasoner_Owlready2(onto)
 
         ch = ClassHierarchy(reasoner)
-        for k in sorted(ch.roots()):
-            _print_children(ch, k)
+        # for k in sorted(ch.roots()):
+        #     _print_children(ch, k)
 
         target_cls = frozenset({OWLClass(IRI(NS, 'female')),
                                 OWLClass(IRI(NS, 'male'))})
         self.assertEqual(frozenset(ch.children(OWLClass(IRI(NS, 'person')))), target_cls)
 
-    def test_class_hierarchy(self):
+    def test_class_hierarchy_parents_roots(self):
         NS = "http://www.benchmark.org/family#"
         mgr = OWLOntologyManager_Owlready2()
         onto = mgr.load_ontology(IRI.create("file://data/family-benchmark_rich_background.owl"))
@@ -59,12 +59,31 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
 
         ch = ClassHierarchy(reasoner)
         grandmother = OWLClass(IRI(NS, 'Grandmother'))
-        _print_parents(ch, grandmother)
+        # _print_parents(ch, grandmother)
 
         target_cls = frozenset({OWLClass(IRI(NS, 'Female')),
                                 OWLClass(IRI(NS, 'Grandparent'))})
         self.assertEqual(frozenset(ch.parents(grandmother)), target_cls)
 
+        target_cls = frozenset({OWLClass(IRI(NS, 'Person'))})
+        self.assertEqual(frozenset(ch.roots()), target_cls)
+
+    def test_class_hierarchy_siblings(self):
+        NS = "http://www.benchmark.org/family#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://data/family-benchmark_rich_background.owl"))
+        reasoner = OWLReasoner_Owlready2(onto)
+
+        ch = ClassHierarchy(reasoner)
+        child = OWLClass(IRI(NS, 'Child'))
+        target_cls = frozenset({OWLClass(IRI(NS, 'Parent')),
+                                OWLClass(IRI(NS, 'PersonWithASibling')),
+                                OWLClass(IRI(NS, 'Female')),
+                                OWLClass(IRI(NS, 'Male'))})
+        self.assertEqual(frozenset(ch.siblings(child)), target_cls)
+
+
+# debug functions
 
 def _print_children(ch: ClassHierarchy, c: OWLClass, level: int = 0) -> None:
     print(' ' * 2 * level, c, '=>')
