@@ -478,6 +478,15 @@ class OWLReasoner:
         pass
 
     @abstractmethod
+    def sub_data_properties(self, dp: OWLDataProperty, direct: bool = False) -> Iterable[OWLDataProperty]:
+        pass
+
+    @abstractmethod
+    def sub_object_properties(self, op: OWLObjectPropertyExpression, direct: bool = False) \
+            -> Iterable[OWLObjectPropertyExpression]:
+        pass
+
+    @abstractmethod
     def types(self, ind: OWLNamedIndividual, direct: bool = False) -> Iterable[OWLClass]:
         pass
 
