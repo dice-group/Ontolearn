@@ -6,7 +6,8 @@ import owlready2
 
 from ontolearn.owlapy import IRI
 from ontolearn.owlapy.model import OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
-    OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectSomeValuesFrom, OWLProperty
+    OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectSomeValuesFrom, OWLProperty, \
+    OWLObjectPropertyExpression
 
 
 class BaseReasoner(Enum):
@@ -100,7 +101,7 @@ class OWLReasoner_Owlready2(OWLReasoner):
                     yield OWLClass(IRI.create(c.iri))
                 # Anonymous classes are ignored
         else:
-            raise NotImplementedError("equivalent_classes for complex class expressions not implemented")
+            raise NotImplementedError("equivalent_classes for complex class expressions not implemented", ce)
 
     def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable:
         i: owlready2.Thing = self._world[ind.get_iri().as_str()]
@@ -125,7 +126,7 @@ class OWLReasoner_Owlready2(OWLReasoner):
                     if isinstance(i, owlready2.Thing):
                         yield OWLNamedIndividual(IRI.create(i.iri))
             else:
-                raise NotImplementedError("instances for complex class expressions not implemented")
+                raise NotImplementedError("instances for complex class expressions not implemented", ce)
         else:
             if ce.is_owl_thing():
                 yield from self._ontology.individuals_in_signature()
@@ -143,7 +144,7 @@ class OWLReasoner_Owlready2(OWLReasoner):
             #             seen_set.add(i)
             #             yield OWLNamedIndividual(IRI.create(i.iri))
             else:
-                raise NotImplementedError("instances for complex class expressions not implemented")
+                raise NotImplementedError("instances for complex class expressions not implemented", ce)
 
     def _named_sub_classes_recursive(self, c: OWLClass, seen_set: Set) -> Iterable[OWLClass]:
         c_x: owlready2.EntityClass = self._world[c.get_iri().as_str()]
@@ -170,7 +171,53 @@ class OWLReasoner_Owlready2(OWLReasoner):
                 seen_set = set()
                 yield from self._named_sub_classes_recursive(ce, seen_set)
         else:
-            raise NotImplementedError("sub classes for complex class expressions not implemented")
+            raise NotImplementedError("sub classes for complex class expressions not implemented", ce)
+
+    def _sub_data_properties_recursive(self, dp: OWLDataProperty, seen_set: Set) -> Iterable[OWLDataProperty]:
+        p_x: owlready2.DataPropertyClass = self._world[dp.get_iri().as_str()]
+        assert isinstance(p_x, owlready2.DataPropertyClass)
+        for sp_x in p_x.subclasses(world=self._world):
+            if isinstance(sp_x, owlready2.DataPropertyClass) and sp_x not in seen_set:
+                seen_set.add(sp_x)
+                sp = OWLDataProperty(IRI.create(sp_x.iri))
+                yield sp
+                yield from self._sub_data_properties_recursive(sp, seen_set)
+
+    def sub_data_properties(self, dp: OWLDataProperty, direct: bool = False) -> Iterable[OWLDataProperty]:
+        assert isinstance(dp, OWLDataProperty)
+        if direct:
+            p_x: owlready2.DataPropertyClass = self._world[dp.get_iri().as_str()]
+            for sp in p_x.subclasses(world=self._world):
+                if isinstance(sp, owlready2.DataPropertyClass):
+                    yield OWLDataProperty(IRI.create(sp.iri))
+            else:
+                seen_set = set()
+                yield from self._sub_data_properties_recursive(dp, seen_set)
+
+    def _sub_object_properties_recursive(self, op: OWLObjectProperty, seen_set: Set) -> Iterable[OWLObjectProperty]:
+        p_x: owlready2.ObjectPropertyClass = self._world[op.get_iri().as_str()]
+        assert isinstance(p_x, owlready2.ObjectPropertyClass)
+        for sp_x in p_x.subclasses(world=self._world):
+            if isinstance(sp_x, owlready2.ObjectPropertyClass) and sp_x not in seen_set:
+                seen_set.add(sp_x)
+                sp = OWLObjectProperty(IRI.create(sp_x.iri))
+                yield sp
+                yield from self._sub_object_properties_recursive(sp, seen_set)
+
+    def sub_object_properties(self, op: OWLObjectPropertyExpression, direct: bool = False)\
+            -> Iterable[OWLObjectPropertyExpression]:
+        assert isinstance(op, OWLObjectPropertyExpression)
+        if isinstance(op, OWLObjectProperty):
+            if direct:
+                p_x: owlready2.ObjectPropertyClass = self._world[op.get_iri().as_str()]
+                for sp in p_x.subclasses(world=self._world):
+                    if isinstance(sp, owlready2.ObjectPropertyClass):
+                        yield OWLObjectProperty(IRI.create(sp.iri))
+            else:
+                seen_set = set()
+                yield from self._sub_object_properties_recursive(op, seen_set)
+        else:
+            raise NotImplementedError("sub properties of inverse properties not yet implemented", op)
 
     def types(self, ind: OWLNamedIndividual, direct: bool = False) -> Iterable[OWLClass]:
         i: owlready2.Thing = self._world[ind.get_iri().as_str()]

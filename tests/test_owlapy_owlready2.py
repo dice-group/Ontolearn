@@ -20,6 +20,21 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         target_classes = frozenset((OWLClass(IRI.create(NS, "male")), OWLClass(IRI.create(NS, "female"))))
         self.assertEqual(classes, target_classes)
 
+    def test_sub_object_properties(self):
+        NS = "http://www.biopax.org/examples/glycolysis#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://data/biopax/owl/data/biopax.owl"))
+        reasoner = OWLReasoner_Owlready2(onto)
+
+        participants = OWLObjectProperty(IRI.create(NS, 'PARTICIPANTS'))
+        target_props = frozenset({OWLObjectProperty(IRI(NS, 'COFACTOR')),
+                                  OWLObjectProperty(IRI(NS, 'CONTROLLED')),
+                                  OWLObjectProperty(IRI(NS, 'CONTROLLER')),
+                                  OWLObjectProperty(IRI(NS, 'LEFT')),
+                                  OWLObjectProperty(IRI(NS, 'RIGHT'))})
+        self.assertEqual(frozenset(reasoner.sub_object_properties(participants, direct=True)), target_props)
+        self.assertEqual(frozenset(reasoner.sub_object_properties(participants, direct=False)), target_props)
+
     def test_instances(self):
         NS = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
