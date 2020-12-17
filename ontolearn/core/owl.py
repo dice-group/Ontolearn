@@ -1,64 +1,77 @@
 import operator
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from functools import reduce
-from typing import Dict, Iterable, Tuple, overload
+from typing import Dict, Iterable, Tuple, overload, TypeVar, Generic, Type, Union, cast
 
-from ontolearn.owlapy.model import OWLClass, OWLReasoner
+from ontolearn.owlapy import HasIRI
+from ontolearn.owlapy.model import OWLClass, OWLReasoner, OWLObjectProperty, OWLDataProperty
 from ontolearn.owlapy.render import DLSyntaxRenderer
 from ontolearn.owlapy.utils import NamedFixedSet, iter_bits
 
+_S = TypeVar('_S', bound=HasIRI)
+_U = TypeVar('_U', bound='AbstractHierarchy')
 
-class ClassHierarchy(metaclass=ABCMeta):
-    """Representation of a class hierarchy
+
+class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
+    """Representation of an abstract hierarchy which can be used for classes or properties
 
     Args:
-        hierarchy_down: a downwards hierarchy given as a mapping of Class to sub-classes
-        reasoner: alternatively, a reasoner whose root_ontology is queried for classes and sub-classes
+        hierarchy_down: a downwards hierarchy given as a mapping of Entities to sub-entities
+        reasoner: alternatively, a reasoner whose root_ontology is queried for entities
         """
-    __slots__ = '_cls_enc', '_parents_map', '_parents_map_trans', '_children_map', '_children_map_trans', \
+    __slots__ = '_Type', '_ent_enc', '_parents_map', '_parents_map_trans', '_children_map', '_children_map_trans', \
                 '_leaf_set', '_root_set', \
-                # '_eq_set'
+        # '_eq_set'
 
-    _cls_enc: NamedFixedSet[OWLClass]
-    _parents_map: Dict[int, int]  # Class => classes
-    _children_map: Dict[int, int]  # Class => classes
-    _children_map_trans: Dict[int, int]  # Class => classes
-    # _eq_set: Dict[int, int]  # Class => classes  # TODO
-    _root_set: int  # root classes
-    _leaf_set: int  # leaf classes
-
-    @overload
-    def __init__(self, hierarchy_down: Iterable[Tuple[OWLClass, Iterable[OWLClass]]]): ...
+    _ent_enc: NamedFixedSet[_S]
+    _parents_map: Dict[int, int]  # Entity => parent entities
+    _parents_map_trans: Dict[int, int]  # Entity => parent entities
+    _children_map: Dict[int, int]  # Entity => child entities
+    _children_map_trans: Dict[int, int]  # Entity => child entities
+    # _eq_set: Dict[int, int]  # Entity => equivalent entities  # TODO
+    _root_set: int  # root entities
+    _leaf_set: int  # leaf entities
 
     @overload
-    def __init__(self, reasoner: OWLReasoner): ...
+    def __init__(self, factory: Type[_S], hierarchy_down: Iterable[Tuple[_S, Iterable[_S]]]):
+        ...
 
-    def __init__(self, arg):
+    @overload
+    def __init__(self, factory: Type[_S], reasoner: OWLReasoner):
+        ...
+
+    @abstractmethod
+    def __init__(self, factory: Type[_S], arg):
+        self._Type = factory
         if isinstance(arg, OWLReasoner):
-            hier_down_gen = ((_, arg.sub_classes(_, direct=True))
-                             for _ in arg.get_root_ontology().classes_in_signature())
+            hier_down_gen = self.hierarchy_down_generator(arg)
             self._init(hier_down_gen)
         else:
             self._init(arg)
 
+    @abstractmethod
+    def hierarchy_down_generator(self, reasoner: OWLReasoner) -> Iterable[Tuple[_S, Iterable[_S]]]:
+        """Generate the suitable downwards hierarchy based on the reasoner"""
+        pass
+
     @staticmethod
-    def restrict(hierarchy: 'ClassHierarchy', *, remove: Iterable[OWLClass] = None, allow: Iterable[OWLClass] = None) \
-            -> 'ClassHierarchy':
-        """Restrict a given class hierarchy to a set of allowed/removed classes
+    def restrict(hierarchy: _U, *, remove: Iterable[_S] = None, allow: Iterable[_S] = None) \
+            -> _U:
+        """Restrict a given hierarchy to a set of allowed/removed entities
 
         Args:
-            hierarchy: an existing Class hierarchy to restrict
-            remove: set of Classes which should be ignored
-            allow: set of Classes which should be used
+            hierarchy: an existing Entity hierarchy to restrict
+            remove: set of entities which should be ignored
+            allow: set of entities which should be used
 
         Returns:
-            the restricted class hierarchy
+            the restricted hierarchy
 
         """
         remove_set = frozenset(remove) if remove is not None else None
         allow_set = frozenset(allow) if allow is not None else None
 
-        def _filter(_: OWLClass):
+        def _filter(_: _S):
             if remove_set is None or _ not in remove_set:
                 if allow_set is None or _ in allow_set:
                     return True
@@ -69,86 +82,86 @@ class ClassHierarchy(metaclass=ABCMeta):
 
         return ClassHierarchy(_gen)
 
-    def restrict_and_copy(self, *, remove: Iterable[OWLClass] = None, allow: Iterable[OWLClass] = None) \
-            -> 'ClassHierarchy':
-        """Restrict this class hierarchy
+    def restrict_and_copy(self: _U, *, remove: Iterable[_S] = None, allow: Iterable[_S] = None) \
+            -> _U:
+        """Restrict this hierarchy
 
         See restrict for more info
         """
-        return ClassHierarchy.restrict(self, remove=remove, allow=allow)
+        return type(self).restrict(self, remove=remove, allow=allow)
 
-    def _init(self, hierarchy_down: Iterable[Tuple[OWLClass, Iterable[OWLClass]]]) -> None:
+    def _init(self, hierarchy_down: Iterable[Tuple[_S, Iterable[_S]]]) -> None:
         self._parents_map_trans = dict()
         self._children_map_trans = dict()
         # self._eq_set = dict()
 
-        cls_to_sub_classes = dict(hierarchy_down)
-        enc = self._cls_enc = NamedFixedSet(OWLClass, cls_to_sub_classes.keys())
+        ent_to_sub_entities = dict(hierarchy_down)
+        enc = self._ent_enc = NamedFixedSet(self._Type, ent_to_sub_entities.keys())
 
-        for cls, sub_it in cls_to_sub_classes.items():
-            cls_enc = enc(cls)
-            self._children_map_trans[cls_enc] = enc(sub_it)
-            self._parents_map_trans[cls_enc] = 0  # create empty parent entry for all classes
+        for ent, sub_it in ent_to_sub_entities.items():
+            ent_enc = enc(ent)
+            self._children_map_trans[ent_enc] = enc(sub_it)
+            self._parents_map_trans[ent_enc] = 0  # create empty parent entry for all classes
 
-        del cls_to_sub_classes  # exhausted
+        del ent_to_sub_entities  # exhausted
 
         # calculate transitive children
-        for cls_enc in self._children_map_trans:
-            _children_transitive(self._children_map_trans, cls_enc=cls_enc, seen_set=0)
+        for ent_enc in self._children_map_trans:
+            _children_transitive(self._children_map_trans, ent_enc=ent_enc, seen_set=0)
 
         # TODO handling of eq_sets
         # sccs = list(_strongly_connected_components(self._children_map_trans))
         # for scc in sccs:
-        #     sub_classes = 0
-        #     for cls_enc in iter_bits(scc):
-        #         self._eq_set[cls_enc] = scc
-        #         sub_classes |= self._children_map_trans[cls_enc]
-        #         del self._children_map_trans[cls_enc]
-        #         del self._parents_map_trans[cls_enc]
-        #     self._children_map_trans[scc] = sub_classes
+        #     sub_entities = 0
+        #     for ent_enc in iter_bits(scc):
+        #         self._eq_set[ent_enc] = scc
+        #         sub_entities |= self._children_map_trans[ent_enc]
+        #         del self._children_map_trans[ent_enc]
+        #         del self._parents_map_trans[ent_enc]
+        #     self._children_map_trans[scc] = sub_entities
         #     self._parents_map_trans[scc] = 0
 
         # fill transitive parents
-        for cls_enc, sub_classes_enc in self._children_map_trans.items():
-            for sub_enc in iter_bits(sub_classes_enc):
-                self._parents_map_trans[sub_enc] |= cls_enc
+        for ent_enc, sub_entities_enc in self._children_map_trans.items():
+            for sub_enc in iter_bits(sub_entities_enc):
+                self._parents_map_trans[sub_enc] |= ent_enc
 
         self._children_map, self._leaf_set = _reduce_transitive(self._children_map_trans, self._parents_map_trans)
         self._parents_map, self._root_set = _reduce_transitive(self._parents_map_trans, self._children_map_trans)
 
-    def parents(self, entity: OWLClass, direct: bool = True) -> Iterable[OWLClass]:
-        """Parents of a class
+    def parents(self, entity: _S, direct: bool = True) -> Iterable[_S]:
+        """Parents of an entity
 
         Args:
-            entity: class for which to query parent classes
+            entity: entity for which to query parent entities
             direct: False to return transitive parents
 
         Returns:
-            super-classes
+            super-entities
 
         """
         if not direct:
-            yield from self._cls_enc(self._parents_map_trans[self._cls_enc(entity)])
+            yield from self._ent_enc(self._parents_map_trans[self._ent_enc(entity)])
         else:
-            yield from self._cls_enc(self._parents_map[self._cls_enc(entity)])
+            yield from self._ent_enc(self._parents_map[self._ent_enc(entity)])
 
-    def children(self, entity: OWLClass, direct: bool = True) -> Iterable[OWLClass]:
-        """Children of a class
+    def children(self, entity: _S, direct: bool = True) -> Iterable[_S]:
+        """Children of an entitiy
 
         Args:
-            entity: class for which to query child classes
+            entity: entity for which to query child entities
             direct: False to return transitive children
 
         Returns:
-            sub-classes
+            sub-entities
 
         """
         if not direct:
-            yield from self._cls_enc(self._children_map_trans[self._cls_enc(entity)])
+            yield from self._ent_enc(self._children_map_trans[self._ent_enc(entity)])
         else:
-            yield from self._cls_enc(self._children_map[self._cls_enc(entity)])
+            yield from self._ent_enc(self._children_map[self._ent_enc(entity)])
 
-    def siblings(self, entity: OWLClass) -> Iterable[OWLClass]:
+    def siblings(self, entity: _S) -> Iterable[_S]:
         seen_set = {entity}
         for parent in self.parents(entity, direct=True):
             for sibling in self.children(parent, direct=True):
@@ -156,15 +169,71 @@ class ClassHierarchy(metaclass=ABCMeta):
                     yield sibling
                     seen_set.add(sibling)
 
-    def items(self) -> Iterable[OWLClass]:
-        for _, i in self._cls_enc.items():
+    def items(self) -> Iterable[_S]:
+        for _, i in self._ent_enc.items():
             yield i
 
-    def roots(self) -> Iterable[OWLClass]:
-        yield from self._cls_enc(self._root_set)
+    def roots(self) -> Iterable[_S]:
+        yield from self._ent_enc(self._root_set)
 
 
-def _children_transitive(map_trans: Dict[int, int], cls_enc: int, seen_set: int):
+class ClassHierarchy(AbstractHierarchy[OWLClass]):
+    """Representation of a class hierarchy
+
+    Args:
+        hierarchy_down: a downwards hierarchy given as a mapping of Class to sub-classes
+        reasoner: alternatively, a reasoner whose root_ontology is queried for classes and sub-classes
+        """
+
+    def hierarchy_down_generator(self, reasoner: OWLReasoner) -> Iterable[Tuple[OWLClass, Iterable[OWLClass]]]:
+        return ((_, reasoner.sub_classes(_, direct=True))
+                for _ in reasoner.get_root_ontology().classes_in_signature())
+
+    @overload
+    def __init__(self, hierarchy_down: Iterable[Tuple[OWLClass, Iterable[OWLClass]]]): ...
+
+    @overload
+    def __init__(self, reasoner: OWLReasoner): ...
+
+    def __init__(self, arg):
+        super().__init__(OWLClass, arg)
+
+
+class ObjectPropertyHierarchy(AbstractHierarchy[OWLObjectProperty]):
+    def hierarchy_down_generator(self, reasoner: OWLReasoner) \
+            -> Iterable[Tuple[OWLObjectProperty, Iterable[OWLObjectProperty]]]:
+        return ((_, map(lambda _: cast(OWLObjectProperty, _),
+                        filter(lambda _: isinstance(_, OWLObjectProperty),
+                               reasoner.sub_object_properties(_, direct=True))))
+                for _ in reasoner.get_root_ontology().object_properties_in_signature())
+
+    @overload
+    def __init__(self, hierarchy_down: Iterable[Tuple[OWLObjectProperty, Iterable[OWLObjectProperty]]]): ...
+
+    @overload
+    def __init__(self, reasoner: OWLReasoner): ...
+
+    def __init__(self, arg):
+        super().__init__(OWLObjectProperty, arg)
+
+
+class DataPropertyHierarchy(AbstractHierarchy[OWLDataProperty]):
+    def hierarchy_down_generator(self, reasoner: OWLReasoner) \
+            -> Iterable[Tuple[OWLDataProperty, Iterable[OWLDataProperty]]]:
+        return ((_, reasoner.sub_data_properties(_, direct=True))
+                for _ in reasoner.get_root_ontology().data_properties_in_signature())
+
+    @overload
+    def __init__(self, hierarchy_down: Iterable[Tuple[OWLDataProperty, Iterable[OWLDataProperty]]]): ...
+
+    @overload
+    def __init__(self, reasoner: OWLReasoner): ...
+
+    def __init__(self, arg):
+        super().__init__(OWLDataProperty, arg)
+
+
+def _children_transitive(map_trans: Dict[int, int], ent_enc: int, seen_set: int):
     """add transitive links to map_trans
 
     Note:
@@ -172,15 +241,15 @@ def _children_transitive(map_trans: Dict[int, int], cls_enc: int, seen_set: int)
 
     Args:
         map_trans: map to which transitive links are added
-        cls_enc: encoded class in map_trans for which to add transitive sub-classes
+        ent_enc: encoded class in map_trans for which to add transitive sub-classes
 
     """
-    sub_classes_enc = map_trans[cls_enc]
+    sub_classes_enc = map_trans[ent_enc]
     for sub_enc in iter_bits(sub_classes_enc):
         if not sub_enc & seen_set:
-            _children_transitive(map_trans, sub_enc, seen_set | cls_enc)
+            _children_transitive(map_trans, sub_enc, seen_set | ent_enc)
             seen_set = seen_set | sub_enc | map_trans[sub_enc]
-            map_trans[cls_enc] |= map_trans[sub_enc]
+            map_trans[ent_enc] |= map_trans[sub_enc]
 
 
 def _reduce_transitive(map: Dict[int, int], map_inverse: Dict[int, int]) -> Tuple[Dict[int, int], int]:
