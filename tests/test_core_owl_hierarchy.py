@@ -1,10 +1,31 @@
 import unittest
+from typing import TypeVar
 
-from ontolearn.core.owl import ClassHierarchy
+from ontolearn.core.owl import ClassHierarchy, ObjectPropertyHierarchy, AbstractHierarchy
 from ontolearn.owlapy import IRI
-from ontolearn.owlapy.model import OWLClass
+from ontolearn.owlapy.model import OWLClass, OWLObjectProperty
 from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 
+_T = TypeVar('_T')
+
+class Owl_Core_PropertyHierarchy_Test(unittest.TestCase):
+    def test_object_property_hierarchy(self):
+        NS = "http://www.biopax.org/examples/glycolysis#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://data/biopax/owl/data/biopax.owl"))
+        reasoner = OWLReasoner_Owlready2(onto)
+
+        oph = ObjectPropertyHierarchy(reasoner)
+        # for k in sorted(oph.roots()):
+        #     _print_children(oph, k)
+
+        participants = OWLObjectProperty(IRI.create(NS, 'PARTICIPANTS'))
+        target_props = frozenset({OWLObjectProperty(IRI(NS, 'COFACTOR')),
+                                  OWLObjectProperty(IRI(NS, 'CONTROLLED')),
+                                  OWLObjectProperty(IRI(NS, 'CONTROLLER')),
+                                  OWLObjectProperty(IRI(NS, 'LEFT')),
+                                  OWLObjectProperty(IRI(NS, 'RIGHT'))})
+        self.assertEqual(frozenset(oph.children(participants)), target_props)
 
 class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
     # TODO
@@ -85,16 +106,16 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
 
 # debug functions
 
-def _print_children(ch: ClassHierarchy, c: OWLClass, level: int = 0) -> None:
+def _print_children(hier: AbstractHierarchy[_T], c: _T, level: int = 0) -> None:
     print(' ' * 2 * level, c, '=>')
-    for d in sorted(ch.children(c)):
-        _print_children(ch, d, level + 1)
+    for d in sorted(hier.children(c)):
+        _print_children(hier, d, level + 1)
 
 
-def _print_parents(ch: ClassHierarchy, c: OWLClass, level: int = 0) -> None:
+def _print_parents(hier: AbstractHierarchy[_T], c: _T, level: int = 0) -> None:
     print(' ' * 2 * level, c, '<=')
-    for d in sorted(ch.parents(c)):
-        _print_parents(ch, d, level + 1)
+    for d in sorted(hier.parents(c)):
+        _print_parents(hier, d, level + 1)
 
 
 if __name__ == '__main__':
