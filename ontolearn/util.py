@@ -4,22 +4,16 @@ import os
 import pickle
 import time
 import copy
-from owlready2 import get_ontology, ThingClass, Ontology
-import types
 import matplotlib.pyplot as plt
-from rdflib import Graph, Literal, RDF, URIRef
-from rdflib.namespace import OWL, RDFS
-from collections import deque
 from sklearn.manifold import TSNE
 import random
-from collections import OrderedDict, defaultdict
-from functools import total_ordering
-from abc import ABCMeta, abstractmethod, ABC
-from typing import Set, Dict, List, Tuple, Iterable
+
 
 # DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
 DEFAULT_FMT = 'Func:{name} took {elapsed:0.8f}s'
 flag_for_performance = False
+
+
 def parametrized_performance_debugger(fmt=DEFAULT_FMT):
     def decorate(func):
         def clocked(*_args):
@@ -41,12 +35,9 @@ def parametrized_performance_debugger(fmt=DEFAULT_FMT):
 def performance_debugger(func_name):
     def function_name_decorator(func):
         def debug(*args, **kwargs):
-            long_string = ''
             starT = time.time()
-            # print('######', func_name, ' func ', end=' ')
             r = func(*args, **kwargs)
             print(func_name, ' took ', round(time.time() - starT, 4), ' seconds')
-            #           long_string += str(func_name) + ' took:' + str(time.time() - starT) + ' seconds'
 
             return r
 
@@ -111,7 +102,7 @@ def incCrossProduct(baseset, newset, exp_gen):
 
 def create_experiment_folder(folder_name='Log'):
     directory = os.getcwd() + '/' + folder_name + '/'
-    folder_name = str(datetime.datetime.now())
+    folder_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     path_of_folder = directory + folder_name
     os.makedirs(path_of_folder)
     return path_of_folder, path_of_folder[:path_of_folder.rfind('/')]
@@ -144,7 +135,7 @@ def create_logger(*, name, p):
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
     # create file handler which logs even debug messages
-    fh = logging.FileHandler(p + '/info.log')
+    fh = logging.FileHandler(p + '/info.log', 'w', 'utf-8')
     fh.setLevel(logging.INFO)
 
     # create console handler with a higher log level
@@ -156,7 +147,7 @@ def create_logger(*, name, p):
     ch.setFormatter(formatter)
     fh.setFormatter(formatter)
     # add the handlers to logger
-    #logger.addHandler(ch) # do not print in console.
+    # logger.addHandler(ch) # do not print in console.
     logger.addHandler(fh)
 
     return logger
