@@ -102,7 +102,7 @@ def incCrossProduct(baseset, newset, exp_gen):
 
 def create_experiment_folder(folder_name='Log'):
     directory = os.getcwd() + '/' + folder_name + '/'
-    folder_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    folder_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     path_of_folder = directory + folder_name
     os.makedirs(path_of_folder)
     return path_of_folder, path_of_folder[:path_of_folder.rfind('/')]
