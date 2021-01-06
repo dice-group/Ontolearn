@@ -440,6 +440,17 @@ class AbstractKnowledgeBase(ABC):
     def clean(self):
         raise NotImplementedError
 
+    @property
+    def concepts(self) -> Dict:
+        """
+        Returns a dictionary where keys are string representation of concept objects
+        and values are concept objects.
+        @return:
+        """
+        return dict(zip([i.str for i in self.uri_to_concepts.values()],self.uri_to_concepts.values()))
+
+    def get_all_concepts(self):
+        return set(self.uri_to_concepts.values())
 
 class AbstractDrill(ABC):
 
