@@ -4,19 +4,13 @@ import os
 import pickle
 import time
 import copy
-from owlready2 import get_ontology
-import types
-from typing import Iterable
 import matplotlib.pyplot as plt
-from rdflib import Graph, Literal, RDF, URIRef
-from rdflib.namespace import OWL, RDFS
-from collections import deque
 from sklearn.manifold import TSNE
 import random
 
+
 # DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
 DEFAULT_FMT = 'Func:{name} took {elapsed:0.8f}s'
-
 flag_for_performance = False
 
 
@@ -39,20 +33,17 @@ def parametrized_performance_debugger(fmt=DEFAULT_FMT):
 
 
 def performance_debugger(func_name):
-    def function_name_decoratir(func):
+    def function_name_decorator(func):
         def debug(*args, **kwargs):
-            long_string = ''
             starT = time.time()
-            # print('######', func_name, ' func ', end=' ')
             r = func(*args, **kwargs)
             print(func_name, ' took ', round(time.time() - starT, 4), ' seconds')
-            #           long_string += str(func_name) + ' took:' + str(time.time() - starT) + ' seconds'
 
             return r
 
         return debug
 
-    return function_name_decoratir
+    return function_name_decorator
 
 
 def decompose(number, upperlimit, bisher, combosTmp):
@@ -87,16 +78,6 @@ def decompose(number, upperlimit, bisher, combosTmp):
 
 def getCombos(length: int, max_length: int):
     """
-    	/**
-	 * Methods for computing combinations with the additional restriction
-	 * that <code>maxValue</code> is the highest natural number, which can
-	 * occur.
-	 * @see #getCombos(int)
-	 * @param length Length of construct.
-	 * @param maxValue Maximum value which can occur in sum.
-	 * @return A two dimensional list constructed in {@link #getCombos(int)}.
-	 */
-
     :param i:
     :param max_length:
     :return:
@@ -121,7 +102,7 @@ def incCrossProduct(baseset, newset, exp_gen):
 
 def create_experiment_folder(folder_name='Log'):
     directory = os.getcwd() + '/' + folder_name + '/'
-    folder_name = str(datetime.datetime.now())
+    folder_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     path_of_folder = directory + folder_name
     os.makedirs(path_of_folder)
     return path_of_folder, path_of_folder[:path_of_folder.rfind('/')]
@@ -145,11 +126,16 @@ def get_full_iri(x):
 
 
 def create_logger(*, name, p):
+    """
+    @todos We should create a better logging.
+    @param name:
+    @param p:
+    @return:
+    """
     logger = logging.getLogger(name)
-
     logger.setLevel(logging.INFO)
     # create file handler which logs even debug messages
-    fh = logging.FileHandler(p + '/info.log')
+    fh = logging.FileHandler(p + '/info.log', 'w', 'utf-8')
     fh.setLevel(logging.INFO)
 
     # create console handler with a higher log level
@@ -161,57 +147,11 @@ def create_logger(*, name, p):
     ch.setFormatter(formatter)
     fh.setFormatter(formatter)
     # add the handlers to logger
-    logger.addHandler(ch)
+    # logger.addHandler(ch) # do not print in console.
     logger.addHandler(fh)
 
     return logger
 
-
-def retrieve_concept_hierarchy(c) -> Iterable:
-    """
-    c: a node object
-
-    hierarchy: an iterable containing a path of concepts from c to T.
-    """
-    hierarchy = deque()
-    if c.parent_node:
-        hierarchy.appendleft(c.parent_node)
-        while hierarchy[-1].parent_node is not None:
-            hierarchy.append(hierarchy[-1].parent_node)
-        hierarchy.appendleft(c)
-    return hierarchy
-
-"""
-def serialize_concepts(concepts: Iterable, serialize_name: str, metric: str, attribute: str, rdf_format: str):
-    raise NotImplementedError
-    g = Graph()
-
-    integer_mapped_concepts = dict()
-
-    for c in concepts:
-        hierarchy = retrieve_concept_hierarchy(c)  # retrieve concept subsuming c.
-        p_quality = URIRef('https://dice-research.org/' + attribute + ':' + metric)
-
-        for h in hierarchy:
-            integer_mapped_concepts.setdefault(h, str(len(integer_mapped_concepts)))
-
-        for node, int_map in integer_mapped_concepts.items():
-            subject = URIRef('https://dice-research.org/' + int_map)
-            g.add((subject, RDF.type, RDFS.Class))  # https://dice-research.org/1 type Class.
-            g.add((subject, RDFS.label,
-                   Literal(node.concept.str)))  # https://dice-research.org/1 type (Mother ⊔ (Son ⊔ ¬Daughter)).
-            try:  # if a concept has not been tested.
-                val = round(getattr(node, attribute), 3)
-            except TypeError:  # if attribute is None.
-                val = 0.0
-            g.add((subject, p_quality, Literal(val)))
-
-            if node.parent_node:
-                g.add((subject, RDFS.subClassOf,
-                       URIRef('https://dice-research.org/' + integer_mapped_concepts[node.parent_node])))
-
-        g.serialize(destination=serialize_name, format=rdf_format)
-"""
 
 def apply_TSNE_on_df(df) -> None:
     low_emb = TSNE(n_components=2).fit_transform(df)
@@ -221,12 +161,20 @@ def apply_TSNE_on_df(df) -> None:
 
 
 def balanced_sets(a: set, b: set) -> (set, set):
+    """
+    Balance given two sets through sampling without replacement.
+    Returned sets have the same length.
+    @param a:
+    @param b:
+    @return:
+    """
+
     if len(a) > len(b):
         sampled_a = random.sample(a, len(b))
-        return sampled_a, b
+        return set(sampled_a), b
     elif len(b) > len(a):
         sampled_b = random.sample(b, len(a))
-        return a, sampled_b
+        return a, set(sampled_b)
     else:
         assert len(a) == len(b)
         return a, b

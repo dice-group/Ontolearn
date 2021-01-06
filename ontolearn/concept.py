@@ -5,8 +5,8 @@ class Concept(BaseConcept):
     Concept Class representing Concepts in Description Logic, Classes in OWL.
     """
 
-    def __init__(self, concept, kwargs):
-        super().__init__(concept, kwargs)
+    def __init__(self, concept, kwargs, world=None):
+        super().__init__(concept, kwargs, world)
         self.__parse(kwargs)
 
     def __parse(self, kwargs):

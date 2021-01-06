@@ -11,6 +11,7 @@ setup(
     version='0.0.2',
     packages=find_packages(exclude=('tests', 'test.*', 'examples.*')),
     install_requires=['scikit-learn>=0.22.1',
+                      'matplotlib',
                       'owlready2>=0.23',
                       'torch',
                       'pandas'],

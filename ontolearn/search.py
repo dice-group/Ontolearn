@@ -10,7 +10,8 @@ class Node(BaseNode):
 
     def __str__(self):
         return 'Node at {0}\t{self.concept.str}\tQuality:{self.quality}\tHeuristic:{self.heuristic}\tDepth:{' \
-               'self.depth}\tH_exp:{self.h_exp}\t|Children|:{self.refinement_count}'.format(hex(id(self)), self=self)
+               'self.depth}\tH_exp:{self.h_exp}\t|Children|:{self.refinement_count}\t|Indv.|:{1}'.format(
+            hex(id(self)), len(self.concept.instances), self=self)
 
 
 class CELOESearchTree(AbstractTree):
@@ -18,35 +19,61 @@ class CELOESearchTree(AbstractTree):
         super().__init__(quality_func, heuristic_func)
         self.expressionTests = 0
 
-    def update_prepare(self, n):
+    def update_prepare(self, n: Node) -> None:
+        """
+        Remove n and its children from search tree.
+        @param n: is a node object containing a concept.
+        @return:
+        """
         self.nodes.pop(n)
         for each in n.children:
             if each in self.nodes:
                 self.update_prepare(each)
 
-    def update_done(self, n):
-        if not n.children:
-            self.nodes[n] = n
-        else:
-            self.nodes[n] = n
-            for each in n.children:
-                self.update_done(each)
+    def update_done(self, n) -> None:
+        """
+        Add n and its children into search tree.
+        @param n: is a node object containing a concept.
+        @return:
+        """
+        self.nodes[n] = n
+        for each in n.children:
+            self.update_done(each)
 
-    def add_node(self, *, parent_node=None, child_node=None):
-        if self.redundancy_check(child_node):
-            self.quality_func.apply(child_node)  # AccuracyOrTooWeak(n)
-            self.expressionTests += 1
-            if child_node.quality == 0:  # > too weak
+    def add(self, node=None, parent_node=None):
+        if self.redundancy_check(node):
+            self.quality_func.apply(node)  # AccuracyOrTooWeak(n)
+            if node.quality == 0:  # > too weak
                 return False
-
-            self.heuristic_func.apply(child_node, parent_node=parent_node)
-            self.nodes[child_node] = child_node
+            self.heuristic_func.apply(node, parent_node=parent_node)
+            self.nodes[node] = node
 
             if parent_node:
-                parent_node.add_children(child_node)
-            if child_node.quality == 1:  # goal found
+                parent_node.add_children(node)
+            if node.quality == 1:  # goal found
                 return True
             return False
+        else:
+            if not (node.parent_node is parent_node):
+                try:
+                    assert parent_node.heuristic is not None
+                    assert node.parent_node.heuristic is not None
+                except AssertionError:
+                    print('REFINED NODE:', parent_node)
+                    print('NODE TO BE ADDED:', node)
+                    print('previous parent of node to be added', node.parent_node)
+                    for k, v in self.nodes.items():
+                        print(k)
+                    raise ValueError()
+
+                if parent_node.heuristic > node.parent_node.heuristic:
+                    """Ignore previous parent"""
+                else:
+                    if node in node.parent_node.children:
+                        node.parent_node.remove_child(node)
+                    node.parent_node = parent_node
+                    self.heuristic_func.apply(node, parent_node=parent_node)
+                    self.nodes[node] = node
         return False
 
 
@@ -54,20 +81,40 @@ class SearchTree(AbstractTree):
     def __init__(self, quality_func: AbstractScorer = None, heuristic_func=None):
         super().__init__(quality_func, heuristic_func)
 
-    def add_node(self, *, parent_node=None, child_node=None):
+    def add(self, node: Node, parent_node: Node = None) -> bool:
+        """
+        Add a node into the search tree.
+        Parameters
+        ----------
+        @param parent_node:
+        @param node:
+        Returns
+        -------
+        None
+        """
 
-        if self.redundancy_check(child_node):
-            self.quality_func.apply(child_node)  # AccuracyOrTooWeak(n)
-            self.expressionTests += 1
-            if child_node.quality == 0:  # > too weak
-                return False
-            self.heuristic_func.apply(child_node)
-            self.nodes[child_node] = child_node
-            if parent_node:
-                parent_node.add_children(child_node)
-            if child_node.quality == 1:  # goal found
-                return True
+        if parent_node is None:
+            self.nodes[node.concept.str] = node
             return False
+
+        if self.redundancy_check(node):
+            self.quality_func.apply(node)  # AccuracyOrTooWeak(n)
+            if node.quality == 0:  # > too weak
+                return False
+            self.heuristic_func.apply(node)
+            self.nodes[node] = node
+            if parent_node:
+                parent_node.add_children(node)
+            if node.quality == 1:  # goal found
+                return True
+        else:
+            if not (node.parent_node is parent_node):
+                if parent_node.heuristic > node.parent_node.heuristic:
+                    # update parent info
+                    self.heuristic_func.apply(node, parent_node=parent_node)
+                    self.nodes[node] = node
+                    parent_node.add_children(node)
+        return False
 
 
 class SearchTreePriorityQueue(AbstractTree):
@@ -90,36 +137,32 @@ class SearchTreePriorityQueue(AbstractTree):
     expressionTests: not being used .
     str_to_obj_instance_mapping: not being used.
     """
+
     def __init__(self, quality_func=None, heuristic_func=None):
         super().__init__(quality_func, heuristic_func)
-        from queue import PriorityQueue
         self.items_in_queue = PriorityQueue()
-        # self.nodes serves as a gate.
 
-    def add_root(self, node: Node):
+    def add(self, n: Node):
         """
-        Adds a root node into the search tree.
-
+        Append a node into the search tree.
         Parameters
         ----------
-        node : A Node object
+        n : A Node object
         Returns
         -------
         None
         """
-        self.quality_func.apply(node)
-        self.heuristic_func.apply(node)
-        self.items_in_queue.put((-node.heuristic, node.concept.str))  # gets the smallest one.
-        self.nodes[node.concept.str] = node
+        self.items_in_queue.put((-n.heuristic, n.concept.str))  # gets the smallest one.
+        self.nodes[n.concept.str] = n
 
-    def add_node(self, *, node: Node, refined_node=Node):
+    def add_node(self, *, node: Node, parent_node: Node):
         """
-        Adds a node into the search tree.
+        Add a node into the search tree after calculating heuristic value given its parent.
 
         Parameters
         ----------
         node : A Node object
-        refined_node : A Node object
+        parent_node : A Node object
 
         Returns
         -------
@@ -131,24 +174,25 @@ class SearchTreePriorityQueue(AbstractTree):
         -----
         node is a refinement of refined_node
         """
-        if node.concept.str in self.nodes and node.parent_node != refined_node:
+        if node.concept.str in self.nodes and node.parent_node != parent_node:
             old_heuristic = node.heuristic
-            self.heuristic_func.apply(node, parent_node=refined_node)
+            self.heuristic_func.apply(node, parent_node=parent_node)
             new_heuristic = node.heuristic
             if new_heuristic > old_heuristic:
                 node.parent_node.children.remove(node)
-                node.parent_node = refined_node
-                refined_node.add_children(node)
+                node.parent_node = parent_node
+                parent_node.add_children(node)
                 self.items_in_queue.put((-node.heuristic, node.concept.str))  # gets the smallest one.
                 self.nodes[node.concept.str] = node
         else:
+            # @todos reconsider it.
             self.quality_func.apply(node)
             if node.quality == 0:
                 return False
-            self.heuristic_func.apply(node, parent_node=refined_node)
+            self.heuristic_func.apply(node, parent_node=parent_node)
             self.items_in_queue.put((-node.heuristic, node.concept.str))  # gets the smallest one.
             self.nodes[node.concept.str] = node
-            refined_node.add_children(node)
+            parent_node.add_children(node)
             if node.quality == 1:
                 return True
 
@@ -192,7 +236,6 @@ class SearchTreePriorityQueue(AbstractTree):
             raise KeyError
         return top_n_predictions
 
-    def reset_tree(self):
+    def clean(self):
         self.items_in_queue = PriorityQueue()
         self._nodes.clear()
-

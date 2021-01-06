@@ -1,20 +1,45 @@
 import subprocess
+from typing import List, Dict
+from .util import create_experiment_folder, create_logger
+import re
+import time
+
 
 class DLLearnerBinder:
-    def __init__(self, path):
-        assert path
-        self.execute_dl_learner_path = path
+    """
+    dl-learner python binder.
+    """
 
-    def generate_config(self, knowledge_base_path, algorithm, positives, negatives, config_path,
-                        num_of_concepts_tested):
+    def __init__(self, binary_path=None, model=None, kb_path=None, max_runtime=3):
+        assert binary_path
+        assert model
+        assert kb_path
+        self.binary_path = binary_path
+        self.kb_path = kb_path
+
+        self.name = model
+        self.max_runtime = max_runtime
+        self.storage_path, _ = create_experiment_folder()
+        self.logger = create_logger(name=self.name, p=self.storage_path)
+        self.best_predictions = None
+
+    def write_dl_learner_config(self, pos: List[str], neg: List[str]) -> str:
+        """
+        Writes config file for dl-learner.
+        @param pos: A list of URIs of individuals indicating positive examples in concept learning problem.
+        @param neg: A list of URIs of individuals indicating negatives examples in concept learning problem.
+        @return: path of generated config file.
+        """
+        assert len(pos) > 0
+        assert len(neg) > 0
 
         Text = list()
         pos_string = "{ "
         neg_string = "{ "
-        for i in positives:
+        for i in pos:
             pos_string += "\"" + str(
                 i) + "\","
-        for j in negatives:
+        for j in neg:
             neg_string += "\"" + str(
                 j) + "\","
 
@@ -31,19 +56,17 @@ class DLLearnerBinder:
         Text.append("cli.type = \"org.dllearner.cli.CLI\"")
         # Text.append("cli.performCrossValidation = \"true\"")
         # Text.append("cli.nrOfFolds = 10\n")
-
         Text.append("ks.type = \"OWL File\"")
         Text.append("\n")
 
         Text.append("// knowledge source definition")
 
         Text.append(
-            "ks.fileName = \"" + knowledge_base_path + '\"')
+            "ks.fileName = \"" + self.kb_path + '\"')
         # Text.append(
         #    "ks.fileName = \"" + '/home/demir/Desktop/DL/dllearner-1.4.0/examples/carcinogenesis/carcinogenesis.owl\"')  # carcinogenesis/carcinogenesis.ow
 
         Text.append("\n")
-
         Text.append("reasoner.type = \"closed world reasoner\"")
         Text.append("reasoner.sources = { ks }")
         Text.append("\n")
@@ -63,107 +86,174 @@ class DLLearnerBinder:
         Text.append("op.type = \"rho\"")
 
         Text.append("op.useCardinalityRestrictions = \"false\"")
-
-        # Text.append(
-        #     "alg.searchTreeFile =\"" + config_path + '_search_tree.txt\"')  # carcinogenesis/carcinogenesis.ow
-
-        if algorithm == 'celoe':
+        if self.name == 'celoe':
             Text.append("alg.type = \"celoe\"")
-            Text.append("alg.maxClassExpressionTests = " + str(num_of_concepts_tested))
             Text.append("alg.stopOnFirstDefinition = \"true\"")
-        elif algorithm == 'ocel':
+        elif self.name == 'ocel':
             Text.append("alg.type = \"ocel\"")
-            Text.append("alg.maxClassDescriptionTests = " + str(num_of_concepts_tested))
             Text.append("alg.showBenchmarkInformation = \"true\"")
-        elif algorithm == 'eltl':
+        elif self.name == 'eltl':
             Text.append("alg.type = \"eltl\"")
             Text.append("alg.maxNrOfResults = \"1\"")
             Text.append("alg.stopOnFirstDefinition = \"true\"")
         else:
             raise ValueError('Wrong algorithm choosen.')
+
+        Text.append("alg.maxExecutionTimeInSeconds = " + str(self.max_runtime))
+
         Text.append("\n")
+        pathToConfig = self.storage_path + '/' + self.name + '.conf'  # /home/demir/Desktop/DL/DL-Learner-1.3.0/examples/family-benchmark
 
-        pathToConfig = config_path + '.conf'  # /home/demir/Desktop/DL/DL-Learner-1.3.0/examples/family-benchmark
-
-        file = open(pathToConfig, "wb")
-
-        for i in Text:
-            file.write(i.encode("utf-8"))
-            file.write("\n".encode("utf-8"))
-        file.close()
+        with open(pathToConfig, "wb") as wb:
+            for i in Text:
+                wb.write(i.encode("utf-8"))
+                wb.write("\n".encode("utf-8"))
         return pathToConfig
 
-    def parse_output(self, results, config_path, serialize):
-        # output_of_dl.append('### ' + pathToConfig + ' ends ###')
+    def fit(self, pos: List[str], neg: List[str], max_runtime: int = None):
+        """
+        Fit dl-learner model on a given positive and negative examples.
+        @param pos: A list of URIs of individuals indicating positive examples in concept learning problem
+        @param neg: A list of URIs of individuals indicating negatives examples in concept learning problem.
+        @param max_runtime:
+        @return: self.
+        """
+        assert len(pos) > 0
+        assert len(neg) > 0
 
-        top_predictions = None
-        for ith, lines in enumerate(results):
-            if 'solutions:' in lines:
-                top_predictions = results[ith:]
+        if max_runtime:
+            self.max_runtime = max_runtime
+        pathToConfig = self.write_dl_learner_config(pos=pos, neg=neg)
+        total_runtime = time.time()
+        res = subprocess.run([self.binary_path + 'bin/cli', pathToConfig], stdout=subprocess.PIPE,
+                             universal_newlines=True)
+        total_runtime = round(time.time() - total_runtime, 3)
+        self.best_predictions = self.parse_dl_learner_output(res.stdout.splitlines())
+        self.best_predictions['Runtime'] = total_runtime
+        return self
+
+    def best_hypotheses(self):
+        """
+        return predictions if exists.
+        """
+        if self.best_predictions:
+            return self.best_predictions
+        else:
+            print('Not prediction found.')
+
+    def parse_dl_learner_output(self, output_of_dl_learner) -> Dict:
+        """
+        Parse the output received from executing dl-learner.
+        @return: A dictionary of {'Prediction': ..., 'Accuracy': ..., 'F-measure': ...}
+        """
+        solutions = None
+        best_concept_str = None
+        acc = -1.0
+        f_measure = -1.0
+
+        # (1) Store output of dl learner and extract solutions.
+        with open(self.storage_path + '/output_' + self.name + '.txt', 'w') as w:
+            for th, sentence in enumerate(output_of_dl_learner):
+                w.write(sentence + '\n')
+                if 'solutions' in sentence and '1:' in output_of_dl_learner[th + 1]:
+                    solutions = output_of_dl_learner[th:]
+
+            # check whether solutions found
+            if solutions:  # if solution found, check the correctness of relevant part of dl-learner output.
+                try:
+                    assert isinstance(solutions, list)
+                    assert 'solutions' in solutions[0]
+                    assert len(solutions) > 0
+                    assert '1: ' in solutions[1][:5]
+                except AssertionError as ast:
+                    print(type(solutions))
+                    print('####')
+                    print(solutions[0])
+                    print('####')
+                    print(len(solutions))
+            else:
+                # no solution found.
+                print('#################')
+                print('#######{}##########'.format(self.name))
+                print('#################')
+                for i in output_of_dl_learner[-3:-1]:
+                    print(i)
+                print('#################')
+                print('#######{}##########'.format(self.name))
+                print('#################')
+                return {'Model': self.name, 'Prediction': best_concept_str, 'Accuracy': float(acc),
+                        'F-measure': float(f_measure)}
 
         # top_predictions must have the following form
-        """solutions:
+        """solutions ......:
         1: Parent(pred.acc.: 100.00 %, F - measure: 100.00 %)
         2: ⊤ (pred.acc.: 50.00 %, F-measure: 66.67 %)
         3: Person(pred.acc.: 50.00 %, F - measure: 66.67 %)
         """
-        try:
-            assert 'solutions:' in top_predictions[0]
-        except:
-            print('PARSING ERROR')
+        best_solution = solutions[1]
 
-            for i in results:
-                print(i)
+        if self.name == 'ocel':
+            """ parse differently"""
+            token = '(accuracy '
+            start_index = len('1: ')
+            end_index = best_solution.index(token)
+            best_concept_str = best_solution[start_index:end_index - 1]  # -1 due to white space between *) (*.
+            quality_info = best_solution[end_index:]
+            # best_concept_str => *Sister ⊔ (Female ⊓ (¬Granddaughter))*
+            # quality_info     => *(accuracy 100%, length 16, depth 2)*
 
-            exit(1)
-        str_f_measure = 'F-measure: '
-        assert '1: ' in top_predictions[1]
-        assert 'pred. acc.:' in top_predictions[1]
-        assert str_f_measure in top_predictions[1]
+            # Create a list to hold the numbers
+            predicted_accuracy_info = re.findall(r'accuracy \d*%', quality_info)
 
-        # Get last numerical value from first item
-        best_pred_info = top_predictions[1]
+            assert len(predicted_accuracy_info) == 1
+            assert predicted_accuracy_info[0][-1] == '%'  # percentage sign
+            acc = re.findall(r'\d+\.?\d+', predicted_accuracy_info[0])[0]
 
-        best_pred = best_pred_info[best_pred_info.index('1: ') + 3:best_pred_info.index(' (pred. acc.:')]
+        elif self.name in ['celoe', 'eltl']:
+            # e.g. => 1: Sister ⊔ (∃ married.Brother) (pred. acc.: 90.24%, F-measure: 91.11%)
+            # Heuristic => Quality info start with *(pred. acc.: *
+            token = '(pred. acc.: '
+            start_index = len('1: ')
+            end_index = best_solution.index(token)
+            best_concept_str = best_solution[start_index:end_index - 1]  # -1 due to white space between *) (*.
+            quality_info = best_solution[end_index:]
+            # best_concept_str => *Sister ⊔ (Female ⊓ (¬Granddaughter))*
+            # quality_info     => *(pred. acc.: 79.27%, F-measure: 82.83%)*
 
-        f_measure = best_pred_info[best_pred_info.index(str_f_measure) + len(str_f_measure): -1]
-        assert f_measure[-1] == '%'
-        f_measure = float(f_measure[:-1])
+            # Create a list to hold the numbers
+            predicted_accuracy_info = re.findall(r'pred. acc.: \d+.\d+%', quality_info)
+            f_measure_info = re.findall(r'F-measure: \d+.\d+%', quality_info)
 
-        if serialize:
-            f_name = config_path + '_' + 'Result.txt'
-            with open(f_name, 'w') as handle:
-                for sentence in results:
-                    handle.write(sentence + '\n')
-            handle.close()
+            assert len(predicted_accuracy_info) == 1
+            assert len(f_measure_info) == 1
 
-        return best_pred, f_measure
+            assert predicted_accuracy_info[0][-1] == '%'  # percentage sign
+            assert f_measure_info[0][-1] == '%'  # percentage sign
 
-    def pipeline(self, *, knowledge_base_path, algorithm, positives, negatives,
-                 path_name, num_of_concepts_tested,
-                 expand_goal_node_furhter=False,
-                 name_of_Example=None, show_path=False):
-        if algorithm is None:
+            acc = re.findall(r'\d+\.?\d+', predicted_accuracy_info[0])[0]
+            f_measure = re.findall(r'\d+\.?\d+', f_measure_info[0])[0]
+        else:
             raise ValueError
 
-        print('####### ', algorithm, ' starts ####### ')
+        return {'Prediction': best_concept_str, 'Accuracy': float(acc), 'F-measure': float(f_measure)}
 
-        config_path = path_name + '_' + algorithm + '_' + str(num_of_concepts_tested)
+    @staticmethod
+    def train(dataset: List = None) -> None:
+        """ do nothing """
 
-        pathToConfig = self.generate_config(knowledge_base_path=knowledge_base_path,
-                                            algorithm=algorithm,
-                                            positives=positives, negatives=negatives,
-                                            config_path=config_path, num_of_concepts_tested=num_of_concepts_tested)
+    def fit_from_iterable(self, dataset: List = None, max_runtime=None) -> List[Dict]:
+        """
+        Fit dl-learner model on a list of given positive and negative examples.
+        @param dataset:A list of tuple (s,p,n) where
+        s => string representation of target concept
+        p => positive examples, i.e. s(p)=1.
+        n => negative examples, i.e. s(n)=0.
+        @param max_runtime:
+        @return:
+        """
+        assert len(dataset) > 0
+        if max_runtime:
+            assert isinstance(max_runtime, int)
+            self.max_runtime = max_runtime
 
-        output_of_dl = list()
-
-        output_of_dl.append('\n\n')
-        output_of_dl.append('### ' + pathToConfig + ' starts ###')
-
-        result = subprocess.run([self.execute_dl_learner_path + 'bin/cli', pathToConfig], stdout=subprocess.PIPE,
-                                universal_newlines=True)
-
-        lines = result.stdout.splitlines()
-        output_of_dl.extend(lines)
-
-        return self.parse_output(output_of_dl, config_path=config_path, serialize=False)
+        return [self.fit(pos=p, neg=n, max_runtime=self.max_runtime).best_hypotheses() for (s, p, n) in dataset]

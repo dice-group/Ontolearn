@@ -11,22 +11,24 @@ from itertools import chain, tee
 class LengthBasedRefinement(BaseRefinement):
     """ A top down refinement operator refinement operator in ALC."""
 
-    def __init__(self, kb, max_child_length=10):
+    def __init__(self, kb, max_child_length=10, apply_combinations=True):
         super().__init__(kb)
         self.max_child_length = max_child_length
+        self.apply_combinations = apply_combinations
+        self.min_num_instances = 0
 
     def getNode(self, c: Concept, parent_node=None, root=False):
+        """
 
-        if c in self.concepts_to_nodes:
-            return self.concepts_to_nodes[c]
-
+        @param c:
+        @param parent_node:
+        @param root:
+        @return:
+        """
         if parent_node is None and root is False:
             print(c)
             raise ValueError
-
-        n = Node(concept=c, parent_node=parent_node, root=root)
-        self.concepts_to_nodes[c] = n
-        return n
+        return Node(concept=c, parent_node=parent_node, root=root)
 
     def refine_atomic_concept(self, node: Node, max_length: int = None) -> Set:
         if node.concept.str == 'Nothing':
@@ -42,44 +44,51 @@ class LengthBasedRefinement(BaseRefinement):
             # (3) Create ∀.r.T and ∃.r.T where r is the most general relation.
             generator_container.append(self.kb.most_general_existential_restrictions(node.concept))
             generator_container.append(self.kb.most_general_universal_restriction(node.concept))
-
-        a, b = tee(chain.from_iterable(generator_container))
-
+        # a, b = tee(chain.from_iterable(generator_container))
+        a = chain.from_iterable(generator_container)
         refinement_gate = set()
         cumulative_refinements = dict()
-        for i in set(a):
-            refinement_gate.add(i)
-            cumulative_refinements.setdefault(len(i), set()).add(i)
+        for concept_ref in a:
+            if len(concept_ref.instances) >= self.min_num_instances:  # ignore "empty" concepts.
+                if concept_ref not in refinement_gate:
+                    refinement_gate.add(concept_ref)
+                    cumulative_refinements.setdefault(len(concept_ref), set()).add(concept_ref)
+                    yield concept_ref
+                else:
+                    print(f'{concept_ref} has already seen')  # Asses this state.
+                    exit(1)
 
-        if len(cumulative_refinements) > 0:
-            old_len_cumulative_refinements = len(cumulative_refinements)
-            while True:
-                temp = dict()
-                for k, v in cumulative_refinements.items():
-                    for kk, vv in cumulative_refinements.items():
-                        length = k + kk
-                        if (max_length > length) and (self.max_child_length > length + 1):
-                            for i in v:
-                                for j in vv:
+        if self.apply_combinations:  # TODO we may not need this.
+            if len(cumulative_refinements) > 0:
+                old_len_cumulative_refinements = len(cumulative_refinements)
+                while True:
+                    temp = dict()
+                    for k, v in cumulative_refinements.items():
+                        for kk, vv in cumulative_refinements.items():
+                            length = k + kk
+                            if (max_length > length) and (self.max_child_length > length + 1):
+                                for i in v:
+                                    for j in vv:
 
-                                    if (i, j) in refinement_gate:
-                                        continue
+                                        if (i, j) in refinement_gate:
+                                            continue
 
-                                    refinement_gate.add((i, j))
-                                    refinement_gate.add((j, i))
-                                    union = self.kb.union(i, j)
-                                    temp.setdefault(len(union), set()).add(union)
-                                    intersect = self.kb.intersection(i, j)
-                                    temp.setdefault(len(intersect), set()).add(intersect)
+                                        refinement_gate.add((i, j))
+                                        refinement_gate.add((j, i))
+                                        union = self.kb.union(i, j)
+                                        temp.setdefault(len(union), set()).add(union)
+                                        intersect = self.kb.intersection(i, j)
+                                        temp.setdefault(len(intersect), set()).add(intersect)
+                                        yield union
+                                        yield intersect
 
-                cumulative_refinements.update(temp)
-                new_len_cumulative_refinements = len(cumulative_refinements)
-                if old_len_cumulative_refinements == new_len_cumulative_refinements:
-                    break
-                old_len_cumulative_refinements = new_len_cumulative_refinements
+                    cumulative_refinements.update(temp)
+                    new_len_cumulative_refinements = len(cumulative_refinements)
+                    if old_len_cumulative_refinements == new_len_cumulative_refinements:
+                        break
+                    old_len_cumulative_refinements = new_len_cumulative_refinements
 
-            for i in chain.from_iterable(cumulative_refinements.values()):
-                yield i
+        # yield from chain.from_iterable(cumulative_refinements.values())
 
     def refine_complement_of(self, node: Node, maxlength: int) -> Generator:
         parents = self.kb.get_direct_parents(self.kb.negation(node.concept))
@@ -90,7 +99,6 @@ class LengthBasedRefinement(BaseRefinement):
         # rule 1: EXISTS r.D = > EXISTS r.E
         for i in self.refine(self.getNode(node.concept.filler, parent_node=node), maxlength=maxlength):
             yield self.kb.existential_restriction(i, node.concept.role)
-
         yield self.kb.universal_restriction(node.concept.filler, node.concept.role)
 
     def refine_object_all_values_from(self, node: Node, maxlength: int):
@@ -121,8 +129,10 @@ class LengthBasedRefinement(BaseRefinement):
             if maxlength >= len(concept_A) + len(ref_concept_B):
                 yield self.kb.intersection(concept_A, ref_concept_B)
 
-    def refine(self, node, maxlength) -> Generator:
+    def refine(self, node, maxlength, apply_combinations=None) -> Generator:
         assert isinstance(node, Node)
+        if apply_combinations:
+            self.apply_combinations = apply_combinations
         if node.concept.is_atomic:
             yield from self.refine_atomic_concept(node, maxlength)
         elif node.concept.form == 'ObjectComplementOf':
@@ -144,14 +154,14 @@ class ModifiedCELOERefinement(BaseRefinement):
      A top down/downward refinement operator refinement operator in ALC.
     """
 
-    def __init__(self, kb, max_child_length=50):
+    def __init__(self, kb, max_child_length=10):
         super().__init__(kb)
-        self.topRefinementsCumulative = dict()
-        self.topRefinementsLength = 0
+        # self.topRefinementsCumulative = dict()
+        # self.topRefinementsLength = 0
+        # self.combos = dict()
+        # self.topRefinements = dict()
+        # self.topARefinements = dict()
         self.max_child_length = max_child_length
-        self.combos = dict()
-        self.topRefinements = dict()
-        self.topARefinements = dict()
 
     def refine_atomic_concept(self, node: Node, max_length: int = None, current_domain: Concept = None) -> Set:
         """
@@ -262,15 +272,15 @@ class ModifiedCELOERefinement(BaseRefinement):
 
     def getNode(self, c: Concept, parent_node=None, root=False):
 
-        if c in self.concepts_to_nodes:
-            return self.concepts_to_nodes[c]
+        # if c in self.concepts_to_nodes:
+        #    return self.concepts_to_nodes[c]
 
         if parent_node is None and root is False:
             print(c)
             raise ValueError
 
         n = Node(concept=c, parent_node=parent_node, root=root)
-        self.concepts_to_nodes[c] = n
+        # self.concepts_to_nodes[c] = n
         return n
 
     def refine_object_union_of(self, node: Node, maxlength: int, current_domain: Concept):
@@ -347,6 +357,7 @@ class ModifiedCELOERefinement(BaseRefinement):
         else:
             raise ValueError
 
+        # @Todo Investigate whether we can avoid this for loop although originally rho in celoe returns none.
         for i in refinement:
             if i is not None:
                 yield i
@@ -358,15 +369,15 @@ class CustomRefinementOperator(BaseRefinement):
 
     def getNode(self, c: Concept, parent_node=None, root=False):
 
-        if c in self.concepts_to_nodes:
-            return self.concepts_to_nodes[c]
+        # if c in self.concepts_to_nodes:
+        #    return self.concepts_to_nodes[c]
 
         if parent_node is None and root is False:
             print(c)
             raise ValueError
 
         n = Node(concept=c, parent_node=parent_node, root=root)
-        self.concepts_to_nodes[c] = n
+        # self.concepts_to_nodes[c] = n
         return n
 
     def refine_atomic_concept(self, concept: Concept) -> Set:
@@ -462,125 +473,6 @@ class CustomRefinementOperator(BaseRefinement):
         for ref_concept_B in self.refine(concept_A):
             if isinstance(ref_concept_B, Concept):
                 yield self.kb.intersection(ref_concept_B, concept_A)
-
-    def refine(self, concept: Concept):
-        assert isinstance(concept, Concept)
-
-        if concept.is_atomic:
-            yield from self.refine_atomic_concept(concept)
-        elif concept.form == 'ObjectComplementOf':
-            yield from self.refine_complement_of(concept)
-        elif concept.form == 'ObjectSomeValuesFrom':
-            yield from self.refine_object_some_values_from(concept)
-        elif concept.form == 'ObjectAllValuesFrom':
-            yield from self.refine_object_all_values_from(concept)
-        elif concept.form == 'ObjectUnionOf':
-            yield from self.refine_object_union_of(concept)
-        elif concept.form == 'ObjectIntersectionOf':
-            yield from self.refine_object_intersection_of(concept)
-        else:
-            raise ValueError
-
-
-class ExampleRefinement(BaseRefinement):
-    """
-     A top down/downward refinement operator refinement operator in ALC.
-    """
-
-    def getNode(self, *args, **kwargs):
-        pass
-
-    def __init__(self, kb: KnowledgeBase):
-        super().__init__(kb)
-
-    @parametrized_performance_debugger()
-    def refine_atomic_concept(self, concept: Concept) -> Set:
-        """
-        # (1) Create all direct sub concepts of C that are defined in TBOX.
-        # (2) Create negations of all leaf concepts in  the concept hierarchy.
-        # (3) Create ∀.r.T and ∃.r.T where r is the most general relation.
-        # (4) Intersect and union set of concepts that are generated in (1-3).
-        # Note that this is modified implementation of refinemenet operator proposed in
-        Concept Learning in Description Logics Using Refinement Operators
-
-        :param concept: Concept
-        :return: A set of refinements.
-        """
-        # (1) Generate all direct_sub_concepts
-        sub_concepts = self.kb.get_direct_sub_concepts(concept)
-        # (2) Create negation of all leaf_concepts
-        negs = self.kb.negation_from_iterables(self.kb.get_leaf_concepts(concept))
-        # (3) Create ∃.r.T where r is the most general relation.
-        existential_rest = self.kb.most_general_existential_restrictions(concept)
-        universal_rest = self.kb.most_general_universal_restriction(concept)
-        a, b = tee(chain(sub_concepts, negs, existential_rest, universal_rest))
-
-        mem = set()
-        for i in a:
-            yield i
-            for j in copy.copy(b):
-                if (i == j) or ((i.str, j.str) in mem) or ((j.str, i.str) in mem):
-                    continue
-                mem.add((j.str, i.str))
-                mem.add((i.str, j.str))
-                mem.add((j.str, i.str))
-                yield self.kb.union(i, j)
-                yield self.kb.intersection(i, j)
-
-    def refine_complement_of(self, concept: Concept):
-        """
-        :type concept: Concept
-        :param concept:
-        :return:
-        """
-        parents = self.kb.get_direct_parents(self.kb.negation(concept))
-        return self.kb.negation_from_iterables(parents)
-
-    def refine_object_some_values_from(self, concept: Concept):
-        for i in self.refine(concept.filler):
-            yield self.kb.existential_restriction(i, concept.role)
-
-    def refine_object_all_values_from(self, C: Concept):
-        """
-
-        :param C:
-        :return:
-        """
-        # rule 1: Forall r.D = > Forall r.E
-        for i in self.refine(C.filler):
-            yield self.kb.universal_restriction(i, C.role)
-
-    def refine_object_union_of(self, C: Concept):
-        """
-
-        :param C:
-        :return:
-        """
-        concept_A = C.concept_a
-        concept_B = C.concept_b
-        for ref_concept_A in self.refine(concept_A):
-            yield self.kb.union(ref_concept_A, concept_B)
-
-        for ref_concept_B in self.refine(concept_B):
-            yield self.kb.union(ref_concept_B, concept_A)
-
-    def refine_object_intersection_of(self, C: Concept):
-        """
-
-        :param C:
-        :return:
-        """
-
-        result = set()
-        concept_A = C.concept_a
-        concept_B = C.concept_b
-        for ref_concept_A in self.refine(concept_A):
-            result.add(self.kb.intersection(ref_concept_A, concept_B))
-
-        for ref_concept_A in self.refine(concept_A):
-            result.add(self.kb.intersection(ref_concept_A, concept_B))
-
-        return result
 
     def refine(self, concept: Concept):
         assert isinstance(concept, Concept)

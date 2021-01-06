@@ -24,8 +24,7 @@ class CELOEHeuristic(AbstractScorer):
 
         assert id(heuristic_val) != node.quality
 
-        if node.parent_node is not None:
-            #heuristic_val += (parent_node.quality - node.quality) * self.gainBonusFactor
+        if parent_node is not None:
             heuristic_val += (node.quality - parent_node.quality) * self.gainBonusFactor
         else:
             heuristic_val += self.startNodeBonus
@@ -40,7 +39,8 @@ class CELOEHeuristic(AbstractScorer):
 class DLFOILHeuristic(AbstractScorer):
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
-        self.name = 'DL-FOIL_Heuristic'
+        self.name = 'custom_dl_foil'
+        # @todo Needs to be tested.
 
     def score(self):
         pass
@@ -56,27 +56,19 @@ class DLFOILHeuristic(AbstractScorer):
         p_1 = len(self.pos.intersection(instances))  # number of positive examples covered by the concept
         n_1 = len(self.neg.intersection(instances))  # number of negative examples covered by the concept
         u_1 = len(self.unlabelled.intersection(instances))
+        term1 = np.log(p_1 / (p_1 + n_1 + u_1))
 
-        if node.parent_node:
-            parent_inst = node.parent_node.concept.instances
+        if parent_node:
+            parent_inst = parent_node.concept.instances
             p_0 = len(self.pos.intersection(parent_inst))  # number of positive examples covered by the concept
             n_0 = len(self.neg.intersection(parent_inst))  # number of negative examples covered by the concept
             u_0 = len(self.unlabelled.intersection(parent_inst))
+            term2 = np.log(p_0 / (p_0 + n_0 + u_0))
         else:
-            p_0, n_0, u_0 = 0, 0, 0
-
-        try:
-            term1 = np.log((p_1) / (p_1 + n_1 + u_1))
-        except:
-            term1 = 0
-
-        try:
-            term2 = np.log((p_0) / (p_0 + n_0 + u_0))
-        except:
             term2 = 0
 
-        gain = p_1 * (term1 - term2)
-        node.heuristic = round(gain, 5)
+        gain = round(p_1 * (term1 - term2), 5)
+        node.heuristic = gain
 
 
 class OCELHeuristic(AbstractScorer):
@@ -106,9 +98,9 @@ class OCELHeuristic(AbstractScorer):
                 len(self.pos) + len(self.neg))  # ACCURACY of Concept
 
         accuracy_gain += accuracy
-        if node.parent_node is not None:
-            uncovered_positives_parent = len(self.pos.difference(node.parent_node.concept.instances))
-            covered_negatives_parent = len(self.neg.intersection(node.parent_node.concept.instances))
+        if parent_node is not None:
+            uncovered_positives_parent = len(self.pos.difference(parent_node.concept.instances))
+            covered_negatives_parent = len(self.neg.intersection(parent_node.concept.instances))
 
             parent_accuracy = 1 - (
                     uncovered_positives_parent + covered_negatives_parent) / (
@@ -127,7 +119,7 @@ class Reward(AbstractScorer):
         self.noise = 0
 
         self.reward_of_goal = 100.0
-        self.gainBonusFactor = self.reward_of_goal*.1
+        self.gainBonusFactor = self.reward_of_goal * .1
 
     def score(self, pos, neg, instances):
         self.pos = pos
