@@ -98,6 +98,40 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
         self.__build_hierarchy(self.onto)
 
+    # OPERATIONS
+    def negation(self, concept: Concept):
+        """ Return a Concept object that is a negation of given concept."""
+        return self.concept_generator.negation(concept)
+
+    def union(self, conceptA: Concept, conceptB: Concept) -> Concept:
+        """Return a concept c == (conceptA OR conceptA)"""
+        assert isinstance(conceptA, Concept)
+        assert isinstance(conceptB, Concept)
+        return self.concept_generator.union(conceptA, conceptB)
+
+    def intersection(self, conceptA: Concept, conceptB: Concept) -> Concept:
+        """Return a concept c == (conceptA AND conceptA)"""
+        assert isinstance(conceptA, Concept)
+        assert isinstance(conceptB, Concept)
+        return self.concept_generator.intersection(conceptA, conceptB)
+
+    def existential_restriction(self, concept: Concept, property_) -> Concept:
+        """Return a concept c == (Exist R.C)"""
+        assert isinstance(concept, Concept)
+        return self.concept_generator.existential_restriction(concept, property_)
+
+    def universal_restriction(self, concept: Concept, property_) -> Concept:
+        """Return a concept c == (Forall R.C)"""
+        assert isinstance(concept, Concept)
+        return self.concept_generator.universal_restriction(concept, property_)
+    ##################################################################################
+    def set_min_size_of_concept(self, n):
+        self.min_size_of_concept = n
+
+    def max_size_of_concept(self, n):
+        self.max_size_of_concept = n
+
+
     def convert_uri_instance_to_obj(self, str_ind: str):
         """
         str_ind indicates string representation of an individual.
@@ -125,12 +159,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
     def convert_owlready2_individuals_to_uri_from_iterable(self, l: Iterable) -> List:
         return [self.convert_owlready2_individuals_to_uri(i) for i in l]
 
-    def set_min_size_of_concept(self, n):
-        self.min_size_of_concept = n
-
-    def max_size_of_concept(self, n):
-        self.max_size_of_concept = n
-
     @staticmethod
     def is_atomic(c: owlready2.entity.ThingClass):
         assert isinstance(c, owlready2.entity.ThingClass)
@@ -145,10 +173,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """ Return : { x | (x subClassOf concept) AND not exist y: y subClassOf x )} """
         for leaf in self.concepts_to_leafs[concept]:
             yield leaf
-
-    def negation(self, concept: Concept):
-        """ Return a Concept object that is a negation of given concept."""
-        yield self.concept_generator.negation(concept)
 
     @parametrized_performance_debugger()
     def negation_from_iterables(self, s: Generator):
@@ -172,12 +196,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         yield from self.down_top_direct_concept_hierarchy[concept]
 
     def most_general_existential_restrictions(self, concept: Concept):
-        """
-
-        @param concept:
-        @return:
-        """
-
         for prob in self.property_hierarchy.get_most_general_property():
             yield self.concept_generator.existential_restriction(concept, prob)
 
@@ -186,34 +204,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
         for prob in self.property_hierarchy.get_most_general_property():
             yield self.concept_generator.universal_restriction(concept, prob)
 
-    def union(self, conceptA: Concept, conceptB: Concept) -> Concept:
-        """Return a concept c == (conceptA OR conceptA)"""
-        assert isinstance(conceptA, Concept)
-        assert isinstance(conceptB, Concept)
-        return self.concept_generator.union(conceptA, conceptB)
-
-    def intersection(self, conceptA: Concept, conceptB: Concept) -> Concept:
-        """Return a concept c == (conceptA AND conceptA)"""
-        assert isinstance(conceptA, Concept)
-        assert isinstance(conceptB, Concept)
-        return self.concept_generator.intersection(conceptA, conceptB)
-
-    def existential_restriction(self, concept: Concept, property_) -> Concept:
-        """Return a concept c == (Exist R.C)"""
-        assert isinstance(concept, Concept)
-        return self.concept_generator.existential_restriction(concept, property_)
-
-    def universal_restriction(self, concept: Concept, property_) -> Concept:
-        """Return a concept c == (Forall R.C)"""
-        assert isinstance(concept, Concept)
-        return self.concept_generator.universal_restriction(concept, property_)
-
     def num_concepts_generated(self):
-
         return len(self.concept_generator.log_of_universal_restriction) + len(
             self.concept_generator.log_of_existential_restriction) + \
                len(self.concept_generator.log_of_intersections) + len(self.concept_generator.log_of_unions) + \
                len(self.concept_generator.log_of_negations) + len(self.concepts)
-
-    def get_all_concepts(self):
-        return set(self.uri_to_concepts.values())

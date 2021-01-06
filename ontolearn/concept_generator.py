@@ -23,19 +23,32 @@ class ConceptGenerator:
         self.log_of_existential_restriction = dict()
 
     def get_instances_for_restrictions(self, exist, role, filler):
+        """
+        Existential Restriction:
+
+        (\exists r.C)^I = \{ a \in \Delta^I | \exists b. (a,b) \in r^I\}.
+
+        Universal Restriction:
+
+        (\forall r.C)^I = \{ a \in \Delta^I | \forall b. (a,b) \in r^I \implies b \in C^I \}
+         P \implies Q where P = (\forall b. (a,b) \in r^I) and Q =(b \in C^I)
+         If Q holds, then P \implies Q must hold: https://en.wikipedia.org/wiki/Material_conditional
+
+        @param exist: boolean if True then Existential Restriction, otherwise Universal Restriction.
+        @param role:
+        @param filler:
+        @return:
+        """
+        temp = set()
         if exist:
-            temp = set()
-            # {(x,y) | (x,r,y) \in G}.
-            for x, y in role.get_relations():
-                if y in filler.instances:
-                    temp.add(x)
+            for a, b in role.get_relations():  # (a,b) \in r^I
+                if b in filler.instances:
+                    temp.add(a)
             return temp
         else:
-            temp = set()
-            # {(s,o) | (s,r,o) \in G}.
-            for s, o in role.get_relations():
-                if not (o in filler.instances):
-                    temp.add(o)
+            for a, b in role.get_relations():  # (a,b) \in r^I
+                if not (b in filler.instances):  # b \in C^I
+                    temp.add(a)
             return self.thing.instances - temp
 
     def negation(self, concept: Concept) -> Concept:
