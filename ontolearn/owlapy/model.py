@@ -20,7 +20,15 @@ class HasOperands(Generic[_T], metaclass=ABCMeta):
         pass
 
 
-class OWLClassExpression(OWLObject):
+class OWLPropertyRange(OWLObject):
+    """OWL Objects that can be the ranges of properties"""
+
+
+class OWLDataRange(OWLPropertyRange):
+    """Data Range"""
+
+
+class OWLClassExpression(OWLPropertyRange):
     """An OWL 2 Class Expression"""
     __slots__ = ()
 
@@ -385,6 +393,76 @@ class OWLObjectIntersectionOf(OWLNaryBooleanClassExpression):
     __slots__ = '_operands'
 
     _operands: Sequence[OWLClassExpression]
+
+
+class HasCardinality(metaclass=ABCMeta):
+    __slots__ = ()
+
+    @abstractmethod
+    def get_cardinality(self) -> int:
+        pass
+
+
+_F = TypeVar('_F', bound=OWLPropertyRange)
+
+
+class OWLCardinalityRestriction(Generic[_F], OWLQuantifiedRestriction[_F], HasCardinality, metaclass=ABCMeta):
+    __slots__ = ()
+
+    _cardinality: int
+    _filler: _F
+
+    def __init__(self, cardinality: int, filler: _F):
+        self._cardinality = cardinality
+        self._filler = filler
+
+    def get_cardinality(self) -> int:
+        return self._cardinality
+
+    def get_filler(self) -> _F:
+        return self._filler
+
+
+class OWLObjectCardinalityRestriction(OWLCardinalityRestriction[OWLClassExpression], OWLQuantifiedObjectRestriction):
+    __slots__ = ()
+
+    _property: OWLObjectPropertyExpression
+
+    @abstractmethod
+    def __init__(self, property: OWLObjectPropertyExpression, cardinality: int, filler: OWLClassExpression):
+        super().__init__(cardinality, filler)
+        self._property = property
+
+    def get_property(self) -> OWLObjectPropertyExpression:
+        return self._property
+
+    def __repr__(self):
+        return f"{type(self).__name__}(property={repr(self.get_property())},{self.get_cardinality()},filler={repr(self.get_filler())})"
+
+
+class OWLObjectMinCardinality(OWLObjectCardinalityRestriction):
+    __slots__ = '_cardinality', '_filler', '_property'
+
+    def __init__(self, property: OWLObjectPropertyExpression, cardinality: int, filler: OWLClassExpression):
+        super().__init__(property, cardinality, filler)
+
+
+class OWLObjectMaxCardinality(OWLObjectCardinalityRestriction):
+    __slots__ = '_cardinality', '_filler', '_property'
+
+    def __init__(self, property: OWLObjectPropertyExpression, cardinality: int, filler: OWLClassExpression):
+        super().__init__(property, cardinality, filler)
+
+
+class OWLObjectExactCardinality(OWLObjectCardinalityRestriction):
+    __slots__ = '_cardinality', '_filler', '_property'
+
+    def __init__(self, property: OWLObjectPropertyExpression, cardinality: int, filler: OWLClassExpression):
+        super().__init__(property, cardinality, filler)
+
+    def as_intersection_of_min_max(self) -> OWLObjectIntersectionOf:
+        args = self.get_property(), self.get_cardinality(), self.get_filler()
+        return OWLObjectIntersectionOf((OWLObjectMinCardinality(*args), OWLObjectMaxCardinality(*args)))
 
 
 class OWLIndividual(OWLObject):

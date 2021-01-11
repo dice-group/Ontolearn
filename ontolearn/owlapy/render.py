@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import types
 from functools import singledispatchmethod
 from types import MappingProxyType
@@ -7,7 +9,8 @@ from ontolearn.owlapy import IRI
 from ontolearn.owlapy.io import OWLObjectRenderer
 from ontolearn.owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLBooleanClassExpression, OWLNaryBooleanClassExpression, \
-    OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, OWLClassExpression, OWLRestriction
+    OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, OWLClassExpression, OWLRestriction, \
+    OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality
 
 _DL_SYNTAX = types.SimpleNamespace(
     SUBCLASS="⊑",
@@ -33,6 +36,7 @@ _DL_SYNTAX = types.SimpleNamespace(
     SELF="self",
 )
 
+
 # TODO
 # _FACETS = MappingProxyType({
 #     OWLFacet.MIN_INCLUSIVE: "\u2265", # >=
@@ -48,10 +52,11 @@ def _simple_short_form_provider(iri: IRI):
     else:
         return sf
 
+
 class DLSyntaxRenderer(OWLObjectRenderer):
     __slots__ = '_sfp'
 
-    def __init__(self, short_form_provider = _simple_short_form_provider):
+    def __init__(self, short_form_provider=_simple_short_form_provider):
         self._sfp = short_form_provider
 
     def set_short_form_provider(self, short_form_provider) -> None:
@@ -73,11 +78,11 @@ class DLSyntaxRenderer(OWLObjectRenderer):
     @render.register
     def _(self, p: OWLObjectProperty) -> str:
         return self._sfp(p.get_iri())
-    
+
     @render.register
     def _(self, e: OWLObjectSomeValuesFrom) -> str:
         return "%s %s.%s" % (_DL_SYNTAX.EXISTS, self.render(e.get_property()), self._render_nested(e.get_filler()))
-    
+
     @render.register
     def _(self, e: OWLObjectAllValuesFrom) -> str:
         return "%s %s.%s" % (_DL_SYNTAX.FORALL, self.render(e.get_property()), self._render_nested(e.get_filler()))
@@ -98,23 +103,20 @@ class DLSyntaxRenderer(OWLObjectRenderer):
     def _(self, p: OWLObjectInverseOf) -> str:
         return "%s%s" % (self.render(p.get_named_property()), _DL_SYNTAX.INVERSE)
 
-    # TODO
-    # @render.register
-    # def _(self, r: OWLObjectMinCardinality) -> str:
-    #     return "%s %s %s .%s" % (
-    #         _DL_SYNTAX.MIN, r.get_cardinality(), self.render(r.get_property()), self._render_nested(r.get_filler()))
+    @render.register
+    def _(self, r: OWLObjectMinCardinality) -> str:
+        return "%s %s %s .%s" % (
+            _DL_SYNTAX.MIN, r.get_cardinality(), self.render(r.get_property()), self._render_nested(r.get_filler()))
 
-    # TODO
-    # @render.register
-    # def _(self, r: OWLObjectExactCardinality) -> str:
-    #     return "%s %s %s .%s" % (
-    #         _DL_SYNTAX.EQUAL, r.get_cardinality(), self.render(r.get_property()), self._render_nested(r.get_filler()))
+    @render.register
+    def _(self, r: OWLObjectExactCardinality) -> str:
+        return "%s %s %s .%s" % (
+            _DL_SYNTAX.EQUAL, r.get_cardinality(), self.render(r.get_property()), self._render_nested(r.get_filler()))
 
-    # TODO
-    # @render.register
-    # def _(self, r: OWLObjectMaxCardinality) -> str:
-    #     return "%s %s %s .%s" % (
-    #         _DL_SYNTAX.MAX, r.get_cardinality(), self.render(r.get_property()), self._render_nested(r.get_filler()))
+    @render.register
+    def _(self, r: OWLObjectMaxCardinality) -> str:
+        return "%s %s %s .%s" % (
+            _DL_SYNTAX.MAX, r.get_cardinality(), self.render(r.get_property()), self._render_nested(r.get_filler()))
 
     # TODO
     # @render.register

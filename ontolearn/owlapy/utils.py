@@ -103,3 +103,8 @@ def iter_bits(v: int) -> Iterable[int]:
         b = v & (~v + 1)
         yield b
         v ^= b
+
+
+def iter_count(i: Iterable) -> int:
+    """Count the number of elements in an iterable"""
+    return sum(1 for _ in i)
