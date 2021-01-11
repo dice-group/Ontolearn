@@ -80,7 +80,7 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
         _gen = ((_, filter(_filter, hierarchy.children(_, direct=False)))
                 for _ in filter(_filter, hierarchy.items()))
 
-        return ClassHierarchy(_gen)
+        return type(hierarchy)(_gen)
 
     def restrict_and_copy(self: _U, *, remove: Iterable[_S] = None, allow: Iterable[_S] = None) \
             -> _U:
@@ -175,6 +175,9 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
 
     def roots(self) -> Iterable[_S]:
         yield from self._ent_enc(self._root_set)
+
+    def leaves(self) -> Iterable[_S]:
+        yield from self._ent_enc(self._leaf_set)
 
 
 class ClassHierarchy(AbstractHierarchy[OWLClass]):

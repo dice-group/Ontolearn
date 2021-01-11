@@ -41,6 +41,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
         self._objectsomevalues_cache = dict()
 
     def reset(self):
+        """The reset method shall reset any cached state"""
         self._init()
 
     def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClass]:
