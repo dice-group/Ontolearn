@@ -10,7 +10,8 @@ from ontolearn.owlapy.io import OWLObjectRenderer
 from ontolearn.owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLBooleanClassExpression, OWLNaryBooleanClassExpression, \
     OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, OWLClassExpression, OWLRestriction, \
-    OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality
+    OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectHasSelf, OWLObjectHasValue, \
+    OWLObjectOneOf, OWLNamedIndividual
 
 _DL_SYNTAX = types.SimpleNamespace(
     SUBCLASS="⊑",
@@ -80,6 +81,10 @@ class DLSyntaxRenderer(OWLObjectRenderer):
         return self._sfp(p.get_iri())
 
     @render.register
+    def _(self, i: OWLNamedIndividual) -> str:
+        return self._sfp(i.get_iri())
+
+    @render.register
     def _(self, e: OWLObjectSomeValuesFrom) -> str:
         return "%s %s.%s" % (_DL_SYNTAX.EXISTS, self.render(e.get_property()), self._render_nested(e.get_filler()))
 
@@ -118,22 +123,19 @@ class DLSyntaxRenderer(OWLObjectRenderer):
         return "%s %s %s .%s" % (
             _DL_SYNTAX.MAX, r.get_cardinality(), self.render(r.get_property()), self._render_nested(r.get_filler()))
 
-    # TODO
-    # @render.register
-    # def _(self, r: OWLObjectHasSelf) -> str:
-    #     return "%s %s .%s" % (_DL_SYNTAX.EXISTS, self.render(r.get_property()), _DL_SYNTAX.SELF)
+    @render.register
+    def _(self, r: OWLObjectHasSelf) -> str:
+        return "%s %s .%s" % (_DL_SYNTAX.EXISTS, self.render(r.get_property()), _DL_SYNTAX.SELF)
 
-    # TODO
-    # @render.register
-    # def _(self, r: OWLObjectHasValue):
-    #     return "%s %s .{%s}" % (_DL_SYNTAX.EXISTS, self.render(r.get_property()),
-    #                             self.render(r.get_filler()))
+    @render.register
+    def _(self, r: OWLObjectHasValue):
+        return "%s %s .{%s}" % (_DL_SYNTAX.EXISTS, self.render(r.get_property()),
+                                self.render(r.get_filler()))
 
-    # TODO
-    # @render.register
-    # def _(self, r: OWLObjectOneOf):
-    #     return "{%s}" % (" %s " % _DL_SYNTAX.OR).join(
-    #         "%s" % (self.render(_)) for _ in r.individuals())
+    @render.register
+    def _(self, r: OWLObjectOneOf):
+        return "{%s}" % (" %s " % _DL_SYNTAX.OR).join(
+            "%s" % (self.render(_)) for _ in r.individuals())
 
     # TODO
     # @render.register

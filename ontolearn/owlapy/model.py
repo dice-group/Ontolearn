@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Generic, Iterable, Sequence, TypeVar
+from typing import Generic, Iterable, Sequence, TypeVar, Union
 
 from ontolearn.owlapy import vocabulary
 from ontolearn.owlapy.base import HasIRI, IRI
@@ -465,9 +465,58 @@ class OWLObjectExactCardinality(OWLObjectCardinalityRestriction):
         return OWLObjectIntersectionOf((OWLObjectMinCardinality(*args), OWLObjectMaxCardinality(*args)))
 
 
+class OWLObjectHasSelf(OWLObjectRestriction):
+    __slots__ = '_property'
+
+    _property: OWLObjectPropertyExpression
+
+    def __init__(self, property: OWLObjectPropertyExpression):
+        self._property = property
+
+    def get_property(self) -> OWLObjectPropertyExpression:
+        return self._property
+
+
 class OWLIndividual(OWLObject):
     __slots__ = ()
     pass
+
+
+class OWLObjectHasValue(OWLHasValueRestriction[OWLIndividual], OWLObjectRestriction):
+    __slots__ = '_property', '_v'
+
+    _property: OWLObjectPropertyExpression
+    _v: OWLIndividual
+
+    def __init__(self, property: OWLObjectPropertyExpression, value: OWLIndividual):
+        super().__init__(value)
+        self._property = property
+
+    def get_property(self) -> OWLObjectPropertyExpression:
+        return self._property
+
+
+class OWLObjectOneOf(OWLAnonymousClassExpression, HasOperands[OWLIndividual]):
+    __slots__ = '_values'
+
+    def __init__(self, values: Union[OWLIndividual, Iterable[OWLIndividual]]):
+        if isinstance(values, OWLIndividual):
+            self._values = values,
+        else:
+            for _ in values:
+               assert isinstance(_, OWLIndividual)
+            self._values = tuple(values)
+
+    def individuals(self) -> Iterable[OWLIndividual]:
+        yield from self._values
+
+    def operands(self) -> Iterable[OWLIndividual]:
+        yield from self.individuals()
+
+    def as_object_union_of(self) -> OWLClassExpression:
+        if len(self._values) == 1:
+            return self
+        return OWLObjectUnionOf(map(lambda _: OWLObjectOneOf(_), self.individuals()))
 
 
 class OWLNamedIndividual(OWLIndividual, OWLNamedObject):
