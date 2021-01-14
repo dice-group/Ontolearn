@@ -3,6 +3,7 @@ from functools import singledispatchmethod
 from ontolearn.owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, \
     OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectCardinalityRestriction
+from ontolearn.owlapy.utils import iter_count
 
 
 class OWLClassExpressionLengthMetric:
@@ -192,40 +193,22 @@ class OWLClassExpressionLengthMetric:
                + self.length(e.get_property()) \
                + self.length(e.get_filler())
 
-    # TODO
-    # @length.register
-    # def _(self, r: OWLObjectHasSelf) -> int:
-    #     return "%s %s .%s" % (_DL_SYNTAX.EXISTS, self.length(r.get_property()), _DL_SYNTAX.SELF)
+    @length.register
+    def _(self, s: OWLObjectHasSelf) -> int:
+        return self.object_has_self_length + self.length(s.get_property())
 
-    # TODO
-    # @length.register
-    # def _(self, r: OWLObjectHasValue):
-    #     return "%s %s .{%s}" % (_DL_SYNTAX.EXISTS, self.length(r.get_property()),
-    #                             self.length(r.get_filler()))
+    @length.register
+    def _(self, v: OWLObjectHasValue):
+        return self.object_has_value_length + self.length(v.get_property())
 
-    # TODO
-    # @length.register
-    # def _(self, r: OWLObjectOneOf):
-    #     return "{%s}" % (" %s " % _DL_SYNTAX.OR).join(
-    #         "%s" % (self.length(_)) for _ in r.individuals())
+    @length.register
+    def _(self, o: OWLObjectOneOf):
+        return self.object_one_of_length
 
-    # TODO
-    # @length.register
-    # def _(self, r: OWLFacetRestriction):
-    #     return "%s %s" % (_FACETS.get(r.get_facet(), r.get_facet().get_symbolic_form()), r.get_facet_value())
+    @length.register
+    def _(self, n: OWLDatatypeRestriction):
+        return iter_count(n.facet_restrictions())
 
-    # TODO
-    # @length.register
-    # def _(self, r: OWLDatatypeRestriction):
-    #     s = [self.length(_) for _ in r.facet_restrictions()]
-    #     return "%s[%s]" % (self.length(r.get_datatype()), (" %s " % _DL_SYNTAX.COMMA).join(s))
-
-    # TODO
-    # @length.register
-    # def _(self, r: OWLObjectPropertyChain):
-    #     return (" %s " % _DL_SYNTAX.COMP).join(self.length(_) for _ in r.property_chain())
-
-    # TODO
-    # @length.register
-    # def _(self, t: OWLDatatype):
-    #     return self._sfp(t.get_iri())
+    @length.register
+    def _(self, t: OWLDatatype):
+        return self.datatype_length
