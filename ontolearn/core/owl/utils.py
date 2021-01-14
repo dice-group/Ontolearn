@@ -2,7 +2,8 @@ from functools import singledispatchmethod
 
 from ontolearn.owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, \
-    OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectCardinalityRestriction
+    OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectCardinalityRestriction, OWLObjectHasSelf, \
+    OWLObjectHasValue
 from ontolearn.owlapy.utils import iter_count
 
 
