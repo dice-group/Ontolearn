@@ -1,6 +1,6 @@
 import types
 from logging import warning
-from typing import Iterable, Type, cast
+from typing import Iterable, Type, cast, Optional
 
 import owlready2
 
@@ -18,7 +18,7 @@ class OWLReasoner_Owlready2_TempClasses(OWLReasoner_Owlready2):
     _conv: ToOwlready2
     _base_reasoner: BaseReasoner
 
-    def __init__(self, ontology: OWLOntology_Owlready2, base_reasoner: BaseReasoner = None):
+    def __init__(self, ontology: OWLOntology_Owlready2, base_reasoner: Optional[BaseReasoner] = None):
         super().__init__(ontology)
         self._cnt = 1
         self._conv = ToOwlready2(world=self._world)

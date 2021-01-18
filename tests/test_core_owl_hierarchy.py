@@ -8,6 +8,7 @@ from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner
 
 _T = TypeVar('_T')
 
+
 class Owl_Core_PropertyHierarchy_Test(unittest.TestCase):
     def test_object_property_hierarchy(self):
         NS = "http://www.biopax.org/examples/glycolysis#"
@@ -25,7 +26,8 @@ class Owl_Core_PropertyHierarchy_Test(unittest.TestCase):
                                   OWLObjectProperty(IRI(NS, 'CONTROLLER')),
                                   OWLObjectProperty(IRI(NS, 'LEFT')),
                                   OWLObjectProperty(IRI(NS, 'RIGHT'))})
-        self.assertEqual(frozenset(oph.children(participants)), target_props)
+        self.assertEqual(frozenset(oph.sub_object_properties(participants)), target_props)
+
 
 class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
     # TODO
@@ -56,7 +58,7 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
                                 OWLClass(IRI(NS, 'Granddaughter')),
                                 OWLClass(IRI(NS, 'Grandson')),
                                 OWLClass(IRI(NS, 'Son'))})
-        self.assertEqual(frozenset(ch.children(OWLClass(IRI(NS, 'Child')))), target_cls)
+        self.assertEqual(frozenset(ch.sub_classes(OWLClass(IRI(NS, 'Child')))), target_cls)
 
     def test_class_hierarchy_children(self):
         NS = "http://example.com/father#"
@@ -70,7 +72,7 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
 
         target_cls = frozenset({OWLClass(IRI(NS, 'female')),
                                 OWLClass(IRI(NS, 'male'))})
-        self.assertEqual(frozenset(ch.children(OWLClass(IRI(NS, 'person')))), target_cls)
+        self.assertEqual(frozenset(ch.sub_classes(OWLClass(IRI(NS, 'person')))), target_cls)
 
     def test_class_hierarchy_parents_roots(self):
         NS = "http://www.benchmark.org/family#"
@@ -84,7 +86,7 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
 
         target_cls = frozenset({OWLClass(IRI(NS, 'Female')),
                                 OWLClass(IRI(NS, 'Grandparent'))})
-        self.assertEqual(frozenset(ch.parents(grandmother)), target_cls)
+        self.assertEqual(frozenset(ch.super_classes(grandmother)), target_cls)
 
         target_cls = frozenset({OWLClass(IRI(NS, 'Person'))})
         self.assertEqual(frozenset(ch.roots()), target_cls)
@@ -113,10 +115,10 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
         # for k in sorted(ch.roots()):
         #     _print_children(ch, k)
         children = OWLClass(IRI(NS, 'Child'))
-        target_leaves = frozenset({OWLClass(IRI(NS,'Daughter')),
-                                   OWLClass(IRI(NS,'Granddaughter')),
-                                   OWLClass(IRI(NS,'Grandson')),
-                                   OWLClass(IRI(NS,'Son'))})
+        target_leaves = frozenset({OWLClass(IRI(NS, 'Daughter')),
+                                   OWLClass(IRI(NS, 'Granddaughter')),
+                                   OWLClass(IRI(NS, 'Grandson')),
+                                   OWLClass(IRI(NS, 'Son'))})
         leaves = frozenset(ch.leaves(children))
         self.assertEqual(leaves, target_leaves)
 

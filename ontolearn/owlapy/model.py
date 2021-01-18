@@ -504,7 +504,7 @@ class OWLObjectOneOf(OWLAnonymousClassExpression, HasOperands[OWLIndividual]):
             self._values = values,
         else:
             for _ in values:
-               assert isinstance(_, OWLIndividual)
+                assert isinstance(_, OWLIndividual)
             self._values = tuple(values)
 
     def individuals(self) -> Iterable[OWLIndividual]:
@@ -531,6 +531,9 @@ class OWLNamedIndividual(OWLIndividual, OWLNamedObject):
         return self._iri
 
 
+_M = TypeVar('_M', bound='OWLOntologyManager')
+
+
 class OWLOntology(OWLObject, metaclass=ABCMeta):
     __slots__ = ()
 
@@ -548,6 +551,10 @@ class OWLOntology(OWLObject, metaclass=ABCMeta):
 
     @abstractmethod
     def individuals_in_signature(self) -> Iterable[OWLNamedIndividual]:
+        pass
+
+    @abstractmethod
+    def get_manager(self) -> _M:
         pass
 
 
