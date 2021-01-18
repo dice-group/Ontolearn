@@ -58,11 +58,13 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def get_top_concept(cls) -> _S:
+        """The most general concept in this hierarchy, which contains all the concepts"""
         pass
 
     @classmethod
     @abstractmethod
     def get_bottom_concept(cls) -> _S:
+        """The most specific concept in this hierarchy, which contains none of the concepts"""
         pass
 
     @staticmethod
@@ -162,6 +164,28 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
             else:
                 yield from self._ent_enc(self._parents_map[self._ent_enc(entity)])
 
+    def is_parent_of(self, a: _S, b: _S) -> bool:
+        """if A is a parent of B.
+
+        Note:
+              A is always a parent of A"""
+        if a == b:
+            return True
+        if self._ent_enc(a) & self._parents_map_trans[self._ent_enc(b)]:
+            return True
+        return False
+
+    def is_child_of(self, a: _S, b: _S) -> bool:
+        """If A is a child of B.
+
+        Note:
+              A is always a child of A"""
+        if a == b:
+            return True
+        if self._ent_enc(a) & self._children_map_trans[self._ent_enc(b)]:
+            return True
+        return False
+
     def children(self, entity: _S, direct: bool = True) -> Iterable[_S]:
         """Children of an entitiy
 
@@ -229,6 +253,15 @@ class ClassHierarchy(AbstractHierarchy[OWLClass]):
         return ((_, reasoner.sub_classes(_, direct=True))
                 for _ in reasoner.get_root_ontology().classes_in_signature())
 
+    def sub_classes(self, entity: OWLClass, direct: bool = True):
+        yield from self.children(entity, direct)
+
+    def super_classes(self, entity: OWLClass, direct: bool = True):
+        yield from self.parents(entity, direct)
+
+    def is_subclass_of(self, subclass: OWLClass, superclass: OWLClass):
+        return self.is_child_of(subclass, superclass)
+
     @overload
     def __init__(self, hierarchy_down: Iterable[Tuple[OWLClass, Iterable[OWLClass]]]): ...
 
@@ -255,6 +288,27 @@ class ObjectPropertyHierarchy(AbstractHierarchy[OWLObjectProperty]):
                                reasoner.sub_object_properties(_, direct=True))))
                 for _ in reasoner.get_root_ontology().object_properties_in_signature())
 
+    def sub_object_properties(self, entity: OWLObjectProperty, direct: bool = True) -> Iterable[OWLObjectProperty]:
+        yield from self.children(entity, direct)
+
+    def super_object_properties(self, entity: OWLObjectProperty, direct: bool = True) -> Iterable[OWLObjectProperty]:
+        yield from self.parents(entity, direct)
+
+    def more_general_roles(self, role: OWLObjectProperty, direct: bool = True) -> Iterable[OWLObjectProperty]:
+        yield from self.parents(role, direct=direct)
+
+    def more_special_roles(self, role: OWLObjectProperty, direct: bool = True) -> Iterable[OWLObjectProperty]:
+        yield from self.children(role, direct=direct)
+
+    def is_sub_property_of(self, sub_property: OWLObjectProperty, super_property: OWLObjectProperty) -> bool:
+        return self.is_child_of(sub_property, super_property)
+
+    def most_general_roles(self) -> Iterable[OWLObjectProperty]:
+        yield from self.roots()
+
+    def most_special_roles(self) -> Iterable[OWLObjectProperty]:
+        yield from self.leaves()
+
     @overload
     def __init__(self, hierarchy_down: Iterable[Tuple[OWLObjectProperty, Iterable[OWLObjectProperty]]]): ...
 
@@ -265,7 +319,7 @@ class ObjectPropertyHierarchy(AbstractHierarchy[OWLObjectProperty]):
         super().__init__(OWLObjectProperty, arg)
 
 
-class DataPropertyHierarchy(AbstractHierarchy[OWLDataProperty]):
+class DatatypePropertyHierarchy(AbstractHierarchy[OWLDataProperty]):
     @classmethod
     def get_top_concept(cls) -> OWLDataProperty:
         return OWLTopDataProperty
@@ -278,6 +332,27 @@ class DataPropertyHierarchy(AbstractHierarchy[OWLDataProperty]):
             -> Iterable[Tuple[OWLDataProperty, Iterable[OWLDataProperty]]]:
         return ((_, reasoner.sub_data_properties(_, direct=True))
                 for _ in reasoner.get_root_ontology().data_properties_in_signature())
+
+    def sub_data_properties(self, entity: OWLDataProperty, direct: bool = True):
+        yield from self.children(entity, direct)
+
+    def super_data_properties(self, entity: OWLDataProperty, direct: bool = True):
+        yield from self.parents(entity, direct)
+
+    def more_general_roles(self, role: OWLDataProperty, direct: bool = True) -> Iterable[OWLDataProperty]:
+        yield from self.parents(role, direct=direct)
+
+    def more_special_roles(self, role: OWLDataProperty, direct: bool = True) -> Iterable[OWLDataProperty]:
+        yield from self.children(role, direct=direct)
+
+    def is_sub_property_of(self, sub_property: OWLDataProperty, super_property: OWLDataProperty) -> bool:
+        return self.is_child_of(sub_property, super_property)
+
+    def most_general_roles(self) -> Iterable[OWLDataProperty]:
+        yield from self.roots()
+
+    def most_special_roles(self) -> Iterable[OWLDataProperty]:
+        yield from self.leaves()
 
     @overload
     def __init__(self, hierarchy_down: Iterable[Tuple[OWLDataProperty, Iterable[OWLDataProperty]]]): ...
