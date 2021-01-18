@@ -6,7 +6,8 @@ from .search import CELOESearchTree
 from .metrics import F1, Accuracy
 from .heuristics import CELOEHeuristic
 from typing import List, Set, Tuple, Dict
-from .util import create_experiment_folder, create_logger, get_full_iri
+from .utils import create_experiment_folder, create_logger
+from .owlready2.utils import get_full_iri
 import numpy as np
 import pandas as pd
 import time

@@ -10,7 +10,7 @@ from .heuristics import CELOEHeuristic, DLFOILHeuristic, OCELHeuristic
 from .refinement_operators import ModifiedCELOERefinement, CustomRefinementOperator, LengthBasedRefinement
 from .metrics import F1, Accuracy, Recall
 import time
-from .util import get_full_iri
+from .owlready2.utils import get_full_iri
 
 pd.set_option('display.max_columns', 100)
 

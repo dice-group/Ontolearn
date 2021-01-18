@@ -3,7 +3,6 @@ import logging
 import os
 import pickle
 import time
-import copy
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 import random
@@ -46,60 +45,6 @@ def performance_debugger(func_name):
     return function_name_decorator
 
 
-def decompose(number, upperlimit, bisher, combosTmp):
-    """
-    TODO: Explain why we need it. We have simply hammered the java code into python here
-    TODO: After fully understanding, we could optimize the computation if necessary
-    TODO: By simply vectorizing the computations.
-    :param number:
-    :param upperlimit:
-    :param bisher:
-    :param combosTmp:
-    :return:
-    """
-    i = min(number, upperlimit)
-    while i >= 1:
-        newbisher = list()
-
-        if i == 0:
-            newbisher = bisher
-            newbisher.append(i)
-        elif number - i != 1:
-            newbisher = copy.copy(bisher)
-            newbisher.append(i)
-
-        if number - i > 1:
-            decompose(number - i - 1, i, newbisher, combosTmp)
-        elif number - i == 0:
-            combosTmp.append(newbisher)
-
-        i -= 1
-
-
-def getCombos(length: int, max_length: int):
-    """
-    :param i:
-    :param max_length:
-    :return:
-    """
-    combosTmp = []
-    decompose(length, max_length, [], combosTmp)
-    return combosTmp
-
-
-def incCrossProduct(baseset, newset, exp_gen):
-    retset = set()
-
-    if len(baseset) == 0:
-        for c in newset:
-            retset.add(c)
-        return retset
-    for i in baseset:
-        for j in newset:
-            retset.add(exp_gen.union(i, j))
-    return retset
-
-
 def create_experiment_folder(folder_name='Log'):
     directory = os.getcwd() + '/' + folder_name + '/'
     folder_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
@@ -119,10 +64,6 @@ def deserializer(*, path: str, serialized_name: str):
         obj_ = pickle.load(f)
     f.close()
     return obj_
-
-
-def get_full_iri(x):
-    return x.namespace.base_iri + x.name
 
 
 def create_logger(*, name, p):
