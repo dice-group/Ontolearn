@@ -3,7 +3,7 @@ import unittest
 from ontolearn.owlapy import IRI
 from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
 from ontolearn.owlapy.model import OWLClass, OWLObjectProperty, OWLNamedIndividual, OWLObjectIntersectionOf, \
-    OWLObjectSomeValuesFrom, OWLThing
+    OWLObjectSomeValuesFrom, OWLThing, OWLTopObjectProperty
 from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 
 
@@ -19,6 +19,8 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
 
         base_reasoner = OWLReasoner_Owlready2(onto)
         reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner)
+
+        self.assertEqual([], list(reasoner.sub_object_properties(has_child, direct=True)))
 
         inst = frozenset(reasoner.instances(female))
         target_inst = frozenset({OWLNamedIndividual(IRI(NS, 'anna')),

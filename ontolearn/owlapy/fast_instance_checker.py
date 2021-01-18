@@ -13,7 +13,7 @@ from ontolearn.owlapy.utils import NamedFixedSet
 
 class OWLReasoner_FastInstanceChecker(OWLReasoner):
     """Tries to check instances fast (but maybe incomplete)"""
-    __slots__ = '_ontology', '_base_reasoner',\
+    __slots__ = '_ontology', '_base_reasoner', \
                 '_ind_enc', '_cls_to_ind', '_obj_prop', '_objectsomevalues_cache'
 
     _ontology: OWLOntology
@@ -83,8 +83,8 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
     def sub_data_properties(self, dp: OWLDataProperty, direct: bool = False) -> Iterable[OWLDataProperty]:
         yield from self._base_reasoner.sub_data_properties(dp=dp, direct=direct)
 
-    def sub_object_properties(self, op: OWLObjectPropertyExpression, direct: bool = False) -> Iterable[
-        OWLObjectPropertyExpression]:
+    def sub_object_properties(self, op: OWLObjectPropertyExpression, direct: bool = False)\
+            -> Iterable[OWLObjectPropertyExpression]:
         yield from self._base_reasoner.sub_object_properties(op=op, direct=direct)
 
     def get_root_ontology(self) -> OWLOntology:
