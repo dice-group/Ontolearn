@@ -1,7 +1,7 @@
 import unittest
 from typing import TypeVar
 
-from ontolearn.core.owl import ClassHierarchy, ObjectPropertyHierarchy, AbstractHierarchy
+from ontolearn.core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, AbstractHierarchy
 from ontolearn.owlapy import IRI
 from ontolearn.owlapy.model import OWLClass, OWLObjectProperty
 from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
@@ -102,6 +102,23 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
                                 OWLClass(IRI(NS, 'Female')),
                                 OWLClass(IRI(NS, 'Male'))})
         self.assertEqual(frozenset(ch.siblings(child)), target_cls)
+
+    def test_class_hierarchy_leaves(self):
+        NS = "http://www.benchmark.org/family#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://data/family-benchmark_rich_background.owl"))
+        reasoner = OWLReasoner_Owlready2(onto)
+
+        ch = ClassHierarchy(reasoner)
+        # for k in sorted(ch.roots()):
+        #     _print_children(ch, k)
+        children = OWLClass(IRI(NS, 'Child'))
+        target_leaves = frozenset({OWLClass(IRI(NS,'Daughter')),
+                                   OWLClass(IRI(NS,'Granddaughter')),
+                                   OWLClass(IRI(NS,'Grandson')),
+                                   OWLClass(IRI(NS,'Son'))})
+        leaves = frozenset(ch.leaves(children))
+        self.assertEqual(leaves, target_leaves)
 
 
 # debug functions

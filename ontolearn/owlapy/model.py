@@ -624,3 +624,7 @@ class OWLReasoner:
 
 OWLThing = OWLClass(vocabulary.OWL_THING.get_iri())
 OWLNothing = OWLClass(vocabulary.OWL_NOTHING.get_iri())
+OWLTopObjectProperty = OWLObjectProperty(vocabulary.OWL_TOP_OBJECT_PROPERTY.get_iri())
+OWLBottomObjectProperty = OWLObjectProperty(vocabulary.OWL_BOTTOM_OBJECT_PROPERTY.get_iri())
+OWLTopDataProperty = OWLDataProperty(vocabulary.OWL_TOP_DATA_PROPERTY.get_iri())
+OWLBottomDataProperty = OWLDataProperty(vocabulary.OWL_BOTTOM_DATA_PROPERTY.get_iri())
