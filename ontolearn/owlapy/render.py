@@ -110,26 +110,26 @@ class DLSyntaxRenderer(OWLObjectRenderer):
 
     @render.register
     def _(self, r: OWLObjectMinCardinality) -> str:
-        return "%s %s %s .%s" % (
+        return "%s %s %s.%s" % (
             _DL_SYNTAX.MIN, r.get_cardinality(), self.render(r.get_property()), self._render_nested(r.get_filler()))
 
     @render.register
     def _(self, r: OWLObjectExactCardinality) -> str:
-        return "%s %s %s .%s" % (
+        return "%s %s %s.%s" % (
             _DL_SYNTAX.EQUAL, r.get_cardinality(), self.render(r.get_property()), self._render_nested(r.get_filler()))
 
     @render.register
     def _(self, r: OWLObjectMaxCardinality) -> str:
-        return "%s %s %s .%s" % (
+        return "%s %s %s.%s" % (
             _DL_SYNTAX.MAX, r.get_cardinality(), self.render(r.get_property()), self._render_nested(r.get_filler()))
 
     @render.register
     def _(self, r: OWLObjectHasSelf) -> str:
-        return "%s %s .%s" % (_DL_SYNTAX.EXISTS, self.render(r.get_property()), _DL_SYNTAX.SELF)
+        return "%s %s.%s" % (_DL_SYNTAX.EXISTS, self.render(r.get_property()), _DL_SYNTAX.SELF)
 
     @render.register
     def _(self, r: OWLObjectHasValue):
-        return "%s %s .{%s}" % (_DL_SYNTAX.EXISTS, self.render(r.get_property()),
+        return "%s %s.{%s}" % (_DL_SYNTAX.EXISTS, self.render(r.get_property()),
                                 self.render(r.get_filler()))
 
     @render.register
