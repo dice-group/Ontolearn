@@ -3,7 +3,7 @@ from functools import singledispatchmethod
 from ontolearn.owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, \
     OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectCardinalityRestriction, OWLObjectHasSelf, \
-    OWLObjectHasValue
+    OWLObjectHasValue, OWLObjectOneOf
 from ontolearn.owlapy.utils import iter_count
 
 
@@ -206,10 +206,12 @@ class OWLClassExpressionLengthMetric:
     def _(self, o: OWLObjectOneOf):
         return self.object_one_of_length
 
-    @length.register
-    def _(self, n: OWLDatatypeRestriction):
-        return iter_count(n.facet_restrictions())
+    # TODO
+    # @length.register
+    # def _(self, n: OWLDatatypeRestriction):
+    #     return iter_count(n.facet_restrictions())
 
-    @length.register
-    def _(self, t: OWLDatatype):
-        return self.datatype_length
+    # TODO
+    # @length.register
+    # def _(self, t: OWLDatatype):
+    #     return self.datatype_length
