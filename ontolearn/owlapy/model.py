@@ -568,7 +568,7 @@ class OWLOntologyManager(metaclass=ABCMeta):
         pass
 
 
-class OWLReasoner:
+class OWLReasoner(metaclass=ABCMeta):
     __slots__ = ()
 
     @abstractmethod
