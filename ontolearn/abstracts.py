@@ -4,8 +4,8 @@ from abc import ABCMeta, abstractmethod, ABC
 
 from .owlapy.model import OWLClassExpression, OWLOntology
 from .owlapy.utils import iter_count
-from .util import get_full_iri, balanced_sets, read_csv
-
+from .utils import balanced_sets, read_csv
+from .owlready2.utils import get_full_iri
 from typing import Set, Dict, List, Tuple, Iterable, Generator, SupportsFloat
 import random
 import pandas as pd

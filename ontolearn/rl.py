@@ -1,7 +1,7 @@
 from abc import ABCMeta
 from .concept_learner import BaseConceptLearner
 from .abstracts import AbstractDrill, AbstractScorer
-from .util import *
+from .utils import *
 from .search import Node, SearchTreePriorityQueue
 from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction, Experience
 from .refinement_operators import LengthBasedRefinement

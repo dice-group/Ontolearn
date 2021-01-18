@@ -6,7 +6,7 @@ Drill with continuous training.
 Author: Caglar Demir
 """
 from ontolearn import KnowledgeBase, LearningProblemGenerator, DrillSample, DrillAverage
-from ontolearn.util import sanity_checking_args
+from ontolearn.utils import sanity_checking_args
 from argparse import ArgumentParser
 
 def start(args):

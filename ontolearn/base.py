@@ -1,12 +1,11 @@
 from collections import defaultdict
-from .concept_generator import ConceptGenerator
-from .concept import Concept
-from typing import Dict, Tuple, Set, Generator, Iterable, List, Type
+from typing import Dict, Tuple, Set, Generator, Iterable, List, Type, Optional, Callable
 
-from .core.owl import ClassHierarchy, ObjectPropertyHierarchy, DataPropertyHierarchy
+from .core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DataPropertyHierarchy
 from .owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner
 from .owlapy.owlready2 import OWLOntologyManager_Owlready2
-from .util import parametrized_performance_debugger, get_full_iri
+from .utils import parametrized_performance_debugger
+from .owlready2.utils import get_full_iri
 from .abstracts import AbstractKnowledgeBase
 import warnings
 from .static_funcs import build_concepts_mapping
@@ -25,7 +24,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
     object_property_hierarchy: ObjectPropertyHierarchy
     data_property_hierarchy: DataPropertyHierarchy
 
-    def __init__(self, *, path: str, ontologymanager_factory: Type[OWLOntologyManager], reasoner_factory: Type[OWLReasoner]):
+    def __init__(self, *, path: Optional[str] = None,
+                 ontologymanager_factory: Callable[[], OWLOntologyManager],
+                 reasoner_factory: Type[OWLReasoner]):
         super().__init__()
         self.path = path
         self.manager = ontologymanager_factory()

@@ -2,7 +2,7 @@ from .base import KnowledgeBase
 from .core.owl.utils import OWLClassExpressionLengthMetric
 from .owlapy.model import OWLClass, OWLObjectComplementOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectUnionOf, OWLObjectIntersectionOf, OWLClassExpression, OWLNothing
-from .util import parametrized_performance_debugger
+from .utils import parametrized_performance_debugger
 from .search import Node
 from .abstracts import BaseRefinement
 import copy

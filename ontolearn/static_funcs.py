@@ -5,7 +5,7 @@ from .abstracts import BaseNode
 from collections import deque
 from owlready2 import Thing, get_ontology, Not
 import types
-from .util import get_full_iri
+from .owlready2.utils import get_full_iri
 import time
 
 

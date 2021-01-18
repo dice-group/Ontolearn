@@ -5,7 +5,7 @@ from .refinement_operators import LengthBasedRefinement, ModifiedCELOERefinement
 from queue import PriorityQueue
 import itertools
 import sys
-from .util import balanced_sets, performance_debugger
+from .utils import balanced_sets, performance_debugger
 from collections import deque
 import numpy as np
 
