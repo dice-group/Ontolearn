@@ -1,10 +1,11 @@
 import operator
 from abc import ABCMeta, abstractmethod
 from functools import reduce
-from typing import Dict, Iterable, Tuple, overload, TypeVar, Generic, Type, Union, cast
+from typing import Dict, Iterable, Tuple, overload, TypeVar, Generic, Type, Union, cast, Optional
 
 from ontolearn.owlapy import HasIRI
-from ontolearn.owlapy.model import OWLClass, OWLReasoner, OWLObjectProperty, OWLDataProperty
+from ontolearn.owlapy.model import OWLClass, OWLReasoner, OWLObjectProperty, OWLDataProperty, OWLTopObjectProperty, \
+    OWLBottomObjectProperty, OWLTopDataProperty, OWLBottomDataProperty, OWLThing, OWLNothing, OWLObject
 from ontolearn.owlapy.render import DLSyntaxRenderer
 from ontolearn.owlapy.utils import NamedFixedSet, iter_bits
 
@@ -52,6 +53,16 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
     @abstractmethod
     def hierarchy_down_generator(self, reasoner: OWLReasoner) -> Iterable[Tuple[_S, Iterable[_S]]]:
         """Generate the suitable downwards hierarchy based on the reasoner"""
+        pass
+
+    @classmethod
+    @abstractmethod
+    def get_top_concept(cls) -> _S:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def get_bottom_concept(cls) -> _S:
         pass
 
     @staticmethod
@@ -140,10 +151,16 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
             super-entities
 
         """
-        if not direct:
-            yield from self._ent_enc(self._parents_map_trans[self._ent_enc(entity)])
+        if entity == type(self).get_bottom_concept():
+            if not direct:
+                yield from self.items()
+            else:
+                yield from self.leaves()
         else:
-            yield from self._ent_enc(self._parents_map[self._ent_enc(entity)])
+            if not direct:
+                yield from self._ent_enc(self._parents_map_trans[self._ent_enc(entity)])
+            else:
+                yield from self._ent_enc(self._parents_map[self._ent_enc(entity)])
 
     def children(self, entity: _S, direct: bool = True) -> Iterable[_S]:
         """Children of an entitiy
@@ -156,10 +173,16 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
             sub-entities
 
         """
-        if not direct:
-            yield from self._ent_enc(self._children_map_trans[self._ent_enc(entity)])
+        if entity == type(self).get_top_concept():
+            if not direct:
+                yield from self.items()
+            else:
+                yield from self.roots()
         else:
-            yield from self._ent_enc(self._children_map[self._ent_enc(entity)])
+            if not direct:
+                yield from self._ent_enc(self._children_map_trans[self._ent_enc(entity)])
+            else:
+                yield from self._ent_enc(self._children_map[self._ent_enc(entity)])
 
     def siblings(self, entity: _S) -> Iterable[_S]:
         seen_set = {entity}
@@ -173,11 +196,17 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
         for _, i in self._ent_enc.items():
             yield i
 
-    def roots(self) -> Iterable[_S]:
-        yield from self._ent_enc(self._root_set)
+    def roots(self, of: Optional[_S] = None) -> Iterable[_S]:
+        if of is not None and of != type(self).get_bottom_concept():
+            yield from self._ent_enc(self._root_set & self._parents_map_trans[self._ent_enc(of)])
+        else:
+            yield from self._ent_enc(self._root_set)
 
-    def leaves(self) -> Iterable[_S]:
-        yield from self._ent_enc(self._leaf_set)
+    def leaves(self, of: Optional[_S] = None) -> Iterable[_S]:
+        if of is not None and of != type(self).get_top_concept():
+            yield from self._ent_enc(self._leaf_set & self._children_map_trans[self._ent_enc(of)])
+        else:
+            yield from self._ent_enc(self._leaf_set)
 
 
 class ClassHierarchy(AbstractHierarchy[OWLClass]):
@@ -187,6 +216,14 @@ class ClassHierarchy(AbstractHierarchy[OWLClass]):
         hierarchy_down: a downwards hierarchy given as a mapping of Class to sub-classes
         reasoner: alternatively, a reasoner whose root_ontology is queried for classes and sub-classes
         """
+
+    @classmethod
+    def get_top_concept(cls) -> OWLClass:
+        return OWLThing
+
+    @classmethod
+    def get_bottom_concept(cls) -> OWLClass:
+        return OWLNothing
 
     def hierarchy_down_generator(self, reasoner: OWLReasoner) -> Iterable[Tuple[OWLClass, Iterable[OWLClass]]]:
         return ((_, reasoner.sub_classes(_, direct=True))
@@ -203,6 +240,14 @@ class ClassHierarchy(AbstractHierarchy[OWLClass]):
 
 
 class ObjectPropertyHierarchy(AbstractHierarchy[OWLObjectProperty]):
+    @classmethod
+    def get_top_concept(cls) -> OWLObjectProperty:
+        return OWLTopObjectProperty
+
+    @classmethod
+    def get_bottom_concept(cls) -> OWLObjectProperty:
+        return OWLBottomObjectProperty
+
     def hierarchy_down_generator(self, reasoner: OWLReasoner) \
             -> Iterable[Tuple[OWLObjectProperty, Iterable[OWLObjectProperty]]]:
         return ((_, map(lambda _: cast(OWLObjectProperty, _),
@@ -221,6 +266,14 @@ class ObjectPropertyHierarchy(AbstractHierarchy[OWLObjectProperty]):
 
 
 class DataPropertyHierarchy(AbstractHierarchy[OWLDataProperty]):
+    @classmethod
+    def get_top_concept(cls) -> OWLDataProperty:
+        return OWLTopDataProperty
+
+    @classmethod
+    def get_bottom_concept(cls) -> OWLDataProperty:
+        return OWLBottomDataProperty
+
     def hierarchy_down_generator(self, reasoner: OWLReasoner) \
             -> Iterable[Tuple[OWLDataProperty, Iterable[OWLDataProperty]]]:
         return ((_, reasoner.sub_data_properties(_, direct=True))

@@ -24,3 +24,7 @@ class OWLRDFVocabulary(HasIRI):
 
 OWL_THING = OWLRDFVocabulary(namespaces.OWL, "Thing")
 OWL_NOTHING = OWLRDFVocabulary(namespaces.OWL, "Nothing")
+OWL_TOP_OBJECT_PROPERTY = OWLRDFVocabulary(namespaces.OWL, "topObjectProperty")
+OWL_BOTTOM_OBJECT_PROPERTY = OWLRDFVocabulary(namespaces.OWL, "bottomObjectProperty")
+OWL_TOP_DATA_PROPERTY = OWLRDFVocabulary(namespaces.OWL, "topDataProperty")
+OWL_BOTTOM_DATA_PROPERTY = OWLRDFVocabulary(namespaces.OWL, "bottomDataProperty")
