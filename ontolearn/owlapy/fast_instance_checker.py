@@ -6,7 +6,8 @@ from typing import Iterable, Dict, Mapping
 
 from ontolearn.owlapy import IRI
 from ontolearn.owlapy.model import OWLReasoner, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
-    OWLObjectProperty, OWLDataProperty, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom
+    OWLObjectProperty, OWLDataProperty, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
+    OWLObjectPropertyExpression
 from ontolearn.owlapy.utils import NamedFixedSet
 
 
@@ -78,6 +79,13 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
 
     def types(self, ind: OWLNamedIndividual, direct: bool = False) -> Iterable[OWLClass]:
         yield from self._base_reasoner.types(ind, direct=direct)
+
+    def sub_data_properties(self, dp: OWLDataProperty, direct: bool = False) -> Iterable[OWLDataProperty]:
+        yield from self._base_reasoner.sub_data_properties(dp=dp, direct=direct)
+
+    def sub_object_properties(self, op: OWLObjectPropertyExpression, direct: bool = False) -> Iterable[
+        OWLObjectPropertyExpression]:
+        yield from self._base_reasoner.sub_object_properties(op=op, direct=direct)
 
     def get_root_ontology(self) -> OWLOntology:
         return self._ontology
