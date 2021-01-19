@@ -1,12 +1,11 @@
 import operator
 from abc import ABCMeta, abstractmethod
 from functools import reduce
-from typing import Dict, Iterable, Tuple, overload, TypeVar, Generic, Type, Union, cast, Optional
+from typing import Dict, Iterable, Tuple, overload, TypeVar, Generic, Type, cast, Optional
 
 from ontolearn.owlapy import HasIRI
 from ontolearn.owlapy.model import OWLClass, OWLReasoner, OWLObjectProperty, OWLDataProperty, OWLTopObjectProperty, \
-    OWLBottomObjectProperty, OWLTopDataProperty, OWLBottomDataProperty, OWLThing, OWLNothing, OWLObject
-from ontolearn.owlapy.render import DLSyntaxRenderer
+    OWLBottomObjectProperty, OWLTopDataProperty, OWLBottomDataProperty, OWLThing, OWLNothing
 from ontolearn.owlapy.utils import NamedFixedSet, iter_bits
 
 _S = TypeVar('_S', bound=HasIRI)
@@ -45,13 +44,13 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
     def __init__(self, factory: Type[_S], arg):
         self._Type = factory
         if isinstance(arg, OWLReasoner):
-            hier_down_gen = self.hierarchy_down_generator(arg)
+            hier_down_gen = self._hierarchy_down_generator(arg)
             self._init(hier_down_gen)
         else:
             self._init(arg)
 
     @abstractmethod
-    def hierarchy_down_generator(self, reasoner: OWLReasoner) -> Iterable[Tuple[_S, Iterable[_S]]]:
+    def _hierarchy_down_generator(self, reasoner: OWLReasoner) -> Iterable[Tuple[_S, Iterable[_S]]]:
         """Generate the suitable downwards hierarchy based on the reasoner"""
         pass
 
@@ -249,17 +248,17 @@ class ClassHierarchy(AbstractHierarchy[OWLClass]):
     def get_bottom_concept(cls) -> OWLClass:
         return OWLNothing
 
-    def hierarchy_down_generator(self, reasoner: OWLReasoner) -> Iterable[Tuple[OWLClass, Iterable[OWLClass]]]:
+    def _hierarchy_down_generator(self, reasoner: OWLReasoner) -> Iterable[Tuple[OWLClass, Iterable[OWLClass]]]:
         return ((_, reasoner.sub_classes(_, direct=True))
                 for _ in reasoner.get_root_ontology().classes_in_signature())
 
-    def sub_classes(self, entity: OWLClass, direct: bool = True):
+    def sub_classes(self, entity: OWLClass, direct: bool = True) -> Iterable[OWLClass]:
         yield from self.children(entity, direct)
 
-    def super_classes(self, entity: OWLClass, direct: bool = True):
+    def super_classes(self, entity: OWLClass, direct: bool = True) -> Iterable[OWLClass]:
         yield from self.parents(entity, direct)
 
-    def is_subclass_of(self, subclass: OWLClass, superclass: OWLClass):
+    def is_subclass_of(self, subclass: OWLClass, superclass: OWLClass) -> bool:
         return self.is_child_of(subclass, superclass)
 
     @overload
@@ -281,7 +280,7 @@ class ObjectPropertyHierarchy(AbstractHierarchy[OWLObjectProperty]):
     def get_bottom_concept(cls) -> OWLObjectProperty:
         return OWLBottomObjectProperty
 
-    def hierarchy_down_generator(self, reasoner: OWLReasoner) \
+    def _hierarchy_down_generator(self, reasoner: OWLReasoner) \
             -> Iterable[Tuple[OWLObjectProperty, Iterable[OWLObjectProperty]]]:
         return ((_, map(lambda _: cast(OWLObjectProperty, _),
                         filter(lambda _: isinstance(_, OWLObjectProperty),
@@ -328,7 +327,7 @@ class DatatypePropertyHierarchy(AbstractHierarchy[OWLDataProperty]):
     def get_bottom_concept(cls) -> OWLDataProperty:
         return OWLBottomDataProperty
 
-    def hierarchy_down_generator(self, reasoner: OWLReasoner) \
+    def _hierarchy_down_generator(self, reasoner: OWLReasoner) \
             -> Iterable[Tuple[OWLDataProperty, Iterable[OWLDataProperty]]]:
         return ((_, reasoner.sub_data_properties(_, direct=True))
                 for _ in reasoner.get_root_ontology().data_properties_in_signature())
@@ -364,51 +363,51 @@ class DatatypePropertyHierarchy(AbstractHierarchy[OWLDataProperty]):
         super().__init__(OWLDataProperty, arg)
 
 
-def _children_transitive(map_trans: Dict[int, int], ent_enc: int, seen_set: int):
+def _children_transitive(hier_trans: Dict[int, int], ent_enc: int, seen_set: int):
     """add transitive links to map_trans
 
     Note:
         changes map_trans
 
     Args:
-        map_trans: map to which transitive links are added
+        hier_trans: map to which transitive links are added
         ent_enc: encoded class in map_trans for which to add transitive sub-classes
 
     """
-    sub_classes_enc = map_trans[ent_enc]
+    sub_classes_enc = hier_trans[ent_enc]
     for sub_enc in iter_bits(sub_classes_enc):
         if not sub_enc & seen_set:
-            _children_transitive(map_trans, sub_enc, seen_set | ent_enc)
-            seen_set = seen_set | sub_enc | map_trans[sub_enc]
-            map_trans[ent_enc] |= map_trans[sub_enc]
+            _children_transitive(hier_trans, sub_enc, seen_set | ent_enc)
+            seen_set = seen_set | sub_enc | hier_trans[sub_enc]
+            hier_trans[ent_enc] |= hier_trans[sub_enc]
 
 
-def _reduce_transitive(map: Dict[int, int], map_inverse: Dict[int, int]) -> Tuple[Dict[int, int], int]:
+def _reduce_transitive(hier: Dict[int, int], hier_inverse: Dict[int, int]) -> Tuple[Dict[int, int], int]:
     """Remove all transitive links
 
     Takes a downward hierarchy and an upward hierarchy with transitive links, and removes all links that can be
     implicitly detected since they are transitive
 
     Args:
-         map: downward hierarchy with all transitive links, from Class => sub-classes
-         map_inverse: upward hierarchy with all transitive links, from Class => super-classes
+         hier: downward hierarchy with all transitive links, from Class => sub-classes
+         hier_inverse: upward hierarchy with all transitive links, from Class => super-classes
 
     Returns:
         thin map with only direct sub-classes
         set of classes without sub-classes
 
     """
-    result_map: Dict[int, int] = dict()
+    result_hier: Dict[int, int] = dict()
     leaf_set = 0
-    for enc, set_enc in map.items():
+    for enc, set_enc in hier.items():
         direct_set = 0
         for item_enc in iter_bits(set_enc):
-            if not map_inverse[item_enc] & (set_enc ^ item_enc):
+            if not hier_inverse[item_enc] & (set_enc ^ item_enc):
                 direct_set |= item_enc
-        result_map[enc] = direct_set
+        result_hier[enc] = direct_set
         if not direct_set:
             leaf_set |= enc
-    return result_map, leaf_set
+    return result_hier, leaf_set
 
 
 def _strongly_connected_components(graph: Dict[int, int]) -> Iterable[int]:

@@ -56,8 +56,12 @@ class IRIFixedSet:
             raise KeyError(i)
 
     def items(self) -> Iterable[Tuple[int, IRI]]:
+        """Return key-value pairs of bit => IRI"""
         for idx, i in enumerate(self._idx_iri):
             yield 1 << idx, i
+
+    def __len__(self) -> int:
+        return len(self._idx_iri)
 
 
 class NamedFixedSet(Generic[_HasIRI]):
@@ -88,9 +92,13 @@ class NamedFixedSet(Generic[_HasIRI]):
             return self._iri_set(map(self._Type.get_iri, arg), ignore_missing=ignore_missing)
 
     def items(self) -> Iterable[Tuple[int, _HasIRI]]:
+        """Return key-value pairs of bit => _HasIRI"""
         t = self._Type
         for e, i in self._iri_set.items():
             yield e, t(i)
+
+    def __len__(self) -> int:
+        return len(self._iri_set)
 
 
 def popcount(v: int) -> int:
@@ -99,6 +107,14 @@ def popcount(v: int) -> int:
 
 
 def iter_bits(v: int) -> Iterable[int]:
+    """Iterate over individual bits in a number
+
+    Args:
+          v: input number
+
+    Returns:
+        numbers with only one bit set
+    """
     while v:
         b = v & (~v + 1)
         yield b
