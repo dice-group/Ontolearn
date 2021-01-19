@@ -1,9 +1,10 @@
-from functools import singledispatchmethod
+from functools import singledispatchmethod, total_ordering
 
+from ontolearn.owlapy import HasIRI
 from ontolearn.owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, \
     OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectCardinalityRestriction, OWLObjectHasSelf, \
-    OWLObjectHasValue, OWLObjectOneOf
+    OWLObjectHasValue, OWLObjectOneOf, OWLObjectRestriction, HasFiller, HasCardinality, HasOperands
 from ontolearn.owlapy.utils import iter_count
 
 
@@ -215,3 +216,34 @@ class OWLClassExpressionLengthMetric:
     # @length.register
     # def _(self, t: OWLDatatype):
     #     return self.datatype_length
+
+
+@total_ordering
+class OrderedOWLObject:
+    __slots__ = 'o'
+
+    def __init__(self, o: OWLObject):
+        self.o = o
+
+    def __lt__(self, other):
+        cs = [self.o.type_index]
+        co = [other.o.type_index]
+
+        if cs == co:
+            if isinstance(self.o, OWLObjectRestriction):
+                cs.append(OrderedOWLObject(self.o.get_property()))
+                co.append(OrderedOWLObject(other.o.get_property()))
+            if isinstance(self.o, HasFiller):
+                cs.append(OrderedOWLObject(self.o.get_filler()))
+                co.append(OrderedOWLObject(other.o.get_filler()))
+            if isinstance(self.o, HasCardinality):
+                cs.append(self.o.get_cardinality())
+                co.append(other.o.get_cardinality())
+            if isinstance(self.o, HasOperands):
+                cs.append(tuple(map(OrderedOWLObject, self.o.operands())))
+                co.append(tuple(map(OrderedOWLObject, other.o.operands())))
+            if isinstance(self.o, HasIRI):
+                cs.append(self.o.get_iri().as_str())
+                co.append(other.o.get_iri().as_str())
+
+        return tuple(cs) < tuple(co)

@@ -1,10 +1,16 @@
 from abc import ABCMeta, abstractmethod
-from typing import Generic, Iterable, Sequence, TypeVar, Union
+from typing import Generic, Iterable, Sequence, TypeVar, Union, Final, ClassVar, Protocol
 
 from ontolearn.owlapy import vocabulary
 from ontolearn.owlapy.base import HasIRI, IRI
 
 _T = TypeVar('_T')
+
+"""The OWL-APy Model class and method names should match those of OWL-API [1]
+
+If OWL-API has streaming and getter API, it is enough to provide the streaming API only.
+
+[1] https://github.com/owlcs/owlapi"""
 
 
 class OWLObject(metaclass=ABCMeta):
@@ -65,6 +71,7 @@ class OWLBooleanClassExpression(OWLAnonymousClassExpression):
 
 class OWLObjectComplementOf(OWLBooleanClassExpression, HasOperands[OWLClassExpression]):
     __slots__ = '_operand'
+    type_index: Final = 3003
 
     _operand: OWLClassExpression
 
@@ -116,6 +123,7 @@ class OWLNamedObject(OWLObject, HasIRI, metaclass=ABCMeta):
 class OWLClass(OWLClassExpression, OWLNamedObject):
     """An OWL 2 named Class"""
     __slots__ = '_iri', '_is_nothing', '_is_thing'
+    type_index: Final = 1001
 
     _iri: IRI
     _is_nothing: bool
@@ -192,6 +200,7 @@ class OWLProperty(OWLPropertyExpression, OWLNamedObject, metaclass=ABCMeta):
 
 class OWLDataProperty(OWLDataPropertyExpression, OWLProperty):
     __slots__ = '_iri'
+    type_index: Final = 1004
 
     _iri: IRI
 
@@ -204,6 +213,7 @@ class OWLDataProperty(OWLDataPropertyExpression, OWLProperty):
 
 class OWLObjectProperty(OWLObjectPropertyExpression, OWLProperty):
     __slots__ = '_iri'
+    type_index: Final = 1002
 
     _iri: IRI
 
@@ -222,6 +232,7 @@ class OWLObjectProperty(OWLObjectPropertyExpression, OWLProperty):
 
 class OWLObjectInverseOf(OWLObjectPropertyExpression):
     __slots__ = '_inverse_property'
+    type_index: Final = 1003
 
     _inverse_property: OWLObjectProperty
 
@@ -317,6 +328,7 @@ class OWLQuantifiedObjectRestriction(OWLQuantifiedRestriction[OWLClassExpression
 
 class OWLObjectSomeValuesFrom(OWLQuantifiedObjectRestriction):
     __slots__ = '_property', '_filler'
+    type_index: Final = 3005
 
     def __init__(self, property: OWLObjectPropertyExpression, filler: OWLClassExpression):
         super().__init__(filler)
@@ -339,6 +351,7 @@ class OWLObjectSomeValuesFrom(OWLQuantifiedObjectRestriction):
 
 class OWLObjectAllValuesFrom(OWLQuantifiedObjectRestriction):
     __slots__ = '_property', '_filler'
+    type_index: Final = 3006
 
     def __init__(self, property: OWLObjectPropertyExpression, filler: OWLClassExpression):
         super().__init__(filler)
@@ -385,12 +398,14 @@ class OWLNaryBooleanClassExpression(OWLBooleanClassExpression, HasOperands[OWLCl
 
 class OWLObjectUnionOf(OWLNaryBooleanClassExpression):
     __slots__ = '_operands'
+    type_index: Final = 3002
 
     _operands: Sequence[OWLClassExpression]
 
 
 class OWLObjectIntersectionOf(OWLNaryBooleanClassExpression):
     __slots__ = '_operands'
+    type_index: Final = 3001
 
     _operands: Sequence[OWLClassExpression]
 
@@ -442,6 +457,7 @@ class OWLObjectCardinalityRestriction(OWLCardinalityRestriction[OWLClassExpressi
 
 class OWLObjectMinCardinality(OWLObjectCardinalityRestriction):
     __slots__ = '_cardinality', '_filler', '_property'
+    type_index: Final = 3008
 
     def __init__(self, property: OWLObjectPropertyExpression, cardinality: int, filler: OWLClassExpression):
         super().__init__(property, cardinality, filler)
@@ -449,6 +465,7 @@ class OWLObjectMinCardinality(OWLObjectCardinalityRestriction):
 
 class OWLObjectMaxCardinality(OWLObjectCardinalityRestriction):
     __slots__ = '_cardinality', '_filler', '_property'
+    type_index: Final = 3010
 
     def __init__(self, property: OWLObjectPropertyExpression, cardinality: int, filler: OWLClassExpression):
         super().__init__(property, cardinality, filler)
@@ -456,6 +473,7 @@ class OWLObjectMaxCardinality(OWLObjectCardinalityRestriction):
 
 class OWLObjectExactCardinality(OWLObjectCardinalityRestriction):
     __slots__ = '_cardinality', '_filler', '_property'
+    type_index: Final = 3009
 
     def __init__(self, property: OWLObjectPropertyExpression, cardinality: int, filler: OWLClassExpression):
         super().__init__(property, cardinality, filler)
@@ -467,6 +485,7 @@ class OWLObjectExactCardinality(OWLObjectCardinalityRestriction):
 
 class OWLObjectHasSelf(OWLObjectRestriction):
     __slots__ = '_property'
+    type_index: Final = 3011
 
     _property: OWLObjectPropertyExpression
 
@@ -484,6 +503,7 @@ class OWLIndividual(OWLObject):
 
 class OWLObjectHasValue(OWLHasValueRestriction[OWLIndividual], OWLObjectRestriction):
     __slots__ = '_property', '_v'
+    type_index: Final = 3007
 
     _property: OWLObjectPropertyExpression
     _v: OWLIndividual
@@ -498,6 +518,7 @@ class OWLObjectHasValue(OWLHasValueRestriction[OWLIndividual], OWLObjectRestrict
 
 class OWLObjectOneOf(OWLAnonymousClassExpression, HasOperands[OWLIndividual]):
     __slots__ = '_values'
+    type_index: Final = 3004
 
     def __init__(self, values: Union[OWLIndividual, Iterable[OWLIndividual]]):
         if isinstance(values, OWLIndividual):
@@ -521,6 +542,7 @@ class OWLObjectOneOf(OWLAnonymousClassExpression, HasOperands[OWLIndividual]):
 
 class OWLNamedIndividual(OWLIndividual, OWLNamedObject):
     __slots__ = '_iri'
+    type_index: Final = 1005
 
     _iri: IRI
 
@@ -536,6 +558,7 @@ _M = TypeVar('_M', bound='OWLOntologyManager')
 
 class OWLOntology(OWLObject, metaclass=ABCMeta):
     __slots__ = ()
+    type_index: Final = 1
 
     @abstractmethod
     def classes_in_signature(self) -> Iterable[OWLClass]:
@@ -628,6 +651,64 @@ class OWLReasoner(metaclass=ABCMeta):
     def get_root_ontology(self) -> OWLOntology:
         pass
 
+# TODO: a big todo plus intermediate classes (missing)
+#
+# class OWLAnnotation(metaclass=ABCMeta):
+#     type_index: Final = 5001
+#
+# class OWLAnnotationProperty(metaclass=ABCMeta):
+#     type_index: Final = 1006
+#
+# class OWLAnonymousIndividual(metaclass=ABCMeta):
+#     type_index: Final = 1007
+#
+# class OWLAxiom(metaclass=ABCMeta):
+#     type_index: Final = 2000 + get_axiom_type().get_index()
+#
+# class OWLDataAllValuesFrom(metaclass=ABCMeta):
+#     type_index: Final = 3013
+#
+# class OWLDataComplementOf(metaclass=ABCMeta):
+#     type_index: Final = 4002
+#
+# class OWLDataExactCardinality(metaclass=ABCMeta):
+#     type_index: Final = 3016
+#
+# class OWLDataHasValue(metaclass=ABCMeta):
+#     type_index: Final = 3014
+#
+# class OWLDataIntersectionOf(metaclass=ABCMeta):
+#     type_index: Final = 4004
+#
+# class OWLDataMaxCardinality(metaclass=ABCMeta):
+#     type_index: Final = 3017
+#
+# class OWLDataMinCardinality(metaclass=ABCMeta):
+#     type_index: Final = 3015
+#
+# class OWLDataOneOf(metaclass=ABCMeta):
+#     type_index: Final = 4003
+#
+# class OWLDataSomeValuesFrom(metaclass=ABCMeta):
+#     type_index: Final = 3012
+#
+# class OWLDataUnionOf(metaclass=ABCMeta):
+#     type_index: Final = 4005
+#
+# class OWLDatatype(metaclass=ABCMeta):
+#     type_index: Final = 4001
+#
+# class OWLDatatypeRestriction(metaclass=ABCMeta):
+#     type_index: Final = 4006
+#
+# class OWLFacetRestriction(metaclass=ABCMeta):
+#     type_index: Final = 4007
+#
+# class OWLLiteral(metaclass=ABCMeta):
+#     type_index: Final = 4008
+
+
+"""Important constant objects section"""
 
 OWLThing = OWLClass(vocabulary.OWL_THING.get_iri())
 OWLNothing = OWLClass(vocabulary.OWL_NOTHING.get_iri())

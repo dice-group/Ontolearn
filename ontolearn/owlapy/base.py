@@ -2,10 +2,14 @@ import sys
 import weakref
 from weakref import WeakKeyDictionary
 from abc import ABCMeta, abstractmethod
-from typing import Union, overload
+from typing import Union, overload, Final, Protocol
 
 from ontolearn.owlapy.namespaces import Namespaces
 from ontolearn.owlapy import namespaces
+
+
+class HasIndex(Protocol):
+    type_index: Final[int]
 
 
 class HasIRI(metaclass=ABCMeta):
@@ -36,6 +40,7 @@ class _WeakCached(type):
 class IRI(metaclass=_WeakCached):
     """An IRI, consisting of a namespace and a remainder"""
     __slots__ = '_namespace', '_remainder', '__weakref__'
+    type_index: Final = 0
 
     _namespace: str
     _remainder: str
