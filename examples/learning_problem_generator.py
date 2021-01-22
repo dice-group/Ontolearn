@@ -1,12 +1,13 @@
 #from ontolearn import KnowledgeBase, LearningProblemGenerator
 from ontolearn.base import KnowledgeBase
 from ontolearn.learning_problem_generator import LearningProblemGenerator
+from ontolearn.owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.static_funcs import export_concepts
 
 path = '../KGs/Biopax/biopax.owl'
 
-kb = KnowledgeBase(path=path)
+kb = KnowledgeBase(path=path, reasoner_factory=OWLReasoner_Owlready2_TempClasses)
 lp = LearningProblemGenerator(knowledge_base=kb)
 num_inds = kb.individuals_count()
 concepts = lp.get_concepts(num_problems=1000,
