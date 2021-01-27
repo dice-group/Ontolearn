@@ -3,9 +3,8 @@ from functools import singledispatchmethod, total_ordering
 from ontolearn.owlapy import HasIRI
 from ontolearn.owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, \
-    OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectCardinalityRestriction, OWLObjectHasSelf, \
+    OWLObjectCardinalityRestriction, OWLObjectHasSelf, \
     OWLObjectHasValue, OWLObjectOneOf, OWLObjectRestriction, HasFiller, HasCardinality, HasOperands
-from ontolearn.owlapy.utils import iter_count
 
 
 class OWLClassExpressionLengthMetric:
@@ -35,7 +34,7 @@ class OWLClassExpressionLengthMetric:
         data_intersection_length: Data Intersection: datatype ⨅ datatype
         data_union_length: Data Union: datatype ⨆ datatype
     """
-    
+
     __slots__ = 'class_length', 'object_intersection_length', 'object_union_length', 'object_complement_length', \
                 'object_some_values_length', 'object_all_values_length', 'object_has_value_length', \
                 'object_cardinality_length', 'object_has_self_length', 'object_one_of_length', \
@@ -66,30 +65,30 @@ class OWLClassExpressionLengthMetric:
     data_complement_length: int
     data_intersection_length: int
     data_union_length: int
-    
+
     def __init__(self, *,
-                 class_length:int,
-                 object_intersection_length:int,
-                 object_union_length:int,
-                 object_complement_length:int,
-                 object_some_values_length:int,
-                 object_all_values_length:int,
-                 object_has_value_length:int,
-                 object_cardinality_length:int,
-                 object_has_self_length:int,
-                 object_one_of_length:int,
-                 data_some_values_length:int,
-                 data_all_values_length:int,
-                 data_has_value_length:int,
-                 data_cardinality_length:int,
-                 object_propery_length:int,
-                 object_inverse_length:int,
-                 data_propery_length:int,
-                 datatype_length:int,
-                 data_one_of_length:int,
-                 data_complement_length:int,
-                 data_intersection_length:int,
-                 data_union_length:int,
+                 class_length: int,
+                 object_intersection_length: int,
+                 object_union_length: int,
+                 object_complement_length: int,
+                 object_some_values_length: int,
+                 object_all_values_length: int,
+                 object_has_value_length: int,
+                 object_cardinality_length: int,
+                 object_has_self_length: int,
+                 object_one_of_length: int,
+                 data_some_values_length: int,
+                 data_all_values_length: int,
+                 data_has_value_length: int,
+                 data_cardinality_length: int,
+                 object_propery_length: int,
+                 object_inverse_length: int,
+                 data_propery_length: int,
+                 datatype_length: int,
+                 data_one_of_length: int,
+                 data_complement_length: int,
+                 data_intersection_length: int,
+                 data_union_length: int,
                  ):
         self.class_length = class_length
         self.object_intersection_length = object_intersection_length

@@ -1,4 +1,3 @@
-from functools import singledispatchmethod
 from typing import Iterable, overload, TypeVar, Generic, Type, Tuple, Dict, List
 
 from ontolearn.owlapy import IRI, HasIRI
@@ -14,7 +13,7 @@ class IRIFixedSet:
     __slots__ = '_iri_idx', '_idx_iri'
 
     _iri_idx: Dict[IRI, int]
-    _idx_iri: List[IRI] # it works as Dict[int, IRI]
+    _idx_iri: List[IRI]  # it works as Dict[int, IRI]
 
     def __init__(self, iri_set: Iterable[IRI]):
         fs = frozenset(iri_set)
