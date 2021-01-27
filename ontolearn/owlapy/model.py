@@ -223,7 +223,7 @@ class OWLObjectProperty(OWLObjectPropertyExpression, OWLProperty):
     def __init__(self, iri: IRI):
         self._iri = iri
 
-    def get_inverse_property(self) -> OWLObjectPropertyExpression:
+    def get_inverse_property(self) -> 'OWLObjectInverseOf':
         return OWLObjectInverseOf(self)
 
     def get_iri(self) -> IRI:
@@ -242,7 +242,7 @@ class OWLObjectInverseOf(OWLObjectPropertyExpression):
     def get_inverse(self) -> OWLObjectProperty:
         return self._inverse_property
 
-    def get_inverse_property(self) -> OWLObjectPropertyExpression:
+    def get_inverse_property(self) -> OWLObjectProperty:
         return self.get_inverse()
 
     def get_named_property(self) -> OWLObjectProperty:
@@ -711,9 +711,9 @@ class OWLReasoner(metaclass=ABCMeta):
 
 """Important constant objects section"""
 
-OWLThing = OWLClass(vocabulary.OWL_THING.get_iri())
-OWLNothing = OWLClass(vocabulary.OWL_NOTHING.get_iri())
-OWLTopObjectProperty = OWLObjectProperty(vocabulary.OWL_TOP_OBJECT_PROPERTY.get_iri())
-OWLBottomObjectProperty = OWLObjectProperty(vocabulary.OWL_BOTTOM_OBJECT_PROPERTY.get_iri())
-OWLTopDataProperty = OWLDataProperty(vocabulary.OWL_TOP_DATA_PROPERTY.get_iri())
-OWLBottomDataProperty = OWLDataProperty(vocabulary.OWL_BOTTOM_DATA_PROPERTY.get_iri())
+OWLThing: Final = OWLClass(vocabulary.OWL_THING.get_iri())
+OWLNothing: Final = OWLClass(vocabulary.OWL_NOTHING.get_iri())
+OWLTopObjectProperty: Final = OWLObjectProperty(vocabulary.OWL_TOP_OBJECT_PROPERTY.get_iri())
+OWLBottomObjectProperty: Final = OWLObjectProperty(vocabulary.OWL_BOTTOM_OBJECT_PROPERTY.get_iri())
+OWLTopDataProperty: Final = OWLDataProperty(vocabulary.OWL_TOP_DATA_PROPERTY.get_iri())
+OWLBottomDataProperty: Final = OWLDataProperty(vocabulary.OWL_BOTTOM_DATA_PROPERTY.get_iri())

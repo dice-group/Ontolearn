@@ -1,3 +1,6 @@
+from typing import Final
+
+
 class Namespaces:
     """A Namespace and its prefix"""
     __slots__ = '_prefix', '_ns'
@@ -29,7 +32,7 @@ class Namespaces:
         return NotImplemented
 
 
-OWL = Namespaces("owl", "http://www.w3.org/2002/07/owl#")
-RDFS = Namespaces("rdfs", "http://www.w3.org/2000/01/rdf-schema#")
-RDF = Namespaces("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
-XSD = Namespaces("xsd", "http://www.w3.org/2001/XMLSchema#")
+OWL: Final = Namespaces("owl", "http://www.w3.org/2002/07/owl#")
+RDFS: Final = Namespaces("rdfs", "http://www.w3.org/2000/01/rdf-schema#")
+RDF: Final = Namespaces("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
+XSD: Final = Namespaces("xsd", "http://www.w3.org/2001/XMLSchema#")
