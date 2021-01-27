@@ -1,3 +1,5 @@
+from typing import Final
+
 from ontolearn.owlapy.base import HasIRI, IRI
 from ontolearn.owlapy import namespaces
 from ontolearn.owlapy.namespaces import Namespaces
@@ -22,9 +24,9 @@ class OWLRDFVocabulary(HasIRI):
         return f"<<{self._namespace.prefix}:{self._remainder}>>"
 
 
-OWL_THING = OWLRDFVocabulary(namespaces.OWL, "Thing")
-OWL_NOTHING = OWLRDFVocabulary(namespaces.OWL, "Nothing")
-OWL_TOP_OBJECT_PROPERTY = OWLRDFVocabulary(namespaces.OWL, "topObjectProperty")
-OWL_BOTTOM_OBJECT_PROPERTY = OWLRDFVocabulary(namespaces.OWL, "bottomObjectProperty")
-OWL_TOP_DATA_PROPERTY = OWLRDFVocabulary(namespaces.OWL, "topDataProperty")
-OWL_BOTTOM_DATA_PROPERTY = OWLRDFVocabulary(namespaces.OWL, "bottomDataProperty")
+OWL_THING: Final = OWLRDFVocabulary(namespaces.OWL, "Thing")
+OWL_NOTHING: Final = OWLRDFVocabulary(namespaces.OWL, "Nothing")
+OWL_TOP_OBJECT_PROPERTY: Final = OWLRDFVocabulary(namespaces.OWL, "topObjectProperty")
+OWL_BOTTOM_OBJECT_PROPERTY: Final = OWLRDFVocabulary(namespaces.OWL, "bottomObjectProperty")
+OWL_TOP_DATA_PROPERTY: Final = OWLRDFVocabulary(namespaces.OWL, "topDataProperty")
+OWL_BOTTOM_DATA_PROPERTY: Final = OWLRDFVocabulary(namespaces.OWL, "bottomDataProperty")

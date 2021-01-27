@@ -1,6 +1,8 @@
 from functools import singledispatchmethod, total_ordering
+from typing import cast, Protocol
 
 from ontolearn.owlapy import HasIRI
+from ontolearn.owlapy.base import HasIndex
 from ontolearn.owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, \
     OWLObjectCardinalityRestriction, OWLObjectHasSelf, \
@@ -221,7 +223,8 @@ class OWLClassExpressionLengthMetric:
 class OrderedOWLObject:
     __slots__ = 'o'
 
-    def __init__(self, o: OWLObject):
+    # we are limited by https://github.com/python/typing/issues/213
+    def __init__(self, o: HasIndex):
         self.o = o
 
     def __lt__(self, other):
@@ -230,7 +233,7 @@ class OrderedOWLObject:
 
         if cs == co:
             if isinstance(self.o, OWLObjectRestriction):
-                cs.append(OrderedOWLObject(self.o.get_property()))
+                cs.append(OrderedOWLObject(cast(HasIndex, self.o.get_property())))
                 co.append(OrderedOWLObject(other.o.get_property()))
             if isinstance(self.o, HasFiller):
                 cs.append(OrderedOWLObject(self.o.get_filler()))
