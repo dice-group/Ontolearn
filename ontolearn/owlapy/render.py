@@ -2,7 +2,6 @@
 
 import types
 from functools import singledispatchmethod
-from types import MappingProxyType
 from typing import List
 
 from ontolearn.owlapy import IRI
@@ -130,7 +129,7 @@ class DLSyntaxRenderer(OWLObjectRenderer):
     @render.register
     def _(self, r: OWLObjectHasValue):
         return "%s %s.{%s}" % (_DL_SYNTAX.EXISTS, self.render(r.get_property()),
-                                self.render(r.get_filler()))
+                               self.render(r.get_filler()))
 
     @render.register
     def _(self, r: OWLObjectOneOf):

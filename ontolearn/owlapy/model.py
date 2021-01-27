@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Generic, Iterable, Sequence, TypeVar, Union, Final, ClassVar, Protocol
+from typing import Generic, Iterable, Sequence, TypeVar, Union, Final
 
 from ontolearn.owlapy import vocabulary
 from ontolearn.owlapy.base import HasIRI, IRI
@@ -452,7 +452,8 @@ class OWLObjectCardinalityRestriction(OWLCardinalityRestriction[OWLClassExpressi
         return self._property
 
     def __repr__(self):
-        return f"{type(self).__name__}(property={repr(self.get_property())},{self.get_cardinality()},filler={repr(self.get_filler())})"
+        return f"{type(self).__name__}(" \
+               f"property={repr(self.get_property())},{self.get_cardinality()},filler={repr(self.get_filler())})"
 
 
 class OWLObjectMinCardinality(OWLObjectCardinalityRestriction):

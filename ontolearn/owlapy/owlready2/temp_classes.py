@@ -1,6 +1,6 @@
 import types
 from logging import warning
-from typing import Iterable, Type, cast, Optional
+from typing import Iterable, cast, Optional
 
 import owlready2
 
@@ -9,7 +9,6 @@ from ontolearn.owlapy.model import OWLClass, OWLClassExpression, OWLNamedIndivid
 from ontolearn.owlapy.owlready2 import OWLReasoner_Owlready2
 from ontolearn.owlapy.owlready2.base import OWLOntology_Owlready2, BaseReasoner
 from ontolearn.owlapy.owlready2.utils import ToOwlready2
-from ontolearn.owlapy.vocabulary import OWL_THING
 
 
 class OWLReasoner_Owlready2_TempClasses(OWLReasoner_Owlready2):
