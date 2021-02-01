@@ -1,17 +1,50 @@
-from collections import OrderedDict
+from functools import total_ordering
 from queue import PriorityQueue
+from typing import List, Optional, ClassVar, Callable
+
 from .abstracts import BaseNode, AbstractTree, AbstractScorer
-from typing import List
+from .core.owl.utils import OrderedOWLObject
+from .owlapy.io import OWLObjectRenderer
+from .owlapy.model import OWLClassExpression
+from .owlapy.render import DLSyntaxRenderer
 
 
 class Node(BaseNode):
-    def __init__(self, concept, parent_node=None, root=None):
+    __slots__ = 'individuals_count'
+
+    renderer: ClassVar[OWLObjectRenderer] = DLSyntaxRenderer()
+    individuals_count: Optional[int]
+
+    def __init__(self, concept: OWLClassExpression, parent_node: Optional['Node'] = None, root: bool = False):
         super().__init__(concept, parent_node, root)
+        self.individuals_count = None
 
     def __str__(self):
-        return 'Node at {0}\t{self.concept.str}\tQuality:{self.quality}\tHeuristic:{self.heuristic}\tDepth:' \
-               '{self.depth}\tH_exp:{self.h_exp}\t|Children|:{self.refinement_count}\t|Indv.|:{1}'.format(
-            hex(id(self)), len(self.concept.instances), self=self)
+        return f'Node at {hex(id(self))}\t{Node.renderer.render(self.concept)}\tQuality:{self.quality}\t' \
+               f'Heuristic:{self.heuristic}\tDepth:{self.depth}\tH_exp:{self.h_exp}\t' \
+               f'|Children|:{self.refinement_count}\t|Indv.|:{self.individuals_count}'
+
+
+@total_ordering
+class OrderedNode:
+    __slots__ = 'node', '_len'
+
+    node: Node
+
+    def __init__(self, node: Node, cl: Callable[[OWLClassExpression], int]):
+        self.node = node
+        self._len = cl(self.node.concept)
+
+    def __lt__(self, other):
+        if type(other) is not type(self):
+            return NotImplemented
+
+        if self._len < other._len:
+            return True
+        elif other._len < self._len:
+            return False
+
+        return OrderedOWLObject(self.node.concept) < OrderedOWLObject(other.node.concept)
 
 
 class CELOESearchTree(AbstractTree):
@@ -179,7 +212,7 @@ class SearchTreePriorityQueue(AbstractTree):
             self.heuristic_func.apply(node, parent_node=parent_node)
             new_heuristic = node.heuristic
             if new_heuristic > old_heuristic:
-                node.parent_node.children.remove(node)
+                node.parent_node.remove_child(node)
                 node.parent_node = parent_node
                 parent_node.add_children(node)
                 self.items_in_queue.put((-node.heuristic, node.concept.str))  # gets the smallest one.
