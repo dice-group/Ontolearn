@@ -2,11 +2,12 @@ from collections import OrderedDict, defaultdict
 from functools import total_ordering
 from abc import ABCMeta, abstractmethod, ABC
 
+from .core.owl.utils import OWLClassExpressionLengthMetric
 from .owlapy.model import OWLClassExpression, OWLOntology
 from .owlapy.utils import iter_count
 from .utils import balanced_sets, read_csv
 from .owlready2.utils import get_full_iri
-from typing import Set, Dict, List, Tuple, Iterable, Generator, SupportsFloat
+from typing import Set, Dict, List, Tuple, Iterable, Generator, SupportsFloat, TypeVar, Optional, Type, Generic
 import random
 import pandas as pd
 import torch
@@ -17,33 +18,41 @@ import time
 
 random.seed(0)
 
+_N = TypeVar('_N', bound='BaseNode')
 
-@total_ordering
+
 class BaseNode(metaclass=ABCMeta):
     """Base class for Concept."""
     __slots__ = ['concept', '__heuristic_score', '__horizontal_expansion', '__quality_score',
-                 '___refinement_count', '__refinement_count', '__depth', '__children', '__embeddings', 'length',
-                 'parent_node']
+                 '__refinement_count', '__depth', '__children', '__embeddings',
+                 'parent_node', '__is_root']
+
+    concept: OWLClassExpression
+    parent_node: _N
+    __quality_score: Optional[float]
+    __heuristic_score: Optional[float]
+    __is_root: bool
+    __horizontal_expansion: int
+    __refinement_count: int
+    __children: Set[_N]
 
     @abstractmethod
-    def __init__(self, concept: OWLClassExpression, parent_node, is_root=False):
-        self.__quality_score, self.__heuristic_score = None, None
+    def __init__(self: _N, concept: OWLClassExpression, parent_node: _N, is_root=False):
+        self.__quality_score = None
+        self.__heuristic_score = None
         self.__is_root = is_root
-        self.__horizontal_expansion, self.__refinement_count = 0, 0
+        self.__horizontal_expansion = 0
+        self.__refinement_count = 0
         self.concept = concept
         self.parent_node = parent_node
         self.__embeddings = None
         self.__children = set()
-        self.length = len(self.concept)
 
         if self.parent_node is None:
-            assert len(concept) == 1 and self.__is_root
+            assert self.__is_root
             self.__depth = 0
         else:
             self.__depth = self.parent_node.depth + 1
-
-    def __len__(self):
-        return len(self.concept)
 
     @property
     def embeddings(self):
@@ -54,19 +63,19 @@ class BaseNode(metaclass=ABCMeta):
         self.__embeddings = value
 
     @property
-    def children(self):
+    def children(self) -> Set[_N]:
         return self.__children
 
     @property
-    def refinement_count(self):
+    def refinement_count(self) -> int:
         return self.__refinement_count
 
     @refinement_count.setter
-    def refinement_count(self, n):
+    def refinement_count(self, n: int):
         self.__refinement_count = n
 
     @property
-    def depth(self):
+    def depth(self) -> int:
         return self.__depth
 
     @depth.setter
@@ -74,7 +83,7 @@ class BaseNode(metaclass=ABCMeta):
         self.__depth = n
 
     @property
-    def h_exp(self):
+    def h_exp(self) -> int:
         return self.__horizontal_expansion
 
     @property
@@ -94,23 +103,17 @@ class BaseNode(metaclass=ABCMeta):
         self.__quality_score = val
 
     @property
-    def is_root(self):
+    def is_root(self) -> bool:
         return self.__is_root
 
-    def add_children(self, n):
+    def add_children(self: _N, n: _N) -> None:
         self.__children.add(n)
 
-    def remove_child(self, n):
+    def remove_child(self: _N, n: _N) -> None:
         self.__children.remove(n)
 
-    def increment_h_exp(self, val=0):
-        self.__horizontal_expansion += val + 1
-
-    def __lt__(self, other):
-        return self.concept.length < other.concept.length
-
-    def __gt__(self, other):
-        return self.concept.length > other.concept.length
+    def increment_h_exp(self, extra_inc: int = 0) -> None:
+        self.__horizontal_expansion += extra_inc + 1
 
 
 class AbstractScorer(ABC):
@@ -149,7 +152,11 @@ class AbstractScorer(ABC):
         self.applied = 0
 
 
-class BaseRefinement(metaclass=ABCMeta):
+_KB = TypeVar('_KB', bound='AbstractKnowledgeBase')
+_N = TypeVar('_N', bound=BaseNode)
+
+
+class BaseRefinement(Generic[_N], metaclass=ABCMeta):
     """
     Base class for Refinement Operators.
 
@@ -171,45 +178,39 @@ class BaseRefinement(metaclass=ABCMeta):
 
     [1] Learning OWL Class Expressions
     """
+    __slots__ = 'kb', 'max_size_of_concept', 'min_size_of_concept', '_NodeType'
+
+    kb: _KB
+    _NodeType: Type[_N]
 
     @abstractmethod
-    def __init__(self, kb, max_size_of_concept=10_000, min_size_of_concept=0):
+    def __init__(self, _NodeType: Type[_N], kb: _KB, max_size_of_concept=10_000, min_size_of_concept=0):
+        self._NodeType = _NodeType
         self.kb = kb
         self.max_size_of_concept = max_size_of_concept
         self.min_size_of_concept = min_size_of_concept
         # self.concepts_to_nodes = dict()
 
     @abstractmethod
-    def get_node(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
     def refine(self, *args, **kwargs):
         pass
 
-    @abstractmethod
-    def refine_atomic_concept(self, *args, **kwargs):
-        pass
+    def get_node(self, c: OWLClassExpression, parent_node: Optional[_N] = None, root: bool = False) -> _N:
+        """
 
-    @abstractmethod
-    def refine_complement_of(self, *args, **kwargs):
-        pass
+        @param c:
+        @param parent_node:
+        @param root:
+        @return:
+        """
+        if parent_node is None and root is False:
+            print(c)
+            raise ValueError
+        return self._NodeType(concept=c, parent_node=parent_node, root=root)
 
-    @abstractmethod
-    def refine_object_some_values_from(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
-    def refine_object_all_values_from(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
-    def refine_object_union_of(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
-    def refine_object_intersection_of(self, *args, **kwargs):
-        pass
+    def len(self, concept: OWLClassExpression) -> int:
+        """The length of a concept"""
+        return self.kb.cl(concept)
 
 
 class AbstractTree(ABC):
@@ -313,9 +314,7 @@ class AbstractTree(ABC):
 
 
 class AbstractKnowledgeBase(metaclass=ABCMeta):
-
-    def __init__(self):
-        pass
+    __slots__ = ()
 
     @abstractmethod
     def save(self, path: str, rdf_format="rdfxml"):
@@ -323,16 +322,22 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
 
     @abstractmethod
     def ontology(self) -> OWLOntology:
+        """The base ontology of this knowledge base"""
         pass
 
-    def describe(self):
+    def describe(self) -> None:
         print(f'Number of named classes: {iter_count(self.ontology().classes_in_signature())}\n'
-              f'Number of individuals: {iter_count(self.ontology().individuals_in_signature())}\n'
+              f'Number of individuals: {self.individuals_count()}\n'
               f'Number of properties: {iter_count(self.ontology().object_properties_in_signature()) + iter_count(self.ontology().data_properties_in_signature())}')
 
     @abstractmethod
-    def clean(self):
+    def clean(self) -> None:
         raise NotImplementedError
+
+    @abstractmethod
+    def individuals_count(self) -> int:
+        """Total number of individuals in this knowledge base"""
+        pass
 
 
 class AbstractDrill(ABC):
