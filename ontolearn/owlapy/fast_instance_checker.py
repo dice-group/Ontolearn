@@ -7,7 +7,7 @@ from typing import Iterable, Dict, Mapping
 from ontolearn.owlapy import IRI
 from ontolearn.owlapy.model import OWLReasoner, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
     OWLObjectProperty, OWLDataProperty, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
-    OWLObjectPropertyExpression
+    OWLObjectPropertyExpression, OWLObjectComplementOf, OWLObjectAllValuesFrom
 from ontolearn.owlapy.utils import NamedFixedSet
 
 
@@ -120,7 +120,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
 
     @singledispatchmethod
     def _find_instances(self, ce: OWLClassExpression) -> int:
-        raise NotImplementedError
+        raise NotImplementedError(ce)
 
     @_find_instances.register
     def _(self, c: OWLClass) -> int:
@@ -152,6 +152,20 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
 
         self._objectsomevalues_cache[ce] = ind_enc
         return ind_enc
+
+    @_find_instances.register
+    def _(self, ce: OWLObjectComplementOf):
+        # TODO!
+        return 0
+        # if self.complement_as_negation:
+        #     ...
+        # else:
+        #     self._lazy_cache_negation
+
+    @_find_instances.register
+    def _(self, ce: OWLObjectAllValuesFrom):
+        # TODO!
+        return 0
 
     def _lazy_cache_class(self, c: OWLClass) -> None:
         if c in self._cls_to_ind:
