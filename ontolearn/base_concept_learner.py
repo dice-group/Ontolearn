@@ -181,7 +181,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.heuristic_func.set_negative_examples(owl_ready_neg)
         self.heuristic_func.set_unlabelled_examples(unlabelled)
 
-        root = self.rho.getNode(self.start_class, root=True)
+        root = self.rho.get_node(self.start_class, root=True)
         self.search_tree.quality_func.apply(root)
         self.search_tree.heuristic_func.apply(root)
         self.search_tree.add(root)

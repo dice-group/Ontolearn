@@ -9,8 +9,8 @@ class Node(BaseNode):
         super().__init__(concept, parent_node, root)
 
     def __str__(self):
-        return 'Node at {0}\t{self.concept.str}\tQuality:{self.quality}\tHeuristic:{self.heuristic}\tDepth:{' \
-               'self.depth}\tH_exp:{self.h_exp}\t|Children|:{self.refinement_count}\t|Indv.|:{1}'.format(
+        return 'Node at {0}\t{self.concept.str}\tQuality:{self.quality}\tHeuristic:{self.heuristic}\tDepth:' \
+               '{self.depth}\tH_exp:{self.h_exp}\t|Children|:{self.refinement_count}\t|Indv.|:{1}'.format(
             hex(id(self)), len(self.concept.instances), self=self)
 
 

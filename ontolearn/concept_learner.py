@@ -47,9 +47,9 @@ class CELOE(BaseConceptLearner):
     def apply_rho(self, node: Node):
         assert isinstance(node, Node)
         self.search_tree.update_prepare(node)
-        refinements = [self.rho.getNode(i, parent_node=node) for i in
+        refinements = [self.rho.get_node(i, parent_node=node) for i in
                        self.rho.refine(node,
-                                       maxlength=node.h_exp + 1,
+                                       max_length=node.h_exp + 1,
                                        current_domain=self.start_class)
                        if i is not None and i.str not in self.concepts_to_ignore]
         node.increment_h_exp()
@@ -159,8 +159,8 @@ class LengthBaseLearner(BaseConceptLearner):
 
     def apply_rho(self, node: Node):
         assert isinstance(node, Node)
-        refinements = (self.rho.getNode(i, parent_node=node) for i in
-                       self.rho.refine(node, maxlength=len(node) + 1 + self.min_length)
+        refinements = (self.rho.get_node(i, parent_node=node) for i in
+                       self.rho.refine(node, max_length=len(node) + 1 + self.min_length)
                        if i.str not in self.concepts_to_ignore)
         return refinements
 

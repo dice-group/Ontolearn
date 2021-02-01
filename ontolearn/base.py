@@ -1,9 +1,9 @@
 from collections import defaultdict
 from .concept_generator import ConceptGenerator
 from .concept import Concept
-from typing import Dict, Tuple, Set, Generator, Iterable, List
+from typing import Dict, Tuple, Set, Generator, Iterable, List, Type
 
-from .core.owl import ClassHierarchy
+from .core.owl import ClassHierarchy, ObjectPropertyHierarchy, DataPropertyHierarchy
 from .owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner
 from .owlapy.owlready2 import OWLOntologyManager_Owlready2
 from .util import parametrized_performance_debugger, get_full_iri
@@ -21,26 +21,23 @@ class KnowledgeBase(AbstractKnowledgeBase):
     onto: OWLOntology
     reasoner: OWLReasoner
 
-    def __init__(self, path):
+    class_hierarchy: ClassHierarchy
+    object_property_hierarchy: ObjectPropertyHierarchy
+    data_property_hierarchy: DataPropertyHierarchy
+
+    def __init__(self, *, path: str, ontologymanager_factory: Type[OWLOntologyManager], reasoner_factory: Type[OWLReasoner]):
         super().__init__()
         self.path = path
-        self.manager = OWLOntologyManager_Owlready2()
+        self.manager = ontologymanager_factory()
         self.onto = self.manager.load_ontology('file://' + self.path)
-        self.reasoner = OWLReasoner
+        self.reasoner = reasoner_factory(self.onto)
         self.class_hierarchy = ClassHierarchy(self.reasoner)
-        self.property_hierarchy = PropertyHierarchy(self.onto)
-        self.name = self.onto.name
-        self.parse()
-        self.str_to_instance_obj = dict(zip([get_full_iri(i) for i in self.thing.instances], self.thing.instances))
-        self.obj_to_str_iri_instances = dict(
-            zip(self.str_to_instance_obj.values(), self.str_to_instance_obj.keys()))
-        self.idx_of_instances = dict(zip(self.thing.instances, range(len(self.str_to_instance_obj))))
-        self.uri_individuals = list(self.str_to_instance_obj.keys())
-        self.concept_generator = ConceptGenerator(concepts=self.uri_to_concepts,
-                                                  thing=self.thing,
-                                                  nothing=self.nothing,
-                                                  onto=self.onto)
+        self.object_property_hierarchy = ObjectPropertyHierarchy(self.reasoner)
+        self.data_property_hierarchy = DataPropertyHierarchy(self.reasoner)
         self.describe()
+
+    def ontology(self) -> OWLOntology:
+        return self.onto
 
     def clean(self):
         """
@@ -85,10 +82,3 @@ class KnowledgeBase(AbstractKnowledgeBase):
         assert isinstance(concept, Concept)
         for prob in self.property_hierarchy.get_most_general_property():
             yield self.concept_generator.universal_restriction(concept, prob)
-
-    def num_concepts_generated(self) -> int:
-        """ Return: the number of all concepts """
-        return len(self.concept_generator.log_of_universal_restriction) + len(
-            self.concept_generator.log_of_existential_restriction) + \
-               len(self.concept_generator.log_of_intersections) + len(self.concept_generator.log_of_unions) + \
-               len(self.concept_generator.log_of_negations) + len(self.concepts)
