@@ -1,21 +1,37 @@
-import random
-from typing import List, Any, Generator, Dict, Set
-import asyncio
-from .refinement_operators import LengthBasedRefinement, ModifiedCELOERefinement
+from typing import Generator, Literal, Optional, Iterable, Callable, Set, Tuple
+
+from .abstracts import BaseRefinement
+from .base import KnowledgeBase
+from .owlapy.model import OWLClassExpression
+from .refinement_operators import LengthBasedRefinement
 from queue import PriorityQueue
-import itertools
 import sys
-from .utils import balanced_sets, performance_debugger
-from collections import deque
-import numpy as np
+
+from .search import Node, OrderedNode
+from .utils import balanced_sets
+
+SearchAlgos = Literal['dfs', 'strict-dfs']
 
 
 class LearningProblemGenerator:
     """ Learning problem generator. """
 
-    def __init__(self, knowledge_base, refinement_operator=None, num_problems=10_000, num_diff_runs=100,
-                 min_num_instances=None, max_num_instances=sys.maxsize, min_length=3, max_length=5, depth=10,
-                 search_algo='strict-dfs'):
+    kb: KnowledgeBase
+    rho: BaseRefinement
+    search_algo: SearchAlgos
+    min_num_instances: Optional[int]
+    max_num_instances: int
+    min_length: int
+    max_length: int
+    depth: int
+    num_diff_runs: int
+    num_problems: int
+
+    def __init__(self, knowledge_base: KnowledgeBase, refinement_operator: Optional[BaseRefinement] = None,
+                 num_problems: int = 10_000, num_diff_runs: int = 100,
+                 min_num_instances: Optional[int] = None, max_num_instances: int = sys.maxsize,
+                 min_length: int = 3, max_length: int = 5, depth: int = 10,
+                 search_algo: SearchAlgos = 'strict-dfs'):
         """
         Generate concepts via search algorithm to satisfy constraints.
          strict-dfs considers (min_length, max_length, min_num_ind, num_problems) as hard constraints.
@@ -130,7 +146,8 @@ class LearningProblemGenerator:
         return res
 
     def get_balanced_examples(self, *, min_num_problems=None, max_length=None, min_length=None,
-                              num_diff_runs=None, min_num_instances=None, search_algo='strict-dfs') -> list:
+                              num_diff_runs=None, min_num_instances=None, search_algo: SearchAlgos = 'strict-dfs') \
+            -> list:
         """
         (1) Generate valid examples with input search algorithm.
         (2) Balance valid examples.
@@ -272,7 +289,7 @@ class LearningProblemGenerator:
 
         if self.min_num_instances and self.max_num_instances == sys.maxsize:
             assert isinstance(self.min_num_instances, int)
-            self.max_num_instances = len(self.kb.thing.instances) - self.min_num_instances
+            self.max_num_instances = self.kb.individuals_count() - self.min_num_instances
 
         if self.search_algo == 'dfs':
             return self._apply_dfs()
@@ -293,28 +310,31 @@ class LearningProblemGenerator:
         def define_constrain():
             if self.min_num_instances:
                 def f1(x):
-                    a = self.max_length >= len(x) >= self.min_length
-                    b = self.max_num_instances >= len(x.concept.instances) >= self.min_num_instances
+                    a = self.max_length >= self.kb.cl(x.concept) >= self.min_length
+                    b = self.max_num_instances >= self.kb.individuals_count(x.concept) >= self.min_num_instances
                     return a and b
 
                 return f1
             else:
                 def f2(x):
-                    return self.max_length >= len(x) >= self.min_length
+                    return self.max_length >= self.kb.cl(x.concept) >= self.min_length
 
                 return f2
 
-        refinements = self.apply_rho(self.rho.get_node(self.kb.thing, root=True), len_constant=3)
+        refinements = iter(self.apply_rho(self.rho.get_node(self.kb.thing, root=True), len_constant=3))
 
         constrain_func = define_constrain()
 
-        valid_states_gate = set()
+        valid_states_gate: Set[Node] = set()
         while True:
             try:
-                state = next(refinements)
+                state: Node = next(refinements)
             except StopIteration:
                 print('All top concepts are refined.')
                 break
+
+            if state.individuals_count is None:
+                state.individuals_count = self.kb.individuals_count(state.concept)
 
             if constrain_func(state):
                 valid_states_gate.add(state)
@@ -323,8 +343,9 @@ class LearningProblemGenerator:
                     if len(valid_states_gate) >= self.num_problems * self.num_diff_runs:
                         break
 
-            temp_gate = set()
+            temp_gate: Set[Node] = set()
             for v in self._apply_dfs_on_state(state=state,
+                                              kb=self.kb,
                                               apply_rho=self.apply_rho,
                                               constrain_func=constrain_func,
                                               depth=self.depth,
@@ -355,30 +376,38 @@ class LearningProblemGenerator:
 
     @staticmethod
     # @performance_debugger('_apply_dfs_on_state')
-    def _apply_dfs_on_state(state, depth, apply_rho, constrain_func=None, patience_per_depth=None) -> set:
+    def _apply_dfs_on_state(state: Node,
+                            depth: int,
+                            kb: KnowledgeBase,
+                            apply_rho: Callable[..., Iterable[Node]],
+                            constrain_func: Callable[[Node], bool],
+                            patience_per_depth: int) -> Iterable[Node]:
         """
 
-        @param state:
-        @param depth:
-        @param apply_rho:
-        @param num_problems:
-        @param max_length:
-        @param min_length:
-        @param min_num_ind:
-        @param max_num_ind:
-        @return:
+        Args:
+            state:
+            depth:
+            kb: the knowledge base
+            apply_rho: Function that takes a Node and a len_constant and refines the Node to new nodes
+            constrain_func: Function that includes a refinement only if true
+            patience_per_depth:
+
+        Returns:
+            ?
         """
         valid_examples = set()
-        q = PriorityQueue()
+        q: PriorityQueue[Tuple[int, OrderedNode]] = PriorityQueue()
         for _ in range(depth):
             temp_patience = patience_per_depth  # patience for valid exam. per depth.
             temp_not_valid_patience = patience_per_depth  # patience for not valid exam. per depth.
             for i in apply_rho(state, len_constant=2):
+                if i.individuals_count is None:
+                    i.individuals_count = kb.individuals_count(i.concept)
                 if constrain_func(i):  # validity checking.
                     # q.put((len(i), i))  # lower the length, higher priority.
                     if i not in valid_examples:
                         valid_examples.add(i)
-                        q.put((len(i), i))  # lower the length, higher priority.
+                        q.put((kb.cl(i.concept), OrderedNode(i, kb.cl)))  # lower the length, higher priority.
                         yield i
                         temp_patience -= 1
                         if temp_patience == 0:
@@ -390,14 +419,14 @@ class LearningProblemGenerator:
                         break
 
             if not q.empty():
-                _, state = q.get()
+                state = q.get()[1].node
             else:
                 return None
 
-    def apply_rho(self, node, len_constant=1):
+    def apply_rho(self, node, len_constant=1) -> Iterable[Node]:
         for i in self.rho.refine(node,
-                                 max_length=len(
-                                     node) + len_constant if len(
-                                     node) < self.max_length else len(
-                                     node)):
+                                 max_length=self.rho.len(
+                                     node.concept) + len_constant if self.rho.len(
+                                     node.concept) < self.max_length else self.rho.len(
+                                     node.concept)):
             yield self.rho.get_node(i, parent_node=node)
