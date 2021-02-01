@@ -1,6 +1,8 @@
 import json
 
-from ontolearn import LengthBaseLearner, KnowledgeBase
+#from ontolearn import LengthBaseLearner, KnowledgeBase
+from ontolearn import KnowledgeBase
+from ontolearn.concept_learner import LengthBaseLearner
 
 with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)

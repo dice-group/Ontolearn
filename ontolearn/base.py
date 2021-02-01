@@ -1,5 +1,6 @@
-from typing import Dict, Tuple, Set, Generator, Iterable, List, Type, Optional, Callable, TypeVar, overload, Literal
+from typing import Dict, Iterable, Optional, Callable, overload
 
+from .abstracts import AbstractKnowledgeBase
 from .core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from .core.owl.utils import OWLClassExpressionLengthMetric
 from .owlapy import IRI
@@ -8,8 +9,6 @@ from .owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClass
     OWLObjectUnionOf, OWLObjectPropertyExpression, OWLThing, OWLNothing
 from .owlapy.utils import NamedFixedSet, popcount, iter_count
 from .utils import parametrized_performance_debugger
-from .abstracts import AbstractKnowledgeBase
-import warnings
 
 # warnings.filterwarnings("ignore")
 
