@@ -199,7 +199,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         # (3) reload (2).
         # (4) get all reloaded concepts.
         # (5) (1) and (4) must be same.
-        uri_all_concepts = set([get_full_iri(i) for i in self.kb.onto.classes()])
+        uri_all_concepts = set([get_full_iri(i) for i in self.kb._ontology.classes()])
         self.last_path = self.storage_path + '/' + self.kb.name + str(time.time()) + '.owl'
         self.kb.save(path=self.last_path)  # save
         d = get_ontology(self.last_path).load()  # load it.
@@ -347,7 +347,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         # https://owlready2.readthedocs.io/en/latest/onto.html =>
         # If an ontology has already been created for the same IRI, it will be returned.
         o1 = self.kb.world.get_ontology('https://dice-research.org/predictions/' + str(time.time()))
-        o1.imported_ontologies.append(self.kb.onto)
+        o1.imported_ontologies.append(self.kb._ontology)
         with o1:
             class f1_score(AnnotationProperty):  # Each concept has single f1 score
                 domain = [Thing]

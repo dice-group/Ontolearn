@@ -87,7 +87,7 @@ def export_concepts(kb, concepts, path: str = 'concepts.owl', rdf_format: str = 
     @return:
     """
     o1 = kb.world.get_ontology('https://dice-research.org/predictions/' + str(time.time()))
-    o1.imported_ontologies.append(kb.onto)
+    o1.imported_ontologies.append(kb._ontology)
     print('Number of concepts to be generated:', len(concepts))
     for ith, h in enumerate(concepts):
         with o1:
