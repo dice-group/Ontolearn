@@ -304,7 +304,7 @@ class LearningProblemGenerator:
 
                 return f2
 
-        refinements = self.apply_rho(self.rho.getNode(self.kb.thing, root=True), len_constant=3)
+        refinements = self.apply_rho(self.rho.get_node(self.kb.thing, root=True), len_constant=3)
 
         constrain_func = define_constrain()
 
@@ -396,8 +396,8 @@ class LearningProblemGenerator:
 
     def apply_rho(self, node, len_constant=1):
         for i in self.rho.refine(node,
-                                 maxlength=len(
+                                 max_length=len(
                                      node) + len_constant if len(
                                      node) < self.max_length else len(
                                      node)):
-            yield self.rho.getNode(i, parent_node=node)
+            yield self.rho.get_node(i, parent_node=node)

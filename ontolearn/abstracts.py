@@ -1,7 +1,9 @@
 from collections import OrderedDict, defaultdict
 from functools import total_ordering
 from abc import ABCMeta, abstractmethod, ABC
-from .owlapy.model import OWLClassExpression
+
+from .owlapy.model import OWLClassExpression, OWLOntology
+from .owlapy.utils import iter_count
 from .util import get_full_iri, balanced_sets, read_csv
 
 from typing import Set, Dict, List, Tuple, Iterable, Generator, SupportsFloat
@@ -14,99 +16,6 @@ import numpy as np
 import time
 
 random.seed(0)
-
-
-@total_ordering
-class BaseConcept(metaclass=ABCMeta):
-    """Base class for Concept."""
-    __slots__ = ['owl', 'full_iri', 'str', 'is_atomic', '__instances', '__idx_instances', 'length',
-                 'form', 'role', 'filler', 'concept_a', 'concept_b']
-
-    @abstractmethod
-    def __init__(self, concept: ThingClass, kwargs, world=None):
-        assert isinstance(concept, ThingClass)
-        assert kwargs['form'] in ['Class', 'ObjectIntersectionOf', 'ObjectUnionOf', 'ObjectComplementOf',
-                                  'ObjectSomeValuesFrom', 'ObjectAllValuesFrom']
-
-        self.owl = concept
-        self.world = world
-        self.full_iri = get_full_iri(concept)  # .namespace.base_iri + concept.name
-        self.str = concept.name
-        self.form = kwargs['form']
-
-        self.is_atomic = True if self.form == 'Class' else False  # self.__is_atomic()  # TODO consider the necessity.
-        self.length = self.__calculate_length()
-        self.__idx_instances = None
-
-        self.__instances = {jjj for jjj in self.owl.instances(world=self.world)}  # be sure of the memory usage.
-        if self.__instances is None:
-            self.__instances = set()
-
-    @property
-    def instances(self) -> Set:
-        """ Returns all instances belonging to the concept."""
-        return self.__instances
-
-    @instances.setter
-    def instances(self, x: Set):
-        """ Setter of instances."""
-        self.__instances = x
-
-    @property
-    def idx_instances(self):
-        """ Getter of integer indexes of instances."""
-        return self.__idx_instances
-
-    @idx_instances.setter
-    def idx_instances(self, x):
-        """ Setter of idx_instances."""
-        self.__idx_instances = x
-
-    def __str__(self):
-        return '{self.__repr__}\t{self.full_iri}'.format(self=self)
-
-    def __len__(self):
-        return self.length
-
-    def __calculate_length(self):
-        """
-        The length of a concept is defined as
-        the sum of the numbers of
-            concept names, role names, quantifiers,and connective symbols occurring in the concept
-
-        The length |A| of a concept CAis defined inductively:
-        |A| = |\top| = |\bot| = 1
-        |¬D| = |D| + 1
-        |D \sqcap E| = |D \sqcup E| = 1 + |D| + |E|
-        |∃r.D| = |∀r.D| = 2 + |D|
-        :return:
-        """
-        num_of_exists = self.str.count("∃")
-        num_of_for_all = self.str.count("∀")
-        num_of_negation = self.str.count("¬")
-        is_dot_here = self.str.count('.')
-
-        num_of_operand_and_operator = len(self.str.split())
-        count = num_of_negation + num_of_operand_and_operator + num_of_exists + is_dot_here + num_of_for_all
-        return count
-
-    def __is_atomic(self):
-        """
-        @todo Atomic class definition must be explicitly defined.
-        Currently we consider all concepts having length=1 as atomic.
-        :return: True if self is atomic otherwise False.
-        """
-        if '∃' in self.str or '∀' in self.str:
-            return False
-        elif '⊔' in self.str or '⊓' in self.str or '¬' in self.str:
-            return False
-        return True
-
-    def __lt__(self, other):
-        return self.length < other.length
-
-    def __gt__(self, other):
-        return self.length > other.length
 
 
 @total_ordering
@@ -270,14 +179,8 @@ class BaseRefinement(metaclass=ABCMeta):
         self.min_size_of_concept = min_size_of_concept
         # self.concepts_to_nodes = dict()
 
-    def set_kb(self, kb):
-        self.kb = kb
-
-    # def set_concepts_node_mapping(self, m: dict):
-    #    self.concepts_to_nodes = m
-
     @abstractmethod
-    def getNode(self, *args, **kwargs):
+    def get_node(self, *args, **kwargs):
         pass
 
     @abstractmethod
@@ -409,7 +312,7 @@ class AbstractTree(ABC):
         self._nodes.clear()
 
 
-class AbstractKnowledgeBase(ABC):
+class AbstractKnowledgeBase(metaclass=ABCMeta):
 
     def __init__(self):
         pass
@@ -418,26 +321,18 @@ class AbstractKnowledgeBase(ABC):
     def save(self, path: str, rdf_format="rdfxml"):
         pass
 
+    @abstractmethod
+    def ontology(self) -> OWLOntology:
+        pass
+
     def describe(self):
-        print(f'Number of concepts: {len(self.uri_to_concepts)}\n'
-              f'Number of individuals: {len(self.individuals)}\n'
-              f'Number of properties: {len(self.property_hierarchy)}')
+        print(f'Number of named classes: {iter_count(self.ontology().classes_in_signature())}\n'
+              f'Number of individuals: {iter_count(self.ontology().individuals_in_signature())}\n'
+              f'Number of properties: {iter_count(self.ontology().object_properties_in_signature()) + iter_count(self.ontology().data_properties_in_signature())}')
 
     @abstractmethod
     def clean(self):
         raise NotImplementedError
-
-    @property
-    def concepts(self) -> Dict:
-        """
-        Returns a dictionary where keys are string representation of concept objects
-        and values are concept objects.
-        @return:
-        """
-        return dict(zip([i.str for i in self.uri_to_concepts.values()], self.uri_to_concepts.values()))
-
-    def get_all_concepts(self):
-        return set(self.uri_to_concepts.values())
 
 
 class AbstractDrill(ABC):
@@ -672,7 +567,7 @@ class AbstractDrill(ABC):
         # (1.2)
         for i in self.rho.refine(node, maxlength=length):  # O(N)
             if i.str not in self.concepts_to_ignore:  # O(1)
-                yield self.rho.getNode(i, parent_node=node)  # O(1)
+                yield self.rho.get_node(i, parent_node=node)  # O(1)
 
     def assign_embeddings(self, node: BaseNode) -> None:
         assert isinstance(node, BaseNode)
@@ -766,7 +661,8 @@ class AbstractDrill(ABC):
 
         # (1)
         self.init_training(pos_uri=pos_uri, neg_uri=neg_uri)
-        root = self.rho.getNode(self.start_class, root=True)
+        root = self.rho.get_node(self.start_class, root=True)
+        # (2) Assign embeddings of root/first state.
         self.assign_embeddings(root)
 
         sum_of_rewards_per_actions = []
