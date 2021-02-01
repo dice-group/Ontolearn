@@ -1,4 +1,3 @@
-from collections import defaultdict
 from typing import Dict, Tuple, Set, Generator, Iterable, List, Type, Optional, Callable, TypeVar, overload
 
 from .core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
@@ -7,6 +6,7 @@ from .owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
 from .owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLObjectComplementOf, \
     OWLClass, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom
 from .owlapy.owlready2 import OWLOntologyManager_Owlready2
+from .owlapy.owlready2.base import OWLOntology_Owlready2
 from .owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 from .utils import parametrized_performance_debugger
 from .abstracts import AbstractKnowledgeBase
@@ -20,9 +20,10 @@ _Default_OntologyManagerFactory = OWLOntologyManager_Owlready2
 
 
 def _Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner_FastInstanceChecker:
+    assert isinstance(onto, OWLOntology_Owlready2)
     base_reasoner = OWLReasoner_Owlready2_TempClasses(ontology=onto)
     reasoner = OWLReasoner_FastInstanceChecker(ontology=onto,
-                                        base_reasoner=base_reasoner)
+                                               base_reasoner=base_reasoner)
     return reasoner
 
 
