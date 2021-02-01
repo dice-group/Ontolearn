@@ -1,16 +1,29 @@
 from collections import defaultdict
-from typing import Dict, Tuple, Set, Generator, Iterable, List, Type, Optional, Callable
+from typing import Dict, Tuple, Set, Generator, Iterable, List, Type, Optional, Callable, TypeVar, overload
 
-from .core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DataPropertyHierarchy
-from .owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLObjectComplementOf
+from .core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
+from .owlapy import IRI
+from .owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
+from .owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLObjectComplementOf, \
+    OWLClass, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom
 from .owlapy.owlready2 import OWLOntologyManager_Owlready2
+from .owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 from .utils import parametrized_performance_debugger
-from .owlready2.utils import get_full_iri
 from .abstracts import AbstractKnowledgeBase
 import warnings
-from .static_funcs import build_concepts_mapping
 
-#warnings.filterwarnings("ignore")
+# warnings.filterwarnings("ignore")
+
+Factory = Callable
+
+_Default_OntologyManagerFactory = OWLOntologyManager_Owlready2
+
+
+def _Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner_FastInstanceChecker:
+    base_reasoner = OWLReasoner_Owlready2_TempClasses(ontology=onto)
+    reasoner = OWLReasoner_FastInstanceChecker(ontology=onto,
+                                        base_reasoner=base_reasoner)
+    return reasoner
 
 
 class KnowledgeBase(AbstractKnowledgeBase):
@@ -22,19 +35,52 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
     class_hierarchy: ClassHierarchy
     object_property_hierarchy: ObjectPropertyHierarchy
-    data_property_hierarchy: DataPropertyHierarchy
+    data_property_hierarchy: DatatypePropertyHierarchy
 
-    def __init__(self, *, path: Optional[str] = None,
-                 ontologymanager_factory: Callable[[], OWLOntologyManager],
-                 reasoner_factory: Type[OWLReasoner]):
+    @overload
+    def __init__(self, *,
+                 path: str,
+                 ontologymanager_factory: Factory[[], OWLOntologyManager] = _Default_OntologyManagerFactory,
+                 reasoner_factory: Factory[[OWLOntology], OWLReasoner] = _Default_ReasonerFactory):
+        ...
+
+    @overload
+    def __init__(self, *, ontology: OWLOntology, reasoner: OWLReasoner):
+        ...
+
+    def __init__(self, *,
+                 path: Optional[str] = None,
+                 ontologymanager_factory: Optional[Factory[[], OWLOntologyManager]] = None,
+                 reasoner_factory: Optional[Factory[[OWLOntology], OWLReasoner]] = None,
+                 ontology: Optional[OWLOntology] = None,
+                 reasoner: Optional[OWLReasoner] = None):
         super().__init__()
         self.path = path
-        self.manager = ontologymanager_factory()
-        self.onto = self.manager.load_ontology('file://' + self.path)
-        self.reasoner = reasoner_factory(self.onto)
+        if ontology is not None:
+            self.manager = ontology.get_manager()
+            self.onto = ontology
+        elif ontologymanager_factory is not None:
+            self.manager = ontologymanager_factory()
+        else:  # default to Owlready2 implementation
+            self.manager = _Default_OntologyManagerFactory()
+            # raise TypeError("neither ontology nor manager factory given")
+
+        if ontology is None:
+            if path is None:
+                raise TypeError("path missing")
+            self.onto = self.manager.load_ontology(IRI.create('file://' + self.path))
+
+        if reasoner is not None:
+            self.reasoner = reasoner
+        elif reasoner_factory is not None:
+            self.reasoner = reasoner_factory(self.onto)
+        else:  # default to fast instance checker
+            self.reasoner = _Default_ReasonerFactory(self.onto)
+            # raise TypeError("neither reasoner nor reasoner factory given")
+
         self.class_hierarchy = ClassHierarchy(self.reasoner)
         self.object_property_hierarchy = ObjectPropertyHierarchy(self.reasoner)
-        self.data_property_hierarchy = DataPropertyHierarchy(self.reasoner)
+        self.data_property_hierarchy = DatatypePropertyHierarchy(self.reasoner)
         self.describe()
 
     def ontology(self) -> OWLOntology:
@@ -52,35 +98,31 @@ class KnowledgeBase(AbstractKnowledgeBase):
     def max_size_of_concept(self, n):
         self.max_size_of_concept = n
 
-    def get_leaf_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
+    def get_leaf_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
         """ Return : { x | (x subClassOf concept) AND not exist y: y subClassOf x )} """
-        assert isinstance(concept, OWLClassExpression)
-        self.class_hierarchy.leaves(of=concept)
-        for leaf in self.concepts_to_leafs[concept]:
-            yield leaf
+        assert isinstance(concept, OWLClass)
+        yield from self.class_hierarchy.leaves(of=concept)
 
     @parametrized_performance_debugger()
     def negation_from_iterables(self, s: Iterable[OWLClassExpression]) -> Iterable[OWLClassExpression]:
         """ Return : { x | ( x \equv not s} """
-        assert isinstance(s, Generator)
         for item in s:
             yield item.get_object_complement_of()
 
     @parametrized_performance_debugger()
-    def get_direct_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
+    def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
         """ Return : { x | ( x subClassOf concept )} """
-        assert isinstance(concept, OWLClassExpression)
-        for v in self.top_down_direct_concept_hierarchy[concept]:
-            yield v
+        assert isinstance(concept, OWLClass)
+        yield from self.class_hierarchy.sub_classes(concept, direct=True)
 
-    def most_general_existential_restrictions(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
+    def most_general_existential_restrictions(self, concept: OWLClassExpression) -> Iterable[OWLObjectSomeValuesFrom]:
         """ Return : { \\exist.r.x | r \\in MostGeneral r} """
         assert isinstance(concept, OWLClassExpression)
-        for prob in self.property_hierarchy.get_most_general_property():
-            yield self.concept_generator.existential_restriction(concept, prob)
+        for prob in self.object_property_hierarchy.most_general_roles():
+            yield OWLObjectSomeValuesFrom(property=prob, filler=concept)
 
-    def most_general_universal_restrictions(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
+    def most_general_universal_restrictions(self, concept: OWLClassExpression) -> Iterable[OWLObjectAllValuesFrom]:
         """ Return : { \\forall.r.x | r \\in MostGeneral r} """
         assert isinstance(concept, OWLClassExpression)
-        for prob in self.property_hierarchy.get_most_general_property():
-            yield self.concept_generator.universal_restriction(concept, prob)
+        for prob in self.object_property_hierarchy.most_general_roles():
+            yield OWLObjectAllValuesFrom(property=prob, filler=concept)
