@@ -1,8 +1,8 @@
-from typing import Dict, Iterable, Optional, Callable, overload
+from typing import Dict, Iterable, Optional, Callable, overload, cast, Union
 
 from .abstracts import AbstractKnowledgeBase
 from .core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
-from .core.owl.utils import OWLClassExpressionLengthMetric
+from .core.owl.utils import OWLClassExpressionLengthMetric, BitSet
 from .owlapy import IRI
 from .owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLObjectComplementOf, \
     OWLClass, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, OWLNamedIndividual, OWLObjectIntersectionOf, \
@@ -291,6 +291,29 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
     def class_hierarchy(self) -> ClassHierarchy:
         return self._class_hierarchy
+
+    @overload
+    def individuals_set(self, concept: OWLClassExpression):
+        ...
+
+    @overload
+    def individuals_set(self, individuals: Iterable[OWLNamedIndividual]):
+        ...
+
+    def individuals_set(self, arg: Union[Iterable[OWLNamedIndividual], OWLClassExpression]):
+        if isinstance(arg, OWLClassExpression):
+            return self.individuals_set(self.individuals(arg))
+        else:
+            if self._ind_enc:
+                return BitSet(self._ind_enc(arg))
+            else:
+                return frozenset(arg)
+
+    def all_individuals_set(self):
+        if self._ind_enc:
+            return BitSet((1 << len(self._ind_enc)) - 1)
+        else:
+            return frozenset(self._ontology.individuals_in_signature())
 
     @property
     def thing(self) -> OWLClass:
