@@ -1,7 +1,7 @@
 import sys
 import weakref
 from abc import ABCMeta, abstractmethod
-from typing import Union, overload, Final, Protocol
+from typing import Union, overload, Final, Protocol, ClassVar
 from weakref import WeakKeyDictionary
 
 from ontolearn.owlapy import namespaces
@@ -9,7 +9,8 @@ from ontolearn.owlapy.namespaces import Namespaces
 
 
 class HasIndex(Protocol):
-    type_index: Final[int]
+    type_index: ClassVar[int]
+    def __eq__(self, other): ...
 
 
 class HasIRI(metaclass=ABCMeta):
