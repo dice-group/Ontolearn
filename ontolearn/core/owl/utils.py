@@ -251,6 +251,29 @@ class OrderedOWLObject:
 
         return tuple(cs) < tuple(co)
 
+    def __eq__(self, other):
+        cs = [self.o.type_index]
+        co = [other.o.type_index]
+
+        if cs == co:
+            if isinstance(self.o, OWLObjectRestriction):
+                cs.append(OrderedOWLObject(as_index(self.o.get_property())))
+                co.append(OrderedOWLObject(other.o.get_property()))
+            if isinstance(self.o, HasFiller):
+                cs.append(OrderedOWLObject(self.o.get_filler()))
+                co.append(OrderedOWLObject(other.o.get_filler()))
+            if isinstance(self.o, HasCardinality):
+                cs.append(self.o.get_cardinality())
+                co.append(other.o.get_cardinality())
+            if isinstance(self.o, HasOperands):
+                cs.append(tuple(map(OrderedOWLObject, self.o.operands())))
+                co.append(tuple(map(OrderedOWLObject, other.o.operands())))
+            if isinstance(self.o, HasIRI):
+                cs.append(self.o.get_iri().as_str())
+                co.append(other.o.get_iri().as_str())
+
+        return tuple(cs) == tuple(co)
+
 
 class BitSet:
     """
