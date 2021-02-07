@@ -181,7 +181,7 @@ class ConceptGenerator:
 
         A, B = concepts_sorter(A, B)
 	if A.str == B.str:
-          return A
+            return A
         # Crude workaround
         if A.str == 'Nothing':
             return B
@@ -212,7 +212,7 @@ class ConceptGenerator:
     def intersection(self, A: Concept, B: Concept, base=None) -> Concept:
         A, B = concepts_sorter(A, B)
         if A.str == B.str:
-          return A
+            return A
 
         if (A, B) in self.log_of_intersections:
             return self.log_of_intersections[(A, B)]
