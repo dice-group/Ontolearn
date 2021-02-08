@@ -180,7 +180,7 @@ class ConceptGenerator:
     def union(self, A: Concept, B: Concept, base=None):
 
         A, B = concepts_sorter(A, B)
-	if A.str == B.str:
+        if A.str == B.str:
             return A
         # Crude workaround
         if A.str == 'Nothing':
