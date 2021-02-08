@@ -422,14 +422,14 @@ class AbstractKnowledgeBase(ABC):
         self.individuals = None
         self.uri_individuals = None  # string representation of uris
 
-    def save(self, path, rdf_format="rdfxml"):
+    def save(self, path:str, rdf_format="rdfxml"):
         """
-        path .owl
-        @param path:
+        @param path: xxxx.nt
         @param rdf_format:
         @return:
         """
-        self.onto.save(file=path, format=rdf_format)
+        # self.onto.save(file=path, format=rdf_format) => due to world object it only creates empty file.
+        self.world.as_rdflib_graph().serialize(destination=path, format=rdf_format)
 
     def describe(self):
         print(f'Number of concepts: {len(self.uri_to_concepts)}\n'
