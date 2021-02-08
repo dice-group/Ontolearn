@@ -69,7 +69,7 @@ class ConceptGenerator:
             # {(s,o) | (s,r,o) \in G}.
             for s, o in role.get_relations():
                 if not (o in filler.instances):
-                    temp.add(o)
+                    temp.add(s)
             return self.thing.instances - temp
 
     def negation(self, concept: Concept) -> Concept:
