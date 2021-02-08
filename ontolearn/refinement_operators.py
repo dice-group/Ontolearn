@@ -648,10 +648,12 @@ class ExpressRefinement(BaseRefinement):
         iter_container_restrict = list(set(chain.from_iterable(iter_container_restrict)))
         container = iter_container_restrict + iter_container_neg + iter_container_sub
         if self.downsample:# downsampling is necessary if no enough RAM
+            assert self.expressivity < 1, "When downsampling, the expressivity is less than 1"
             m, n = int(0.5*self.expressivity*len(container)), int(self.expressivity*len(iter_container_sub))
             container = random.sample(container, k=max(m,1))
             iter_container_sub_sample = random.sample(iter_container_sub, k=max(1,n))
         else:
+            self.expressivity = 1.
             iter_container_sub_sample = iter_container_sub
           
         del iter_container_restrict, iter_container_neg
