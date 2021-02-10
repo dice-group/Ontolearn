@@ -658,8 +658,10 @@ class ExpressRefinement(BaseRefinement):
           
         del iter_container_restrict, iter_container_neg
         any_refinement = False
-        # print("Length of subs: ", len(iter_container_sub_sample))
-        # print("Length of other: ", len(container))
+        #Yield all subconcepts
+        if iter_container_sub:
+            yield from iter_container_sub
+        #Compute other refinements
         for i in range(len(iter_container_sub_sample)):
             yield iter_container_sub_sample[i]
             any_refinement = True
