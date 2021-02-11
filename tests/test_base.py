@@ -29,6 +29,6 @@ def test_multiple_knowledge_bases():
 
 def test_knowledge_base_save():
     kb = KnowledgeBase(PATH_FAMILY)
-    kb.save('test_kb_save.nt', rdf_format='nt')
+    kb.save('test_kb_save', rdf_format='nt')
     assert os.stat('test_kb_save.nt').st_size > 0
     os.remove('test_kb_save.nt')
