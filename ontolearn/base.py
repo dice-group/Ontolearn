@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore")
 
 
 class KnowledgeBase(AbstractKnowledgeBase):
-    """Knowledge Base Class representing Tbox and Abox along with concept hierarchies"""
+    """ Knowledge Base Class representing Tbox and Abox along with the concept hierarchy """
 
     def __init__(self, path):
         super().__init__()
@@ -99,20 +99,19 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.__build_hierarchy(self.onto)
 
     # OPERATIONS
-    def negation(self, concept: Concept):
+    def negation(self, concept: Concept) -> Concept:
         """ Return a Concept object that is a negation of given concept."""
+        assert isinstance(concept, Concept)
         return self.concept_generator.negation(concept)
 
     def union(self, conceptA: Concept, conceptB: Concept) -> Concept:
         """Return a concept c == (conceptA OR conceptA)"""
-        assert isinstance(conceptA, Concept)
-        assert isinstance(conceptB, Concept)
+        assert isinstance(conceptA, Concept) and isinstance(conceptB, Concept)
         return self.concept_generator.union(conceptA, conceptB)
 
     def intersection(self, conceptA: Concept, conceptB: Concept) -> Concept:
         """Return a concept c == (conceptA AND conceptA)"""
-        assert isinstance(conceptA, Concept)
-        assert isinstance(conceptB, Concept)
+        assert isinstance(conceptA, Concept) and isinstance(conceptB, Concept)
         return self.concept_generator.intersection(conceptA, conceptB)
 
     def existential_restriction(self, concept: Concept, property_) -> Concept:
@@ -124,13 +123,13 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """Return a concept c == (Forall R.C)"""
         assert isinstance(concept, Concept)
         return self.concept_generator.universal_restriction(concept, property_)
+
     ##################################################################################
     def set_min_size_of_concept(self, n):
         self.min_size_of_concept = n
 
     def max_size_of_concept(self, n):
         self.max_size_of_concept = n
-
 
     def convert_uri_instance_to_obj(self, str_ind: str):
         """
@@ -169,42 +168,49 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             return True
 
-    def get_leaf_concepts(self, concept: Concept):
+    def get_leaf_concepts(self, concept: Concept) -> Generator:
         """ Return : { x | (x subClassOf concept) AND not exist y: y subClassOf x )} """
+        assert isinstance(concept, Concept)
         for leaf in self.concepts_to_leafs[concept]:
             yield leaf
 
     @parametrized_performance_debugger()
-    def negation_from_iterables(self, s: Generator):
+    def negation_from_iterables(self, s: Generator) -> Generator:
         """ Return : { x | ( x \equv not s} """
+        assert isinstance(s, Generator)
         for item in s:
             yield self.concept_generator.negation(item)
 
     @parametrized_performance_debugger()
-    def get_direct_sub_concepts(self, concept: Concept):
+    def get_direct_sub_concepts(self, concept: Concept) -> Generator:
         """ Return : { x | ( x subClassOf concept )} """
-        # USE yield from later.
+        assert isinstance(concept, Concept)
         for v in self.top_down_direct_concept_hierarchy[concept]:
             yield v
 
     def get_all_sub_concepts(self, concept: Concept):
         """ Return : { x | ( x subClassOf concept ) OR ..."""
+        assert isinstance(concept, Concept)
         yield from self.top_down_concept_hierarchy[concept]
 
-    def get_direct_parents(self, concept: Concept):
+    def get_direct_parents(self, concept: Concept) -> Generator:
         """ Return : { x | (concept subClassOf x)} """
+        assert isinstance(concept, Concept)
         yield from self.down_top_direct_concept_hierarchy[concept]
 
-    def most_general_existential_restrictions(self, concept: Concept):
+    def most_general_existential_restrictions(self, concept: Concept) -> Generator:
+        """ Return : { x | (concept subClassOf x)} """
+        assert isinstance(concept, Concept)
         for prob in self.property_hierarchy.get_most_general_property():
             yield self.concept_generator.existential_restriction(concept, prob)
 
-    def most_general_universal_restriction(self, concept: Concept) -> Concept:
+    def most_general_universal_restrictions(self, concept: Concept) -> Generator:
         assert isinstance(concept, Concept)
         for prob in self.property_hierarchy.get_most_general_property():
             yield self.concept_generator.universal_restriction(concept, prob)
 
-    def num_concepts_generated(self):
+    def num_concepts_generated(self) -> int:
+        """ Return: the number of all concepts """
         return len(self.concept_generator.log_of_universal_restriction) + len(
             self.concept_generator.log_of_existential_restriction) + \
                len(self.concept_generator.log_of_intersections) + len(self.concept_generator.log_of_unions) + \
