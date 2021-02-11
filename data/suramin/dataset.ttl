@@ -1,0 +1,32 @@
+@prefix : <http://sml-bench.aksw.org/datasets/> .
+@prefix void: <http://rdfs.org/ns/void#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix mexc: <http://mex.aksw.org/mex-core#> .
+@prefix sbo: <http://sml-bench.aksw.org/ont#> .
+
+:suramin_owl
+    a
+        void:Dataset ,
+        mexc:Dataset ,
+        [
+            a owl:Restriction ;
+            owl:onProperty sbo:expressedInKRLanguage ;
+            owl:someValuesFrom sbo:OWL 
+        ] ;
+    dcterms:title "Suramin" ;
+    dcterms:description "Dataset for finding a predictive description of suramin analogues for cancer treatment" ;
+    dcterms:source <https://github.com/AKSW/DL-Learner> ;
+    dcterms:issued "2016-04-30"^^xsd:date ;
+    dcterms:subject <http://dbpedia.org/resource/Suramin> ;
+    dcterms:subject <http://dbpedia.org/resource/Category:Benzanilides> ;
+    dcterms:subject <http://dbpedia.org/resource/Category:Ureas> ;
+    dcterms:subject <http://dbpedia.org/resource/Category:World_Health_Organization_essential_medicines> ;
+    dcterms:subject <http://dbpedia.org/resource/Category:Anthelmintics> ;
+    dcterms:subject <http://dbpedia.org/resource/Category:Antiprotozoal_agents> ;
+    dcterms:subject <http://dbpedia.org/resource/Category:Naphthalenesulfonic_acids> ;
+    dcat:byteSize "1273169"^^xsd:decimal ;
+    owl:versionInfo "0.1"^^xsd:string .
+
