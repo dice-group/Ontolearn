@@ -422,14 +422,14 @@ class AbstractKnowledgeBase(ABC):
         self.individuals = None
         self.uri_individuals = None  # string representation of uris
 
-    def save(self, path, rdf_format="rdfxml"):
+    def save(self, path: str, rdf_format="rdfxml"):
         """
-        path .owl
-        @param path:
+        @param path: xxxx.nt
         @param rdf_format:
         @return:
         """
-        self.onto.save(file=path, format=rdf_format)
+        # self.onto.save(file=path, format=rdf_format) => due to world object it only creates empty file.
+        self.world.as_rdflib_graph().serialize(destination=path + '.' + rdf_format, format=rdf_format)
 
     def describe(self):
         print(f'Number of concepts: {len(self.uri_to_concepts)}\n'
@@ -447,10 +447,11 @@ class AbstractKnowledgeBase(ABC):
         and values are concept objects.
         @return:
         """
-        return dict(zip([i.str for i in self.uri_to_concepts.values()],self.uri_to_concepts.values()))
+        return dict(zip([i.str for i in self.uri_to_concepts.values()], self.uri_to_concepts.values()))
 
     def get_all_concepts(self):
         return set(self.uri_to_concepts.values())
+
 
 class AbstractDrill(ABC):
 
@@ -657,6 +658,7 @@ class AbstractDrill(ABC):
                 try:
                     assert node.embeddings.shape == (1, self.sample_size, self.instance_embeddings.shape[1])
                 except AssertionError as e:
+                    print(e)
                     print(node)
                     print(node.embeddings.shape)
                     print((1, self.sample_size, self.instance_embeddings.shape[1]))
