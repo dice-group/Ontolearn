@@ -43,7 +43,7 @@ class LengthBasedRefinement(BaseRefinement):
         if max_length >= 3 and (len(node.concept) + 2 < self.max_child_length):
             # (3) Create ∀.r.T and ∃.r.T where r is the most general relation.
             generator_container.append(self.kb.most_general_existential_restrictions(node.concept))
-            generator_container.append(self.kb.most_general_universal_restriction(node.concept))
+            generator_container.append(self.kb.most_general_universal_restrictions(node.concept))
         # a, b = tee(chain.from_iterable(generator_container))
         a = chain.from_iterable(generator_container)
         refinement_gate = set()
@@ -202,7 +202,7 @@ class ModifiedCELOERefinement(BaseRefinement):
         if max_length >= 3 and (len(node.concept) + 2 <= self.max_child_length):
             # (2.3) Create ∀.r.T and ∃.r.T where r is the most general relation.
             iter_container.append(self.kb.most_general_existential_restrictions(node.concept))
-            iter_container.append(self.kb.most_general_universal_restriction(node.concept))
+            iter_container.append(self.kb.most_general_universal_restrictions(node.concept))
 
         a, b = tee(chain.from_iterable(iter_container))
 
@@ -329,8 +329,6 @@ class ModifiedCELOERefinement(BaseRefinement):
                                          maxlength=maxlength - len(concept_A) + len(concept_B),
                                          current_domain=current_domain):
             if maxlength >= len(concept_A) + len(ref_concept_B):
-                # if concept_A.instances.isdisjoint(ref_concept_B.instances):
-                #    continue
                 yield self.kb.intersection(concept_A, ref_concept_B)
 
     def refine(self, node, maxlength, current_domain):
@@ -387,7 +385,7 @@ class CustomRefinementOperator(BaseRefinement):
         negs = self.kb.negation_from_iterables(self.kb.get_leaf_concepts(concept))
         # (3) Create ∃.r.T where r is the most general relation.
         existential_rest = self.kb.most_general_existential_restrictions(concept)
-        universal_rest = self.kb.most_general_universal_restriction(concept)
+        universal_rest = self.kb.most_general_universal_restrictions(concept)
         a, b = tee(chain(sub_concepts, negs, existential_rest, universal_rest))
 
         mem = set()
