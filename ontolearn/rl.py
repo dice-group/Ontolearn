@@ -160,7 +160,7 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
                  pretrained_model_path=None,
                  quality_func=F1(), iter_bound=None, num_episode=None, max_num_of_concepts_tested=None, verbose=None,
                  sample_size=10, terminate_on_goal=True, instance_embeddings=None,
-                 max_runtime=5,ignored_concepts=None, num_of_sequential_actions=None):
+                 max_runtime=5, ignored_concepts=None, num_of_sequential_actions=None):
         self.sample_size = sample_size
         if pretrained_model_path is None:
             self.heuristic_func = DrillHeuristic(mode='sample',
@@ -267,7 +267,7 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
         # Default exploration exploitation tradeoff.
         self.epsilon = 1
 
-    def fit(self, pos: Set[str], neg: Set[str], ignore: Set[str] = None):
+    def fit(self, pos: Set[str], neg: Set[str], ignore: Set[str] = None, max_runtime=None):
         """
         Find hypotheses that explain pos and neg.
         """
@@ -275,6 +275,8 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
         self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances, ignore=ignore)
         self.emb_pos, self.emb_neg = self.represent_examples(pos=pos, neg=neg)
         self.start_time = time.time()
+        if max_runtime:
+            self.max_runtime = max_runtime
         for i in range(1, self.iter_bound):
             most_promising = self.next_node_to_expand(i)
             refinements = [ref for ref in self.apply_rho(most_promising)]

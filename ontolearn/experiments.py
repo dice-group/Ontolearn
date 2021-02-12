@@ -1,8 +1,9 @@
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set,Dict,Any
 import numpy as np
 import json
 from sklearn.model_selection import KFold
 
+import time
 
 class Experiments:
     def __init__(self):
@@ -37,7 +38,7 @@ class Experiments:
                 #    algorithm, str_best_concept, f_1score))
 
     @staticmethod
-    def store_report(model, learning_problems: List[List], predictions: List[dict]) -> dict:
+    def store_report(model, learning_problems: List[List], predictions: List[dict]) -> Tuple[str, Dict[str, Any]]:
         """
 
         @param model: concept learner
@@ -73,19 +74,17 @@ class Experiments:
         del array_res
         m = '{}\t F-measure:(avg.{:.2f} | std.{:.2f})\tAccuracy:(avg.{:.2f} | std.{:.2f})\t' \
             'Runtime:(avg.{:.2f} | std.{:.2f})'.format(model.name,
-                                                         f1.mean(), f1.std(),
-                                                         acc.mean(),
-                                                         acc.std(),
-                                                         time.mean(), time.std())
-        print(m)         #model.logger.debug(m) ?!
-
-        return {'F-measure': f1, 'Accuracy': acc, 'Runtime': time}
+                                                       f1.mean(), f1.std(),
+                                                       acc.mean(),
+                                                       acc.std(),
+                                                       time.mean(), time.std())
+        return m, {'F-measure': f1, 'Accuracy': acc, 'Runtime': time}
 
     def start_KFold(self, k=None, dataset: List[Tuple[str, Set, Set]] = None, models: List = None,
-                    max_runtime=3) -> dict:
+                    max_runtime_per_problem=3) -> dict:
         """
         Perform KFold cross validation
-        @param max_runtime:
+        @param max_runtime_per_problem:
         @param models:
         @param k:
         @param dataset: A list of tuples where a tuple (i,j,k) where i denotes the target concept
@@ -98,7 +97,7 @@ class Experiments:
         assert isinstance(dataset[0], tuple)
         assert isinstance(dataset[0], tuple)
         assert k
-        assert isinstance(max_runtime, int)
+        assert isinstance(max_runtime_per_problem, int)
         dataset = np.array(dataset)  # due to indexing feature required in the sklearn.KFold.
 
         kf = KFold(n_splits=k, random_state=self.random_state_k_fold)
@@ -111,13 +110,18 @@ class Experiments:
             fold = dict()
             # one could even parallelize the following computation.
             print(f'##### FOLD:{counter} #####')
+            start_time_fold = time.time()
             for m in models:
                 m.train(train)
-                test_report: List[dict] = m.fit_from_iterable(test, max_runtime=max_runtime)
-                stats_report = self.store_report(m, test, test_report)
+                test_report: List[dict] = m.fit_from_iterable(test, max_runtime=max_runtime_per_problem)
+                stats_report, dict_report = self.store_report(m, test, test_report)
+                print(stats_report)
                 # Store stats
-                fold.update({m.name: stats_report})
-                k_fold_summary.setdefault(m.name, []).append(stats_report)
+                fold.update({m.name: dict_report})
+                k_fold_summary.setdefault(m.name, []).append(dict_report)
+
+            print(f'##### FOLD:{counter} took {round(time.time() - start_time_fold)} seconds #####')
+
             results[counter] = fold
             counter += 1
 

@@ -71,7 +71,12 @@ model.fit(pos=p, neg=n, ignore=concepts_to_ignore)
 # Get Top n hypotheses
 hypotheses = model.best_hypotheses(n=3)
 ```
-## Testing
+## Test-Driven Development
+
+In this project, we follow the test-driven development process. 
+To this end, we strive for writing tests for each class under the test folder.
+We rely on the [pytest](https://docs.pytest.org) framework. 
+Executing ```pytest``` results in running all tests under the test folder.
 
 ### Simple Linting and Testing
 
