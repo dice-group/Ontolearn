@@ -16,7 +16,6 @@ class DLLearnerBinder:
         assert kb_path
         self.binary_path = binary_path
         self.kb_path = kb_path
-
         self.name = model
         self.max_runtime = max_runtime
         self.storage_path, _ = create_experiment_folder()
@@ -97,7 +96,7 @@ class DLLearnerBinder:
             Text.append("alg.maxNrOfResults = \"1\"")
             Text.append("alg.stopOnFirstDefinition = \"true\"")
         else:
-            raise ValueError('Wrong algorithm choosen.')
+            raise ValueError('Wrong algorithm chosen.')
 
         Text.append("alg.maxExecutionTimeInSeconds = " + str(self.max_runtime))
 
