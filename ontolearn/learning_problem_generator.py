@@ -13,11 +13,11 @@ SearchAlgos = Literal['dfs', 'strict-dfs']
 
 class LearningProblemGenerator:
     """ Learning problem generator. """
-    __slots__ = 'kb', 'rho', 'search_algo', 'min_num_instances', 'max_num_instances', 'min_length', 'max_length', \
+    __slots__ = 'kb', 'operator', 'search_algo', 'min_num_instances', 'max_num_instances', 'min_length', 'max_length', \
                 'depth', 'num_diff_runs', 'num_problems'
 
     kb: KnowledgeBase
-    rho: BaseRefinement
+    operator: BaseRefinement
     search_algo: SearchAlgos
     min_num_instances: Optional[int]
     max_num_instances: int
@@ -48,7 +48,7 @@ class LearningProblemGenerator:
         if max_length and min_length:
             assert max_length >= min_length
         self.kb = knowledge_base
-        self.rho = refinement_operator
+        self.operator = refinement_operator
         self.search_algo = search_algo
         self.min_num_instances = min_num_instances
         self.max_num_instances = max_num_instances
@@ -278,7 +278,7 @@ class LearningProblemGenerator:
             assert isinstance(min_num_instances, int)
             self.min_num_instances = min_num_instances
             # Do not generate concepts that do not define enough individuals.
-            self.rho.min_num_instances = self.min_num_instances
+            self.operator.min_num_instances = self.min_num_instances
 
         if max_num_instances:
             assert isinstance(max_num_instances, int)
@@ -421,9 +421,9 @@ class LearningProblemGenerator:
                 return None
 
     def apply_rho(self, node, len_constant=1) -> Iterable[Node]:
-        for i in self.rho.refine(node,
-                                 max_length=self.rho.len(
-                                     node.concept) + len_constant if self.rho.len(
-                                     node.concept) < self.max_length else self.rho.len(
+        for i in self.operator.refine(node.concept,
+                                      max_length=self.operator.len(
+                                     node.concept) + len_constant if self.operator.len(
+                                     node.concept) < self.max_length else self.operator.len(
                                      node.concept)):
             yield Node(i, parent_node=node)

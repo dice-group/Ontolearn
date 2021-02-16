@@ -42,15 +42,14 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     ##################################################################################################
 
     """
-    __slots__ = 'kb', 'rho', 'heuristic_func', 'quality_func', 'search_tree', 'max_num_of_concepts_tested', \
+    __slots__ = 'kb', 'operator', 'heuristic_func', 'quality_func', 'max_num_of_concepts_tested', \
                 'terminate_on_goal', 'max_child_length', 'goal_found', 'start_class', 'iter_bound', 'max_runtime', \
                 'concepts_to_ignore', 'verbose', 'logger', 'start_time', 'name', 'storage_path'
 
     kb: KnowledgeBase
-    rho: BaseRefinement
+    operator: BaseRefinement
     heuristic_func: AbstractHeuristic
     quality_func: AbstractScorer
-    search_tree: AbstractTree
     max_num_of_concepts_tested: Optional[int]
     terminate_on_goal: Optional[bool]
     max_child_length: Optional[int]
@@ -68,7 +67,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     @abstractmethod
     def __init__(self, knowledge_base: KnowledgeBase = None, refinement_operator: BaseRefinement = None,
                  heuristic_func: AbstractHeuristic = None, quality_func: AbstractScorer = None,
-                 search_tree: AbstractTree = None, max_num_of_concepts_tested: Optional[int] = None,
+                 max_num_of_concepts_tested: Optional[int] = None,
                  max_runtime: Optional[int] = None, terminate_on_goal: Optional[bool] = None,
                  ignored_concepts: Optional[Set[OWLClassExpression]] = None,
                  iter_bound: Optional[int] = None, max_child_length: Optional[int] = None,
@@ -76,10 +75,9 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
                  name: Optional[str] = None):
 
         self.kb = knowledge_base
-        self.rho = refinement_operator
+        self.operator = refinement_operator
         self.heuristic_func = heuristic_func
         self.quality_func = quality_func
-        self.search_tree = search_tree
         self.max_num_of_concepts_tested = max_num_of_concepts_tested
         self.terminate_on_goal = terminate_on_goal
         self.max_runtime = max_runtime
@@ -93,7 +91,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         self.goal_found = False
         self.storage_path, _ = create_experiment_folder()
         self.name = name
-        self.logger = create_logger(name=self.name, p=self.storage_path)
+        self.logger = create_logger(name=self.name, p=self.storage_path, verbose=verbose)
         # self.last_path = None  # path of lastly stored onto.
         self.__default_values()
         self.__sanity_checking()
@@ -102,9 +100,9 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         """
         Fill all params with plausible default values.
         """
-        if self.rho is None:
+        if self.operator is None:
             from ontolearn.refinement_operators import ModifiedCELOERefinement
-            self.rho = ModifiedCELOERefinement(self.kb)
+            self.operator = ModifiedCELOERefinement(self.kb)
 
         if self.heuristic_func is None:
             from ontolearn.heuristics import CELOEHeuristic
@@ -113,11 +111,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         if self.quality_func is None:
             from ontolearn.metrics import F1
             self.quality_func = F1()
-        if self.search_tree is None:
-            from ontolearn.search import CELOESearchTree
-            self.search_tree = CELOESearchTree()
-        else:
-            self.search_tree.clean()
 
         if self.start_class is None:
             self.start_class = self.kb.thing
@@ -141,10 +134,9 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
     def __sanity_checking(self):
         assert self.start_class
-        assert self.search_tree is not None
         assert self.quality_func
         assert self.heuristic_func
-        assert self.rho
+        assert self.operator
         assert self.kb
 
         self.add_ignored_concepts(self.concepts_to_ignore)
@@ -190,6 +182,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
                 self.logger.info('Concepts to ignore: {0}'.format(' '.join(map(r.render, ignore))))
         if ignore:
             self.add_ignored_concepts(ignore)
+            self.operator.set_class_hierarchy(self.kb.class_hierarchy().restrict_and_copy(remove=self.concepts_to_ignore))
 
         kb_pos = self.kb.individuals_set(pos)
         if len(neg) == 0:  # if negatives are not provided, randomly sample.
@@ -215,13 +208,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         # self.heuristic_func.set_negative_examples(kb_neg)
         # self.heuristic_func.set_unlabelled_examples(unlabelled)
 
-        root = self.make_node(self.start_class, is_root=True)
-        root_instances = self.kb.individuals_set(root.concept)
-        self.quality_func.apply(root, root_instances)
-        self.heuristic_func.apply(root)
-        self.search_tree.add(root, None)
-        assert len(self.search_tree) == 1
-
     # def store_ontology(self):
     #     """
     #
@@ -241,9 +227,14 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     #     assert uri_all_concepts == uri_all_concepts_loaded
     #     # check the base iri of ontologeis
 
+    @abstractmethod
     def clean(self):
+        """
+        Clear all states of the concept learner
+        """
         self.concepts_to_ignore.clear()
-        self.search_tree.clean()
+        self.quality_func.clean()
+        self.heuristic_func.clean()
 
     def train(self, *args, **kwargs):
         pass
@@ -262,29 +253,15 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             if self.goal_found:
                 t = 'A goal concept found:{0}'.format(self.goal_found)
             else:
-                t = 'Current best concept:{0}'.format(self.best_hypotheses(n=1)[0])
+                t = 'Current best concept:{0}'.format(list(self.best_hypotheses(n=1))[0])
             self.logger.info(t)
             print(t)
 
-        if self.verbose > 1:
-            self.search_tree.show_search_tree('Final')
+        if self.verbose >= 2:
+            self.show_search_tree('Final')
 
-        self.clean()
+        # self.clean()
         return self
-
-    def get_metric_key(self, key: str):
-        if key == 'quality':
-            metric = self.quality_func.name
-            attribute = key
-        elif key == 'heuristic':
-            metric = self.heuristic.name
-            attribute = key
-        elif key == 'length':
-            metric = key
-            attribute = key
-        else:
-            raise ValueError('Invalid key:{0}'.format(key))
-        return metric, attribute
 
     @abstractmethod
     def next_node_to_expand(self, *args, **kwargs):
@@ -311,7 +288,9 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             h = self.best_hypotheses(1)[0]
             individuals = self.kb.convert_owlready2_individuals_to_uri_from_iterable(h.concept.instances)
 
+            from ontolearn.metrics import F1
             f_measure = F1().score(pos=positives, neg=negatives, instances=individuals)
+            from ontolearn.metrics import Accuracy
             accuracy = Accuracy().score(pos=positives, neg=negatives, instances=individuals)
             results.append({'Prediction': h.concept.str,
                             'F-measure': f_measure,
@@ -319,29 +298,39 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
                             'Runtime': time.time() - start_time})
         return results
 
-    def best_hypotheses(self, n=10) -> List[Node]:
-        assert self.search_tree is not None
-        assert len(self.search_tree) > 1
-        return [i for i in self.search_tree.get_top_n_nodes(n)]
+    @abstractmethod
+    def best_hypotheses(self, n=10) -> Iterable[_N]:
+        pass
 
-    @staticmethod
-    def assign_labels_to_individuals(*, individuals: List, hypotheses: List[Node]) -> np.ndarray:
+    @abstractmethod
+    def show_search_tree(self, heading_step: str, top_n: int = 10) -> None:
+        pass
+
+    def assign_labels_to_individuals(self, *, individuals: List[OWLNamedIndividual], hypotheses: List[_N]) -> np.ndarray:
         """
-        individuals: A list of owlready individuals.
-        hypotheses: A
-
         Use each hypothesis as a binary function and assign 1 or 0 to each individual.
 
-        return matrix of |individuals| x |hypotheses|
+        Args:
+            individuals: A list of owlready individuals.
+            hypotheses: A
+
+        Returns:
+            return matrix of |individuals| x |hypotheses|
         """
         labels = np.zeros((len(individuals), len(hypotheses)))
-        for ith_ind in range(len(individuals)):
-            for jth_hypo in range(len(hypotheses)):
-                if individuals[ith_ind] in hypotheses[jth_hypo].concept.instances:
+        for jth_hypo in range(len(hypotheses)):
+            node = hypotheses[jth_hypo]
+
+            kb_individuals = self.kb.individuals_set(node.concept)
+            for ith_ind in range(len(individuals)):
+                ind = individuals[ith_ind]
+
+                kb_test = self.kb.individuals_set(ind)
+                if kb_test in kb_individuals:
                     labels[ith_ind][jth_hypo] = 1
         return labels
 
-    def predict(self, individuals: List[OWLNamedIndividual], hypotheses: Optional[List[Node]] = None,
+    def predict(self, individuals: List[OWLNamedIndividual], hypotheses: Optional[List[_N]] = None,
                 n: Optional[int] = None) -> pd.DataFrame:
         """
 
@@ -350,31 +339,23 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             hypotheses: A list of ALC concepts.
             n: integer denoting number of ALC concepts to extract from search tree if hypotheses=None.
         """
-        assert isinstance(hypotheses, List)  # set would not work.
-        individuals = self.kb.convert_uri_instance_to_obj_from_iterable(individuals)
+        assert isinstance(individuals, List)  # set would not work.
         if hypotheses is None:
             try:
                 assert isinstance(n, int) and n > 0
             except AssertionError:
-                raise AssertionError('**n** must be positive integer.')
-            hypotheses = self.best_hypotheses(n)
+                raise ValueError('**n** must be positive integer.')
+            hypotheses = list(self.best_hypotheses(n))
+
+        dlr = DLSyntaxRenderer()
 
         return pd.DataFrame(data=self.assign_labels_to_individuals(individuals=individuals, hypotheses=hypotheses),
-                            index=individuals, columns=[c.concept.str for c in hypotheses])
+                            index=[dlr.render(_) for _ in individuals],
+                            columns=[dlr.render(c.concept) for c in hypotheses])
 
     @property
     def number_of_tested_concepts(self):
         return self.quality_func.applied
-
-    def default_state_concept_learner(self):
-        """
-        At each problem initialization, we recent previous info if available.
-        @return:
-        """
-        self.concepts_to_ignore.clear()
-        self.search_tree.clean()
-        self.quality_func.clean()
-        self.heuristic_func.clean()
 
     def save_best_hypothesis(self, n: int = 10, path='Predictions', rdf_format='rdfxml') -> None:
         try:
