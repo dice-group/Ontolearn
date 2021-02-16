@@ -27,7 +27,7 @@ _N = TypeVar('_N', bound='BaseNode')
 
 class BaseNode(metaclass=ABCMeta):
     """Base class for Concept."""
-    __slots__ = 'concept', '__heuristic_score', '__horizontal_expansion', '__quality_score', \
+    __slots__ = 'concept', '__heuristic_score', '__quality_score', \
                 '__refinement_count', '__depth', '__children', '__embeddings', \
                 '__parent_node_ref', '__is_root', '__weakref__'
 
@@ -36,27 +36,22 @@ class BaseNode(metaclass=ABCMeta):
     __quality_score: Optional[float]
     __heuristic_score: Optional[float]
     __is_root: bool
-    __horizontal_expansion: int
     __refinement_count: int
     __children: Set[_N]
 
     @abstractmethod
-    def __init__(self: _N, concept: OWLClassExpression, parent_node: _N, is_root=False):
+    def __init__(self: _N, concept: OWLClassExpression, is_root: bool = False):
         self.__quality_score = None
         self.__heuristic_score = None
         self.__is_root = is_root
-        self.__horizontal_expansion = 0
         self.__refinement_count = 0
         self.concept = concept
-        self.parent_node = parent_node
         self.__embeddings = None
         self.__children = set()
+        self.__parent_node_ref = None
 
-        if self.parent_node is None:
-            assert self.__is_root
+        if is_root:
             self.__depth = 0
-        else:
-            self.__depth = self.parent_node.depth + 1
 
     @property
     def parent_node(self) -> _N:
@@ -65,6 +60,11 @@ class BaseNode(metaclass=ABCMeta):
     @parent_node.setter
     def parent_node(self, value: _N):
         self.__parent_node_ref = weakref.ref(value) if value is not None else None
+        if value is None:
+            assert self.__is_root
+        else:
+            assert not self.__is_root
+            self.__depth = self.parent_node.depth + 1
 
     @property
     def embeddings(self):
@@ -95,10 +95,6 @@ class BaseNode(metaclass=ABCMeta):
         self.__depth = n
 
     @property
-    def h_exp(self) -> int:
-        return self.__horizontal_expansion
-
-    @property
     def heuristic(self) -> float:
         return self.__heuristic_score
 
@@ -118,14 +114,11 @@ class BaseNode(metaclass=ABCMeta):
     def is_root(self) -> bool:
         return self.__is_root
 
-    def add_children(self: _N, n: _N) -> None:
+    def add_child(self: _N, n: _N) -> None:
         self.__children.add(n)
 
     def remove_child(self: _N, n: _N) -> None:
         self.__children.remove(n)
-
-    def increment_h_exp(self, *, extra_inc: int = 0) -> None:
-        self.__horizontal_expansion += extra_inc + 1
 
 
 class AbstractScorer(Generic[_N], metaclass=ABCMeta):
@@ -216,8 +209,24 @@ class BaseRefinement(Generic[_N], metaclass=ABCMeta):
         return self.kb.cl(concept)
 
 
-class AbstractTree(metaclass=ABCMeta):
-    pass
+class AbstractTree(Generic[_N], metaclass=ABCMeta):
+    __slots__ = ()
+
+    @abstractmethod
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def clean(self):
+        pass
+
+    @abstractmethod
+    def add(self, node: _N, parent_node: Optional[_N]):
+        pass
+
+    @abstractmethod
+    def __len__(self) -> int:
+        pass
 
 
 class AbstractTree2(ABC):

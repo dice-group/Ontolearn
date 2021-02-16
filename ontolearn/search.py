@@ -4,7 +4,8 @@ from typing import List, Optional, ClassVar, Callable, cast, Final, Iterable
 
 from sortedcontainers import SortedSet
 
-from .abstracts import BaseNode, AbstractTree, AbstractScorer
+from superprop import super_prop
+from .abstracts import BaseNode, AbstractTree, AbstractScorer, _N
 from .core.owl.utils import OrderedOWLObject
 from .owlapy.base import HasIndex
 from .owlapy.io import OWLObjectRenderer
@@ -19,18 +20,67 @@ class Node(BaseNode):
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxRenderer()
     individuals_count: Optional[int]
 
-    def __init__(self, concept: OWLClassExpression, parent_node: Optional['Node'] = None, root: bool = False):
-        super().__init__(concept, parent_node, root)
+    def __init__(self, concept: OWLClassExpression, is_root: bool = False):
+        super().__init__(concept, is_root=is_root)
         self.individuals_count = None
 
     def __str__(self):
         return f'Node at {hex(id(self))}\t{Node.renderer.render(self.concept)}\tQuality:{self.quality}\t' \
-               f'Heuristic:{self.heuristic}\tDepth:{self.depth}\tH_exp:{self.h_exp}\t' \
+               f'Heuristic:{self.heuristic}\tDepth:{self.depth}\t' \
                f'|Children|:{self.refinement_count}\t|Indv.|:{self.individuals_count}'
 
 
 class OENode(Node):
-    __slots__ = ()
+    __slots__ = '_horizontal_expansion'
+
+    _horizontal_expansion: int
+
+    def __init__(self, concept: OWLClassExpression, h_exp: int, is_root: bool = False):
+        super().__init__(concept, is_root)
+        self._horizontal_expansion = h_exp
+
+    @property
+    def h_exp(self) -> int:
+        return self._horizontal_expansion
+
+    def increment_h_exp(self, *, extra_inc: int = 0) -> None:
+        self.heuristic = None
+        self._horizontal_expansion += extra_inc + 1
+
+    @property
+    def parent_node(self) -> Optional['OENode']:
+        return super().parent_node
+
+    @parent_node.setter
+    def parent_node(self, n: 'OENode'):
+        if self.parent_node is not None:
+            raise ValueError("Node already has parent")
+        super().parent_node = n
+
+    @property
+    def quality(self) -> float:
+        return super().quality
+
+    @quality.setter
+    def quality(self, q: float):
+        self.heuristic = None
+        if self.quality is not None:
+            raise ValueError("Node already evaluated")
+        super_prop(super()).quality = q
+
+    @property
+    def refinement_count(self) -> int:
+        return super().refinement_count
+
+    @refinement_count.setter
+    def refinement_count(self, c: int):
+        self.heuristic = None
+        super_prop(super()).refinement_count = c
+
+    def __str__(self):
+        return f'OENode at {hex(id(self))}\t{Node.renderer.render(self.concept)}\tQuality:{self.quality}\t' \
+               f'Heuristic:{self.heuristic}\tDepth:{self.depth}\tH_exp:{self.h_exp}\t' \
+               f'|Children|:{self.refinement_count}\t|Indv.|:{self.individuals_count}'
 
 
 @total_ordering
@@ -63,21 +113,28 @@ def _node_and_all_children(n: Node) -> Iterable[Node]:
         yield from _node_and_all_children(c)
 
 
-class CELOESearchTree(AbstractTree):
-    __slots__ = ()
+class CELOESearchTree(AbstractTree[OENode]):
+    __slots__ = 'nodes', 'expression_tests'
 
     nodes: 'SortedSet[OENode]'
+    expression_tests: int
 
-    def __init__(self, quality_func: AbstractScorer = None, heuristic_func: AbstractScorer = None):
-        super().__init__(quality_func, heuristic_func)
+    def __init__(self):
+        super().__init__()
+        self.clean()
 
-        def key(n: OENode):
-            if n.heuristic is None:
-                raise ValueError("node not evaluated")
-            return n.heuristic, OrderedOWLObject(as_index(n.concept))
+    @staticmethod
+    def node_key(n: OENode):
+        if n.heuristic is None:
+            raise ValueError("node not evaluated")
+        return n.heuristic, OrderedOWLObject(as_index(n.concept))
 
-        self.nodes = SortedSet(key=key)
+    def clean(self):
+        self.nodes = SortedSet(key=CELOESearchTree.node_key)
         self.expression_tests = 0
+
+    def __len__(self) -> int:
+        return len(self.nodes)
 
     # def update_prepare(self, n: Node) -> None:
     #     """Remove n and its children from search tree.
@@ -113,21 +170,25 @@ class CELOESearchTree(AbstractTree):
         """
         self.nodes.add(n)
 
-    def add(self, node: OENode):
+    # noinspection DuplicatedCode
+    def add(self, node: OENode, parent_node: Optional[OENode]):
         if node not in self.nodes:
-            self.quality_func.apply(node)  # AccuracyOrTooWeak(n)
-            if node.quality == 0:  # > too weak
-                return False
-            self.heuristic_func.apply(node, parent_node=parent_node)
-            self.nodes[node] = node
+            if parent_node is not None:
+                assert parent_node in self.nodes
+                node.parent_node = parent_node
+            else:
+                assert node.is_root
+                assert not self.nodes
+
+            self.nodes.add(node)
 
             if parent_node:
-                parent_node.add_children(node)
+                parent_node.add_child(node)
             if node.quality == 1:  # goal found
                 return True
             return False
         else:
-            raise ValueError
+            raise ValueError("Node already exists")
             # if not (node.parent_node is parent_node):
             #     try:
             #         assert parent_node.heuristic is not None
@@ -148,6 +209,9 @@ class CELOESearchTree(AbstractTree):
             #         node.parent_node = parent_node
             #         self.heuristic_func.apply(node, parent_node=parent_node)
             #         self.nodes[node] = node
+
+    def best_heuristic_node(self) -> OENode:
+        return self.nodes[-1]
 
 
 class SearchTree(AbstractTree):
@@ -177,7 +241,7 @@ class SearchTree(AbstractTree):
             self.heuristic_func.apply(node)
             self.nodes[node] = node
             if parent_node:
-                parent_node.add_children(node)
+                parent_node.add_child(node)
             if node.quality == 1:  # goal found
                 return True
         else:
@@ -186,7 +250,7 @@ class SearchTree(AbstractTree):
                     # update parent info
                     self.heuristic_func.apply(node, parent_node=parent_node)
                     self.nodes[node] = node
-                    parent_node.add_children(node)
+                    parent_node.add_child(node)
         return False
 
 
@@ -254,7 +318,7 @@ class SearchTreePriorityQueue(AbstractTree):
             if new_heuristic > old_heuristic:
                 node.parent_node.remove_child(node)
                 node.parent_node = parent_node
-                parent_node.add_children(node)
+                parent_node.add_child(node)
                 self.items_in_queue.put((-node.heuristic, node.concept.str))  # gets the smallest one.
                 self.nodes[node.concept.str] = node
         else:
@@ -265,7 +329,7 @@ class SearchTreePriorityQueue(AbstractTree):
             self.heuristic_func.apply(node, parent_node=parent_node)
             self.items_in_queue.put((-node.heuristic, node.concept.str))  # gets the smallest one.
             self.nodes[node.concept.str] = node
-            parent_node.add_children(node)
+            parent_node.add_child(node)
             if node.quality == 1:
                 return True
 
