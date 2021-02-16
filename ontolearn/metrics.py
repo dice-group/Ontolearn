@@ -1,12 +1,13 @@
 from .abstracts import AbstractScorer
 from .search import Node
-from typing import Set
+from typing import Set, ClassVar, Final
 
 
 class Recall(AbstractScorer):
+    name: Final = 'Recall'
+
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
-        self.name = 'Recall'
 
     def score(self, pos, neg, instances):
         self.pos = pos
@@ -38,9 +39,10 @@ class Recall(AbstractScorer):
 
 
 class Precision(AbstractScorer):
+    name: Final = 'Precision'
+
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
-        self.name = 'Precision'
 
     def score(self, pos, neg, instances):
         self.pos = pos
@@ -72,9 +74,10 @@ class Precision(AbstractScorer):
 
 
 class F1(AbstractScorer):
+    name: Final = 'F1'
+
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
-        self.name = 'F1'
         self.beta = 0
         self.noise = 0
 
@@ -147,6 +150,7 @@ class Accuracy(AbstractScorer):
 
     2) E^+ and E^- are the positive and negative examples probided. E = E^+ OR E^- .
     """
+    name: Final = 'Accuracy'
 
     def score(self, pos, neg, instances):
         self.pos = pos
@@ -170,7 +174,6 @@ class Accuracy(AbstractScorer):
 
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
-        self.name = 'Accuracy'
 
     def apply(self, node: Node, instances):
         assert isinstance(node, Node)
