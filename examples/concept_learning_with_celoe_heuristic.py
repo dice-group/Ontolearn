@@ -7,6 +7,9 @@ from ontolearn.owlapy import IRI
 from ontolearn.owlapy.model import OWLClass, OWLNamedIndividual
 from ontolearn.owlapy.render import DLSyntaxRenderer
 from ontolearn.search import OENode
+from ontolearn.utils import setup_logging
+
+setup_logging()
 
 with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)

@@ -1,5 +1,4 @@
 from abc import ABCMeta, abstractmethod
-from logging import Logger
 
 from . import KnowledgeBase
 from .abstracts import BaseRefinement, AbstractScorer, AbstractTree, AbstractNode, AbstractHeuristic
@@ -8,15 +7,17 @@ from typing import List, Set, Tuple, Dict, Optional, Iterable, Generic, TypeVar
 from .owlapy.model import OWLClassExpression, OWLNamedIndividual
 from .owlapy.render import DLSyntaxRenderer
 from .search import Node
-from .utils import create_experiment_folder, create_logger
 import numpy as np
 import pandas as pd
 import time
 import random
 import types
 from .static_funcs import retrieve_concept_chain, decompose_to_atomic
+from .utils import oplogging
 
 _N = TypeVar('_N', bound=AbstractNode)
+
+logger = logging.getLogger(__name__)
 
 
 class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
@@ -58,8 +59,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     iter_bound: Optional[int]
     max_runtime: Optional[int]
     concepts_to_ignore: Set[OWLClassExpression]
-    verbose: Optional[int]
-    logger: Logger
     start_time: Optional[float]
     name: Optional[str]
     storage_path: str
@@ -85,13 +84,11 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         self.iter_bound = iter_bound
         self.start_class = root_concept
         self.max_child_length = max_child_length
-        self.verbose = verbose
         # self.store_onto_flag = False
         self.start_time = None
         self.goal_found = False
-        self.storage_path, _ = create_experiment_folder()
+        # self.storage_path, _ = create_experiment_folder()
         self.name = name
-        self.logger = create_logger(name=self.name, p=self.storage_path, verbose=verbose)
         # self.last_path = None  # path of lastly stored onto.
         self.__default_values()
         self.__sanity_checking()
@@ -247,17 +244,16 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         # if self.store_onto_flag:
         #     self.store_ontology()
 
-        if self.verbose >= 1:
-            self.logger.info('Elapsed runtime: {0} seconds'.format(round(time.time() - self.start_time, 4)))
-            self.logger.info('Number of concepts tested:{0}'.format(self.number_of_tested_concepts))
+        if logger.isEnabledFor(logging.INFO):
+            logger.info('Elapsed runtime: {0} seconds'.format(round(time.time() - self.start_time, 4)))
+            logger.info('Number of concepts tested:{0}'.format(self.number_of_tested_concepts))
             if self.goal_found:
                 t = 'A goal concept found:{0}'.format(self.goal_found)
             else:
                 t = 'Current best concept:{0}'.format(list(self.best_hypotheses(n=1))[0])
-            self.logger.info(t)
-            print(t)
+            logger.info(t)
 
-        if self.verbose >= 2:
+        if logger.isEnabledFor(oplogging.TRACE):
             self.show_search_tree('Final')
 
         # self.clean()
