@@ -38,10 +38,20 @@ def _Default_ClassExpressionLengthMetricFactory() -> OWLClassExpressionLengthMet
 
 
 class KnowledgeBase(AbstractKnowledgeBase):
-    """Knowledge Base Class representing Tbox and Abox along with concept hierarchies"""
-    __slots__ = '_manager', '_ontology', '_reasoner', '_length_metric',\
-                '_class_hierarchy', '_object_property_hierarchy', '_data_property_hierarchy', '_ind_enc', '_ind_cache',\
-                'path', 'use_individuals_cache'
+    """Knowledge Base Class representing Tbox and Abox along with concept hierarchies
+
+    Args:
+        path: path to an ontology file that is to be loaded
+        ontologymanager_factory: factory that creates an ontology manager to be used to load the file
+        ontology: OWL ontology object
+        reasoner_factory: factory that creates a reasoner to reason about the ontology
+        reasoner: reasoner over the ontology
+        length_metric_factory: see `length_metric`
+        length_metric: length metric that is used in calculation of class expresion lengths
+    """
+    __slots__ = '_manager', '_ontology', '_reasoner', '_length_metric', \
+                '_class_hierarchy', '_object_property_hierarchy', '_data_property_hierarchy', '_ind_enc', \
+                '_ind_cache', 'path', 'use_individuals_cache'
 
     _manager: OWLOntologyManager
     _ontology: OWLOntology
@@ -127,8 +137,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self._ind_enc = NamedFixedSet(OWLNamedIndividual, individuals)
 
         self.use_individuals_cache = use_individuals_cache
-        if self.use_individuals_cache:
-            self._ind_cache = dict()
+        self.clean()
 
         self.describe()
 
@@ -147,8 +156,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
         return self._length_metric.length(ce)
 
     def clean(self):
-        """Clearn all stored values if there is any.
+        """Clean all stored values if there is any.
         """
+        if self.use_individuals_cache:
+            self._ind_cache = dict()
 
     def get_leaf_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
         """ Return : { x | (x subClassOf concept) AND not exist y: y subClassOf x )} """
@@ -224,6 +235,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             return self._maybe_cache_individuals_count(concept)
 
+    # noinspection PyMethodMayBeStatic
     def intersection(self, ops: Iterable[OWLClassExpression]) -> OWLObjectIntersectionOf:
         operands = []
         for c in ops:
@@ -234,6 +246,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                 operands.append(c)
         return OWLObjectIntersectionOf(operands)
 
+    # noinspection PyMethodMayBeStatic
     def union(self, ops: Iterable[OWLClassExpression]) -> OWLObjectUnionOf:
         operands = []
         for c in ops:
@@ -252,12 +265,14 @@ class KnowledgeBase(AbstractKnowledgeBase):
         assert isinstance(concept, OWLClass)
         yield from self._class_hierarchy.sub_classes(concept, direct=True)
 
-    def existential_restriction(self, concept: OWLClassExpression, property: OWLObjectPropertyExpression)\
+    # noinspection PyMethodMayBeStatic
+    def existential_restriction(self, concept: OWLClassExpression, property: OWLObjectPropertyExpression) \
             -> OWLObjectSomeValuesFrom:
         assert isinstance(property, OWLObjectPropertyExpression)
         return OWLObjectSomeValuesFrom(property=property, filler=concept)
 
-    def universal_restriction(self, concept: OWLClassExpression, property: OWLObjectPropertyExpression)\
+    # noinspection PyMethodMayBeStatic
+    def universal_restriction(self, concept: OWLClassExpression, property: OWLObjectPropertyExpression) \
             -> OWLObjectAllValuesFrom:
         assert isinstance(property, OWLObjectPropertyExpression)
         return OWLObjectAllValuesFrom(property=property, filler=concept)
@@ -270,6 +285,13 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             return concept.get_object_complement_of()
 
+    def contains_class(self, concept: OWLClassExpression) -> bool:
+        assert isinstance(concept, OWLClass)
+        return concept in self._class_hierarchy
+
+    def class_hierarchy(self) -> ClassHierarchy:
+        return self._class_hierarchy
+
     @property
     def thing(self) -> OWLClass:
         return OWLThing
@@ -277,4 +299,3 @@ class KnowledgeBase(AbstractKnowledgeBase):
     @property
     def nothing(self) -> OWLClass:
         return OWLNothing
-
