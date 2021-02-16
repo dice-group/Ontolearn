@@ -2,8 +2,8 @@ from abc import ABCMeta, abstractmethod
 from logging import Logger
 
 from . import KnowledgeBase
-from .abstracts import BaseRefinement, AbstractScorer, AbstractTree
-from typing import List, Set, Tuple, Dict, Optional, Iterable
+from .abstracts import BaseRefinement, AbstractScorer, AbstractTree, BaseNode, AbstractHeuristic
+from typing import List, Set, Tuple, Dict, Optional, Iterable, Generic, TypeVar
 
 from .owlapy.model import OWLClassExpression, OWLNamedIndividual
 from .owlapy.render import DLSyntaxRenderer
@@ -16,8 +16,9 @@ import random
 import types
 from .static_funcs import retrieve_concept_chain, decompose_to_atomic
 
+_N = TypeVar('_N', bound=BaseNode)
 
-class BaseConceptLearner(metaclass=ABCMeta):
+class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     """
     Base class for Concept Learning approaches
 
@@ -46,7 +47,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
     kb: KnowledgeBase
     rho: BaseRefinement
-    heuristic_func: AbstractScorer
+    heuristic_func: AbstractHeuristic
     quality_func: AbstractScorer
     search_tree: AbstractTree
     max_num_of_concepts_tested: Optional[int]
@@ -65,7 +66,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, knowledge_base: KnowledgeBase = None, refinement_operator: BaseRefinement = None,
-                 heuristic_func: AbstractScorer = None, quality_func: AbstractScorer = None,
+                 heuristic_func: AbstractHeuristic = None, quality_func: AbstractScorer = None,
                  search_tree: AbstractTree = None, max_num_of_concepts_tested: Optional[int] = None,
                  max_runtime: Optional[int] = None, terminate_on_goal: Optional[bool] = None,
                  ignored_concepts: Optional[Set[OWLClassExpression]] = None,
@@ -113,11 +114,9 @@ class BaseConceptLearner(metaclass=ABCMeta):
             self.quality_func = F1()
         if self.search_tree is None:
             from ontolearn.search import CELOESearchTree
-            self.search_tree = CELOESearchTree(quality_func=self.quality_func, heuristic_func=self.heuristic_func)
+            self.search_tree = CELOESearchTree()
         else:
             self.search_tree.clean()
-            self.search_tree.set_quality_func(self.quality_func)
-            self.search_tree.set_heuristic_func(self.heuristic_func)
 
         if self.start_class is None:
             self.start_class = self.kb.thing
@@ -150,19 +149,21 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.add_ignored_concepts(self.concepts_to_ignore)
 
     def add_ignored_concepts(self, ignore: Iterable[OWLClassExpression]) -> None:
-        if ignore:
-            owl_concepts_to_ignore = set()
-            for i in ignore:  # iterate over string representations of ALC concepts.
-                if self.kb.contains_class(i):
-                    owl_concepts_to_ignore.add(i)
-                else:
-                    raise ValueError(
-                        f'{i} could not found in \n{self.kb} \n'
-                        f'{[_ for _ in self.kb.ontology().classes_in_signature()]}.')
-            self.concepts_to_ignore = owl_concepts_to_ignore  # use ALC concept representation instead of URI.
+        owl_concepts_to_ignore = set()
+        for i in ignore:  # iterate over string representations of ALC concepts.
+            if self.kb.contains_class(i):
+                owl_concepts_to_ignore.add(i)
+            else:
+                raise ValueError(
+                    f'{i} could not found in \n{self.kb} \n'
+                    f'{[_ for _ in self.kb.ontology().classes_in_signature()]}.')
+        self.concepts_to_ignore = owl_concepts_to_ignore  # use ALC concept representation instead of URI.
 
-    def initialize_learning_problem(self, pos: Set[OWLNamedIndividual], neg: Set[OWLNamedIndividual], all_instances,
-                                    ignore: Set[OWLClassExpression]):
+    def initialize_learning_problem(self,
+                                    pos: Set[OWLNamedIndividual],
+                                    neg: Set[OWLNamedIndividual],
+                                    all_instances: Optional[Set[OWLNamedIndividual]],
+                                    ignore: Optional[Set[OWLClassExpression]]):
         """
         Determine the learning problem and initialize the search.
         1) Convert the string representation of an individuals into the owlready2 representation.
@@ -173,45 +174,51 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
         assert len(self.kb.class_hierarchy()) > 0
 
-        assert isinstance(pos, set) and isinstance(neg, set) and isinstance(all_instances, set)
-        assert 0 < len(pos) < len(all_instances) and len(all_instances) > len(neg)
+        if all_instances is None:
+            kb_all = self.kb.all_individuals_set()
+        else:
+            kb_all = self.kb.individuals_set(all_instances)
+
+        assert isinstance(pos, set) and isinstance(neg, set)
+        assert 0 < len(pos) < len(kb_all) and len(kb_all) > len(neg)
         if self.verbose > 1:
             r = DLSyntaxRenderer()
             self.logger.info('E^+:[ {0} ]'.format(', '.join(map(r.render, pos))))
             self.logger.info('E^-:[ {0} ]'.format(', '.join(map(r.render, neg))))
             if ignore:
                 self.logger.info('Concepts to ignore: {0}'.format(' '.join(map(r.render, ignore))))
-        self.add_ignored_concepts(ignore)
+        if ignore:
+            self.add_ignored_concepts(ignore)
 
-        owl_ready_pos = set(self.kb.convert_uri_instance_to_obj_from_iterable(pos))
+        kb_pos = self.kb.individuals_set(pos)
         if len(neg) == 0:  # if negatives are not provided, randomly sample.
-            owl_ready_neg = set(random.sample(all_instances, len(owl_ready_pos)))
+            kb_neg = type(kb_all)(random.sample(list(kb_all), len(kb_pos)))
         else:
-            owl_ready_neg = set(self.kb.convert_uri_instance_to_obj_from_iterable(neg))
+            kb_neg = self.kb.individuals_set(neg)
 
         try:
-            assert len(owl_ready_pos) == len(pos)
+            assert len(kb_pos) == len(pos)
         except AssertionError:
             print(pos)
-            print(owl_ready_pos)
-            print(all_instances)
-            print(self.kb.str_to_instance_obj)
+            print(kb_pos)
+            print(kb_all)
             print('Assertion error. Exiting.')
-            exit(1)
-        assert len(owl_ready_neg) == len(neg)
+            raise
+        assert len(kb_neg) == len(neg)
 
-        unlabelled = all_instances.difference(owl_ready_pos.union(owl_ready_neg))
-        self.quality_func.set_positive_examples(owl_ready_pos)
-        self.quality_func.set_negative_examples(owl_ready_neg)
+        unlabelled = kb_all.difference(kb_pos.union(kb_neg))
+        self.quality_func.set_positive_examples(kb_pos)
+        self.quality_func.set_negative_examples(kb_neg)
 
-        self.heuristic_func.set_positive_examples(owl_ready_pos)
-        self.heuristic_func.set_negative_examples(owl_ready_neg)
-        self.heuristic_func.set_unlabelled_examples(unlabelled)
+        # self.heuristic_func.set_positive_examples(kb_pos)
+        # self.heuristic_func.set_negative_examples(kb_neg)
+        # self.heuristic_func.set_unlabelled_examples(unlabelled)
 
-        root = self.rho.get_node(self.start_class, root=True)
-        self.search_tree.quality_func.apply(root)
-        self.search_tree.heuristic_func.apply(root)
-        self.search_tree.add(root)
+        root = self.make_node(self.start_class, is_root=True)
+        root_instances = self.kb.individuals_set(root.concept)
+        self.quality_func.apply(root, root_instances)
+        self.heuristic_func.apply(root)
+        self.search_tree.add(root, None)
         assert len(self.search_tree) == 1
 
     # def store_ontology(self):
@@ -235,6 +242,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
     def clean(self):
         self.concepts_to_ignore.clear()
+        self.search_tree.clean()
 
     def train(self, *args, **kwargs):
         pass
@@ -282,7 +290,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def apply_rho(self, *args, **kwargs):
+    def downward_refinement(self, *args, **kwargs):
         pass
 
     @abstractmethod
@@ -421,3 +429,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         folder = self.kb.path[:self.kb.path.rfind('/')] + '/'
         kb_name = 'enriched_' + self.kb.name
         self.kb.save(folder + kb_name + '.owl', rdf_format=rdf_format)
+
+    @abstractmethod
+    def make_node(self, c: OWLClassExpression, is_root: bool = False) -> _N:
+        pass

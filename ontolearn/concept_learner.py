@@ -15,38 +15,61 @@ import time
 pd.set_option('display.max_columns', 100)
 
 
-class CELOE(BaseConceptLearner):
-    __slots__ = 'max_he', 'min_he'
+class CELOE(BaseConceptLearner[OENode]):
+    __slots__ = 'max_he', 'min_he', 'best_only', 'calculate_min_max'
 
     max_he: int
     min_he: int
+    best_only: bool
+    calculate_min_max: bool
 
     search_tree: CELOESearchTree
 
-    def __init__(self, knowledge_base: KnowledgeBase, heuristic_func: Optional[AbstractScorer] = None,
-                 quality_func: Optional[AbstractScorer] = None, iter_bound: Optional[int] = None,
-                 max_num_of_concepts_tested: Optional[int] = None, max_runtime: Optional[int] = None,
-                 ignored_concepts: Optional[Set[OWLClassExpression]] = None, verbose: Optional[int] = None,
-                 terminate_on_goal: Optional[bool] = None):
+    def __init__(self,
+                 knowledge_base: KnowledgeBase,
+                 heuristic_func: Optional[AbstractScorer] = None,
+                 quality_func: Optional[AbstractScorer] = None,
+                 iter_bound: Optional[int] = None,
+                 max_num_of_concepts_tested: Optional[int] = None,
+                 max_runtime: Optional[int] = None,
+                 ignored_concepts: Optional[Set[OWLClassExpression]] = None,
+                 verbose: Optional[int] = None,
+                 terminate_on_goal: Optional[bool] = None,
+                 best_only: bool = False,
+                 calculate_min_max: bool = True):
         if heuristic_func is None:
             heuristic_func = CELOEHeuristic()
-        super().__init__(knowledge_base=knowledge_base, refinement_operator=ModifiedCELOERefinement(kb=knowledge_base),
+        super().__init__(knowledge_base=knowledge_base,
+                         refinement_operator=ModifiedCELOERefinement(kb=knowledge_base),
                          search_tree=CELOESearchTree(),
                          quality_func=quality_func,
                          heuristic_func=heuristic_func,
                          ignored_concepts=ignored_concepts,
                          terminate_on_goal=terminate_on_goal,
-                         iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested,
+                         iter_bound=iter_bound,
+                         max_num_of_concepts_tested=max_num_of_concepts_tested,
                          max_runtime=max_runtime,
                          verbose=verbose, name='celoe_python')
-        self.max_he, self.min_he = self.max_num_of_concepts_tested, 1
+        self.max_he = 0
+        self.min_he = 1
+        self.best_only = best_only
+        self.calculate_min_max = calculate_min_max
 
     def next_node_to_expand(self, step: int) -> OENode:
         """
         Return most promising node/concept based
         """
-        # Original implementation of CELOE: Sort search tree at each step. Quite inefficient.
-        return self.search_tree.best_heuristic_node()
+        if not self.best_only:
+            for n in reversed(self.search_tree.nodes):
+                if n.quality < 1.0 or n.h_exp < self.kb.cl(n.concept):
+                    return n
+            else:
+                raise ValueError("No Node with lesser accuracy found")
+        else:
+            # from reimplementation, pick without quality criterion
+            return self.search_tree.best_heuristic_node()
+
+        # Original reimplementation of CELOE: Sort search tree at each step. Quite inefficient.
         # self.search_tree.sort_search_tree_by_decreasing_order(key='heuristic')
         # if self.verbose > 1:
         #     self.search_tree.show_search_tree(step)
@@ -54,71 +77,84 @@ class CELOE(BaseConceptLearner):
         #     return n
         # raise ValueError('Search Tree can not be empty.')
 
-    def apply_rho(self, node: OENode) -> Iterable[OENode]:
+    def make_node(self, c: OWLClassExpression, is_root: bool = False) -> OENode:
+        r = OENode(c, self.kb.cl(c), is_root=is_root)
+        return r
+
+    def downward_refinement(self, node: OENode) -> Iterable[OENode]:
         assert isinstance(node, OENode)
+        print("refine: ", node)
+        print("current search tree: ")
+        for n in self.search_tree.nodes:
+            print("* ", n)
+        x = node
         self.search_tree.update_prepare(node)
         refinements = list(self.rho.refine(node,
                                            max_length=node.h_exp + 1,
                                            current_domain=self.start_class))
         node.increment_h_exp()
         node.refinement_count = len(refinements)
-        self.heuristic_func.apply(node, parent_node=node.parent_node)
+        self.heuristic_func.apply(node)
         self.search_tree.update_done(node)
 
-        def make_node(c: OWLClassExpression) -> Node:
-            return Node(c, parent_node=node)
+        return map(self.make_node, refinements)
 
-        return map(make_node, refinements)
-
-    def fit(self, pos: Set[OWLNamedIndividual], neg: Set[OWLNamedIndividual], ignore: Set[str] = None, max_runtime: int = None):
+    def fit(self,
+            pos: Set[OWLNamedIndividual],
+            neg: Set[OWLNamedIndividual],
+            ignore: Set[OWLClassExpression] = None,
+            max_runtime: int = None):
         """
         Find hypotheses that explain pos and neg.
         """
         if max_runtime:
             self.max_runtime = max_runtime
-        self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances, ignore=ignore)
+        self.initialize_learning_problem(pos=pos,
+                                         neg=neg,
+                                         all_instances=None,
+                                         ignore=ignore)
         self.start_time = time.time()
         for j in range(1, self.iter_bound):
             most_promising = self.next_node_to_expand(j)
-            for ref in self.apply_rho(most_promising):
+            for ref in self.downward_refinement(most_promising):
+                ref_instances = self.kb.individuals_set(ref.concept)
+                self.quality_func.apply(ref, ref_instances)  # AccuracyOrTooWeak(n)
+                if ref.quality == 0:  # > too weak
+                    continue
+                self.heuristic_func.apply(ref)
                 goal_found = self.search_tree.add(node=ref, parent_node=most_promising)
                 if goal_found:
                     if self.terminate_on_goal:
                         return self.terminate()
+            if self.calculate_min_max:
+                self.update_min_max_horiz_exp(most_promising)
             if time.time() - self.start_time > self.max_runtime:
                 return self.terminate()
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 return self.terminate()
         return self.terminate()
 
-    def updateMinMaxHorizExp(self, node: Node):
-        """
-        @todo Very inefficient. This chunk of code is obtained from DL-learner as it is.
-        @param node:
-        @return:
-        """
-        # @todo Currently it is not being used. Investigate the impact of
-
+    def update_min_max_horiz_exp(self, node: OENode):
         he = node.h_exp
         # update maximum value
-        self.max_he = self.max_he if self.max_he > he else he
+        self.max_he = max(self.max_he, he)
 
         if self.min_he == he - 1:
             threshold_score = node.heuristic + 1 - node.quality
-            sorted_x = sorted(self.search_tree.nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
-            self.search_tree.nodes = dict(sorted_x)
 
-            for item in self.search_tree:
-                if node.concept.str != item.concept.str:
-                    if item.h_exp == self.min_he:
-                        """ we can stop instantly when another node with min. """
-                        return
-                    if self.search_tree[item].heuristic < threshold_score:
-                        """ we can stop traversing nodes when their score is too low. """
-                        break
+            for n in reversed(self.search_tree.nodes):
+                if n == node:
+                    continue
+                if n.h_exp == self.min_he:
+                    """ we can stop instantly when another node with min. """
+                    return
+                if n.heuristic < threshold_score:
+                    """ we can stop traversing nodes when their score is too low. """
+                    break
             # inc. minimum since we found no other node which also has min. horiz. exp.
             self.min_he += 1
-            print("minimum horizontal expansion is now ", self.min_he)
+
+            # print("minimum horizontal expansion is now ", self.min_he)
 
 
 class OCEL(CELOE):
@@ -169,7 +205,7 @@ class LengthBaseLearner(BaseConceptLearner):
     def next_node_to_expand(self, step):
         return self.search_tree.get_most_promising()
 
-    def apply_rho(self, node: Node):
+    def downward_refinement(self, node: Node):
         assert isinstance(node, Node)
         refinements = (self.rho.get_node(i, parent_node=node) for i in
                        self.rho.refine(node, max_length=len(node) + 1 + self.min_length)
@@ -184,7 +220,7 @@ class LengthBaseLearner(BaseConceptLearner):
         self.start_time = time.time()
         for j in range(1, self.iter_bound):
             most_promising = self.next_node_to_expand(j)
-            for ref in self.apply_rho(most_promising):
+            for ref in self.downward_refinement(most_promising):
                 goal_found = self.search_tree.add_node(node=ref, parent_node=most_promising)
                 if goal_found:
                     if self.terminate_on_goal:
