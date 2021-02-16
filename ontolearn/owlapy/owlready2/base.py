@@ -6,8 +6,8 @@ import owlready2
 
 from ontolearn.owlapy import IRI
 from ontolearn.owlapy.model import OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
-    OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectSomeValuesFrom, OWLProperty, \
-    OWLObjectPropertyExpression
+    OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectPropertyExpression \
+    # OWLObjectSomeValuesFrom, OWLProperty, \
 
 
 class BaseReasoner(Enum):
