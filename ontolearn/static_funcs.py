@@ -1,6 +1,6 @@
 from owlready2 import Ontology, World, Thing, Nothing
 from typing import Tuple, Dict, Iterable
-from .abstracts import BaseNode
+from .abstracts import AbstractNode
 from collections import deque
 from owlready2 import Thing, get_ontology, Not
 import types
@@ -43,7 +43,7 @@ def concepts_sorter(A, B):
     return args[0], args[1]
 
 
-def retrieve_concept_chain(node: BaseNode) -> Iterable:
+def retrieve_concept_chain(node: AbstractNode) -> Iterable:
     """
     Given a node return its parent hierarchy
     @param node:

@@ -6,12 +6,14 @@ from .abstracts import BaseRefinement
 from .knowledge_base import KnowledgeBase
 from .owlapy.model import OWLClass, OWLObjectComplementOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectUnionOf, OWLObjectIntersectionOf, OWLClassExpression, OWLNothing, OWLNaryBooleanClassExpression
-from .search import Node
+from .search import Node, OENode
 
 
 class LengthBasedRefinement(BaseRefinement[Node]):
     """ A top down refinement operator refinement operator in ALC."""
     __slots__ = 'max_child_length', 'apply_combinations', 'min_num_instances'
+
+    _Node: Final = Node
 
     kb: KnowledgeBase
 
@@ -246,11 +248,13 @@ class LengthBasedRefinement(BaseRefinement[Node]):
             raise ValueError
 
 
-class ModifiedCELOERefinement(BaseRefinement[Node]):
+class ModifiedCELOERefinement(BaseRefinement[OENode]):
     """
      A top down/downward refinement operator refinement operator in ALC.
     """
     __slots__ = 'max_child_length'
+
+    _Node: Final = OENode
 
     kb: KnowledgeBase
     max_child_length: int

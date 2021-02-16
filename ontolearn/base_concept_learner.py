@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 from logging import Logger
 
 from . import KnowledgeBase
-from .abstracts import BaseRefinement, AbstractScorer, AbstractTree, BaseNode, AbstractHeuristic
+from .abstracts import BaseRefinement, AbstractScorer, AbstractTree, AbstractNode, AbstractHeuristic
 from typing import List, Set, Tuple, Dict, Optional, Iterable, Generic, TypeVar
 
 from .owlapy.model import OWLClassExpression, OWLNamedIndividual
@@ -16,7 +16,8 @@ import random
 import types
 from .static_funcs import retrieve_concept_chain, decompose_to_atomic
 
-_N = TypeVar('_N', bound=BaseNode)
+_N = TypeVar('_N', bound=AbstractNode)
+
 
 class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     """
@@ -429,7 +430,3 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         folder = self.kb.path[:self.kb.path.rfind('/')] + '/'
         kb_name = 'enriched_' + self.kb.name
         self.kb.save(folder + kb_name + '.owl', rdf_format=rdf_format)
-
-    @abstractmethod
-    def make_node(self, c: OWLClassExpression, is_root: bool = False) -> _N:
-        pass
