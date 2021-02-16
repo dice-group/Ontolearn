@@ -148,13 +148,27 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def apply(self, node: _N):
+    def apply(self, node: _N, individuals):
         pass
 
     def clean(self):
         self.pos = None
         self.neg = None
         self.unlabelled = None
+        self.applied = 0
+
+
+class AbstractHeuristic(Generic[_N], metaclass=ABCMeta):
+    __slots__ = 'applied'
+
+    applied: int
+
+    @abstractmethod
+    def apply(self, node: _N):
+        pass
+
+    @abstractmethod
+    def clean(self):
         self.applied = 0
 
 
