@@ -15,18 +15,20 @@ flag_for_performance = False
 
 def parametrized_performance_debugger(fmt=DEFAULT_FMT):
     def decorate(func):
-        def clocked(*_args):
-            t0 = time.time()
-            _result = func(*_args)
-            elapsed = time.time() - t0
-            name = func.__name__
-            args = ', '.join(repr(arg) for arg in _args)
-            result = repr(_result)
-            if flag_for_performance:
+        if flag_for_performance:
+            def clocked(*_args):
+                t0 = time.time()
+                _result = func(*_args)
+                elapsed = time.time() - t0
+                name = func.__name__
+                args = ', '.join(repr(arg) for arg in _args)
+                result = repr(_result)
                 print(fmt.format(**locals()))
-            return _result
+                return _result
 
-        return clocked
+            return clocked
+        else:
+            return func
 
     return decorate
 
@@ -66,7 +68,7 @@ def deserializer(*, path: str, serialized_name: str):
     return obj_
 
 
-def create_logger(*, name, p):
+def create_logger(*, name, p, verbose):
     """
     @todos We should create a better logging.
     @param name:
@@ -88,7 +90,8 @@ def create_logger(*, name, p):
     ch.setFormatter(formatter)
     fh.setFormatter(formatter)
     # add the handlers to logger
-    # logger.addHandler(ch) # do not print in console.
+    if verbose > 1:
+        logger.addHandler(ch) # do not print in console.
     logger.addHandler(fh)
 
     return logger
