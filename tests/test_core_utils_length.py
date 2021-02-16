@@ -17,39 +17,40 @@ class Core_OWLClassExpressionLengthMetric_Test(unittest.TestCase):
         female = OWLClass(IRI.create(NS, 'female'))
         has_child = OWLObjectProperty(IRI(NS, 'hasChild'))
 
-        c = OWLObjectUnionOf((male, OWLObjectSomeValuesFrom(property=has_child, filler=female)))
-        l = cl.length(c)
+        ce = OWLObjectUnionOf((male, OWLObjectSomeValuesFrom(property=has_child, filler=female)))
+        le = cl.length(ce)
         # male ⊔ (∃ hasChild.female)
-        self.assertEqual(l, 5)
-        c = OWLObjectComplementOf(OWLObjectIntersectionOf((female,
+        self.assertEqual(le, 5)
+        ce = OWLObjectComplementOf(OWLObjectIntersectionOf((female,
                                                            OWLObjectSomeValuesFrom(property=has_child,
                                                                                    filler=OWLThing))))
-        l = cl.length(c)
+        le = cl.length(ce)
         # ¬(female ⊓ (∃ hasChild.⊤))
-        self.assertEqual(l, 6)
-        c = OWLObjectSomeValuesFrom(property=has_child,
+        self.assertEqual(le, 6)
+        ce = OWLObjectSomeValuesFrom(property=has_child,
                                     filler=OWLObjectSomeValuesFrom(property=has_child,
                                                                    filler=OWLObjectSomeValuesFrom(property=has_child,
                                                                                                   filler=OWLThing)))
-        l = cl.length(c)
+        le = cl.length(ce)
         # ∃ hasChild.(∃ hasChild.(∃ hasChild.⊤))
-        self.assertEqual(l, 7)
+        self.assertEqual(le, 7)
 
         i1 = OWLNamedIndividual(IRI.create(NS, 'heinz'))
         i2 = OWLNamedIndividual(IRI.create(NS, 'marie'))
-        c = OWLObjectOneOf((i1, i2))
+        ce = OWLObjectOneOf((i1, i2))
+        le = cl.length(ce)
         # {heinz ⊔ marie}
-        self.assertEqual(l, 1)
+        self.assertEqual(le, 1)
 
-        c = OWLObjectHasValue(property=has_child, value=i1)
-        l = cl.length(c)
+        ce = OWLObjectHasValue(property=has_child, value=i1)
+        le = cl.length(ce)
         # ∃ hasChild.{heinz}
-        self.assertEqual(l, 3)
+        self.assertEqual(le, 3)
 
-        c = OWLObjectMinCardinality(property=has_child, cardinality=2, filler=OWLThing)
-        l = cl.length(c)
+        ce = OWLObjectMinCardinality(property=has_child, cardinality=2, filler=OWLThing)
+        le = cl.length(ce)
         # ≥ 2 hasChild.⊤
-        self.assertEqual(l, 4)
+        self.assertEqual(le, 4)
 
 
 if __name__ == '__main__':
