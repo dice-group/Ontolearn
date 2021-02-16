@@ -1,8 +1,9 @@
+from . import KnowledgeBase
+from .abstracts import AbstractScorer
 from .base_concept_learner import BaseConceptLearner
-from .search import Node, CELOESearchTree, SearchTree, SearchTreePriorityQueue
-from typing import Set, Iterable, List
-from owlready2 import get_ontology
-from owlready2.entity import ThingClass
+from .owlapy.model import OWLClassExpression, OWLNamedIndividual
+from .search import Node, CELOESearchTree, SearchTree, SearchTreePriorityQueue, OENode
+from typing import Set, Iterable, List, Optional
 import types
 import numpy as np
 import pandas as pd
@@ -10,15 +11,23 @@ from .heuristics import CELOEHeuristic, DLFOILHeuristic, OCELHeuristic
 from .refinement_operators import ModifiedCELOERefinement, CustomRefinementOperator, LengthBasedRefinement
 from .metrics import F1, Accuracy, Recall
 import time
-from .owlready2.utils import get_full_iri
 
 pd.set_option('display.max_columns', 100)
 
 
 class CELOE(BaseConceptLearner):
-    def __init__(self, knowledge_base, heuristic_func=None, quality_func=None, iter_bound=None,
-                 max_num_of_concepts_tested=None, max_runtime=None,
-                 ignored_concepts=None, verbose=None, terminate_on_goal=None):
+    __slots__ = 'max_he', 'min_he'
+
+    max_he: int
+    min_he: int
+
+    search_tree: CELOESearchTree
+
+    def __init__(self, knowledge_base: KnowledgeBase, heuristic_func: Optional[AbstractScorer] = None,
+                 quality_func: Optional[AbstractScorer] = None, iter_bound: Optional[int] = None,
+                 max_num_of_concepts_tested: Optional[int] = None, max_runtime: Optional[int] = None,
+                 ignored_concepts: Optional[Set[OWLClassExpression]] = None, verbose: Optional[int] = None,
+                 terminate_on_goal: Optional[bool] = None):
         if heuristic_func is None:
             heuristic_func = CELOEHeuristic()
         super().__init__(knowledge_base=knowledge_base, refinement_operator=ModifiedCELOERefinement(kb=knowledge_base),
@@ -32,33 +41,36 @@ class CELOE(BaseConceptLearner):
                          verbose=verbose, name='celoe_python')
         self.max_he, self.min_he = self.max_num_of_concepts_tested, 1
 
-    def next_node_to_expand(self, step: int) -> Node:
+    def next_node_to_expand(self, step: int) -> OENode:
         """
         Return most promising node/concept based
         """
         # Original implementation of CELOE: Sort search tree at each step. Quite inefficient.
-        self.search_tree.sort_search_tree_by_decreasing_order(key='heuristic')
-        if self.verbose > 1:
-            self.search_tree.show_search_tree(step)
-        for n in self.search_tree:
-            return n
-        raise ValueError('Search Tree can not be empty.')
+        return self.search_tree.best_heuristic_node()
+        # self.search_tree.sort_search_tree_by_decreasing_order(key='heuristic')
+        # if self.verbose > 1:
+        #     self.search_tree.show_search_tree(step)
+        # for n in self.search_tree:
+        #     return n
+        # raise ValueError('Search Tree can not be empty.')
 
-    def apply_rho(self, node: Node):
-        assert isinstance(node, Node)
+    def apply_rho(self, node: OENode) -> Iterable[OENode]:
+        assert isinstance(node, OENode)
         self.search_tree.update_prepare(node)
-        refinements = [self.rho.get_node(i, parent_node=node) for i in
-                       self.rho.refine(node,
-                                       max_length=node.h_exp + 1,
-                                       current_domain=self.start_class)
-                       if i is not None and i.str not in self.concepts_to_ignore]
+        refinements = list(self.rho.refine(node,
+                                           max_length=node.h_exp + 1,
+                                           current_domain=self.start_class))
         node.increment_h_exp()
         node.refinement_count = len(refinements)
         self.heuristic_func.apply(node, parent_node=node.parent_node)
         self.search_tree.update_done(node)
-        return refinements
 
-    def fit(self, pos: Set[str], neg: Set[str], ignore: Set[str] = None, max_runtime: int = None):
+        def make_node(c: OWLClassExpression) -> Node:
+            return Node(c, parent_node=node)
+
+        return map(make_node, refinements)
+
+    def fit(self, pos: Set[OWLNamedIndividual], neg: Set[OWLNamedIndividual], ignore: Set[str] = None, max_runtime: int = None):
         """
         Find hypotheses that explain pos and neg.
         """

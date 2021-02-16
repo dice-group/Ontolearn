@@ -1,6 +1,10 @@
-from collections import OrderedDict, defaultdict
-from functools import total_ordering
+import random
+import time
+import weakref
+from _weakref import ReferenceType
 from abc import ABCMeta, abstractmethod, ABC
+from collections import OrderedDict
+from typing import Set, List, Tuple, Iterable, TypeVar, Optional, Type, Generic, ClassVar, cast
 
 from .core.owl.utils import OWLClassExpressionLengthMetric
 from .owlapy.model import OWLClassExpression, OWLOntology
@@ -11,24 +15,24 @@ from typing import Set, Dict, List, Tuple, Iterable, Generator, SupportsFloat, T
 import random
 import pandas as pd
 import torch
-from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction, Experience
+from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
 import json
 import numpy as np
 import time
 
-random.seed(0)
+# random.seed(0)  # Note: a module should not set the seed
 
 _N = TypeVar('_N', bound='BaseNode')
 
 
 class BaseNode(metaclass=ABCMeta):
     """Base class for Concept."""
-    __slots__ = ['concept', '__heuristic_score', '__horizontal_expansion', '__quality_score',
-                 '__refinement_count', '__depth', '__children', '__embeddings',
-                 'parent_node', '__is_root']
+    __slots__ = 'concept', '__heuristic_score', '__horizontal_expansion', '__quality_score', \
+                '__refinement_count', '__depth', '__children', '__embeddings', \
+                '__parent_node_ref', '__is_root', '__weakref__'
 
     concept: OWLClassExpression
-    parent_node: _N
+    __parent_node_ref: ReferenceType
     __quality_score: Optional[float]
     __heuristic_score: Optional[float]
     __is_root: bool
@@ -53,6 +57,14 @@ class BaseNode(metaclass=ABCMeta):
             self.__depth = 0
         else:
             self.__depth = self.parent_node.depth + 1
+
+    @property
+    def parent_node(self) -> _N:
+        return cast(type(self), self.__parent_node_ref()) if self.__parent_node_ref is not None else None
+
+    @parent_node.setter
+    def parent_node(self, value: _N):
+        self.__parent_node_ref = weakref.ref(value) if value is not None else None
 
     @property
     def embeddings(self):
@@ -112,14 +124,15 @@ class BaseNode(metaclass=ABCMeta):
     def remove_child(self: _N, n: _N) -> None:
         self.__children.remove(n)
 
-    def increment_h_exp(self, extra_inc: int = 0) -> None:
+    def increment_h_exp(self, *, extra_inc: int = 0) -> None:
         self.__horizontal_expansion += extra_inc + 1
 
 
-class AbstractScorer(ABC):
+class AbstractScorer(Generic[_N], metaclass=ABCMeta):
     """
     An abstract class for quality and heuristic functions.
     """
+    __slots__ = 'pos', 'neg', 'unlabelled', 'applied'
 
     @abstractmethod
     def __init__(self, pos, neg, unlabelled):
@@ -142,7 +155,7 @@ class AbstractScorer(ABC):
         pass
 
     @abstractmethod
-    def apply(self, *args, **kwargs):
+    def apply(self, node: _N):
         pass
 
     def clean(self):
@@ -153,17 +166,16 @@ class AbstractScorer(ABC):
 
 
 _KB = TypeVar('_KB', bound='AbstractKnowledgeBase')
-_N = TypeVar('_N', bound=BaseNode)
 
 
 class BaseRefinement(Generic[_N], metaclass=ABCMeta):
     """
     Base class for Refinement Operators.
 
-    Let C, D \in N_c where N_c os a finite set of concepts.
+    Let C, D \\in N_c where N_c os a finite set of concepts.
 
     * Proposition 3.3 (Complete and Finite Refinement Operators) [1]
-        ** ρ(C) = {C ⊓ T} ∪ {D | D is not empty AND D \sqset C}
+        ** ρ(C) = {C ⊓ T} ∪ {D | D is not empty AND D \\sqset C}
         *** The operator is finite,
         *** The operator is complete as given a concept C, we can reach an arbitrary concept D such that D subset of C.
 
@@ -178,44 +190,39 @@ class BaseRefinement(Generic[_N], metaclass=ABCMeta):
 
     [1] Learning OWL Class Expressions
     """
-    __slots__ = 'kb', 'max_size_of_concept', 'min_size_of_concept', '_NodeType'
+    __slots__ = 'kb'
 
     kb: _KB
-    _NodeType: Type[_N]
 
     @abstractmethod
-    def __init__(self, _NodeType: Type[_N], kb: _KB, max_size_of_concept=10_000, min_size_of_concept=0):
-        self._NodeType = _NodeType
+    def __init__(self, kb: _KB):
         self.kb = kb
-        self.max_size_of_concept = max_size_of_concept
-        self.min_size_of_concept = min_size_of_concept
-        # self.concepts_to_nodes = dict()
 
     @abstractmethod
-    def refine(self, *args, **kwargs):
+    def refine(self, *args, **kwargs) -> Iterable[OWLClassExpression]:
+        """Refine a given node
+        """
         pass
 
-    def get_node(self, c: OWLClassExpression, parent_node: Optional[_N] = None, root: bool = False) -> _N:
-        """
-
-        @param c:
-        @param parent_node:
-        @param root:
-        @return:
-        """
-        if parent_node is None and root is False:
-            print(c)
-            raise ValueError
-        return self._NodeType(concept=c, parent_node=parent_node, root=root)
-
     def len(self, concept: OWLClassExpression) -> int:
-        """The length of a concept"""
+        """The length of a concept
+
+        Args:
+            concept: concept
+
+        Returns:
+            length of concept according to some metric
+        """
         return self.kb.cl(concept)
 
 
-class AbstractTree(ABC):
+class AbstractTree(metaclass=ABCMeta):
+    pass
+
+
+class AbstractTree2(ABC):
     @abstractmethod
-    def __init__(self, quality_func, heuristic_func):
+    def __init__(self, quality_func: AbstractScorer, heuristic_func: AbstractScorer):
         self.quality_func = quality_func
         self.heuristic_func = heuristic_func
         self._nodes = dict()
@@ -326,9 +333,12 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
         pass
 
     def describe(self) -> None:
+        """Print a short description of the Knowledge Base to standard output"""
+        properties_count = iter_count(self.ontology().object_properties_in_signature()) + iter_count(
+            self.ontology().data_properties_in_signature())
         print(f'Number of named classes: {iter_count(self.ontology().classes_in_signature())}\n'
               f'Number of individuals: {self.individuals_count()}\n'
-              f'Number of properties: {iter_count(self.ontology().object_properties_in_signature()) + iter_count(self.ontology().data_properties_in_signature())}')
+              f'Number of properties: {properties_count}')
 
     @abstractmethod
     def clean(self) -> None:
