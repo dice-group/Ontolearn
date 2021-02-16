@@ -2,15 +2,15 @@
 
 import types
 from functools import singledispatchmethod
-from typing import List
+from typing import List, Callable
 
-from ontolearn.owlapy import IRI
+from ontolearn.owlapy import IRI, namespaces
 from ontolearn.owlapy.io import OWLObjectRenderer
 from ontolearn.owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLBooleanClassExpression, OWLNaryBooleanClassExpression, \
     OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, OWLClassExpression, OWLRestriction, \
     OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectHasSelf, OWLObjectHasValue, \
-    OWLObjectOneOf, OWLNamedIndividual
+    OWLObjectOneOf, OWLNamedIndividual, OWLEntity
 
 _DL_SYNTAX = types.SimpleNamespace(
     SUBCLASS="⊑",
@@ -45,21 +45,31 @@ _DL_SYNTAX = types.SimpleNamespace(
 #     OWLFacet.MAX_EXCLUSIVE: "\u003c", # <
 # })
 
-def _simple_short_form_provider(iri: IRI):
+def _simple_short_form_provider(e: OWLEntity) -> str:
+    iri: IRI = e.get_iri()
     sf = iri.get_short_form()
-    if iri.get_namespace() == "http://www.w3.org/2001/XMLSchema#":
-        return "xsd:%s" % sf
+    for ns in [namespaces.XSD, namespaces.OWL, namespaces.RDFS, namespaces.RDF]:
+        if iri.get_namespace() == ns:
+            return "%s:%s" % (ns.prefix, sf)
     else:
         return sf
 
 
 class DLSyntaxRenderer(OWLObjectRenderer):
+    """DL Syntax renderer for OWL Objects"""
     __slots__ = '_sfp'
 
-    def __init__(self, short_form_provider=_simple_short_form_provider):
+    _sfp: Callable[[OWLEntity], str]
+
+    def __init__(self, short_form_provider: Callable[[OWLEntity], str] = _simple_short_form_provider):
+        """Create a new DL Syntax renderer
+
+        Args:
+            short_form_provider: custom short form provider
+        """
         self._sfp = short_form_provider
 
-    def set_short_form_provider(self, short_form_provider) -> None:
+    def set_short_form_provider(self, short_form_provider: Callable[[OWLEntity], str]) -> None:
         self._sfp = short_form_provider
 
     @singledispatchmethod
@@ -73,15 +83,15 @@ class DLSyntaxRenderer(OWLObjectRenderer):
         elif o.is_owl_thing():
             return _DL_SYNTAX.TOP
         else:
-            return self._sfp(o.get_iri())
+            return self._sfp(o)
 
     @render.register
     def _(self, p: OWLObjectProperty) -> str:
-        return self._sfp(p.get_iri())
+        return self._sfp(p)
 
     @render.register
     def _(self, i: OWLNamedIndividual) -> str:
-        return self._sfp(i.get_iri())
+        return self._sfp(i)
 
     @render.register
     def _(self, e: OWLObjectSomeValuesFrom) -> str:
