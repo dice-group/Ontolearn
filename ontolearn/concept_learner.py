@@ -1,3 +1,4 @@
+import logging
 import time
 from contextlib import contextmanager
 from functools import total_ordering, singledispatchmethod
@@ -19,11 +20,14 @@ from .owlapy.render import DLSyntaxRenderer
 from .owlapy.utils import as_index
 from .refinement_operators import ModifiedCELOERefinement, LengthBasedRefinement
 from .search import SearchTreePriorityQueue
-
-pd.set_option('display.max_columns', 100)
+from .utils import oplogging
 
 _N = TypeVar('_N')
 _O = TypeVar('_O')
+
+pd.set_option('display.max_columns', 100)
+
+logger = logging.getLogger(__name__)
 
 
 # noinspection DuplicatedCode
@@ -82,7 +86,6 @@ class CELOE(BaseConceptLearner[OENode]):
                  max_num_of_concepts_tested: Optional[int] = None,
                  max_runtime: Optional[int] = None,
                  ignored_concepts: Optional[Set[OWLClassExpression]] = None,
-                 verbose: Optional[int] = None,
                  terminate_on_goal: Optional[bool] = None,
                  max_results: int = 10,
                  best_only: bool = False,
@@ -189,8 +192,8 @@ class CELOE(BaseConceptLearner[OENode]):
             most_promising = self.next_node_to_expand(j)
             tree_parent = self.node_tree_parent(most_promising)
             minimum_length = most_promising.h_exp
-            if self.verbose >= 3:
-                self.logger.info("now refining %s", most_promising)
+            if logger.isEnabledFor(oplogging.TRACE):
+                logger.debug("now refining %s", most_promising)
             for ref in self.downward_refinement(most_promising):
                 # we ignore all refinements with lower length 
                 # (this also avoids duplicate node children)
@@ -238,8 +241,8 @@ class CELOE(BaseConceptLearner[OENode]):
         # TODO: expression rewriting
         self.heuristic_func.apply(ref)
         if self.best_descriptions.maybe_add(ref):
-            if self.verbose >= 1:
-                self.logger.info("Better description found: %s", ref)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Better description found: %s", ref)
         self.heuristic_queue.add(ref)
         # TODO: implement noise
         return True
@@ -313,7 +316,8 @@ class CELOE(BaseConceptLearner[OENode]):
             # inc. minimum since we found no other node which also has min. horiz. exp.
             self.min_he += 1
 
-            # print("minimum horizontal expansion is now ", self.min_he)
+            if logger.isEnabledFor(oplogging.TRACE):
+                logger.info("minimum horizontal expansion is now %d", self.min_he)
 
     def clean(self):
         self.max_he = 0

@@ -19,7 +19,7 @@ class DLLearnerBinder:
         self.name = model
         self.max_runtime = max_runtime
         self.storage_path, _ = create_experiment_folder()
-        self.logger = create_logger(name=self.name, p=self.storage_path)
+        # self.logger = create_logger(name=self.name, p=self.storage_path)
         self.best_predictions = None
 
     def write_dl_learner_config(self, pos: List[str], neg: List[str]) -> str:

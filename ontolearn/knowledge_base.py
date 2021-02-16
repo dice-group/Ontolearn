@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, Iterable, Optional, Callable, overload, Union
 
 from .abstracts import AbstractKnowledgeBase
@@ -12,6 +13,8 @@ from .owlapy.utils import NamedFixedSet, popcount, iter_count
 # warnings.filterwarnings("ignore")
 
 Factory = Callable
+
+logger = logging.getLogger(__name__)
 
 
 def _Default_OntologyManagerFactory() -> OWLOntologyManager:

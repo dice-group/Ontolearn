@@ -8,7 +8,10 @@ from sklearn.manifold import TSNE
 import random
 import pandas as pd
 
+from ontolearn.utils.log_config import setup_logging
+
 # DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
+
 DEFAULT_FMT = 'Func:{name} took {elapsed:0.8f}s'
 flag_for_performance = False
 
@@ -36,9 +39,9 @@ def parametrized_performance_debugger(fmt=DEFAULT_FMT):
 def performance_debugger(func_name):
     def function_name_decorator(func):
         def debug(*args, **kwargs):
-            starT = time.time()
+            start = time.time()
             r = func(*args, **kwargs)
-            print(func_name, ' took ', round(time.time() - starT, 4), ' seconds')
+            print(func_name, ' took ', round(time.time() - start, 4), ' seconds')
 
             return r
 
@@ -48,10 +51,13 @@ def performance_debugger(func_name):
 
 
 def create_experiment_folder(folder_name='Log'):
-    directory = os.getcwd() + '/' + folder_name + '/'
-    folder_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    path_of_folder = directory + folder_name
-    os.makedirs(path_of_folder)
+    if log_config.log_dirs:
+        path_of_folder = log_config.log_dirs[-1]
+    else:
+        directory = os.getcwd() + '/' + folder_name + '/'
+        folder_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        path_of_folder = directory + folder_name
+        os.makedirs(path_of_folder)
     return path_of_folder, path_of_folder[:path_of_folder.rfind('/')]
 
 
@@ -66,6 +72,9 @@ def deserializer(*, path: str, serialized_name: str):
         obj_ = pickle.load(f)
     f.close()
     return obj_
+
+
+# self.logger = create_logger(name=self.name, p=self.storage_path, verbose=verbose)
 
 
 def create_logger(*, name, p, verbose):
@@ -91,7 +100,7 @@ def create_logger(*, name, p, verbose):
     fh.setFormatter(formatter)
     # add the handlers to logger
     if verbose > 1:
-        logger.addHandler(ch) # do not print in console.
+        logger.addHandler(ch)  # do not print in console.
     logger.addHandler(fh)
 
     return logger
