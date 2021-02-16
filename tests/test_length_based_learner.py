@@ -2,12 +2,11 @@
 
 import json
 
-from ontolearn import CELOEHeuristic
-from ontolearn import F1
 from ontolearn import KnowledgeBase
-from ontolearn import LengthBasedRefinement
-from ontolearn import LengthBaseLearner
-from ontolearn import SearchTreePriorityQueue
+from ontolearn.concept_learner import LengthBaseLearner
+from ontolearn.heuristics import CELOEHeuristic
+from ontolearn.refinement_operators import LengthBasedRefinement
+from ontolearn.search import SearchTreePriorityQueue
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 with open('examples/synthetic_problems.json') as json_file:
