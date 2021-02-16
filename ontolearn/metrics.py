@@ -21,10 +21,9 @@ class Recall(AbstractScorer):
         except ValueError:
             return 0
 
-    def apply(self, node):
+    def apply(self, node, instances):
         self.applied += 1
 
-        instances = node.concept.instances
         if len(instances) == 0:
             node.quality = 0
             return False
@@ -56,9 +55,9 @@ class Precision(AbstractScorer):
         except ValueError:
             return 0
 
-    def apply(self, node):
+    def apply(self, node, instances):
         self.applied += 1
-        instances = node.concept.instances
+
         if len(instances) == 0:
             node.quality = 0
             return False
@@ -97,10 +96,9 @@ class F1(AbstractScorer):
 
         return round(f_1, 5)
 
-    def apply(self, node):
+    def apply(self, node, instances):
         self.applied += 1
 
-        instances = node.concept.instances
         if len(instances) == 0:
             node.quality = 0
             return False
@@ -138,10 +136,10 @@ class Accuracy(AbstractScorer):
     Accuracy is          acc = (tp + tn) / (tp + tn + fp+ fn). However,
     Concept learning papers (e.g. Learning OWL Class expression) appear to invernt their own accuracy metrics.
 
-    In OCEL =>    Accuracy of a concept = 1 - ( |E^+ \ R(C)|+ |E^- AND R(C)|) / |E|)
+    In OCEL =>    Accuracy of a concept = 1 - ( |E^+ \\ R(C)|+ |E^- AND R(C)|) / |E|)
 
 
-    In CELOE  =>    Accuracy of a concept C = 1 - ( |R(A) \ R(C)| + |R(C) \ R(A)|)/n
+    In CELOE  =>    Accuracy of a concept C = 1 - ( |R(A) \\ R(C)| + |R(C) \\ R(A)|)/n
 
 
 
@@ -167,19 +165,17 @@ class Accuracy(AbstractScorer):
             print(tn)
             print(fp)
             print(fn)
-            acc=0
+            acc = 0
         return acc
-
 
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
         self.name = 'Accuracy'
 
-    def apply(self, node: Node):
+    def apply(self, node: Node, instances):
         assert isinstance(node, Node)
         self.applied += 1
 
-        instances = node.concept.instances
         if len(instances) == 0:
             node.quality = 0
             return False
@@ -187,10 +183,11 @@ class Accuracy(AbstractScorer):
         tp = len(self.pos.intersection(instances))
         tn = len(self.neg.difference(instances))
 
-        fp = len(self.neg.intersection(
-            instances))  # FP corresponds to CN in Learning OWL Class Expressions OCEL paper, i.e., cn = |R(C) \AND E^-| covered negatives
-        fn = len(self.pos.difference(
-            instances))  # FN corresponds to UP in Learning OWL Class Expressions OCEL paper, i.e., up = |E^+ \ R(C)|
+        # FP corresponds to CN in Learning OWL Class Expressions OCEL paper, i.e., cn = |R(C) \AND
+        # E^-| covered negatives
+        fp = len(self.neg.intersection(instances))
+        # FN corresponds to UP in Learning OWL Class Expressions OCEL paper, i.e., up = |E^+ \ R(C)|
+        fn = len(self.pos.difference(instances))
         # uncovered positives
 
         acc = (tp + tn) / (tp + tn + fp + fn)
