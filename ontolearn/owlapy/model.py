@@ -15,7 +15,18 @@ If OWL-API has streaming and getter API, it is enough to provide the streaming A
 
 class OWLObject(metaclass=ABCMeta):
     __slots__ = ()
-    pass
+
+    @abstractmethod
+    def __eq__(self, other):
+        pass
+
+    @abstractmethod
+    def __hash__(self):
+        pass
+
+    @abstractmethod
+    def __repr__(self):
+        pass
 
 
 class HasOperands(Generic[_T], metaclass=ABCMeta):
@@ -26,11 +37,11 @@ class HasOperands(Generic[_T], metaclass=ABCMeta):
         pass
 
 
-class OWLPropertyRange(OWLObject):
+class OWLPropertyRange(OWLObject, metaclass=ABCMeta):
     """OWL Objects that can be the ranges of properties"""
 
 
-class OWLDataRange(OWLPropertyRange):
+class OWLDataRange(OWLPropertyRange, metaclass=ABCMeta):
     """Data Range"""
 
 
@@ -64,7 +75,7 @@ class OWLAnonymousClassExpression(OWLClassExpression, metaclass=ABCMeta):
         return OWLObjectComplementOf(self)
 
 
-class OWLBooleanClassExpression(OWLAnonymousClassExpression):
+class OWLBooleanClassExpression(OWLAnonymousClassExpression, metaclass=ABCMeta):
     __slots__ = ()
     pass
 
@@ -191,7 +202,7 @@ class OWLObjectPropertyExpression(OWLPropertyExpression):
         return True
 
 
-class OWLDataPropertyExpression(OWLPropertyExpression):
+class OWLDataPropertyExpression(OWLPropertyExpression, metaclass=ABCMeta):
     __slots__ = ()
 
     def is_data_property_expression(self):
@@ -501,8 +512,19 @@ class OWLObjectHasSelf(OWLObjectRestriction):
     def get_property(self) -> OWLObjectPropertyExpression:
         return self._property
 
+    def __eq__(self, other):
+        if type(other) == type(self):
+            return self._property == other._property
+        return NotImplemented
 
-class OWLIndividual(OWLObject):
+    def __hash__(self):
+        return hash(self._property)
+
+    def __repr__(self):
+        return f'OWLObjectHasSelf({self._property})'
+
+
+class OWLIndividual(OWLObject, metaclass=ABCMeta):
     __slots__ = ()
     pass
 
@@ -520,6 +542,9 @@ class OWLObjectHasValue(OWLHasValueRestriction[OWLIndividual], OWLObjectRestrict
 
     def get_property(self) -> OWLObjectPropertyExpression:
         return self._property
+
+    def __repr__(self):
+        return f'OWLObjectHasValue(property={self.get_property()}, value={self._v})'
 
 
 class OWLObjectOneOf(OWLAnonymousClassExpression, HasOperands[OWLIndividual]):
@@ -544,6 +569,17 @@ class OWLObjectOneOf(OWLAnonymousClassExpression, HasOperands[OWLIndividual]):
         if len(self._values) == 1:
             return self
         return OWLObjectUnionOf(map(lambda _: OWLObjectOneOf(_), self.individuals()))
+
+    def __hash__(self):
+        return hash(self._values)
+
+    def __eq__(self, other):
+        if type(other) == type(self):
+            return self._values == other._values
+        return NotImplemented
+
+    def __repr__(self):
+        return f'OWLObjectOneOf({self._values})'
 
 
 class OWLNamedIndividual(OWLIndividual, OWLEntity):
