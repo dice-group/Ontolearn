@@ -1,12 +1,12 @@
 from typing import Final
 
-from .abstracts import AbstractScorer
+from .abstracts import AbstractScorer, AbstractHeuristic
 import numpy as np
 
 from .search import Node, OENode
 
 
-class CELOEHeuristic(AbstractScorer):
+class CELOEHeuristic(AbstractHeuristic[OENode]):
     __slots__ = 'gainBonusFactor', 'startNodeBonus', 'nodeRefinementPenalty', 'expansionPenaltyFactor'
 
     name: Final = 'CELOE_Heuristic'
@@ -16,12 +16,12 @@ class CELOEHeuristic(AbstractScorer):
     nodeRefinementPenalty: Final[float]
     expansionPenaltyFactor: Final[float]
 
-    def __init__(self, pos=None, neg=None, unlabelled=None, *,
+    def __init__(self, *,
                  gainBonusFactor: float = 0.3,
                  startNodeBonus: float = 0.1,
                  nodeRefinementPenalty: float = 0.001,
                  expansionPenaltyFactor: float = 0.1):
-        super().__init__(pos, neg, unlabelled)
+        super().__init__()
         self.gainBonusFactor = gainBonusFactor
         self.startNodeBonus = startNodeBonus
         self.nodeRefinementPenalty = nodeRefinementPenalty
@@ -46,6 +46,9 @@ class CELOEHeuristic(AbstractScorer):
         # // penalty for having many child nodes (stuck prevention)
         heuristic_val -= node.refinement_count * self.nodeRefinementPenalty
         node.heuristic = round(heuristic_val, 5)
+
+    def clean(self):
+        super().clean()
 
 
 class DLFOILHeuristic(AbstractScorer):
