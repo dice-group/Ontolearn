@@ -222,57 +222,47 @@ class OWLClassExpressionLengthMetric:
 
 @total_ordering
 class OrderedOWLObject:
-    __slots__ = 'o'
+    __slots__ = 'o', '_chain'
+
+    o: HasIndex  # o: Intersection[OWLObject, HasIndex]
+    _chain: Optional[Tuple]
 
     # we are limited by https://github.com/python/typing/issues/213 # o: Intersection[OWLObject, HasIndex]
     def __init__(self, o: HasIndex):
         self.o = o
+        self._chain = None
+
+    def _comparison_chain(self):
+        if self._chain is None:
+            c = [self.o.type_index]
+
+            if isinstance(self.o, OWLObjectRestriction):
+                c.append(OrderedOWLObject(as_index(self.o.get_property())))
+            if isinstance(self.o, HasFiller):
+                c.append(OrderedOWLObject(self.o.get_filler()))
+            if isinstance(self.o, HasCardinality):
+                c.append(self.o.get_cardinality())
+            if isinstance(self.o, HasOperands):
+                c.append(tuple(map(OrderedOWLObject, self.o.operands())))
+            if isinstance(self.o, HasIRI):
+                c.append(self.o.get_iri().as_str())
+
+            self._chain = tuple(c)
+
+        return self._chain
 
     def __lt__(self, other):
-        cs = [self.o.type_index]
-        co = [other.o.type_index]
-
-        if cs == co:
-            if isinstance(self.o, OWLObjectRestriction):
-                cs.append(OrderedOWLObject(as_index(self.o.get_property())))
-                co.append(OrderedOWLObject(other.o.get_property()))
-            if isinstance(self.o, HasFiller):
-                cs.append(OrderedOWLObject(self.o.get_filler()))
-                co.append(OrderedOWLObject(other.o.get_filler()))
-            if isinstance(self.o, HasCardinality):
-                cs.append(self.o.get_cardinality())
-                co.append(other.o.get_cardinality())
-            if isinstance(self.o, HasOperands):
-                cs.append(tuple(map(OrderedOWLObject, self.o.operands())))
-                co.append(tuple(map(OrderedOWLObject, other.o.operands())))
-            if isinstance(self.o, HasIRI):
-                cs.append(self.o.get_iri().as_str())
-                co.append(other.o.get_iri().as_str())
-
-        return tuple(cs) < tuple(co)
+        if self.o.type_index < other.o.type_index:
+            return True
+        elif self.o.type_index > other.o.type_index:
+            return False
+        else:
+            return self._comparison_chain() < other._comparison_chain()
 
     def __eq__(self, other):
-        cs = [self.o.type_index]
-        co = [other.o.type_index]
+        return self.o == other.o
 
-        if cs == co:
-            if isinstance(self.o, OWLObjectRestriction):
-                cs.append(OrderedOWLObject(as_index(self.o.get_property())))
-                co.append(OrderedOWLObject(other.o.get_property()))
-            if isinstance(self.o, HasFiller):
-                cs.append(OrderedOWLObject(self.o.get_filler()))
-                co.append(OrderedOWLObject(other.o.get_filler()))
-            if isinstance(self.o, HasCardinality):
-                cs.append(self.o.get_cardinality())
-                co.append(other.o.get_cardinality())
-            if isinstance(self.o, HasOperands):
-                cs.append(tuple(map(OrderedOWLObject, self.o.operands())))
-                co.append(tuple(map(OrderedOWLObject, other.o.operands())))
-            if isinstance(self.o, HasIRI):
-                cs.append(self.o.get_iri().as_str())
-                co.append(other.o.get_iri().as_str())
 
-        return tuple(cs) == tuple(co)
 
 
 
