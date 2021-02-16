@@ -120,7 +120,12 @@ class OWLNamedObject(OWLObject, HasIRI, metaclass=ABCMeta):
     pass
 
 
-class OWLClass(OWLClassExpression, OWLNamedObject):
+class OWLEntity(OWLNamedObject, metaclass=ABCMeta):
+    __slots__ = ()
+    pass
+
+
+class OWLClass(OWLClassExpression, OWLEntity):
     """An OWL 2 named Class"""
     __slots__ = '_iri', '_is_nothing', '_is_thing'
     type_index: Final = 1001
@@ -193,7 +198,7 @@ class OWLDataPropertyExpression(OWLPropertyExpression):
         return True
 
 
-class OWLProperty(OWLPropertyExpression, OWLNamedObject, metaclass=ABCMeta):
+class OWLProperty(OWLPropertyExpression, OWLEntity, metaclass=ABCMeta):
     __slots__ = ()
     pass
 
@@ -541,7 +546,7 @@ class OWLObjectOneOf(OWLAnonymousClassExpression, HasOperands[OWLIndividual]):
         return OWLObjectUnionOf(map(lambda _: OWLObjectOneOf(_), self.individuals()))
 
 
-class OWLNamedIndividual(OWLIndividual, OWLNamedObject):
+class OWLNamedIndividual(OWLIndividual, OWLEntity):
     __slots__ = '_iri'
     type_index: Final = 1005
 
@@ -696,7 +701,7 @@ class OWLReasoner(metaclass=ABCMeta):
 # class OWLDataUnionOf(metaclass=ABCMeta):
 #     type_index: Final = 4005
 #
-# class OWLDatatype(metaclass=ABCMeta):
+# class OWLDatatype(OWLEntity, metaclass=ABCMeta):
 #     type_index: Final = 4001
 #
 # class OWLDatatypeRestriction(metaclass=ABCMeta):
