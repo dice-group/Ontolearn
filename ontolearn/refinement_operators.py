@@ -3,7 +3,7 @@ from itertools import chain, tee
 from typing import Set, Optional, Iterable, Dict, List, Type, Final
 
 from .abstracts import BaseRefinement
-from .base import KnowledgeBase
+from .knowledge_base import KnowledgeBase
 from .owlapy.model import OWLClass, OWLObjectComplementOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectUnionOf, OWLObjectIntersectionOf, OWLClassExpression, OWLNothing, OWLNaryBooleanClassExpression
 from .search import Node

@@ -1,7 +1,7 @@
 """ Test the base module"""
 import os
 
-from ontolearn.base import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 PATH_FATHER = 'KGs/father.owl'

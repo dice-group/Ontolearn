@@ -9,7 +9,7 @@ The goal of ontolearn os to provide efficient solutions for concept learning on 
 """
 __version__ = '0.1.4.dev'
 
-from .base import KnowledgeBase
+from .knowledge_base import KnowledgeBase
 # from .refinement_operators import *
 # from .concept import Concept
 # from .concept_learner import *
