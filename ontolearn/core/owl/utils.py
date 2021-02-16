@@ -1,5 +1,5 @@
 from functools import singledispatchmethod, total_ordering
-from typing import cast, Set, Iterable
+from typing import Optional, Tuple, Final, overload, Union, Iterable, Type, Generic, TypeVar, Callable
 
 from sortedcontainers import SortedSet
 
@@ -8,8 +8,9 @@ from ontolearn.owlapy.base import HasIndex
 from ontolearn.owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, \
     OWLObjectCardinalityRestriction, OWLObjectHasSelf, \
-    OWLObjectHasValue, OWLObjectOneOf, OWLObjectRestriction, HasFiller, HasCardinality, HasOperands
-from ontolearn.owlapy.utils import as_index, popcount, iter_bits
+    OWLObjectHasValue, OWLObjectOneOf, OWLObjectRestriction, HasFiller, HasCardinality, HasOperands, OWLClassExpression, \
+    OWLNamedIndividual, OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality
+from ontolearn.owlapy.utils import as_index
 
 
 class OWLClassExpressionLengthMetric:
@@ -306,4 +307,106 @@ class EvaluatedDescriptionSet(Generic[_N, _O]):
         yield from reversed(self.items)
 
 
+def _sort_by_ordered_owl_object(i: Iterable[_O]) -> Iterable[_O]:
+    return sorted(i, key=OrderedOWLObject)
 
+
+class ConceptOperandSorter:
+    @singledispatchmethod
+    def sort(self, o: _O) -> _O:
+        raise NotImplementedError
+
+    @sort.register
+    def _(self, o: OWLClass) -> OWLClass:
+        return o
+
+    @sort.register
+    def _(self, p: OWLObjectProperty) -> OWLObjectProperty:
+        return p
+
+    @sort.register
+    def _(self, i: OWLNamedIndividual) -> OWLNamedIndividual:
+        return i
+
+    @sort.register
+    def _(self, e: OWLObjectSomeValuesFrom) -> OWLObjectSomeValuesFrom:
+        t = OWLObjectSomeValuesFrom(property=e.get_property(), filler=self.sort(e.get_filler()))
+        if t == e:
+            return e
+        else:
+            return t
+
+    @sort.register
+    def _(self, e: OWLObjectAllValuesFrom) -> OWLObjectAllValuesFrom:
+        t = OWLObjectAllValuesFrom(property=e.get_property(), filler=self.sort(e.get_filler()))
+        if t == e:
+            return e
+        else:
+            return t
+        
+    @sort.register
+    def _(self, c: OWLObjectUnionOf) -> OWLObjectUnionOf:
+        t = OWLObjectUnionOf(_sort_by_ordered_owl_object(c.operands()))
+        if t == c:
+            return c
+        else:
+            return t
+
+    @sort.register
+    def _(self, c: OWLObjectIntersectionOf) -> OWLObjectIntersectionOf:
+        t = OWLObjectIntersectionOf(_sort_by_ordered_owl_object(c.operands()))
+        if t == c:
+            return c
+        else:
+            return t
+
+    @sort.register
+    def _(self, n: OWLObjectComplementOf) -> OWLObjectComplementOf:
+        return n
+
+    @sort.register
+    def _(self, p: OWLObjectInverseOf) -> OWLObjectInverseOf:
+        return p
+
+    @sort.register
+    def _(self, r: OWLObjectMinCardinality) -> OWLObjectMinCardinality:
+        t = OWLObjectMinCardinality(property=r.get_property(), cardinality=r.get_cardinality(),
+                                    filler=self.sort(r.get_filler()))
+        if t == r:
+            return r
+        else:
+            return t
+
+    @sort.register
+    def _(self, r: OWLObjectExactCardinality) -> OWLObjectExactCardinality:
+        t = OWLObjectExactCardinality(property=r.get_property(), cardinality=r.get_cardinality(),
+                                      filler=self.sort(r.get_filler()))
+        if t == r:
+            return r
+        else:
+            return t
+
+    @sort.register
+    def _(self, r: OWLObjectMaxCardinality) -> OWLObjectMaxCardinality:
+        t = OWLObjectMaxCardinality(property=r.get_property(), cardinality=r.get_cardinality(),
+                                    filler=self.sort(r.get_filler()))
+        if t == r:
+            return r
+        else:
+            return t
+
+    @sort.register
+    def _(self, r: OWLObjectHasSelf) -> OWLObjectHasSelf:
+        return r
+
+    @sort.register
+    def _(self, r: OWLObjectHasValue):
+        return r
+
+    @sort.register
+    def _(self, r: OWLObjectOneOf):
+        t = OWLObjectOneOf(_sort_by_ordered_owl_object(r.individuals()))
+        if t == r:
+            return r
+        else:
+            return t
