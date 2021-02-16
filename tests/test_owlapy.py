@@ -1,6 +1,7 @@
 from ontolearn.owlapy import IRI, namespaces
 from ontolearn.owlapy.namespaces import Namespaces
 from ontolearn.owlapy.model import OWLClass, OWLObjectUnionOf
+from ontolearn.owlapy.utils import IRIFixedSet
 
 base = Namespaces("ex", "http://example.org/")
 
@@ -22,5 +23,18 @@ def test_union():
     assert list(c3.operands()) == [c1, c2]
 
 
-# test_class()
-# test_union()
+def test_iri_fixed_set():
+    fs = IRIFixedSet({IRI.create(base, "C1"), IRI.create(base, "C2")})
+    assert IRI.create(base, "C1") in fs
+    assert IRI.create(base, "C3") not in fs
+    assert fs(IRI.create(base, "C2")) != fs(IRI.create(base, "C1"))
+    assert fs(IRI.create(base, "C1")) == fs(IRI.create(base, "C1"))
+    assert fs(IRI.create(base, "C3"), ignore_missing=True) == 0
+    assert fs(set()) == 0
+    assert list(fs(fs(IRI.create(base, "C1")))) == [IRI.create(base, "C1")]
+
+
+if __name__ == '__main__':
+    test_class()
+    test_union()
+    test_iri_fixed_set()
