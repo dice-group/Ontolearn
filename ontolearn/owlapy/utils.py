@@ -170,3 +170,9 @@ def iter_bits(v: int) -> Iterable[int]:
 def iter_count(i: Iterable) -> int:
     """Count the number of elements in an iterable"""
     return sum(1 for _ in i)
+
+
+def as_index(o: OWLObject) -> HasIndex:
+    i = cast(HasIndex, o)
+    assert type(i).type_index
+    return i
