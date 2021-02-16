@@ -3,7 +3,7 @@ from queue import PriorityQueue
 from typing import Generator, Literal, Optional, Iterable, Callable, Set, Tuple
 
 from .abstracts import BaseRefinement
-from .base import KnowledgeBase
+from .knowledge_base import KnowledgeBase
 from .refinement_operators import LengthBasedRefinement
 from .search import Node, OrderedNode
 from .utils import balanced_sets
