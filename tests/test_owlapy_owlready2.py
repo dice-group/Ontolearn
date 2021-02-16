@@ -148,6 +148,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
 
 
 class Owlapy_Owlready2_TempClasses_Test(unittest.TestCase):
+    # noinspection DuplicatedCode
     def test_instances(self):
         NS = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
