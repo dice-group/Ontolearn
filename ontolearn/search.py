@@ -1,12 +1,16 @@
 from functools import total_ordering
 from queue import PriorityQueue
-from typing import List, Optional, ClassVar, Callable
+from typing import List, Optional, ClassVar, Callable, cast, Final, Iterable
+
+from sortedcontainers import SortedSet
 
 from .abstracts import BaseNode, AbstractTree, AbstractScorer
 from .core.owl.utils import OrderedOWLObject
+from .owlapy.base import HasIndex
 from .owlapy.io import OWLObjectRenderer
 from .owlapy.model import OWLClassExpression
 from .owlapy.render import DLSyntaxRenderer
+from .owlapy.utils import as_index
 
 
 class Node(BaseNode):
@@ -25,56 +29,92 @@ class Node(BaseNode):
                f'|Children|:{self.refinement_count}\t|Indv.|:{self.individuals_count}'
 
 
+class OENode(Node):
+    __slots__ = ()
+
+
 @total_ordering
 class OrderedNode:
-    __slots__ = 'node', '_len'
+    __slots__ = 'node', 'len'
 
-    node: Node
+    node: Final[Node]
+    len: Final[int]
 
-    def __init__(self, node: Node, cl: Callable[[OWLClassExpression], int]):
+    def __init__(self, node: Node, length: int):
         self.node = node
-        self._len = cl(self.node.concept)
+        self.len = length
 
     def __lt__(self, other):
         if type(other) is not type(self):
             return NotImplemented
 
-        if self._len < other._len:
+        if self.len < other.len:
             return True
-        elif other._len < self._len:
+        elif other.len < self.len:
             return False
 
-        return OrderedOWLObject(self.node.concept) < OrderedOWLObject(other.node.concept)
+        return OrderedOWLObject(cast(HasIndex, self.node.concept)) < OrderedOWLObject(other.node.concept)
+
+
+def _node_and_all_children(n: Node) -> Iterable[Node]:
+    """Get a node and all of its children (recursively) in an iterable"""
+    yield n
+    for c in n.children:
+        yield from _node_and_all_children(c)
 
 
 class CELOESearchTree(AbstractTree):
-    def __init__(self, quality_func: AbstractScorer = None, heuristic_func=None):
+    __slots__ = ()
+
+    nodes: 'SortedSet[OENode]'
+
+    def __init__(self, quality_func: AbstractScorer = None, heuristic_func: AbstractScorer = None):
         super().__init__(quality_func, heuristic_func)
-        self.expressionTests = 0
 
-    def update_prepare(self, n: Node) -> None:
-        """
-        Remove n and its children from search tree.
-        @param n: is a node object containing a concept.
-        @return:
-        """
-        self.nodes.pop(n)
-        for each in n.children:
-            if each in self.nodes:
-                self.update_prepare(each)
+        def key(n: OENode):
+            if n.heuristic is None:
+                raise ValueError("node not evaluated")
+            return n.heuristic, OrderedOWLObject(as_index(n.concept))
 
-    def update_done(self, n) -> None:
-        """
-        Add n and its children into search tree.
-        @param n: is a node object containing a concept.
-        @return:
-        """
-        self.nodes[n] = n
-        for each in n.children:
-            self.update_done(each)
+        self.nodes = SortedSet(key=key)
+        self.expression_tests = 0
 
-    def add(self, node=None, parent_node=None):
-        if self.redundancy_check(node):
+    # def update_prepare(self, n: Node) -> None:
+    #     """Remove n and its children from search tree.
+    #
+    #     Args:
+    #         n: is a node object containing a concept.
+    #     """
+    #     subtree = list(_node_and_all_children(n))
+    #     self.nodes.difference_update(subtree)
+
+    # def update_done(self, n: Node) -> None:
+    #     """Add back n and its children into search tree.
+    #
+    #     Args:
+    #         n: is a node object containing a concept.
+    #     """
+    #     subtree = list(_node_and_all_children(n))
+    #     self.nodes.update(subtree)
+
+    def update_prepare(self, n: OENode) -> None:
+        """Remove n search tree.
+
+        Args:
+            n: is a node object containing a concept.
+        """
+        self.nodes.remove(n)
+
+    def update_done(self, n: OENode) -> None:
+        """Add back n into search tree.
+
+        Args:
+            n: is a node object containing a concept.
+        """
+        self.nodes.add(n)
+
+    def add(self, node: OENode):
+        if node not in self.nodes:
             self.quality_func.apply(node)  # AccuracyOrTooWeak(n)
             if node.quality == 0:  # > too weak
                 return False
@@ -87,27 +127,27 @@ class CELOESearchTree(AbstractTree):
                 return True
             return False
         else:
-            if not (node.parent_node is parent_node):
-                try:
-                    assert parent_node.heuristic is not None
-                    assert node.parent_node.heuristic is not None
-                except AssertionError:
-                    print('REFINED NODE:', parent_node)
-                    print('NODE TO BE ADDED:', node)
-                    print('previous parent of node to be added', node.parent_node)
-                    for k, v in self.nodes.items():
-                        print(k)
-                    raise ValueError()
-
-                if parent_node.heuristic > node.parent_node.heuristic:
-                    """Ignore previous parent"""
-                else:
-                    if node in node.parent_node.children:
-                        node.parent_node.remove_child(node)
-                    node.parent_node = parent_node
-                    self.heuristic_func.apply(node, parent_node=parent_node)
-                    self.nodes[node] = node
-        return False
+            raise ValueError
+            # if not (node.parent_node is parent_node):
+            #     try:
+            #         assert parent_node.heuristic is not None
+            #         assert node.parent_node.heuristic is not None
+            #     except AssertionError:
+            #         print('REFINED NODE:', parent_node)
+            #         print('NODE TO BE ADDED:', node)
+            #         print('previous parent of node to be added', node.parent_node)
+            #         for k, v in self.nodes.items():
+            #             print(k)
+            #         raise ValueError()
+            #
+            #     if parent_node.heuristic > node.parent_node.heuristic:
+            #         """Ignore previous parent"""
+            #     else:
+            #         if node in node.parent_node.children:
+            #             node.parent_node.remove_child(node)
+            #         node.parent_node = parent_node
+            #         self.heuristic_func.apply(node, parent_node=parent_node)
+            #         self.nodes[node] = node
 
 
 class SearchTree(AbstractTree):

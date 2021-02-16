@@ -1,14 +1,12 @@
-from .base import KnowledgeBase
-from .core.owl.utils import OWLClassExpressionLengthMetric
-from .owlapy.model import OWLClass, OWLObjectComplementOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
-    OWLObjectUnionOf, OWLObjectIntersectionOf, OWLClassExpression, OWLNothing, OWLThing, OWLObjectHasSelf, \
-    OWLObjectMaxCardinality, OWLObjectHasValue, HasOperands, OWLNaryBooleanClassExpression
-from .utils import parametrized_performance_debugger
-from .search import Node
-from .abstracts import BaseRefinement
 import copy
-from typing import Set, Generator, ClassVar, Optional, Iterable, Dict, List, Type
 from itertools import chain, tee
+from typing import Set, Optional, Iterable, Dict, List, Type, Final
+
+from .abstracts import BaseRefinement
+from .base import KnowledgeBase
+from .owlapy.model import OWLClass, OWLObjectComplementOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
+    OWLObjectUnionOf, OWLObjectIntersectionOf, OWLClassExpression, OWLNothing, OWLNaryBooleanClassExpression
+from .search import Node
 
 
 class LengthBasedRefinement(BaseRefinement[Node]):
@@ -22,7 +20,7 @@ class LengthBasedRefinement(BaseRefinement[Node]):
     min_num_instances: int
 
     def __init__(self, kb: KnowledgeBase, max_child_length=10, apply_combinations=True):
-        super().__init__(Node, kb)
+        super().__init__(kb)
         self.max_child_length = max_child_length
         self.apply_combinations = apply_combinations
         self.min_num_instances = 0
@@ -177,7 +175,7 @@ class LengthBasedRefinement(BaseRefinement[Node]):
         assert isinstance(node.concept.get_filler(), OWLClassExpression)
 
         # rule 1: EXISTS r.D = > EXISTS r.E
-        for i in self.refine(self.get_node(node.concept.get_filler(), parent_node=node), max_length=max_length):
+        for i in self.refine(Node(node.concept.get_filler(), parent_node=node), max_length=max_length):
             yield self.kb.existential_restriction(i, node.concept.get_property())
         yield self.kb.universal_restriction(node.concept.get_filler(), node.concept.get_property())
 
@@ -185,7 +183,7 @@ class LengthBasedRefinement(BaseRefinement[Node]):
         assert isinstance(node.concept, OWLObjectAllValuesFrom)
 
         # rule 1: for all r.D = > for all r.E
-        for i in self.refine(self.get_node(node.concept.get_filler(), parent_node=node), max_length=max_length):
+        for i in self.refine(Node(node.concept.get_filler(), parent_node=node), max_length=max_length):
             yield self.kb.universal_restriction(i, node.concept.get_property())
 
     def _operands_len(self, type_: Type[OWLNaryBooleanClassExpression],
@@ -203,10 +201,10 @@ class LengthBasedRefinement(BaseRefinement[Node]):
         child: OWLClassExpression
         operands: List[OWLClassExpression] = list(node.concept.operands())
         for i in range(len(operands)):
-            concept_left, concept, concept_right = operands[:i], operands[i], operands[i+1:]
+            concept_left, concept, concept_right = operands[:i], operands[i], operands[i + 1:]
             other_length = self._operands_len(OWLObjectUnionOf, concept_left + concept_right)
 
-            for ref_concept in self.refine(self.get_node(concept, parent_node=node),
+            for ref_concept in self.refine(Node(concept, parent_node=node),
                                            max_length=max_length):
                 if max_length >= other_length + self.len(ref_concept):
                     yield self.kb.union(concept_left + [ref_concept] + concept_right)
@@ -220,12 +218,12 @@ class LengthBasedRefinement(BaseRefinement[Node]):
             concept_left, concept, concept_right = operands[:i], operands[i], operands[i + 1:]
             other_length = self._operands_len(OWLObjectIntersectionOf, concept_left + concept_right)
 
-            for ref_concept in self.refine(self.get_node(concept, parent_node=node),
+            for ref_concept in self.refine(Node(concept, parent_node=node),
                                            max_length=max_length):
                 if max_length >= other_length + self.len(ref_concept):
                     yield self.kb.intersection(concept_left + [ref_concept] + concept_right)
 
-    def refine(self, node, max_length, apply_combinations=None) -> Iterable[OWLClassExpression]:
+    def refine(self, node: Node, max_length, apply_combinations=None) -> Iterable[OWLClassExpression]:
         assert isinstance(node, Node)
         if apply_combinations:
             self.apply_combinations = apply_combinations
@@ -258,7 +256,7 @@ class ModifiedCELOERefinement(BaseRefinement[Node]):
     max_child_length: int
 
     def __init__(self, kb: KnowledgeBase, max_child_length=10):
-        super().__init__(Node, kb)
+        super().__init__(kb)
         # self.topRefinementsCumulative = dict()
         # self.topRefinementsLength = 0
         # self.combos = dict()
@@ -364,7 +362,7 @@ class ModifiedCELOERefinement(BaseRefinement[Node]):
         assert isinstance(node.concept.get_filler(), OWLClassExpression)
 
         # rule 1: EXISTS r.D = > EXISTS r.E
-        for i in self.refine(self.get_node(node.concept.get_filler(), parent_node=node), max_length=maxlength - 2,
+        for i in self.refine(Node(node.concept.get_filler(), parent_node=node), max_length=maxlength - 2,
                              current_domain=current_domain):
             if i is not None:
                 yield self.kb.existential_restriction(i, node.concept.get_property())
@@ -378,25 +376,13 @@ class ModifiedCELOERefinement(BaseRefinement[Node]):
         assert isinstance(node.concept, OWLObjectAllValuesFrom)
 
         # rule 1: Forall r.D = > Forall r.E
-        for i in self.refine(self.get_node(node.concept.get_filler(), parent_node=node), max_length=max_length - 2,
+        for i in self.refine(Node(node.concept.get_filler(), parent_node=node), max_length=max_length - 2,
                              current_domain=current_domain):
             if i is not None:
                 yield self.kb.universal_restriction(i, node.concept.get_property())
         # if not node.concept.get_filler().is_owl_nothing() and node.concept.get_filler().isatomic and (len(refs) == 0):
-        #    refs.update(self.kb.universal_restriction(i, node.concept.get_property())) # TODO find a way to include nothing concept
-
-    def get_node(self, c: OWLClassExpression, parent_node: Optional[Node] = None, root: bool = False):
-
-        # if c in self.concepts_to_nodes:
-        #    return self.concepts_to_nodes[c]
-
-        if parent_node is None and root is False:
-            print(c)
-            raise ValueError
-
-        n = Node(concept=c, parent_node=parent_node, root=root)
-        # self.concepts_to_nodes[c] = n
-        return n
+        #    # TODO find a way to include nothing concept
+        #    refs.update(self.kb.universal_restriction(i, node.concept.get_property()))
 
     def refine_object_union_of(self, node: Node, max_length: int, current_domain: Optional[OWLClassExpression]):
         """Given a node corresponding a concepts that comprises union operation.
@@ -417,11 +403,11 @@ class ModifiedCELOERefinement(BaseRefinement[Node]):
         child: OWLClassExpression
         operands: List[OWLClassExpression] = list(node.concept.operands())
         for i in range(len(operands)):
-            concept_left, concept, concept_right = operands[:i], operands[i], operands[i+1:]
+            concept_left, concept, concept_right = operands[:i], operands[i], operands[i + 1:]
             concept_length = self.len(concept)
             other_length = self._operands_len(OWLObjectUnionOf, concept_left + concept_right)
 
-            for ref_concept in self.refine(self.get_node(concept, parent_node=node),
+            for ref_concept in self.refine(Node(concept, parent_node=node),
                                            max_length=max_length - concept_length + other_length,
                                            current_domain=current_domain):
                 if max_length >= other_length + self.len(ref_concept):
@@ -435,11 +421,11 @@ class ModifiedCELOERefinement(BaseRefinement[Node]):
         child: OWLClassExpression
         operands: List[OWLClassExpression] = list(node.concept.operands())
         for i in range(len(operands)):
-            concept_left, concept, concept_right = operands[:i], operands[i], operands[i+1:]
+            concept_left, concept, concept_right = operands[:i], operands[i], operands[i + 1:]
             concept_length = self.len(concept)
             other_length = self._operands_len(OWLObjectIntersectionOf, concept_left + concept_right)
 
-            for ref_concept in self.refine(self.get_node(concept, parent_node=node),
+            for ref_concept in self.refine(Node(concept, parent_node=node),
                                            max_length=max_length - concept_length + other_length,
                                            current_domain=current_domain):
                 if max_length >= other_length + self.len(ref_concept):
@@ -448,41 +434,36 @@ class ModifiedCELOERefinement(BaseRefinement[Node]):
                     yield self.kb.intersection(concept_left + [ref_concept] + concept_right)
 
     def refine(self, node: Node, max_length: int, current_domain: OWLClassExpression) -> Iterable[OWLClassExpression]:
-        """
+        """Refine a node
 
         Args:
-            node:
+            node: node with concept to refine
             max_length:
             current_domain:
 
         Returns:
-            ?
+            iterable of refined concepts
         """
         assert isinstance(node, Node)
         if isinstance(node.concept, OWLClass):
-            refinement = self.refine_atomic_concept(node, max_length, current_domain)
+            yield from self.refine_atomic_concept(node, max_length, current_domain)
         elif isinstance(node.concept, OWLObjectComplementOf):
-            refinement = self.refine_complement_of(node, max_length, current_domain)
+            yield from self.refine_complement_of(node, max_length, current_domain)
         elif isinstance(node.concept, OWLObjectSomeValuesFrom):
-            refinement = self.refine_object_some_values_from(node, max_length, current_domain)
+            yield from self.refine_object_some_values_from(node, max_length, current_domain)
         elif isinstance(node.concept, OWLObjectAllValuesFrom):
-            refinement = self.refine_object_all_values_from(node, max_length, current_domain)
+            yield from self.refine_object_all_values_from(node, max_length, current_domain)
         elif isinstance(node.concept, OWLObjectUnionOf):
-            refinement = self.refine_object_union_of(node, max_length, current_domain)
+            yield from self.refine_object_union_of(node, max_length, current_domain)
         elif isinstance(node.concept, OWLObjectIntersectionOf):
-            refinement = self.refine_object_intersection_of(node, max_length, current_domain)
+            yield from self.refine_object_intersection_of(node, max_length, current_domain)
         else:
             raise ValueError
 
-        # @Todo Investigate whether we can avoid this for loop although originally rho in celoe returns none.
-        for i in refinement:
-            if i is not None:
-                yield i
 
-
-class CustomRefinementOperator(BaseRefinement):
+class CustomRefinementOperator(BaseRefinement[Node]):
     def __init__(self, kb: KnowledgeBase = None, max_size_of_concept=1000, min_size_of_concept=1):
-        super().__init__(kb, max_size_of_concept, min_size_of_concept)
+        super().__init__(kb)
 
     def get_node(self, c: OWLClassExpression, parent_node=None, root=False):
 
@@ -591,21 +572,21 @@ class CustomRefinementOperator(BaseRefinement):
             if isinstance(ref_concept_B, OWLClassExpression):
                 yield self.kb.intersection(ref_concept_B, concept_A)
 
-    def refine(self, concept: OWLClassExpression):
-        assert isinstance(concept, OWLClassExpression)
+    def refine(self, node: Node):
+        assert isinstance(node.concept, OWLClassExpression)
 
-        if isinstance(concept, OWLClass):
-            yield from self.refine_atomic_concept(concept)
-        elif isinstance(concept, OWLObjectComplementOf):
-            yield from self.refine_complement_of(concept)
-        elif isinstance(concept, OWLObjectSomeValuesFrom):
-            yield from self.refine_object_some_values_from(concept)
-        elif isinstance(concept, OWLObjectAllValuesFrom):
-            yield from self.refine_object_all_values_from(concept)
-        elif isinstance(concept, OWLObjectUnionOf):
-            yield from self.refine_object_union_of(concept)
-        elif isinstance(concept, OWLObjectIntersectionOf):
-            yield from self.refine_object_intersection_of(concept)
+        if isinstance(node.concept, OWLClass):
+            yield from self.refine_atomic_concept(node.concept)
+        elif isinstance(node.concept, OWLObjectComplementOf):
+            yield from self.refine_complement_of(node.concept)
+        elif isinstance(node.concept, OWLObjectSomeValuesFrom):
+            yield from self.refine_object_some_values_from(node.concept)
+        elif isinstance(node.concept, OWLObjectAllValuesFrom):
+            yield from self.refine_object_all_values_from(node.concept)
+        elif isinstance(node.concept, OWLObjectUnionOf):
+            yield from self.refine_object_union_of(node.concept)
+        elif isinstance(node.concept, OWLObjectIntersectionOf):
+            yield from self.refine_object_intersection_of(node.concept)
         else:
             raise ValueError
 

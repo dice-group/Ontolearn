@@ -1,33 +1,45 @@
+from typing import Final
+
 from .abstracts import AbstractScorer
 import numpy as np
 
+from .search import Node, OENode
+
 
 class CELOEHeuristic(AbstractScorer):
-    def __init__(self, pos=None, neg=None, unlabelled=None):
-        super().__init__(pos, neg, unlabelled)
-        self.name = 'CELOE_Heuristic'
+    __slots__ = 'gainBonusFactor', 'startNodeBonus', 'nodeRefinementPenalty', 'expansionPenaltyFactor'
 
-        self.gainBonusFactor = 0.3
-        self.startNodeBonus = 0.1
-        self.nodeRefinementPenalty = 0.001
-        self.expansionPenaltyFactor = 0.1
-        self.applied = 0
+    name: Final = 'CELOE_Heuristic'
+
+    gainBonusFactor: Final[float]
+    startNodeBonus: Final[float]
+    nodeRefinementPenalty: Final[float]
+    expansionPenaltyFactor: Final[float]
+
+    def __init__(self, pos=None, neg=None, unlabelled=None, *,
+                 gainBonusFactor: float = 0.3,
+                 startNodeBonus: float = 0.1,
+                 nodeRefinementPenalty: float = 0.001,
+                 expansionPenaltyFactor: float = 0.1):
+        super().__init__(pos, neg, unlabelled)
+        self.gainBonusFactor = gainBonusFactor
+        self.startNodeBonus = startNodeBonus
+        self.nodeRefinementPenalty = nodeRefinementPenalty
+        self.expansionPenaltyFactor = expansionPenaltyFactor
 
     def score(self):
         pass
 
-    def apply(self, node, parent_node=None):
+    def apply(self, node: OENode):
         self.applied += 1
 
         heuristic_val = 0
         heuristic_val += node.quality
 
-        assert id(heuristic_val) != node.quality
-
-        if parent_node is not None:
-            heuristic_val += (node.quality - parent_node.quality) * self.gainBonusFactor
-        else:
+        if node.is_root:
             heuristic_val += self.startNodeBonus
+        else:
+            heuristic_val += (node.quality - node.parent_node.quality) * self.gainBonusFactor
 
         # penalty for horizontal expansion
         heuristic_val -= node.h_exp * self.expansionPenaltyFactor

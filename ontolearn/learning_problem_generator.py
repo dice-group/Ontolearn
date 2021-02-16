@@ -1,12 +1,10 @@
+import sys
+from queue import PriorityQueue
 from typing import Generator, Literal, Optional, Iterable, Callable, Set, Tuple
 
 from .abstracts import BaseRefinement
 from .base import KnowledgeBase
-from .owlapy.model import OWLClassExpression
 from .refinement_operators import LengthBasedRefinement
-from queue import PriorityQueue
-import sys
-
 from .search import Node, OrderedNode
 from .utils import balanced_sets
 
@@ -15,6 +13,8 @@ SearchAlgos = Literal['dfs', 'strict-dfs']
 
 class LearningProblemGenerator:
     """ Learning problem generator. """
+    __slots__ = 'kb', 'rho', 'search_algo', 'min_num_instances', 'max_num_instances', 'min_length', 'max_length', \
+                'depth', 'num_diff_runs', 'num_problems'
 
     kb: KnowledgeBase
     rho: BaseRefinement
@@ -54,7 +54,6 @@ class LearningProblemGenerator:
         self.max_num_instances = max_num_instances
         self.min_length = min_length
         self.max_length = max_length
-        self.valid_learning_problems = []
         self.depth = depth
         self.num_diff_runs = num_diff_runs
         self.num_problems = num_problems // self.num_diff_runs
@@ -300,11 +299,8 @@ class LearningProblemGenerator:
             print(f'Invalid input: search_algo:{search_algo} must be in [dfs,strict-dfs]')
             raise ValueError
 
-    def _apply_dfs(self, strict=False):
-        """
-        Apply depth first search with backtracking to generate concepts.
-
-        @return:
+    def _apply_dfs(self, strict=False) -> Iterable[Node]:
+        """Apply depth first search with backtracking to generate concepts.
         """
 
         def define_constrain():
@@ -321,7 +317,7 @@ class LearningProblemGenerator:
 
                 return f2
 
-        refinements = iter(self.apply_rho(self.rho.get_node(self.kb.thing, root=True), len_constant=3))
+        refinements = iter(self.apply_rho(Node(self.kb.thing, root=True), len_constant=3))
 
         constrain_func = define_constrain()
 
@@ -407,7 +403,8 @@ class LearningProblemGenerator:
                     # q.put((len(i), i))  # lower the length, higher priority.
                     if i not in valid_examples:
                         valid_examples.add(i)
-                        q.put((kb.cl(i.concept), OrderedNode(i, kb.cl)))  # lower the length, higher priority.
+                        concept_len = kb.cl(i.concept)
+                        q.put((concept_len, OrderedNode(i, concept_len)))  # lower the length, higher priority.
                         yield i
                         temp_patience -= 1
                         if temp_patience == 0:
@@ -429,4 +426,4 @@ class LearningProblemGenerator:
                                      node.concept) + len_constant if self.rho.len(
                                      node.concept) < self.max_length else self.rho.len(
                                      node.concept)):
-            yield self.rho.get_node(i, parent_node=node)
+            yield Node(i, parent_node=node)
