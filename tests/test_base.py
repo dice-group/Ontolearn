@@ -8,7 +8,7 @@ PATH_FATHER = 'KGs/father.owl'
 
 
 def test_knowledge_base():
-    kb = KnowledgeBase(path=PATH_FAMILY)
+    KnowledgeBase(path=PATH_FAMILY)
     # assert kb.name == 'family-benchmark_rich_background'
     #
     # assert kb.property_hierarchy

@@ -7,6 +7,8 @@ with open('synthetic_problems.json') as json_file:
 
 kb = KnowledgeBase(path=settings['data_path'])
 model = CELOE(knowledge_base=kb, max_runtime=1)
+
+# noinspection DuplicatedCode
 for str_target_concept, examples in settings['problems'].items():
     p = set(examples['positive_examples'])
     n = set(examples['negative_examples'])
