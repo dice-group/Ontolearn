@@ -5,7 +5,7 @@ from typing import Generator, Literal, Optional, Iterable, Callable, Set, Tuple
 from .abstracts import BaseRefinement
 from .knowledge_base import KnowledgeBase
 from .refinement_operators import LengthBasedRefinement
-from .search import Node, OrderedNode
+from .search import Node, LengthOrderedNode
 from .utils import balanced_sets
 
 SearchAlgos = Literal['dfs', 'strict-dfs']
@@ -392,7 +392,7 @@ class LearningProblemGenerator:
             ?
         """
         valid_examples = set()
-        q: PriorityQueue[Tuple[int, OrderedNode]] = PriorityQueue()
+        q: PriorityQueue[Tuple[int, LengthOrderedNode]] = PriorityQueue()
         for _ in range(depth):
             temp_patience = patience_per_depth  # patience for valid exam. per depth.
             temp_not_valid_patience = patience_per_depth  # patience for not valid exam. per depth.
@@ -404,7 +404,7 @@ class LearningProblemGenerator:
                     if i not in valid_examples:
                         valid_examples.add(i)
                         concept_len = kb.cl(i.concept)
-                        q.put((concept_len, OrderedNode(i, concept_len)))  # lower the length, higher priority.
+                        q.put((concept_len, LengthOrderedNode(i, concept_len)))  # lower the length, higher priority.
                         yield i
                         temp_patience -= 1
                         if temp_patience == 0:

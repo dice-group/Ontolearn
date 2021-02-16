@@ -1,8 +1,8 @@
+from ontolearn.search import HeuristicOrderedNode, OENode, Node, TreeNode, LengthOrderedNode
 from . import KnowledgeBase
 from .abstracts import AbstractScorer
 from .base_concept_learner import BaseConceptLearner
 from .owlapy.model import OWLClassExpression, OWLNamedIndividual
-from .search import Node, CELOESearchTree, SearchTree, SearchTreePriorityQueue, OENode
 from typing import Set, Iterable, List, Optional
 import types
 import numpy as np
@@ -13,6 +13,37 @@ from .metrics import F1, Accuracy, Recall
 import time
 
 pd.set_option('display.max_columns', 100)
+
+# noinspection DuplicatedCode
+@total_ordering
+class QualityOrderedNode:
+    __slots__ = 'node'
+
+    node: Final[OENode]
+
+    def __init__(self, node: OENode):
+        self.node = node
+
+    def __lt__(self, other):
+        if self.node.quality is None:
+            raise ValueError("node not evaluated", self.node)
+        if other.node.quality is None:
+            raise ValueError("other node not evaluated", other.node)
+
+        if self.node.quality < other.node.quality:
+            return True
+        elif self.node.quality > other.node.quality:
+            return False
+        else:
+            if self.node.len > other.node.len:  # shorter is better, ie. greater
+                return True
+            elif self.node.len < other.node.len:
+                return False
+            else:
+                return OrderedOWLObject(as_index(self.node.concept)) < OrderedOWLObject(as_index(other.node.concept))
+
+    def __eq__(self, other):
+        return self.node == other.node
 
 
 class CELOE(BaseConceptLearner[OENode]):

@@ -6,119 +6,135 @@ from abc import ABCMeta, abstractmethod, ABC
 from collections import OrderedDict
 from typing import Set, List, Tuple, Iterable, TypeVar, Optional, Type, Generic, ClassVar, cast
 
+import numpy as np
+import pandas as pd
+import torch
+
 from .core.owl.utils import OWLClassExpressionLengthMetric
+from .core.owl.hierarchy import ClassHierarchy
+from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
 from .owlapy.model import OWLClassExpression, OWLOntology
 from .owlapy.utils import iter_count
 from .utils import balanced_sets, read_csv
 from .owlready2.utils import get_full_iri
 from typing import Set, Dict, List, Tuple, Iterable, Generator, SupportsFloat, TypeVar, Optional, Type, Generic
 import random
-import pandas as pd
-import torch
 from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
 import json
-import numpy as np
 import time
 
 # random.seed(0)  # Note: a module should not set the seed
 
-_N = TypeVar('_N', bound='BaseNode')
+_N = TypeVar('_N')
 
 
-class BaseNode(metaclass=ABCMeta):
-    """Base class for Concept."""
-    __slots__ = 'concept', '__heuristic_score', '__quality_score', \
-                '__refinement_count', '__depth', '__children', '__embeddings', \
-                '__parent_node_ref', '__is_root', '__weakref__'
-
-    concept: OWLClassExpression
-    __parent_node_ref: ReferenceType
-    __quality_score: Optional[float]
-    __heuristic_score: Optional[float]
-    __is_root: bool
-    __refinement_count: int
-    __children: Set[_N]
-
-    @abstractmethod
-    def __init__(self: _N, concept: OWLClassExpression, is_root: bool = False):
-        self.__quality_score = None
-        self.__heuristic_score = None
-        self.__is_root = is_root
-        self.__refinement_count = 0
-        self.concept = concept
-        self.__embeddings = None
-        self.__children = set()
-        self.__parent_node_ref = None
-
-        if is_root:
-            self.__depth = 0
-
-    @property
-    def parent_node(self) -> _N:
-        return cast(type(self), self.__parent_node_ref()) if self.__parent_node_ref is not None else None
-
-    @parent_node.setter
-    def parent_node(self, value: _N):
-        self.__parent_node_ref = weakref.ref(value) if value is not None else None
-        if value is None:
-            assert self.__is_root
-        else:
-            assert not self.__is_root
-            self.__depth = self.parent_node.depth + 1
-
-    @property
-    def embeddings(self):
-        return self.__embeddings
-
-    @embeddings.setter
-    def embeddings(self, value):
-        self.__embeddings = value
-
-    @property
-    def children(self) -> Set[_N]:
-        return self.__children
-
-    @property
-    def refinement_count(self) -> int:
-        return self.__refinement_count
-
-    @refinement_count.setter
-    def refinement_count(self, n: int):
-        self.__refinement_count = n
-
-    @property
-    def depth(self) -> int:
-        return self.__depth
-
-    @depth.setter
-    def depth(self, n: int):
-        self.__depth = n
-
-    @property
-    def heuristic(self) -> float:
-        return self.__heuristic_score
-
-    @heuristic.setter
-    def heuristic(self, val: float):
-        self.__heuristic_score = val
-
-    @property
-    def quality(self) -> float:
-        return self.__quality_score
-
-    @quality.setter
-    def quality(self, val: float):
-        self.__quality_score = val
-
-    @property
-    def is_root(self) -> bool:
-        return self.__is_root
-
-    def add_child(self: _N, n: _N) -> None:
-        self.__children.add(n)
-
-    def remove_child(self: _N, n: _N) -> None:
-        self.__children.remove(n)
+# class AbstractNode(metaclass=ABCMeta):
+#     """Base class for Concept."""
+#     __slots__ = 'concept', '__heuristic_score', '__quality_score', \
+#                 '__refinement_count', '__depth', '__children', '__embeddings', \
+#                 '__parent_node_ref', '__is_root', '__weakref__'
+#
+#     concept: OWLClassExpression
+#     __parent_node_ref: Optional[ReferenceType]
+#     __quality_score: Optional[float]
+#     __heuristic_score: Optional[float]
+#     __is_root: bool
+#     __refinement_count: int
+#     __children: Set[_N]
+#
+#     @abstractmethod
+#     def __init__(self: _N, concept: OWLClassExpression, parent_node: Optional[_N] = None, is_root: bool = False):
+#         self.__quality_score = None
+#         self.__heuristic_score = None
+#         self.__is_root = is_root
+#         self.__refinement_count = 0
+#         self.concept = concept
+#         self.__embeddings = None
+#         self.__children = set()
+#         self.__parent_node_ref = None
+#         self.parent_node = parent_node
+#
+#     @abstractmethod
+#     def __eq__(self, other):
+#         raise NotImplementedError
+#
+#     @abstractmethod
+#     def __hash__(self):
+#         raise NotImplementedError
+#
+#     @property
+#     def parent_node(self) -> _N:
+#         return cast(type(self), self.__parent_node_ref()) if self.__parent_node_ref is not None else None
+#
+#     @parent_node.setter
+#     def parent_node(self, parent_node: _N):
+#         self.__parent_node_ref = weakref.ref(parent_node) if parent_node is not None else None
+#         if parent_node is None:
+#             assert self.__is_root
+#             self.__depth = 0
+#         else:
+#             assert not self.__is_root
+#             self.__depth = parent_node.depth + 1
+#             parent_node.add_child(self)
+#
+#     @property
+#     def embeddings(self):
+#         return self.__embeddings
+#
+#     @embeddings.setter
+#     def embeddings(self, value):
+#         self.__embeddings = value
+#
+#     @property
+#     def children(self) -> Set[_N]:
+#         return self.__children
+#
+#     @property
+#     def refinement_count(self) -> int:
+#         return self.__refinement_count
+#
+#     @refinement_count.setter
+#     def refinement_count(self, n: int):
+#         self.__refinement_count = n
+#
+#     @property
+#     def depth(self) -> int:
+#         return self.__depth
+#
+#     @depth.setter
+#     def depth(self, n: int):
+#         self.__depth = n
+#
+#     @property
+#     def heuristic(self) -> Optional[float]:
+#         return self.__heuristic_score
+#
+#     @heuristic.setter
+#     def heuristic(self, val: Optional[float]):
+#         if val is not None and self.__heuristic_score is not None:
+#             raise ValueError("Node heuristic already calculated", self)
+#         self.__heuristic_score = val
+#
+#     @property
+#     def quality(self) -> float:
+#         return self.__quality_score
+#
+#     @quality.setter
+#     def quality(self, val: float):
+#         self.__quality_score = val
+#
+#     @property
+#     def is_root(self) -> bool:
+#         return self.__is_root
+#
+#     def add_child(self: _N, n: _N) -> None:
+#         assert type(self) is type(n)
+#         print(n)
+#         self.__children.add(n)
+#
+#     def remove_child(self: _N, n: _N) -> None:
+#         assert type(self) is type(n)
+#         self.__children.remove(n)
 
 
 class AbstractScorer(Generic[_N], metaclass=ABCMeta):
@@ -126,6 +142,8 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
     An abstract class for quality and heuristic functions.
     """
     __slots__ = 'pos', 'neg', 'unlabelled', 'applied'
+
+    name: ClassVar
 
     @abstractmethod
     def __init__(self, pos, neg, unlabelled):
@@ -207,7 +225,7 @@ class BaseRefinement(Generic[_N], metaclass=ABCMeta):
 
     @abstractmethod
     def refine(self, *args, **kwargs) -> Iterable[OWLClassExpression]:
-        """Refine a given node
+        """Refine a given concept
         """
         pass
 
@@ -235,7 +253,7 @@ class AbstractTree(Generic[_N], metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def add(self, node: _N, parent_node: Optional[_N]):
+    def add(self, node: _N):
         pass
 
     @abstractmethod
@@ -243,104 +261,10 @@ class AbstractTree(Generic[_N], metaclass=ABCMeta):
         pass
 
 
-class AbstractTree2(ABC):
+class AbstractNode(metaclass=ABCMeta):
     @abstractmethod
-    def __init__(self, quality_func: AbstractScorer, heuristic_func: AbstractScorer):
-        self.quality_func = quality_func
-        self.heuristic_func = heuristic_func
-        self._nodes = dict()
-
-    def __len__(self):
-        return len(self._nodes)
-
-    def __getitem__(self, item):
-        return self._nodes[item]
-
-    def __setitem__(self, k, v):
-        self._nodes[k] = v
-
-    def __iter__(self):
-        for k, node in self._nodes.items():
-            yield node
-
-    def get_top_n_nodes(self, n: int, key='quality'):
-        self.sort_search_tree_by_decreasing_order(key=key)
-        for ith, dict_ in enumerate(self._nodes.items()):
-            if ith >= n:
-                break
-            k, node = dict_
-            yield node
-
-    def set_quality_func(self, f: AbstractScorer):
-        self.quality_func = f
-
-    def set_heuristic_func(self, h):
-        self.heuristic_func = h
-
-    def redundancy_check(self, n):
-        if n in self._nodes:
-            return False
-        return True
-
-    @property
-    def nodes(self):
-        return self._nodes
-
-    @abstractmethod
-    def add(self, *args, **kwargs):
-        pass
-
-    def sort_search_tree_by_decreasing_order(self, *, key: str):
-        if key == 'heuristic':
-            sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
-        elif key == 'quality':
-            sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
-        elif key == 'length':
-            sorted_x = sorted(self._nodes.items(), key=lambda kv: len(kv[1]), reverse=True)
-        else:
-            raise ValueError('Wrong Key. Key must be heuristic, quality or concept_length')
-
-        self._nodes = OrderedDict(sorted_x)
-
-    def best_hypotheses(self, n=10) -> List[BaseNode]:
-        assert self.search_tree is not None
-        assert len(self.search_tree) > 1
-        return [i for i in self.search_tree.get_top_n_nodes(n)]
-
-    def show_search_tree(self, th, top_n=10):
-        """
-        Show search tree.
-        """
-        print('######## ', th, 'step Search Tree ###########')
-        predictions = list(self.get_top_n_nodes(top_n))
-        for ith, node in enumerate(predictions):
-            print('{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(ith + 1, node.concept.str,
-                                                              self.quality_func.name, node.quality, node.heuristic))
-        print('######## Search Tree ###########\n')
-        return predictions
-
-    def show_best_nodes(self, top_n, key=None):
-        assert key
-        self.sort_search_tree_by_decreasing_order(key=key)
-        return self.show_search_tree('Final', top_n=top_n + 1)
-
-    @staticmethod
-    def save_current_top_n_nodes(key=None, n=10, path=None):
-
-        """
-        Save current top_n nodes
-        """
-        assert path
-        assert key
-        assert isinstance(n, int)
-        pass
-
-    def clean(self):
-        """
-        Clearn
-        @return:
-        """
-        self._nodes.clear()
+    def __init__(self):
+        raise NotImplementedError
 
 
 class AbstractKnowledgeBase(metaclass=ABCMeta):
@@ -448,7 +372,7 @@ class AbstractDrill(ABC):
         @return:
         """
 
-    def next_node_to_expand(self, t: int = None) -> BaseNode:
+    def next_node_to_expand(self, t: int = None) -> AbstractNode:
         """
         Return a node that maximizes the heuristic function at time t
         @param t:
@@ -528,7 +452,7 @@ class AbstractDrill(ABC):
                 self.optimizer.step()
         self.heuristic_func.net.train().eval()
 
-    def sequence_of_actions(self, root: BaseNode) -> Tuple[List[Tuple[BaseNode, BaseNode]], List[SupportsFloat]]:
+    def sequence_of_actions(self, root: AbstractNode) -> Tuple[List[Tuple[AbstractNode, AbstractNode]], List[SupportsFloat]]:
         """
         Perform self.num_of_sequential_actions number of actions
 
@@ -543,7 +467,7 @@ class AbstractDrill(ABC):
         (2) Return path_of_concepts, rewards
 
         """
-        assert isinstance(root, BaseNode)
+        assert isinstance(root, AbstractNode)
 
         current_state = root
         path_of_concepts = []
@@ -586,7 +510,7 @@ class AbstractDrill(ABC):
             if child_node.quality == 1:
                 return child_node
 
-    def apply_rho(self, node: BaseNode) -> Generator:
+    def apply_rho(self, node: AbstractNode) -> Generator:
         """
         Refine an OWL Class expression |= Observing next possible states
 
@@ -598,17 +522,17 @@ class AbstractDrill(ABC):
                 Note that          i.str not in self.concepts_to_ignore => O(1) if a set is being used.
         3. Return Generator
         """
-        assert isinstance(node, BaseNode)
+        assert isinstance(node, AbstractNode)
         # 1.
         # (1.1)
         length = len(node) + 3 if len(node) + 3 <= self.max_child_length else self.max_child_length
         # (1.2)
-        for i in self.rho.refine(node, maxlength=length):  # O(N)
+        for i in self.operator.refine(node, maxlength=length):  # O(N)
             if i.str not in self.concepts_to_ignore:  # O(1)
-                yield self.rho.get_node(i, parent_node=node)  # O(1)
+                yield self.operator.get_node(i, parent_node=node)  # O(1)
 
-    def assign_embeddings(self, node: BaseNode) -> None:
-        assert isinstance(node, BaseNode)
+    def assign_embeddings(self, node: AbstractNode) -> None:
+        assert isinstance(node, AbstractNode)
         # (1) Detect mode
         if self.representation_mode == 'averaging':
             # (2) if input node has not seen before, assign embeddings.
@@ -699,7 +623,7 @@ class AbstractDrill(ABC):
 
         # (1)
         self.init_training(pos_uri=pos_uri, neg_uri=neg_uri)
-        root = self.rho.get_node(self.start_class, root=True)
+        root = self.operator.get_node(self.start_class, root=True)
         # (2) Assign embeddings of root/first state.
         self.assign_embeddings(root)
 
@@ -731,7 +655,7 @@ class AbstractDrill(ABC):
             sum_of_rewards_per_actions.append(sum(rewards))
         return sum_of_rewards_per_actions
 
-    def exploration_exploitation_tradeoff(self, current_state: BaseNode, next_states: List[BaseNode]) -> BaseNode:
+    def exploration_exploitation_tradeoff(self, current_state: AbstractNode, next_states: List[AbstractNode]) -> AbstractNode:
         """
         Exploration vs Exploitation tradeoff at finding next state.
         (1) Exploration
@@ -744,7 +668,7 @@ class AbstractDrill(ABC):
             next_state = self.exploitation(current_state, next_states)
         return next_state
 
-    def exploitation(self, current_state: BaseNode, next_states: List[BaseNode]) -> BaseNode:
+    def exploitation(self, current_state: AbstractNode, next_states: List[AbstractNode]) -> AbstractNode:
         """
         Find next node that is assigned with highest predicted Q value.
 
@@ -769,7 +693,7 @@ class AbstractDrill(ABC):
         """
         return next_state
 
-    def predict_Q(self, current_state: BaseNode, next_states: List[BaseNode]) -> torch.Tensor:
+    def predict_Q(self, current_state: AbstractNode, next_states: List[AbstractNode]) -> torch.Tensor:
         """
         Predict promise of next states given current state.
         @param current_state:
