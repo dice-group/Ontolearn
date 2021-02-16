@@ -1,6 +1,8 @@
 from functools import singledispatchmethod, total_ordering
 from typing import cast, Set, Iterable
 
+from sortedcontainers import SortedSet
+
 from ontolearn.owlapy import HasIRI
 from ontolearn.owlapy.base import HasIndex
 from ontolearn.owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
@@ -263,6 +265,45 @@ class OrderedOWLObject:
         return self.o == other.o
 
 
+_N = TypeVar('_N')
+_O = TypeVar('_O')
+
+
+class EvaluatedDescriptionSet(Generic[_N, _O]):
+    __slots__ = 'items', '_max_size', '_Ordering'
+
+    items: 'SortedSet[_N]'
+    _max_size: int
+    _Ordering: Callable[[_N], _O]
+
+    def __init__(self, ordering: Callable[[_N], _O], max_size: int = 10):
+        self._max_size = max_size
+        self._Ordering = ordering
+        self.items = SortedSet(key=self._Ordering)
+
+    def maybe_add(self, node):
+        if len(self.items) == self._max_size:
+            worst = self.items[0]
+            if self._Ordering(node) > self._Ordering(worst):
+                self.items.pop(0)
+                self.items.add(node)
+                return True
+        else:
+            self.items.add(node)
+            return True
+        return False
+
+    def worst(self):
+        return self.items[0]
+
+    def best(self):
+        return self.items[-1]
+
+    def best_quality_value(self) -> float:
+        return self.items[-1].quality
+
+    def __iter__(self) -> Iterable[_N]:
+        yield from reversed(self.items)
 
 
 
