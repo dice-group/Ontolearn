@@ -231,6 +231,12 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
         else:
             yield from self._ent_enc(self._leaf_set)
 
+    def __contains__(self, item: _S) -> bool:
+        return item in self._ent_enc
+
+    def __len__(self):
+        return len(self._ent_enc)
+
 
 class ClassHierarchy(AbstractHierarchy[OWLClass]):
     """Representation of a class hierarchy
