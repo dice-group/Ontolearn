@@ -58,6 +58,17 @@ class OWLOntology_Owlready2(OWLOntology):
     def get_manager(self) -> OWLOntologyManager_Owlready2:
         return self._manager
 
+    def __eq__(self, other):
+        if type(other) == type(self):
+            return self._onto.loaded == other._onto.loaded and self._onto.base_iri == other._onto.base_iri
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self._onto.base_iri)
+
+    def __repr__(self):
+        return f'OWLOntology_Owlready2({IRI.create(self._onto.base_iri)}, {self._onto.loaded})'
+
 
 class OWLReasoner_Owlready2(OWLReasoner):
     __slots__ = '_ontology', '_world'
