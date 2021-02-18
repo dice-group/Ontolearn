@@ -12,8 +12,13 @@ from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.util import apply_TSNE_on_df
 import json
 import pandas as pd
+print('We change the design of the network in Drill. Hence, previous pretrained model removed.')
+print('We will soon relase many pretrained models ')
+exit(1)
 
-PATH_FAMILY = '../data/family-benchmark_rich_background.owl'
+
+
+PATH_FAMILY = '../KGs/Family/family-benchmark_rich_background.owl'
 family_embeddings_path = '../embeddings/dismult_family_benchmark/instance_emb.csv'
 pretrained_drill_sample_path = '../pre_trained_agents/Family/Drill_Sample/1605797163.5565891_DrillHeuristic_sample.pth'
 pretrained_drill_average_path = '../pre_trained_agents/Family/Drill_Average/1605801167.8185513_DrillHeuristic_average.pth'
