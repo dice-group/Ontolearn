@@ -639,7 +639,7 @@ class ExpressRefinement(BaseRefinement):
         if iter_container_sub == []:
           iter_container_sub = [node.concept]
         iter_container_restrict = []
-        iter_container_neg = [list(self.kb.negation(c))[0] for c in iter_container_sub]
+        iter_container_neg = list(self.kb.negation_from_iterables(iter_container_sub))
         # (3) Create ∀.r.C and ∃.r.C where r is the most general relation and C in {node.concept}
         for C in {node.concept}:#.union(set(iter_container_sub))).union(set(iter_container_neg)): this ligne can be uncommented for more expressivity
             if C.length + 2 <= self.max_child_length:
@@ -655,7 +655,8 @@ class ExpressRefinement(BaseRefinement):
         else:
             self.expressivity = 1.
             iter_container_sub_sample = iter_container_sub
-          
+        if node.concept.str == "Thing":
+            yield from iter_container_neg
         del iter_container_restrict, iter_container_neg
         any_refinement = False
         #Yield all subconcepts
