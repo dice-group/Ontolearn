@@ -1,5 +1,11 @@
+"""
+====================================================================
+Drill -- Deep Reinforcement Learning for Refinement Operators in ALC
+====================================================================
+Drill with training.
+Author: Caglar Demir
+"""
 from ontolearn import KnowledgeBase, LearningProblemGenerator, DrillSample, DrillAverage
-from ontolearn import CELOE, OCEL, DLFOILHeuristic, CustomConceptLearner
 from ontolearn import Experiments
 from ontolearn.util import sanity_checking_args
 from ontolearn.binders import DLLearnerBinder
