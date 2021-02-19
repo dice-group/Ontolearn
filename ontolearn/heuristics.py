@@ -51,7 +51,7 @@ class CELOEHeuristic(AbstractHeuristic[OENode]):
         super().clean()
 
 
-class DLFOILHeuristic(AbstractScorer):
+class DLFOILHeuristic(AbstractHeuristic):
     def __init__(self, pos=None, neg=None, unlabelled=None):
         super().__init__(pos, neg, unlabelled)
         self.name = 'custom_dl_foil'
