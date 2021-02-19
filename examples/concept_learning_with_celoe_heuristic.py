@@ -3,10 +3,13 @@ import random
 
 from ontolearn import KnowledgeBase
 from ontolearn.concept_learner import CELOE
-from ontolearn.owlapy import IRI
-from ontolearn.owlapy.model import OWLClass, OWLNamedIndividual
-from ontolearn.owlapy.render import DLSyntaxRenderer
-from ontolearn.search import OENode
+from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric
+from ontolearn.heuristics import CELOEHeuristic
+from ontolearn.learning_problem import PosNegLPStandard
+from ontolearn.metrics import Accuracy
+from owlapy import IRI
+from owlapy.model import OWLClass, OWLNamedIndividual
+from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.utils import setup_logging
 
 setup_logging()

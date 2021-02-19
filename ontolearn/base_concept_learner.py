@@ -5,8 +5,8 @@ from .abstracts import BaseRefinement, AbstractScorer, AbstractTree, AbstractNod
     AbstractKnowledgeBase, AbstractLearningProblem
 from typing import List, Set, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar
 
-from .owlapy.model import OWLClassExpression, OWLNamedIndividual
-from .owlapy.render import DLSyntaxRenderer
+from owlapy.model import OWLClassExpression, OWLNamedIndividual
+from owlapy.render import DLSyntaxRenderer
 from .search import Node
 import numpy as np
 import pandas as pd

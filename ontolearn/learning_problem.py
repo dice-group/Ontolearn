@@ -4,8 +4,8 @@ from typing import Set, Optional
 
 from ontolearn import KnowledgeBase
 from ontolearn.abstracts import AbstractLearningProblem
-from ontolearn.owlapy.model import OWLNamedIndividual, OWLClass, OWLClassExpression
-from ontolearn.owlapy.render import DLSyntaxRenderer
+from owlapy.model import OWLNamedIndividual, OWLClass, OWLClassExpression
+from owlapy.render import DLSyntaxRenderer
 
 logger = logging.getLogger(__name__)
 

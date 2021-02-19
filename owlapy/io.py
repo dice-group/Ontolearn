@@ -1,6 +1,6 @@
 from abc import abstractmethod, ABCMeta
 
-from ontolearn.owlapy.model import OWLObject
+from owlapy.model import OWLObject
 
 
 class OWLObjectRenderer(metaclass=ABCMeta):

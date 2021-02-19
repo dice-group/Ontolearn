@@ -4,9 +4,9 @@ import types
 from functools import singledispatchmethod
 from typing import List, Callable
 
-from ontolearn.owlapy import IRI, namespaces
-from ontolearn.owlapy.io import OWLObjectRenderer
-from ontolearn.owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
+from owlapy import IRI, namespaces
+from owlapy.io import OWLObjectRenderer
+from owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLBooleanClassExpression, OWLNaryBooleanClassExpression, \
     OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, OWLClassExpression, OWLRestriction, \
     OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectHasSelf, OWLObjectHasValue, \

@@ -2,18 +2,21 @@ import unittest
 from typing import TypeVar
 
 from ontolearn.core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, AbstractHierarchy
-from ontolearn.owlapy import IRI
-from ontolearn.owlapy.model import OWLClass, OWLObjectProperty
-from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from ontolearn.utils import setup_logging
+from owlapy import IRI
+from owlapy.model import OWLClass, OWLObjectProperty
+from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 
 _T = TypeVar('_T')
+
+setup_logging("logging_test.conf")
 
 
 class Owl_Core_PropertyHierarchy_Test(unittest.TestCase):
     def test_object_property_hierarchy(self):
         NS = "http://www.biopax.org/examples/glycolysis#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://data/biopax/owl/data/biopax.owl"))
+        onto = mgr.load_ontology(IRI.create("file://data/biopax/biopax.owl"))
         reasoner = OWLReasoner_Owlready2(onto)
 
         oph = ObjectPropertyHierarchy(reasoner)

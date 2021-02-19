@@ -1,12 +1,13 @@
 import copy
 from itertools import chain, tee
-from typing import Set, Optional, Iterable, Dict, List, Type, Final
+from typing import Set, Optional, Iterable, Dict, List, Type, Final, Generator
 
 from .abstracts import BaseRefinement
 from .knowledge_base import KnowledgeBase
-from .owlapy.model import OWLClass, OWLObjectComplementOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
+from owlapy.model import OWLClass, OWLObjectComplementOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectUnionOf, OWLObjectIntersectionOf, OWLClassExpression, OWLNothing, OWLNaryBooleanClassExpression
 from .search import Node, OENode
+from .utils import parametrized_performance_debugger
 
 
 class LengthBasedRefinement(BaseRefinement[Node]):
@@ -607,7 +608,7 @@ class ExampleRefinement(BaseRefinement):
         super().__init__(kb)
 
     @parametrized_performance_debugger()
-    def refine_atomic_concept(self, concept: Concept) -> Set:
+    def refine_atomic_concept(self, concept: 'Concept') -> Set:
         """
         # (1) Create all direct sub concepts of C that are defined in TBOX.
         # (2) Create negations of all leaf concepts in  the concept hierarchy.
@@ -640,7 +641,7 @@ class ExampleRefinement(BaseRefinement):
                 yield self.kb.union(i, j)
                 yield self.kb.intersection(i, j)
 
-    def refine_complement_of(self, concept: Concept):
+    def refine_complement_of(self, concept: 'Concept'):
         """
         :type concept: Concept
         :param concept:
@@ -649,11 +650,11 @@ class ExampleRefinement(BaseRefinement):
         parents = self.kb.get_direct_parents(self.kb.negation(concept))
         return self.kb.negation_from_iterables(parents)
 
-    def refine_object_some_values_from(self, concept: Concept):
+    def refine_object_some_values_from(self, concept: 'Concept'):
         for i in self.refine(concept.filler):
             yield self.kb.existential_restriction(i, concept.role)
 
-    def refine_object_all_values_from(self, C: Concept):
+    def refine_object_all_values_from(self, C: 'Concept'):
         """
 
         :param C:
@@ -663,7 +664,7 @@ class ExampleRefinement(BaseRefinement):
         for i in self.refine(C.filler):
             yield self.kb.universal_restriction(i, C.role)
 
-    def refine_object_union_of(self, C: Concept):
+    def refine_object_union_of(self, C: 'Concept'):
         """
 
         :param C:
@@ -677,7 +678,7 @@ class ExampleRefinement(BaseRefinement):
         for ref_concept_B in self.refine(concept_B):
             yield self.kb.union(ref_concept_B, concept_A)
 
-    def refine_object_intersection_of(self, C: Concept):
+    def refine_object_intersection_of(self, C: 'Concept'):
         """
 
         :param C:
@@ -695,8 +696,8 @@ class ExampleRefinement(BaseRefinement):
 
         return result
 
-    def refine(self, concept: Concept):
-        assert isinstance(concept, Concept)
+    def refine(self, concept: 'Concept'):
+        assert isinstance(concept, 'Concept')
 
         if concept.is_atomic:
             yield from self.refine_atomic_concept(concept)
@@ -721,7 +722,7 @@ class ExpressRefinement(BaseRefinement):
         self.downsample = downsample
         self.expressivity = expressivity
 
-    def getNode(self, c: Concept, parent_node=None, root=False):
+    def getNode(self, c: 'Concept', parent_node=None, root=False):
 
         if c in self.concepts_to_nodes:
             return self.concepts_to_nodes[c]

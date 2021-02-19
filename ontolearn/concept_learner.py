@@ -16,9 +16,9 @@ from .core.owl.utils import EvaluatedDescriptionSet, OrderedOWLObject, ConceptOp
 from .heuristics import CELOEHeuristic, OCELHeuristic
 from .learning_problem import PosNegLPStandard
 from .metrics import F1
-from .owlapy.model import OWLClassExpression, OWLNamedIndividual
-from .owlapy.render import DLSyntaxRenderer
-from .owlapy.utils import as_index
+from owlapy.model import OWLClassExpression, OWLNamedIndividual
+from owlapy.render import DLSyntaxRenderer
+from owlapy.utils import as_index
 from .refinement_operators import ModifiedCELOERefinement, LengthBasedRefinement
 from .search import SearchTreePriorityQueue
 from .utils import oplogging

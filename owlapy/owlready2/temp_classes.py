@@ -4,11 +4,11 @@ from typing import Iterable, cast, Optional
 
 import owlready2
 
-from ontolearn.owlapy import IRI
-from ontolearn.owlapy.model import OWLClass, OWLClassExpression, OWLNamedIndividual
-from ontolearn.owlapy.owlready2 import OWLReasoner_Owlready2
-from ontolearn.owlapy.owlready2.base import OWLOntology_Owlready2, BaseReasoner
-from ontolearn.owlapy.owlready2.utils import ToOwlready2
+from owlapy import IRI
+from owlapy.model import OWLClass, OWLClassExpression, OWLNamedIndividual
+from owlapy.owlready2 import OWLReasoner_Owlready2
+from owlapy.owlready2.base import OWLOntology_Owlready2, BaseReasoner
+from owlapy.owlready2.utils import ToOwlready2
 
 
 class OWLReasoner_Owlready2_TempClasses(OWLReasoner_Owlready2):

@@ -1,8 +1,8 @@
 from abc import ABCMeta, abstractmethod
 from typing import Generic, Iterable, Sequence, TypeVar, Union, Final
 
-from ontolearn.owlapy import vocabulary
-from ontolearn.owlapy.base import HasIRI, IRI
+from owlapy import vocabulary
+from owlapy.base import HasIRI, IRI
 
 _T = TypeVar('_T')
 
@@ -471,6 +471,16 @@ class OWLObjectCardinalityRestriction(OWLCardinalityRestriction[OWLClassExpressi
         return f"{type(self).__name__}(" \
                f"property={repr(self.get_property())},{self.get_cardinality()},filler={repr(self.get_filler())})"
 
+    def __eq__(self, other):
+        if type(other) == type(self):
+            return self._property == other._property \
+                   and self._cardinality == other._cardinality \
+                   and self._filler == other._filler
+        return NotImplemented
+
+    def __hash__(self):
+        hash((self._property, self._cardinality, self._filler))
+
 
 class OWLObjectMinCardinality(OWLObjectCardinalityRestriction):
     __slots__ = '_cardinality', '_filler', '_property'
@@ -692,6 +702,7 @@ class OWLReasoner(metaclass=ABCMeta):
     @abstractmethod
     def get_root_ontology(self) -> OWLOntology:
         pass
+
 
 # TODO: a big todo plus intermediate classes (missing)
 #

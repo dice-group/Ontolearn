@@ -1,11 +1,13 @@
 import unittest
 
 from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric
-from ontolearn.owlapy import IRI
-from ontolearn.owlapy.model import OWLClass, OWLObjectProperty, OWLObjectUnionOf, OWLObjectSomeValuesFrom, \
+from ontolearn.utils import setup_logging
+from owlapy import IRI
+from owlapy.model import OWLClass, OWLObjectProperty, OWLObjectUnionOf, OWLObjectSomeValuesFrom, \
     OWLObjectComplementOf, OWLObjectIntersectionOf, OWLThing, OWLNamedIndividual, OWLObjectOneOf, OWLObjectHasValue, \
     OWLObjectMinCardinality
 
+setup_logging("logging_test.conf")
 
 class Core_OWLClassExpressionLengthMetric_Test(unittest.TestCase):
     def test_ce_length(self):

@@ -1,7 +1,7 @@
-from ontolearn.owlapy import IRI, namespaces
-from ontolearn.owlapy.namespaces import Namespaces
-from ontolearn.owlapy.model import OWLClass, OWLObjectUnionOf
-from ontolearn.owlapy.utils import IRIFixedSet
+from owlapy import IRI, namespaces
+from owlapy.namespaces import Namespaces
+from owlapy.model import OWLClass, OWLObjectUnionOf
+from owlapy.utils import IRIFixedSet
 
 base = Namespaces("ex", "http://example.org/")
 

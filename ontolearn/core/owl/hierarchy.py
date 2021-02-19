@@ -3,10 +3,10 @@ from abc import ABCMeta, abstractmethod
 from functools import reduce
 from typing import Dict, Iterable, Tuple, overload, TypeVar, Generic, Type, cast, Optional
 
-from ontolearn.owlapy import HasIRI
-from ontolearn.owlapy.model import OWLClass, OWLReasoner, OWLObjectProperty, OWLDataProperty, OWLTopObjectProperty, \
+from owlapy import HasIRI
+from owlapy.model import OWLClass, OWLReasoner, OWLObjectProperty, OWLDataProperty, OWLTopObjectProperty, \
     OWLBottomObjectProperty, OWLTopDataProperty, OWLBottomDataProperty, OWLThing, OWLNothing
-from ontolearn.owlapy.utils import NamedFixedSet, iter_bits
+from owlapy.utils import NamedFixedSet, iter_bits
 
 _S = TypeVar('_S', bound=HasIRI)
 _U = TypeVar('_U', bound='AbstractHierarchy')

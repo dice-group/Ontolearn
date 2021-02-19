@@ -9,10 +9,10 @@ from sortedcontainers import SortedSet
 from superprop import super_prop
 from .abstracts import AbstractTree, AbstractScorer, AbstractNode
 from .core.owl.utils import OrderedOWLObject
-from .owlapy.io import OWLObjectRenderer
-from .owlapy.model import OWLClassExpression
-from .owlapy.render import DLSyntaxRenderer
-from .owlapy.utils import as_index
+from owlapy.io import OWLObjectRenderer
+from owlapy.model import OWLClassExpression
+from owlapy.render import DLSyntaxRenderer
+from owlapy.utils import as_index
 
 _N = TypeVar('_N')
 

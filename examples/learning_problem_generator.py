@@ -1,7 +1,7 @@
 #from ontolearn import KnowledgeBase, LearningProblemGenerator
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem_generator import LearningProblemGenerator
-from ontolearn.owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
+from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.static_funcs import export_concepts
 from ontolearn.utils import setup_logging
