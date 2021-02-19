@@ -1,8 +1,8 @@
 from ontolearn import KnowledgeBase
 import os
 
-PATH_KG = '../data/family-benchmark_rich_background.owl'
-kb = KnowledgeBase(PATH_KG)
+kb_path = '../KGs/Family/family-benchmark_rich_background.owl'
+kb = KnowledgeBase(kb_path)
 kb.save('family-benchmark_rich_background', rdf_format='nt')
 
 # All concepts.
