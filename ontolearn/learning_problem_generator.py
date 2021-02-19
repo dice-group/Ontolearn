@@ -1,6 +1,6 @@
 import sys
 from queue import PriorityQueue
-from typing import Generator, Literal, Optional, Iterable, Callable, Set, Tuple
+from typing import Generator, Literal, Optional, Iterable, Callable, Set, Tuple, Dict
 
 from .abstracts import BaseRefinement
 from .knowledge_base import KnowledgeBase
