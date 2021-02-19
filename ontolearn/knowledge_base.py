@@ -6,11 +6,11 @@ from .concept_generator import ConceptGenerator
 from .core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from .core.owl.utils import OWLClassExpressionLengthMetric
 from .core.utils import BitSet
-from .owlapy import IRI
-from .owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLNamedIndividual, \
+from owlapy import IRI
+from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLNamedIndividual, \
     OWLObjectProperty, OWLClass, OWLDataProperty
-from .owlapy.render import DLSyntaxRenderer
-from .owlapy.utils import NamedFixedSet, popcount, iter_count
+from owlapy.render import DLSyntaxRenderer
+from owlapy.utils import NamedFixedSet, popcount, iter_count
 
 Factory = Callable
 
@@ -18,15 +18,15 @@ logger = logging.getLogger(__name__)
 
 
 def _Default_OntologyManagerFactory() -> OWLOntologyManager:
-    from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2
+    from owlapy.owlready2 import OWLOntologyManager_Owlready2
 
     return OWLOntologyManager_Owlready2()
 
 
 def _Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
-    from ontolearn.owlapy.owlready2.base import OWLOntology_Owlready2
-    from ontolearn.owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
-    from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
+    from owlapy.owlready2.base import OWLOntology_Owlready2
+    from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
+    from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
 
     assert isinstance(onto, OWLOntology_Owlready2)
     base_reasoner = OWLReasoner_Owlready2_TempClasses(ontology=onto)

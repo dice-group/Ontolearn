@@ -13,9 +13,9 @@ import torch
 from .core.owl.utils import OWLClassExpressionLengthMetric
 from .core.owl.hierarchy import ClassHierarchy
 from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
-from .owlapy.model import OWLClassExpression, OWLOntology
-from .owlapy.utils import iter_count
 from .utils import balanced_sets, read_csv
+from owlapy.model import OWLClassExpression, OWLOntology
+from owlapy.utils import iter_count
 from .owlready2.utils import get_full_iri
 from typing import Set, Dict, List, Tuple, Iterable, Generator, SupportsFloat, TypeVar, Optional, Type, Generic
 import random

@@ -4,8 +4,8 @@ from abc import ABCMeta, abstractmethod
 from typing import Union, overload, Final, Protocol, ClassVar
 from weakref import WeakKeyDictionary
 
-from ontolearn.owlapy import namespaces
-from ontolearn.owlapy.namespaces import Namespaces
+from owlapy import namespaces
+from owlapy.namespaces import Namespaces
 
 
 class HasIndex(Protocol):
@@ -85,11 +85,11 @@ class IRI(metaclass=_WeakCached):
         return hash((self._namespace, self._remainder))
 
     def is_nothing(self):
-        from ontolearn.owlapy import vocabulary
+        from owlapy import vocabulary
         return self == vocabulary.OWL_NOTHING.get_iri()
 
     def is_thing(self):
-        from ontolearn.owlapy import vocabulary
+        from owlapy import vocabulary
         return self == vocabulary.OWL_THING.get_iri()
 
     def is_reserved_vocabulary(self) -> bool:

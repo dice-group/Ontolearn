@@ -3,8 +3,8 @@ from typing import Union
 
 import owlready2
 
-from ontolearn.owlapy import IRI
-from ontolearn.owlapy.model import OWLClassExpression, OWLPropertyExpression, OWLObjectProperty, OWLClass, \
+from owlapy import IRI
+from owlapy.model import OWLClassExpression, OWLPropertyExpression, OWLObjectProperty, OWLClass, \
     OWLObjectComplementOf, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectPropertyExpression
 

@@ -1,8 +1,8 @@
 from typing import Iterable, overload, TypeVar, Generic, Type, Tuple, Dict, List, cast
 
-from ontolearn.owlapy import IRI, HasIRI
-from ontolearn.owlapy.base import HasIndex
-from ontolearn.owlapy.model import OWLObject
+from owlapy import IRI, HasIRI
+from owlapy.base import HasIndex
+from owlapy.model import OWLObject
 
 _HasIRI = TypeVar('_HasIRI', bound=HasIRI)
 

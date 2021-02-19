@@ -1,10 +1,10 @@
 import unittest
 
-from ontolearn.owlapy import IRI
-from ontolearn.owlapy.model import OWLClass, OWLObjectProperty, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
+from owlapy import IRI
+from owlapy.model import OWLClass, OWLObjectProperty, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
     OWLThing, OWLObjectComplementOf, OWLObjectUnionOf, OWLNamedIndividual, OWLObjectOneOf, OWLObjectHasValue, \
     OWLObjectMinCardinality
-from ontolearn.owlapy.render import DLSyntaxRenderer
+from owlapy.render import DLSyntaxRenderer
 
 
 class Owlapy_DLRenderer_Test(unittest.TestCase):

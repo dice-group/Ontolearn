@@ -1,10 +1,10 @@
 import unittest
 
-from ontolearn.owlapy import IRI
-from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from ontolearn.owlapy.model import OWLClass, OWLObjectProperty, OWLNamedIndividual, OWLObjectIntersectionOf, \
+from owlapy import IRI
+from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
+from owlapy.model import OWLClass, OWLObjectProperty, OWLNamedIndividual, OWLObjectIntersectionOf, \
     OWLObjectSomeValuesFrom, OWLThing
-from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 
 
 class Owlapy_FastInstanceChecker_Test(unittest.TestCase):

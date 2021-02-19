@@ -1,12 +1,12 @@
 import unittest
 
-import ontolearn.owlapy.owlready2.utils
-from ontolearn.owlapy import IRI
-from ontolearn.owlapy.model import OWLObjectProperty, OWLNamedIndividual, OWLThing, OWLClass, OWLObjectUnionOf, \
+import owlapy.owlready2.utils
+from owlapy import IRI
+from owlapy.model import OWLObjectProperty, OWLNamedIndividual, OWLThing, OWLClass, OWLObjectUnionOf, \
     OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectComplementOf
-from ontolearn.owlapy.owlready2.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-import ontolearn.owlapy.owlready2
-from ontolearn.owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
+from owlapy.owlready2.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+import owlapy.owlready2
+from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 
 
 class Owlapy_Owlready2_Test(unittest.TestCase):
@@ -23,7 +23,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
     def test_sub_object_properties(self):
         NS = "http://www.biopax.org/examples/glycolysis#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://data/biopax/owl/data/biopax.owl"))
+        onto = mgr.load_ontology(IRI.create("file://data/biopax/biopax.owl"))
         reasoner = OWLReasoner_Owlready2(onto)
 
         participants = OWLObjectProperty(IRI.create(NS, 'PARTICIPANTS'))
@@ -91,7 +91,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         female = OWLClass(IRI.create(NS, 'female'))
         has_child = OWLObjectProperty(IRI(NS, 'hasChild'))
 
-        to_owlready = ontolearn.owlapy.owlready2.utils.ToOwlready2(world=onto._world)
+        to_owlready = owlapy.owlready2.utils.ToOwlready2(world=onto._world)
 
         ce = male
         owlready_ce = onto._onto.male
@@ -127,7 +127,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         female = onto._onto.female
         has_child = onto._onto.hasChild
 
-        from_owlready = ontolearn.owlapy.owlready2.utils.FromOwlready2()
+        from_owlready = owlapy.owlready2.utils.FromOwlready2()
 
         import owlready2
         ce = male | female

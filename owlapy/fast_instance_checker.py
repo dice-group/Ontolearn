@@ -4,11 +4,11 @@ from logging import warning
 from types import MappingProxyType
 from typing import Iterable, Dict, Mapping
 
-from ontolearn.owlapy import IRI
-from ontolearn.owlapy.model import OWLReasoner, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
+from owlapy import IRI
+from owlapy.model import OWLReasoner, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
     OWLObjectProperty, OWLDataProperty, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
     OWLObjectPropertyExpression, OWLObjectComplementOf, OWLObjectAllValuesFrom
-from ontolearn.owlapy.utils import NamedFixedSet
+from owlapy.utils import NamedFixedSet
 
 
 class OWLReasoner_FastInstanceChecker(OWLReasoner):
@@ -99,7 +99,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
         opc: Dict[int, int] = dict()
 
         # shortcut for owlready2
-        from ontolearn.owlapy.owlready2.base import OWLOntology_Owlready2
+        from owlapy.owlready2.base import OWLOntology_Owlready2
         if isinstance(self._ontology, OWLOntology_Owlready2):
             import owlready2
             # _x => owlready2 objects

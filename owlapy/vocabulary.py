@@ -1,8 +1,8 @@
 from typing import Final
 
-from ontolearn.owlapy.base import HasIRI, IRI
-from ontolearn.owlapy import namespaces
-from ontolearn.owlapy.namespaces import Namespaces
+from owlapy.base import HasIRI, IRI
+from owlapy import namespaces
+from owlapy.namespaces import Namespaces
 
 
 class OWLRDFVocabulary(HasIRI):

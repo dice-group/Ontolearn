@@ -4,14 +4,14 @@ from typing import Optional, Tuple, Final, overload, Union, Iterable, Type, Gene
 
 from sortedcontainers import SortedSet
 
-from ontolearn.owlapy import HasIRI
-from ontolearn.owlapy.base import HasIndex
-from ontolearn.owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
+from owlapy import HasIRI
+from owlapy.base import HasIndex
+from owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, \
     OWLObjectCardinalityRestriction, OWLObjectHasSelf, \
     OWLObjectHasValue, OWLObjectOneOf, OWLObjectRestriction, HasFiller, HasCardinality, HasOperands, OWLClassExpression, \
     OWLNamedIndividual, OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality
-from ontolearn.owlapy.utils import as_index
+from owlapy.utils import as_index
 
 
 class OWLClassExpressionLengthMetric:

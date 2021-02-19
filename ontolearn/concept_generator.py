@@ -3,10 +3,10 @@ from typing import Iterable, List, Optional, AbstractSet, Dict
 
 from ontolearn.core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from ontolearn.core.owl.utils import OrderedOWLObject
-from ontolearn.owlapy.model import OWLClass, OWLClassExpression, OWLObjectComplementOf, OWLObjectSomeValuesFrom, \
+from owlapy.model import OWLClass, OWLClassExpression, OWLObjectComplementOf, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectPropertyExpression, OWLThing, \
     OWLNothing, OWLReasoner, OWLObjectProperty
-from ontolearn.owlapy.utils import as_index
+from owlapy.utils import as_index
 from ontolearn.utils import parametrized_performance_debugger
 
 

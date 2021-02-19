@@ -4,8 +4,8 @@ from typing import Iterable, Set
 
 import owlready2
 
-from ontolearn.owlapy import IRI
-from ontolearn.owlapy.model import OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
+from owlapy import IRI
+from owlapy.model import OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
     OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectPropertyExpression \
     # OWLObjectSomeValuesFrom, OWLProperty, \
 

@@ -2,7 +2,7 @@
 import json
 
 from ontolearn import KnowledgeBase
-from ontolearn.owlapy.render import DLSyntaxRenderer
+from owlapy.render import DLSyntaxRenderer
 from ontolearn.refinement_operators import CustomRefinementOperator, ModifiedCELOERefinement, LengthBasedRefinement
 from ontolearn.search import Node
 
