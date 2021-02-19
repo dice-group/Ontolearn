@@ -9,6 +9,12 @@ class Namespaces:
     _ns: str
 
     def __init__(self, prefix: str, ns: str):
+        """Create a new namespace
+
+        Args:
+            prefix: typical prefix associated with this namespace
+            ns: namespace IRI as string
+        """
         assert ns[-1] in ("/", ":", "#")
         self._prefix = prefix
         self._ns = ns
@@ -23,6 +29,9 @@ class Namespaces:
 
     def __repr__(self):
         return f'Namespaces({repr(self._prefix)}, {repr(self._ns)})'
+
+    def __hash__(self):
+        return hash((self._prefix, self._ns))
 
     def __eq__(self, other):
         if type(other) is type(self):
