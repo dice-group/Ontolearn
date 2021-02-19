@@ -2,9 +2,12 @@
 import json
 
 from ontolearn import KnowledgeBase
+from ontolearn.utils import setup_logging
 from owlapy.render import DLSyntaxRenderer
 from ontolearn.refinement_operators import CustomRefinementOperator, ModifiedCELOERefinement, LengthBasedRefinement
 from ontolearn.search import Node
+
+setup_logging("logging_test.conf")
 
 with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)

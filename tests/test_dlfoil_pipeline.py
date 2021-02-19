@@ -3,6 +3,9 @@
 import json
 
 from ontolearn import CustomConceptLearner, KnowledgeBase, F1, DLFOILHeuristic
+from ontolearn.utils import setup_logging
+
+setup_logging("logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 with open('examples/synthetic_problems.json') as json_file:
