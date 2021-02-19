@@ -1,13 +1,18 @@
-from .abstracts import AbstractScorer
+from .abstracts import AbstractScorer, AbstractLearningProblem, AbstractNode
+from .learning_problem import PosNegLPStandard
 from .search import Node
 from typing import Set, ClassVar, Final
 
 
 class Recall(AbstractScorer):
+    __slots__ = ()
+
     name: Final = 'Recall'
 
-    def __init__(self, pos=None, neg=None, unlabelled=None):
-        super().__init__(pos, neg, unlabelled)
+    lp: PosNegLPStandard
+
+    def __init__(self, learning_problem: PosNegLPStandard):
+        super().__init__(lp)
 
     def score(self, pos, neg, instances):
         self.pos = pos
@@ -28,8 +33,8 @@ class Recall(AbstractScorer):
         if len(instances) == 0:
             node.quality = 0
             return False
-        tp = len(self.pos.intersection(instances))
-        fn = len(self.pos.difference(instances))
+        tp = len(self.lp.kb_pos.intersection(instances))
+        fn = len(self.lp.kb_pos.difference(instances))
         try:
             recall = tp / (tp + fn)
             node.quality = round(recall, 5)
@@ -39,10 +44,14 @@ class Recall(AbstractScorer):
 
 
 class Precision(AbstractScorer):
+    __slots__ = ()
+
     name: Final = 'Precision'
 
-    def __init__(self, pos=None, neg=None, unlabelled=None):
-        super().__init__(pos, neg, unlabelled)
+    lp: PosNegLPStandard
+
+    def __init__(self, learning_problem: PosNegLPStandard):
+        super().__init__(lp)
 
     def score(self, pos, neg, instances):
         self.pos = pos
@@ -63,8 +72,8 @@ class Precision(AbstractScorer):
         if len(instances) == 0:
             node.quality = 0
             return False
-        tp = len(self.pos.intersection(instances))
-        fp = len(self.neg.intersection(instances))
+        tp = len(self.lp.kb_pos.intersection(instances))
+        fp = len(self.lp.kb_neg.intersection(instances))
         try:
             precision = tp / (tp + fp)
             node.quality = round(precision, 5)
@@ -74,12 +83,14 @@ class Precision(AbstractScorer):
 
 
 class F1(AbstractScorer):
+    __slots__ = ()
+
     name: Final = 'F1'
 
-    def __init__(self, pos=None, neg=None, unlabelled=None):
-        super().__init__(pos, neg, unlabelled)
-        self.beta = 0
-        self.noise = 0
+    lp: PosNegLPStandard
+
+    def __init__(self, learning_problem: PosNegLPStandard):
+        super().__init__(learning_problem=learning_problem)
 
     def score(self, pos, neg, instances):
         self.pos = pos
@@ -106,11 +117,11 @@ class F1(AbstractScorer):
             node.quality = 0
             return False
 
-        tp = len(self.pos.intersection(instances))
-        # tn = len(self.neg.difference(instances))
+        tp = len(self.lp.kb_pos.intersection(instances))
+        # tn = len(self.lp.kb_neg.difference(instances))
 
-        fp = len(self.neg.intersection(instances))
-        fn = len(self.pos.difference(instances))
+        fp = len(self.lp.kb_neg.intersection(instances))
+        fn = len(self.lp.kb_pos.difference(instances))
 
         try:
             recall = tp / (tp + fn)
@@ -150,7 +161,11 @@ class Accuracy(AbstractScorer):
 
     2) E^+ and E^- are the positive and negative examples probided. E = E^+ OR E^- .
     """
+    __slots__ = ()
+
     name: Final = 'Accuracy'
+
+    lp: PosNegLPStandard
 
     def score(self, pos, neg, instances):
         self.pos = pos
@@ -172,25 +187,25 @@ class Accuracy(AbstractScorer):
             acc = 0
         return acc
 
-    def __init__(self, pos=None, neg=None, unlabelled=None):
-        super().__init__(pos, neg, unlabelled)
+    def __init__(self, learning_problem: PosNegLPStandard):
+        super().__init__(learning_problem)
 
-    def apply(self, node: Node, instances):
-        assert isinstance(node, Node)
+    def apply(self, node: AbstractNode, instances):
+        assert isinstance(node, AbstractNode)
         self.applied += 1
 
         if len(instances) == 0:
             node.quality = 0
             return False
 
-        tp = len(self.pos.intersection(instances))
-        tn = len(self.neg.difference(instances))
+        tp = len(self.lp.kb_pos.intersection(instances))
+        tn = len(self.lp.kb_neg.difference(instances))
 
         # FP corresponds to CN in Learning OWL Class Expressions OCEL paper, i.e., cn = |R(C) \AND
         # E^-| covered negatives
-        fp = len(self.neg.intersection(instances))
+        fp = len(self.lp.kb_neg.intersection(instances))
         # FN corresponds to UP in Learning OWL Class Expressions OCEL paper, i.e., up = |E^+ \ R(C)|
-        fn = len(self.pos.difference(instances))
+        fn = len(self.lp.kb_pos.difference(instances))
         # uncovered positives
 
         acc = (tp + tn) / (tp + tn + fp + fn)

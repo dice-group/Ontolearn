@@ -136,43 +136,34 @@ _N = TypeVar('_N')
 #         assert type(self) is type(n)
 #         self.__children.remove(n)
 
+class AbstractLearningProblem(metaclass=ABCMeta):
+    __slots__ = 'kb'
+
+    kb: 'AbstractKnowledgeBase'
+
+    @abstractmethod
+    def __init__(self, knowledge_base: 'AbstractKnowledgeBase'):
+        self.kb = knowledge_base
+
 
 class AbstractScorer(Generic[_N], metaclass=ABCMeta):
     """
-    An abstract class for quality and heuristic functions.
+    An abstract class for quality functions.
     """
-    __slots__ = 'pos', 'neg', 'unlabelled', 'applied'
+    __slots__ = 'lp', 'applied'
 
     name: ClassVar
 
     @abstractmethod
-    def __init__(self, pos, neg, unlabelled):
-        self.pos = pos
-        self.neg = neg
-        self.unlabelled = unlabelled
+    def __init__(self, learning_problem: AbstractLearningProblem):
+        self.lp = learning_problem
         self.applied = 0
-
-    def set_positive_examples(self, instances):
-        self.pos = instances
-
-    def set_negative_examples(self, instances):
-        self.neg = instances
-
-    def set_unlabelled_examples(self, instances):
-        self.unlabelled = instances
-
-    @abstractmethod
-    def score(self, *args, **kwargs):
-        pass
 
     @abstractmethod
     def apply(self, node: _N, individuals):
         pass
 
     def clean(self):
-        self.pos = None
-        self.neg = None
-        self.unlabelled = None
         self.applied = 0
 
 
@@ -180,6 +171,10 @@ class AbstractHeuristic(Generic[_N], metaclass=ABCMeta):
     __slots__ = 'applied'
 
     applied: int
+
+    @abstractmethod
+    def __init__(self):
+        self.applied = 0
 
     @abstractmethod
     def apply(self, node: _N):
