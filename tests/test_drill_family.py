@@ -4,7 +4,9 @@ import json
 import random
 import pandas as pd
 
-PATH_FAMILY = 'data/family-benchmark_rich_background.owl'
+PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
+"""
+
 drill_pretrained_model_path = 'agent_pre_trained/model.pth'
 family_embeddings_path = 'embeddings/dismult_family_benchmark/instance_emb.csv'
 synthetic_problems_path = 'examples/synthetic_problems.json'
@@ -42,3 +44,4 @@ class TestDrill:
             hypotheses = model.best_hypotheses(n=5)
             assert hypotheses[0].quality >= exp_f1_scores[str_target_concept]
             assert hypotheses[0].quality >= hypotheses[1].quality
+"""

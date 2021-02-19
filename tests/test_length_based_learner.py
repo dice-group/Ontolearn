@@ -9,7 +9,7 @@ from ontolearn import LengthBasedRefinement
 from ontolearn import LengthBaseLearner
 from ontolearn import SearchTreePriorityQueue
 
-PATH_FAMILY = 'data/family-benchmark_rich_background.owl'
+PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 kb = KnowledgeBase(path=PATH_FAMILY)
