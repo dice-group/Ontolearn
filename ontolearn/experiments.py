@@ -1,24 +1,20 @@
-from typing import List, Tuple, Set,Dict,Any
+from typing import List, Tuple, Set, Dict, Any, Iterable
 import numpy as np
 import json
 from sklearn.model_selection import KFold
 
 import time
 
+
 class Experiments:
-    def __init__(self):
+    def __init__(self, max_test_time_per_concept=3):
         self.random_state_k_fold = 1
-        self.max_run_time = 3
+        self.max_test_time_per_concept = max_test_time_per_concept
 
-    def run_dl(self, dataset, max_run_time: int = None):
-        """
-
-        @param max_run_time:
-        @param dataset:
-        @return:
-        """
-        if max_run_time:
-            self.max_run_time = max_run_time
+    """
+    def run_dl(self, dataset, max_test_time_per_concept: int = None):
+        if max_test_time_per_concept:
+            self.max_test_time_per_concept = max_test_time_per_concept
         # Create Config file
         for (target_concept, positives, negatives) in dataset:
 
@@ -32,11 +28,11 @@ class Experiments:
                     positives=positives,
                     negatives=negatives,
                     path_name=target_concept,
-                    max_run_time=self.max_run_time)
+                    max_run_time=self.max_test_time_per_concept)
 
                 # print('JAVA:{0}:BestPrediction:\t{1}\tF-score:{2}'.format(
                 #    algorithm, str_best_concept, f_1score))
-
+    """
     @staticmethod
     def store_report(model, learning_problems: List[List], predictions: List[dict]) -> Tuple[str, Dict[str, Any]]:
         """
@@ -80,56 +76,51 @@ class Experiments:
                                                        time.mean(), time.std())
         return m, {'F-measure': f1, 'Accuracy': acc, 'Runtime': time}
 
-    def start_KFold(self, k=None, dataset: List[Tuple[str, Set, Set]] = None, models: List = None,
-                    max_runtime_per_problem=3) -> dict:
+    def start_KFold(self, k=None, dataset: List[Tuple[str, Set, Set]] = None, models: Iterable = None):
         """
         Perform KFold cross validation
-        @param max_runtime_per_problem:
+        @param max_test_time_per_concept:
         @param models:
         @param k:
         @param dataset: A list of tuples where a tuple (i,j,k) where i denotes the target concept
         j denotes the set of positive examples and k denotes the set of negative examples.
-        @param max_runtime: in seconds.
+        @param max_runtime_per_problem: in seconds.
         @return:
         """
+        models = {i for i in models}
         assert len(models) > 0
         assert len(dataset) > 0
         assert isinstance(dataset[0], tuple)
         assert isinstance(dataset[0], tuple)
         assert k
-        assert isinstance(max_runtime_per_problem, int)
         dataset = np.array(dataset)  # due to indexing feature required in the sklearn.KFold.
 
         kf = KFold(n_splits=k, random_state=self.random_state_k_fold)
 
-        k_fold_summary = dict()
         results = dict()
         counter = 1
         for train_index, test_index in kf.split(dataset):
-            train, test = dataset[train_index].tolist(), dataset[train_index].tolist()
-            fold = dict()
-            # one could even parallelize the following computation.
+            train, test = dataset[train_index].tolist(), dataset[test_index].tolist()
             print(f'##### FOLD:{counter} #####')
             start_time_fold = time.time()
             for m in models:
                 m.train(train)
-                test_report: List[dict] = m.fit_from_iterable(test, max_runtime=max_runtime_per_problem)
-                stats_report, dict_report = self.store_report(m, test, test_report)
-                print(stats_report)
-                # Store stats
-                fold.update({m.name: dict_report})
-                k_fold_summary.setdefault(m.name, []).append(dict_report)
-
+                test_report: List[dict] = m.fit_from_iterable(test, max_runtime=self.max_test_time_per_concept)
+                str_report, dict_report = self.store_report(m, test, test_report)
+                print(str_report)
+                results.setdefault(m.name, []).append((counter, dict_report))
             print(f'##### FOLD:{counter} took {round(time.time() - start_time_fold)} seconds #####')
-
-            results[counter] = fold
             counter += 1
 
-        return_results = dict()
-        for mode_name, stats in k_fold_summary.items():
-            test_stats = np.array([[i['F-measure'], i['Accuracy'], i['Runtime']] for i in stats])
-            return_results[mode_name] = {'F-measure': test_stats[:, 0],
-                                         'Accuracy': test_stats[:, 1],
-                                         'Runtime': test_stats[:, 2]}
+        self.report_results(results)
 
-        return return_results
+    @staticmethod
+    def report_results(k_fold_cross_validation):
+        print('\n##### K-FOLD CROSS VALUATION RESULTS #####')
+        for learner_name, v in k_fold_cross_validation.items():
+            r=np.array([[report['F-measure'],report['Accuracy'],report['Runtime']] for (fold, report) in v])
+            f1_mean, f1_std = r[:,0].mean(), r[:,0].std()
+            acc_mean, acc_std = r[:,1].mean(), r[:,1].std()
+            runtime_mean, runtime_std = r[:,2].mean(), r[:,2].std()
+            print(
+                f'{learner_name}\t F-measure:(avg.{f1_mean:.2f} | std.{f1_std:.2f})\tAccuracy:(avg.{acc_mean:.2f} | std.{acc_std:.2f})\tRuntime:(avg.{runtime_mean:.2f} | std.{runtime_std:.2f})')
