@@ -103,18 +103,18 @@ class Celoe_Test(unittest.TestCase):
         model.fit(pos=pos_uncle, neg=neg_uncle)
 
         print("First fitted on Aunt then on Uncle:")
-        hypotheses = model.best_hypotheses(n=2)
-        q, str_concept = hypotheses[0].quality, hypotheses[0].concept.str
+        hypotheses = list(model.best_hypotheses(n=2))
+        q, str_concept = hypotheses[0].quality, hypotheses[0].concept
 
         model = ModelAdapter(learner_type=CELOE)
         model.fit(knowledge_base=kb, pos=pos_uncle, neg=neg_uncle)
 
         print("Only fitted on Uncle:")
-        hypotheses = model.best_hypotheses(n=2)
-        q2, str_concept2 = hypotheses[0].quality, hypotheses[0].concept.str
+        hypotheses = list(model.best_hypotheses(n=2))
+        q2, str_concept2 = hypotheses[0].quality, hypotheses[0].concept
 
-        assert q == q2
-        assert str_concept == str_concept2
+        self.assertEqual(q, q2)
+        self.assertEqual(str_concept, str_concept2)
 
 
 if __name__ == '__main__':
