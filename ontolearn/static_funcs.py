@@ -133,3 +133,4 @@ def export_concepts(kb, concepts, path: str = 'concepts.owl', rdf_format: str = 
                 print(e)
                 print('exiting.')
     o1.save(file=path, format=rdf_format)
+    print('Concepts are saved.')
