@@ -1,5 +1,6 @@
+from collections import Counter
 from functools import singledispatchmethod, total_ordering
-from typing import Optional, Tuple, Final, overload, Union, Iterable, Type, Generic, TypeVar, Callable
+from typing import Optional, Tuple, Final, overload, Union, Iterable, Type, Generic, TypeVar, Callable, List
 
 from sortedcontainers import SortedSet
 
@@ -306,6 +307,16 @@ class EvaluatedDescriptionSet(Generic[_N, _O]):
 
     def __iter__(self) -> Iterable[_N]:
         yield from reversed(self.items)
+
+
+def _avoid_overly_redundand_operands(operands: List[_O], max_count: int = 2) -> List[_O]:
+    _max_count = max_count
+    r = []
+    counts = Counter(operands)
+    for op in sorted(operands, key=OrderedOWLObject):
+        for _ in range(min(_max_count, counts[op])):
+            r.append(op)
+    return r
 
 
 def _sort_by_ordered_owl_object(i: Iterable[_O]) -> Iterable[_O]:

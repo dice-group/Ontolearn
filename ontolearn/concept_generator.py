@@ -57,6 +57,7 @@ class ConceptGenerator:
             else:
                 assert isinstance(c, OWLClassExpression)
                 operands.append(c)
+        # operands = _avoid_overly_redundand_operands(operands)
         return OWLObjectIntersectionOf(operands)
 
     # noinspection PyMethodMayBeStatic
@@ -68,6 +69,7 @@ class ConceptGenerator:
             else:
                 assert isinstance(c, OWLClassExpression)
                 operands.append(c)
+        # operands = _avoid_overly_redundand_operands(operands)
         return OWLObjectUnionOf(operands)
 
     def get_direct_parents(self, concept: OWLClassExpression) -> Iterable[OWLClass]:
