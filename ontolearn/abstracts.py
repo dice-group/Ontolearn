@@ -262,9 +262,11 @@ class AbstractTree(Generic[_N], metaclass=ABCMeta):
 
 
 class AbstractNode(metaclass=ABCMeta):
+    __slots__ = ()
+
     @abstractmethod
     def __init__(self):
-        raise NotImplementedError
+        pass
 
 
 class AbstractKnowledgeBase(metaclass=ABCMeta):
