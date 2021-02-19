@@ -1,8 +1,9 @@
 import inspect
 import logging
+from typing import Iterable, TypeVar
 
 from ontolearn.abstracts import AbstractHeuristic, AbstractScorer, BaseRefinement, AbstractKnowledgeBase, \
-    AbstractLearningProblem
+    AbstractLearningProblem, AbstractNode
 from ontolearn.base_concept_learner import BaseConceptLearner
 
 logger = logging.getLogger(__name__)
@@ -39,6 +40,9 @@ def _get_matching_opts(_Type, optargs, topargs, kwargs, prefix=None):
     return opts
 
 
+_N = TypeVar('_N', bound=AbstractNode)
+
+
 class ModelAdapter:
     def __init__(self, *args, **kwargs):
         """Create a new Concept learner model adapter
@@ -57,6 +61,8 @@ class ModelAdapter:
             learner_type: a Base Concept Learner type
             ...: arguments for the learning algorithm
         """
+        self.fit_result = None
+
         self.kb_type = kwargs.pop("knowledge_base_type", None)
         if "knowledge_base" in kwargs:
             self.kb = kwargs.pop("knowledge_base")
@@ -188,4 +194,9 @@ class ModelAdapter:
         if kwargs:
             logger.warning("Unused parameters: %s", kwargs)
 
-        return learner.fit()
+        self.fit_result = learner.fit()
+        return self
+
+    def best_hypotheses(self, n=10) -> Iterable[_N]:
+        assert isinstance(self.fit_result, BaseConceptLearner)
+        yield from self.fit_result.best_hypotheses(n)
