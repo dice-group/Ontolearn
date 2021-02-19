@@ -394,46 +394,6 @@ class Node(AbstractNode):
     ...
 
 
-class SearchTree(AbstractTree):
-    def __init__(self, quality_func: AbstractScorer = None, heuristic_func=None):
-        super().__init__(quality_func, heuristic_func)
-
-    def add(self, node: Node, parent_node: Node = None) -> bool:
-        """
-        Add a node into the search tree.
-        Parameters
-        ----------
-        @param parent_node:
-        @param node:
-        Returns
-        -------
-        None
-        """
-
-        if parent_node is None:
-            self.nodes[node.concept.str] = node
-            return False
-
-        if self.redundancy_check(node):
-            self.quality_func.apply(node)  # AccuracyOrTooWeak(n)
-            if node.quality == 0:  # > too weak
-                return False
-            self.heuristic_func.apply(node)
-            self.nodes[node] = node
-            if parent_node:
-                parent_node.add_child(node)
-            if node.quality == 1:  # goal found
-                return True
-        else:
-            if not (node.parent_node is parent_node):
-                if parent_node.heuristic > node.parent_node.heuristic:
-                    # update parent info
-                    self.heuristic_func.apply(node, parent_node=parent_node)
-                    self.nodes[node] = node
-                    parent_node.add_child(node)
-        return False
-
-
 class SearchTreePriorityQueue(AbstractTree):
     """
 
