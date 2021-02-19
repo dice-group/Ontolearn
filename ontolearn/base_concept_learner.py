@@ -58,7 +58,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     start_class: Optional[OWLClassExpression]
     iter_bound: Optional[int]
     max_runtime: Optional[int]
-    concepts_to_ignore: Set[OWLClassExpression]
     start_time: Optional[float]
     name: Optional[str]
     storage_path: str
@@ -68,7 +67,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
                  heuristic_func: AbstractHeuristic = None, quality_func: AbstractScorer = None,
                  max_num_of_concepts_tested: Optional[int] = None,
                  max_runtime: Optional[int] = None, terminate_on_goal: Optional[bool] = None,
-                 ignored_concepts: Optional[Set[OWLClassExpression]] = None,
                  iter_bound: Optional[int] = None, max_child_length: Optional[int] = None,
                  root_concept: Optional[OWLClassExpression] = None, verbose: Optional[int] = None,
                  name: Optional[str] = None):
@@ -80,7 +78,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         self.max_num_of_concepts_tested = max_num_of_concepts_tested
         self.terminate_on_goal = terminate_on_goal
         self.max_runtime = max_runtime
-        self.concepts_to_ignore = ignored_concepts
         self.iter_bound = iter_bound
         self.start_class = root_concept
         self.max_child_length = max_child_length
@@ -124,8 +121,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         if self.max_child_length is None:
             self.max_child_length = 10
 
-        if self.concepts_to_ignore is None:
-            self.concepts_to_ignore = set()
         if self.verbose is None:
             self.verbose = 1
 
@@ -135,19 +130,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         assert self.heuristic_func
         assert self.operator
         assert self.kb
-
-        self.add_ignored_concepts(self.concepts_to_ignore)
-
-    def add_ignored_concepts(self, ignore: Iterable[OWLClassExpression]) -> None:
-        owl_concepts_to_ignore = set()
-        for i in ignore:  # iterate over string representations of ALC concepts.
-            if self.kb.contains_class(i):
-                owl_concepts_to_ignore.add(i)
-            else:
-                raise ValueError(
-                    f'{i} could not found in \n{self.kb} \n'
-                    f'{[_ for _ in self.kb.ontology().classes_in_signature()]}.')
-        self.concepts_to_ignore = owl_concepts_to_ignore  # use ALC concept representation instead of URI.
 
     def initialize_learning_problem(self,
                                     pos: Set[OWLNamedIndividual],
@@ -175,11 +157,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             r = DLSyntaxRenderer()
             self.logger.info('E^+:[ {0} ]'.format(', '.join(map(r.render, pos))))
             self.logger.info('E^-:[ {0} ]'.format(', '.join(map(r.render, neg))))
-            if ignore:
-                self.logger.info('Concepts to ignore: {0}'.format(' '.join(map(r.render, ignore))))
-        if ignore:
-            self.add_ignored_concepts(ignore)
-            self.operator.set_class_hierarchy(self.kb.class_hierarchy().restrict_and_copy(remove=self.concepts_to_ignore))
 
         kb_pos = self.kb.individuals_set(pos)
         if len(neg) == 0:  # if negatives are not provided, randomly sample.
@@ -229,7 +206,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         """
         Clear all states of the concept learner
         """
-        self.concepts_to_ignore.clear()
         self.quality_func.clean()
         self.heuristic_func.clean()
 

@@ -85,7 +85,6 @@ class CELOE(BaseConceptLearner[OENode]):
                  iter_bound: Optional[int] = None,
                  max_num_of_concepts_tested: Optional[int] = None,
                  max_runtime: Optional[int] = None,
-                 ignored_concepts: Optional[Set[OWLClassExpression]] = None,
                  terminate_on_goal: Optional[bool] = None,
                  max_results: int = 10,
                  best_only: bool = False,
@@ -104,7 +103,6 @@ class CELOE(BaseConceptLearner[OENode]):
                          refinement_operator=ModifiedCELOERefinement(kb=knowledge_base),
                          quality_func=quality_func,
                          heuristic_func=heuristic_func,
-                         ignored_concepts=ignored_concepts,
                          terminate_on_goal=terminate_on_goal,
                          iter_bound=iter_bound,
                          max_num_of_concepts_tested=max_num_of_concepts_tested,
@@ -171,7 +169,6 @@ class CELOE(BaseConceptLearner[OENode]):
     def fit(self,
             pos: Set[OWLNamedIndividual],
             neg: Set[OWLNamedIndividual],
-            ignore: Set[OWLClassExpression] = None,
             max_runtime: int = None):
         """
         Find hypotheses that explain pos and neg.
@@ -334,7 +331,6 @@ class OCEL(CELOE):
         super().__init__(knowledge_base=knowledge_base,
                          quality_func=quality_func,
                          heuristic_func=OCELHeuristic(),
-                         ignored_concepts=ignored_concepts,
                          terminate_on_goal=terminate_on_goal,
                          iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested, verbose=verbose)
         self.name = 'ocel_python'
