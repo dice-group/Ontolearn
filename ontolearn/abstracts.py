@@ -270,6 +270,8 @@ class AbstractNode(metaclass=ABCMeta):
 class AbstractKnowledgeBase(metaclass=ABCMeta):
     __slots__ = ()
 
+    thing: OWLClassExpression
+
     @abstractmethod
     def save(self, path: str, rdf_format="rdfxml"):
         pass
