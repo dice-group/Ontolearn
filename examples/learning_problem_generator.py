@@ -4,6 +4,9 @@ from ontolearn.learning_problem_generator import LearningProblemGenerator
 from ontolearn.owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.static_funcs import export_concepts
+from ontolearn.utils import setup_logging
+
+setup_logging("logging_test.conf")
 
 path = '../KGs/Biopax/biopax.owl'
 
