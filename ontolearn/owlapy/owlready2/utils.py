@@ -17,6 +17,7 @@ class ToOwlready2:
     def __init__(self, world: owlready2.World):
         self._world = world
 
+    # single dispatch is still not implemented in mypy, see https://github.com/python/mypy/issues/2904
     @singledispatchmethod
     def map_concept(self, o: OWLClassExpression) \
             -> Union[owlready2.ClassConstruct, owlready2.ThingClass]:

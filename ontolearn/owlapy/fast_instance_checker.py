@@ -118,6 +118,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
 
         self._obj_prop[pe] = MappingProxyType(opc)
 
+    # single dispatch is still not implemented in mypy, see https://github.com/python/mypy/issues/2904
     @singledispatchmethod
     def _find_instances(self, ce: OWLClassExpression) -> int:
         raise NotImplementedError(ce)
