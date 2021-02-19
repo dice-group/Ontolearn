@@ -126,10 +126,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         else:
             self._length_metric = _Default_ClassExpressionLengthMetricFactory()
 
-        ConceptGenerator.__init__(self,
-                                  class_hierarchy=ClassHierarchy(self._reasoner),
-                                  object_property_hierarchy=ObjectPropertyHierarchy(self._reasoner),
-                                  data_property_hierarchy=DatatypePropertyHierarchy(self._reasoner))
+        ConceptGenerator.__init__(self, reasoner=self._reasoner)
 
         individuals = self._ontology.individuals_in_signature()
         self._ind_enc = NamedFixedSet(OWLNamedIndividual, individuals)

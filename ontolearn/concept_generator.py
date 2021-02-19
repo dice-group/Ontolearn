@@ -1,24 +1,45 @@
-from typing import Iterable
+from collections import Counter
+from typing import Iterable, List, Optional, AbstractSet, Dict
 
 from ontolearn.core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
+from ontolearn.core.owl.utils import OrderedOWLObject
 from ontolearn.owlapy.model import OWLClass, OWLClassExpression, OWLObjectComplementOf, OWLObjectSomeValuesFrom, \
-    OWLObjectAllValuesFrom, OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectPropertyExpression, OWLThing, OWLNothing
+    OWLObjectAllValuesFrom, OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectPropertyExpression, OWLThing, \
+    OWLNothing, OWLReasoner, OWLObjectProperty
+from ontolearn.owlapy.utils import as_index
 from ontolearn.utils import parametrized_performance_debugger
 
 
 class ConceptGenerator:
     """A class that can generate some sorts of OWL Class Expressions"""
-    __slots__ = '_class_hierarchy', '_object_property_hierarchy', '_data_property_hierarchy'
+    __slots__ = '_class_hierarchy', '_object_property_hierarchy', '_data_property_hierarchy', '_reasoner', '_op_domains'
 
     _class_hierarchy: ClassHierarchy
     _object_property_hierarchy: ObjectPropertyHierarchy
     _data_property_hierarchy: DatatypePropertyHierarchy
+    _reasoner: OWLReasoner
+    _op_domains: Dict[OWLObjectProperty, AbstractSet[OWLClass]]
 
-    def __init__(self, class_hierarchy: ClassHierarchy, object_property_hierarchy: ObjectPropertyHierarchy,
-                 data_property_hierarchy: DatatypePropertyHierarchy):
+    def __init__(self, reasoner: OWLReasoner,
+                 class_hierarchy: Optional[ClassHierarchy] = None,
+                 object_property_hierarchy: Optional[ObjectPropertyHierarchy] = None,
+                 data_property_hierarchy: Optional[DatatypePropertyHierarchy] = None):
+        self._reasoner = reasoner
+
+        if class_hierarchy is None:
+            class_hierarchy = ClassHierarchy(self._reasoner)
+
+        if object_property_hierarchy is None:
+            object_property_hierarchy = ObjectPropertyHierarchy(self._reasoner)
+
+        if data_property_hierarchy is None:
+            data_property_hierarchy = DatatypePropertyHierarchy(self._reasoner)
+
         self._class_hierarchy = class_hierarchy
         self._object_property_hierarchy = object_property_hierarchy
         self._data_property_hierarchy = data_property_hierarchy
+
+        self._op_domains = dict()
 
     def get_leaf_concepts(self, concept: OWLClass):
         """ Return : { x | (x subClassOf concept) AND not exist y: y subClassOf x )} """
@@ -38,15 +59,22 @@ class ConceptGenerator:
         assert isinstance(concept, OWLClass)
         yield from self._class_hierarchy.sub_classes(concept, direct=True)
 
-    def most_general_existential_restrictions(self, concept: OWLClassExpression) -> Iterable[OWLObjectSomeValuesFrom]:
-        assert isinstance(concept, OWLClassExpression)
-        for prop in self._object_property_hierarchy.most_general_roles():
-            yield OWLObjectSomeValuesFrom(property=prop, filler=concept)
+    def _object_property_domain(self, prop: OWLObjectProperty):
+        if prop not in self._op_domains:
+            self._op_domains[prop] = frozenset(self._reasoner.object_property_domains(prop))
+        return self._op_domains[prop]
 
-    def most_general_universal_restriction(self, concept: OWLClassExpression) -> Iterable[OWLObjectAllValuesFrom]:
-        assert isinstance(concept, OWLClassExpression)
+    def most_general_existential_restrictions(self, *, domain: OWLClass) -> Iterable[OWLObjectSomeValuesFrom]:
+        assert isinstance(domain, OWLClass)
         for prop in self._object_property_hierarchy.most_general_roles():
-            yield OWLObjectAllValuesFrom(property=prop, filler=concept)
+            if domain.is_owl_thing() or domain in self._object_property_domain(prop):
+                yield OWLObjectSomeValuesFrom(property=prop, filler=self.thing)
+
+    def most_general_universal_restriction(self, *, domain: OWLClass) -> Iterable[OWLObjectAllValuesFrom]:
+        assert isinstance(domain, OWLClassExpression)
+        for prop in self._object_property_hierarchy.most_general_roles():
+            if domain.is_owl_thing() or domain in self._object_property_domain(prop):
+                yield OWLObjectAllValuesFrom(property=prop, filler=self.thing)
 
     # noinspection PyMethodMayBeStatic
     def intersection(self, ops: Iterable[OWLClassExpression]) -> OWLObjectIntersectionOf:
@@ -116,4 +144,4 @@ class ConceptGenerator:
         return OWLNothing
 
     def clean(self):
-        pass
+        self._op_domains.clear()
