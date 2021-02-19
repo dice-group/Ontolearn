@@ -11,28 +11,6 @@ class Experiments:
         self.random_state_k_fold = 1
         self.max_test_time_per_concept = max_test_time_per_concept
 
-    """
-    def run_dl(self, dataset, max_test_time_per_concept: int = None):
-        if max_test_time_per_concept:
-            self.max_test_time_per_concept = max_test_time_per_concept
-        # Create Config file
-        for (target_concept, positives, negatives) in dataset:
-
-            for algorithm in ['ocel', 'eltl',
-                              'celoe']:  # Although accuracyMethod.type = fmeasure, ocel reports accuracy.
-
-                # @todos: create file to store .conf files.
-                str_best_concept, f_1score = self.dl_leaner.pipeline(
-                    knowledge_base_path=self.kb_path,
-                    algorithm=algorithm,
-                    positives=positives,
-                    negatives=negatives,
-                    path_name=target_concept,
-                    max_run_time=self.max_test_time_per_concept)
-
-                # print('JAVA:{0}:BestPrediction:\t{1}\tF-score:{2}'.format(
-                #    algorithm, str_best_concept, f_1score))
-    """
     @staticmethod
     def store_report(model, learning_problems: List[List], predictions: List[dict]) -> Tuple[str, Dict[str, Any]]:
         """
@@ -79,12 +57,10 @@ class Experiments:
     def start_KFold(self, k=None, dataset: List[Tuple[str, Set, Set]] = None, models: Iterable = None):
         """
         Perform KFold cross validation
-        @param max_test_time_per_concept:
         @param models:
         @param k:
         @param dataset: A list of tuples where a tuple (i,j,k) where i denotes the target concept
         j denotes the set of positive examples and k denotes the set of negative examples.
-        @param max_runtime_per_problem: in seconds.
         @return:
         """
         models = {i for i in models}
