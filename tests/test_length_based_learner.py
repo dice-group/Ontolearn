@@ -25,7 +25,7 @@ def test_lengthbasedlearner():
                 {'Brother', 'Father', 'Grandparent'})
             model = LengthBaseLearner(
                 knowledge_base=kb,
-                refinement_operator=LengthBasedRefinement(kb=kb),
+                refinement_operator=LengthBasedRefinement(knowledge_base=kb),
                 quality_func=F1(),
                 min_length=1,
                 heuristic_func=CELOEHeuristic(),

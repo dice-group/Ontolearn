@@ -40,7 +40,7 @@ class LearningProblemGenerator:
          Trade-off between num_diff_runs and num_problems.
         """
         if refinement_operator is None:
-            refinement_operator = LengthBasedRefinement(kb=knowledge_base)
+            refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base)
 
         if max_num_instances and min_num_instances:
             assert max_num_instances >= min_num_instances

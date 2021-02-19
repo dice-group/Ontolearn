@@ -220,8 +220,8 @@ class BaseRefinement(Generic[_N], metaclass=ABCMeta):
     kb: _KB
 
     @abstractmethod
-    def __init__(self, kb: _KB):
-        self.kb = kb
+    def __init__(self, knowledge_base: _KB):
+        self.kb = knowledge_base
 
     @abstractmethod
     def refine(self, *args, **kwargs) -> Iterable[OWLClassExpression]:

@@ -355,7 +355,7 @@ class LengthBaseLearner(BaseConceptLearner):
         if ignored_concepts is None:
             ignored_concepts = {}
         if refinement_operator is None:
-            refinement_operator = LengthBasedRefinement(kb=knowledge_base)
+            refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base)
         if quality_func is None:
             quality_func = F1()
         if heuristic_func is None:
