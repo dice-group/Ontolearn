@@ -109,7 +109,7 @@ _N = TypeVar('_N')
 #                f'Heuristic:{self.heuristic}\tDepth:{self.depth}\tH_exp:{self.h_exp}\t' \
 #                f'|Children|:{self.refinement_count}\t|Indv.|:{self.individuals_count}'
 
-class OENode:
+class OENode(AbstractNode):
     __slots__ = '_concept', '_parent_ref', '_quality', '_heuristic', '_horizontal_expansion', '_len', \
                 '_refinement_count', '_individuals_count', '__weakref__'
 
@@ -137,6 +137,7 @@ class OENode:
         self._len = length
         self._refinement_count = 0
         self._individuals_count = None
+        super().__init__()
 
     @property
     def is_root(self) -> bool:
@@ -219,6 +220,7 @@ class OENode:
         return f'OENode at {addr}\t{OENode.renderer.render(self.concept)}\tQuality:{self.quality}\t' \
                f'Heuristic:{self.heuristic}\tDepth:{self.depth()}\tH_exp:{self.h_exp}\t' \
                f'|RC|:{self.refinement_count}\t|Indv.|:{self.individuals_count}'
+
 
 @total_ordering
 class LengthOrderedNode(Generic[_N]):
@@ -533,4 +535,3 @@ class TreeNode(Generic[_N]):
         if not is_root:
             assert isinstance(parent_tree_node, TreeNode)
             parent_tree_node.children.add(self)
-
