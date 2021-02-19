@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Generic, Iterable, Sequence, TypeVar, Union, Final
+from typing import Generic, Iterable, Sequence, TypeVar, Union, Final, Optional
 
 from owlapy import vocabulary
 from owlapy.base import HasIRI, IRI
@@ -608,6 +608,37 @@ class OWLNamedIndividual(OWLIndividual, OWLEntity):
 _M = TypeVar('_M', bound='OWLOntologyManager')
 
 
+class OWLOntologyID:
+    __slots__ = '_ontology_iri', '_version_iri'
+
+    _ontology_iri: Optional[IRI]
+    _version_iri: Optional[IRI]
+
+    def __init__(self, ontology_iri: Optional[IRI] = None, version_iri: Optional[IRI] = None):
+        self._ontology_iri = ontology_iri
+        self._version_iri = version_iri
+
+    def get_ontology_iri(self) -> Optional[IRI]:
+        return self._ontology_iri
+
+    def get_version_iri(self) -> Optional[IRI]:
+        return self._version_iri
+
+    def get_default_document_iri(self) -> Optional[IRI]:
+        if self._ontology_iri is not None:
+            if self._version_iri is not None:
+                return self._version_iri
+        return self._ontology_iri
+
+    def __repr__(self):
+        return f"OWLOntologyID({repr(self._ontology_iri)}, {repr(self._version_iri)})"
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._ontology_iri == other._ontology_iri and self._version_iri == other._version_iri
+        return NotImplemented
+
+
 class OWLOntology(OWLObject, metaclass=ABCMeta):
     __slots__ = ()
     type_index: Final = 1
@@ -630,6 +661,10 @@ class OWLOntology(OWLObject, metaclass=ABCMeta):
 
     @abstractmethod
     def get_manager(self) -> _M:
+        pass
+
+    @abstractmethod
+    def get_ontology_id(self) -> OWLOntologyID:
         pass
 
 
