@@ -42,7 +42,7 @@ class CELOEHeuristic(AbstractHeuristic[OENode]):
             heuristic_val += (node.quality - node.parent_node.quality) * self.gainBonusFactor
 
         # penalty for horizontal expansion
-        heuristic_val -= node.h_exp * self.expansionPenaltyFactor
+        heuristic_val -= (node.h_exp - 1) * self.expansionPenaltyFactor
         # // penalty for having many child nodes (stuck prevention)
         heuristic_val -= node.refinement_count * self.nodeRefinementPenalty
         node.heuristic = round(heuristic_val, 5)
