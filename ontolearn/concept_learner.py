@@ -155,12 +155,15 @@ class CELOE(BaseConceptLearner[OENode]):
         assert isinstance(node, OENode)
 
         with self.updating_node(node):
+            # TODO: NNF
             refinements = SortedSet(
                 map(_concept_operand_sorter.sort,
                     self.operator.refine(
                         node.concept,
                         max_length=node.h_exp,
-                        current_domain=self.start_class)),
+                        current_domain=self.start_class)
+                    )
+                ,
                 key=OrderedOWLObject)
 
             node.increment_h_exp()
@@ -202,7 +205,7 @@ class CELOE(BaseConceptLearner[OENode]):
                     continue
 
                 # note: tree_parent has to be equal to node_tree_parent(ref.parent_node)!
-                added = self.add_node(ref, tree_parent)
+                added = self._add_node(ref, tree_parent)
 
                 goal_found = added and ref.quality == 1.0
 
@@ -225,7 +228,7 @@ class CELOE(BaseConceptLearner[OENode]):
         tree_parent = self.search_tree[node.concept]
         return tree_parent
 
-    def add_node(self, ref: OENode, tree_parent: Optional[TreeNode[OENode]]):
+    def _add_node(self, ref: OENode, tree_parent: Optional[TreeNode[OENode]]):
         if ref.concept in self.search_tree:
             # ignoring refinement, it has been refined from another parent
             return False
@@ -283,7 +286,7 @@ class CELOE(BaseConceptLearner[OENode]):
                                                                            tn.node.heuristic, tn.node.refinement_count))
 
             for c in sorted(tn.children, key=tree_node_as_length_ordered_concept):
-                print_partial_tree_recursive(c, depth+1)
+                print_partial_tree_recursive(c, depth + 1)
 
         print_partial_tree_recursive(self.search_tree[self.start_class])
 
@@ -292,7 +295,8 @@ class CELOE(BaseConceptLearner[OENode]):
         predictions = list(self.best_hypotheses(top_n))
         for ith, node in enumerate(predictions):
             print('{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(ith + 1, rdr.render(node.concept),
-                                                              type(self.quality_func).name, node.quality, node.heuristic))
+                                                              type(self.quality_func).name, node.quality,
+                                                              node.heuristic))
         print('######## Search Tree ###########\n')
 
     def update_min_max_horiz_exp(self, node: OENode):
@@ -393,7 +397,7 @@ class LengthBaseLearner(BaseConceptLearner):
         for j in range(1, self.iter_bound):
             most_promising = self.next_node_to_expand(j)
             for ref in self.downward_refinement(most_promising):
-                goal_found = self.search_tree.add_node(node=ref, parent_node=most_promising)
+                goal_found = self.search_tree._add_node(node=ref, parent_node=most_promising)
                 if goal_found:
                     if self.terminate_on_goal:
                         return self.terminate()

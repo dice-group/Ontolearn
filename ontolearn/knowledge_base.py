@@ -132,7 +132,8 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         self._ind_enc = NamedFixedSet(OWLNamedIndividual, individuals)
 
         self.use_individuals_cache = use_individuals_cache
-        self.clean()
+        if use_individuals_cache:
+            self._ind_cache = dict()
 
         self.describe()
 
