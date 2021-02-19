@@ -4,7 +4,7 @@ import json
 
 from ontolearn import CustomConceptLearner, KnowledgeBase, F1, DLFOILHeuristic
 
-PATH_FAMILY = 'data/family-benchmark_rich_background.owl'
+PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 kb = KnowledgeBase(path=PATH_FAMILY)

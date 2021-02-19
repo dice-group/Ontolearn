@@ -1,1 +1,0 @@
-{"batch_size": 256, "learning_rate": 0.001, "decay_rate": 1.0, "num_of_epochs": 5, "max_len_replay_memory": 1024, "epsilon": 1.0, "epsilon_decay": 0.001, "max_replay_mem": 1024, "learn_per_modulo_iter": 10, "max_num_rho_applied": 10}

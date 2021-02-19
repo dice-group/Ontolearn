@@ -2,12 +2,12 @@ from collections import OrderedDict, defaultdict
 from functools import total_ordering
 from abc import ABCMeta, abstractmethod, ABC
 from owlready2 import ThingClass, Ontology
-from .util import get_full_iri, balanced_sets
+from .util import get_full_iri, balanced_sets, read_csv
 from typing import Set, Dict, List, Tuple, Iterable
 import random
 import pandas as pd
 import torch
-from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
+from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction, Experience
 import json
 import numpy as np
 import time
@@ -454,25 +454,24 @@ class AbstractKnowledgeBase(ABC):
 
 
 class AbstractDrill(ABC):
+    """
+    Abstract class for Convolutional DQL concept learning
+    """
 
-    def __init__(self, drill_heuristic, instance_embeddings, reward_func, learning_rate=None,
+    def __init__(self, path_of_embeddings, reward_func, learning_rate=None,
                  num_episode=None, num_of_sequential_actions=None, max_len_replay_memory=None,
-                 representation_mode=None, batch_size=None, epsilon_decay=None, epsilon_min=None,
-                 num_epochs_per_replay=None):
-
-        assert isinstance(instance_embeddings, pd.DataFrame)
-        assert (instance_embeddings.all()).all()  # all columns and all rows are not none.
-        assert drill_heuristic
-        assert drill_heuristic.model
-
+                 representation_mode=None, batch_size=1024, epsilon_decay=None, epsilon_min=None,
+                 num_epochs_per_replay=None, num_workers=32):
+        # @TODO refactor the code for the sake of readability
+        self.instance_embeddings = read_csv(path_of_embeddings)
+        self.embedding_dim = self.instance_embeddings.shape[1]
+        self.reward_func = reward_func
         assert reward_func
         self.representation_mode = representation_mode
-        self.drill_heuristic = drill_heuristic
-        self.model_name = self.drill_heuristic.name
-        self.model_net = self.drill_heuristic.model
-        self.instance_embeddings = instance_embeddings
-        self.reward_func = reward_func
-
+        assert representation_mode in ['averaging', 'sampling']
+        # Will be filled by child class
+        self.heuristic_func = None
+        self.num_workers = num_workers
         # constants
         self.epsilon = 1
         self.learning_rate = learning_rate
@@ -498,15 +497,15 @@ class AbstractDrill(ABC):
             self.epsilon_min = 0
         if self.num_epochs_per_replay is None:
             self.num_epochs_per_replay = 10
-        if self.batch_size is None:
-            self.batch_size = 1024
 
-        self.optimizer = torch.optim.Adam(self.model_net.parameters(), lr=self.learning_rate)
+        # will be filled
+        self.optimizer = None  # torch.optim.Adam(self.model_net.parameters(), lr=self.learning_rate)
 
         self.seen_examples = dict()
         self.emb_pos, self.emb_neg = None, None
         self.start_time = None
         self.goal_found = False
+        self.experiences = Experience(maxlen=self.max_len_replay_memory)
 
     def default_state_rl(self):
         self.emb_pos, self.emb_neg = None, None
@@ -557,6 +556,10 @@ class AbstractDrill(ABC):
                 (e, e_next, max(rewards[th:])))  # given e, e_next, Q val is the max Q value reachable.
 
     def learn_from_replay_memory(self) -> None:
+        """
+        Learning by replaying memory
+        @return:
+        """
         current_state_batch, next_state_batch, q_values = self.experiences.retrieve()
         current_state_batch = torch.cat(current_state_batch, dim=0)
         next_state_batch = torch.cat(next_state_batch, dim=0)
@@ -574,29 +577,29 @@ class AbstractDrill(ABC):
             print(e)
             exit(1)
 
-        assert current_state_batch.shape[2] == next_state_batch.shape[2] == self.emb_pos.shape[2] == \
-               self.emb_neg.shape[2]
+        assert current_state_batch.shape[2] == next_state_batch.shape[2] == self.emb_pos.shape[2] == self.emb_neg.shape[
+            2]
+        data_loader = torch.utils.data.DataLoader(PrepareBatchOfTraining(current_state_batch=current_state_batch,
+                                                                         next_state_batch=next_state_batch,
+                                                                         p=self.emb_pos, n=self.emb_neg, q=q_values),
+                                                  batch_size=self.batch_size, shuffle=True,
+                                                  num_workers=self.num_workers)
 
-        ds = PrepareBatchOfTraining(current_state_batch=current_state_batch,
-                                    next_state_batch=next_state_batch,
-                                    p=self.emb_pos, n=self.emb_neg, q=q_values)
-        self.model_net.train()
+        self.heuristic_func.net.train()
         for m in range(self.num_epochs_per_replay):
             total_loss = 0
-            for X, y in torch.utils.data.DataLoader(ds, batch_size=self.batch_size, shuffle=True, num_workers=4):
-                if len(X) == 1:
-                    continue
+            for X, y in data_loader:
                 self.optimizer.zero_grad()  # zero the gradient buffers
                 # forward
-                predicted_q = self.model_net.forward(X)
+                predicted_q = self.heuristic_func.net.forward(X)
                 # loss
-                loss = self.model_net.loss(predicted_q, y)
+                loss = self.heuristic_func.net.loss(predicted_q, y)
                 total_loss += loss.item()
                 # compute the derivative of the loss w.r.t. the parameters using backpropagation
                 loss.backward()
                 # clip gradients if gradients are killed. =>torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
                 self.optimizer.step()
-        self.model_net.eval()
+        self.heuristic_func.net.train().eval()
 
     def sequence_of_actions(self, root):
         current_state = root
@@ -607,8 +610,7 @@ class AbstractDrill(ABC):
             if len(next_states) == 0:  # DEAD END
                 break
             next_state = self.exploration_exploitation_tradeoff(current_state, next_states)
-            assert next_state
-            assert current_state
+            assert next_state and current_state
             if next_state.concept.str == 'Nothing':  # Dead END
                 break
             path_of_concepts.append((current_state, next_state))
@@ -700,7 +702,8 @@ class AbstractDrill(ABC):
         @return:
         """
         # Save model.
-        torch.save(self.model_net.state_dict(), self.storage_path + '/{0}_{1}.pth'.format(time.time(), self.model_name))
+        torch.save(self.heuristic_func.net.state_dict(),
+                   self.storage_path + '/{0}.pth'.format(self.heuristic_func.name))
 
     def rl_learning_loop(self, pos_uri: Set[str], neg_uri: Set[str]) -> List[float]:
         """
@@ -715,13 +718,16 @@ class AbstractDrill(ABC):
         # (2) Assign embeddings of root/first state.
         self.assign_embeddings(root)
         sum_of_rewards_per_actions = []
+
+        log_every_n_episodes = int(self.num_episode * .1) + 1
         for th in range(self.num_episode):
             # (3) Take sequence of actions.
             path_of_concepts, rewards = self.sequence_of_actions(root)
-            if th % 100 == 0:
-                """
-                self.logger.info('{0}.th iter. SumOfRewards: {1:.2f}\tEpsilon:{2:.2f}\t|ReplayMem.|:{3}'.format(th, sum(rewards),self.epsilon,len(self.experiences)))
-                """
+            if th % log_every_n_episodes == 0:
+                self.logger.info(
+                    '{0}.th iter. SumOfRewards: {1:.2f}\tEpsilon:{2:.2f}\t|ReplayMem.|:{3}'.format(th, sum(rewards),
+                                                                                                   self.epsilon, len(
+                            self.experiences)))
             # (4) Decrease exploration rate.
             self.epsilon -= self.epsilon_decay
             if self.epsilon < self.epsilon_min:
@@ -752,9 +758,14 @@ class AbstractDrill(ABC):
         @param next_states:
         @return:
         """
+
+        predictions = self.predict_Q(current_state, next_states)
+        argmax_id = int(torch.argmax(predictions))
+        return next_states[argmax_id]
+        """
         self.assign_embeddings(current_state)
         with torch.no_grad():
-            self.model_net.eval()
+            self.heuristic_func.net.eval()
             # create batch batch.
             next_state_batch = []
             for n in next_states:
@@ -766,10 +777,11 @@ class AbstractDrill(ABC):
                                           next_state_batch,
                                           self.emb_pos,
                                           self.emb_neg)
-            predictions = self.model_net.forward(ds.get_all())
+            predictions = self.heuristic_func.net.forward(ds.get_all())
             argmax_id = int(torch.argmax(predictions))
             next_state = next_states[argmax_id]
         return next_state
+        """
 
     def predict_Q(self, current_state: BaseNode, next_states: List[BaseNode]) -> torch.Tensor:
         """
@@ -781,7 +793,7 @@ class AbstractDrill(ABC):
         self.assign_embeddings(current_state)
         assert len(next_states) > 0
         with torch.no_grad():
-            self.model_net.eval()
+            self.heuristic_func.net.eval()
             # create batch batch.
             next_state_batch = []
             for _ in next_states:
@@ -792,7 +804,7 @@ class AbstractDrill(ABC):
                                           next_state_batch,
                                           self.emb_pos,
                                           self.emb_neg)
-            predictions = self.model_net.forward(ds.get_all())
+            predictions = self.heuristic_func.net.forward(ds.get_all())
         return predictions
 
     def train(self, dataset: Iterable[Tuple[str, Set, Set]], relearn_ratio: int = 1):
@@ -811,11 +823,14 @@ class AbstractDrill(ABC):
         for _ in range(relearn_ratio):  # repeat training over learning problems.
             for (alc_concept_str, positives, negatives) in dataset:
                 self.logger.info(
-                    'Goal Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
+                    'Goal Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str,
+                                                                      len(positives), len(negatives)))
 
                 self.rl_learning_loop(pos_uri=positives, neg_uri=negatives)
-                self.seen_examples.setdefault(alc_concept_str, dict()).update(
-                    {'Positives': list(positives), 'Negatives': list(negatives)})
+
+                self.seen_examples.setdefault(counter, dict()).update(
+                    {'Concept': alc_concept_str, 'Positives': list(positives), 'Negatives': list(negatives)})
+
                 counter += 1
                 if counter % 100 == 0:
                     self.save_weights()

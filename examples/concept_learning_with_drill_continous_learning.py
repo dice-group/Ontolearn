@@ -5,45 +5,49 @@ Drill -- Deep Reinforcement Learning for Refinement Operators in ALC
 Drill with continuous training.
 Author: Caglar Demir
 """
+from ontolearn import KnowledgeBase, LearningProblemGenerator, DrillSample, DrillAverage
+from ontolearn.util import sanity_checking_args
+from argparse import ArgumentParser
 
-from ontolearn import KnowledgeBase, LearningProblemGenerator
-from ontolearn.rl import DrillSample, DrillAverage
-from ontolearn.refinement_operators import LengthBasedRefinement
-from ontolearn.util import apply_TSNE_on_df
-import json
-import pandas as pd
+def start(args):
+    sanity_checking_args(args)
+    kb = KnowledgeBase(args.path_knowledge_base)
+    lp = LearningProblemGenerator(knowledge_base=kb, min_length=args.min_length, max_length=args.max_length)
+    balanced_examples = lp.get_balanced_n_samples_per_examples(n=args.num_of_randomly_created_problems_per_concept,
+                                                               min_num_problems=args.min_num_concepts,
+                                                               num_diff_runs=1,  # This must be optimized
+                                                               min_num_instances=args.min_num_instances_per_concept)
 
-PATH_FAMILY = '../data/family-benchmark_rich_background.owl'
-family_embeddings_path = '../embeddings/dismult_family_benchmark/instance_emb.csv'
-pretrained_drill_sample_path = '../pre_trained_agents/Family/Drill_Sample/1605797163.5565891_DrillHeuristic_sample.pth'
-pretrained_drill_average_path = '../pre_trained_agents/Family/Drill_Average/1605801167.8185513_DrillHeuristic_average.pth'
+    drill_average = DrillAverage(pretrained_model_path=args.pretrained_drill_avg_path,
+                                 knowledge_base=kb,
+                                 path_of_embeddings=args.path_knowledge_base_embeddings,
+                                 num_episode=args.num_episode, verbose=args.verbose,
+                                 num_workers=args.num_workers)
 
-with open('synthetic_problems.json') as json_file:
-    settings = json.load(json_file)
-data_path = settings['data_path']
+    drill_sample = DrillSample(pretrained_model_path=args.pretrained_drill_sample_path,
+                               knowledge_base=kb,
+                               path_of_embeddings=args.path_knowledge_base_embeddings,
+                               num_episode=args.num_episode, verbose=args.verbose,
+                               num_workers=args.num_workers)
 
-kb = KnowledgeBase(PATH_FAMILY)
-rho = LengthBasedRefinement(kb=kb)
-
-lp = LearningProblemGenerator(knowledge_base=kb)
-balanced_examples = lp.get_balanced_examples(min_num_problems=1000, min_num_instances=10, num_diff_runs=100, search_algo='dfs')
+    drill_average.train(balanced_examples)
+    drill_sample.train(balanced_examples)
 
 
-instance_emb = pd.read_csv(family_embeddings_path, index_col=0)
-# apply_TSNE_on_df(instance_emb)  # if needed.
-model_sub = DrillSample(knowledge_base=kb, refinement_operator=rho, num_episode=10, instance_embeddings=instance_emb,
-                        pretrained_model_path=pretrained_drill_sample_path).train(balanced_examples, relearn_ratio=2)
-
-model_avg = DrillAverage(knowledge_base=kb, refinement_operator=rho, num_episode=10, instance_embeddings=instance_emb,
-                         pretrained_model_path=pretrained_drill_average_path).train(balanced_examples, relearn_ratio=2)
-
-for str_target_concept, examples in settings['problems'].items():
-    p = set(examples['positive_examples'])
-    n = set(examples['negative_examples'])
-    print('Target concept: ', str_target_concept)
-
-    model_avg.fit(pos=p, neg=n)
-    print(model_avg.best_hypotheses(n=1)[0])
-
-    model_sub.fit(pos=p, neg=n)
-    print(model_sub.best_hypotheses(n=1)[0])
+if __name__ == '__main__':
+    parser = ArgumentParser()
+    parser.add_argument("--path_knowledge_base", type=str,
+                        default='/home/demir/Desktop/Onto-learn_dev/KGs/Family/family-benchmark_rich_background.owl')
+    parser.add_argument("--path_knowledge_base_embeddings", type=str,
+                        default='../embeddings/Shallom_Family/Shallom_entity_embeddings.csv')
+    parser.add_argument("--min_num_concepts", type=int, default=2)
+    parser.add_argument("--min_length", type=int, default=3, help='Min length of concepts to be used')
+    parser.add_argument("--max_length", type=int, default=5, help='Max length of concepts to be used')
+    parser.add_argument("--min_num_instances_per_concept", type=int, default=1)
+    parser.add_argument("--num_of_randomly_created_problems_per_concept", type=int, default=2)
+    parser.add_argument("--num_episode", type=int, default=2)
+    parser.add_argument("--verbose", type=int, default=10)
+    parser.add_argument('--num_workers', type=int, default=32, help='Number of cpus used during batching')
+    parser.add_argument('--pretrained_drill_sample_path', type=str, default='../pre_trained_agents/DrillHeuristic_sampling/DrillHeuristic_sampling.pth', help='Provide a path of .pth file')
+    parser.add_argument('--pretrained_drill_avg_path', type=str, default='../pre_trained_agents/DrillHeuristic_averaging/DrillHeuristic_averaging.pth', help='Provide a path of .pth file')
+    start(parser.parse_args())
