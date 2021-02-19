@@ -1,13 +1,14 @@
 from enum import Enum, auto
 from logging import warning
-from typing import Iterable, Set
+from typing import Iterable, Set, Final
 
 import owlready2
 
-from owlapy import IRI
+from owlapy import IRI, namespaces
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
-    OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectPropertyExpression \
+    OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID \
     # OWLObjectSomeValuesFrom, OWLProperty, \
+from owlapy.namespaces import Namespaces
 
 
 class BaseReasoner(Enum):
@@ -22,6 +23,9 @@ class OWLOntologyManager_Owlready2(OWLOntologyManager):
 
     def load_ontology(self, iri: IRI) -> 'OWLOntology_Owlready2':
         return OWLOntology_Owlready2(self, iri, load=True)
+
+
+_VERSION_IRI: Final = IRI.create(namespaces.OWL, "versionIRI")
 
 
 class OWLOntology_Owlready2(OWLOntology):
@@ -57,6 +61,19 @@ class OWLOntology_Owlready2(OWLOntology):
 
     def get_manager(self) -> OWLOntologyManager_Owlready2:
         return self._manager
+
+    def get_ontology_id(self) -> OWLOntologyID:
+        onto_iri = self._world._unabbreviate(self._onto.storid)
+        look_version =  self._world.get_triples(
+            self._onto.storid,
+            self._world._abbreviate(_VERSION_IRI.as_str()))
+        if look_version:  # look_version = [ (s_id, p_id, o_id), ... ]
+            version_iri = self._world._unabbreviate(look_version[0][2])
+        else:
+            version_iri = None
+
+        return OWLOntologyID(IRI.create(onto_iri) if onto_iri is not None else None,
+                             IRI.create(version_iri) if version_iri is not None else None)
 
     def __eq__(self, other):
         if type(other) == type(self):
