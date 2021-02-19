@@ -4,7 +4,7 @@ from ontolearn.binders import DLLearnerBinder
 with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 
-kb_path = '/home/demir/Desktop/Onto-learn_dev/data/family-benchmark_rich_background.owl'
+kb_path = '/home/demir/Desktop/Onto-learn_dev/KGs/Family/family-benchmark_rich_background.owl'
 # To download DL-learner,  https://github.com/SmartDataAnalytics/DL-Learner/releases.
 dl_learner_binary_path = '/home/demir/Desktop/DL/dllearner-1.4.0/'
 

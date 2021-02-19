@@ -3,8 +3,8 @@
 from ontolearn import KnowledgeBase
 import os
 
-PATH_FAMILY = 'data/family-benchmark_rich_background.owl'
-PATH_FATHER = 'data/father.owl'
+PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
+PATH_FATHER = 'KGs/father.owl'
 
 
 def test_knowledge_base():

@@ -3,7 +3,7 @@ from owlready2 import Ontology, World
 import owlready2
 from .concept_generator import ConceptGenerator
 from .concept import Concept
-from typing import Dict, Tuple, Set, Generator, Iterable, List
+from typing import Generator, Iterable
 from .util import parametrized_performance_debugger, get_full_iri
 from .abstracts import AbstractKnowledgeBase
 from .data_struct import PropertyHierarchy
@@ -124,13 +124,14 @@ class KnowledgeBase(AbstractKnowledgeBase):
         assert isinstance(concept, Concept)
         return self.concept_generator.universal_restriction(concept, property_)
 
-    ##################################################################################
+    #######################Do we need them ?###########################################################
     def set_min_size_of_concept(self, n):
         self.min_size_of_concept = n
 
     def max_size_of_concept(self, n):
         self.max_size_of_concept = n
 
+    ##################################################################################
     def convert_uri_instance_to_obj(self, str_ind: str):
         """
         str_ind indicates string representation of an individual.
@@ -144,22 +145,44 @@ class KnowledgeBase(AbstractKnowledgeBase):
         except KeyError:
             KeyError('{0} is not found in vocabulary of URI instances'.format(str_ind))
 
-    def convert_uri_instance_to_obj_from_iterable(self, str_individuals: Iterable[str]) -> List:
+    def convert_uri_instance_to_obj_from_iterable(self, str_individuals: Iterable[str]) -> Iterable:
+        """
+        Given an iterable of string representation of individuals, return owlready2 individuals
+        @param str_individuals:
+        @return:
+        """
         return [self.convert_uri_instance_to_obj(i) for i in str_individuals]
 
-    def convert_owlready2_individuals_to_uri(self, instance):
+    def convert_owlready2_individuals_to_uri(self, instance: str):
+        """
+        Given a string representation of an individual, return a owlready2 individual
+        @param instance:
+        @return:
+        """
         try:
             return self.obj_to_str_iri_instances[instance]
         except KeyError as e:
+            print(e)
             print('{0} owlready2 instance with {1} memory space could not be found '.format(instance, id(instance)))
             print([(i, id(i)) for i in self.obj_to_str_iri_instances.keys()])
             exit(1)
 
-    def convert_owlready2_individuals_to_uri_from_iterable(self, l: Iterable) -> List:
+    def convert_owlready2_individuals_to_uri_from_iterable(self, l: Iterable) -> Iterable:
+        """
+        Given an iterable of owlready2 individuals, string representation of them
+        @param l:
+        @return:
+        """
         return [self.convert_owlready2_individuals_to_uri(i) for i in l]
 
     @staticmethod
     def is_atomic(c: owlready2.entity.ThingClass):
+        """
+        Check whether input owlready2 concept object is atomic concept.
+        This is a workaround
+        @param c:
+        @return:
+        """
         assert isinstance(c, owlready2.entity.ThingClass)
         if '¬' in c.name and not (' ' in c.name):
             return False
@@ -199,12 +222,13 @@ class KnowledgeBase(AbstractKnowledgeBase):
         yield from self.down_top_direct_concept_hierarchy[concept]
 
     def most_general_existential_restrictions(self, concept: Concept) -> Generator:
-        """ Return : { x | (concept subClassOf x)} """
+        """ Return : { \exist.r.x | r \in MostGeneral r} """
         assert isinstance(concept, Concept)
         for prob in self.property_hierarchy.get_most_general_property():
             yield self.concept_generator.existential_restriction(concept, prob)
 
     def most_general_universal_restrictions(self, concept: Concept) -> Generator:
+        """ Return : { \forall.r.x | r \in MostGeneral r} """
         assert isinstance(concept, Concept)
         for prob in self.property_hierarchy.get_most_general_property():
             yield self.concept_generator.universal_restriction(concept, prob)

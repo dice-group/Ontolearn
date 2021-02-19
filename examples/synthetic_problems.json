@@ -1,5 +1,5 @@
 {
-  "data_path": "../data/family-benchmark_rich_background.owl",
+  "data_path": "../KGs/Family/family-benchmark_rich_background.owl",
   "problems": {
     "Aunt": {
       "positive_examples": [
