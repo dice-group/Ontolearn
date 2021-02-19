@@ -146,6 +146,7 @@ class OWLClassExpressionLengthMetric:
             data_union_length=1,
         )
 
+    # single dispatch is still not implemented in mypy, see https://github.com/python/mypy/issues/2904
     @singledispatchmethod
     def length(self, o: OWLObject) -> int:
         raise NotImplementedError
@@ -312,6 +313,7 @@ def _sort_by_ordered_owl_object(i: Iterable[_O]) -> Iterable[_O]:
 
 
 class ConceptOperandSorter:
+    # single dispatch is still not implemented in mypy, see https://github.com/python/mypy/issues/2904
     @singledispatchmethod
     def sort(self, o: _O) -> _O:
         raise NotImplementedError
