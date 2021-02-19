@@ -30,35 +30,41 @@ class LengthBasedRefinement(BaseRefinement):
             raise ValueError
         return Node(concept=c, parent_node=parent_node, root=root)
 
-    def refine_atomic_concept(self, node: Node, max_length: int = None) -> Set:
+    def refine_top_concept(self, node: Node, max_length: int = None) -> Generator:
         if node.concept.str == 'Nothing':
             yield from {node.concept}
-        # Get all subsumption hierarchy
+
+        refinement_gate = set()
+        # A mapping where keys are lengths (integer) and values are catehgorized refinements of c
+        cumulative_refinements = dict()
+
+        # 1.
         generator_container = [self.kb.get_all_sub_concepts(node.concept)]
-        # GET all negations.
+
+        # 2.
         if max_length >= 2 and (len(node.concept) + 1 < self.max_child_length):
-            # (2) Create negation of all leaf_concepts
             generator_container.append(self.kb.negation_from_iterables(self.kb.get_all_sub_concepts(node.concept)))
-        # (3) Create ∀.r.T and ∃.r.T where r is the most general relation.
+
+        # 3. and 4.
         if max_length >= 3 and (len(node.concept) + 2 < self.max_child_length):
-            # (3) Create ∀.r.T and ∃.r.T where r is the most general relation.
             generator_container.append(self.kb.most_general_existential_restrictions(node.concept))
             generator_container.append(self.kb.most_general_universal_restrictions(node.concept))
-        # a, b = tee(chain.from_iterable(generator_container))
+
         a = chain.from_iterable(generator_container)
-        refinement_gate = set()
-        cumulative_refinements = dict()
         for concept_ref in a:
-            if len(concept_ref.instances) >= self.min_num_instances:  # ignore "empty" concepts.
-                if concept_ref not in refinement_gate:
+            if len(concept_ref.instances) >= self.min_num_instances:
+                if concept_ref in refinement_gate:
+                    raise ValueError
+                else:
                     refinement_gate.add(concept_ref)
                     cumulative_refinements.setdefault(len(concept_ref), set()).add(concept_ref)
                     yield concept_ref
-                else:
-                    print(f'{concept_ref} has already seen')  # Asses this state.
-                    exit(1)
+            else:
+                """ Ignore concept that does not satisfy constraint"""
 
-        if self.apply_combinations:  # TODO we may not need this.
+        # 5.
+        # The computation in bellow needs to be optimized and parallelized.
+        if self.apply_combinations:
             if len(cumulative_refinements) > 0:
                 old_len_cumulative_refinements = len(cumulative_refinements)
                 while True:
@@ -79,8 +85,8 @@ class LengthBasedRefinement(BaseRefinement):
                                         temp.setdefault(len(union), set()).add(union)
                                         intersect = self.kb.intersection(i, j)
                                         temp.setdefault(len(intersect), set()).add(intersect)
-                                        yield union
                                         yield intersect
+                                        yield union
 
                     cumulative_refinements.update(temp)
                     new_len_cumulative_refinements = len(cumulative_refinements)
@@ -88,7 +94,82 @@ class LengthBasedRefinement(BaseRefinement):
                         break
                     old_len_cumulative_refinements = new_len_cumulative_refinements
 
-        # yield from chain.from_iterable(cumulative_refinements.values())
+    def refine_atomic_concept(self, node: Node, max_length: int = None) -> Generator:
+        """
+        Given an atomic class expression c, obtain its refinements by following 5 steps.
+        Note that all refinements generated from 1-4 must fulfill constraints,
+        e.g. ***self.max_child_length*** and **self.min_num_instances***
+        1. Sub    = { x | ( x subClassOf c}
+        2. NegSub = { \neg x | ( x subClassOf c}
+        3. MGER   = { \exists.r.x | r \in MostGeneral r}
+        4. MGUR   = { \forall.r.x | r \in MostGeneral r}
+
+        5. Combine 1-4 until we have all refinements have at most max__length.
+
+
+        @param node:
+        @param max_length:
+        @return:
+        """
+        if node.concept.str == 'Nothing':
+            yield from {node.concept}
+
+        refinement_gate = set()
+        # A mapping where keys are lengths (integer) and values are catehgorized refinements of c
+        cumulative_refinements = dict()
+
+        # 1.
+        generator_container = [self.kb.get_all_sub_concepts(node.concept)]
+
+        # 2.
+        if max_length >= 2 and (len(node.concept) + 1 < self.max_child_length):
+            generator_container.append(self.kb.negation_from_iterables(self.kb.get_all_sub_concepts(node.concept)))
+
+        # 3. and 4.
+        if max_length >= 3 and (len(node.concept) + 2 < self.max_child_length):
+            generator_container.append(self.kb.most_general_existential_restrictions(node.concept))
+            generator_container.append(self.kb.most_general_universal_restrictions(node.concept))
+
+        a = chain.from_iterable(generator_container)
+        for concept_ref in a:
+            if len(concept_ref.instances) >= self.min_num_instances:
+                if concept_ref in refinement_gate:
+                    raise ValueError
+                else:
+                    refinement_gate.add(concept_ref)
+                    cumulative_refinements.setdefault(len(concept_ref), set()).add(concept_ref)
+                    yield concept_ref
+            else:
+                """ Ignore concept that does not satisfy constraint"""
+
+        # 5.
+        # The computation in bellow needs to be optimized and parallelized.
+        if self.apply_combinations:
+            if len(cumulative_refinements) > 0:
+                old_len_cumulative_refinements = len(cumulative_refinements)
+                while True:
+                    temp = dict()
+                    for k, v in cumulative_refinements.items():
+                        for kk, vv in cumulative_refinements.items():
+                            length = k + kk
+                            if (max_length > length) and (self.max_child_length > length + 1):
+                                for i in v:
+                                    for j in vv:
+
+                                        if (i, j) in refinement_gate:
+                                            continue
+
+                                        refinement_gate.add((i, j))
+                                        refinement_gate.add((j, i))
+                                        intersect = self.kb.intersection(i, j)
+                                        temp.setdefault(len(intersect), set()).add(intersect)
+                                        yield intersect
+
+                    cumulative_refinements.update(temp)
+                    new_len_cumulative_refinements = len(cumulative_refinements)
+                    if old_len_cumulative_refinements == new_len_cumulative_refinements:
+                        break
+                    old_len_cumulative_refinements = new_len_cumulative_refinements
 
     def refine_complement_of(self, node: Node, maxlength: int) -> Generator:
         parents = self.kb.get_direct_parents(self.kb.negation(node.concept))
@@ -134,7 +215,10 @@ class LengthBasedRefinement(BaseRefinement):
         if apply_combinations:
             self.apply_combinations = apply_combinations
         if node.concept.is_atomic:
-            yield from self.refine_atomic_concept(node, maxlength)
+            if node.concept.str == 'Thing':
+                yield from self.refine_top_concept(node, maxlength)
+            else:
+                yield from self.refine_atomic_concept(node, maxlength)
         elif node.concept.form == 'ObjectComplementOf':
             yield from self.refine_complement_of(node, maxlength)
         elif node.concept.form == 'ObjectSomeValuesFrom':
