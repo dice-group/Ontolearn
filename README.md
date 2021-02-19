@@ -8,10 +8,11 @@ Ontolearn is an open-source software library for explainable structured machine 
 ### Installation from source
 ```
 git clone https://github.com/dice-group/OntoPy.git
-conda create -n temp python=3.6.2
+conda create -n temp python=3.7.1
 conda activate temp
 pip install -e .
 python -c "import ontolearn"
+python -m pytest tests #
 ```
 ### Installation via pip
 
@@ -22,12 +23,8 @@ pip install ontolearn # https://pypi.org/project/ontolearn/ only a place holder.
 ## Usage
 See examples folder.
 
-## Test-Driven Development
-
-In this project, we follow the test-driven development process. 
-To this end, we strive for writing tests for each class under the test folder.
-We rely on the [pytest](https://docs.pytest.org) framework. 
-Executing ```pytest``` results in running all tests under the test folder.
+## Contribution
+Feel free to create a pull request. We will promptly review pull requests.
 
 ### Simple Linting and Testing
 
