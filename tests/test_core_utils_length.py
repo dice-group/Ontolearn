@@ -9,6 +9,7 @@ from owlapy.model import OWLClass, OWLObjectProperty, OWLObjectUnionOf, OWLObjec
 
 setup_logging("logging_test.conf")
 
+
 class Core_OWLClassExpressionLengthMetric_Test(unittest.TestCase):
     def test_ce_length(self):
         NS = "http://example.com/father#"
@@ -24,15 +25,15 @@ class Core_OWLClassExpressionLengthMetric_Test(unittest.TestCase):
         # male ⊔ (∃ hasChild.female)
         self.assertEqual(le, 5)
         ce = OWLObjectComplementOf(OWLObjectIntersectionOf((female,
-                                                           OWLObjectSomeValuesFrom(property=has_child,
-                                                                                   filler=OWLThing))))
+                                                            OWLObjectSomeValuesFrom(property=has_child,
+                                                                                    filler=OWLThing))))
         le = cl.length(ce)
         # ¬(female ⊓ (∃ hasChild.⊤))
         self.assertEqual(le, 6)
         ce = OWLObjectSomeValuesFrom(property=has_child,
-                                    filler=OWLObjectSomeValuesFrom(property=has_child,
-                                                                   filler=OWLObjectSomeValuesFrom(property=has_child,
-                                                                                                  filler=OWLThing)))
+                                     filler=OWLObjectSomeValuesFrom(property=has_child,
+                                                                    filler=OWLObjectSomeValuesFrom(property=has_child,
+                                                                                                   filler=OWLThing)))
         le = cl.length(ce)
         # ∃ hasChild.(∃ hasChild.(∃ hasChild.⊤))
         self.assertEqual(le, 7)
