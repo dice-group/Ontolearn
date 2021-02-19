@@ -2,6 +2,9 @@
 import json
 from ontolearn import KnowledgeBase
 from ontolearn.concept_learner import OCEL
+from ontolearn.utils import setup_logging
+
+setup_logging("logging_test.conf")
 
 with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)

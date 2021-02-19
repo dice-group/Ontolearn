@@ -6,9 +6,12 @@ from ontolearn import KnowledgeBase
 from ontolearn.concept_learner import CELOE
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.model_adapter import ModelAdapter
+from ontolearn.utils import setup_logging
 from owlapy import IRI
 from owlapy.model import OWLNamedIndividual, OWLClass
 from owlapy.render import DLSyntaxRenderer
+
+setup_logging("logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 PATH_DATA_FATHER = 'KGs/father.owl'

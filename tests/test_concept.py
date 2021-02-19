@@ -1,9 +1,12 @@
 """ Test the concept module"""
 import json
 from ontolearn import KnowledgeBase
+from ontolearn.utils import setup_logging
 from owlapy import IRI
 from owlapy.model import OWLClass
 from owlapy.owlready2 import OWLReasoner_Owlready2
+
+setup_logging("logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 with open('examples/synthetic_problems.json') as json_file:

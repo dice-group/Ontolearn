@@ -3,6 +3,9 @@ from ontolearn import *
 import json
 import random
 import pandas as pd
+from ontolearn.utils import setup_logging
+
+setup_logging("logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 # @TODO, write such tests for Drill after, experiments are completed.

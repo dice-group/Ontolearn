@@ -7,6 +7,9 @@ from ontolearn.concept_learner import LengthBaseLearner
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.search import SearchTreePriorityQueue
+from ontolearn.utils import setup_logging
+
+setup_logging("logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 with open('examples/synthetic_problems.json') as json_file:
