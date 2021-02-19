@@ -1,8 +1,11 @@
 """ Test DRILL"""
-from ontolearn import *
 import json
 import random
 import pandas as pd
+
+from ontolearn import KnowledgeBase
+from ontolearn.refinement_operators import LengthBasedRefinement
+from ontolearn.rl import DrillAverage
 from ontolearn.utils import setup_logging
 
 setup_logging("logging_test.conf")
@@ -18,8 +21,8 @@ synthetic_problems_path = 'examples/synthetic_problems.json'
 with open(synthetic_problems_path) as json_file:
     settings = json.load(json_file)
 
-kb = KnowledgeBase(PATH_FAMILY)
-rho = LengthBasedRefinement(kb=kb)
+kb = KnowledgeBase(path=PATH_FAMILY)
+rho = LengthBasedRefinement(knowledge_base=kb)
 
 instance_emb = pd.read_csv(family_embeddings_path, index_col=0)
 
@@ -45,7 +48,7 @@ class TestDrill:
 
             returned_val = model.fit(pos=p, neg=n,ignore=concepts_to_ignore)
             assert returned_val == model
-            hypotheses = model.best_hypotheses(n=5)
+            hypotheses = list(model.best_hypotheses(n=5))
             assert hypotheses[0].quality >= exp_f1_scores[str_target_concept]
             assert hypotheses[0].quality >= hypotheses[1].quality
 """

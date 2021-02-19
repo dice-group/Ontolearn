@@ -32,7 +32,7 @@ class TestOcel:
 
             returned_val = model.fit(pos=p, neg=n, ignore=concepts_to_ignore)
             assert returned_val == model
-            hypotheses = model.best_hypotheses(n=3)
+            hypotheses = list(model.best_hypotheses(n=3))
             assert hypotheses[0].quality >= regression_test_ocel[str_target_concept]
             assert hypotheses[0].quality >= hypotheses[1].quality
             assert hypotheses[1].quality >= hypotheses[2].quality
