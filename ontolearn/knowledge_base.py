@@ -142,7 +142,67 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
     def ontology(self) -> OWLOntology:
         return self._ontology
 
-    def restrict_and_copy(self, ):
+    def ignore_and_copy(self, ignored_classes: Optional[Iterable[OWLClass]] = None,
+                        ignored_object_properties: Optional[Iterable[OWLObjectProperty]] = None,
+                        ignored_data_properties: Optional[Iterable[OWLDataProperty]] = None) -> 'KnowledgeBase':
+        """Make a copy of the knowledge base while ignoring specified concepts and properties
+
+        Args:
+            ignored_classes: classes to ignore
+            ignored_object_properties: object properties to ignore
+            ignored_data_properties: data properties to ignore
+
+        Returns:
+            a new KnowledgeBase with the hierarchies restricted as requested
+        """
+        new = object.__new__(KnowledgeBase)
+
+        AbstractKnowledgeBase.__init__(new)
+        new._manager = self._manager
+        new._ontology = self._ontology
+        new._reasoner = self._reasoner
+        new._length_metric = self._length_metric
+        new._ind_enc = self._ind_enc
+        new.path = self.path
+        new.use_individuals_cache = self.use_individuals_cache
+
+        if self.use_individuals_cache:
+            new._ind_cache = self._ind_cache.copy()
+
+        if ignored_classes is not None:
+            owl_concepts_to_ignore = set()
+            for i in ignored_classes:
+                if self.contains_class(i):
+                    owl_concepts_to_ignore.add(i)
+                else:
+                    raise ValueError(
+                        f'{i} could not found in \n{self} \n'
+                        f'{[_ for _ in self.ontology().classes_in_signature()]}.')
+            if logger.isEnabledFor(logging.INFO):
+                r = DLSyntaxRenderer()
+                logger.info('Concepts to ignore: {0}'.format(' '.join(map(r.render, owl_concepts_to_ignore))))
+            class_hierarchy = self._class_hierarchy.restrict_and_copy(remove=owl_concepts_to_ignore)
+        else:
+            class_hierarchy = self._class_hierarchy
+
+        if ignored_object_properties is not None:
+            object_property_hierarchy = self._object_property_hierarchy.restrict_and_copy(
+                remove=ignored_object_properties)
+        else:
+            object_property_hierarchy = self._object_property_hierarchy
+
+        if ignored_data_properties is not None:
+            data_property_hierarchy = self._data_property_hierarchy.restrict_and_copy(remove=ignored_data_properties)
+        else:
+            data_property_hierarchy = self._data_property_hierarchy
+
+        ConceptGenerator.__init__(new,
+                                  reasoner=self._reasoner,
+                                  class_hierarchy=class_hierarchy,
+                                  object_property_hierarchy=object_property_hierarchy,
+                                  data_property_hierarchy=data_property_hierarchy)
+
+        return new
 
     def cl(self, ce: OWLClassExpression) -> int:
         """Calculate the length of a concept
