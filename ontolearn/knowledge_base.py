@@ -7,10 +7,10 @@ from .core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, Datatyp
 from .core.owl.utils import OWLClassExpressionLengthMetric
 from .core.utils import BitSet
 from .owlapy import IRI
-from .owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLNamedIndividual
+from .owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLNamedIndividual, \
+    OWLObjectProperty, OWLClass, OWLDataProperty
+from .owlapy.render import DLSyntaxRenderer
 from .owlapy.utils import NamedFixedSet, popcount, iter_count
-
-# warnings.filterwarnings("ignore")
 
 Factory = Callable
 

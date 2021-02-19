@@ -1,8 +1,9 @@
+import logging
 from abc import ABCMeta, abstractmethod
 
-from . import KnowledgeBase
-from .abstracts import BaseRefinement, AbstractScorer, AbstractTree, AbstractNode, AbstractHeuristic
-from typing import List, Set, Tuple, Dict, Optional, Iterable, Generic, TypeVar
+from .abstracts import BaseRefinement, AbstractScorer, AbstractTree, AbstractNode, AbstractHeuristic, \
+    AbstractKnowledgeBase, AbstractLearningProblem
+from typing import List, Set, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar
 
 from .owlapy.model import OWLClassExpression, OWLNamedIndividual
 from .owlapy.render import DLSyntaxRenderer
@@ -43,11 +44,14 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     ##################################################################################################
 
     """
-    __slots__ = 'kb', 'operator', 'heuristic_func', 'quality_func', 'max_num_of_concepts_tested', \
+    __slots__ = 'kb', 'lp', 'operator', 'heuristic_func', 'quality_func', 'max_num_of_concepts_tested', \
                 'terminate_on_goal', 'max_child_length', 'goal_found', 'start_class', 'iter_bound', 'max_runtime', \
-                'concepts_to_ignore', 'verbose', 'logger', 'start_time', 'name', 'storage_path'
+                'start_time', 'name'
 
-    kb: KnowledgeBase
+    name: ClassVar[str]
+
+    kb: AbstractKnowledgeBase
+    lp: AbstractLearningProblem
     operator: BaseRefinement
     heuristic_func: AbstractHeuristic
     quality_func: AbstractScorer
@@ -60,18 +64,23 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     max_runtime: Optional[int]
     start_time: Optional[float]
     name: Optional[str]
-    storage_path: str
 
     @abstractmethod
-    def __init__(self, knowledge_base: KnowledgeBase = None, refinement_operator: BaseRefinement = None,
-                 heuristic_func: AbstractHeuristic = None, quality_func: AbstractScorer = None,
+    def __init__(self,
+                 knowledge_base: Optional[AbstractKnowledgeBase] = None,
+                 learning_problem: Optional[AbstractLearningProblem] = None,
+                 refinement_operator: Optional[BaseRefinement] = None,
+                 heuristic_func: Optional[AbstractHeuristic] = None,
+                 quality_func: Optional[AbstractScorer] = None,
                  max_num_of_concepts_tested: Optional[int] = None,
-                 max_runtime: Optional[int] = None, terminate_on_goal: Optional[bool] = None,
-                 iter_bound: Optional[int] = None, max_child_length: Optional[int] = None,
-                 root_concept: Optional[OWLClassExpression] = None, verbose: Optional[int] = None,
-                 name: Optional[str] = None):
+                 max_runtime: Optional[int] = None,
+                 terminate_on_goal: Optional[bool] = None,
+                 iter_bound: Optional[int] = None,
+                 max_child_length: Optional[int] = None,
+                 root_concept: Optional[OWLClassExpression] = None):
 
         self.kb = knowledge_base
+        self.lp = learning_problem
         self.operator = refinement_operator
         self.heuristic_func = heuristic_func
         self.quality_func = quality_func
@@ -85,7 +94,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         self.start_time = None
         self.goal_found = False
         # self.storage_path, _ = create_experiment_folder()
-        self.name = name
         # self.last_path = None  # path of lastly stored onto.
         self.__default_values()
         self.__sanity_checking()
@@ -94,8 +102,14 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         """
         Fill all params with plausible default values.
         """
+        if self.kb is None:
+            assert isinstance(self.lp, AbstractLearningProblem)
+            self.kb = self.lp.kb
+
         if self.operator is None:
             from ontolearn.refinement_operators import ModifiedCELOERefinement
+            from ontolearn import KnowledgeBase
+            assert isinstance(self.kb, KnowledgeBase)
             self.operator = ModifiedCELOERefinement(self.kb)
 
         if self.heuristic_func is None:
@@ -104,7 +118,9 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         if self.quality_func is None:
             from ontolearn.metrics import F1
-            self.quality_func = F1()
+            from ontolearn.learning_problem import PosNegLPStandard
+            assert isinstance(self.lp, PosNegLPStandard)
+            self.quality_func = F1(self.lp)
 
         if self.start_class is None:
             self.start_class = self.kb.thing
@@ -121,66 +137,12 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         if self.max_child_length is None:
             self.max_child_length = 10
 
-        if self.verbose is None:
-            self.verbose = 1
-
     def __sanity_checking(self):
         assert self.start_class
         assert self.quality_func
         assert self.heuristic_func
         assert self.operator
         assert self.kb
-
-    def initialize_learning_problem(self,
-                                    pos: Set[OWLNamedIndividual],
-                                    neg: Set[OWLNamedIndividual],
-                                    all_instances: Optional[Set[OWLNamedIndividual]],
-                                    ignore: Optional[Set[OWLClassExpression]]):
-        """
-        Determine the learning problem and initialize the search.
-        1) Convert the string representation of an individuals into the owlready2 representation.
-        2) Sample negative examples if necessary.
-        3) Initialize the root and search tree.
-        """
-        self.default_state_concept_learner()
-
-        assert len(self.kb.class_hierarchy()) > 0
-
-        if all_instances is None:
-            kb_all = self.kb.all_individuals_set()
-        else:
-            kb_all = self.kb.individuals_set(all_instances)
-
-        assert isinstance(pos, set) and isinstance(neg, set)
-        assert 0 < len(pos) < len(kb_all) and len(kb_all) > len(neg)
-        if self.verbose > 1:
-            r = DLSyntaxRenderer()
-            self.logger.info('E^+:[ {0} ]'.format(', '.join(map(r.render, pos))))
-            self.logger.info('E^-:[ {0} ]'.format(', '.join(map(r.render, neg))))
-
-        kb_pos = self.kb.individuals_set(pos)
-        if len(neg) == 0:  # if negatives are not provided, randomly sample.
-            kb_neg = type(kb_all)(random.sample(list(kb_all), len(kb_pos)))
-        else:
-            kb_neg = self.kb.individuals_set(neg)
-
-        try:
-            assert len(kb_pos) == len(pos)
-        except AssertionError:
-            print(pos)
-            print(kb_pos)
-            print(kb_all)
-            print('Assertion error. Exiting.')
-            raise
-        assert len(kb_neg) == len(neg)
-
-        unlabelled = kb_all.difference(kb_pos.union(kb_neg))
-        self.quality_func.set_positive_examples(kb_pos)
-        self.quality_func.set_negative_examples(kb_neg)
-
-        # self.heuristic_func.set_positive_examples(kb_pos)
-        # self.heuristic_func.set_negative_examples(kb_neg)
-        # self.heuristic_func.set_unlabelled_examples(unlabelled)
 
     # def store_ontology(self):
     #     """
@@ -232,7 +194,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         if logger.isEnabledFor(oplogging.TRACE):
             self.show_search_tree('Final')
 
-        # self.clean()
         return self
 
     @abstractmethod
