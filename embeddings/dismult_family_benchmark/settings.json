@@ -1,1 +1,0 @@
-{"embedding_dim": 100, "learning_rate": 0.0005, "batch_size": 1024, "conv_out": 32, "input_dropout": 0.0, "hidden_dropout": 0.3, "projection_size": 576, "feature_map_dropout": 0.1, "label_smoothing": 0.1, "decay_rate": 1.0, "num_entities": 1256, "num_relations": 22, "dataset": "KGs/ExtendFamily/", "dataset_augmentation": true}
