@@ -14,13 +14,16 @@ setup(
                       'matplotlib',
                       'owlready2>=0.23',
                       'torch',
-                      'pandas'],
+                      'rdflib',
+                      'pandas',
+                      'pytest'
+                      ],
     author='Caglar Demir',
     author_email='caglardemir8@gmail.com',
     classifiers=[
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "License :: OSI Approved :: MIT License", ],
-    python_requires='>=3.6',
+    python_requires='==3.7.1',
     long_description=long_description,
     long_description_content_type="text/markdown",
 )
