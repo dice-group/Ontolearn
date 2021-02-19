@@ -8,7 +8,6 @@ from owlapy import IRI, namespaces
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
     OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID \
     # OWLObjectSomeValuesFrom, OWLProperty, \
-from owlapy.namespaces import Namespaces
 
 
 class BaseReasoner(Enum):
@@ -64,11 +63,11 @@ class OWLOntology_Owlready2(OWLOntology):
 
     def get_ontology_id(self) -> OWLOntologyID:
         onto_iri = self._world._unabbreviate(self._onto.storid)
-        look_version =  self._world.get_triples(
+        look_version =  self._world._get_obj_triple_sp_o(
             self._onto.storid,
             self._world._abbreviate(_VERSION_IRI.as_str()))
-        if look_version:  # look_version = [ (s_id, p_id, o_id), ... ]
-            version_iri = self._world._unabbreviate(look_version[0][2])
+        if look_version is not None:
+            version_iri = self._world._unabbreviate(look_version)
         else:
             version_iri = None
 
