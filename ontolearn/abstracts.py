@@ -296,6 +296,10 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
         """Total number of individuals in this knowledge base"""
         pass
 
+    @abstractmethod
+    def individuals_set(self, *args, **kwargs) -> Set:
+        pass
+
 
 class AbstractDrill(ABC):
     """
