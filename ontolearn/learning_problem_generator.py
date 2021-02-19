@@ -55,6 +55,78 @@ class LearningProblemGenerator:
 
         return {'string_balanced_pos': string_balanced_pos, 'string_balanced_neg': string_balanced_neg}
 
+    def owlready_individuals_to_string_balanced_n_samples(self, n: int, instances: set) -> Generator:
+        """
+        Generate n number of balanced negative and positive examples.
+        To balance examples, randomly sample positive or negative examples.
+
+        @param n: in
+        @param instances: a set of owlready2 instances
+        @return:
+        """
+
+        string_all_pos = set(self.kb.convert_owlready2_individuals_to_uri_from_iterable(instances))
+
+        string_all_neg = set(
+            self.kb.convert_owlready2_individuals_to_uri_from_iterable(self.kb.individuals.difference(instances)))
+        for i in range(n):
+            string_balanced_pos, string_balanced_neg = balanced_sets(string_all_pos, string_all_neg)
+            assert len(string_balanced_pos) >= self.min_num_instances
+            assert len(string_balanced_neg) >= self.min_num_instances
+
+            yield {'string_balanced_pos': string_balanced_pos, 'string_balanced_neg': string_balanced_neg}
+
+    def get_balanced_n_samples_per_examples(self, *, n=5, min_num_problems=None, max_length=None, min_length=None,
+                                            num_diff_runs=None, min_num_instances=None,
+                                            search_algo='strict-dfs') -> list:
+        """
+        1. We generate min_num_problems number of concepts
+        2. For each concept, we generate n number of positive and negative examples
+        3. Each example contains
+        @param n:
+        @param min_num_problems:
+        @param max_length:
+        @param min_length:
+        @param num_diff_runs:
+        @param min_num_instances:
+        @param search_algo:
+        @return:
+        """
+
+        def concept_sanity_check(x):
+            try:
+                assert len(x.concept.instances)
+            except AssertionError:
+                print(f'{x}\nDoes not contain any instances. No instance to balance. Exiting.')
+                raise
+
+        assert self.min_num_instances or min_num_instances
+
+        res = []
+        gen_examples = []
+        for example_node in self.generate_examples(num_problems=min_num_problems, max_length=max_length,
+                                                   min_length=min_length, num_diff_runs=num_diff_runs,
+                                                   min_num_instances=min_num_instances, search_algo=search_algo):
+            concept_sanity_check(example_node)
+            gen_examples.append(example_node)
+
+            for d in self.owlready_individuals_to_string_balanced_n_samples(n, example_node.concept.instances):
+                res.append((example_node.concept.str, d['string_balanced_pos'], d['string_balanced_neg']))
+
+        try:
+            assert len(gen_examples) > 0
+        except AssertionError:
+            print('*****No examples are created. Please update the configurations for learning problem generator****')
+            exit(1)
+
+        stats = np.array([[len(x), len(x.concept.instances)] for x in gen_examples])
+
+        print(f'\nNumber of generated concepts {len(gen_examples)}')
+        print(f'Number of generated examples: {len(res)}')
+        print(
+            f'Average length of generated examples {stats[:, 0].mean():.3f}\nAverage number of individuals belong to a generated example {stats[:, 1].mean():.3f}\n')
+        return res
+
     def get_balanced_examples(self, *, min_num_problems=None, max_length=None, min_length=None,
                               num_diff_runs=None, min_num_instances=None, search_algo='strict-dfs') -> list:
         """
@@ -71,17 +143,9 @@ class LearningProblemGenerator:
         p and n denote a set of URIs of individuals indicating positive and negative examples.
 
         """
-
-        def concept_sanity_check(x):
-            try:
-                assert len(x.concept.instances)
-            except AssertionError:
-                print(f'{x}\nDoes not contain any instances. No instance to balance. Exiting.')
-                raise
-
         def output_sanity_check(y):
             try:
-                assert len(y) > min_num_problems
+                assert len(y) >= min_num_problems
             except AssertionError:
                 print('Not enough number of problems are generated')
                 raise
@@ -93,12 +157,11 @@ class LearningProblemGenerator:
         for example_node in self.generate_examples(num_problems=min_num_problems, max_length=max_length,
                                                    min_length=min_length, num_diff_runs=num_diff_runs,
                                                    min_num_instances=min_num_instances, search_algo=search_algo):
-            concept_sanity_check(example_node)
-
             d = self.owlready_individuals_to_string_balanced_examples(example_node.concept.instances)
             res.append((example_node.concept.str, d['string_balanced_pos'], d['string_balanced_neg']))
             gen_examples.append(example_node)
 
+        output_sanity_check(res)
         stats = np.array([[len(x), len(x.concept.instances)] for x in gen_examples])
         print(
             f'Average length of generated examples {stats[:, 0].mean():.3f}\nAverage number of individuals belong to a generated example {stats[:, 1].mean():.3f}')
@@ -241,16 +304,6 @@ class LearningProblemGenerator:
         refinements = self.apply_rho(self.rho.getNode(self.kb.thing, root=True), len_constant=3)
 
         constrain_func = define_constrain()
-        """
-        if self.min_num_instances:
-            def constrain_func(x):
-                a = self.max_length >= len(x) >= self.min_length
-                b = self.max_num_instances >= len(x.concept.instances) >= self.min_num_instances
-                return a and b
-        else:
-            def constrain_func(x):
-                return self.max_length >= len(x) >= self.min_length
-        """
 
         valid_states_gate = set()
         while True:
@@ -263,6 +316,10 @@ class LearningProblemGenerator:
             if constrain_func(state):
                 valid_states_gate.add(state)
                 yield state
+                if strict:
+                    if len(valid_states_gate) >= self.num_problems * self.num_diff_runs:
+                        break
+
             temp_gate = set()
             for v in self._apply_dfs_on_state(state=state,
                                               apply_rho=self.apply_rho,
@@ -274,7 +331,7 @@ class LearningProblemGenerator:
                     temp_gate.add(v)
                     yield v
                     if strict:
-                        if len(temp_gate) >= self.num_problems:
+                        if len(temp_gate) >= self.num_problems or (len(valid_states_gate) >= self.num_problems * self.num_diff_runs):
                             break
             if strict:
                 if len(valid_states_gate) >= self.num_problems * self.num_diff_runs:
@@ -340,114 +397,3 @@ class LearningProblemGenerator:
                                      node) < self.max_length else len(
                                      node)):
             yield self.rho.getNode(i, parent_node=node)
-
-    """
-    CD:Refactored.
-    @property
-    def concepts(self) -> List:
-
-        Return list of positive and negative examples from valid learning problems.
-
-        if len(self.valid_learning_problems) == 0:
-            self.apply()
-        return self.valid_learning_problems
-
-    @property
-    def balanced_examples(self) -> List:
-        if len(self.valid_learning_problems) == 0:
-            self.apply()
-        results = list()
-        counter = 0
-        for example_node in self.valid_learning_problems:
-            if counter == self.num_problems:
-                break
-            string_all_pos = set(
-                self.kb.convert_owlready2_individuals_to_uri_from_iterable(example_node.concept.instances))
-            string_all_neg = set(self.kb.convert_owlready2_individuals_to_uri_from_iterable(
-                self.kb.individuals.difference(example_node.concept.instances)))
-            # create balanced setting
-            string_balanced_pos, string_balanced_neg = balanced_sets(string_all_pos, string_all_neg)
-            if len(string_balanced_pos) > 0 and len(string_balanced_neg) > 0:
-                results.append((example_node.concept.str, string_balanced_pos, string_balanced_neg))
-                counter += 1
-
-        return results
-    @property
-    def examples(self) -> List:
-        if len(self.valid_learning_problems) == 0:
-            self.apply()
-        return self.valid_learning_problems
-    """
-
-    """
-        CD:Due to controversy is ignored.
-    
-    
-     @performance_debugger('DFSGeneration')
-    def dfs_concept_generation(self) -> None:
-        valid_learning_problems = set()
-        for _ in range(self.num_problems):
-            # Generate all length 1 concepts.
-            refinements = list(self.apply_rho(self.rho.getNode(self.kb.thing, root=True), len_constant=0))
-            random.shuffle(refinements)
-            state = refinements.pop()
-            temp = self._apply_dfs_on_state(state=state, apply_rho=self.apply_rho,
-                                            depth=self.depth, num_problems=self.num_problems,
-                                            min_num_ind=self.min_num_ind,
-                                            max_length=self.max_length, min_length=self.min_length)
-            valid_learning_problems.update(temp)
-            if len(valid_learning_problems) > self.num_problems:
-                break
-        self.valid_learning_problems += list(valid_learning_problems)  # [:self.num_problems]
-        
-    @staticmethod
-    async def async_apply_dfs(*, state, apply_rho, depth, num_problems, max_length, min_length) -> list:
-        valid_examples = set()
-        explored_state = deque()
-        for i in range(depth):
-            refinements = apply_rho(state, len_constant=3)
-            if len(refinements) > 0:
-                # Only constraints.
-                valid_refs = set(filter(lambda x: max_length >= len(x) >= min_length, refinements))
-                # Early select valid examples.
-                valid_examples.update(valid_refs)
-                if len(valid_examples) >= num_problems:
-                    break
-                state = refinements.pop()
-                explored_state.extend(refinements)  # Append explored state
-            else:
-                state = explored_state.pop()  # Backtrack.
-        return list(valid_examples)
-
-
-    def concurrent_dfs_concept_generation(self) -> None:
-        async def async_dfs(X):
-            c = [self.async_apply_dfs(state=x, apply_rho=self.apply_rho,
-                                      depth=self.depth, num_problems=self.num_problems // self.num_of_concurrent_search,
-                                      max_length=self.max_length,
-                                      min_length=self.min_length) for x in X]
-            return await asyncio.gather(*c)
-
-        refinements = list(self.apply_rho(self.rho.getNode(self.kb.thing, root=True), len_constant=0))
-        random.shuffle(refinements)
-        loop = asyncio.get_event_loop()
-        results = loop.run_until_complete(async_dfs(refinements[:self.num_of_concurrent_search]))
-        valid_examples = set(list(itertools.chain.from_iterable(results)))
-        self.valid_learning_problems += list(valid_examples)
- 
-    def apply(self) -> None:
-        if self.num_of_concurrent_search:
-            print('Async will not be used.')
-            self.dfs_concept_generation()
-        else:
-            self.dfs_concept_generation()
-    
-    def __iter__(self):
-        if len(self.valid_learning_problems) == 0:
-            self.apply()
-        for c in self.valid_learning_problems:
-            yield c
-
-    def __len__(self):
-        return len(self.valid_learning_problems)
-    """

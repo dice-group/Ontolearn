@@ -1,12 +1,7 @@
 from ontolearn import KnowledgeBase, LearningProblemGenerator
 from ontolearn.static_funcs import export_concepts
 
-# path = '../data/carcinogenesis/owl/data/carcinogenesis.owl'
-# path = '../data/lymphography/owl/data/lymphography.owl'
-# path = '../data/mutagenesis/owl/data/mutagenesis.owl'
-# path = '../data/suramin/owl/data/suramin.owl'
-# path = '../data/nctrer/owl/data/nctrer.owl'
-path = '../data/biopax/owl/data/biopax.owl'
+path = '../KGs/Biopax/biopax.owl'
 
 kb = KnowledgeBase(path)
 lp = LearningProblemGenerator(knowledge_base=kb)
