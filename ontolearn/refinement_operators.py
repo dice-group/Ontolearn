@@ -21,8 +21,8 @@ class LengthBasedRefinement(BaseRefinement[Node]):
     apply_combinations: bool
     min_num_instances: int
 
-    def __init__(self, kb: KnowledgeBase, max_child_length=10, apply_combinations=True):
-        super().__init__(kb)
+    def __init__(self, knowledge_base: KnowledgeBase, max_child_length=10, apply_combinations=True):
+        super().__init__(knowledge_base)
         self.max_child_length = max_child_length
         self.apply_combinations = apply_combinations
         self.min_num_instances = 0
