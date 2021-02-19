@@ -10,15 +10,14 @@ from collections import deque
 class PropertyHierarchy:
 
     def __init__(self, onto):
-        self.all_properties = [i for i in onto.properties()]
+        self.all_properties = {i for i in onto.properties()}
 
-        self.data_properties = [i for i in onto.data_properties()]
+        self.data_properties = {i for i in onto.data_properties()}
 
-        self.object_properties = [i for i in onto.object_properties()]
+        self.object_properties = {i for i in onto.object_properties()}
 
     def get_most_general_property(self):
-        for i in self.all_properties:
-            yield i
+        return self.data_properties
 
     def __len__(self):
         return len(self.all_properties)
@@ -30,17 +29,24 @@ class PrepareBatchOfPrediction(torch.utils.data.Dataset):
 
     def __init__(self, current_state: torch.FloatTensor, next_state_batch: torch.Tensor, p: torch.FloatTensor,
                  n: torch.FloatTensor):
+        """
+        @param current_state: a Tensor of torch.Size([1, 1, dim]) corresponds to embeddings of current_state
+        @param next_state_batch: a Tensor of torch.Size([n, 1, dim]) corresponds to embeddings of next_states, i.e. \rho(current_state)
+        @param p:
+        @param n:
+        """
         self.S_Prime = next_state_batch
+
+        # Expands them into torch.Size([n, 1, dim])
         self.S = current_state.expand(self.S_Prime.shape)
-        self.Positives = p.expand(next_state_batch.shape)
-        self.Negatives = n.expand(next_state_batch.shape)
+        self.Positives = p.expand(self.S_Prime.shape)
+        self.Negatives = n.expand(self.S_Prime.shape)
         assert self.S.shape == self.S_Prime.shape == self.Positives.shape == self.Negatives.shape
         assert self.S.dtype == self.S_Prime.dtype == self.Positives.dtype == self.Negatives.dtype == torch.float32
-        # X.shape()=> batch_size,4, embedding dim)
+
         self.X = torch.cat([self.S, self.S_Prime, self.Positives, self.Negatives], 1)
-        num_points, depth, dim = self.X.shape
-        self.X = self.X.view(num_points, depth, dim)
-        # self.X = self.X.to(device)
+        n, depth, dim = self.X.shape
+        self.X = self.X.view(n, depth, 1, dim)
 
     def __len__(self):
         return len(self.X)
@@ -56,6 +62,7 @@ class PrepareBatchOfTraining(torch.utils.data.Dataset):
 
     def __init__(self, current_state_batch: torch.Tensor, next_state_batch: torch.Tensor, p: torch.Tensor,
                  n: torch.Tensor, q: torch.Tensor):
+        # Sanity checking
         if torch.isnan(current_state_batch).any() or torch.isinf(current_state_batch).any():
             raise ValueError('invalid value detected in current_state_batch,\n{0}'.format(current_state_batch))
         if torch.isnan(next_state_batch).any() or torch.isinf(next_state_batch).any():
@@ -83,10 +90,14 @@ class PrepareBatchOfTraining(torch.utils.data.Dataset):
 
         assert self.S.shape == self.S_Prime.shape == self.Positives.shape == self.Negatives.shape
         assert self.S.dtype == self.S_Prime.dtype == self.Positives.dtype == self.Negatives.dtype == torch.float32
-        # X.shape()=> batch_size,4,embeddingdim)
         self.X = torch.cat([self.S, self.S_Prime, self.Positives, self.Negatives], 1)
         num_points, depth, dim = self.X.shape
-        self.X = self.X.view(num_points, depth, dim)
+        self.X = self.X.view(num_points, depth, 1, dim)
+        # X[0] => corresponds to a data point, X[0] \in R^{4 \times 1 \times dim}
+        # where X[0][0] => current state representation R^{1 \times dim}
+        # where X[0][1] => next state representation R^{1 \times dim}
+        # where X[0][2] => positive example representation R^{1 \times dim}
+        # where X[0][3] => negative example representation R^{1 \times dim}
 
         if torch.isnan(self.X).any() or torch.isinf(self.X).any():
             print('invalid input detected during batching in X')
@@ -94,7 +105,6 @@ class PrepareBatchOfTraining(torch.utils.data.Dataset):
         if torch.isnan(self.y).any() or torch.isinf(self.y).any():
             print('invalid Q value  detected during batching in Y')
             raise ValueError
-        # self.X, self.y = self.X.to(device), self.y.to(device)
 
     def __len__(self):
         return len(self.X)
@@ -109,6 +119,7 @@ class Experience:
     """
 
     def __init__(self, maxlen: int):
+        # @TODO we may want to not forget experiences yielding high rewards
         self.current_states = deque(maxlen=maxlen)
         self.next_states = deque(maxlen=maxlen)
         self.rewards = deque(maxlen=maxlen)
