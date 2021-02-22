@@ -1,6 +1,6 @@
 import sys
 from queue import PriorityQueue
-from typing import Generator, Literal, Optional, Iterable, Callable, Set, Tuple, Dict
+from typing import Generator, Literal, Optional, Iterable, Callable, Set, Tuple, Dict, AbstractSet, List
 import numpy as np
 
 from owlapy.model import OWLClassExpression
@@ -60,35 +60,34 @@ class LearningProblemGenerator:
         self.num_diff_runs = num_diff_runs
         self.num_problems = num_problems // self.num_diff_runs
 
-    def owlready_individuals_to_string_balanced_examples(self, instances) -> Dict[str, Set]:
+    def concept_individuals_to_string_balanced_examples(self, concept: OWLClassExpression) -> Dict[str, AbstractSet]:
 
-        string_all_pos = set(self.kb.convert_owlready2_individuals_to_uri_from_iterable(instances))
+        string_all_pos = self.kb.individuals_set(concept)
 
-        string_all_neg = set(
-            self.kb.convert_owlready2_individuals_to_uri_from_iterable(self.kb.individuals.difference(instances)))
+        string_all_neg = self.kb.all_individuals_set().difference(string_all_pos)
         assert len(string_all_pos) >= self.min_num_instances
 
-        string_balanced_pos, string_balanced_neg = balanced_sets(string_all_pos, string_all_neg)
+        string_balanced_pos, string_balanced_neg = balanced_sets(set(string_all_pos), set(string_all_neg))
         assert len(string_balanced_neg) >= self.min_num_instances
 
         return {'string_balanced_pos': string_balanced_pos, 'string_balanced_neg': string_balanced_neg}
 
-    def owlready_individuals_to_string_balanced_n_samples(self, n: int, instances: set) -> Generator:
+    def concept_individuals_to_string_balanced_n_samples(self, n: int, concept: OWLClassExpression) \
+            -> Iterable[Dict[str, AbstractSet]]:
         """
         Generate n number of balanced negative and positive examples.
         To balance examples, randomly sample positive or negative examples.
 
         @param n: in
-        @param instances: a set of owlready2 instances
+        @param concept: an OWL Class Expression
         @return:
         """
 
-        string_all_pos = set(self.kb.convert_owlready2_individuals_to_uri_from_iterable(instances))
+        string_all_pos = self.kb.individuals_set(concept)
 
-        string_all_neg = set(
-            self.kb.convert_owlready2_individuals_to_uri_from_iterable(self.kb.individuals.difference(instances)))
+        string_all_neg = self.kb.all_individuals_set().difference(string_all_pos)
         for i in range(n):
-            string_balanced_pos, string_balanced_neg = balanced_sets(string_all_pos, string_all_neg)
+            string_balanced_pos, string_balanced_neg = balanced_sets(set(string_all_pos), set(string_all_neg))
             assert len(string_balanced_pos) >= self.min_num_instances
             assert len(string_balanced_neg) >= self.min_num_instances
 
@@ -96,19 +95,24 @@ class LearningProblemGenerator:
 
     def get_balanced_n_samples_per_examples(self, *, n=5, min_num_problems=None, max_length=None, min_length=None,
                                             num_diff_runs=None, min_num_instances=None,
-                                            search_algo='strict-dfs') -> list:
+                                            search_algo: SearchAlgos = 'strict-dfs') \
+            -> List[Tuple[OWLClassExpression, AbstractSet, AbstractSet]]:
         """
         1. We generate min_num_problems number of concepts
         2. For each concept, we generate n number of positive and negative examples
         3. Each example contains
-        @param n:
-        @param min_num_problems:
-        @param max_length:
-        @param min_length:
-        @param num_diff_runs:
-        @param min_num_instances:
-        @param search_algo:
-        @return:
+
+        Args:
+            n: ???
+            min_num_problems:
+            max_length:
+            min_length:
+            num_diff_runs:
+            min_num_instances:
+            search_algo:
+
+        Returns:
+            ???
         """
 
         def concept_sanity_check(x):
@@ -128,9 +132,9 @@ class LearningProblemGenerator:
             concept_sanity_check(example_node)
             gen_examples.append(example_node)
 
-            for d in self.owlready_individuals_to_string_balanced_n_samples(n, example_node.concept.instances):
+            for d in self.concept_individuals_to_string_balanced_n_samples(n, example_node.concept):
                 assert len(d['string_balanced_pos']) == len(d['string_balanced_neg'])
-                res.append((example_node.concept.str, d['string_balanced_pos'], d['string_balanced_neg']))
+                res.append((example_node.concept, d['string_balanced_pos'], d['string_balanced_neg']))
 
         try:
             assert len(gen_examples) > 0
@@ -138,30 +142,33 @@ class LearningProblemGenerator:
             print('*****No examples are created. Please update the configurations for learning problem generator****')
             exit(1)
 
-        stats = np.array([[len(x), len(x.concept.instances)] for x in gen_examples])
+        stats = np.array([[x.len, x.individuals_count] for x in gen_examples])
 
         print(f'\nNumber of generated concepts:{len(gen_examples)}')
         print(f'Number of generated learning problems via sampling: {len(res)}')
         print(
-            f'Average length of generated concepts:{stats[:, 0].mean():.3f}\nAverage number of individuals belong to a generated example:{stats[:, 1].mean():.3f}\n')
+            f'Average length of generated concepts:{stats[:, 0].mean():.3f}\n'
+            f'Average number of individuals belong to a generated example:{stats[:, 1].mean():.3f}\n')
         return res
 
     def get_balanced_examples(self, *, min_num_problems=None, max_length=None, min_length=None,
                               num_diff_runs=None, min_num_instances=None, search_algo: SearchAlgos = 'strict-dfs') \
-            -> list:
+            -> List[Tuple[OWLClassExpression, AbstractSet, AbstractSet]]:
         """
         (1) Generate valid examples with input search algorithm.
         (2) Balance valid examples.
 
-        @param min_num_problems:
-        @param max_length:
-        @param min_length:
-        @param num_diff_runs:
-        @param min_num_instances:
-        @param search_algo: 'dfs' or 'strict-'dfs=> strict-dfs considers num_problems as a hard constrain.
-        @return: A list of tuples (s,p,n) where s denotes the string representation of a concept,
-        p and n denote a set of URIs of individuals indicating positive and negative examples.
+        Args:
+            min_num_problems:
+            max_length:
+            min_length:
+            num_diff_runs:
+            min_num_instances:
+            search_algo: 'dfs' or 'strict-'dfs=> strict-dfs considers num_problems as a hard constrain.
 
+        Returns:
+            A list of tuples (s,p,n) where s denotes the string representation of a concept,
+            p and n denote a set of URIs of individuals indicating positive and negative examples.
         """
 
         def output_sanity_check(y):
@@ -178,14 +185,15 @@ class LearningProblemGenerator:
         for example_node in self.generate_examples(num_problems=min_num_problems, max_length=max_length,
                                                    min_length=min_length, num_diff_runs=num_diff_runs,
                                                    min_num_instances=min_num_instances, search_algo=search_algo):
-            d = self.owlready_individuals_to_string_balanced_examples(example_node.concept.instances)
-            res.append((example_node.concept.str, d['string_balanced_pos'], d['string_balanced_neg']))
+            d = self.concept_individuals_to_string_balanced_examples(example_node.concept)
+            res.append((example_node.concept, d['string_balanced_pos'], d['string_balanced_neg']))
             gen_examples.append(example_node)
 
         output_sanity_check(res)
-        stats = np.array([[len(x), len(x.concept.instances)] for x in gen_examples])
+        stats = np.array([[x.len, x.individuals_count] for x in gen_examples])
         print(
-            f'Average length of generated examples {stats[:, 0].mean():.3f}\nAverage number of individuals belong to a generated example {stats[:, 1].mean():.3f}')
+            f'Average length of generated examples {stats[:, 0].mean():.3f}\n'
+            f'Average number of individuals belong to a generated example {stats[:, 1].mean():.3f}')
         return res
 
     def get_examples(self, *, num_problems=None, max_length=None, min_length=None,
