@@ -12,7 +12,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
     def test_instances(self):
         NS = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://data/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
 
         male = OWLClass(IRI.create(NS, 'male'))
         female = OWLClass(IRI.create(NS, 'female'))
