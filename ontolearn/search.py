@@ -393,7 +393,43 @@ def _node_and_all_children(n: _N) -> Iterable[_N]:
 
 
 class Node(AbstractNode):
-    ...
+    __slots__ = '_concept', '_len', '_individuals_count'
+
+    renderer: ClassVar[OWLObjectRenderer] = DLSyntaxRenderer()
+
+    _individuals_count: Optional[int]
+    _concept: OWLClassExpression
+    _len: int
+
+    def __init__(self, concept: OWLClassExpression, length: int):
+        self._concept = concept
+        self._len = length
+        self._individuals_count = None
+        super().__init__()
+
+    @property
+    def concept(self) -> OWLClassExpression:
+        return self._concept
+
+    @property
+    def len(self) -> int:
+        return self._len
+
+    @property
+    def individuals_count(self) -> Optional[int]:
+        return self._individuals_count
+
+    @individuals_count.setter
+    def individuals_count(self, v: int):
+        if self._individuals_count is not None:
+            raise ValueError("Individuals already counted", self)
+        self._individuals_count = v
+
+    def __str__(self):
+        addr = hex(id(self))
+        addr = addr[0:2] + addr[6:-1]
+        return f'Node at {addr}\t{Node.renderer.render(self.concept)}\t' \
+               f'|Indv.|:{self.individuals_count}'
 
 
 class SearchTreePriorityQueue(AbstractTree):

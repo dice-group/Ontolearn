@@ -1,7 +1,9 @@
 import sys
 from queue import PriorityQueue
 from typing import Generator, Literal, Optional, Iterable, Callable, Set, Tuple, Dict
+import numpy as np
 
+from owlapy.model import OWLClassExpression
 from .abstracts import BaseRefinement
 from .knowledge_base import KnowledgeBase
 from .refinement_operators import LengthBasedRefinement
@@ -111,7 +113,7 @@ class LearningProblemGenerator:
 
         def concept_sanity_check(x):
             try:
-                assert len(x.concept.instances)
+                assert self.kb.individuals_count(x.concept)
             except AssertionError:
                 print(f'{x}\nDoes not contain any instances. No instance to balance. Exiting.')
                 raise
@@ -219,40 +221,46 @@ class LearningProblemGenerator:
             res.append((example_node.concept.str, string_all_pos, string_all_neg))
         return res
 
-    def get_concepts(self, *, num_problems=None, max_length=None, min_length=None,
-                     max_num_instances=None, num_diff_runs=None, min_num_instances=None, search_algo=None) -> Generator:
+    def get_concepts(self, *, num_problems=None, max_length=None, min_length=None, max_num_instances=None,
+                     num_diff_runs=None, min_num_instances=None, search_algo=None) -> Iterable[Node]:
         """
-        @param max_num_instances:
-        @param num_problems:
-        @param max_length:
-        @param min_length:
-        @param num_diff_runs:
-        @param min_num_instances:
-        @param search_algo: 'dfs' or 'strict-'dfs=> strict-dfs considers num_problems as hard constriant.
-        @return: A list of tuples (s,p,n) where s denotes the string representation of a concept,
-        p and n denote a set of URIs of individuals indicating positive and negative examples.
+
+        Args:
+            max_num_instances:
+            num_problems:
+            max_length:
+            min_length:
+            num_diff_runs:
+            min_num_instances:
+            search_algo: 'dfs' or 'strict-'dfs=> strict-dfs considers num_problems as hard constriant.
+
+        Returns:
+            A list of nodes with generated concepts inside
         """
-        return self.generate_examples(num_problems=num_problems,
-                                      max_length=max_length, min_length=min_length,
-                                      num_diff_runs=num_diff_runs,
-                                      max_num_instances=max_num_instances,
-                                      min_num_instances=min_num_instances,
-                                      search_algo=search_algo)
+        yield from self.generate_examples(num_problems=num_problems,
+                                          max_length=max_length, min_length=min_length,
+                                          num_diff_runs=num_diff_runs,
+                                          max_num_instances=max_num_instances,
+                                          min_num_instances=min_num_instances,
+                                          search_algo=search_algo)
 
     def generate_examples(self, *, num_problems=None, max_length=None, min_length=None,
                           num_diff_runs=None, max_num_instances=None, min_num_instances=None,
-                          search_algo=None) -> Generator:
+                          search_algo=None) -> Iterable[Node]:
         """
         Generate examples via search algorithm that are valid examples w.r.t. given constraints
 
-        @param num_diff_runs:
-        @param num_problems:
-        @param max_length:
-        @param min_length:
-        @param min_num_instances:
-        @param max_num_instances:
-        @param search_algo:
-        @return:
+        Args:
+            num_diff_runs:
+            num_problems:
+            max_length:
+            min_length:
+            min_num_instances:
+            max_num_instances:
+            search_algo:
+
+        Returns:
+            ???
         """
         if num_problems and num_diff_runs:
             assert isinstance(num_problems, int)
@@ -291,9 +299,9 @@ class LearningProblemGenerator:
             self.max_num_instances = self.kb.individuals_count() - self.min_num_instances
 
         if self.search_algo == 'dfs':
-            return self._apply_dfs()
+            yield from self._apply_dfs()
         elif self.search_algo == 'strict-dfs':
-            return self._apply_dfs(strict=True)
+            yield from self._apply_dfs(strict=True)
 
         else:
             print(f'Invalid input: search_algo:{search_algo} must be in [dfs,strict-dfs]')
@@ -303,66 +311,66 @@ class LearningProblemGenerator:
         """Apply depth first search with backtracking to generate concepts.
         """
 
-        def define_constrain():
+        def define_constrain() -> Callable[[Node], bool]:
             if self.min_num_instances:
-                def f1(x):
-                    a = self.max_length >= self.kb.cl(x.concept) >= self.min_length
-                    b = self.max_num_instances >= self.kb.individuals_count(x.concept) >= self.min_num_instances
+                def f1(x: Node) -> bool:
+                    a = self.max_length >= x.len >= self.min_length
+                    b = self.max_num_instances >= x.individuals_count >= self.min_num_instances
                     return a and b
 
                 return f1
             else:
-                def f2(x):
-                    return self.max_length >= self.kb.cl(x.concept) >= self.min_length
+                def f2(x: Node) -> bool:
+                    return self.max_length >= x.len >= self.min_length
 
                 return f2
 
-        refinements = iter(self.apply_rho(Node(self.kb.thing, root=True), len_constant=3))
+        refinements = iter(self.apply_refinement_operator(self.kb.thing, len_constant=3))
 
         constrain_func = define_constrain()
 
-        valid_states_gate: Set[Node] = set()
+        valid_concepts_gate: Set[OWLClassExpression] = set()
         while True:
             try:
-                state: Node = next(refinements)
+                concept: OWLClassExpression = next(refinements)
             except StopIteration:
                 print('All top concepts are refined.')
                 break
 
-            if state.individuals_count is None:
-                state.individuals_count = self.kb.individuals_count(state.concept)
+            state = Node(concept, self.kb.cl(concept))
+            state.individuals_count = self.kb.individuals_count(concept)
 
             if constrain_func(state):
-                valid_states_gate.add(state)
+                valid_concepts_gate.add(concept)
                 yield state
                 if strict:
-                    if len(valid_states_gate) >= self.num_problems * self.num_diff_runs:
+                    if len(valid_concepts_gate) >= self.num_problems * self.num_diff_runs:
                         break
 
-            temp_gate: Set[Node] = set()
+            temp_gate: Set[OWLClassExpression] = set()
             for v in self._apply_dfs_on_state(state=state,
                                               kb=self.kb,
-                                              apply_rho=self.apply_rho,
+                                              refine_concept=self.apply_refinement_operator,
                                               constrain_func=constrain_func,
                                               depth=self.depth,
                                               patience_per_depth=(self.num_problems // 2)):
-                if v not in valid_states_gate:
-                    valid_states_gate.add(v)
-                    temp_gate.add(v)
+                if v.concept not in valid_concepts_gate:
+                    valid_concepts_gate.add(v.concept)
+                    temp_gate.add(v.concept)
                     yield v
                     if strict:
                         if len(temp_gate) >= self.num_problems or (
-                                len(valid_states_gate) >= self.num_problems * self.num_diff_runs):
+                                len(valid_concepts_gate) >= self.num_problems * self.num_diff_runs):
                             break
             if strict:
-                if len(valid_states_gate) >= self.num_problems * self.num_diff_runs:
+                if len(valid_concepts_gate) >= self.num_problems * self.num_diff_runs:
                     break
 
         # sanity checking after the search.
         try:
-            assert len(valid_states_gate) >= self.num_diff_runs * self.num_problems
+            assert len(valid_concepts_gate) >= self.num_diff_runs * self.num_problems
         except AssertionError:
-            print(f'Number of valid concepts generated:{len(valid_states_gate)}.\n'
+            print(f'Number of valid concepts generated:{len(valid_concepts_gate)}.\n'
                   f'Required number of concepts: {self.num_diff_runs * self.num_problems}.\n'
                   f'Please update the given constraints:'
                   f'Increase the max length (Currently {self.max_length}).\n'
@@ -375,7 +383,7 @@ class LearningProblemGenerator:
     def _apply_dfs_on_state(state: Node,
                             depth: int,
                             kb: KnowledgeBase,
-                            apply_rho: Callable[..., Iterable[Node]],
+                            refine_concept: Callable[..., Iterable[OWLClassExpression]],
                             constrain_func: Callable[[Node], bool],
                             patience_per_depth: int) -> Iterable[Node]:
         """
@@ -384,8 +392,8 @@ class LearningProblemGenerator:
             state:
             depth:
             kb: the knowledge base
-            apply_rho: Function that takes a Node and a len_constant and refines the Node to new nodes
-            constrain_func: Function that includes a refinement only if true
+            refine_concept: Function that takes a concept and a len_constant and refines the concept to new concepts
+            constrain_func: Function that includes a Node only if true
             patience_per_depth:
 
         Returns:
@@ -396,15 +404,14 @@ class LearningProblemGenerator:
         for _ in range(depth):
             temp_patience = patience_per_depth  # patience for valid exam. per depth.
             temp_not_valid_patience = patience_per_depth  # patience for not valid exam. per depth.
-            for i in apply_rho(state, len_constant=2):
-                if i.individuals_count is None:
-                    i.individuals_count = kb.individuals_count(i.concept)
+            for c in refine_concept(state.concept, len_constant=2):
+                i = Node(c, kb.cl(c))
+                i.individuals_count = kb.individuals_count(c)
                 if constrain_func(i):  # validity checking.
                     # q.put((len(i), i))  # lower the length, higher priority.
                     if i not in valid_examples:
                         valid_examples.add(i)
-                        concept_len = kb.cl(i.concept)
-                        q.put((concept_len, LengthOrderedNode(i, concept_len)))  # lower the length, higher priority.
+                        q.put((i.len, LengthOrderedNode(i, i.len)))  # lower the length, higher priority.
                         yield i
                         temp_patience -= 1
                         if temp_patience == 0:
@@ -420,10 +427,10 @@ class LearningProblemGenerator:
             else:
                 return None
 
-    def apply_rho(self, node, len_constant=1) -> Iterable[Node]:
-        for i in self.operator.refine(node.concept,
+    def apply_refinement_operator(self, concept: OWLClassExpression, len_constant=1) -> Iterable[OWLClassExpression]:
+        for i in self.operator.refine(concept,
                                       max_length=self.operator.len(
-                                     node.concept) + len_constant if self.operator.len(
-                                     node.concept) < self.max_length else self.operator.len(
-                                     node.concept)):
-            yield Node(i, parent_node=node)
+                                          concept) + len_constant if self.operator.len(
+                                          concept) < self.max_length else self.operator.len(
+                                          concept)):
+            yield i
