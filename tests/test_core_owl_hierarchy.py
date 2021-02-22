@@ -16,7 +16,7 @@ class Owl_Core_PropertyHierarchy_Test(unittest.TestCase):
     def test_object_property_hierarchy(self):
         NS = "http://www.biopax.org/examples/glycolysis#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://data/biopax/biopax.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/Biopax/biopax.owl"))
         reasoner = OWLReasoner_Owlready2(onto)
 
         oph = ObjectPropertyHierarchy(reasoner)
@@ -52,7 +52,7 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
     def test_class_hierarchy_restrict(self):
         NS = "http://www.benchmark.org/family#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://data/family-benchmark_rich_background.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/Family/family-benchmark_rich_background.owl"))
         reasoner = OWLReasoner_Owlready2(onto)
 
         ch = ClassHierarchy(reasoner).restrict_and_copy(remove=frozenset({OWLClass(IRI(NS, 'Grandchild'))}))
@@ -66,7 +66,7 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
     def test_class_hierarchy_children(self):
         NS = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://data/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
         reasoner = OWLReasoner_Owlready2(onto)
 
         ch = ClassHierarchy(reasoner)
@@ -80,7 +80,7 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
     def test_class_hierarchy_parents_roots(self):
         NS = "http://www.benchmark.org/family#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://data/family-benchmark_rich_background.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/Family/family-benchmark_rich_background.owl"))
         reasoner = OWLReasoner_Owlready2(onto)
 
         ch = ClassHierarchy(reasoner)
@@ -97,7 +97,7 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
     def test_class_hierarchy_siblings(self):
         NS = "http://www.benchmark.org/family#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://data/family-benchmark_rich_background.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/Family/family-benchmark_rich_background.owl"))
         reasoner = OWLReasoner_Owlready2(onto)
 
         ch = ClassHierarchy(reasoner)
@@ -111,7 +111,7 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
     def test_class_hierarchy_leaves(self):
         NS = "http://www.benchmark.org/family#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://data/family-benchmark_rich_background.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/Family/family-benchmark_rich_background.owl"))
         reasoner = OWLReasoner_Owlready2(onto)
 
         ch = ClassHierarchy(reasoner)
