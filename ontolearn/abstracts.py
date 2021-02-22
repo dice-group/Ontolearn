@@ -270,10 +270,6 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
     thing: OWLClassExpression
 
     @abstractmethod
-    def save(self, path: str, rdf_format="rdfxml"):
-        pass
-
-    @abstractmethod
     def ontology(self) -> OWLOntology:
         """The base ontology of this knowledge base"""
         pass
