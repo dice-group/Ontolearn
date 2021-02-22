@@ -335,7 +335,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
             yield from self.kb.most_general_existential_restrictions(domain=ce)
             if self.use_all_constructor:
                 # iter_container.append(self.kb.most_general_universal_restriction(ce))
-                yield from self.kb.most_general_universal_restriction(domain=ce)
+                yield from self.kb.most_general_universal_restrictions(domain=ce)
             yield self.kb.intersection((ce, ce))
             yield self.kb.union((ce, ce))
 
@@ -405,9 +405,9 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
                                  current_domain=current_domain):
                 if i is not None:
                     yield self.kb.universal_restriction(i, ce.get_property())
-            # if not node.concept.get_filler().is_owl_nothing() and node.concept.get_filler().isatomic and (len(refs) == 0):
+            # if not concept.get_filler().is_owl_nothing() and concept.get_filler().isatomic and (len(refs) == 0):
             #    # TODO find a way to include nothing concept
-            #    refs.update(self.kb.universal_restriction(i, node.concept.get_property()))
+            #    refs.update(self.kb.universal_restriction(i, concept.get_property()))
         else:
             yield from {}
 
