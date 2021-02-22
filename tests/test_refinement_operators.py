@@ -18,7 +18,7 @@ kb = KnowledgeBase(path=settings['data_path'][3:])
 def test_celoe_refinement_operator():
     r = DLSyntaxRenderer()
     rho = ModifiedCELOERefinement(kb)
-    for _ in enumerate(rho.refine(Node(kb.thing, root=True), max_length=10, current_domain=kb.thing)):
+    for _ in enumerate(rho.refine(kb.thing, max_length=10, current_domain=kb.thing)):
         print(r.render(_[1]))
         pass
 
@@ -26,7 +26,7 @@ def test_celoe_refinement_operator():
 def test_length_refinement_operator():
     r = DLSyntaxRenderer()
     rho = LengthBasedRefinement(kb)
-    for _ in enumerate(rho.refine(Node(kb.thing, root=True), max_length=10, apply_combinations=False)):
+    for _ in enumerate(rho.refine(kb.thing, max_length=5, apply_combinations=False)):
         print(r.render(_[1]))
         pass
 
