@@ -41,7 +41,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     # General
     parser.add_argument("--path_knowledge_base", type=str,
-                        default='/home/demir/Desktop/Onto-learn_dev/KGs/Family/family-benchmark_rich_background.owl')
+                        default='../KGs/Family/family-benchmark_rich_background.owl')
     parser.add_argument("--verbose", type=int, default=0)
     parser.add_argument('--num_workers', type=int, default=32, help='Number of cpus used during batching')
 
