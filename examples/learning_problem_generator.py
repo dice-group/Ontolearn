@@ -1,4 +1,3 @@
-#from ontolearn import KnowledgeBase, LearningProblemGenerator
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem_generator import LearningProblemGenerator
 from ontolearn.utils import setup_logging
