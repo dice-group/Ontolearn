@@ -3,7 +3,6 @@ from typing import Dict, Iterable, Optional, Callable, overload, Union
 
 from .abstracts import AbstractKnowledgeBase
 from .concept_generator import ConceptGenerator
-from .core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from .core.owl.utils import OWLClassExpressionLengthMetric
 from .core.utils import BitSet
 from owlapy import IRI
