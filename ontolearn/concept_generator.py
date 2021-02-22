@@ -64,17 +64,29 @@ class ConceptGenerator:
             self._op_domains[prop] = frozenset(self._reasoner.object_property_domains(prop))
         return self._op_domains[prop]
 
-    def most_general_existential_restrictions(self, *, domain: OWLClass) -> Iterable[OWLObjectSomeValuesFrom]:
-        assert isinstance(domain, OWLClass)
-        for prop in self._object_property_hierarchy.most_general_roles():
-            if domain.is_owl_thing() or domain in self._object_property_domain(prop):
-                yield OWLObjectSomeValuesFrom(property=prop, filler=self.thing)
+    def most_general_existential_restrictions(self, *,
+                                              domain: OWLClassExpression, filler: Optional[OWLClassExpression] = None) \
+            -> Iterable[OWLObjectSomeValuesFrom]:
+        if filler is None:
+            filler = self.thing
+        assert isinstance(domain, OWLClass)  # for now, only named classes supported
+        assert isinstance(filler, OWLClassExpression)
 
-    def most_general_universal_restriction(self, *, domain: OWLClass) -> Iterable[OWLObjectAllValuesFrom]:
-        assert isinstance(domain, OWLClassExpression)
         for prop in self._object_property_hierarchy.most_general_roles():
             if domain.is_owl_thing() or domain in self._object_property_domain(prop):
-                yield OWLObjectAllValuesFrom(property=prop, filler=self.thing)
+                yield OWLObjectSomeValuesFrom(property=prop, filler=filler)
+
+    def most_general_universal_restrictions(self, *,
+                                            domain: OWLClassExpression, filler: Optional[OWLClassExpression] = None) \
+            -> Iterable[OWLObjectAllValuesFrom]:
+        if filler is None:
+            filler = self.thing
+        assert isinstance(domain, OWLClass)  # for now, only named classes supported
+        assert isinstance(filler, OWLClassExpression)
+
+        for prop in self._object_property_hierarchy.most_general_roles():
+            if domain.is_owl_thing() or domain in self._object_property_domain(prop):
+                yield OWLObjectAllValuesFrom(property=prop, filler=filler)
 
     # noinspection PyMethodMayBeStatic
     def intersection(self, ops: Iterable[OWLClassExpression]) -> OWLObjectIntersectionOf:
@@ -107,6 +119,10 @@ class ConceptGenerator:
     def get_all_direct_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
         assert isinstance(concept, OWLClass)
         yield from self._class_hierarchy.sub_classes(concept, direct=True)
+
+    def get_all_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
+        assert isinstance(concept, OWLClass)
+        yield from self._class_hierarchy.sub_classes(concept, direct=False)
 
     # noinspection PyMethodMayBeStatic
     def existential_restriction(self, concept: OWLClassExpression, property: OWLObjectPropertyExpression) \
