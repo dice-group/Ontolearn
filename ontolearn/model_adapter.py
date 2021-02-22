@@ -57,15 +57,23 @@ class ModelAdapter:
             learner_type: a Base Concept Learner type
             ...: arguments for the learning algorithm
         """
-        kb_type = kwargs.pop("knowledge_base_type", None)
+        self.kb_type = kwargs.pop("knowledge_base_type", None)
         if "knowledge_base" in kwargs:
             self.kb = kwargs.pop("knowledge_base")
         else:
-            if kb_type is None:
+            if self.kb_type is None:
                 from ontolearn import KnowledgeBase
                 kb_type = KnowledgeBase
-            self.kb = kb_type(**_get_matching_opts(kb_type, {}, {}, kwargs))
-        assert isinstance(self.kb, AbstractKnowledgeBase)
+            else:
+                kb_type = self.kb_type
+
+            self.kb_args = _get_matching_opts(kb_type, {}, {}, kwargs)
+            try:
+                self.kb = kb_type(**self.kb_args)
+            except TypeError:
+                self.kb = None
+        if self.kb is not None:
+            assert isinstance(self.kb, AbstractKnowledgeBase)
 
         self.op_type = kwargs.pop("refinement_operator_type", None)
         if "refinement_operator" in kwargs:
@@ -112,14 +120,30 @@ class ModelAdapter:
         """Execute fit function on a model adapter
 
         Args:
+            knowledge_base (Optional[AbstractKnowledgeBase]): a knowledge base
             ignore (Iterable[OWLClass]): list of OWL Classes to ignore
             learning_problem_type: a type of the learning prblem
             ...: learning problem arguments, for example pos and neg
         """
-        if "ignore" in kwargs:
-            target_kb = self.kb.ignore_and_copy(ignored_classes=kwargs.pop("ignore"))
+        kb_type = kwargs.pop("knowledge_base_type", self.kb_type)
+        if "knowledge_base" in kwargs:
+            kb = kwargs.pop("knowledge_base")
+        elif self.kb is not None and kb_type == self.kb_type:
+            kb = self.kb
         else:
-            target_kb = self.kb
+            if kb_type is None:
+                from ontolearn import KnowledgeBase
+                kb_type = KnowledgeBase
+            assert issubclass(kb_type, AbstractKnowledgeBase)
+            kb = kb_type(**_get_matching_opts(kb_type, {}, self.kb_args, kwargs))
+        assert isinstance(kb, AbstractKnowledgeBase)
+
+        if "ignore" in kwargs:
+            from ontolearn import KnowledgeBase
+            assert isinstance(kb, KnowledgeBase)
+            target_kb = kb.ignore_and_copy(ignored_classes=kwargs.pop("ignore"))
+        else:
+            target_kb = kb
 
         lp_type = kwargs.pop("learning_problem_type", None)
         if lp_type is None:
