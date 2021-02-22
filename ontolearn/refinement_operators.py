@@ -339,30 +339,30 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
             yield self.kb.intersection((ce, ce))
             yield self.kb.union((ce, ce))
 
-        a, b = tee(chain.from_iterable(iter_container))
+        # a, b = tee(chain.from_iterable(iter_container))
 
         # Compute all possible combinations of the disjunction and conjunctions.
-        mem = set()
-        for i in a:
-            assert i is not None
-            yield i
-            for j in copy.copy(b):
-                assert j is not None
-                if (i == j) or ((i, j) in mem) or ((j, i) in mem):
-                    continue
-                mem.add((j, i))
-                mem.add((i, j))
-                length = self.len(i) + self.len(j)
-
-                if (max_length >= length) and (self.max_child_length >= length + 1):
-                    if not i.is_owl_thing() and not j.is_owl_thing():
-                        temp_union = self.kb.union((i, j))
-                        if self.kb.individuals_count(temp_union) < self.kb.individuals_count():
-                            yield temp_union
-
-                    temp_intersection = self.kb.intersection((i, j))
-                    if self.kb.individuals_count(temp_intersection) > 0:
-                        yield temp_intersection
+        # mem = set()
+        # for i in a:
+        #     assert i is not None
+        #     yield i
+        #     for j in copy.copy(b):
+        #         assert j is not None
+        #         if (i == j) or ((i, j) in mem) or ((j, i) in mem):
+        #             continue
+        #         mem.add((j, i))
+        #         mem.add((i, j))
+        #         length = self.len(i) + self.len(j)
+        #
+        #         if (max_length >= length) and (self.max_child_length >= length + 1):
+        #             if not i.is_owl_thing() and not j.is_owl_thing():
+        #                 temp_union = self.kb.union((i, j))
+        #                 if self.kb.individuals_count(temp_union) < self.kb.individuals_count():
+        #                     yield temp_union
+        #
+        #             temp_intersection = self.kb.intersection((i, j))
+        #             if self.kb.individuals_count(temp_intersection) > 0:
+        #                 yield temp_intersection
 
     def refine_complement_of(self, ce: OWLObjectComplementOf, max_length: int,
                              current_domain: Optional[OWLClassExpression] = None) -> Iterable[OWLClassExpression]:
