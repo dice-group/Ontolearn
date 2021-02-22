@@ -98,9 +98,9 @@ class LengthBasedRefinement(BaseRefinement[Node]):
         Note that all refinements generated from 1-4 must fulfill constraints,
         e.g. ***self.max_child_length*** and **self.min_num_instances***
         1. Sub    = { x | ( x subClassOf c}
-        2. NegSub = { \neg x | ( x subClassOf c}
-        3. MGER   = { \exists.r.x | r \in MostGeneral r}
-        4. MGUR   = { \forall.r.x | r \in MostGeneral r}
+        2. NegSub = { \\neg x | ( x subClassOf c}
+        3. MGER   = { \\exists.r.x | r \\in MostGeneral r}
+        4. MGUR   = { \\forall.r.x | r \\in MostGeneral r}
 
         5. Combine 1-4 until we have all refinements have at most max__length.
 
