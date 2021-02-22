@@ -2,6 +2,9 @@
 import os
 
 from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.utils import setup_logging
+
+setup_logging("logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 PATH_FATHER = 'KGs/father.owl'
@@ -26,8 +29,14 @@ def test_multiple_knowledge_bases():
     # (that refers to the family ontology)
 
 
-def test_knowledge_base_save():
-    kb = KnowledgeBase(path=PATH_FAMILY)
-    kb.save('test_kb_save', rdf_format='nt')
-    assert os.stat('test_kb_save.nt').st_size > 0
-    os.remove('test_kb_save.nt')
+# def test_knowledge_base_save():
+#     kb = KnowledgeBase(path=PATH_FAMILY)
+#     kb.save('test_kb_save', rdf_format='nt')
+#     assert os.stat('test_kb_save.nt').st_size > 0
+#     os.remove('test_kb_save.nt')
+
+
+if __name__ == '__main__':
+    test_knowledge_base()
+    test_multiple_knowledge_bases()
+    # test_knowledge_base_save()
