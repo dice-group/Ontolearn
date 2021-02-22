@@ -58,6 +58,8 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
     _ontology: OWLOntology
     _reasoner: OWLReasoner
 
+    _length_metric: OWLClassExpressionLengthMetric
+
     _ind_enc: NamedFixedSet[OWLNamedIndividual]
     _ind_cache: Dict[OWLClassExpression, int]  # class expression => individuals
 
