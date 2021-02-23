@@ -74,6 +74,7 @@ class DLSyntaxRenderer(OWLObjectRenderer):
 
     @singledispatchmethod
     def render(self, o: OWLObject) -> str:
+        assert isinstance(o, OWLObject), f"Tried to render non-OWLObject {o} of {type(o)}"
         raise NotImplementedError
 
     @render.register
