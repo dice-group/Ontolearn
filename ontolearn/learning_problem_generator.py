@@ -1,6 +1,7 @@
 import sys
 from queue import PriorityQueue
-from typing import Generator, Literal, Optional, Iterable, Callable, Set, Tuple, Dict, AbstractSet, List
+from typing import Literal, Optional, Iterable, Callable, Set, Tuple, Dict, AbstractSet, List
+
 import numpy as np
 
 from owlapy.model import OWLClassExpression
