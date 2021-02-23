@@ -61,7 +61,7 @@ class LearningProblemGenerator:
         self.num_diff_runs = num_diff_runs
         self.num_problems = num_problems // self.num_diff_runs
 
-    def concept_individuals_to_string_balanced_examples(self, concept: OWLClassExpression) -> Dict[str, AbstractSet]:
+    def concept_individuals_to_string_balanced_examples(self, concept: OWLClassExpression) -> Dict[str, Set]:
 
         string_all_pos = self.kb.individuals_set(concept)
 
@@ -74,14 +74,17 @@ class LearningProblemGenerator:
         return {'string_balanced_pos': string_balanced_pos, 'string_balanced_neg': string_balanced_neg}
 
     def concept_individuals_to_string_balanced_n_samples(self, n: int, concept: OWLClassExpression) \
-            -> Iterable[Dict[str, AbstractSet]]:
+            -> Iterable[Dict[str, Set]]:
         """
         Generate n number of balanced negative and positive examples.
         To balance examples, randomly sample positive or negative examples.
 
-        @param n: in
-        @param concept: an OWL Class Expression
-        @return:
+        Args:
+            n: in
+            concept: an OWL Class Expression
+
+        Returns:
+            n dictionaries with positive and negative sets
         """
 
         string_all_pos = self.kb.individuals_set(concept)
@@ -97,7 +100,7 @@ class LearningProblemGenerator:
     def get_balanced_n_samples_per_examples(self, *, n=5, min_num_problems=None, max_length=None, min_length=None,
                                             num_diff_runs=None, min_num_instances=None,
                                             search_algo: SearchAlgos = 'strict-dfs') \
-            -> List[Tuple[OWLClassExpression, AbstractSet, AbstractSet]]:
+            -> List[Tuple[OWLClassExpression, Set, Set]]:
         """
         1. We generate min_num_problems number of concepts
         2. For each concept, we generate n number of positive and negative examples
@@ -154,7 +157,7 @@ class LearningProblemGenerator:
 
     def get_balanced_examples(self, *, min_num_problems=None, max_length=None, min_length=None,
                               num_diff_runs=None, min_num_instances=None, search_algo: SearchAlgos = 'strict-dfs') \
-            -> List[Tuple[OWLClassExpression, AbstractSet, AbstractSet]]:
+            -> List[Tuple[OWLClassExpression, Set, Set]]:
         """
         (1) Generate valid examples with input search algorithm.
         (2) Balance valid examples.
@@ -195,39 +198,6 @@ class LearningProblemGenerator:
         print(
             f'Average length of generated examples {stats[:, 0].mean():.3f}\n'
             f'Average number of individuals belong to a generated example {stats[:, 1].mean():.3f}')
-        return res
-
-    def get_examples(self, *, num_problems=None, max_length=None, min_length=None,
-                     num_diff_runs=None, min_num_ind=None, search_algo=None) -> list:
-        """
-        (1) Get valid examples with input search algorithm.
-
-        @param num_problems:
-        @param max_length:
-        @param min_length:
-        @param num_diff_runs:
-        @param min_num_ind:
-        @param search_algo: 'dfs' or 'strict-'dfs=> strict-dfs considers num_problems as hard constriant.
-        @return: A list of tuples (s,p,n) where s denotes the string representation of a concept,
-        p and n denote a set of URIs of individuals indicating positive and negative examples.
-
-        """
-        res = []
-        for example_node in self.generate_examples(num_problems=num_problems,
-                                                   max_length=max_length, min_length=min_length,
-                                                   num_diff_runs=num_diff_runs, min_num_instances=min_num_ind,
-                                                   search_algo=search_algo):
-            try:
-                assert len(example_node.concept.instances)
-            except AssertionError as e:
-                print(e)
-                print(f'{example_node}\nDoes not contain any instances. No instance to balance. Exiting.')
-                exit(1)
-            string_all_pos = set(
-                self.kb.convert_owlready2_individuals_to_uri_from_iterable(example_node.concept.instances))
-            string_all_neg = set(self.kb.convert_owlready2_individuals_to_uri_from_iterable(
-                self.kb.individuals.difference(example_node.concept.instances)))
-            res.append((example_node.concept.str, string_all_pos, string_all_neg))
         return res
 
     def get_concepts(self, *, num_problems=None, max_length=None, min_length=None, max_num_instances=None,
