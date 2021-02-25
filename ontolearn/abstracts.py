@@ -263,6 +263,11 @@ class AbstractNode(metaclass=ABCMeta):
     def __init__(self):
         pass
 
+    def __str__(self):
+        addr = hex(id(self))
+        addr = addr[0:2] + addr[6:-1]
+        return f'{type(self)} at {addr}'
+
 
 class AbstractKnowledgeBase(metaclass=ABCMeta):
     __slots__ = ()

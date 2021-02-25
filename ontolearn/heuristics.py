@@ -3,10 +3,10 @@ from typing import Final
 from .abstracts import AbstractScorer, AbstractHeuristic
 import numpy as np
 
-from .search import Node, OENode
+from .search import Node, OENode, OEHNode
 
 
-class CELOEHeuristic(AbstractHeuristic[OENode]):
+class CELOEHeuristic(AbstractHeuristic[OEHNode]):
     __slots__ = 'gainBonusFactor', 'startNodeBonus', 'nodeRefinementPenalty', 'expansionPenaltyFactor'
 
     name: Final = 'CELOE_Heuristic'
@@ -30,7 +30,7 @@ class CELOEHeuristic(AbstractHeuristic[OENode]):
     def score(self):
         pass
 
-    def apply(self, node: OENode):
+    def apply(self, node: OEHNode):
         self.applied += 1
 
         heuristic_val = 0
