@@ -70,7 +70,7 @@ class CELOE(BaseConceptLearner[OENode]):
     __slots__ = 'best_descriptions', 'max_he', 'min_he', 'best_only', 'calculate_min_max', 'heuristic_queue', \
                 'search_tree'
 
-    name: Final = 'celoe_python'
+    name = 'celoe_python'
 
     kb: KnowledgeBase
 
@@ -334,7 +334,7 @@ class CELOE(BaseConceptLearner[OENode]):
 class OCEL(CELOE):
     __slots__ = ()
 
-    name: Final = 'ocel_python'
+    name = 'ocel_python'
 
     def __init__(self, knowledge_base, quality_func=None, iter_bound=None, max_num_of_concepts_tested=None,
                  terminate_on_goal=None):
