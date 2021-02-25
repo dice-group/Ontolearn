@@ -1,5 +1,6 @@
 import weakref
 from _weakref import ReferenceType
+from abc import abstractmethod, ABCMeta
 from functools import total_ordering
 from queue import PriorityQueue
 from typing import List, Optional, ClassVar, Final, Iterable, TypeVar, Generic, Set
@@ -8,96 +9,61 @@ from owlapy.io import OWLObjectRenderer
 from owlapy.model import OWLClassExpression
 from owlapy.render import DLSyntaxRenderer
 from owlapy.utils import as_index
+from superprop import super_prop
 from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer
 from .core.owl.utils import OrderedOWLObject
 
 _N = TypeVar('_N')
 
 
-class OENode(AbstractNode):
-    __slots__ = '_concept', '_parent_ref', '_quality', '_heuristic', '_horizontal_expansion', '_len', \
-                '_refinement_count', '_individuals_count', '__weakref__'
+# noinspection PyUnresolvedReferences
+# noinspection PyDunderSlots
+class _NodeConcept(metaclass=ABCMeta):
+    __slots__ = ()
 
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxRenderer()
 
-    _parent_ref: Optional[ReferenceType]  # Optional[ReferenceType[OENode]]
-    _quality: Optional[float]
-    _heuristic: Optional[float]
-    _horizontal_expansion: int
-    _len: int
-    _refinement_count: int
-    _individuals_count: Optional[int]
     _concept: OWLClassExpression
 
-    def __init__(self, concept: OWLClassExpression, length: int, parent_node: Optional['OENode'] = None,
-                 is_root: bool = False):
+    @abstractmethod
+    def __init__(self, concept: OWLClassExpression):
         self._concept = concept
-        if is_root:
-            self._parent_ref = None
-        else:
-            self._parent_ref = weakref.ref(parent_node)
-        self._quality = None
-        self._heuristic = None
-        self._horizontal_expansion = length
+
+    @property
+    def concept(self) -> OWLClassExpression:
+        return self._concept
+
+    @abstractmethod
+    def __str__(self):
+        return _NodeConcept.renderer.render(self.concept)
+
+
+# noinspection PyUnresolvedReferences
+# noinspection PyDunderSlots
+class _NodeLen(metaclass=ABCMeta):
+    __slots__ = ()
+
+    _len: int
+
+    @abstractmethod
+    def __init__(self, length: int):
         self._len = length
-        self._refinement_count = 0
-        self._individuals_count = None
-        super().__init__()
-
-    @property
-    def is_root(self) -> bool:
-        return self._parent_ref is None
-
-    @property
-    def quality(self) -> float:
-        return self._quality
-
-    @quality.setter
-    def quality(self, v: float):
-        if self._quality is not None:
-            raise ValueError("Node already evaluated", self)
-        self._quality = v
-
-    @property
-    def heuristic(self) -> float:
-        return self._heuristic
-
-    @heuristic.setter
-    def heuristic(self, v: float):
-        if v is not None and self._heuristic is not None:
-            raise ValueError("Node heuristic already calculated", self)
-        self._heuristic = v
-
-    @property
-    def h_exp(self) -> int:
-        return self._horizontal_expansion
-
-    def increment_h_exp(self):
-        self._heuristic = None
-        self._horizontal_expansion += 1
 
     @property
     def len(self) -> int:
         return self._len
 
-    @property
-    def parent_node(self) -> Optional['OENode']:
-        if self._parent_ref is None:
-            return None
-        return self._parent_ref()
 
-    @property
-    def refinement_count(self) -> int:
-        return self._refinement_count
+# noinspection PyUnresolvedReferences
+# noinspection PyDunderSlots
+class _NodeIndividualsCount(metaclass=ABCMeta):
+    __slots__ = ()
 
-    @refinement_count.setter
-    def refinement_count(self, v: int):
-        self._heuristic = None
-        self._refinement_count = v
+    _individuals_count: Optional[int]
 
-    @property
-    def concept(self) -> OWLClassExpression:
-        return self._concept
+    @abstractmethod
+    def __init__(self, individuals_count: Optional[int] = None):
+        self._individuals_count = individuals_count
 
     @property
     def individuals_count(self) -> Optional[int]:
@@ -109,6 +75,59 @@ class OENode(AbstractNode):
             raise ValueError("Individuals already counted", self)
         self._individuals_count = v
 
+    @abstractmethod
+    def __str__(self):
+        return f'|Indv.|:{self.individuals_count}'
+
+
+# noinspection PyUnresolvedReferences
+# noinspection PyDunderSlots
+class _NodeHeuristic(metaclass=ABCMeta):
+    __slots__ = ()
+
+    _heuristic: Optional[float]
+
+    @abstractmethod
+    def __init__(self, heuristic: Optional[float] = None):
+        self._heuristic = None
+
+    @property
+    def heuristic(self) -> float:
+        return self._heuristic
+
+    @heuristic.setter
+    def heuristic(self, v: float):
+        if v is not None and self._heuristic is not None:
+            raise ValueError("Node heuristic already calculated", self)
+        self._heuristic = v
+
+    @abstractmethod
+    def __str__(self):
+        return f'Heuristic:{self.heuristic}'
+
+
+class _NodeParentRef(Generic[_N], metaclass=ABCMeta):
+    __slots__ = ()
+
+    _parent_ref: Optional[ReferenceType]  # Optional[ReferenceType[OENode]]
+
+    @abstractmethod
+    def __init__(self, parent_node: Optional[_N] = None, is_root: bool = False):
+        if is_root:
+            self._parent_ref = None
+        else:
+            self._parent_ref = weakref.ref(parent_node)
+
+    @property
+    def is_root(self) -> bool:
+        return self._parent_ref is None
+
+    @property
+    def parent_node(self) -> Optional[_N]:
+        if self._parent_ref is None:
+            return None
+        return self._parent_ref()
+
     def depth(self) -> int:
         d = 0
         n = self
@@ -119,12 +138,168 @@ class OENode(AbstractNode):
             d += 1
         return d
 
+    @abstractmethod
     def __str__(self):
-        addr = hex(id(self))
-        addr = addr[0:2] + addr[6:-1]
-        return f'OENode at {addr}\t{OENode.renderer.render(self.concept)}\tQuality:{self.quality}\t' \
-               f'Heuristic:{self.heuristic}\tDepth:{self.depth()}\tH_exp:{self.h_exp}\t' \
-               f'|RC|:{self.refinement_count}\t|Indv.|:{self.individuals_count}'
+        return f'Depth:{self.depth()}'
+
+
+# noinspection PyUnresolvedReferences
+# noinspection PyDunderSlots
+class _NodeQuality(metaclass=ABCMeta):
+    __slots__ = ()
+
+    _quality: Optional[float]
+
+    @abstractmethod
+    def __init__(self, quality: Optional[float] = None):
+        self._quality = quality
+
+    @property
+    def quality(self) -> float:
+        return self._quality
+
+    @quality.setter
+    def quality(self, v: float):
+        if self._quality is not None:
+            raise ValueError("Node already evaluated", self)
+        self._quality = v
+
+    @abstractmethod
+    def __str__(self):
+        return f'Quality:{self.quality}'
+
+
+class Node(AbstractNode, _NodeConcept, _NodeLen, _NodeIndividualsCount):
+    __slots__ = '_concept', '_len', '_individuals_count'
+
+    def __init__(self, concept: OWLClassExpression, length: int):
+        _NodeConcept.__init__(self, concept)
+        _NodeLen.__init__(self, length)
+        _NodeIndividualsCount.__init__(self)
+        AbstractNode.__init__(self)
+
+    def __str__(self):
+        return "\t".join((
+            AbstractNode.__str__(self),
+            _NodeConcept.__str__(self),
+            _NodeIndividualsCount.__str__(self),
+        ))
+
+
+class OEHNode(metaclass=ABCMeta):
+    @property
+    @abstractmethod
+    def quality(self) -> Optional[float]:
+        pass
+
+    @property
+    @abstractmethod
+    def h_exp(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
+    def is_root(self) -> bool:
+        pass
+
+    @property
+    @abstractmethod
+    def parent_node(self: _N) -> Optional[_N]:
+        pass
+
+    @property
+    @abstractmethod
+    def refinement_count(self) -> int:
+        pass
+
+
+class OENode(AbstractNode, _NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeHeuristic,
+             _NodeParentRef['OENode'], OEHNode):
+    __slots__ = '_concept', '_len', '_individuals_count', '_quality', '_heuristic', \
+                '_parent_ref', '_horizontal_expansion', \
+                '_refinement_count', '__weakref__'
+
+    renderer: ClassVar[OWLObjectRenderer] = DLSyntaxRenderer()
+
+    _horizontal_expansion: int
+    _refinement_count: int
+
+    def __init__(self, concept: OWLClassExpression, length: int, parent_node: Optional['OENode'] = None,
+                 is_root: bool = False):
+        _NodeConcept.__init__(self, concept)
+        _NodeLen.__init__(self, length)
+        _NodeIndividualsCount.__init__(self)
+        _NodeQuality.__init__(self)
+        _NodeHeuristic.__init__(self)
+        _NodeParentRef.__init__(self, parent_node, is_root)
+        self._horizontal_expansion = length
+        self._refinement_count = 0
+        AbstractNode.__init__(self)
+
+    @property
+    def h_exp(self) -> int:
+        return self._horizontal_expansion
+
+    def increment_h_exp(self):
+        self._heuristic = None
+        self._horizontal_expansion += 1
+
+    @property
+    def refinement_count(self) -> int:
+        return self._refinement_count
+
+    @refinement_count.setter
+    def refinement_count(self, v: int):
+        self._heuristic = None
+        self._refinement_count = v
+
+    def __str__(self):
+        return "\t".join((
+            AbstractNode.__str__(self),
+            _NodeConcept.__str__(self),
+            _NodeQuality.__str__(self),
+            _NodeHeuristic.__str__(self),
+            _NodeParentRef.__str__(self),
+            'H_exp:{self.h_exp}',
+            f'|RC|:{self.refinement_count}',
+            _NodeIndividualsCount.__str__(self),
+        ))
+
+
+class LBLNode(OENode):
+    __slots__ = '_children'
+
+    def __init__(self, concept: OWLClassExpression, length: int, individuals, parent_node: Optional['LBLNode'] = None,
+                 is_root: bool = False):
+        super().__init__(concept=concept, length=length, parent_node=parent_node, is_root=is_root)
+        self._children = set()
+        self._individuals = individuals
+
+    def add_child(self, n):
+        self._children.add(n)
+
+    def remove_child(self, n):
+        self._children.remove(n)
+
+    @property
+    def children(self):
+        return self._children
+
+    @property
+    def parent_node(self) -> Optional['LBLNode']:
+        return super_prop(super()).parent_node
+
+    @parent_node.setter
+    def parent_node(self, parent_node: Optional['LBLNode']):
+        self._parent_ref = weakref.ref(parent_node)
+
+    @property
+    def individuals(self):
+        return self._individuals
+
+    @property
+    def individuals_count(self) -> Optional[int]:
+        return len(self._individuals)
 
 
 @total_ordering
@@ -186,44 +361,30 @@ def _node_and_all_children(n: _N) -> Iterable[_N]:
         yield from _node_and_all_children(c)
 
 
-class Node(AbstractNode):
-    __slots__ = '_concept', '_len', '_individuals_count'
+class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
+    @abstractmethod
+    def get_most_promising(self) -> _N:
+        pass
 
-    renderer: ClassVar[OWLObjectRenderer] = DLSyntaxRenderer()
+    @abstractmethod
+    def add_node(self, node: _N, parent_node: _N):
+        pass
 
-    _individuals_count: Optional[int]
-    _concept: OWLClassExpression
-    _len: int
+    @abstractmethod
+    def clean(self):
+        pass
 
-    def __init__(self, concept: OWLClassExpression, length: int):
-        self._concept = concept
-        self._len = length
-        self._individuals_count = None
-        super().__init__()
+    @abstractmethod
+    def get_top_n(self, n: int) -> List[_N]:
+        pass
 
-    @property
-    def concept(self) -> OWLClassExpression:
-        return self._concept
+    @abstractmethod
+    def show_search_tree(self, root_concept: OWLClassExpression, heading_step: str):
+        pass
 
-    @property
-    def len(self) -> int:
-        return self._len
-
-    @property
-    def individuals_count(self) -> Optional[int]:
-        return self._individuals_count
-
-    @individuals_count.setter
-    def individuals_count(self, v: int):
-        if self._individuals_count is not None:
-            raise ValueError("Individuals already counted", self)
-        self._individuals_count = v
-
-    def __str__(self):
-        addr = hex(id(self))
-        addr = addr[0:2] + addr[6:-1]
-        return f'Node at {addr}\t{Node.renderer.render(self.concept)}\t' \
-               f'|Indv.|:{self.individuals_count}'
+    @abstractmethod
+    def add_root(self, node: _N):
+        pass
 
 
 class SearchTreePriorityQueue(AbstractTree):
