@@ -1,7 +1,7 @@
 import logging
 from abc import ABCMeta, abstractmethod
 
-from .abstracts import BaseRefinement, AbstractScorer, AbstractTree, AbstractNode, AbstractHeuristic, \
+from .abstracts import BaseRefinement, AbstractScorer, AbstractNode, AbstractHeuristic, \
     AbstractKnowledgeBase, AbstractLearningProblem
 from typing import List, Set, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar
 
