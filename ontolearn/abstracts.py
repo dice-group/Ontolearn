@@ -236,24 +236,24 @@ class BaseRefinement(Generic[_N], metaclass=ABCMeta):
         return self.kb.cl(concept)
 
 
-class AbstractTree(Generic[_N], metaclass=ABCMeta):
-    __slots__ = ()
-
-    @abstractmethod
-    def __init__(self):
-        pass
-
-    @abstractmethod
-    def clean(self):
-        pass
-
-    @abstractmethod
-    def add(self, node: _N):
-        pass
-
-    @abstractmethod
-    def __len__(self) -> int:
-        pass
+# class AbstractTree(Generic[_N], metaclass=ABCMeta):
+#     __slots__ = ()
+#
+#     @abstractmethod
+#     def __init__(self):
+#         pass
+#
+#     @abstractmethod
+#     def clean(self):
+#         pass
+#
+#     @abstractmethod
+#     def add(self, node: _N):
+#         pass
+#
+#     @abstractmethod
+#     def __len__(self) -> int:
+#         pass
 
 
 class AbstractNode(metaclass=ABCMeta):

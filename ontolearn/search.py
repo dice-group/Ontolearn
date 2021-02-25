@@ -8,7 +8,7 @@ from owlapy.io import OWLObjectRenderer
 from owlapy.model import OWLClassExpression
 from owlapy.render import DLSyntaxRenderer
 from owlapy.utils import as_index
-from .abstracts import AbstractTree, AbstractNode
+from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer
 from .core.owl.utils import OrderedOWLObject
 
 _N = TypeVar('_N')
