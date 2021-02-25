@@ -3,12 +3,12 @@ import time
 from contextlib import contextmanager
 from functools import total_ordering, singledispatchmethod
 from itertools import islice
-from typing import Set, Iterable, Optional, TypeVar, Final, Dict
+from typing import Set, Iterable, Optional, TypeVar, Final, Dict, List
 
 import pandas as pd
 from sortedcontainers import SortedSet
 
-from ontolearn.search import HeuristicOrderedNode, OENode, Node, TreeNode, LengthOrderedNode
+from ontolearn.search import HeuristicOrderedNode, OENode, Node, TreeNode, LengthOrderedNode, LBLNode, LBLSearchTree
 from . import KnowledgeBase
 from .abstracts import AbstractScorer, BaseRefinement, AbstractLearningProblem, AbstractHeuristic
 from .base_concept_learner import BaseConceptLearner
@@ -351,59 +351,104 @@ class LengthBaseLearner(BaseConceptLearner):
     Propose a Heuristic func based on embeddings
     Use LengthBasedRef.
     """
+    __slots__ = 'search_tree', 'concepts_to_ignore', 'min_length'
 
-    def __init__(self, *, knowledge_base, refinement_operator=None, search_tree=None, quality_func=None,
-                 heuristic_func=None, iter_bound=10_000,
-                 verbose=False, terminate_on_goal=False, max_num_of_concepts_tested=10_000, min_length=1,
-                 ignored_concepts=None):
+    name = 'LengthBaseLearner'
+
+    kb: KnowledgeBase
+    search_tree: LBLSearchTree
+    min_length: int
+
+    def __init__(self, *,
+                 knowledge_base: KnowledgeBase,
+                 learning_problem: PosNegLPStandard,
+                 refinement_operator: Optional[BaseRefinement] = None,
+                 search_tree: Optional[LBLSearchTree] = None,
+                 quality_func: Optional[AbstractScorer] = None,
+                 heuristic_func: Optional[AbstractHeuristic] = None,
+                 iter_bound: int = 10_000,
+                 terminate_on_goal: bool = False,
+                 max_num_of_concepts_tested: int = 10_000,
+                 min_length: int = 1,
+                 ignored_concepts = None):
 
         if ignored_concepts is None:
             ignored_concepts = {}
         if refinement_operator is None:
             refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base)
         if quality_func is None:
-            quality_func = F1()
+            quality_func = F1(learning_problem=learning_problem)
         if heuristic_func is None:
             heuristic_func = CELOEHeuristic()
         if search_tree is None:
-            search_tree = SearchTreePriorityQueue()
+            search_tree = SearchTreePriorityQueue(quality_func=quality_func, heuristic_func=heuristic_func)
 
-        super().__init__(knowledge_base=knowledge_base, refinement_operator=refinement_operator,
-                         search_tree=search_tree,
+        super().__init__(knowledge_base=knowledge_base,
+                         learning_problem=learning_problem,
+                         refinement_operator=refinement_operator,
                          quality_func=quality_func,
                          heuristic_func=heuristic_func,
-                         ignored_concepts=ignored_concepts,
                          terminate_on_goal=terminate_on_goal,
-                         iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested, verbose=verbose,
-                         name='LengthBaseLearner')
+                         iter_bound=iter_bound,
+                         max_num_of_concepts_tested=max_num_of_concepts_tested
+                         )
+        self.search_tree = search_tree
+        self.concepts_to_ignore = ignored_concepts
         self.min_length = min_length
 
-    def next_node_to_expand(self, step):
+    def get_node(self, c: OWLClassExpression, **kwargs):
+        return LBLNode(c, self.kb.cl(c), self.kb.individuals_set(c), **kwargs)
+
+    def next_node_to_expand(self, step) -> LBLNode:
         return self.search_tree.get_most_promising()
 
-    def downward_refinement(self, node: Node):
-        assert isinstance(node, Node)
-        refinements = (self.operator.get_node(i, parent_node=node) for i in
-                       self.operator.refine(node, max_length=len(node) + 1 + self.min_length)
-                       if i.str not in self.concepts_to_ignore)
+    def downward_refinement(self, node: LBLNode):
+        assert isinstance(node, LBLNode)
+        refinements = (self.get_node(i, parent_node=node) for i in
+                       self.operator.refine(node.concept, max_length=node.len + 1 + self.min_length)
+                       if i not in self.concepts_to_ignore)
         return refinements
 
-    def fit(self, pos: Set[str], neg: Set[str], ignore: Set[str] = None):
+    def fit(self):
         """
         Find hypotheses that explain pos and neg.
         """
-        self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances, ignore=ignore)
         self.start_time = time.time()
+        root = self.get_node(self.start_class, is_root=True)
+        self.search_tree.add_root(node=root)
         for j in range(1, self.iter_bound):
             most_promising = self.next_node_to_expand(j)
             for ref in self.downward_refinement(most_promising):
-                goal_found = self.search_tree._add_node(node=ref, parent_node=most_promising)
+                goal_found = self.search_tree.add_node(node=ref, parent_node=most_promising)
                 if goal_found:
                     if self.terminate_on_goal:
                         return self.terminate()
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 return self.terminate()
         return self.terminate()
+
+    def clean(self):
+        self.quality_func.clean()
+        self.heuristic_func.clean()
+        self.search_tree.clean()
+        self.concepts_to_ignore.clear()
+
+    def best_hypotheses(self, n=10) -> Iterable[LBLNode]:
+        yield from self.search_tree.get_top_n(n)
+
+    def show_search_tree(self, heading_step: str, top_n: int = 10) -> None:
+        rdr = DLSyntaxRenderer()
+
+        self.search_tree.show_search_tree(root_concept=self.start_class, heading_step=heading_step)
+
+        print('######## ', heading_step, 'step Best Hypotheses ###########')
+
+        predictions = list(self.best_hypotheses(top_n))
+        for ith, node in enumerate(predictions):
+            print('{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(ith + 1, rdr.render(node.concept),
+                                                              type(self.quality_func).name, node.quality,
+                                                              node.heuristic))
+        print('######## Search Tree ###########\n')
 
 
 class CustomConceptLearner(CELOE):

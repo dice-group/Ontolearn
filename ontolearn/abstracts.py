@@ -383,7 +383,7 @@ class AbstractDrill(ABC):
         @return:
         """
         if self.verbose > 1:
-            self.search_tree.show_search_tree(t)
+            self.search_tree.show_search_tree(self.start_class, t)
         return self.search_tree.get_most_promising()
 
     def form_experiences(self, state_pairs: List, rewards: List) -> None:
