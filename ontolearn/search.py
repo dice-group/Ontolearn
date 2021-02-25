@@ -3,7 +3,7 @@ from _weakref import ReferenceType
 from abc import abstractmethod, ABCMeta
 from functools import total_ordering
 from queue import PriorityQueue
-from typing import List, Optional, ClassVar, Final, Iterable, TypeVar, Generic, Set
+from typing import List, Optional, ClassVar, Final, Iterable, TypeVar, Generic, Set, Tuple, Dict
 
 from owlapy.io import OWLObjectRenderer
 from owlapy.model import OWLClassExpression
@@ -330,6 +330,7 @@ class LengthOrderedNode(Generic[_N]):
 
 @total_ordering
 class HeuristicOrderedNode(Generic[_N]):
+    """A comparator that orders the Nodes based on Heuristic, then OrderedOWLObject of the concept"""
     __slots__ = 'node'
 
     node: Final[_N]
@@ -387,97 +388,106 @@ class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
         pass
 
 
-class SearchTreePriorityQueue(AbstractTree):
+class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
     """
 
     Search tree based on priority queue.
 
-    Parameters
-    ----------
-    quality_func : An instance of a subclass of AbstractScorer that measures the quality of a node.
-    heuristic_func : An instance of a subclass of AbstractScorer that measures the promise of a node.
+    Args:
+        quality_func: An instance of a subclass of AbstractScorer that measures the quality of a node.
+        heuristic_func: An instance of a subclass of AbstractScorer that measures the promise of a node.
 
-    Attributes
-    ----------
-    quality_func : An instance of a subclass of AbstractScorer that measures the quality of a node.
-    heuristic_func : An instance of a subclass of AbstractScorer that measures the promise of a node.
-    items_in_queue: An instance of PriorityQueue Class.
-    .nodes: A dictionary where keys are string representation of nodes and values are corresponding node objects.
-    nodes: A property method for ._nodes.
-    expressionTests: not being used .
-    str_to_obj_instance_mapping: not being used.
+    Attributes:
+        quality_func: An instance of a subclass of AbstractScorer that measures the quality of a node.
+        heuristic_func: An instance of a subclass of AbstractScorer that measures the promise of a node.
+        items_in_queue: An instance of PriorityQueue Class.
+        .nodes: A dictionary where keys are string representation of nodes and values are corresponding node objects.
+        nodes: A property method for ._nodes.
+        expressionTests: not being used .
+        str_to_obj_instance_mapping: not being used.
     """
 
-    def __init__(self, quality_func=None, heuristic_func=None):
-        super().__init__(quality_func, heuristic_func)
+    quality_func: AbstractScorer
+    heuristic_func: AbstractHeuristic
+    nodes: Dict[OWLClassExpression, LBLNode]
+    items_in_queue: 'PriorityQueue[Tuple[float, HeuristicOrderedNode[LBLNode]]]'
+
+    def __init__(self, quality_func, heuristic_func):
+        self.quality_func = quality_func
+        self.heuristic_func = heuristic_func
+        self.nodes = dict()
         self.items_in_queue = PriorityQueue()
 
-    def add(self, n: Node):
+    def add(self, n: LBLNode):
         """
         Append a node into the search tree.
-        Parameters
-        ----------
-        n : A Node object
-        Returns
-        -------
-        None
-        """
-        self.items_in_queue.put((-n.heuristic, n.concept.str))  # gets the smallest one.
-        self.nodes[n.concept.str] = n
 
-    def add_node(self, *, node: Node, parent_node: Node):
+        Args:
+            n: A Node object
+
+        Returns:
+            None
+        """
+        self.items_in_queue.put((-n.heuristic, HeuristicOrderedNode(n)))  # gets the smallest one.
+        self.nodes[n.concept] = n
+
+    def add_root(self, *, node: LBLNode):
+        assert node.is_root
+        assert not self.nodes
+        self.quality_func.apply(node, node.individuals)
+        self.heuristic_func.apply(node)
+        self.items_in_queue.put((-node.heuristic, HeuristicOrderedNode(node)))  # gets the smallest one.
+        self.nodes[node.concept] = node
+
+    def add_node(self, *, node: LBLNode, parent_node: LBLNode):
         """
         Add a node into the search tree after calculating heuristic value given its parent.
 
-        Parameters
-        ----------
-        node : A Node object
-        parent_node : A Node object
+        Args:
+            node: A Node object
+            parent_node: A Node object
 
-        Returns
-        -------
-        True if node is a "goal node", i.e. quality_metric(node)=1.0
-        False if node is a "weak node", i.e. quality_metric(node)=0.0
-        None otherwise
+        Returns:
+            True if node is a "goal node", i.e. quality_metric(node)=1.0
+            False if node is a "weak node", i.e. quality_metric(node)=0.0
+            None otherwise
 
-        Notes
-        -----
-        node is a refinement of refined_node
+        Notes:
+            node is a refinement of refined_node
         """
-        if node.concept.str in self.nodes and node.parent_node != parent_node:
+        if node.concept in self.nodes and node.parent_node != parent_node:
             old_heuristic = node.heuristic
-            self.heuristic_func.apply(node, parent_node=parent_node)
+            self.heuristic_func.apply(node)
             new_heuristic = node.heuristic
             if new_heuristic > old_heuristic:
                 node.parent_node.remove_child(node)
                 node.parent_node = parent_node
                 parent_node.add_child(node)
-                self.items_in_queue.put((-node.heuristic, node.concept.str))  # gets the smallest one.
-                self.nodes[node.concept.str] = node
+                self.items_in_queue.put((-node.heuristic, HeuristicOrderedNode(node)))  # gets the smallest one.
+                self.nodes[node.concept] = node
         else:
             # @todos reconsider it.
-            self.quality_func.apply(node)
+            self.quality_func.apply(node, node.individuals)
             if node.quality == 0:
                 return False
-            self.heuristic_func.apply(node, parent_node=parent_node)
-            self.items_in_queue.put((-node.heuristic, node.concept.str))  # gets the smallest one.
-            self.nodes[node.concept.str] = node
+            self.heuristic_func.apply(node)
+            self.items_in_queue.put((-node.heuristic, HeuristicOrderedNode(node)))  # gets the smallest one.
+            self.nodes[node.concept] = node
             parent_node.add_child(node)
             if node.quality == 1:
                 return True
 
-    def get_most_promising(self) -> Node:
+    def get_most_promising(self) -> LBLNode:
         """
         Gets the current most promising node from Queue.
 
-        Returns
-        -------
-        node: A node object
+        Returns:
+            node: A node object
         """
         _, most_promising_str = self.items_in_queue.get()  # get
         try:
-            node = self.nodes[most_promising_str]
-            self.items_in_queue.put((-node.heuristic, node.concept.str))  # put again into queue.
+            node = self.nodes[most_promising_str.node.concept]
+            self.items_in_queue.put((-node.heuristic, HeuristicOrderedNode(node)))  # put again into queue.
             return node
         except KeyError:
             print(most_promising_str, 'is not found')
@@ -486,13 +496,12 @@ class SearchTreePriorityQueue(AbstractTree):
                 print(k)
             exit(1)
 
-    def get_top_n(self, n: int, key='quality') -> List[Node]:
+    def get_top_n(self, n: int, key='quality') -> List[LBLNode]:
         """
         Gets the top n nodes determined by key from the search tree.
 
-        Returns
-        -------
-        top_n_predictions: A list of node objects
+        Returns:
+            top_n_predictions: A list of node objects
         """
 
         if key == 'quality':
@@ -500,7 +509,7 @@ class SearchTreePriorityQueue(AbstractTree):
         elif key == 'heuristic':
             top_n_predictions = sorted(self.nodes.values(), key=lambda node: node.heuristic, reverse=True)[:n]
         elif key == 'length':
-            top_n_predictions = sorted(self.nodes.values(), key=lambda node: len(node), reverse=True)[:n]
+            top_n_predictions = sorted(self.nodes.values(), key=lambda node: node.len, reverse=True)[:n]
         else:
             print('Wrong Key:{0}\tProgram exist.'.format(key))
             raise KeyError
@@ -508,7 +517,27 @@ class SearchTreePriorityQueue(AbstractTree):
 
     def clean(self):
         self.items_in_queue = PriorityQueue()
-        self._nodes.clear()
+        self.nodes.clear()
+
+    def show_search_tree(self, root_concept: OWLClassExpression, heading_step: str):
+        rdr = DLSyntaxRenderer()
+
+        print('######## ', heading_step, 'step Search Tree ###########')
+
+        def node_as_length_ordered_concept(node: LBLNode):
+            return LengthOrderedNode(node, node.len)
+
+        def print_partial_tree_recursive(node: LBLNode, depth: int = 0):
+            render_str = rdr.render(node.concept)
+
+            depths = "`" * depth
+
+            print("%s %s \t Q:%f Heur:%s" % (depths, render_str, node.quality, node.heuristic))
+
+            for c in sorted(node.children, key=node_as_length_ordered_concept):
+                print_partial_tree_recursive(c, depth + 1)
+
+        print_partial_tree_recursive(self.nodes[root_concept])
 
 
 _TN = TypeVar('_TN', bound='TreeNode')
