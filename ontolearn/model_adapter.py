@@ -1,6 +1,6 @@
 import inspect
 import logging
-from typing import Iterable, TypeVar
+from typing import Iterable, TypeVar, Type, Any, Callable
 
 from ontolearn.abstracts import AbstractHeuristic, AbstractScorer, BaseRefinement, AbstractKnowledgeBase, \
     AbstractLearningProblem, AbstractNode
@@ -119,6 +119,20 @@ class ModelAdapter:
         assert issubclass(self.learner_type, BaseConceptLearner)
         self.learner_args = _get_matching_opts(self.learner_type, {}, {}, kwargs)
 
+        other_components = dict()
+        clearkeys = []
+        for k in list(kwargs):
+            if k in kwargs and k.endswith("_type"):
+                clearkeys.append(k)
+                cls = kwargs[k]
+                assert issubclass(cls, object)
+                other_components[k[:-5]] = (cls, _get_matching_opts(cls, {}, {}, kwargs))
+
+        for k in clearkeys:
+            kwargs.pop(k)
+
+        self.other_components = other_components
+
         if kwargs:
             logger.warning("Unused parameters: %s", kwargs)
 
@@ -181,8 +195,24 @@ class ModelAdapter:
             }, self.op_args, kwargs)
         operator = self.op_type(**opts)
 
+        other_instances = dict()
+        for k in self.other_components:
+            cls = self.other_components[k][0]
+            logger.debug("Instantiating %s of type %s", k, cls)
+
+            # noinspection PyArgumentList
+            inst = cls(**_get_matching_opts(cls, {
+                'knowledge_base': target_kb,
+                'learning_problem': lp,
+                'refinement_operator': operator,
+                'quality_func': qual,
+                'heuristic_func': heur,
+            }, self.other_components[k][1], kwargs))
+            other_instances[k] = inst
+
         learner = self.learner_type(**_get_matching_opts(
             self.learner_type, {
+                **other_instances,
                 'knowledge_base': target_kb,
                 'learning_problem': lp,
                 'refinement_operator': operator,
