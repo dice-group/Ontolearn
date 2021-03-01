@@ -172,7 +172,7 @@ class _NodeQuality(metaclass=ABCMeta):
         return f'Quality:{self.quality}'
 
 
-class Node(AbstractNode, _NodeConcept, _NodeLen, _NodeIndividualsCount):
+class Node(_NodeConcept, _NodeLen, _NodeIndividualsCount, AbstractNode):
     __slots__ = '_concept', '_len', '_individuals_count'
 
     def __init__(self, concept: OWLClassExpression, length: int):
@@ -216,8 +216,8 @@ class OEHNode(metaclass=ABCMeta):
         pass
 
 
-class OENode(AbstractNode, _NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeHeuristic,
-             _NodeParentRef['OENode'], OEHNode):
+class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeHeuristic,
+             _NodeParentRef['OENode'], AbstractNode, OEHNode):
     __slots__ = '_concept', '_len', '_individuals_count', '_quality', '_heuristic', \
                 '_parent_ref', '_horizontal_expansion', \
                 '_refinement_count', '__weakref__'
