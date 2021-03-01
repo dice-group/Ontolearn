@@ -92,7 +92,7 @@ class _NodeHeuristic(metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, heuristic: Optional[float] = None):
-        self._heuristic = None
+        self._heuristic = heuristic
 
     @property
     def heuristic(self) -> float:
