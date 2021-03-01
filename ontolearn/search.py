@@ -16,6 +16,9 @@ from .core.owl.utils import OrderedOWLObject
 _N = TypeVar('_N')
 
 
+# Due to a bug in Python, we cannot use the slots like we should be able to. Hence, the attribute access is also
+# invalid but there is nothing we can do. See https://mail.python.org/pipermail/python-list/2002-December/126637.html
+
 # noinspection PyUnresolvedReferences
 # noinspection PyDunderSlots
 class _NodeConcept(metaclass=ABCMeta):
