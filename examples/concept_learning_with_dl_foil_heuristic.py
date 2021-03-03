@@ -1,7 +1,14 @@
 import json
+import os
+
 from ontolearn import KnowledgeBase
 from ontolearn.concept_learner import CustomConceptLearner
 from ontolearn.heuristics import DLFOILHeuristic
+
+try:
+    os.chdir("examples")
+except FileNotFoundError:
+    pass
 
 with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)

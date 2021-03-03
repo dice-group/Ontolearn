@@ -1,4 +1,5 @@
 import json
+import os
 import random
 
 from ontolearn import KnowledgeBase
@@ -13,6 +14,11 @@ from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.utils import setup_logging
 
 setup_logging()
+
+try:
+    os.chdir("examples")
+except FileNotFoundError:
+    pass
 
 with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)

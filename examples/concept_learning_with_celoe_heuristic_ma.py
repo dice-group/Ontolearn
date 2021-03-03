@@ -1,4 +1,5 @@
 import json
+import os
 import random
 
 from ontolearn.model_adapter import ModelAdapter
@@ -7,6 +8,11 @@ from owlapy.model import OWLClass, OWLNamedIndividual
 from ontolearn.utils import setup_logging
 
 setup_logging()
+
+try:
+    os.chdir("examples")
+except FileNotFoundError:
+    pass
 
 with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)
