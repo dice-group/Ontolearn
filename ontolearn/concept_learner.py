@@ -1,25 +1,24 @@
 import logging
 import time
 from contextlib import contextmanager
-from functools import total_ordering, singledispatchmethod
 from itertools import islice
-from typing import Set, Iterable, Optional, TypeVar, Final, Dict, List
+from typing import Iterable, Optional, TypeVar, Dict
 
 import pandas as pd
 from sortedcontainers import SortedSet
 
-from ontolearn.search import HeuristicOrderedNode, OENode, Node, TreeNode, LengthOrderedNode, LBLNode, LBLSearchTree
+from ontolearn.search import HeuristicOrderedNode, OENode, TreeNode, LengthOrderedNode, LBLNode, LBLSearchTree, \
+    QualityOrderedNode
 from . import KnowledgeBase
-from .abstracts import AbstractScorer, BaseRefinement, AbstractLearningProblem, AbstractHeuristic
+from .abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic
 from .base_concept_learner import BaseConceptLearner
 from .core.owl.utils import EvaluatedDescriptionSet, OrderedOWLObject, ConceptOperandSorter
 from .heuristics import CELOEHeuristic, OCELHeuristic
 from .learning_problem import PosNegLPStandard
 from .metrics import F1
-from owlapy.model import OWLClassExpression, OWLNamedIndividual
+from owlapy.model import OWLClassExpression
 from owlapy.render import DLSyntaxRenderer
-from owlapy.utils import as_index
-from .refinement_operators import ModifiedCELOERefinement, LengthBasedRefinement
+from .refinement_operators import LengthBasedRefinement
 from .search import SearchTreePriorityQueue
 from .utils import oplogging
 
@@ -29,39 +28,6 @@ _O = TypeVar('_O')
 pd.set_option('display.max_columns', 100)
 
 logger = logging.getLogger(__name__)
-
-
-# noinspection DuplicatedCode
-@total_ordering
-class QualityOrderedNode:
-    __slots__ = 'node'
-
-    node: Final[OENode]
-
-    def __init__(self, node: OENode):
-        self.node = node
-
-    def __lt__(self, other):
-        if self.node.quality is None:
-            raise ValueError("node not evaluated", self.node)
-        if other.node.quality is None:
-            raise ValueError("other node not evaluated", other.node)
-
-        if self.node.quality < other.node.quality:
-            return True
-        elif self.node.quality > other.node.quality:
-            return False
-        else:
-            if self.node.len > other.node.len:  # shorter is better, ie. greater
-                return True
-            elif self.node.len < other.node.len:
-                return False
-            else:
-                return OrderedOWLObject(as_index(self.node.concept)) < OrderedOWLObject(as_index(other.node.concept))
-
-    def __eq__(self, other):
-        return self.node == other.node
-
 
 _concept_operand_sorter = ConceptOperandSorter()
 
