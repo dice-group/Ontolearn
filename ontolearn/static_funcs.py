@@ -32,32 +32,6 @@ import time
 #         i.is_a.append(new_concept)
 
 
-def concepts_sorter(A, B):
-    if len(A) < len(B):
-        return A, B
-    if len(A) > len(B):
-        return B, A
-
-    args = [A, B]
-    args.sort(key=lambda ce: ce.str)
-    return args[0], args[1]
-
-
-def retrieve_concept_chain(node: AbstractNode) -> Iterable:
-    """
-    Given a node return its parent hierarchy
-    @param node:
-    @return:
-    """
-    hierarchy = deque()
-    if node.parent_node:
-        hierarchy.appendleft(node.parent_node)
-        while hierarchy[-1].parent_node is not None:
-            hierarchy.append(hierarchy[-1].parent_node)
-        hierarchy.appendleft(node)
-    return hierarchy
-
-
 def decompose_to_atomic(C):
     if C.is_atomic:
         return C.owl
