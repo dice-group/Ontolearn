@@ -1,8 +1,15 @@
+import os
+
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem_generator import LearningProblemGenerator
 from ontolearn.utils import setup_logging
 
 setup_logging("logging_test.conf")
+
+try:
+    os.chdir("examples")
+except FileNotFoundError:
+    pass
 
 path = '../KGs/Biopax/biopax.owl'
 

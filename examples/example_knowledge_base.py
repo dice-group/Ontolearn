@@ -1,6 +1,11 @@
 from ontolearn import KnowledgeBase
 import os
 
+try:
+    os.chdir("examples")
+except FileNotFoundError:
+    pass
+
 kb_path = '../KGs/Family/family-benchmark_rich_background.owl'
 kb = KnowledgeBase(kb_path)
 kb.save('family-benchmark_rich_background', rdf_format='nt')
