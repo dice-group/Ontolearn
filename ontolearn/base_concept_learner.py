@@ -1,18 +1,16 @@
 import logging
+import time
+import types
 from abc import ABCMeta, abstractmethod
-
-from .abstracts import BaseRefinement, AbstractScorer, AbstractNode, AbstractHeuristic, \
-    AbstractKnowledgeBase, AbstractLearningProblem
 from typing import List, Set, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar
+
+import numpy as np
+import pandas as pd
 
 from owlapy.model import OWLClassExpression, OWLNamedIndividual
 from owlapy.render import DLSyntaxRenderer
-from .search import Node
-import numpy as np
-import pandas as pd
-import time
-import random
-import types
+from .abstracts import BaseRefinement, AbstractScorer, AbstractNode, AbstractHeuristic, \
+    AbstractKnowledgeBase, AbstractLearningProblem
 from .static_funcs import decompose_to_atomic
 from .utils import oplogging
 
