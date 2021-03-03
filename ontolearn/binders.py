@@ -1,6 +1,6 @@
 import subprocess
 from typing import List, Dict
-from .utils import create_experiment_folder, create_logger
+from .utils import create_experiment_folder
 import re
 import time
 

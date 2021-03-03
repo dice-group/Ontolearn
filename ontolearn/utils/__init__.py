@@ -1,12 +1,12 @@
 import datetime
-import logging
 import os
 import pickle
-import time
-import matplotlib.pyplot as plt
-from sklearn.manifold import TSNE
 import random
+import time
+
+import matplotlib.pyplot as plt
 import pandas as pd
+from sklearn.manifold import TSNE
 
 from ontolearn.utils.log_config import setup_logging
 
@@ -72,38 +72,6 @@ def deserializer(*, path: str, serialized_name: str):
         obj_ = pickle.load(f)
     f.close()
     return obj_
-
-
-# self.logger = create_logger(name=self.name, p=self.storage_path, verbose=verbose)
-
-
-def create_logger(*, name, p, verbose):
-    """
-    @todos We should create a better logging.
-    @param name:
-    @param p:
-    @return:
-    """
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
-    # create file handler which logs even debug messages
-    fh = logging.FileHandler(p + '/info.log', 'w', 'utf-8')
-    fh.setLevel(logging.INFO)
-
-    # create console handler with a higher log level
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-
-    # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    ch.setFormatter(formatter)
-    fh.setFormatter(formatter)
-    # add the handlers to logger
-    if verbose > 1:
-        logger.addHandler(ch)  # do not print in console.
-    logger.addHandler(fh)
-
-    return logger
 
 
 def apply_TSNE_on_df(df) -> None:
