@@ -1,9 +1,9 @@
 from typing import Final
 
-from .abstracts import AbstractScorer, AbstractHeuristic
+from .abstracts import AbstractScorer, AbstractHeuristic, OEHNode
 import numpy as np
 
-from .search import Node, OENode, OEHNode
+from .search import Node, OENode
 
 
 class CELOEHeuristic(AbstractHeuristic[OEHNode]):
