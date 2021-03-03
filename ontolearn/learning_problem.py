@@ -4,7 +4,7 @@ from typing import Set, Optional
 
 from ontolearn import KnowledgeBase
 from ontolearn.abstracts import AbstractLearningProblem
-from owlapy.model import OWLNamedIndividual, OWLClass, OWLClassExpression
+from owlapy.model import OWLNamedIndividual
 from owlapy.render import DLSyntaxRenderer
 
 logger = logging.getLogger(__name__)

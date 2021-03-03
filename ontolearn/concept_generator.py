@@ -1,13 +1,10 @@
-from collections import Counter
-from typing import Iterable, List, Optional, AbstractSet, Dict
+from typing import Iterable, Optional, AbstractSet, Dict
 
 from ontolearn.core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
-from ontolearn.core.owl.utils import OrderedOWLObject
+from ontolearn.utils import parametrized_performance_debugger
 from owlapy.model import OWLClass, OWLClassExpression, OWLObjectComplementOf, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectPropertyExpression, OWLThing, \
     OWLNothing, OWLReasoner, OWLObjectProperty
-from owlapy.utils import as_index
-from ontolearn.utils import parametrized_performance_debugger
 
 
 class ConceptGenerator:
