@@ -1,140 +1,22 @@
 import random
-import time
-import weakref
-from _weakref import ReferenceType
 from abc import ABCMeta, abstractmethod, ABC
-from collections import OrderedDict
-from typing import Set, List, Tuple, Iterable, TypeVar, Optional, Type, Generic, ClassVar, cast
+from typing import ClassVar
+from typing import Set, List, Tuple, Iterable, Generator, SupportsFloat, TypeVar, Generic
 
 import numpy as np
-import pandas as pd
 import torch
 
-from .core.owl.utils import OWLClassExpressionLengthMetric
-from .core.owl.hierarchy import ClassHierarchy
-from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
-from .utils import balanced_sets, read_csv
 from owlapy.model import OWLClassExpression, OWLOntology
 from owlapy.utils import iter_count
-from .owlready2.utils import get_full_iri
-from typing import Set, Dict, List, Tuple, Iterable, Generator, SupportsFloat, TypeVar, Optional, Type, Generic
-import random
+from .data_struct import Experience
 from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
-import json
-import time
+from .owlready2.utils import get_full_iri
+from .utils import read_csv
 
 # random.seed(0)  # Note: a module should not set the seed
 
 _N = TypeVar('_N')
 
-
-# class AbstractNode(metaclass=ABCMeta):
-#     """Base class for Concept."""
-#     __slots__ = 'concept', '__heuristic_score', '__quality_score', \
-#                 '__refinement_count', '__depth', '__children', '__embeddings', \
-#                 '__parent_node_ref', '__is_root', '__weakref__'
-#
-#     concept: OWLClassExpression
-#     __parent_node_ref: Optional[ReferenceType]
-#     __quality_score: Optional[float]
-#     __heuristic_score: Optional[float]
-#     __is_root: bool
-#     __refinement_count: int
-#     __children: Set[_N]
-#
-#     @abstractmethod
-#     def __init__(self: _N, concept: OWLClassExpression, parent_node: Optional[_N] = None, is_root: bool = False):
-#         self.__quality_score = None
-#         self.__heuristic_score = None
-#         self.__is_root = is_root
-#         self.__refinement_count = 0
-#         self.concept = concept
-#         self.__embeddings = None
-#         self.__children = set()
-#         self.__parent_node_ref = None
-#         self.parent_node = parent_node
-#
-#     @abstractmethod
-#     def __eq__(self, other):
-#         raise NotImplementedError
-#
-#     @abstractmethod
-#     def __hash__(self):
-#         raise NotImplementedError
-#
-#     @property
-#     def parent_node(self) -> _N:
-#         return cast(type(self), self.__parent_node_ref()) if self.__parent_node_ref is not None else None
-#
-#     @parent_node.setter
-#     def parent_node(self, parent_node: _N):
-#         self.__parent_node_ref = weakref.ref(parent_node) if parent_node is not None else None
-#         if parent_node is None:
-#             assert self.__is_root
-#             self.__depth = 0
-#         else:
-#             assert not self.__is_root
-#             self.__depth = parent_node.depth + 1
-#             parent_node.add_child(self)
-#
-#     @property
-#     def embeddings(self):
-#         return self.__embeddings
-#
-#     @embeddings.setter
-#     def embeddings(self, value):
-#         self.__embeddings = value
-#
-#     @property
-#     def children(self) -> Set[_N]:
-#         return self.__children
-#
-#     @property
-#     def refinement_count(self) -> int:
-#         return self.__refinement_count
-#
-#     @refinement_count.setter
-#     def refinement_count(self, n: int):
-#         self.__refinement_count = n
-#
-#     @property
-#     def depth(self) -> int:
-#         return self.__depth
-#
-#     @depth.setter
-#     def depth(self, n: int):
-#         self.__depth = n
-#
-#     @property
-#     def heuristic(self) -> Optional[float]:
-#         return self.__heuristic_score
-#
-#     @heuristic.setter
-#     def heuristic(self, val: Optional[float]):
-#         if val is not None and self.__heuristic_score is not None:
-#             raise ValueError("Node heuristic already calculated", self)
-#         self.__heuristic_score = val
-#
-#     @property
-#     def quality(self) -> float:
-#         return self.__quality_score
-#
-#     @quality.setter
-#     def quality(self, val: float):
-#         self.__quality_score = val
-#
-#     @property
-#     def is_root(self) -> bool:
-#         return self.__is_root
-#
-#     def add_child(self: _N, n: _N) -> None:
-#         assert type(self) is type(n)
-#         print(n)
-#         self.__children.add(n)
-#
-#     def remove_child(self: _N, n: _N) -> None:
-#         assert type(self) is type(n)
-#         self.__children.remove(n)
 
 class AbstractLearningProblem(metaclass=ABCMeta):
     __slots__ = 'kb'
@@ -234,26 +116,6 @@ class BaseRefinement(Generic[_N], metaclass=ABCMeta):
             length of concept according to some metric
         """
         return self.kb.cl(concept)
-
-
-# class AbstractTree(Generic[_N], metaclass=ABCMeta):
-#     __slots__ = ()
-#
-#     @abstractmethod
-#     def __init__(self):
-#         pass
-#
-#     @abstractmethod
-#     def clean(self):
-#         pass
-#
-#     @abstractmethod
-#     def add(self, node: _N):
-#         pass
-#
-#     @abstractmethod
-#     def __len__(self) -> int:
-#         pass
 
 
 class AbstractNode(metaclass=ABCMeta):
