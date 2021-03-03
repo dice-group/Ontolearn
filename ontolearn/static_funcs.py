@@ -1,11 +1,7 @@
-from owlready2 import Ontology, World, Thing, Nothing
-from typing import Tuple, Dict, Iterable
-from .abstracts import AbstractNode
-from collections import deque
-from owlready2 import Thing, get_ontology, Not
-import types
-from .owlready2.utils import get_full_iri
 import time
+import types
+
+from owlready2 import Thing, Not
 
 
 # def apply_type_enrichment_from_iterable(concepts: Iterable[Concept], world: World) -> None:
