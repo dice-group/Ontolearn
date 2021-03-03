@@ -1,7 +1,6 @@
 import random
 from abc import ABCMeta, abstractmethod, ABC
-from typing import ClassVar
-from typing import Set, List, Tuple, Iterable, Generator, SupportsFloat, TypeVar, Generic
+from typing import Set, List, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional, Generator, SupportsFloat
 
 import numpy as np
 import torch
@@ -129,6 +128,33 @@ class AbstractNode(metaclass=ABCMeta):
         addr = hex(id(self))
         addr = addr[0:2] + addr[6:-1]
         return f'{type(self)} at {addr}'
+
+
+class OEHNode(metaclass=ABCMeta):
+    @property
+    @abstractmethod
+    def quality(self) -> Optional[float]:
+        pass
+
+    @property
+    @abstractmethod
+    def h_exp(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
+    def is_root(self) -> bool:
+        pass
+
+    @property
+    @abstractmethod
+    def parent_node(self: _N) -> Optional[_N]:
+        pass
+
+    @property
+    @abstractmethod
+    def refinement_count(self) -> int:
+        pass
 
 
 class AbstractKnowledgeBase(metaclass=ABCMeta):
