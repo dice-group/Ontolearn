@@ -62,11 +62,3 @@ class PosNegLPStandard(AbstractLearningProblem):
         self.kb_neg = kb_neg
         self.kb_all = kb_all
         self.kb_diff = kb_all.difference(kb_pos.union(kb_neg))
-
-        # unlabelled = kb_all.difference(kb_pos.union(kb_neg))
-        # self.quality_func.set_positive_examples(kb_pos)
-        # self.quality_func.set_negative_examples(kb_neg)
-
-        # self.heuristic_func.set_positive_examples(kb_pos)
-        # self.heuristic_func.set_negative_examples(kb_neg)
-        # self.heuristic_func.set_unlabelled_examples(unlabelled)
