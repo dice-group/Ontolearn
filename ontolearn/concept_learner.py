@@ -22,9 +22,6 @@ from .refinement_operators import LengthBasedRefinement
 from .search import SearchTreePriorityQueue
 from .utils import oplogging
 
-_N = TypeVar('_N')
-_O = TypeVar('_O')
-
 pd.set_option('display.max_columns', 100)
 
 logger = logging.getLogger(__name__)
@@ -336,7 +333,7 @@ class LengthBaseLearner(BaseConceptLearner):
                  terminate_on_goal: bool = False,
                  max_num_of_concepts_tested: int = 10_000,
                  min_length: int = 1,
-                 ignored_concepts = None):
+                 ignored_concepts=None):
 
         if ignored_concepts is None:
             ignored_concepts = {}
