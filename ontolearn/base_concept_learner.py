@@ -13,7 +13,7 @@ import pandas as pd
 import time
 import random
 import types
-from .static_funcs import retrieve_concept_chain, decompose_to_atomic
+from .static_funcs import decompose_to_atomic
 from .utils import oplogging
 
 _N = TypeVar('_N', bound=AbstractNode)
