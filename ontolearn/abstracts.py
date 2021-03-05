@@ -3,7 +3,7 @@ from functools import total_ordering
 from abc import ABCMeta, abstractmethod, ABC
 from owlready2 import ThingClass, Ontology
 from .util import get_full_iri, balanced_sets, read_csv
-from typing import Set, Dict, List, Tuple, Iterable
+from typing import Set, Dict, List, Tuple, Iterable, Generator, SupportsFloat
 import random
 import pandas as pd
 import torch
@@ -397,6 +397,7 @@ class AbstractTree(ABC):
         """
         assert path
         assert key
+        assert isinstance(n, int)
         pass
 
     def clean(self):
@@ -496,7 +497,7 @@ class AbstractDrill(ABC):
         if self.epsilon_min is None:
             self.epsilon_min = 0
         if self.num_epochs_per_replay is None:
-            self.num_epochs_per_replay = 10
+            self.num_epochs_per_replay = 100
 
         # will be filled
         self.optimizer = None  # torch.optim.Adam(self.model_net.parameters(), lr=self.learning_rate)
@@ -545,6 +546,8 @@ class AbstractDrill(ABC):
         state_pairs - a list of tuples containing two consecutive states
         reward      - a list of reward.
 
+        Gamma is 1.
+
         Return
         X - a list of embeddings of current concept, next concept, positive examples, negative examples
         y - argmax Q value.
@@ -560,6 +563,7 @@ class AbstractDrill(ABC):
         Learning by replaying memory
         @return:
         """
+
         current_state_batch, next_state_batch, q_values = self.experiences.retrieve()
         current_state_batch = torch.cat(current_state_batch, dim=0)
         next_state_batch = torch.cat(next_state_batch, dim=0)
@@ -568,6 +572,7 @@ class AbstractDrill(ABC):
         try:
             assert current_state_batch.shape[1] == next_state_batch.shape[1] == self.emb_pos.shape[1] == \
                    self.emb_neg.shape[1]
+
         except AssertionError as e:
             print(current_state_batch.shape)
             print(next_state_batch.shape)
@@ -579,12 +584,15 @@ class AbstractDrill(ABC):
 
         assert current_state_batch.shape[2] == next_state_batch.shape[2] == self.emb_pos.shape[2] == self.emb_neg.shape[
             2]
-        data_loader = torch.utils.data.DataLoader(PrepareBatchOfTraining(current_state_batch=current_state_batch,
-                                                                         next_state_batch=next_state_batch,
-                                                                         p=self.emb_pos, n=self.emb_neg, q=q_values),
+        dataset = PrepareBatchOfTraining(current_state_batch=current_state_batch,
+                                         next_state_batch=next_state_batch,
+                                         p=self.emb_pos, n=self.emb_neg, q=q_values)
+        num_experience = len(dataset)
+        data_loader = torch.utils.data.DataLoader(dataset,
                                                   batch_size=self.batch_size, shuffle=True,
                                                   num_workers=self.num_workers)
-
+        print(f'Number of experiences:{num_experience}')
+        print('DQL agent is learning via experience replay')
         self.heuristic_func.net.train()
         for m in range(self.num_epochs_per_replay):
             total_loss = 0
@@ -601,21 +609,47 @@ class AbstractDrill(ABC):
                 self.optimizer.step()
         self.heuristic_func.net.train().eval()
 
-    def sequence_of_actions(self, root):
+    def sequence_of_actions(self, root: BaseNode) -> Tuple[List[Tuple[BaseNode, BaseNode]], List[SupportsFloat]]:
+        """
+        Perform self.num_of_sequential_actions number of actions
+
+        (1) Make a sequence of **self.num_of_sequential_actions** actions
+            (1.1) Get next states in a generator and convert them to list
+            (1.2) Exit, if If there is no next state. @TODO Is it possible to 0 next states ?! Nothing should in the set of refinements, shouldn't it ?, i.e. [Nothing]
+            (1.3) Find next state.
+            (1.4) Exit, if next state is **Nothing**
+            (1.5) Compute reward.
+            (1.6) Update current state.
+
+        (2) Return path_of_concepts, rewards
+
+        """
+        assert isinstance(root, BaseNode)
+
         current_state = root
         path_of_concepts = []
         rewards = []
+        # (1)
         for _ in range(self.num_of_sequential_actions):
+            # (1.1)
             next_states = list(self.apply_rho(current_state))
+            # (1.2)
             if len(next_states) == 0:  # DEAD END
+                assert (len(current_state) + 3) <= self.max_child_length
                 break
+            # (1.3)
             next_state = self.exploration_exploitation_tradeoff(current_state, next_states)
-            assert next_state and current_state
+
+            # (1.3)
             if next_state.concept.str == 'Nothing':  # Dead END
                 break
+            # (1.4)
             path_of_concepts.append((current_state, next_state))
+            # (1.5)
             rewards.append(self.reward_func.calculate(current_state, next_state))
+            # (1.6)
             current_state = next_state
+        # (2)
         return path_of_concepts, rewards
 
     def update_search(self, concepts, predicted_Q_values):
@@ -633,13 +667,26 @@ class AbstractDrill(ABC):
             if child_node.quality == 1:
                 return child_node
 
-    def apply_rho(self, node: BaseNode):
+    def apply_rho(self, node: BaseNode) -> Generator:
+        """
+        Refine an OWL Class expression |= Observing next possible states
+
+        Computation O(N).
+
+        1. Generate concepts by refining a node
+            1.1 Compute allowed length of refinements
+            1.2. Convert concepts if concepts do not belong to  self.concepts_to_ignore
+                Note that          i.str not in self.concepts_to_ignore => O(1) if a set is being used.
+        3. Return Generator
+        """
         assert isinstance(node, BaseNode)
-        refinements = (self.rho.getNode(i, parent_node=node) for i in
-                       self.rho.refine(node,
-                                       maxlength=len(node) + 3 if len(node) + 3 <= self.max_length else self.max_length)
-                       if i.str not in self.concepts_to_ignore)
-        return refinements
+        # 1.
+        # (1.1)
+        length = len(node) + 3 if len(node) + 3 <= self.max_child_length else self.max_child_length
+        # (1.2)
+        for i in self.rho.refine(node, maxlength=length):  # O(N)
+            if i.str not in self.concepts_to_ignore:  # O(1)
+                yield self.rho.getNode(i, parent_node=node)  # O(1)
 
     def assign_embeddings(self, node: BaseNode) -> None:
         assert isinstance(node, BaseNode)
@@ -707,34 +754,58 @@ class AbstractDrill(ABC):
 
     def rl_learning_loop(self, pos_uri: Set[str], neg_uri: Set[str]) -> List[float]:
         """
-        RL agent training loop over given positive and negative examples.
+        RL agent learning loop over learning problem defined
+        @param pos_uri: A set of URIs indicating E^+
+        @param neg_uri: A set of URIs indicating E^-
 
+        Computation
+
+        1. Initialize training
+
+        2. Learning loop: Stopping criteria
+            ***self.num_episode** OR ***self.epsilon < self.epsilon_min***
+
+        2.1. Perform sequence of actions
+
+        2.2. Decrease exploration rate
+
+        2.3. Form experiences
+
+        2.4. Experience Replay
+
+        2.5. Return sum of actions
 
         @return: List of sum of rewards per episode.
         """
-        # (1) initialize training.
+
+        # (1)
         self.init_training(pos_uri=pos_uri, neg_uri=neg_uri)
         root = self.rho.getNode(self.start_class, root=True)
-        # (2) Assign embeddings of root/first state.
         self.assign_embeddings(root)
-        sum_of_rewards_per_actions = []
 
+        sum_of_rewards_per_actions = []
         log_every_n_episodes = int(self.num_episode * .1) + 1
+
+        # (2)
         for th in range(self.num_episode):
-            # (3) Take sequence of actions.
-            path_of_concepts, rewards = self.sequence_of_actions(root)
+            # (2.1)
+            sequence_of_states, rewards = self.sequence_of_actions(root)
+
             if th % log_every_n_episodes == 0:
                 self.logger.info(
                     '{0}.th iter. SumOfRewards: {1:.2f}\tEpsilon:{2:.2f}\t|ReplayMem.|:{3}'.format(th, sum(rewards),
                                                                                                    self.epsilon, len(
                             self.experiences)))
-            # (4) Decrease exploration rate.
+
+            # (2.2)
             self.epsilon -= self.epsilon_decay
             if self.epsilon < self.epsilon_min:
                 break
-            # (5) Form experience.
-            self.form_experiences(path_of_concepts, rewards)
-            # (6) Adjust weights through experience replay.
+
+            # (2.3)
+            self.form_experiences(sequence_of_states, rewards)
+
+            # (2.4)
             if th % self.num_epochs_per_replay == 0 and len(self.experiences) > 1:
                 self.learn_from_replay_memory()
             sum_of_rewards_per_actions.append(sum(rewards))
@@ -743,45 +814,40 @@ class AbstractDrill(ABC):
     def exploration_exploitation_tradeoff(self, current_state: BaseNode, next_states: List[BaseNode]) -> BaseNode:
         """
         Exploration vs Exploitation tradeoff at finding next state.
+        (1) Exploration
+        (2) Exploitation
         """
-        if np.random.random() < self.epsilon:  # Exploration
+        if np.random.random() < self.epsilon:
             next_state = random.choice(next_states)
             self.assign_embeddings(next_state)
-        else:  # Exploitation
+        else:
             next_state = self.exploitation(current_state, next_states)
         return next_state
 
     def exploitation(self, current_state: BaseNode, next_states: List[BaseNode]) -> BaseNode:
         """
+        Find next node that is assigned with highest predicted Q value.
 
-        @param current_state:
-        @param next_states:
-        @return:
+        (1) Predict Q values : predictions.shape => torch.Size([n, 1]) where n = len(next_states)
+
+        (2) Find the index of max value in predictions
+
+        (3) Use the index to obtain next state.
+
+        (4) Return next state.
         """
-
-        predictions = self.predict_Q(current_state, next_states)
+        predictions: torch.Tensor = self.predict_Q(current_state, next_states)
         argmax_id = int(torch.argmax(predictions))
-        return next_states[argmax_id]
+        next_state = next_states[argmax_id]
         """
-        self.assign_embeddings(current_state)
-        with torch.no_grad():
-            self.heuristic_func.net.eval()
-            # create batch batch.
-            next_state_batch = []
-            for n in next_states:
-                self.assign_embeddings(n)
-                next_state_batch.append(n.embeddings)
-            next_state_batch = torch.cat(next_state_batch, dim=0)
-
-            ds = PrepareBatchOfPrediction(current_state.embeddings,
-                                          next_state_batch,
-                                          self.emb_pos,
-                                          self.emb_neg)
-            predictions = self.heuristic_func.net.forward(ds.get_all())
-            argmax_id = int(torch.argmax(predictions))
-            next_state = next_states[argmax_id]
+        # Sanity checking
+        print('#'*10)
+        for s, q in zip(next_states, predictions):
+            print(s, q)
+        print('#'*10)
+        print(next_state,f'\t {torch.max(predictions)}')
+        """
         return next_state
-        """
 
     def predict_Q(self, current_state: BaseNode, next_states: List[BaseNode]) -> torch.Tensor:
         """
@@ -807,32 +873,46 @@ class AbstractDrill(ABC):
             predictions = self.heuristic_func.net.forward(ds.get_all())
         return predictions
 
-    def train(self, dataset: Iterable[Tuple[str, Set, Set]], relearn_ratio: int = 1):
+    def train(self, dataset: Iterable[Tuple[str, Set, Set]], relearn_ratio: int = 2):
         """
         Train RL agent on learning problems with relearn_ratio.
-
         @param dataset: An iterable containing training data. Each item corresponds to a tuple of string representation
         of target concept, a set of positive examples in the form of URIs amd a set of negative examples in the form of
         URIs, respectively.
         @param relearn_ratio: An integer indicating the number of times dataset is iterated.
-        @return: itself
-        """
 
+        # @TODO determine Big-O
+
+        Computation
+        1. Dataset and relearn_ratio loops: Learn each problem relearn_ratio times,
+
+        2. Learning loop
+
+        3. Take post process action that implemented by subclass.
+
+        @return: self
+        """
+        # We need a better way of login,
         self.logger.info('Training starts.')
-        counter = 0
-        for _ in range(relearn_ratio):  # repeat training over learning problems.
+        print(f'Training starts.\nNumber of learning problem:{len(dataset)},\t Relearn ratio:{relearn_ratio}')
+        counter = 1
+        # 1.
+        for _ in range(relearn_ratio):
             for (alc_concept_str, positives, negatives) in dataset:
                 self.logger.info(
                     'Goal Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str,
                                                                       len(positives), len(negatives)))
+                # 2.
+                print(f'RL training on {counter}.th learning problem starts')
+                sum_of_rewards_per_actions = self.rl_learning_loop(pos_uri=positives, neg_uri=negatives)
 
-                self.rl_learning_loop(pos_uri=positives, neg_uri=negatives)
-
+                print(f'Sum of Rewards in first 3 trajectory:{sum_of_rewards_per_actions[:3]}')
+                print(f'Sum of Rewards in last 3 trajectory:{sum_of_rewards_per_actions[:3]}')
                 self.seen_examples.setdefault(counter, dict()).update(
                     {'Concept': alc_concept_str, 'Positives': list(positives), 'Negatives': list(negatives)})
 
                 counter += 1
                 if counter % 100 == 0:
                     self.save_weights()
-
+                # 3.
         return self.terminate_training()

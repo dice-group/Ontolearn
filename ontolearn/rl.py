@@ -37,7 +37,7 @@ class DrillAverage(AbstractDrill, BaseConceptLearner):
                  refinement_operator=None, quality_func=F1(),
                  pretrained_model_path=None,
                  iter_bound=None, max_num_of_concepts_tested=None, verbose=None,
-                 terminate_on_goal=True, ignored_concepts=None,
+                 terminate_on_goal=True, ignored_concepts=None, max_child_length=None,
                  max_len_replay_memory=None, batch_size=None, epsilon_decay=None, epsilon_min=None,
                  num_epochs_per_replay=None, learning_rate=None,
                  max_runtime=5, num_of_sequential_actions=None, num_episode=None, num_workers=32):
@@ -73,6 +73,7 @@ class DrillAverage(AbstractDrill, BaseConceptLearner):
                                     search_tree=SearchTreePriorityQueue(),
                                     quality_func=quality_func,
                                     heuristic_func=self.heuristic_func,
+                                    max_child_length=max_child_length,
                                     ignored_concepts=ignored_concepts,
                                     terminate_on_goal=terminate_on_goal,
                                     iter_bound=iter_bound,
@@ -177,7 +178,7 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
     def __init__(self, knowledge_base,
                  path_of_embeddings=None,
                  refinement_operator=None, quality_func=F1(),
-                 pretrained_model_path=None,
+                 pretrained_model_path=None,max_child_length=None,
                  iter_bound=None, max_num_of_concepts_tested=None, verbose=None,
                  terminate_on_goal=True, ignored_concepts=None,
                  max_len_replay_memory=None, batch_size=None, epsilon_decay=None, epsilon_min=None,
@@ -214,6 +215,7 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
                                     search_tree=SearchTreePriorityQueue(),
                                     quality_func=quality_func,
                                     heuristic_func=self.heuristic_func,
+                                    max_child_length=max_child_length,
                                     ignored_concepts=ignored_concepts,
                                     terminate_on_goal=terminate_on_goal,
                                     iter_bound=iter_bound,
@@ -388,40 +390,18 @@ class Drill(nn.Module):
                                out_channels=args['first_out_channels'],
                                kernel_size=args['kernel_size'],
                                padding=1, stride=1, bias=True)
-        self.bn1 = nn.BatchNorm1d(args['first_out_channels'])
-
-        self.conv2 = nn.Conv2d(in_channels=args['first_out_channels'],
-                               out_channels=args['second_out_channels'],
-                               kernel_size=args['kernel_size'], padding=1, stride=1, bias=True)
-        self.bn2 = nn.BatchNorm1d(args['second_out_channels'])
-
-        self.conv3 = nn.Conv2d(in_channels=args['second_out_channels'],
-                               out_channels=args['third_out_channels'],
-                               kernel_size=args['kernel_size'], padding=1, stride=1, bias=True)
-        self.bn3 = nn.BatchNorm1d(args['third_out_channels'])
 
         # Fully connected layers.
-
-        self.size_of_fc1 = int(args['third_out_channels'] * self.embedding_dim)
+        self.size_of_fc1 = int(args['first_out_channels'] * self.embedding_dim)
         self.fc1 = nn.Linear(in_features=self.size_of_fc1, out_features=self.size_of_fc1 // 2)
+        self.fc2 = nn.Linear(in_features=self.size_of_fc1 // 2, out_features=1)
 
-        self.bn4 = nn.BatchNorm2d(self.size_of_fc1 // 2)
-
-        self.fc2 = nn.Linear(in_features=self.size_of_fc1 // 2, out_features=self.size_of_fc1 // 4)
-        self.bn5 = nn.BatchNorm1d(self.size_of_fc1 // 4)
-
-        self.fc3 = nn.Linear(in_features=self.size_of_fc1 // 4, out_features=1)
-
+        self.init()
         assert self.__sanity_checking(torch.rand(32, 4, 1, self.embedding_dim)).shape == (32, 1)
 
     def init(self):
         xavier_normal_(self.fc1.weight.data)
-        xavier_normal_(self.fc2.weight.data)
-        xavier_normal_(self.fc3.weight.data)
-
         xavier_normal_(self.conv1.weight.data)
-        xavier_normal_(self.conv2.weight.data)
-        xavier_normal_(self.conv3.weight.data)
 
     def __sanity_checking(self, X):
         return self.forward(X)
@@ -429,22 +409,8 @@ class Drill(nn.Module):
     def forward(self, X: torch.FloatTensor):
         # X denotes a batch of tensors where each tensor has the shape of (4, 1, embedding_dim)
         # 4 => S, S', E^+, E^- \in R^embedding_dim
-
-        # @TODO Later Add Residual learning
-
-        # In => torch.Size([batchsize, 4, 1, self.embedding_dim])
-        # Out => torch.Size([batchsize, 32, 1, self.embedding_dim]) # 32 number of input channels
+        # @TODO: Later batch norm and residual learning block.
         X = F.relu(self.conv1(X))
-
-        # Out => torch.Size([batchsize, 16, 1, self.embedding_dim]) # 16 number of input channels
-        X = F.relu(self.conv2(X))
-
-        # Out => torch.Size([batchsize, 8, 1, self.embedding_dim]) # 8 number of input channels
-        X = F.relu(self.conv3(X))
-
-        # Out => torch.Size([batchsize, 8, * self.embedding_dim]) # 8 number of input channels
         X = X.view(X.shape[0], X.shape[1] * X.shape[2] * X.shape[3])
-
         X = F.relu(self.fc1(X))
-        X = F.relu(self.fc2(X))
-        return F.relu(self.fc3(X))
+        return self.fc2(X)

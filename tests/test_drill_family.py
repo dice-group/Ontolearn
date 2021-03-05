@@ -5,6 +5,7 @@ import random
 import pandas as pd
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
+# @TODO, write such tests for Drill after, experiments are completed.
 """
 
 drill_pretrained_model_path = 'agent_pre_trained/model.pth'
