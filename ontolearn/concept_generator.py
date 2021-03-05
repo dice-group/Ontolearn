@@ -54,12 +54,22 @@ class ConceptGenerator:
     def negation(self, concept: Concept) -> Concept:
         """
         ¬C = \Delta^I \ C.
-        @param concept: an instance of Concept class
-        @return: ¬C: an instance of Concept class
+
+        1. Check whether input concept have previously been negated. If yes, return its negation.
+        2. If C is not TOP and not a negated Concept, then negate it
+             2.1.  C = Person => ¬Person
+             2.2.  C = (Person AND MOTHER) => => ¬(Person AND MOTHER)
+             2.3   C = (∃R.Person)         =>  ¬(∃R.Person). This applies for \forall
+        3. If C is a negated Concept,i.e. ¬C:
+            3.1. Remove ¬ from C
+            3.2. Use str representation of C to retrieve object C.
+
         """
+        # 1.
         if concept in self.log_of_negations:
             return self.log_of_negations[concept]
-        if not (concept.owl.name == 'Thing'):
+        # 2.
+        if concept.owl.name != 'Thing' and concept.owl.name != 'Nothing' and concept.form != 'ObjectComplementOf':
             possible_instances_ = self.thing.instances - concept.instances
 
             with self.onto:
@@ -70,10 +80,16 @@ class ConceptGenerator:
                 c = Concept(concept=not_concept, kwargs={'form': 'ObjectComplementOf', 'root': concept})
                 c.instances = possible_instances_  # self.T.instances - concept.instances
 
+                # A=> \negA
                 self.log_of_negations[concept] = c
+                # \negA => A
+                self.log_of_negations[c] = concept
+
+                # Add into the mapping from STR URI to concept objects.
                 self.uri_to_concepts[c.full_iri] = c
 
             return self.log_of_negations[concept]
+        # 3.
         elif concept.form == 'ObjectComplementOf':
             assert concept.str[0] == '¬'
             full_iri = concept.owl.namespace.base_iri + concept.owl.name[1:]
@@ -81,6 +97,10 @@ class ConceptGenerator:
         elif concept.owl.name == 'Thing':
             self.log_of_negations[concept.full_iri] = self.nothing
             self.log_of_negations[self.nothing.full_iri] = concept
+            return self.log_of_negations[concept.full_iri]
+        elif concept.owl.name == 'Nothing':
+            self.log_of_negations[concept.full_iri] = self.thing
+            self.log_of_negations[self.thing.full_iri] = concept
             return self.log_of_negations[concept.full_iri]
         else:
             raise ValueError
