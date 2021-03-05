@@ -62,7 +62,6 @@ class BaseConceptLearner(metaclass=ABCMeta):
         self.store_onto_flag = False
         self.start_time = None
         self.goal_found = False
-        self.max_length = 5
         self.storage_path, _ = create_experiment_folder()
         self.name = name
         self.logger = create_logger(name=self.name, p=self.storage_path)
@@ -100,6 +99,9 @@ class BaseConceptLearner(metaclass=ABCMeta):
             self.terminate_on_goal = True
         if self.max_runtime is None:
             self.max_runtime = 5
+
+        if self.max_child_length is None:
+            self.max_child_length = 10
 
         if self.concepts_to_ignore is None:
             self.concepts_to_ignore = set()

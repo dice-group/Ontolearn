@@ -115,7 +115,7 @@ class LengthBasedRefinement(BaseRefinement):
             yield from {node.concept}
 
         refinement_gate = set()
-        # A mapping where keys are lengths (integer) and values are catehgorized refinements of c
+        # A mapping where keys are lengths (integer) and values are categorized refinements of c
         cumulative_refinements = dict()
 
         # 1.
