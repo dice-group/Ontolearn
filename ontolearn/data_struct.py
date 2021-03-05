@@ -17,7 +17,7 @@ class PropertyHierarchy:
         self.object_properties = {i for i in onto.object_properties()}
 
     def get_most_general_property(self):
-        return self.data_properties
+        return self.all_properties
 
     def __len__(self):
         return len(self.all_properties)
