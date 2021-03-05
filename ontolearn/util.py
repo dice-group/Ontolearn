@@ -226,7 +226,7 @@ def sanity_checking_args(args):
         assert args.max_test_time_per_concept > 1
 
     if hasattr(args, 'num_of_sequential_actions'):
-        assert args.num_of_sequential_actions > 1
+        assert args.num_of_sequential_actions > 0
 
     if hasattr(args, 'batch_size'):
         assert args.batch_size > 1
