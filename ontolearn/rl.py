@@ -178,7 +178,7 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
     def __init__(self, knowledge_base,
                  path_of_embeddings=None,
                  refinement_operator=None, quality_func=F1(),
-                 pretrained_model_path=None,
+                 pretrained_model_path=None,max_child_length=None,
                  iter_bound=None, max_num_of_concepts_tested=None, verbose=None,
                  terminate_on_goal=True, ignored_concepts=None,
                  max_len_replay_memory=None, batch_size=None, epsilon_decay=None, epsilon_min=None,
@@ -215,6 +215,7 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
                                     search_tree=SearchTreePriorityQueue(),
                                     quality_func=quality_func,
                                     heuristic_func=self.heuristic_func,
+                                    max_child_length=max_child_length,
                                     ignored_concepts=ignored_concepts,
                                     terminate_on_goal=terminate_on_goal,
                                     iter_bound=iter_bound,
@@ -412,4 +413,4 @@ class Drill(nn.Module):
         X = F.relu(self.conv1(X))
         X = X.view(X.shape[0], X.shape[1] * X.shape[2] * X.shape[3])
         X = F.relu(self.fc1(X))
-        return F.relu(self.fc2(X))
+        return self.fc2(X)

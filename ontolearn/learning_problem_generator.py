@@ -12,6 +12,7 @@ import numpy as np
 
 class LearningProblemGenerator:
     """ Learning problem generator. """
+
     def __init__(self, knowledge_base, refinement_operator=None, num_problems=10_000, num_diff_runs=100,
                  min_num_instances=None, max_num_instances=sys.maxsize, min_length=3, max_length=5, depth=10,
                  search_algo='strict-dfs'):
@@ -111,6 +112,7 @@ class LearningProblemGenerator:
             gen_examples.append(example_node)
 
             for d in self.owlready_individuals_to_string_balanced_n_samples(n, example_node.concept.instances):
+                assert len(d['string_balanced_pos']) == len(d['string_balanced_neg'])
                 res.append((example_node.concept.str, d['string_balanced_pos'], d['string_balanced_neg']))
 
         try:
@@ -121,10 +123,10 @@ class LearningProblemGenerator:
 
         stats = np.array([[len(x), len(x.concept.instances)] for x in gen_examples])
 
-        print(f'\nNumber of generated concepts {len(gen_examples)}')
-        print(f'Number of generated examples: {len(res)}')
+        print(f'\nNumber of generated concepts:{len(gen_examples)}')
+        print(f'Number of generated learning problems via sampling: {len(res)}')
         print(
-            f'Average length of generated examples {stats[:, 0].mean():.3f}\nAverage number of individuals belong to a generated example {stats[:, 1].mean():.3f}\n')
+            f'Average length of generated concepts:{stats[:, 0].mean():.3f}\nAverage number of individuals belong to a generated example:{stats[:, 1].mean():.3f}\n')
         return res
 
     def get_balanced_examples(self, *, min_num_problems=None, max_length=None, min_length=None,
@@ -143,6 +145,7 @@ class LearningProblemGenerator:
         p and n denote a set of URIs of individuals indicating positive and negative examples.
 
         """
+
         def output_sanity_check(y):
             try:
                 assert len(y) >= min_num_problems
@@ -331,7 +334,8 @@ class LearningProblemGenerator:
                     temp_gate.add(v)
                     yield v
                     if strict:
-                        if len(temp_gate) >= self.num_problems or (len(valid_states_gate) >= self.num_problems * self.num_diff_runs):
+                        if len(temp_gate) >= self.num_problems or (
+                                len(valid_states_gate) >= self.num_problems * self.num_diff_runs):
                             break
             if strict:
                 if len(valid_states_gate) >= self.num_problems * self.num_diff_runs:
