@@ -8,7 +8,7 @@ setup(
     description='Ontolearn is an open-source software library for structured machine learning in Python. Ontolearn '
                 'includes modules for processing knowledge bases, inductive logic programming and ontology. '
                 'engineering.',
-    version='0.0.2',
+    version='0.1.2',
     packages=find_packages(exclude=('tests', 'test.*', 'examples.*')),
     install_requires=['scikit-learn>=0.22.1',
                       'owlready2>=0.23',
