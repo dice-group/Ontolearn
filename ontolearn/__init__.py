@@ -7,7 +7,7 @@ The goal of ontolearn os to provide efficient solutions for concept learning on 
 
 # Author: Caglar Demir <caglar.demir@upb.de>,<caglardemir8@gmail.com>
 """
-__version__ = '0.1.2'
+__version__ = '0.1.3.dev'
 
 import warnings
 
