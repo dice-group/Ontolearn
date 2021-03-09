@@ -25,6 +25,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "License :: OSI Approved :: MIT License", ],
     python_requires='==3.7.1',
+    scripts=['ontolearn/endpoint/simple_drill_endpoint'],
     long_description=long_description,
     long_description_content_type="text/markdown",
 )
