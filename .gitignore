@@ -44,6 +44,7 @@ htmlcov/
 .coverage.*
 .cache
 nosetests.xml
+coverage.json
 coverage.xml
 *.cover
 *.py,cover
@@ -139,3 +140,6 @@ cython_debug/
 
 # Pycharm IDE
 .idea/
+
+# Ontolearn logs
+Log/
