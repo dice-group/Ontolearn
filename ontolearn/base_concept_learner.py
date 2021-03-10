@@ -11,7 +11,7 @@ from owlapy.model import OWLClassExpression, OWLNamedIndividual
 from owlapy.render import DLSyntaxRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractNode, AbstractHeuristic, \
     AbstractKnowledgeBase, AbstractLearningProblem
-from .static_funcs import decompose_to_atomic
+from ontolearn.owlready2.static_funcs import decompose_to_atomic
 from .utils import oplogging
 
 _N = TypeVar('_N', bound=AbstractNode)

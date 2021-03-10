@@ -1,7 +1,7 @@
-from .abstracts import AbstractScorer, AbstractLearningProblem, AbstractNode
+from typing import Final
+
+from .abstracts import AbstractScorer, AbstractNode
 from .learning_problem import PosNegLPStandard
-from .search import Node
-from typing import Set, ClassVar, Final
 
 
 class Recall(AbstractScorer):
