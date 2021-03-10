@@ -127,13 +127,13 @@ def sanity_checking_args(args):
         assert os.path.isfile(args.path_knowledge_base)
     except AssertionError:
         print(f'--path_knowledge_base ***{args.path_knowledge_base}*** does not lead to a file.')
-        exit(1)
+        raise
 
     try:
         assert os.path.isfile(args.path_knowledge_base_embeddings)
     except AssertionError:
         print(f'--path_knowledge_base_embeddings ***{args.path_knowledge_base_embeddings}*** does not lead to a file.')
-        exit(1)
+        raise
 
     assert args.min_length > 0
     assert args.max_length > 0

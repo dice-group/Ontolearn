@@ -501,7 +501,7 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
             print('####')
             for k, v in self.nodes.items():
                 print(k)
-            exit(1)
+            raise
 
     def get_top_n(self, n: int, key='quality') -> List[LBLNode]:
         """

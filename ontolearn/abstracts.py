@@ -315,7 +315,7 @@ class AbstractDrill(ABC):
             print(self.emb_neg.shape)
             print('Wrong format.')
             print(e)
-            exit(1)
+            raise
 
         assert current_state_batch.shape[2] == next_state_batch.shape[2] == self.emb_pos.shape[2] == self.emb_neg.shape[
             2]
@@ -446,7 +446,7 @@ class AbstractDrill(ABC):
                     print(node)
                     print(node.embeddings.shape)
                     print((1, self.sample_size, self.instance_embeddings.shape[1]))
-                    exit(1)
+                    raise
         elif self.representation_mode == 'sampling':
             if node.embeddings is None:
                 str_idx = [get_full_iri(i).replace('\n', '') for i in node.concept.instances]

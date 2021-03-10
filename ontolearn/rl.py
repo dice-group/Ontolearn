@@ -236,7 +236,7 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
         except AssertionError:
             print(len(pos))
             print(len(neg))
-            exit(1)
+            raise
         sampled_pos = random.sample(pos, self.sample_size)
         sampled_neg = random.sample(neg, self.sample_size)
 
