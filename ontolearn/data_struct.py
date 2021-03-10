@@ -69,7 +69,7 @@ class PrepareBatchOfTraining(torch.utils.data.Dataset):
             print(p.shape)
             print(next_state_batch.shape)
             print(e)
-            exit(1)
+            raise
         self.Negatives = n.expand(next_state_batch.shape)
 
         assert self.S.shape == self.S_Prime.shape == self.Positives.shape == self.Negatives.shape

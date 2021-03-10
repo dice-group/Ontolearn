@@ -144,7 +144,7 @@ class LearningProblemGenerator:
             assert len(gen_examples) > 0
         except AssertionError:
             print('*****No examples are created. Please update the configurations for learning problem generator****')
-            exit(1)
+            raise
 
         stats = np.array([[x.len, x.individuals_count] for x in gen_examples])
 
