@@ -493,8 +493,8 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
 
 class CustomRefinementOperator(BaseRefinement[Node]):
-    def __init__(self, kb: KnowledgeBase = None, max_size_of_concept=1000, min_size_of_concept=1):
-        super().__init__(kb)
+    def __init__(self, knowledge_base: KnowledgeBase = None, max_size_of_concept=1000, min_size_of_concept=1):
+        super().__init__(knowledge_base)
 
     def get_node(self, c: OWLClassExpression, parent_node=None, root=False):
 
@@ -505,7 +505,7 @@ class CustomRefinementOperator(BaseRefinement[Node]):
             print(c)
             raise ValueError
 
-        n = Node(concept=c, parent_node=parent_node, root=root)
+        n = self._Node(concept=c, parent_node=parent_node, root=root)
         # self.concepts_to_nodes[c] = n
         return n
 
@@ -603,21 +603,21 @@ class CustomRefinementOperator(BaseRefinement[Node]):
             if isinstance(ref_concept_B, OWLClassExpression):
                 yield self.kb.intersection(ref_concept_B, concept_A)
 
-    def refine(self, node: Node):
-        assert isinstance(node.concept, OWLClassExpression)
+    def refine(self, concept: OWLClassExpression):
+        assert isinstance(concept, OWLClassExpression)
 
-        if isinstance(node.concept, OWLClass):
-            yield from self.refine_atomic_concept(node.concept)
-        elif isinstance(node.concept, OWLObjectComplementOf):
-            yield from self.refine_complement_of(node.concept)
-        elif isinstance(node.concept, OWLObjectSomeValuesFrom):
-            yield from self.refine_object_some_values_from(node.concept)
-        elif isinstance(node.concept, OWLObjectAllValuesFrom):
-            yield from self.refine_object_all_values_from(node.concept)
-        elif isinstance(node.concept, OWLObjectUnionOf):
-            yield from self.refine_object_union_of(node.concept)
-        elif isinstance(node.concept, OWLObjectIntersectionOf):
-            yield from self.refine_object_intersection_of(node.concept)
+        if isinstance(concept, OWLClass):
+            yield from self.refine_atomic_concept(concept)
+        elif isinstance(concept, OWLObjectComplementOf):
+            yield from self.refine_complement_of(concept)
+        elif isinstance(concept, OWLObjectSomeValuesFrom):
+            yield from self.refine_object_some_values_from(concept)
+        elif isinstance(concept, OWLObjectAllValuesFrom):
+            yield from self.refine_object_all_values_from(concept)
+        elif isinstance(concept, OWLObjectUnionOf):
+            yield from self.refine_object_union_of(concept)
+        elif isinstance(concept, OWLObjectIntersectionOf):
+            yield from self.refine_object_intersection_of(concept)
         else:
             raise ValueError
 
@@ -761,18 +761,18 @@ class ExpressRefinement(BaseRefinement):
         self.concepts_to_nodes[c] = n
         return n
 
-    def refine_atomic_concept(self, node: Node):
-        #print ("Concept: ", node.concept.str)
-        if node.concept.str == 'Nothing':
-            yield from {node.concept}
+    def refine_atomic_concept(self, concept: OWLClass):
+        #print ("Concept: ", concept.str)
+        if concept.str == 'Nothing':
+            yield from {concept}
         # Get all subsumption hierarchy
-        iter_container_sub = list(self.kb.get_all_sub_concepts(node.concept))
+        iter_container_sub = list(self.kb.get_all_sub_concepts(concept))
         if iter_container_sub == []:
-          iter_container_sub = [node.concept]
+          iter_container_sub = [concept]
         iter_container_restrict = []
         iter_container_neg = list(self.kb.negation_from_iterables(iter_container_sub))
-        # (3) Create ∀.r.C and ∃.r.C where r is the most general relation and C in {node.concept}
-        for C in {node.concept}:#.union(set(iter_container_sub))).union(set(iter_container_neg)): this ligne can be uncommented for more expressivity
+        # (3) Create ∀.r.C and ∃.r.C where r is the most general relation and C in {concept}
+        for C in {concept}:#.union(set(iter_container_sub))).union(set(iter_container_neg)): this ligne can be uncommented for more expressivity
             if C.length + 2 <= self.max_child_length:
                 iter_container_restrict.append(set(self.kb.most_general_universal_restriction(C)))
                 iter_container_restrict.append(set(self.kb.most_general_existential_restriction(C)))       
@@ -786,7 +786,7 @@ class ExpressRefinement(BaseRefinement):
         else:
             self.expressivity = 1.
             iter_container_sub_sample = iter_container_sub
-        if node.concept.str == "Thing":
+        if concept.str == "Thing":
             yield from iter_container_neg
         del iter_container_restrict, iter_container_neg
         any_refinement = False
@@ -800,153 +800,153 @@ class ExpressRefinement(BaseRefinement):
             for j in range(len(container)):
                 if iter_container_sub_sample[i].str != container[j].str and (iter_container_sub_sample[i].length + container[j].length < self.max_child_length):
                     if ((iter_container_sub[i].instances.union(container[j].instances) != self.kb.thing.instances)\
-                        and (container[j] in iter_container_sub)) or node.concept.str == "Thing":
+                        and (container[j] in iter_container_sub)) or concept.str == "Thing":
                         union = self.kb.union(iter_container_sub_sample[i], container[j])
                         yield union
                         any_refinement = True
-                        #self.kb.top_down_direct_concept_hierarchy[node.concept].add(union)
-                        #self.kb.down_top_direct_concept_hierarchy[union].add(node.concept)
+                        #self.kb.top_down_direct_concept_hierarchy[concept].add(union)
+                        #self.kb.down_top_direct_concept_hierarchy[union].add(concept)
                     elif (not container[j] in iter_container_sub) and (len(iter_container_sub_sample[i].instances.union(container[j].instances)) < \
                         len(self.kb.thing.instances)):
                         union = self.kb.union(iter_container_sub_sample[i], container[j])
-                        union = self.kb.intersection(node.concept, union)
+                        union = self.kb.intersection(concept, union)
                         yield union
                         any_refinement = True
                     if not iter_container_sub_sample[i].instances.isdisjoint(container[j].instances):
                         intersect = self.kb.intersection(iter_container_sub_sample[i], container[j])
-                        #self.kb.top_down_direct_concept_hierarchy[node.concept].add(intersect)
-                        #self.kb.down_top_direct_concept_hierarchy[intersect].add(node.concept)
+                        #self.kb.top_down_direct_concept_hierarchy[concept].add(intersect)
+                        #self.kb.down_top_direct_concept_hierarchy[intersect].add(concept)
                         yield intersect
                         any_refinement = True
         if not any_refinement:
-            yield node.concept
+            yield concept
                         
-    def refine_complement_of(self, node: Node) -> Generator:
-        #print ("Concept: ", node.concept.str)
+    def refine_complement_of(self, concept: OWLObjectComplementOf) -> Generator:
+        #print ("Concept: ", concept.str)
         any_refinement = False
-        parents = self.kb.get_direct_parents(self.kb.negation(node.concept))
-        for subs in self.kb.get_all_sub_concepts(node.concept):
+        parents = self.kb.get_direct_parents(self.kb.negation(concept))
+        for subs in self.kb.get_all_sub_concepts(concept):
             if subs.length <= self.max_child_length:
                 any_refinement = True
                 yield subs
         for ref in self.kb.negation_from_iterables(parents):
             if ref.length <= self.max_child_length:
                 any_refinement = True
-                #self.kb.top_down_direct_concept_hierarchy[node.concept].add(ref)
-                #self.kb.down_top_direct_concept_hierarchy[ref].add(node.concept)
+                #self.kb.top_down_direct_concept_hierarchy[concept].add(ref)
+                #self.kb.down_top_direct_concept_hierarchy[ref].add(concept)
                 yield ref
         if not any_refinement:
-            yield node.concept
+            yield concept
 
-    def refine_object_some_values_from(self, node: Node) -> Generator:
-        #print ("Concept: ", node.concept.str)
-        assert isinstance(node.concept.filler, Concept)
+    def refine_object_some_values_from(self, concept: OWLObjectSomeValuesFrom) -> Generator:
+        #print ("Concept: ", concept.str)
+        assert isinstance(concept.filler, Concept)
         any_refinement = False
-        for subs in self.kb.get_all_sub_concepts(node.concept):
+        for subs in self.kb.get_all_sub_concepts(concept):
             if subs.length <= self.max_child_length:
                 any_refinement = True
                 yield subs
 
-        for i in self.refine(self.getNode(node.concept.filler, parent_node=node)):
+        for i in self.refine(self.getNode(concept.filler, parent_node=node)):
             if i.length <= self.max_child_length:
                 any_refinement = True
-                #self.kb.top_down_direct_concept_hierarchy[node.concept].add(i)
-                #self.kb.down_top_direct_concept_hierarchy[i].add(node.concept)
-                yield self.kb.existential_restriction(i, node.concept.role)
-        if node.concept.length <= self.max_child_length:
+                #self.kb.top_down_direct_concept_hierarchy[concept].add(i)
+                #self.kb.down_top_direct_concept_hierarchy[i].add(concept)
+                yield self.kb.existential_restriction(i, concept.role)
+        if concept.length <= self.max_child_length:
             any_refinement = True
-            #self.kb.top_down_direct_concept_hierarchy[node.concept].add(self.kb.universal_restriction(node.concept.filler, node.concept.role))
-            #self.kb.down_top_direct_concept_hierarchy[self.kb.universal_restriction(node.concept.filler, node.concept.role)].add(node.concept)
-            yield self.kb.universal_restriction(node.concept.filler, node.concept.role)
+            #self.kb.top_down_direct_concept_hierarchy[concept].add(self.kb.universal_restriction(concept.filler, concept.role))
+            #self.kb.down_top_direct_concept_hierarchy[self.kb.universal_restriction(concept.filler, concept.role)].add(concept)
+            yield self.kb.universal_restriction(concept.filler, concept.role)
         if not any_refinement:
-            yield node.concept
+            yield concept
 
-    def refine_object_all_values_from(self, node: Node):
-        #print ("Concept: ", node.concept.str)
+    def refine_object_all_values_from(self, concept: OWLObjectAllValuesFrom):
+        #print ("Concept: ", concept.str)
         any_refinement = False
-        for subs in self.kb.get_all_sub_concepts(node.concept):
+        for subs in self.kb.get_all_sub_concepts(concept):
             if subs.length <= self.max_child_length:
                 any_refinement = True
                 yield subs
 
-        for i in self.refine(self.getNode(node.concept.filler, parent_node=node)):
+        for i in self.refine(self.getNode(concept.filler, parent_node=node)):
             if i.length <= self.max_child_length:
                 any_refinement = True
-                #self.kb.top_down_direct_concept_hierarchy[node.concept].add(i)
-                #self.kb.down_top_direct_concept_hierarchy[i].add(node.concept)
-                yield self.kb.universal_restriction(i, node.concept.role)
+                #self.kb.top_down_direct_concept_hierarchy[concept].add(i)
+                #self.kb.down_top_direct_concept_hierarchy[i].add(concept)
+                yield self.kb.universal_restriction(i, concept.role)
         if not any_refinement:
-            yield node.concept
+            yield concept
 
-    def refine_object_union_of(self, node: Node):
-        #print ("Concept: ", node.concept.str)
-        concept_A = node.concept.concept_a
-        concept_B = node.concept.concept_b
+    def refine_object_union_of(self, concept: OWLObjectUnionOf):
+        #print ("Concept: ", concept.str)
+        concept_A = concept.concept_a
+        concept_B = concept.concept_b
         any_refinement = False
-        for subs in self.kb.get_all_sub_concepts(node.concept):
+        for subs in self.kb.get_all_sub_concepts(concept):
             if subs.length <= self.max_child_length:
                 any_refinement = True
                 yield subs
 
         for ref_concept_A in self.refine(self.getNode(concept_A, parent_node=node)):
             if self.max_child_length >= len(concept_B) + len(ref_concept_A) + 1:
-                #self.kb.top_down_direct_concept_hierarchy[node.concept].add(self.kb.union(concept_B, ref_concept_A))
-                #self.kb.down_top_direct_concept_hierarchy[self.kb.union(concept_B, ref_concept_A)].add(node.concept)
+                #self.kb.top_down_direct_concept_hierarchy[concept].add(self.kb.union(concept_B, ref_concept_A))
+                #self.kb.down_top_direct_concept_hierarchy[self.kb.union(concept_B, ref_concept_A)].add(concept)
                 if ref_concept_A.str != concept_B.str:
                     yield self.kb.union(concept_B, ref_concept_A)
                     any_refinement = True
 
         for ref_concept_B in self.refine(self.getNode(concept_B, parent_node=node)):
             if self.max_child_length >= len(concept_A) + len(ref_concept_B) + 1:
-                #self.kb.top_down_direct_concept_hierarchy[node.concept].add(self.kb.union(concept_A, ref_concept_B))
-                #self.kb.down_top_direct_concept_hierarchy[self.kb.union(concept_A, ref_concept_B)].add(node.concept)
+                #self.kb.top_down_direct_concept_hierarchy[concept].add(self.kb.union(concept_A, ref_concept_B))
+                #self.kb.down_top_direct_concept_hierarchy[self.kb.union(concept_A, ref_concept_B)].add(concept)
                 if ref_concept_B.str != concept_A.str:
                     yield self.kb.union(concept_A, ref_concept_B)
                     any_refinement = True
         if not any_refinement:
-            yield node.concept
+            yield concept
 
-    def refine_object_intersection_of(self, node: Node):
-        #print ("Concept: ", node.concept.str)
-        concept_A = node.concept.concept_a
-        concept_B = node.concept.concept_b
+    def refine_object_intersection_of(self, concept: OWLObjectIntersectionOf):
+        #print ("Concept: ", concept.str)
+        concept_A = concept.concept_a
+        concept_B = concept.concept_b
         any_refinement = False
-        for subs in self.kb.get_all_sub_concepts(node.concept):
+        for subs in self.kb.get_all_sub_concepts(concept):
             if subs.length <= self.max_child_length:
                 any_refinement = True
                 yield subs
 
         for ref_concept_A in self.refine(self.getNode(concept_A, parent_node=node)):
             if self.max_child_length >= len(concept_B) + len(ref_concept_A) + 1:
-                #self.kb.top_down_direct_concept_hierarchy[node.concept].add(self.kb.intersection(concept_B, ref_concept_A))
-                #self.kb.down_top_direct_concept_hierarchy[self.kb.intersection(concept_B, ref_concept_A)].add(node.concept)
+                #self.kb.top_down_direct_concept_hierarchy[concept].add(self.kb.intersection(concept_B, ref_concept_A))
+                #self.kb.down_top_direct_concept_hierarchy[self.kb.intersection(concept_B, ref_concept_A)].add(concept)
                 if concept_B.str != ref_concept_A.str:
                     any_refinement = True
                     yield self.kb.intersection(concept_B, ref_concept_A)
 
         for ref_concept_B in self.refine(self.getNode(concept_B, parent_node=node)):
             if self.max_child_length >= len(concept_A) + len(ref_concept_B) + 1:
-                #self.kb.top_down_direct_concept_hierarchy[node.concept].add(self.kb.intersection(concept_A, ref_concept_B))
-                #self.kb.down_top_direct_concept_hierarchy[self.kb.intersection(concept_A, ref_concept_B)].add(node.concept)
+                #self.kb.top_down_direct_concept_hierarchy[concept].add(self.kb.intersection(concept_A, ref_concept_B))
+                #self.kb.down_top_direct_concept_hierarchy[self.kb.intersection(concept_A, ref_concept_B)].add(concept)
                 if concept_A.str != ref_concept_B.str:
                     any_refinement = True
                     yield self.kb.intersection(concept_A, ref_concept_B)
         if not any_refinement:
-            yield node.concept
+            yield concept
 
-    def refine(self, node) -> Generator:
-        assert isinstance(node, Node)
-        if node.concept.is_atomic:
-            yield from self.refine_atomic_concept(node)
-        elif node.concept.form == 'ObjectComplementOf':
-            yield from self.refine_complement_of(node)
-        elif node.concept.form == 'ObjectSomeValuesFrom':
-            yield from self.refine_object_some_values_from(node)
-        elif node.concept.form == 'ObjectAllValuesFrom':
-            yield from self.refine_object_all_values_from(node)
-        elif node.concept.form == 'ObjectUnionOf':
-            yield from self.refine_object_union_of(node)
-        elif node.concept.form == 'ObjectIntersectionOf':
-            yield from self.refine_object_intersection_of(node)
+    def refine(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
+        assert isinstance(concept, OWLClassExpression)
+        if concept.is_atomic:
+            yield from self.refine_atomic_concept(concept)
+        elif concept.form == 'ObjectComplementOf':
+            yield from self.refine_complement_of(concept)
+        elif concept.form == 'ObjectSomeValuesFrom':
+            yield from self.refine_object_some_values_from(concept)
+        elif concept.form == 'ObjectAllValuesFrom':
+            yield from self.refine_object_all_values_from(concept)
+        elif concept.form == 'ObjectUnionOf':
+            yield from self.refine_object_union_of(concept)
+        elif concept.form == 'ObjectIntersectionOf':
+            yield from self.refine_object_intersection_of(concept)
         else:
             raise ValueError
