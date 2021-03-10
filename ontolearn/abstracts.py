@@ -130,7 +130,7 @@ class AbstractNode(metaclass=ABCMeta):
         return f'{type(self)} at {addr}'
 
 
-class OEHNode(metaclass=ABCMeta):
+class AbstractOEHeuristicNode(metaclass=ABCMeta):
     @property
     @abstractmethod
     def quality(self) -> Optional[float]:
