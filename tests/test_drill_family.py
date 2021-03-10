@@ -3,6 +3,8 @@ import json
 import random
 import pandas as pd
 
+# @TODO, write such tests for Drill after, experiments are completed.
+"""
 from ontolearn import KnowledgeBase
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.rl import DrillAverage
@@ -11,8 +13,6 @@ from ontolearn.utils import setup_logging
 setup_logging("logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
-# @TODO, write such tests for Drill after, experiments are completed.
-"""
 
 drill_pretrained_model_path = 'agent_pre_trained/model.pth'
 family_embeddings_path = 'embeddings/dismult_family_benchmark/instance_emb.csv'
