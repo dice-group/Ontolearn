@@ -1,6 +1,6 @@
 import inspect
 import logging
-from typing import Iterable, TypeVar, Type, Any, Callable
+from typing import Iterable, TypeVar
 
 from ontolearn.abstracts import AbstractHeuristic, AbstractScorer, BaseRefinement, AbstractKnowledgeBase, \
     AbstractLearningProblem, AbstractNode

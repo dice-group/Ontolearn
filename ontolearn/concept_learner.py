@@ -2,13 +2,15 @@ import logging
 import time
 from contextlib import contextmanager
 from itertools import islice
-from typing import Iterable, Optional, TypeVar, Dict
+from typing import Iterable, Optional, Dict
 
 import pandas as pd
-from sortedcontainers import SortedSet
 
 from ontolearn.search import HeuristicOrderedNode, OENode, TreeNode, LengthOrderedNode, LBLNode, LBLSearchTree, \
     QualityOrderedNode
+from owlapy.model import OWLClassExpression
+from owlapy.render import DLSyntaxRenderer
+from sortedcontainers import SortedSet
 from . import KnowledgeBase
 from .abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic
 from .base_concept_learner import BaseConceptLearner
@@ -16,8 +18,6 @@ from .core.owl.utils import EvaluatedDescriptionSet, OrderedOWLObject, ConceptOp
 from .heuristics import CELOEHeuristic, OCELHeuristic
 from .learning_problem import PosNegLPStandard
 from .metrics import F1
-from owlapy.model import OWLClassExpression
-from owlapy.render import DLSyntaxRenderer
 from .refinement_operators import LengthBasedRefinement
 from .search import SearchTreePriorityQueue
 from .utils import oplogging
