@@ -1,4 +1,15 @@
 include LICENSE
-recursive-include data *.owl
+include tox.ini
+include *.conf
+recursive-include KGs *.owl
+recursive-include KGs *.ttl
 recursive-include examples *.py
+recursive-include examples *.json
+recursive-include examples *.conf
 recursive-include tests *.py
+include sortedcontainers-stubs/py.typed
+recursive-include sortedcontainers-stubs *.pyi
+include superprop/py.typed
+recursive-include superprop *.pyi
+prune *.egg-info
+prune .tox

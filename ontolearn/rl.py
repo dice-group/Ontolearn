@@ -1,7 +1,7 @@
 from abc import ABCMeta
 from .concept_learner import BaseConceptLearner
 from .abstracts import AbstractDrill, AbstractScorer
-from .util import *
+from .utils import *
 from .search import Node, SearchTreePriorityQueue
 from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction, Experience
 from .refinement_operators import LengthBasedRefinement
@@ -22,9 +22,8 @@ from torch.nn.init import xavier_normal_
 from itertools import chain
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ExponentialLR
-import random
 
-random.seed(1)
+# random.seed(1)  # do not set random in a module, set it in the main script
 
 
 class DrillAverage(AbstractDrill, BaseConceptLearner):
@@ -236,7 +235,7 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
         except AssertionError:
             print(len(pos))
             print(len(neg))
-            exit(1)
+            raise
         sampled_pos = random.sample(pos, self.sample_size)
         sampled_neg = random.sample(neg, self.sample_size)
 

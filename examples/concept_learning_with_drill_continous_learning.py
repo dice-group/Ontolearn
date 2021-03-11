@@ -5,8 +5,10 @@ Drill -- Deep Reinforcement Learning for Refinement Operators in ALC
 Drill with continuous training.
 Author: Caglar Demir
 """
-from ontolearn import KnowledgeBase, LearningProblemGenerator, DrillSample, DrillAverage
-from ontolearn.util import sanity_checking_args
+from ontolearn import KnowledgeBase
+from ontolearn.learning_problem_generator import LearningProblemGenerator
+from ontolearn.rl import DrillAverage, DrillSample
+from ontolearn.utils import sanity_checking_args
 from argparse import ArgumentParser
 
 def start(args):

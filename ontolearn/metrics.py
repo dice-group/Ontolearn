@@ -1,12 +1,18 @@
-from .abstracts import AbstractScorer
-from .search import Node
-from typing import Set
+from typing import Final
+
+from .abstracts import AbstractScorer, AbstractNode
+from .learning_problem import PosNegLPStandard
 
 
 class Recall(AbstractScorer):
-    def __init__(self, pos=None, neg=None, unlabelled=None):
-        super().__init__(pos, neg, unlabelled)
-        self.name = 'Recall'
+    __slots__ = ()
+
+    name: Final = 'Recall'
+
+    lp: PosNegLPStandard
+
+    def __init__(self, learning_problem: PosNegLPStandard):
+        super().__init__(lp)
 
     def score(self, pos, neg, instances):
         self.pos = pos
@@ -21,15 +27,14 @@ class Recall(AbstractScorer):
         except ValueError:
             return 0
 
-    def apply(self, node):
+    def apply(self, node, instances):
         self.applied += 1
 
-        instances = node.concept.instances
         if len(instances) == 0:
             node.quality = 0
             return False
-        tp = len(self.pos.intersection(instances))
-        fn = len(self.pos.difference(instances))
+        tp = len(self.lp.kb_pos.intersection(instances))
+        fn = len(self.lp.kb_pos.difference(instances))
         try:
             recall = tp / (tp + fn)
             node.quality = round(recall, 5)
@@ -39,9 +44,14 @@ class Recall(AbstractScorer):
 
 
 class Precision(AbstractScorer):
-    def __init__(self, pos=None, neg=None, unlabelled=None):
-        super().__init__(pos, neg, unlabelled)
-        self.name = 'Precision'
+    __slots__ = ()
+
+    name: Final = 'Precision'
+
+    lp: PosNegLPStandard
+
+    def __init__(self, learning_problem: PosNegLPStandard):
+        super().__init__(lp)
 
     def score(self, pos, neg, instances):
         self.pos = pos
@@ -56,14 +66,14 @@ class Precision(AbstractScorer):
         except ValueError:
             return 0
 
-    def apply(self, node):
+    def apply(self, node, instances):
         self.applied += 1
-        instances = node.concept.instances
+
         if len(instances) == 0:
             node.quality = 0
             return False
-        tp = len(self.pos.intersection(instances))
-        fp = len(self.neg.intersection(instances))
+        tp = len(self.lp.kb_pos.intersection(instances))
+        fp = len(self.lp.kb_neg.intersection(instances))
         try:
             precision = tp / (tp + fp)
             node.quality = round(precision, 5)
@@ -73,11 +83,14 @@ class Precision(AbstractScorer):
 
 
 class F1(AbstractScorer):
-    def __init__(self, pos=None, neg=None, unlabelled=None):
-        super().__init__(pos, neg, unlabelled)
-        self.name = 'F1'
-        self.beta = 0
-        self.noise = 0
+    __slots__ = ()
+
+    name: Final = 'F1'
+
+    lp: PosNegLPStandard
+
+    def __init__(self, learning_problem: PosNegLPStandard):
+        super().__init__(learning_problem=learning_problem)
 
     def score(self, pos, neg, instances):
         self.pos = pos
@@ -97,19 +110,18 @@ class F1(AbstractScorer):
 
         return round(f_1, 5)
 
-    def apply(self, node):
+    def apply(self, node, instances):
         self.applied += 1
 
-        instances = node.concept.instances
         if len(instances) == 0:
             node.quality = 0
             return False
 
-        tp = len(self.pos.intersection(instances))
-        # tn = len(self.neg.difference(instances))
+        tp = len(self.lp.kb_pos.intersection(instances))
+        # tn = len(self.lp.kb_neg.difference(instances))
 
-        fp = len(self.neg.intersection(instances))
-        fn = len(self.pos.difference(instances))
+        fp = len(self.lp.kb_neg.intersection(instances))
+        fn = len(self.lp.kb_pos.difference(instances))
 
         try:
             recall = tp / (tp + fn)
@@ -138,10 +150,10 @@ class Accuracy(AbstractScorer):
     Accuracy is          acc = (tp + tn) / (tp + tn + fp+ fn). However,
     Concept learning papers (e.g. Learning OWL Class expression) appear to invernt their own accuracy metrics.
 
-    In OCEL =>    Accuracy of a concept = 1 - ( |E^+ \ R(C)|+ |E^- AND R(C)|) / |E|)
+    In OCEL =>    Accuracy of a concept = 1 - ( |E^+ \\ R(C)|+ |E^- AND R(C)|) / |E|)
 
 
-    In CELOE  =>    Accuracy of a concept C = 1 - ( |R(A) \ R(C)| + |R(C) \ R(A)|)/n
+    In CELOE  =>    Accuracy of a concept C = 1 - ( |R(A) \\ R(C)| + |R(C) \\ R(A)|)/n
 
 
 
@@ -149,6 +161,11 @@ class Accuracy(AbstractScorer):
 
     2) E^+ and E^- are the positive and negative examples probided. E = E^+ OR E^- .
     """
+    __slots__ = ()
+
+    name: Final = 'Accuracy'
+
+    lp: PosNegLPStandard
 
     def score(self, pos, neg, instances):
         self.pos = pos
@@ -167,30 +184,28 @@ class Accuracy(AbstractScorer):
             print(tn)
             print(fp)
             print(fn)
-            acc=0
+            acc = 0
         return acc
 
+    def __init__(self, learning_problem: PosNegLPStandard):
+        super().__init__(learning_problem)
 
-    def __init__(self, pos=None, neg=None, unlabelled=None):
-        super().__init__(pos, neg, unlabelled)
-        self.name = 'Accuracy'
-
-    def apply(self, node: Node):
-        assert isinstance(node, Node)
+    def apply(self, node: AbstractNode, instances):
+        assert isinstance(node, AbstractNode)
         self.applied += 1
 
-        instances = node.concept.instances
         if len(instances) == 0:
             node.quality = 0
             return False
 
-        tp = len(self.pos.intersection(instances))
-        tn = len(self.neg.difference(instances))
+        tp = len(self.lp.kb_pos.intersection(instances))
+        tn = len(self.lp.kb_neg.difference(instances))
 
-        fp = len(self.neg.intersection(
-            instances))  # FP corresponds to CN in Learning OWL Class Expressions OCEL paper, i.e., cn = |R(C) \AND E^-| covered negatives
-        fn = len(self.pos.difference(
-            instances))  # FN corresponds to UP in Learning OWL Class Expressions OCEL paper, i.e., up = |E^+ \ R(C)|
+        # FP corresponds to CN in Learning OWL Class Expressions OCEL paper, i.e., cn = |R(C) \AND
+        # E^-| covered negatives
+        fp = len(self.lp.kb_neg.intersection(instances))
+        # FN corresponds to UP in Learning OWL Class Expressions OCEL paper, i.e., up = |E^+ \ R(C)|
+        fn = len(self.lp.kb_pos.difference(instances))
         # uncovered positives
 
         acc = (tp + tn) / (tp + tn + fp + fn)

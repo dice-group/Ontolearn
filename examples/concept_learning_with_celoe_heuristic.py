@@ -1,25 +1,86 @@
 import json
+import os
+import random
+
 from ontolearn import KnowledgeBase
 from ontolearn.concept_learner import CELOE
+from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric  # noqa: F401
+from ontolearn.heuristics import CELOEHeuristic
+from ontolearn.learning_problem import PosNegLPStandard
+from ontolearn.metrics import Accuracy
+from owlapy import IRI
+from owlapy.model import OWLClass, OWLNamedIndividual
+from ontolearn.refinement_operators import ModifiedCELOERefinement
+from ontolearn.utils import setup_logging
+
+setup_logging()
+
+try:
+    os.chdir("examples")
+except FileNotFoundError:
+    pass
 
 with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 
 kb = KnowledgeBase(path=settings['data_path'])
-model = CELOE(knowledge_base=kb, max_runtime=1)
+
+random.seed(0)
+
+# noinspection DuplicatedCode
 for str_target_concept, examples in settings['problems'].items():
     p = set(examples['positive_examples'])
     n = set(examples['negative_examples'])
     print('Target concept: ', str_target_concept)
-    concepts_to_ignore = set()
+
     # lets inject more background info
     if str_target_concept in ['Granddaughter', 'Aunt', 'Sister']:
-        concepts_to_ignore.update(
-            {'http://www.benchmark.org/family#Brother',
-             'Father', 'http://www.benchmark.org/family#Grandparent'})  # Use URI, or concept with length 1.
-    model.fit(pos=p, neg=n, ignore=concepts_to_ignore)
-    model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
+        NS = 'http://www.benchmark.org/family#'
+        concepts_to_ignore = {
+            OWLClass(IRI(NS, 'Brother')),
+            OWLClass(IRI(NS, 'Sister')),
+            OWLClass(IRI(NS, 'Daughter')),
+            OWLClass(IRI(NS, 'Mother')),
+            OWLClass(IRI(NS, 'Grandmother')),
+            OWLClass(IRI(NS, 'Father')),
+            OWLClass(IRI(NS, 'Grandparent')),
+            OWLClass(IRI(NS, 'PersonWithASibling')),
+            OWLClass(IRI(NS, 'Granddaughter')),
+            OWLClass(IRI(NS, 'Son')),
+            OWLClass(IRI(NS, 'Child')),
+            OWLClass(IRI(NS, 'Grandson')),
+            OWLClass(IRI(NS, 'Grandfather')),
+            OWLClass(IRI(NS, 'Grandchild')),
+            OWLClass(IRI(NS, 'Parent')),
+        }
+        target_kb = kb.ignore_and_copy(ignored_classes=concepts_to_ignore)
+    else:
+        target_kb = kb
+
+    typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
+    typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
+    lp = PosNegLPStandard(knowledge_base=kb, pos=typed_pos, neg=typed_neg)
+
+    qual = Accuracy(learning_problem=lp)
+    heur = CELOEHeuristic(expansionPenaltyFactor=0.05, startNodeBonus=1.0, nodeRefinementPenalty=0.01)
+    op = ModifiedCELOERefinement(knowledge_base=target_kb, use_negation=False, use_all_constructor=False)
+
+    model = CELOE(knowledge_base=target_kb,
+                  max_runtime=600,
+                  learning_problem=lp,
+                  refinement_operator=op,
+                  quality_func=qual,
+                  heuristic_func=heur,
+                  max_num_of_concepts_tested=10_000_000_000,
+                  iter_bound=10_000_000_000)
+    model.fit()
+
+    # model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
     # Get Top n hypotheses
-    hypotheses = model.best_hypotheses(n=3)
+    hypotheses = list(model.best_hypotheses(n=3))
     # Use hypotheses as binary function to label individuals.
-    predictions = model.predict(individuals=list(p) + list(n), hypotheses=hypotheses)
+    predictions = model.predict(individuals=list(typed_pos | typed_neg),
+                                hypotheses=hypotheses)
+    # print(predictions)
+    [print(_) for _ in hypotheses]
+    # exit(1)

@@ -1,10 +1,14 @@
-from ontolearn import KnowledgeBase, LearningProblemGenerator, DrillSample, DrillAverage
-from ontolearn import CELOE, OCEL, DLFOILHeuristic, CustomConceptLearner
-from ontolearn import Experiments
+from ontolearn import KnowledgeBase
 from ontolearn.binders import DLLearnerBinder
 import pandas as pd
 from argparse import ArgumentParser
 import os
+
+from ontolearn.concept_learner import CELOE, OCEL, CustomConceptLearner
+from ontolearn.experiments import Experiments
+from ontolearn.heuristics import DLFOILHeuristic
+from ontolearn.learning_problem_generator import LearningProblemGenerator
+from ontolearn.rl import DrillAverage, DrillSample
 
 
 def sanity_checking_args(args):
@@ -12,7 +16,7 @@ def sanity_checking_args(args):
         assert os.path.isfile(args.path_knowledge_base)
     except AssertionError as e:
         print(f'--path_knowledge_base ***{args.path_knowledge_base}*** does not lead to a file.')
-        exit(1)
+        raise
 
     assert os.path.isfile(args.path_knowledge_base_embeddings)
     assert args.min_num_concepts > 0
