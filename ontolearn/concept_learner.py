@@ -125,7 +125,7 @@ class CELOE(BaseConceptLearner[OENode]):
                         node.concept,
                         max_length=node.h_exp,
                         current_domain=self.start_class)
-                    )
+                    )  # noqa: E203
                 ,
                 key=OrderedOWLObject)
 
@@ -160,7 +160,7 @@ class CELOE(BaseConceptLearner[OENode]):
             if logger.isEnabledFor(oplogging.TRACE):
                 logger.debug("now refining %s", most_promising)
             for ref in self.downward_refinement(most_promising):
-                # we ignore all refinements with lower length 
+                # we ignore all refinements with lower length
                 # (this also avoids duplicate node children)
                 # TODO: ignore too high depth
                 if ref.len < minimum_length:
