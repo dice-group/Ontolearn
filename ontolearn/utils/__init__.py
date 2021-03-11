@@ -8,10 +8,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.manifold import TSNE
 
-from ontolearn.utils.log_config import setup_logging
+from ontolearn.utils.log_config import setup_logging  # noqa: F401
 
 # DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
-
 DEFAULT_FMT = 'Func:{name} took {elapsed:0.8f}s'
 flag_for_performance = False
 
@@ -51,6 +50,7 @@ def performance_debugger(func_name):
 
 
 def create_experiment_folder(folder_name='Log'):
+    from ontolearn.utils import log_config
     if log_config.log_dirs:
         path_of_folder = log_config.log_dirs[-1]
     else:
