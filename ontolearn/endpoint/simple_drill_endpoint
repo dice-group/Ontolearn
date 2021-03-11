@@ -58,4 +58,4 @@ if __name__ == '__main__':
                                  num_workers=args.num_workers)
 
     app = create_flask_app()
-    app.run(host="0.0.0.0", port=8090, processes=1)  # processes=1 is important to avoid copying the kb
+    app.run(host="0.0.0.0", port=9080, processes=1)  # processes=1 is important to avoid copying the kb
