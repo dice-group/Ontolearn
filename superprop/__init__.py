@@ -30,7 +30,7 @@ class SuperProp:
                     try:
                         # don't lookup further up the chain
                         return object.__getattribute__(cls, name)
-                    except AttributeError as e:
+                    except AttributeError:
                         continue
                     except KeyError:
                         return None
