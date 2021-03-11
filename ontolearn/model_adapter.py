@@ -44,7 +44,7 @@ _N = TypeVar('_N', bound=AbstractNode)
 
 
 class ModelAdapter:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):  # noqa: C901
         """Create a new Concept learner model adapter
 
         Args:

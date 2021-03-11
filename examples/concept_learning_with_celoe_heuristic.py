@@ -4,7 +4,7 @@ import random
 
 from ontolearn import KnowledgeBase
 from ontolearn.concept_learner import CELOE
-from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric
+from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric  # noqa: F401
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import Accuracy

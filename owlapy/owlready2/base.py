@@ -63,7 +63,7 @@ class OWLOntology_Owlready2(OWLOntology):
 
     def get_ontology_id(self) -> OWLOntologyID:
         onto_iri = self._world._unabbreviate(self._onto.storid)
-        look_version =  self._world._get_obj_triple_sp_o(
+        look_version = self._world._get_obj_triple_sp_o(
             self._onto.storid,
             self._world._abbreviate(_VERSION_IRI.as_str()))
         if look_version is not None:

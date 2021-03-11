@@ -355,7 +355,7 @@ class ConceptOperandSorter:
             return e
         else:
             return t
-        
+
     @sort.register
     def _(self, c: OWLObjectUnionOf) -> OWLObjectUnionOf:
         t = OWLObjectUnionOf(_sort_by_ordered_owl_object(c.operands()))
