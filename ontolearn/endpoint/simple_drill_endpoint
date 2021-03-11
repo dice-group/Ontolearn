@@ -41,6 +41,7 @@ if __name__ == '__main__':
     parser.add_argument("--path_knowledge_base", type=str, required=True)
     parser.add_argument("--verbose", type=int, default=0)
     parser.add_argument('--num_workers', type=int, default=32, help='Number of cpus used during batching')
+    parser.add_argument("--max_runtime", type=int, default=5)
 
     # DQL related
     parser.add_argument("--path_knowledge_base_embeddings", type=str, required=True)
@@ -53,8 +54,11 @@ if __name__ == '__main__':
     # TODO: use DrillAverage or DrillSample? What is the difference?
     drill_average = DrillAverage(pretrained_model_path=args.pretrained_drill_avg_path,
                                  num_of_sequential_actions=args.num_of_sequential_actions,
-                                 knowledge_base=kb, path_of_embeddings=args.path_knowledge_base_embeddings,
-                                 num_episode=args.num_episode, verbose=args.verbose,
+                                 knowledge_base=kb,
+                                 path_of_embeddings=args.path_knowledge_base_embeddings,
+                                 num_episode=args.num_episode,
+                                 verbose=args.verbose,
+                                 max_runtime=args.max_runtime,
                                  num_workers=args.num_workers)
 
     app = create_flask_app()
