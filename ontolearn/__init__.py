@@ -11,4 +11,4 @@ __version__ = '0.1.4.dev'
 
 from .knowledge_base import KnowledgeBase
 
-__all__ = 'KnowledgeBase'
+__all__ = 'KnowledgeBase',
