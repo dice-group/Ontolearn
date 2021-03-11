@@ -7,22 +7,6 @@ import torch
 from collections import deque
 
 
-class PropertyHierarchy:
-
-    def __init__(self, onto):
-        self.all_properties = {i for i in onto.properties()}
-
-        self.data_properties = {i for i in onto.data_properties()}
-
-        self.object_properties = {i for i in onto.object_properties()}
-
-    def get_most_general_property(self):
-        return self.all_properties
-
-    def __len__(self):
-        return len(self.all_properties)
-
-
 # @Todo CD:Could we combine PrepareBatchOfPrediction and PrepareBatchOfTraining?
 
 class PrepareBatchOfPrediction(torch.utils.data.Dataset):
@@ -85,7 +69,7 @@ class PrepareBatchOfTraining(torch.utils.data.Dataset):
             print(p.shape)
             print(next_state_batch.shape)
             print(e)
-            exit(1)
+            raise
         self.Negatives = n.expand(next_state_batch.shape)
 
         assert self.S.shape == self.S_Prime.shape == self.Positives.shape == self.Negatives.shape

@@ -1,252 +1,82 @@
-from collections import OrderedDict, defaultdict
-from functools import total_ordering
-from abc import ABCMeta, abstractmethod, ABC
-from owlready2 import ThingClass, Ontology
-from .util import get_full_iri, balanced_sets, read_csv
-from typing import Set, Dict, List, Tuple, Iterable, Generator, SupportsFloat
 import random
-import pandas as pd
-import torch
-from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction, Experience
-import json
+from abc import ABCMeta, abstractmethod, ABC
+from typing import Set, List, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional, Generator, SupportsFloat
+
 import numpy as np
-import time
+import torch
 
-random.seed(0)
+from owlapy.model import OWLClassExpression, OWLOntology
+from owlapy.utils import iter_count
+from .data_struct import Experience
+from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
+from .owlready2.utils import get_full_iri
+from .utils import read_csv
 
+# random.seed(0)  # Note: a module should not set the seed
 
-@total_ordering
-class BaseConcept(metaclass=ABCMeta):
-    """Base class for Concept."""
-    __slots__ = ['owl', 'full_iri', 'str', 'is_atomic', '__instances', '__idx_instances', 'length',
-                 'form', 'role', 'filler', 'concept_a', 'concept_b']
-
-    @abstractmethod
-    def __init__(self, concept: ThingClass, kwargs, world=None):
-        assert isinstance(concept, ThingClass)
-        assert kwargs['form'] in ['Class', 'ObjectIntersectionOf', 'ObjectUnionOf', 'ObjectComplementOf',
-                                  'ObjectSomeValuesFrom', 'ObjectAllValuesFrom']
-
-        self.owl = concept
-        self.world = world
-        self.full_iri = get_full_iri(concept)  # .namespace.base_iri + concept.name
-        self.str = concept.name
-        self.form = kwargs['form']
-
-        self.is_atomic = True if self.form == 'Class' else False  # self.__is_atomic()  # TODO consider the necessity.
-        self.length = self.__calculate_length()
-        self.__idx_instances = None
-
-        self.__instances = {jjj for jjj in self.owl.instances(world=self.world)}  # be sure of the memory usage.
-        if self.__instances is None:
-            self.__instances = set()
-
-    @property
-    def instances(self) -> Set:
-        """ Returns all instances belonging to the concept."""
-        return self.__instances
-
-    @instances.setter
-    def instances(self, x: Set):
-        """ Setter of instances."""
-        self.__instances = x
-
-    @property
-    def idx_instances(self):
-        """ Getter of integer indexes of instances."""
-        return self.__idx_instances
-
-    @idx_instances.setter
-    def idx_instances(self, x):
-        """ Setter of idx_instances."""
-        self.__idx_instances = x
-
-    def __str__(self):
-        return '{self.__repr__}\t{self.full_iri}'.format(self=self)
-
-    def __len__(self):
-        return self.length
-
-    def __calculate_length(self):
-        """
-        The length of a concept is defined as
-        the sum of the numbers of
-            concept names, role names, quantifiers,and connective symbols occurring in the concept
-
-        The length |A| of a concept CAis defined inductively:
-        |A| = |\top| = |\bot| = 1
-        |¬D| = |D| + 1
-        |D \sqcap E| = |D \sqcup E| = 1 + |D| + |E|
-        |∃r.D| = |∀r.D| = 2 + |D|
-        :return:
-        """
-        num_of_exists = self.str.count("∃")
-        num_of_for_all = self.str.count("∀")
-        num_of_negation = self.str.count("¬")
-        is_dot_here = self.str.count('.')
-
-        num_of_operand_and_operator = len(self.str.split())
-        count = num_of_negation + num_of_operand_and_operator + num_of_exists + is_dot_here + num_of_for_all
-        return count
-
-    def __is_atomic(self):
-        """
-        @todo Atomic class definition must be explicitly defined.
-        Currently we consider all concepts having length=1 as atomic.
-        :return: True if self is atomic otherwise False.
-        """
-        if '∃' in self.str or '∀' in self.str:
-            return False
-        elif '⊔' in self.str or '⊓' in self.str or '¬' in self.str:
-            return False
-        return True
-
-    def __lt__(self, other):
-        return self.length < other.length
-
-    def __gt__(self, other):
-        return self.length > other.length
+_N = TypeVar('_N')
 
 
-@total_ordering
-class BaseNode(metaclass=ABCMeta):
-    """Base class for Concept."""
-    __slots__ = ['concept', '__heuristic_score', '__horizontal_expansion', '__quality_score',
-                 '___refinement_count', '__refinement_count', '__depth', '__children', '__embeddings', 'length',
-                 'parent_node']
+class AbstractLearningProblem(metaclass=ABCMeta):
+    __slots__ = 'kb'
+
+    kb: 'AbstractKnowledgeBase'
 
     @abstractmethod
-    def __init__(self, concept, parent_node, is_root=False):
-        self.__quality_score, self.__heuristic_score = None, None
-        self.__is_root = is_root
-        self.__horizontal_expansion, self.__refinement_count = 0, 0
-        self.concept = concept
-        self.parent_node = parent_node
-        self.__embeddings = None
-        self.__children = set()
-        self.length = len(self.concept)
-
-        if self.parent_node is None:
-            assert len(concept) == 1 and self.__is_root
-            self.__depth = 0
-        else:
-            self.__depth = self.parent_node.depth + 1
-
-    def __len__(self):
-        return len(self.concept)
-
-    @property
-    def embeddings(self):
-        return self.__embeddings
-
-    @embeddings.setter
-    def embeddings(self, value):
-        self.__embeddings = value
-
-    @property
-    def children(self):
-        return self.__children
-
-    @property
-    def refinement_count(self):
-        return self.__refinement_count
-
-    @refinement_count.setter
-    def refinement_count(self, n):
-        self.__refinement_count = n
-
-    @property
-    def depth(self):
-        return self.__depth
-
-    @depth.setter
-    def depth(self, n: int):
-        self.__depth = n
-
-    @property
-    def h_exp(self):
-        return self.__horizontal_expansion
-
-    @property
-    def heuristic(self) -> float:
-        return self.__heuristic_score
-
-    @heuristic.setter
-    def heuristic(self, val: float):
-        self.__heuristic_score = val
-
-    @property
-    def quality(self) -> float:
-        return self.__quality_score
-
-    @quality.setter
-    def quality(self, val: float):
-        self.__quality_score = val
-
-    @property
-    def is_root(self):
-        return self.__is_root
-
-    def add_children(self, n):
-        self.__children.add(n)
-
-    def remove_child(self, n):
-        self.__children.remove(n)
-
-    def increment_h_exp(self, val=0):
-        self.__horizontal_expansion += val + 1
-
-    def __lt__(self, other):
-        return self.concept.length < other.concept.length
-
-    def __gt__(self, other):
-        return self.concept.length > other.concept.length
+    def __init__(self, knowledge_base: 'AbstractKnowledgeBase'):
+        self.kb = knowledge_base
 
 
-class AbstractScorer(ABC):
+class AbstractScorer(Generic[_N], metaclass=ABCMeta):
     """
-    An abstract class for quality and heuristic functions.
+    An abstract class for quality functions.
     """
+    __slots__ = 'lp', 'applied'
+
+    name: ClassVar
 
     @abstractmethod
-    def __init__(self, pos, neg, unlabelled):
-        self.pos = pos
-        self.neg = neg
-        self.unlabelled = unlabelled
+    def __init__(self, learning_problem: AbstractLearningProblem):
+        self.lp = learning_problem
         self.applied = 0
 
-    def set_positive_examples(self, instances):
-        self.pos = instances
-
-    def set_negative_examples(self, instances):
-        self.neg = instances
-
-    def set_unlabelled_examples(self, instances):
-        self.unlabelled = instances
-
     @abstractmethod
-    def score(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
-    def apply(self, *args, **kwargs):
+    def apply(self, node: _N, individuals):
         pass
 
     def clean(self):
-        self.pos = None
-        self.neg = None
-        self.unlabelled = None
         self.applied = 0
 
 
-class BaseRefinement(metaclass=ABCMeta):
+class AbstractHeuristic(Generic[_N], metaclass=ABCMeta):
+    __slots__ = 'applied'
+
+    applied: int
+
+    @abstractmethod
+    def __init__(self):
+        self.applied = 0
+
+    @abstractmethod
+    def apply(self, node: _N):
+        pass
+
+    @abstractmethod
+    def clean(self):
+        self.applied = 0
+
+
+_KB = TypeVar('_KB', bound='AbstractKnowledgeBase')
+
+
+class BaseRefinement(Generic[_N], metaclass=ABCMeta):
     """
     Base class for Refinement Operators.
 
-    Let C, D \in N_c where N_c os a finite set of concepts.
+    Let C, D \\in N_c where N_c os a finite set of concepts.
 
     * Proposition 3.3 (Complete and Finite Refinement Operators) [1]
-        ** ρ(C) = {C ⊓ T} ∪ {D | D is not empty AND D \sqset C}
+        ** ρ(C) = {C ⊓ T} ∪ {D | D is not empty AND D \\sqset C}
         *** The operator is finite,
         *** The operator is complete as given a concept C, we can reach an arbitrary concept D such that D subset of C.
 
@@ -261,197 +91,102 @@ class BaseRefinement(metaclass=ABCMeta):
 
     [1] Learning OWL Class Expressions
     """
+    __slots__ = 'kb'
+
+    kb: _KB
 
     @abstractmethod
-    def __init__(self, kb, max_size_of_concept=10_000, min_size_of_concept=0):
-        self.kb = kb
-        self.max_size_of_concept = max_size_of_concept
-        self.min_size_of_concept = min_size_of_concept
-        # self.concepts_to_nodes = dict()
-
-    def set_kb(self, kb):
-        self.kb = kb
-
-    # def set_concepts_node_mapping(self, m: dict):
-    #    self.concepts_to_nodes = m
+    def __init__(self, knowledge_base: _KB):
+        self.kb = knowledge_base
 
     @abstractmethod
-    def getNode(self, *args, **kwargs):
+    def refine(self, *args, **kwargs) -> Iterable[OWLClassExpression]:
+        """Refine a given concept
+        """
         pass
 
+    def len(self, concept: OWLClassExpression) -> int:
+        """The length of a concept
+
+        Args:
+            concept: concept
+
+        Returns:
+            length of concept according to some metric
+        """
+        return self.kb.cl(concept)
+
+
+class AbstractNode(metaclass=ABCMeta):
+    __slots__ = ()
+
     @abstractmethod
-    def refine(self, *args, **kwargs):
+    def __init__(self):
         pass
 
+    def __str__(self):
+        addr = hex(id(self))
+        addr = addr[0:2] + addr[6:-1]
+        return f'{type(self)} at {addr}'
+
+
+class AbstractOEHeuristicNode(metaclass=ABCMeta):
+    @property
     @abstractmethod
-    def refine_atomic_concept(self, *args, **kwargs):
+    def quality(self) -> Optional[float]:
         pass
-
-    @abstractmethod
-    def refine_complement_of(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
-    def refine_object_some_values_from(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
-    def refine_object_all_values_from(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
-    def refine_object_union_of(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
-    def refine_object_intersection_of(self, *args, **kwargs):
-        pass
-
-
-class AbstractTree(ABC):
-    @abstractmethod
-    def __init__(self, quality_func, heuristic_func):
-        self.quality_func = quality_func
-        self.heuristic_func = heuristic_func
-        self._nodes = dict()
-
-    def __len__(self):
-        return len(self._nodes)
-
-    def __getitem__(self, item):
-        return self._nodes[item]
-
-    def __setitem__(self, k, v):
-        self._nodes[k] = v
-
-    def __iter__(self):
-        for k, node in self._nodes.items():
-            yield node
-
-    def get_top_n_nodes(self, n: int, key='quality'):
-        self.sort_search_tree_by_decreasing_order(key=key)
-        for ith, dict_ in enumerate(self._nodes.items()):
-            if ith >= n:
-                break
-            k, node = dict_
-            yield node
-
-    def set_quality_func(self, f: AbstractScorer):
-        self.quality_func = f
-
-    def set_heuristic_func(self, h):
-        self.heuristic_func = h
-
-    def redundancy_check(self, n):
-        if n in self._nodes:
-            return False
-        return True
 
     @property
-    def nodes(self):
-        return self._nodes
-
     @abstractmethod
-    def add(self, *args, **kwargs):
+    def h_exp(self) -> int:
         pass
 
-    def sort_search_tree_by_decreasing_order(self, *, key: str):
-        if key == 'heuristic':
-            sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
-        elif key == 'quality':
-            sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
-        elif key == 'length':
-            sorted_x = sorted(self._nodes.items(), key=lambda kv: len(kv[1]), reverse=True)
-        else:
-            raise ValueError('Wrong Key. Key must be heuristic, quality or concept_length')
-
-        self._nodes = OrderedDict(sorted_x)
-
-    def best_hypotheses(self, n=10) -> List[BaseNode]:
-        assert self.search_tree is not None
-        assert len(self.search_tree) > 1
-        return [i for i in self.search_tree.get_top_n_nodes(n)]
-
-    def show_search_tree(self, th, top_n=10):
-        """
-        Show search tree.
-        """
-        print('######## ', th, 'step Search Tree ###########')
-        predictions = list(self.get_top_n_nodes(top_n))
-        for ith, node in enumerate(predictions):
-            print('{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(ith + 1, node.concept.str,
-                                                              self.quality_func.name, node.quality, node.heuristic))
-        print('######## Search Tree ###########\n')
-        return predictions
-
-    def show_best_nodes(self, top_n, key=None):
-        assert key
-        self.sort_search_tree_by_decreasing_order(key=key)
-        return self.show_search_tree('Final', top_n=top_n + 1)
-
-    @staticmethod
-    def save_current_top_n_nodes(key=None, n=10, path=None):
-
-        """
-        Save current top_n nodes
-        """
-        assert path
-        assert key
-        assert isinstance(n, int)
+    @property
+    @abstractmethod
+    def is_root(self) -> bool:
         pass
 
-    def clean(self):
-        """
-        Clearn
-        @return:
-        """
-        self._nodes.clear()
+    @property
+    @abstractmethod
+    def parent_node(self: _N) -> Optional[_N]:
+        pass
+
+    @property
+    @abstractmethod
+    def refinement_count(self) -> int:
+        pass
 
 
-class AbstractKnowledgeBase(ABC):
+class AbstractKnowledgeBase(metaclass=ABCMeta):
+    __slots__ = ()
 
-    def __init__(self):
-        self.uri_to_concepts = dict()
-        self.thing = None
-        self.nothing = None
-        self.top_down_concept_hierarchy = defaultdict(set)  # Next time thing about including this into Concepts.
-        self.top_down_direct_concept_hierarchy = defaultdict(set)
-        self.down_top_concept_hierarchy = defaultdict(set)
-        self.down_top_direct_concept_hierarchy = defaultdict(set)
-        self.concepts_to_leafs = defaultdict(set)
-        self.property_hierarchy = None
-        self.individuals = None
-        self.uri_individuals = None  # string representation of uris
-
-    def save(self, path: str, rdf_format="rdfxml"):
-        """
-        @param path: xxxx.nt
-        @param rdf_format:
-        @return:
-        """
-        # self.onto.save(file=path, format=rdf_format) => due to world object it only creates empty file.
-        self.world.as_rdflib_graph().serialize(destination=path + '.' + rdf_format, format=rdf_format)
-
-    def describe(self):
-        print(f'Number of concepts: {len(self.uri_to_concepts)}\n'
-              f'Number of individuals: {len(self.individuals)}\n'
-              f'Number of properties: {len(self.property_hierarchy)}')
+    thing: OWLClassExpression
 
     @abstractmethod
-    def clean(self):
+    def ontology(self) -> OWLOntology:
+        """The base ontology of this knowledge base"""
+        pass
+
+    def describe(self) -> None:
+        """Print a short description of the Knowledge Base to standard output"""
+        properties_count = iter_count(self.ontology().object_properties_in_signature()) + iter_count(
+            self.ontology().data_properties_in_signature())
+        print(f'Number of named classes: {iter_count(self.ontology().classes_in_signature())}\n'
+              f'Number of individuals: {self.individuals_count()}\n'
+              f'Number of properties: {properties_count}')
+
+    @abstractmethod
+    def clean(self) -> None:
         raise NotImplementedError
 
-    @property
-    def concepts(self) -> Dict:
-        """
-        Returns a dictionary where keys are string representation of concept objects
-        and values are concept objects.
-        @return:
-        """
-        return dict(zip([i.str for i in self.uri_to_concepts.values()], self.uri_to_concepts.values()))
+    @abstractmethod
+    def individuals_count(self) -> int:
+        """Total number of individuals in this knowledge base"""
+        pass
 
-    def get_all_concepts(self):
-        return set(self.uri_to_concepts.values())
+    @abstractmethod
+    def individuals_set(self, *args, **kwargs) -> Set:
+        pass
 
 
 class AbstractDrill(ABC):
@@ -529,14 +264,14 @@ class AbstractDrill(ABC):
         @return:
         """
 
-    def next_node_to_expand(self, t: int = None) -> BaseNode:
+    def next_node_to_expand(self, t: int = None) -> AbstractNode:
         """
         Return a node that maximizes the heuristic function at time t
         @param t:
         @return:
         """
         if self.verbose > 1:
-            self.search_tree.show_search_tree(t)
+            self.search_tree.show_search_tree(self.start_class, t)
         return self.search_tree.get_most_promising()
 
     def form_experiences(self, state_pairs: List, rewards: List) -> None:
@@ -580,7 +315,7 @@ class AbstractDrill(ABC):
             print(self.emb_neg.shape)
             print('Wrong format.')
             print(e)
-            exit(1)
+            raise
 
         assert current_state_batch.shape[2] == next_state_batch.shape[2] == self.emb_pos.shape[2] == self.emb_neg.shape[
             2]
@@ -609,7 +344,7 @@ class AbstractDrill(ABC):
                 self.optimizer.step()
         self.heuristic_func.net.train().eval()
 
-    def sequence_of_actions(self, root: BaseNode) -> Tuple[List[Tuple[BaseNode, BaseNode]], List[SupportsFloat]]:
+    def sequence_of_actions(self, root: AbstractNode) -> Tuple[List[Tuple[AbstractNode, AbstractNode]], List[SupportsFloat]]:
         """
         Perform self.num_of_sequential_actions number of actions
 
@@ -624,7 +359,7 @@ class AbstractDrill(ABC):
         (2) Return path_of_concepts, rewards
 
         """
-        assert isinstance(root, BaseNode)
+        assert isinstance(root, AbstractNode)
 
         current_state = root
         path_of_concepts = []
@@ -667,7 +402,7 @@ class AbstractDrill(ABC):
             if child_node.quality == 1:
                 return child_node
 
-    def apply_rho(self, node: BaseNode) -> Generator:
+    def apply_rho(self, node: AbstractNode) -> Generator:
         """
         Refine an OWL Class expression |= Observing next possible states
 
@@ -679,17 +414,17 @@ class AbstractDrill(ABC):
                 Note that          i.str not in self.concepts_to_ignore => O(1) if a set is being used.
         3. Return Generator
         """
-        assert isinstance(node, BaseNode)
+        assert isinstance(node, AbstractNode)
         # 1.
         # (1.1)
         length = len(node) + 3 if len(node) + 3 <= self.max_child_length else self.max_child_length
         # (1.2)
-        for i in self.rho.refine(node, maxlength=length):  # O(N)
+        for i in self.operator.refine(node, maxlength=length):  # O(N)
             if i.str not in self.concepts_to_ignore:  # O(1)
-                yield self.rho.getNode(i, parent_node=node)  # O(1)
+                yield self.operator.get_node(i, parent_node=node)  # O(1)
 
-    def assign_embeddings(self, node: BaseNode) -> None:
-        assert isinstance(node, BaseNode)
+    def assign_embeddings(self, node: AbstractNode) -> None:
+        assert isinstance(node, AbstractNode)
         # (1) Detect mode
         if self.representation_mode == 'averaging':
             # (2) if input node has not seen before, assign embeddings.
@@ -711,7 +446,7 @@ class AbstractDrill(ABC):
                     print(node)
                     print(node.embeddings.shape)
                     print((1, self.sample_size, self.instance_embeddings.shape[1]))
-                    exit(1)
+                    raise
         elif self.representation_mode == 'sampling':
             if node.embeddings is None:
                 str_idx = [get_full_iri(i).replace('\n', '') for i in node.concept.instances]
@@ -780,7 +515,8 @@ class AbstractDrill(ABC):
 
         # (1)
         self.init_training(pos_uri=pos_uri, neg_uri=neg_uri)
-        root = self.rho.getNode(self.start_class, root=True)
+        root = self.operator.get_node(self.start_class, root=True)
+        # (2) Assign embeddings of root/first state.
         self.assign_embeddings(root)
 
         sum_of_rewards_per_actions = []
@@ -811,7 +547,7 @@ class AbstractDrill(ABC):
             sum_of_rewards_per_actions.append(sum(rewards))
         return sum_of_rewards_per_actions
 
-    def exploration_exploitation_tradeoff(self, current_state: BaseNode, next_states: List[BaseNode]) -> BaseNode:
+    def exploration_exploitation_tradeoff(self, current_state: AbstractNode, next_states: List[AbstractNode]) -> AbstractNode:
         """
         Exploration vs Exploitation tradeoff at finding next state.
         (1) Exploration
@@ -824,7 +560,7 @@ class AbstractDrill(ABC):
             next_state = self.exploitation(current_state, next_states)
         return next_state
 
-    def exploitation(self, current_state: BaseNode, next_states: List[BaseNode]) -> BaseNode:
+    def exploitation(self, current_state: AbstractNode, next_states: List[AbstractNode]) -> AbstractNode:
         """
         Find next node that is assigned with highest predicted Q value.
 
@@ -849,7 +585,7 @@ class AbstractDrill(ABC):
         """
         return next_state
 
-    def predict_Q(self, current_state: BaseNode, next_states: List[BaseNode]) -> torch.Tensor:
+    def predict_Q(self, current_state: AbstractNode, next_states: List[AbstractNode]) -> torch.Tensor:
         """
         Predict promise of next states given current state.
         @param current_state:

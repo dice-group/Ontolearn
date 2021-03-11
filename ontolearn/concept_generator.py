@@ -1,239 +1,160 @@
-import types
-from owlready2 import Not, AllDisjoint
-from .concept import Concept
-import concurrent.futures
-import owlready2
-from typing import Dict
-from .static_funcs import concepts_sorter
-from .util import get_full_iri
+from typing import Iterable, Optional, AbstractSet, Dict
+
+from ontolearn.core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
+from ontolearn.utils import parametrized_performance_debugger
+from owlapy.model import OWLClass, OWLClassExpression, OWLObjectComplementOf, OWLObjectSomeValuesFrom, \
+    OWLObjectAllValuesFrom, OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectPropertyExpression, OWLThing, \
+    OWLNothing, OWLReasoner, OWLObjectProperty
 
 
 class ConceptGenerator:
-    def __init__(self, concepts: Dict, thing: Concept, nothing: Concept, onto):
+    """A class that can generate some sorts of OWL Class Expressions"""
+    __slots__ = '_class_hierarchy', '_object_property_hierarchy', '_data_property_hierarchy', '_reasoner', '_op_domains'
 
-        self.uri_to_concepts = concepts
-        self.thing = thing
-        self.nothing = nothing
-        self.onto = onto
-        # TODO Have a data structure that can only be written once.
-        self.log_of_intersections = dict()
-        self.log_of_unions = dict()
-        self.log_of_negations = dict()
-        self.log_of_universal_restriction = dict()
-        self.log_of_existential_restriction = dict()
+    _class_hierarchy: ClassHierarchy
+    _object_property_hierarchy: ObjectPropertyHierarchy
+    _data_property_hierarchy: DatatypePropertyHierarchy
+    _reasoner: OWLReasoner
+    _op_domains: Dict[OWLObjectProperty, AbstractSet[OWLClass]]
 
-    def get_instances_for_restrictions(self, exist, role, filler):
-        """
-        Existential Restriction:
+    def __init__(self, reasoner: OWLReasoner,
+                 class_hierarchy: Optional[ClassHierarchy] = None,
+                 object_property_hierarchy: Optional[ObjectPropertyHierarchy] = None,
+                 data_property_hierarchy: Optional[DatatypePropertyHierarchy] = None):
+        self._reasoner = reasoner
 
-        (\exists r.C)^I = \{ a \in \Delta^I | \exists b. (a,b) \in r^I\}.
+        if class_hierarchy is None:
+            class_hierarchy = ClassHierarchy(self._reasoner)
 
-        Universal Restriction:
+        if object_property_hierarchy is None:
+            object_property_hierarchy = ObjectPropertyHierarchy(self._reasoner)
 
-        (\forall r.C)^I = \{ a \in \Delta^I | \forall b. (a,b) \in r^I \implies b \in C^I \}
-         P \implies Q where P = (\forall b. (a,b) \in r^I) and Q =(b \in C^I)
-         If Q holds, then P \implies Q must hold: https://en.wikipedia.org/wiki/Material_conditional
+        if data_property_hierarchy is None:
+            data_property_hierarchy = DatatypePropertyHierarchy(self._reasoner)
 
-        @param exist: boolean if True then Existential Restriction, otherwise Universal Restriction.
-        @param role:
-        @param filler:
-        @return:
-        """
-        temp = set()
-        if exist:
-            for a, b in role.get_relations():  # (a,b) \in r^I
-                if b in filler.instances:
-                    temp.add(a)
-            return temp
+        self._class_hierarchy = class_hierarchy
+        self._object_property_hierarchy = object_property_hierarchy
+        self._data_property_hierarchy = data_property_hierarchy
+
+        self._op_domains = dict()
+
+    def get_leaf_concepts(self, concept: OWLClass):
+        """ Return : { x | (x subClassOf concept) AND not exist y: y subClassOf x )} """
+        assert isinstance(concept, OWLClass)
+        yield from self._class_hierarchy.leaves(of=concept)
+
+    @parametrized_performance_debugger()
+    def negation_from_iterables(self, s: Iterable[OWLClassExpression]) -> Iterable[OWLObjectComplementOf]:
+        """ Return : { x | ( x \\equv not s} """
+        for item in s:
+            assert isinstance(item, OWLClassExpression)
+            yield self.negation(item)
+
+    @parametrized_performance_debugger()
+    def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
+        """ Return : { x | ( x subClassOf concept )} """
+        assert isinstance(concept, OWLClass)
+        yield from self._class_hierarchy.sub_classes(concept, direct=True)
+
+    def _object_property_domain(self, prop: OWLObjectProperty):
+        if prop not in self._op_domains:
+            self._op_domains[prop] = frozenset(self._reasoner.object_property_domains(prop))
+        return self._op_domains[prop]
+
+    def most_general_existential_restrictions(self, *,
+                                              domain: OWLClassExpression, filler: Optional[OWLClassExpression] = None) \
+            -> Iterable[OWLObjectSomeValuesFrom]:
+        if filler is None:
+            filler = self.thing
+        assert isinstance(domain, OWLClass)  # for now, only named classes supported
+        assert isinstance(filler, OWLClassExpression)
+
+        for prop in self._object_property_hierarchy.most_general_roles():
+            if domain.is_owl_thing() or domain in self._object_property_domain(prop):
+                yield OWLObjectSomeValuesFrom(property=prop, filler=filler)
+
+    def most_general_universal_restrictions(self, *,
+                                            domain: OWLClassExpression, filler: Optional[OWLClassExpression] = None) \
+            -> Iterable[OWLObjectAllValuesFrom]:
+        if filler is None:
+            filler = self.thing
+        assert isinstance(domain, OWLClass)  # for now, only named classes supported
+        assert isinstance(filler, OWLClassExpression)
+
+        for prop in self._object_property_hierarchy.most_general_roles():
+            if domain.is_owl_thing() or domain in self._object_property_domain(prop):
+                yield OWLObjectAllValuesFrom(property=prop, filler=filler)
+
+    # noinspection PyMethodMayBeStatic
+    def intersection(self, ops: Iterable[OWLClassExpression]) -> OWLObjectIntersectionOf:
+        operands = []
+        for c in ops:
+            if isinstance(c, OWLObjectIntersectionOf):
+                operands.extend(c.operands())
+            else:
+                assert isinstance(c, OWLClassExpression)
+                operands.append(c)
+        # operands = _avoid_overly_redundand_operands(operands)
+        return OWLObjectIntersectionOf(operands)
+
+    # noinspection PyMethodMayBeStatic
+    def union(self, ops: Iterable[OWLClassExpression]) -> OWLObjectUnionOf:
+        operands = []
+        for c in ops:
+            if isinstance(c, OWLObjectUnionOf):
+                operands.extend(c.operands())
+            else:
+                assert isinstance(c, OWLClassExpression)
+                operands.append(c)
+        # operands = _avoid_overly_redundand_operands(operands)
+        return OWLObjectUnionOf(operands)
+
+    def get_direct_parents(self, concept: OWLClassExpression) -> Iterable[OWLClass]:
+        assert isinstance(concept, OWLClass)
+        yield from self._class_hierarchy.super_classes(concept, direct=True)
+
+    def get_all_direct_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
+        assert isinstance(concept, OWLClass)
+        yield from self._class_hierarchy.sub_classes(concept, direct=True)
+
+    def get_all_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
+        assert isinstance(concept, OWLClass)
+        yield from self._class_hierarchy.sub_classes(concept, direct=False)
+
+    # noinspection PyMethodMayBeStatic
+    def existential_restriction(self, concept: OWLClassExpression, property: OWLObjectPropertyExpression) \
+            -> OWLObjectSomeValuesFrom:
+        assert isinstance(property, OWLObjectPropertyExpression)
+        return OWLObjectSomeValuesFrom(property=property, filler=concept)
+
+    # noinspection PyMethodMayBeStatic
+    def universal_restriction(self, concept: OWLClassExpression, property: OWLObjectPropertyExpression) \
+            -> OWLObjectAllValuesFrom:
+        assert isinstance(property, OWLObjectPropertyExpression)
+        return OWLObjectAllValuesFrom(property=property, filler=concept)
+
+    def negation(self, concept: OWLClassExpression) -> OWLClassExpression:
+        if concept.is_owl_thing():
+            return self.nothing
+        elif isinstance(concept, OWLObjectComplementOf):
+            return concept.get_operand()
         else:
-            for a, b in role.get_relations():  # (a,b) \in r^I
-                if not (b in filler.instances):  # b \in C^I
-                    temp.add(a)
-            return self.thing.instances - temp
+            return concept.get_object_complement_of()
 
-    def negation(self, concept: Concept) -> Concept:
-        """
-        ¬C = \Delta^I \ C.
+    def contains_class(self, concept: OWLClassExpression) -> bool:
+        assert isinstance(concept, OWLClass)
+        return concept in self._class_hierarchy
 
-        1. Check whether input concept have previously been negated. If yes, return its negation.
-        2. If C is not TOP and not a negated Concept, then negate it
-             2.1.  C = Person => ¬Person
-             2.2.  C = (Person AND MOTHER) => => ¬(Person AND MOTHER)
-             2.3   C = (∃R.Person)         =>  ¬(∃R.Person). This applies for \forall
-        3. If C is a negated Concept,i.e. ¬C:
-            3.1. Remove ¬ from C
-            3.2. Use str representation of C to retrieve object C.
+    def class_hierarchy(self) -> ClassHierarchy:
+        return self._class_hierarchy
 
-        """
-        # 1.
-        if concept in self.log_of_negations:
-            return self.log_of_negations[concept]
-        # 2.
-        if concept.owl.name != 'Thing' and concept.owl.name != 'Nothing' and concept.form != 'ObjectComplementOf':
-            possible_instances_ = self.thing.instances - concept.instances
+    @property
+    def thing(self) -> OWLClass:
+        return OWLThing
 
-            with self.onto:
-                not_concept = types.new_class(name="¬{0}".format(concept.owl.name), bases=(self.thing.owl,))
-                AllDisjoint([not_concept, concept.owl])
-                not_concept.equivalent_to.append(Not(concept.owl))
+    @property
+    def nothing(self) -> OWLClass:
+        return OWLNothing
 
-                c = Concept(concept=not_concept, kwargs={'form': 'ObjectComplementOf', 'root': concept})
-                c.instances = possible_instances_  # self.T.instances - concept.instances
-
-                # A=> \negA
-                self.log_of_negations[concept] = c
-                # \negA => A
-                self.log_of_negations[c] = concept
-
-                # Add into the mapping from STR URI to concept objects.
-                self.uri_to_concepts[c.full_iri] = c
-
-            return self.log_of_negations[concept]
-        # 3.
-        elif concept.form == 'ObjectComplementOf':
-            assert concept.str[0] == '¬'
-            full_iri = concept.owl.namespace.base_iri + concept.owl.name[1:]
-            return self.uri_to_concepts[full_iri]
-        elif concept.owl.name == 'Thing':
-            self.log_of_negations[concept.full_iri] = self.nothing
-            self.log_of_negations[self.nothing.full_iri] = concept
-            return self.log_of_negations[concept.full_iri]
-        elif concept.owl.name == 'Nothing':
-            self.log_of_negations[concept.full_iri] = self.thing
-            self.log_of_negations[self.thing.full_iri] = concept
-            return self.log_of_negations[concept.full_iri]
-        else:
-            raise ValueError
-
-    def existential_restriction(self, concept: Concept, relation, base=None) -> Concept:
-        """
-        ∃R.C =>  {x \in \Delta | ∃y \in \Delta : (x, y) \in R^I AND y ∈ C^I }
-
-        @param concept: an instance of Concept
-        @param relation: an isntance of owlready2.prop.ObjectPropertyClass'
-        @param base:
-        @return:
-        """
-
-        if (concept, relation) in self.log_of_existential_restriction:
-            return self.log_of_existential_restriction[(concept, relation)]
-
-        if not base:
-            base = self.thing.owl
-
-        possible_instances_ = self.get_instances_for_restrictions(True, relation, concept)
-        with self.onto:
-            new_concept = types.new_class(name="(∃{0}.{1})".format(relation.name, concept.str), bases=(base,))
-            new_concept.equivalent_to.append(relation.some(concept.owl))
-
-            c = Concept(concept=new_concept,
-                        kwargs={'form': 'ObjectSomeValuesFrom', 'Role': relation, 'Filler': concept})
-
-            for i in possible_instances_:
-                assert type(i) is not str
-            c.instances = possible_instances_  # self.get_instances_for_restrictions(True, relation, concept)
-
-            self.log_of_existential_restriction[(concept, relation)] = c
-            self.uri_to_concepts[c.full_iri] = c
-
-        return self.log_of_existential_restriction[(concept, relation)]
-
-    def universal_restriction(self, concept: Concept, relation, base=None) -> Concept:
-        """
-
-        ∀R.C => extension => {x \in \Delta | ∃y \in \Delta : (x, y) ∈ \in R^I \implies y ∈ C^I }
-
-        Brief explanation:
-                    The universal quantifier defines a class as
-                    *   The set of all instances for which the given role "only" attains values from the given class.
-
-        :param concept:
-        :param relation:
-        :param base:
-        :return:
-        """
-
-        if (concept, relation) in self.log_of_universal_restriction:
-            return self.log_of_universal_restriction[(concept, relation)]
-
-        if not base:
-            base = self.thing.owl
-
-        possible_instances_ = self.get_instances_for_restrictions(False, relation, concept)
-        with self.onto:
-            new_concept = types.new_class(name="(∀{0}.{1})".format(relation.name, concept.str), bases=(base,))
-            new_concept.equivalent_to.append(relation.only(base))
-            c = Concept(concept=new_concept,
-                        kwargs={'form': 'ObjectAllValuesFrom', 'Role': relation, 'Filler': concept})
-
-            for i in possible_instances_:
-                assert type(i) is not str
-            c.instances = possible_instances_  # self.get_instances_for_restrictions(False, relation, concept)
-
-            self.log_of_universal_restriction[(concept, relation)] = c
-
-            self.uri_to_concepts[c.full_iri] = c
-
-        return self.log_of_universal_restriction[(concept, relation)]
-
-    def union(self, A: Concept, B: Concept, base=None):
-
-        A, B = concepts_sorter(A, B)
-        if A.str == B.str:
-            return A
-        # Crude workaround
-        if A.str == 'Nothing':
-            return B
-
-        if B.str == 'Nothing':
-            return A
-
-        if (A, B) in self.log_of_unions:
-            return self.log_of_unions[(A, B)]
-
-        if not base:
-            base = self.thing.owl
-
-        possible_instances_ = A.instances | B.instances
-        with self.onto:
-            new_concept = types.new_class(name="({0} ⊔ {1})".format(A.str, B.str), bases=(base,))
-            new_concept.equivalent_to.append(A.owl | B.owl)
-            c = Concept(concept=new_concept, kwargs={'form': 'ObjectUnionOf', 'ConceptA': A, 'ConceptB': B})
-            for i in possible_instances_:
-                assert type(i) is not str
-
-            c.instances = possible_instances_  # A.instances | B.instances
-            self.log_of_unions[(A, B)] = c
-
-            self.uri_to_concepts[c.full_iri] = c
-        return self.log_of_unions[(A, B)]
-
-    def intersection(self, A: Concept, B: Concept, base=None) -> Concept:
-        A, B = concepts_sorter(A, B)
-        if A.str == B.str:
-            return A
-
-        if (A, B) in self.log_of_intersections:
-            return self.log_of_intersections[(A, B)]
-
-        # Crude workaround
-        if A.str == 'Nothing' or B.str == 'Nothing':
-            self.log_of_intersections[(A, B)] = self.nothing
-            return self.log_of_intersections[(A, B)]
-
-        if not base:
-            base = self.thing.owl
-
-        possible_instances_ = A.instances & B.instances
-
-        with self.onto:
-            new_concept = types.new_class(name="({0}  ⊓  {1})".format(A.str, B.str), bases=(base,))
-            new_concept.equivalent_to.append(A.owl & B.owl)
-            c = Concept(concept=new_concept, kwargs={'form': 'ObjectIntersectionOf', 'ConceptA': A, 'ConceptB': B})
-            for i in possible_instances_:
-                assert type(i) is not str
-            c.instances = possible_instances_  # A.instances & B.instances
-            self.log_of_intersections[(A, B)] = c
-            self.uri_to_concepts[c.full_iri] = c
-
-        return self.log_of_intersections[(A, B)]
+    def clean(self):
+        self._op_domains.clear()

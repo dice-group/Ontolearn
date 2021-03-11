@@ -1,16 +1,32 @@
 """ Test the concept module"""
 import json
 from ontolearn import KnowledgeBase
+from ontolearn.utils import setup_logging
+from owlapy import IRI
+from owlapy.model import OWLClass
+from owlapy.owlready2 import OWLReasoner_Owlready2
+
+setup_logging("logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)
-kb = KnowledgeBase(PATH_FAMILY)
+kb = KnowledgeBase(path=PATH_FAMILY, reasoner_factory=OWLReasoner_Owlready2)
+
 
 def test_concept():
     # Processes input kb
-    assert kb.name == 'family-benchmark_rich_background'
-    assert len(kb.uri_to_concepts) > 1
-    for _, v in kb.uri_to_concepts.items():
-        assert len(v) == 1
-        assert v.instances.issubset(kb.individuals)
+    iri = kb.ontology().get_ontology_id().get_ontology_iri()
+    assert iri == IRI.create("http://www.benchmark.org/family")
+    classes = list(kb.ontology().classes_in_signature())
+    assert len(classes) >= 18
+    for cls in kb.ontology().classes_in_signature():
+        assert isinstance(cls, OWLClass)
+        ic = kb.individuals_count(cls)
+        assert ic > 0
+        inds = kb.individuals_set(cls)
+        assert inds.issubset(kb.all_individuals_set())
+
+
+if __name__ == '__main__':
+    test_concept()

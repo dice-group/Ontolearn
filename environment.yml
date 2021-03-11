@@ -1,12 +1,13 @@
 name: ontolearn
 channels:
-  - conda-forge
   - defaults
+  - conda-forge
   - pytorch
 dependencies:
-  - matplotlib=3.3.1
-  - owlready2=0.24
-  - rdflib=5.0.0 
-  - pandas=1.0.5
-  - pytorch=1.6
-  - scikit-learn=0.23.1
+  - matplotlib=3.3.4
+  - pandas=1.2.3
+  - pytorch=1.8.0
+  - rdflib=5.0.0
+  - scikit-learn=0.24.1
+  - sortedcontainers=2.3.0
+  - owlready2=0.29
