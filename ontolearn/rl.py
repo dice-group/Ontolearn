@@ -22,9 +22,8 @@ from torch.nn.init import xavier_normal_
 from itertools import chain
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ExponentialLR
-import random
 
-random.seed(1)
+# random.seed(1)  # do not set random in a module, set it in the main script
 
 
 class DrillAverage(AbstractDrill, BaseConceptLearner):
