@@ -1,13 +1,35 @@
 #!/usr/bin/env python
 
 import io
+import threading
 from argparse import ArgumentParser
+from datetime import datetime
+from functools import wraps, update_wrapper
 from typing import List
 
 from flask import Flask, request, Response, abort
+from flask import make_response
 
 from ontolearn import KnowledgeBase, DrillAverage, Node
 from ontolearn.static_funcs import export_concepts
+
+
+def nocache(view):
+    @wraps(view)
+    def no_cache(*args, **kwargs):
+        response = make_response(view(*args, **kwargs))
+        response.headers['Last-Modified'] = datetime.now()
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '-1'
+        return response
+
+    return update_wrapper(no_cache, view)
+
+
+lock = threading.Lock()
+ready: bool = False
+waiting: bool = False
 
 
 def create_flask_app():
@@ -15,18 +37,55 @@ def create_flask_app():
 
     @app.route('/concept_learning', methods=['POST'])
     def concept_learning_endpoint():
-        learning_problem = request.get_json(force=True)
-        app.logger.debug(learning_problem)
-        no_of_hypotheses = request.form.get("no_of_hypotheses", 1, type=int)
+        """
+        Accepts a json objects with parameters "positives" and "negatives". Those must have as value a list of entity
+        strings each. Additionally a HTTP form parameter `no_of_hypotheses` can be provided. If not provided, it
+        defaults to 1.
+        """
+        global lock
+        global waiting
+        lock.acquire()
         try:
-            drill_average.fit(set(learning_problem["positives"]), set(learning_problem["negatives"]))
-        except Exception as e:
-            app.logger.debug(e)
-            abort(400)
-        hypotheses: List[Node] = drill_average.best_hypotheses(no_of_hypotheses)
-        file = io.BytesIO(b"")  # BytesIO has the same interface as File. So this should be fine
-        export_concepts(kb, hypotheses, file)
-        return Response(file.getvalue().decode('utf-8'), mimetype="application/rdf+xml")
+            global drill_average
+            global kb
+            waiting = False
+            learning_problem = request.get_json(force=True)
+            app.logger.debug(learning_problem)
+            no_of_hypotheses = request.form.get("no_of_hypotheses", 1, type=int)
+            try:
+                drill_average.fit(set(learning_problem["positives"]), set(learning_problem["negatives"]))
+            except Exception as e:
+                app.logger.debug(e)
+                abort(400)
+            hypotheses: List[Node] = drill_average.best_hypotheses(no_of_hypotheses)
+            file = io.BytesIO(b"")  # BytesIO has the same interface as File. So this should be fine
+            export_concepts(kb, hypotheses, file)
+            return Response(file.getvalue().decode('utf-8'), mimetype="application/rdf+xml")
+        finally:
+            waiting = True
+            lock.release()
+
+    @app.route('/status')
+    @nocache
+    def status_endpoint():
+        flags = []
+        global ready
+        if ready:
+            flags += ["ready"]
+        global waiting
+        if waiting:
+            flags += ["waiting"]
+        status = {"status": flags}
+        return status
+
+    @app.before_first_request
+    def set_read_and_waiting():
+        global lock
+        with lock:
+            global ready
+            ready = True
+            global waiting
+            waiting = True
 
     return app
 
