@@ -28,8 +28,8 @@ def nocache(view):
 
 
 lock = threading.Lock()
+loading: bool = False
 ready: bool = False
-waiting: bool = False
 
 
 def create_flask_app():
@@ -43,12 +43,12 @@ def create_flask_app():
         defaults to 1.
         """
         global lock
-        global waiting
+        global ready
         lock.acquire()
         try:
             global drill_average
             global kb
-            waiting = False
+            ready = False
             learning_problem = request.get_json(force=True)
             app.logger.debug(learning_problem)
             no_of_hypotheses = request.form.get("no_of_hypotheses", 1, type=int)
@@ -62,30 +62,31 @@ def create_flask_app():
             export_concepts(kb, hypotheses, file)
             return Response(file.getvalue().decode('utf-8'), mimetype="application/rdf+xml")
         finally:
-            waiting = True
+            ready = True
             lock.release()
 
     @app.route('/status')
     @nocache
     def status_endpoint():
-        flags = []
+        global loading
         global ready
-        if ready:
-            flags += ["ready"]
-        global waiting
-        if waiting:
-            flags += ["waiting"]
-        status = {"status": flags}
+        if loading:
+            flag = "loading"
+        elif ready:
+            flag = "ready"
+        else:
+            flag = "busy"
+        status = {"status": flag}
         return status
 
     @app.before_first_request
-    def set_read_and_waiting():
+    def set_ready():
         global lock
         with lock:
+            global loading
+            loading = False
             global ready
             ready = True
-            global waiting
-            waiting = True
 
     return app
 
@@ -108,6 +109,7 @@ if __name__ == '__main__':
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument('--num_of_sequential_actions', type=int, default=2)
     parser.add_argument('--pretrained_drill_avg_path', type=str, required=True, help='Provide a path of .pth file')
+    loading = True
     args = parser.parse_args()
     kb = KnowledgeBase(args.path_knowledge_base)
     # TODO: use DrillAverage or DrillSample? What is the difference?
