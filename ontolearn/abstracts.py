@@ -189,6 +189,32 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
         pass
 
 
+class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
+    @abstractmethod
+    def get_most_promising(self) -> _N:
+        pass
+
+    @abstractmethod
+    def add_node(self, node: _N, parent_node: _N):
+        pass
+
+    @abstractmethod
+    def clean(self):
+        pass
+
+    @abstractmethod
+    def get_top_n(self, n: int) -> List[_N]:
+        pass
+
+    @abstractmethod
+    def show_search_tree(self, root_concept: OWLClassExpression, heading_step: str):
+        pass
+
+    @abstractmethod
+    def add_root(self, node: _N):
+        pass
+
+
 class AbstractDrill(ABC):
     """
     Abstract class for Convolutional DQL concept learning

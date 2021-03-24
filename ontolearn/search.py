@@ -10,7 +10,7 @@ from owlapy.model import OWLClassExpression
 from owlapy.render import DLSyntaxRenderer
 from owlapy.utils import as_index
 from superprop import super_prop
-from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode
+from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree
 from .core.owl.utils import OrderedOWLObject
 
 _N = TypeVar('_N')
@@ -236,7 +236,7 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
             _NodeQuality.__str__(self),
             _NodeHeuristic.__str__(self),
             _NodeParentRef.__str__(self),
-            'H_exp:{self.h_exp}',
+            f'H_exp:{self.h_exp}',
             f'|RC|:{self.refinement_count}',
             _NodeIndividualsCount.__str__(self),
         ))
@@ -367,32 +367,6 @@ def _node_and_all_children(n: _N) -> Iterable[_N]:
     yield n
     for c in n.children:
         yield from _node_and_all_children(c)
-
-
-class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
-    @abstractmethod
-    def get_most_promising(self) -> _N:
-        pass
-
-    @abstractmethod
-    def add_node(self, node: _N, parent_node: _N):
-        pass
-
-    @abstractmethod
-    def clean(self):
-        pass
-
-    @abstractmethod
-    def get_top_n(self, n: int) -> List[_N]:
-        pass
-
-    @abstractmethod
-    def show_search_tree(self, root_concept: OWLClassExpression, heading_step: str):
-        pass
-
-    @abstractmethod
-    def add_root(self, node: _N):
-        pass
 
 
 class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
