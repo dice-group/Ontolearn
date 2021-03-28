@@ -7,7 +7,7 @@ from typing import List, Optional, ClassVar, Final, Iterable, TypeVar, Generic, 
 
 from owlapy.io import OWLObjectRenderer
 from owlapy.model import OWLClassExpression
-from owlapy.render import DLSyntaxRenderer
+from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.utils import as_index
 from superprop import super_prop
 from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree
@@ -24,7 +24,7 @@ _N = TypeVar('_N')
 class _NodeConcept(metaclass=ABCMeta):
     __slots__ = ()
 
-    renderer: ClassVar[OWLObjectRenderer] = DLSyntaxRenderer()
+    renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
 
     _concept: OWLClassExpression
 
@@ -195,7 +195,7 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
                 '_parent_ref', '_horizontal_expansion', \
                 '_refinement_count', '__weakref__'
 
-    renderer: ClassVar[OWLObjectRenderer] = DLSyntaxRenderer()
+    renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
 
     _horizontal_expansion: int
     _refinement_count: int
@@ -501,7 +501,7 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
         self.nodes.clear()
 
     def show_search_tree(self, root_concept: OWLClassExpression, heading_step: str):
-        rdr = DLSyntaxRenderer()
+        rdr = DLSyntaxObjectRenderer()
 
         print('######## ', heading_step, 'step Search Tree ###########')
 

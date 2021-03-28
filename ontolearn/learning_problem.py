@@ -5,7 +5,7 @@ from typing import Set, Optional
 from ontolearn import KnowledgeBase
 from ontolearn.abstracts import AbstractLearningProblem
 from owlapy.model import OWLNamedIndividual
-from owlapy.render import DLSyntaxRenderer
+from owlapy.render import DLSyntaxObjectRenderer
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class PosNegLPStandard(AbstractLearningProblem):
         assert isinstance(pos, set) and isinstance(neg, set)
         assert 0 < len(pos) < len(kb_all) and len(kb_all) > len(neg)
         if logger.isEnabledFor(logging.INFO):
-            r = DLSyntaxRenderer()
+            r = DLSyntaxObjectRenderer()
             logger.info('E^+:[ {0} ]'.format(', '.join(map(r.render, pos))))
             logger.info('E^-:[ {0} ]'.format(', '.join(map(r.render, neg))))
 
