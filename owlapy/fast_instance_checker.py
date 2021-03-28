@@ -14,7 +14,8 @@ from owlapy.utils import NamedFixedSet
 class OWLReasoner_FastInstanceChecker(OWLReasoner):
     """Tries to check instances fast (but maybe incomplete)"""
     __slots__ = '_ontology', '_base_reasoner', \
-                '_ind_enc', '_cls_to_ind', '_obj_prop', '_objectsomevalues_cache'
+                '_ind_enc', '_cls_to_ind', '_obj_prop', '_objectsomevalues_cache', \
+                '_negation_default'
 
     _ontology: OWLOntology
     _base_reasoner: OWLReasoner
@@ -23,7 +24,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
     _ind_enc: NamedFixedSet[OWLNamedIndividual]
     _objectsomevalues_cache: Dict[OWLClassExpression, int]  # ObjectSomeValuesFrom => individuals
 
-    def __init__(self, ontology: OWLOntology, base_reasoner: OWLReasoner):
+    def __init__(self, ontology: OWLOntology, base_reasoner: OWLReasoner, *, negation_default=False):
         """Fast instance checker
 
         Args:
@@ -32,6 +33,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
         super().__init__(ontology)
         self._ontology = ontology
         self._base_reasoner = base_reasoner
+        self._negation_default = negation_default
         self._init()
 
     def _init(self):
@@ -156,12 +158,17 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
 
     @_find_instances.register
     def _(self, ce: OWLObjectComplementOf):
-        # TODO!
-        return 0
-        # if self.complement_as_negation:
-        #     ...
-        # else:
-        #     self._lazy_cache_negation
+        if self._negation_default:
+            all = (1 << len(self._ind_enc)) - 1
+            complement_ind_enc = self._find_instances(ce.get_operand())
+            return all ^ complement_ind_enc
+        else:
+            # TODO!
+            return 0
+            # if self.complement_as_negation:
+            #     ...
+            # else:
+            #     self._lazy_cache_negation
 
     @_find_instances.register
     def _(self, ce: OWLObjectAllValuesFrom):
