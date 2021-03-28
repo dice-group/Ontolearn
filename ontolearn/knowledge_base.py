@@ -8,7 +8,7 @@ from .core.utils import BitSet
 from owlapy import IRI
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLNamedIndividual, \
     OWLObjectProperty, OWLClass, OWLDataProperty
-from owlapy.render import DLSyntaxRenderer
+from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.utils import NamedFixedSet, popcount, iter_count
 
 Factory = Callable
@@ -178,7 +178,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
                         f'{i} could not found in \n{self} \n'
                         f'{[_ for _ in self.ontology().classes_in_signature()]}.')
             if logger.isEnabledFor(logging.INFO):
-                r = DLSyntaxRenderer()
+                r = DLSyntaxObjectRenderer()
                 logger.info('Concepts to ignore: {0}'.format(' '.join(map(r.render, owl_concepts_to_ignore))))
             class_hierarchy = self._class_hierarchy.restrict_and_copy(remove=owl_concepts_to_ignore)
         else:
