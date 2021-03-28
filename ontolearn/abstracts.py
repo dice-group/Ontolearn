@@ -35,14 +35,24 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
 
     name: ClassVar
 
-    @abstractmethod
     def __init__(self, learning_problem: AbstractLearningProblem):
         self.lp = learning_problem
         self.applied = 0
 
     @abstractmethod
-    def apply(self, node: _N, individuals):
+    def score(self, instances) -> Tuple[bool, Optional[float]]:
         pass
+
+    def apply(self, node: 'AbstractNode', instances):
+        assert isinstance(node, AbstractNode)
+        from ontolearn.search import _NodeQuality
+        assert isinstance(node, _NodeQuality)
+        self.applied += 1
+
+        ret, q = self.score(instances)
+        if q is not None:
+            node.quality = q
+        return ret
 
     def clean(self):
         self.applied = 0
