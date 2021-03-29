@@ -10,8 +10,10 @@ from typing import List
 from flask import Flask, request, Response, abort
 from flask import make_response
 
-from ontolearn import KnowledgeBase, DrillAverage, Node
-from ontolearn.static_funcs import export_concepts
+from ontolearn import KnowledgeBase
+from ontolearn.owlready2.static_funcs import export_concepts
+from ontolearn.rl import DrillAverage
+from ontolearn.search import Node
 
 
 def nocache(view):
@@ -57,7 +59,7 @@ def create_flask_app():
             except Exception as e:
                 app.logger.debug(e)
                 abort(400)
-            hypotheses: List[Node] = drill_average.best_hypotheses(no_of_hypotheses)
+            hypotheses: List[Node] = list(drill_average.best_hypotheses(no_of_hypotheses))
             file = io.BytesIO(b"")  # BytesIO has the same interface as File. So this should be fine
             export_concepts(kb, hypotheses, file)
             return Response(file.getvalue().decode('utf-8'), mimetype="application/rdf+xml")
@@ -111,7 +113,7 @@ if __name__ == '__main__':
     parser.add_argument('--pretrained_drill_avg_path', type=str, required=True, help='Provide a path of .pth file')
     loading = True
     args = parser.parse_args()
-    kb = KnowledgeBase(args.path_knowledge_base)
+    kb = KnowledgeBase(**args.path_knowledge_base)
     # TODO: use DrillAverage or DrillSample? What is the difference?
     drill_average = DrillAverage(pretrained_model_path=args.pretrained_drill_avg_path,
                                  num_of_sequential_actions=args.num_of_sequential_actions,
