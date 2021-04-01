@@ -8,7 +8,7 @@ Ontolearn is an open-source software library for explainable structured machine 
 
 ### Installation from source
 
-```
+```shell
 git clone https://github.com/dice-group/OntoPy.git
 cd OntoPy
 conda create --name temp python=3.8
@@ -17,25 +17,29 @@ conda env update --name temp
 python -c 'from setuptools import setup; setup()' develop  # OR
 # export PYTHONPATH=$PWD
 python -c "import ontolearn"
-conda install pytest
-pytest
+tox  # to test
 ```
 
 ### Installation via pip
 
-```
+```shell
 pip install ontolearn  # https://pypi.org/project/ontolearn/ only a place holder.
 ```
 
 ### Building (sdist and bdist_wheel)
 
+```shell
+tox -e build
 ```
-pip install build
-python -m build
+
+#### Building the docs
+
+```shell
+tox -e docs
 ```
 
 ## Usage
-See tests and examples folder.
+See the [manual](https://ontolearn-docs-dice-group.netlify.app/), tests and examples folder.
 
 ## Contribution
 Feel free to create a pull request
@@ -43,8 +47,8 @@ Feel free to create a pull request
 ### Simple Linting
 
 Run
-```shell script
+```shell
 flake8
 ```
 
-For any further questions, please contact:  ```caglar.demir@upb.de```
+For any further questions, please contact:  ```onto-learn@lists.uni-paderborn.de```
