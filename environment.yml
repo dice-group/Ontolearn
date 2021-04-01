@@ -12,3 +12,14 @@ dependencies:
   - sortedcontainers=2.3.0
   - owlready2=0.29
   - flask=1.1.2
+  # docs
+  - sphinx=3.5.3
+  - sphinx_rtd_theme=0.5.1
+  - myst-parser=0.13.5
+  # # building
+  # PIP
+  - pip:
+    # docs
+    - sphinx-theme==1.0
+    - sphinxcontrib-plantuml==0.20
+    - plantuml-local-client==1.2021.3
