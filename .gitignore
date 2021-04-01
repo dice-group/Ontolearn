@@ -71,6 +71,9 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/_static_gen/
+# managed by sphinx autosummary in api.rst
+docs/source/
 
 # PyBuilder
 .pybuilder/
