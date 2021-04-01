@@ -89,8 +89,10 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
         base_reasoner = OWLReasoner_Owlready2(onto)
         reasoner_open = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner, negation_default=False)
 
-        self.assertEqual(set(reasoner_open.instances(male)), set(reasoner_open.instances(OWLObjectComplementOf(female))))
-        self.assertEqual(set(reasoner_open.instances(female)), set(reasoner_open.instances(OWLObjectComplementOf(male))))
+        self.assertEqual(set(reasoner_open.instances(male)),
+                         set(reasoner_open.instances(OWLObjectComplementOf(female))))
+        self.assertEqual(set(reasoner_open.instances(female)),
+                         set(reasoner_open.instances(OWLObjectComplementOf(male))))
 
 
 if __name__ == '__main__':
