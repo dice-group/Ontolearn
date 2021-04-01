@@ -9,7 +9,7 @@ import pandas as pd
 from ontolearn.search import HeuristicOrderedNode, OENode, TreeNode, LengthOrderedNode, LBLNode, LBLSearchTree, \
     QualityOrderedNode
 from owlapy.model import OWLClassExpression
-from owlapy.render import DLSyntaxRenderer
+from owlapy.render import DLSyntaxObjectRenderer
 from sortedcontainers import SortedSet
 from . import KnowledgeBase
 from .abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic
@@ -216,7 +216,7 @@ class CELOE(BaseConceptLearner[OENode]):
         """
         Show search tree.
         """
-        rdr = DLSyntaxRenderer()
+        rdr = DLSyntaxObjectRenderer()
 
         print('######## ', heading_step, 'step Search Tree ###########')
 
@@ -400,7 +400,7 @@ class LengthBaseLearner(BaseConceptLearner):
         yield from self.search_tree.get_top_n(n)
 
     def show_search_tree(self, heading_step: str, top_n: int = 10) -> None:
-        rdr = DLSyntaxRenderer()
+        rdr = DLSyntaxObjectRenderer()
 
         self.search_tree.show_search_tree(root_concept=self.start_class, heading_step=heading_step)
 

@@ -3,7 +3,7 @@ import json
 
 from ontolearn import KnowledgeBase
 from ontolearn.utils import setup_logging
-from owlapy.render import DLSyntaxRenderer
+from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.refinement_operators import CustomRefinementOperator, ModifiedCELOERefinement, LengthBasedRefinement
 from ontolearn.search import Node
 
@@ -16,7 +16,7 @@ kb = KnowledgeBase(path=settings['data_path'][3:])
 
 
 def test_celoe_refinement_operator():
-    r = DLSyntaxRenderer()
+    r = DLSyntaxObjectRenderer()
     rho = ModifiedCELOERefinement(kb)
     for _ in enumerate(rho.refine(kb.thing, max_length=10, current_domain=kb.thing)):
         print(r.render(_[1]))
@@ -24,7 +24,7 @@ def test_celoe_refinement_operator():
 
 
 def test_length_refinement_operator():
-    r = DLSyntaxRenderer()
+    r = DLSyntaxObjectRenderer()
     rho = LengthBasedRefinement(kb)
     for _ in enumerate(rho.refine(kb.thing, max_length=5, apply_combinations=False)):
         print(r.render(_[1]))

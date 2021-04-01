@@ -1,6 +1,6 @@
-from typing import Final
+from typing import Final, Tuple
 
-from .abstracts import AbstractScorer, AbstractNode
+from .abstracts import AbstractScorer
 from .learning_problem import PosNegLPStandard
 
 
@@ -11,36 +11,16 @@ class Recall(AbstractScorer):
 
     lp: PosNegLPStandard
 
-    def __init__(self, learning_problem: PosNegLPStandard):
-        super().__init__(lp)
-
-    def score(self, pos, neg, instances):
-        self.pos = pos
-        self.neg = neg
+    def score(self, instances):
         if len(instances) == 0:
-            return 0
-        tp = len(self.pos.intersection(instances))
-        fn = len(self.pos.difference(instances))
-        try:
-            recall = tp / (tp + fn)
-            return round(recall, 5)
-        except ValueError:
-            return 0
-
-    def apply(self, node, instances):
-        self.applied += 1
-
-        if len(instances) == 0:
-            node.quality = 0
-            return False
+            return False, 0
         tp = len(self.lp.kb_pos.intersection(instances))
         fn = len(self.lp.kb_pos.difference(instances))
         try:
             recall = tp / (tp + fn)
-            node.quality = round(recall, 5)
+            return True, round(recall, 5)
         except ZeroDivisionError:
-            node.quality = 0
-            return False
+            return False, 0
 
 
 class Precision(AbstractScorer):
@@ -50,36 +30,16 @@ class Precision(AbstractScorer):
 
     lp: PosNegLPStandard
 
-    def __init__(self, learning_problem: PosNegLPStandard):
-        super().__init__(lp)
-
-    def score(self, pos, neg, instances):
-        self.pos = pos
-        self.neg = neg
+    def score(self, instances):
         if len(instances) == 0:
-            return 0
-        tp = len(self.pos.intersection(instances))
-        fp = len(self.neg.intersection(instances))
-        try:
-            precision = tp / (tp + fp)
-            return round(precision, 5)
-        except ValueError:
-            return 0
-
-    def apply(self, node, instances):
-        self.applied += 1
-
-        if len(instances) == 0:
-            node.quality = 0
-            return False
+            return False, 0
         tp = len(self.lp.kb_pos.intersection(instances))
         fp = len(self.lp.kb_neg.intersection(instances))
         try:
             precision = tp / (tp + fp)
-            node.quality = round(precision, 5)
+            return True, round(precision, 5)
         except ZeroDivisionError:
-            node.quality = 0
-            return False
+            return False, 0
 
 
 class F1(AbstractScorer):
@@ -89,33 +49,9 @@ class F1(AbstractScorer):
 
     lp: PosNegLPStandard
 
-    def __init__(self, learning_problem: PosNegLPStandard):
-        super().__init__(learning_problem=learning_problem)
-
-    def score(self, pos, neg, instances):
-        self.pos = pos
-        self.neg = neg
-
-        tp = len(self.pos.intersection(instances))
-        tn = len(self.neg.difference(instances))
-
-        fp = len(self.neg.intersection(instances))
-        fn = len(self.pos.difference(instances))
-        try:
-            recall = tp / (tp + fn)
-            precision = tp / (tp + fp)
-            f_1 = 2 * ((precision * recall) / (precision + recall))
-        except ZeroDivisionError:
-            f_1 = 0
-
-        return round(f_1, 5)
-
-    def apply(self, node, instances):
-        self.applied += 1
-
+    def score(self, instances):
         if len(instances) == 0:
-            node.quality = 0
-            return False
+            return False, 0
 
         tp = len(self.lp.kb_pos.intersection(instances))
         # tn = len(self.lp.kb_neg.difference(instances))
@@ -126,23 +62,18 @@ class F1(AbstractScorer):
         try:
             recall = tp / (tp + fn)
         except ZeroDivisionError:
-            node.quality = 0
-            return False
+            return False, 0
 
         try:
             precision = tp / (tp + fp)
         except ZeroDivisionError:
-            node.quality = 0
-            return False
+            return False, 0
 
         if precision == 0 or recall == 0:
-            node.quality = 0
-            return False
+            return False, 0
 
         f_1 = 2 * ((precision * recall) / (precision + recall))
-        node.quality = round(f_1, 5)
-
-        assert node.quality
+        return True, round(f_1, 5)
 
 
 class Accuracy(AbstractScorer):
@@ -167,36 +98,9 @@ class Accuracy(AbstractScorer):
 
     lp: PosNegLPStandard
 
-    def score(self, pos, neg, instances):
-        self.pos = pos
-        self.neg = neg
-
-        tp = len(self.pos.intersection(instances))
-        tn = len(self.neg.difference(instances))
-
-        fp = len(self.neg.intersection(instances))
-        fn = len(self.pos.difference(instances))
-        try:
-            acc = (tp + tn) / (tp + tn + fp + fn)
-        except ZeroDivisionError as e:
-            print(e)
-            print(tp)
-            print(tn)
-            print(fp)
-            print(fn)
-            acc = 0
-        return acc
-
-    def __init__(self, learning_problem: PosNegLPStandard):
-        super().__init__(learning_problem)
-
-    def apply(self, node: AbstractNode, instances):
-        assert isinstance(node, AbstractNode)
-        self.applied += 1
-
+    def score(self, instances) -> Tuple[bool, float]:
         if len(instances) == 0:
-            node.quality = 0
-            return False
+            return False, 0
 
         tp = len(self.lp.kb_pos.intersection(instances))
         tn = len(self.lp.kb_neg.difference(instances))
@@ -211,4 +115,4 @@ class Accuracy(AbstractScorer):
         acc = (tp + tn) / (tp + tn + fp + fn)
         # acc = 1 - ((fp + fn) / len(self.pos) + len(self.neg)) # from Learning OWL Class Expressions.
 
-        node.quality = round(acc, 5)
+        return True, round(acc, 5)

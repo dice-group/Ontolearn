@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from owlapy.model import OWLClassExpression, OWLNamedIndividual
-from owlapy.render import DLSyntaxRenderer
+from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractNode, AbstractHeuristic, \
     AbstractKnowledgeBase, AbstractLearningProblem
 from ontolearn.owlready2.static_funcs import decompose_to_atomic
@@ -278,7 +278,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
                 raise ValueError('**n** must be positive integer.')
             hypotheses = list(self.best_hypotheses(n))
 
-        dlr = DLSyntaxRenderer()
+        dlr = DLSyntaxObjectRenderer()
 
         return pd.DataFrame(data=self.assign_labels_to_individuals(individuals=individuals, hypotheses=hypotheses),
                             index=[dlr.render(_) for _ in individuals],
