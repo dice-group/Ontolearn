@@ -1,0 +1,128 @@
+#!/usr/bin/env python
+
+import io
+import threading
+from argparse import ArgumentParser
+from datetime import datetime
+from functools import wraps, update_wrapper
+from typing import List
+
+from flask import Flask, request, Response, abort
+from flask import make_response
+
+from ontolearn import KnowledgeBase
+from ontolearn.owlready2.static_funcs import export_concepts
+from ontolearn.rl import DrillAverage
+from ontolearn.search import Node
+
+
+def nocache(view):
+    @wraps(view)
+    def no_cache(*args, **kwargs):
+        response = make_response(view(*args, **kwargs))
+        response.headers['Last-Modified'] = datetime.now()
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '-1'
+        return response
+
+    return update_wrapper(no_cache, view)
+
+
+lock = threading.Lock()
+loading: bool = False
+ready: bool = False
+
+
+def create_flask_app():
+    app = Flask(__name__, instance_relative_config=True, )
+
+    @app.route('/concept_learning', methods=['POST'])
+    def concept_learning_endpoint():
+        """
+        Accepts a json objects with parameters "positives" and "negatives". Those must have as value a list of entity
+        strings each. Additionally a HTTP form parameter `no_of_hypotheses` can be provided. If not provided, it
+        defaults to 1.
+        """
+        global lock
+        global ready
+        lock.acquire()
+        try:
+            global drill_average
+            global kb
+            ready = False
+            learning_problem = request.get_json(force=True)
+            app.logger.debug(learning_problem)
+            no_of_hypotheses = request.form.get("no_of_hypotheses", 1, type=int)
+            try:
+                drill_average.fit(set(learning_problem["positives"]), set(learning_problem["negatives"]))
+            except Exception as e:
+                app.logger.debug(e)
+                abort(400)
+            hypotheses: List[Node] = list(drill_average.best_hypotheses(no_of_hypotheses))
+            file = io.BytesIO(b"")  # BytesIO has the same interface as File. So this should be fine
+            export_concepts(kb, hypotheses, file)
+            return Response(file.getvalue().decode('utf-8'), mimetype="application/rdf+xml")
+        finally:
+            ready = True
+            lock.release()
+
+    @app.route('/status')
+    @nocache
+    def status_endpoint():
+        global loading
+        global ready
+        if loading:
+            flag = "loading"
+        elif ready:
+            flag = "ready"
+        else:
+            flag = "busy"
+        status = {"status": flag}
+        return status
+
+    @app.before_first_request
+    def set_ready():
+        global lock
+        with lock:
+            global loading
+            loading = False
+            global ready
+            ready = True
+
+    return app
+
+
+kb = None
+
+drill_average = None
+
+if __name__ == '__main__':
+    parser = ArgumentParser()
+    # General
+    parser.add_argument("--path_knowledge_base", type=str, required=True)
+    parser.add_argument("--verbose", type=int, default=0)
+    parser.add_argument('--num_workers', type=int, default=32, help='Number of cpus used during batching')
+    parser.add_argument("--max_runtime", type=int, default=5)
+
+    # DQL related
+    parser.add_argument("--path_knowledge_base_embeddings", type=str, required=True)
+    parser.add_argument("--num_episode", type=int, default=2)
+    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument('--num_of_sequential_actions', type=int, default=2)
+    parser.add_argument('--pretrained_drill_avg_path', type=str, required=True, help='Provide a path of .pth file')
+    loading = True
+    args = parser.parse_args()
+    kb = KnowledgeBase(**args.path_knowledge_base)
+    # TODO: use DrillAverage or DrillSample? What is the difference?
+    drill_average = DrillAverage(pretrained_model_path=args.pretrained_drill_avg_path,
+                                 num_of_sequential_actions=args.num_of_sequential_actions,
+                                 knowledge_base=kb,
+                                 path_of_embeddings=args.path_knowledge_base_embeddings,
+                                 num_episode=args.num_episode,
+                                 verbose=args.verbose,
+                                 max_runtime=args.max_runtime,
+                                 num_workers=args.num_workers)
+
+    app = create_flask_app()
+    app.run(host="0.0.0.0", port=9080, processes=1)  # processes=1 is important to avoid copying the kb
