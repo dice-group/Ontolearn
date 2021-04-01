@@ -35,7 +35,7 @@ in the Ontology document.
 
 ## Knowledge Base over the Ontology
 
-The [knowledge base](ontolearn.KnowledgeBase) is the Ontolearn
+The [knowledge base](ontolearn.knowledge_base.KnowledgeBase) is the Ontolearn
 representation of an Ontology and a Reasoner. It also contains a
 Hierarchy generator as well as other Ontology-related state required
 for the Structured Machine Learning library. It is required to run a
