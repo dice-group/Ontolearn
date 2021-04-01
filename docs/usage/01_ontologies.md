@@ -30,7 +30,7 @@ load a file from our computer, we have to reference it with an
 [IRI](https://tools.ietf.org/html/rfc3987). Secondly, we need an
 Ontology Manager, which is a component that can manage ontologies for
 us. Currently, Ontolearn contains one such manager: The
-[OWLOntologyManager_Owlready2](owlapy.owlready2.OWLOntologyManager_Owlready2).
+[OWLOntologyManager_Owlready2](owlapy.owlready2.base.OWLOntologyManager_Owlready2).
 
 Now, we can already inspect the contents of the ontology. For example,
 to list all individuals:
