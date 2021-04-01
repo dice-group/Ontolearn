@@ -9,7 +9,7 @@ from ontolearn.model_adapter import ModelAdapter
 from ontolearn.utils import setup_logging
 from owlapy import IRI
 from owlapy.model import OWLNamedIndividual, OWLClass
-from owlapy.render import DLSyntaxRenderer
+from owlapy.render import DLSyntaxObjectRenderer
 
 setup_logging("logging_test.conf")
 
@@ -81,7 +81,7 @@ class Celoe_Test(unittest.TestCase):
         best_pred = model.best_hypotheses(n=1).__iter__().__next__()
         print(best_pred)
         self.assertEqual(best_pred.quality, 1.0)
-        r = DLSyntaxRenderer()
+        r = DLSyntaxObjectRenderer()
         self.assertEqual(r.render(best_pred.concept), 'male ⊓ (∃ hasChild.⊤)')
 
     def test_multiple_fits(self):

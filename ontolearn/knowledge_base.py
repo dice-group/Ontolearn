@@ -8,7 +8,7 @@ from .core.utils import BitSet
 from owlapy import IRI
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLNamedIndividual, \
     OWLObjectProperty, OWLClass, OWLDataProperty
-from owlapy.render import DLSyntaxRenderer
+from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.utils import NamedFixedSet, popcount, iter_count
 
 Factory = Callable
@@ -130,7 +130,11 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         ConceptGenerator.__init__(self, reasoner=self._reasoner)
 
         individuals = self._ontology.individuals_in_signature()
-        self._ind_enc = NamedFixedSet(OWLNamedIndividual, individuals)
+        from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
+        if isinstance(self._reasoner, OWLReasoner_FastInstanceChecker):
+            self._ind_enc = self._reasoner._ind_enc  # performance hack
+        else:
+            self._ind_enc = NamedFixedSet(OWLNamedIndividual, individuals)
 
         self.use_individuals_cache = use_individuals_cache
         if use_individuals_cache:
@@ -178,7 +182,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
                         f'{i} could not found in \n{self} \n'
                         f'{[_ for _ in self.ontology().classes_in_signature()]}.')
             if logger.isEnabledFor(logging.INFO):
-                r = DLSyntaxRenderer()
+                r = DLSyntaxObjectRenderer()
                 logger.info('Concepts to ignore: {0}'.format(' '.join(map(r.render, owl_concepts_to_ignore))))
             class_hierarchy = self._class_hierarchy.restrict_and_copy(remove=owl_concepts_to_ignore)
         else:
@@ -226,8 +230,12 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
             raise TypeError
         if ce in self._ind_cache:
             return
-        temp = self._reasoner.instances(ce)
-        self._ind_cache[ce] = self._ind_enc(temp)
+        from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
+        if isinstance(self._reasoner, OWLReasoner_FastInstanceChecker):
+            self._ind_cache[ce] = self._reasoner._find_instances(ce)  # performance hack
+        else:
+            temp = self._reasoner.instances(ce)
+            self._ind_cache[ce] = self._ind_enc(temp)
 
     def _maybe_cache_individuals(self, ce: OWLClassExpression) -> Iterable[OWLNamedIndividual]:
         if self.use_individuals_cache:
@@ -279,7 +287,11 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
     def individuals_set(self, arg: Union[Iterable[OWLNamedIndividual], OWLNamedIndividual, OWLClassExpression]):
         if isinstance(arg, OWLClassExpression):
-            return self.individuals_set(self.individuals(arg))
+            if self.use_individuals_cache:
+                self._cache_individuals(arg)
+                return BitSet(self._ind_cache[arg])
+            else:
+                return self.individuals_set(self.individuals(arg))
         else:
             if self._ind_enc:
                 return BitSet(self._ind_enc(arg))

@@ -35,14 +35,24 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
 
     name: ClassVar
 
-    @abstractmethod
     def __init__(self, learning_problem: AbstractLearningProblem):
         self.lp = learning_problem
         self.applied = 0
 
     @abstractmethod
-    def apply(self, node: _N, individuals):
+    def score(self, instances) -> Tuple[bool, Optional[float]]:
         pass
+
+    def apply(self, node: 'AbstractNode', instances):
+        assert isinstance(node, AbstractNode)
+        from ontolearn.search import _NodeQuality
+        assert isinstance(node, _NodeQuality)
+        self.applied += 1
+
+        ret, q = self.score(instances)
+        if q is not None:
+            node.quality = q
+        return ret
 
     def clean(self):
         self.applied = 0
@@ -186,6 +196,32 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
 
     @abstractmethod
     def individuals_set(self, *args, **kwargs) -> Set:
+        pass
+
+
+class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
+    @abstractmethod
+    def get_most_promising(self) -> _N:
+        pass
+
+    @abstractmethod
+    def add_node(self, node: _N, parent_node: _N):
+        pass
+
+    @abstractmethod
+    def clean(self):
+        pass
+
+    @abstractmethod
+    def get_top_n(self, n: int) -> List[_N]:
+        pass
+
+    @abstractmethod
+    def show_search_tree(self, root_concept: OWLClassExpression, heading_step: str):
+        pass
+
+    @abstractmethod
+    def add_root(self, node: _N):
         pass
 
 
