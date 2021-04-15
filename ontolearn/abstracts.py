@@ -167,6 +167,13 @@ class AbstractOEHeuristicNode(metaclass=ABCMeta):
         pass
 
 
+class AbstractConceptNode(metaclass=ABCMeta):
+    @property
+    @abstractmethod
+    def concept(self) -> OWLClassExpression:
+        pass
+
+
 class AbstractKnowledgeBase(metaclass=ABCMeta):
     __slots__ = ()
 

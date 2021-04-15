@@ -6,8 +6,7 @@ import owlready2
 
 from owlapy import IRI
 from owlapy.model import OWLClass, OWLClassExpression, OWLNamedIndividual
-from owlapy.owlready2 import OWLReasoner_Owlready2
-from owlapy.owlready2.base import OWLOntology_Owlready2, BaseReasoner
+from owlapy.owlready2 import OWLReasoner_Owlready2, OWLOntology_Owlready2, BaseReasoner
 from owlapy.owlready2.utils import ToOwlready2
 
 

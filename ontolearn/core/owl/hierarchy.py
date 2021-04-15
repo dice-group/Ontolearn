@@ -3,9 +3,8 @@ from abc import ABCMeta, abstractmethod
 from functools import reduce
 from typing import Dict, Iterable, Tuple, overload, TypeVar, Generic, Type, cast, Optional
 
-from owlapy import HasIRI
 from owlapy.model import OWLClass, OWLReasoner, OWLObjectProperty, OWLDataProperty, OWLTopObjectProperty, \
-    OWLBottomObjectProperty, OWLTopDataProperty, OWLBottomDataProperty, OWLThing, OWLNothing
+    OWLBottomObjectProperty, OWLTopDataProperty, OWLBottomDataProperty, OWLThing, OWLNothing, HasIRI
 from owlapy.utils import NamedFixedSet, iter_bits
 
 _S = TypeVar('_S', bound=HasIRI)

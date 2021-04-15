@@ -10,7 +10,8 @@ from owlapy.model import OWLClassExpression
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.utils import as_index
 from superprop import super_prop
-from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree
+from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree, \
+    AbstractConceptNode
 from .core.owl.utils import OrderedOWLObject
 
 _N = TypeVar('_N')
@@ -190,7 +191,7 @@ class Node(_NodeConcept, _NodeLen, _NodeIndividualsCount, AbstractNode):
 
 
 class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeHeuristic,
-             _NodeParentRef['OENode'], AbstractNode, AbstractOEHeuristicNode):
+             _NodeParentRef['OENode'], AbstractNode, AbstractConceptNode, AbstractOEHeuristicNode):
     __slots__ = '_concept', '_len', '_individuals_count', '_quality', '_heuristic', \
                 '_parent_ref', '_horizontal_expansion', \
                 '_refinement_count', '__weakref__'

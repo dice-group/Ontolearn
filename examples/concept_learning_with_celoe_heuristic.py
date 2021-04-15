@@ -75,7 +75,7 @@ for str_target_concept, examples in settings['problems'].items():
                   iter_bound=10_000_000_000)
     model.fit()
 
-    # model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
+    model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
     # Get Top n hypotheses
     hypotheses = list(model.best_hypotheses(n=3))
     # Use hypotheses as binary function to label individuals.

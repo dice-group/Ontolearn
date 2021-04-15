@@ -4,8 +4,7 @@ import owlapy.owlready2.utils
 from owlapy import IRI
 from owlapy.model import OWLObjectProperty, OWLNamedIndividual, OWLThing, OWLClass, OWLObjectUnionOf, \
     OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectComplementOf
-from owlapy.owlready2.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-import owlapy.owlready2
+from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 
 

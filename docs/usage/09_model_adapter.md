@@ -11,11 +11,10 @@ from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import Accuracy
 from ontolearn.model_adapter import ModelAdapter
-from owlapy import IRI
 from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.model import OWLOntology, OWLNamedIndividual
+from owlapy.model import OWLOntology, OWLNamedIndividual, IRI
 from owlapy.namespaces import Namespaces
-from owlapy.owlready2.base import OWLOntology_Owlready2, OWLOntologyManager_Owlready2
+from owlapy.owlready2 import OWLOntology_Owlready2, OWLOntologyManager_Owlready2
 from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 from owlapy.render import DLSyntaxObjectRenderer
 
@@ -56,7 +55,7 @@ model.fit(path="../KGs/father.owl",
           neg=negative_examples,
           )
 
-dlsr = DLSyntaxRenderer()
+dlsr = DLSyntaxObjectRenderer()
 
 for desc in model.best_hypotheses(1):
     print('The result:', dlsr.render(desc.concept), 'has quality', desc.quality)

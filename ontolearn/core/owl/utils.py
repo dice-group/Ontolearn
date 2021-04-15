@@ -2,13 +2,11 @@ from collections import Counter
 from functools import singledispatchmethod, total_ordering
 from typing import Optional, Tuple, Iterable, Generic, TypeVar, Callable, List
 
-from owlapy import HasIRI
-from owlapy.base import HasIndex
 from owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, \
     OWLObjectCardinalityRestriction, OWLObjectHasSelf, \
     OWLObjectHasValue, OWLObjectOneOf, OWLObjectRestriction, HasFiller, HasCardinality, HasOperands, OWLNamedIndividual, \
-    OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality
+    OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality, HasIndex, HasIRI
 from owlapy.utils import as_index
 from sortedcontainers import SortedSet
 
