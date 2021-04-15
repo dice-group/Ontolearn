@@ -101,7 +101,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
         opc: Dict[int, int] = dict()
 
         # shortcut for owlready2
-        from owlapy.owlready2.base import OWLOntology_Owlready2
+        from owlapy.owlready2 import OWLOntology_Owlready2
         if isinstance(self._ontology, OWLOntology_Owlready2):
             import owlready2
             # _x => owlready2 objects

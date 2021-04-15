@@ -6,7 +6,7 @@ import owlready2
 from owlapy import IRI
 from owlapy.model import OWLClassExpression, OWLPropertyExpression, OWLObjectProperty, OWLClass, \
     OWLObjectComplementOf, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
-    OWLObjectPropertyExpression
+    OWLObjectPropertyExpression, OWLObject, OWLOntology, OWLAnnotationProperty
 
 
 class ToOwlready2:
@@ -16,6 +16,24 @@ class ToOwlready2:
 
     def __init__(self, world: owlready2.World):
         self._world = world
+
+    @singledispatchmethod
+    def map_object(self, o: OWLObject):
+        raise NotImplementedError(f'don\'t know how to map {o}')
+
+    @map_object.register
+    def _(self, ce: OWLClassExpression) -> Union[owlready2.ClassConstruct, owlready2.ThingClass]:
+        return self.map_concept(ce)
+
+    @map_object.register
+    def _(self, ont: OWLOntology) -> owlready2.namespace.Ontology:
+        return self._world.get_ontology(
+                ont.get_ontology_id().get_ontology_iri().as_str()
+            )
+
+    @map_object.register
+    def _(self, ap: OWLAnnotationProperty) -> owlready2.annotation.AnnotationPropertyClass:
+        return self._world[ap.get_iri().as_str()]
 
     # single dispatch is still not implemented in mypy, see https://github.com/python/mypy/issues/2904
     @singledispatchmethod

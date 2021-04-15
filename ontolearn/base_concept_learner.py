@@ -2,19 +2,23 @@ import logging
 import time
 import types
 from abc import ABCMeta, abstractmethod
-from typing import List, Set, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar
+from typing import List, Set, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, cast
 
 import numpy as np
 import pandas as pd
 
-from owlapy.model import OWLClassExpression, OWLNamedIndividual
+from owlapy import IRI
+from owlapy.model import OWLClassExpression, OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
+    OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, OWLAnnotationAssertionAxiom, OWLAnnotation, \
+    OWLAnnotationProperty, OWLLiteral
+from owlapy.owlready2 import OWLOntologyManager_Owlready2
 from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractNode, AbstractHeuristic, \
-    AbstractKnowledgeBase, AbstractLearningProblem
+    AbstractKnowledgeBase, AbstractLearningProblem, AbstractConceptNode
 from ontolearn.owlready2.static_funcs import decompose_to_atomic
 from .utils import oplogging
 
-_N = TypeVar('_N', bound=AbstractNode)
+_N = TypeVar('_N', bound=AbstractConceptNode)
 
 logger = logging.getLogger(__name__)
 
@@ -289,39 +293,46 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         return self.quality_func.applied
 
     def save_best_hypothesis(self, n: int = 10, path='Predictions', rdf_format='rdfxml') -> None:
+        best = list(self.best_hypotheses(n))
         try:
-            assert len(self.search_tree) > n
+            assert len(best) >= n
         except AssertionError:
-            print('|Search Tree|:{0}'.format(len(self.search_tree)))
+            logger.warning("There were only %d results", len(best))
 
-        # https://owlready2.readthedocs.io/en/latest/onto.html =>
-        # If an ontology has already been created for the same IRI, it will be returned.
-        o1 = self.kb.world.get_ontology('https://dice-research.org/predictions/' + str(time.time()))
-        o1.imported_ontologies.append(self.kb._ontology)
-        with o1:
-            class f1_score(AnnotationProperty):  # Each concept has single f1 score
-                domain = [Thing]
-                range = [float]
+        SNS: Final = 'https://dice-research.org/predictions-schema/'
+        NS: Final = 'https://dice-research.org/predictions/' + str(time.time()) + '#'
+        manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
 
-            class accuracy(AnnotationProperty):  # Each concept has single f1 score
-                domain = [Thing]
-                range = [float]
-
+        ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
+        from ontolearn import KnowledgeBase
+        assert isinstance(self.kb, KnowledgeBase)
+        manager.load_ontology(IRI.create(self.kb.path))
+        kb_iri = self.kb.ontology().get_ontology_id().get_ontology_iri()
+        manager.apply_change(AddImport(ontology, OWLImportsDeclaration(kb_iri)))
         for ith, h in enumerate(self.best_hypotheses(n=n)):
-            with o1:
-                w = types.new_class(name='Pred_' + str(ith), bases=(Thing,))
-                w.is_a.remove(Thing)
-                w.label.append(h.concept.str)
-                try:
-                    w.equivalent_to.append(decompose_to_atomic(h.concept))
-                except AttributeError as e:
-                    print(e)
-                    continue
+            cls_a: OWLClass = OWLClass(IRI.create(NS, "Pred_" + str(ith)))
+            equivalent_classes_axiom = OWLEquivalentClassesAxiom(cls_a, h.concept)
+            manager.add_axiom(ontology, equivalent_classes_axiom)
 
-                w.f1_score = h.quality
-                # @Todo add assertion to check whether h.quality is F1-score
+            try:
+                from ontolearn.search import _NodeQuality
+                h = cast(_NodeQuality, h)
+                quality = h.quality
+            except AttributeError:
+                quality = None
 
-        o1.save(file=self.storage_path + '/' + path + '.owl', format=rdf_format)
+            from ontolearn.metrics import Accuracy
+            from ontolearn.metrics import F1
+            if isinstance(self.quality_func, Accuracy):
+                accuracy = OWLAnnotationAssertionAxiom(cls_a.get_iri(), OWLAnnotation(
+                    OWLAnnotationProperty(IRI.create(SNS, "accuracy")), OWLLiteral(quality)))
+                manager.add_axiom(ontology, accuracy)
+            elif isinstance(self.quality_func, F1):
+                f1_score = OWLAnnotationAssertionAxiom(cls_a.get_iri(), OWLAnnotation(
+                    OWLAnnotationProperty(IRI.create(SNS, "f1_score")), OWLLiteral(quality)))
+                manager.add_axiom(ontology, f1_score)
+
+        manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))
 
     def extend_ontology(self, top_n_concepts=10, key='quality', rdf_format='xml'):
         """
