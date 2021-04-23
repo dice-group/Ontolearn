@@ -2,8 +2,10 @@ from abc import ABCMeta, abstractmethod
 from typing import Generic, Iterable, Sequence, TypeVar, Union, Final, Optional, Protocol, ClassVar, List
 
 from owlapy import vocab
+from owlapy._utils import MOVE
 from owlapy.model._base import OWLObject, OWLAnnotationObject, OWLAnnotationSubject, OWLAnnotationValue
 from owlapy.model._iri import HasIRI, IRI
+MOVE(OWLObject, OWLAnnotationObject, OWLAnnotationSubject, OWLAnnotationValue, HasIRI, IRI)
 
 _T = TypeVar('_T')
 _C = TypeVar('_C', bound='OWLObject')
@@ -1032,14 +1034,14 @@ class OWLAnnotationAssertionAxiom(OWLAnnotationAxiom):
 
 """Important constant objects section"""
 
-OWLThing: Final = OWLClass(vocab.OWL_THING.get_iri())
-OWLNothing: Final = OWLClass(vocab.OWL_NOTHING.get_iri())
-OWLTopObjectProperty: Final = OWLObjectProperty(vocab.OWL_TOP_OBJECT_PROPERTY.get_iri())
-OWLBottomObjectProperty: Final = OWLObjectProperty(vocab.OWL_BOTTOM_OBJECT_PROPERTY.get_iri())
-OWLTopDataProperty: Final = OWLDataProperty(vocab.OWL_TOP_DATA_PROPERTY.get_iri())
-OWLBottomDataProperty: Final = OWLDataProperty(vocab.OWL_BOTTOM_DATA_PROPERTY.get_iri())
+OWLThing: Final = OWLClass(vocab.OWL_THING.get_iri())  #:
+OWLNothing: Final = OWLClass(vocab.OWL_NOTHING.get_iri())  #:
+OWLTopObjectProperty: Final = OWLObjectProperty(vocab.OWL_TOP_OBJECT_PROPERTY.get_iri())  #:
+OWLBottomObjectProperty: Final = OWLObjectProperty(vocab.OWL_BOTTOM_OBJECT_PROPERTY.get_iri())  #:
+OWLTopDataProperty: Final = OWLDataProperty(vocab.OWL_TOP_DATA_PROPERTY.get_iri())  #:
+OWLBottomDataProperty: Final = OWLDataProperty(vocab.OWL_BOTTOM_DATA_PROPERTY.get_iri())  #:
 
-DoubleOWLDatatype: Final = OWLDatatype(vocab.DOUBLE)
-IntegerOWLDatatype: Final = OWLDatatype(vocab.INTEGER)
-BooleanOWLDatatype: Final = OWLDatatype(vocab.BOOLEAN)
-TopDatatype: Final = OWLDatatype(vocab.RDFS_LITERAL)
+DoubleOWLDatatype: Final = OWLDatatype(vocab.DOUBLE)  #:
+IntegerOWLDatatype: Final = OWLDatatype(vocab.INTEGER)  #:
+BooleanOWLDatatype: Final = OWLDatatype(vocab.BOOLEAN)  #:
+TopDatatype: Final = OWLDatatype(vocab.RDFS_LITERAL)  #:

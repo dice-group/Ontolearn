@@ -13,7 +13,7 @@ from owlapy.model import OWLOntologyManager, OWLOntology, OWLClass, OWLDataPrope
 from owlapy.owlready2.utils import ToOwlready2
 
 
-class BaseReasoner(Enum):
+class BaseReasoner_Owlready2(Enum):
     PELLET = auto()
 
 
@@ -331,14 +331,14 @@ class OWLReasoner_Owlready2(OWLReasoner):
                     yield OWLClass(IRI.create(c.iri))
                 # Anonymous classes are ignored
 
-    def _sync_reasoner(self, other_reasoner: BaseReasoner = None, **kwargs) -> None:
+    def _sync_reasoner(self, other_reasoner: BaseReasoner_Owlready2 = None, **kwargs) -> None:
         """Call Owlready2's sync_reasoner method, which spawns a Java process on a temp file to infer more
 
         Keyword arguments:
             other_reasoner -- set to BaseReasoner.PELLET to use pellet
         """
-        assert other_reasoner is None or isinstance(other_reasoner, BaseReasoner)
-        if other_reasoner == BaseReasoner.PELLET:
+        assert other_reasoner is None or isinstance(other_reasoner, BaseReasoner_Owlready2)
+        if other_reasoner == BaseReasoner_Owlready2.PELLET:
             owlready2.sync_reasoner_pellet(self._world, **kwargs)
         else:
             owlready2.sync_reasoner(self._world, **kwargs)

@@ -30,7 +30,7 @@ load a file from our computer, we have to reference it with an
 [IRI](https://tools.ietf.org/html/rfc3987). Secondly, we need an
 Ontology Manager, which is a component that can manage ontologies for
 us. Currently, Ontolearn contains one such manager: The
-[OWLOntologyManager_Owlready2](owlapy.owlready2.base.OWLOntologyManager_Owlready2).
+[OWLOntologyManager_Owlready2](owlapy.owlready2.OWLOntologyManager_Owlready2).
 
 Now, we can already inspect the contents of the ontology. For example,
 to list all individuals:
@@ -53,7 +53,7 @@ In our Ontolearn library, we provide several reasoners to choose
 from. Currently, there are the the
 [fast instance checker](owlapy.fast_instance_checker.OWLReasoner_FastInstanceChecker),
 the
-[structural Owlready2 reasoner](owlapy.owlready2.base.OWLReasoner_Owlready2),
+[structural Owlready2 reasoner](owlapy.owlready2.OWLReasoner_Owlready2),
 and the [class instantiation Owlready2 reasoner](owlapy.owlready2.temp_classes.OWLReasoner_Owlready2_TempClasses)
 available to choose from.
 

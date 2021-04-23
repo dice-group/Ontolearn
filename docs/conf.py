@@ -28,11 +28,10 @@ author = 'Ontolearn team'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinxext_autox',
     'sphinx.ext.githubpages',
-    'sphinx.ext.autosummary',
     # 'sphinx.ext.intersphinx',
     # 'sphinx_automodapi.smart_resolver',
-    'sphinx.ext.autodoc',
     # 'sphinx.ext.inheritance_diagram',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
@@ -61,18 +60,6 @@ autosummary_generate = True
 
 numpydoc_show_class_members = False
 autoclass_content = 'both'
-
-def _autosummary_shorten_toc():
-    import sphinx.ext.autosummary
-    _init = sphinx.ext.autosummary.autosummary_toc.__init__
-    def my_init(self, rawsource='', text='', *children, **attributes):
-        for tocnode in children:
-            tocnode['entries'] = [(_[1].split('.')[-1] if '.' in _[1] else _[0], _[1]) for _ in tocnode['entries']]
-        _init(self, rawsource, text, *children, **attributes)
-
-    sphinx.ext.autosummary.autosummary_toc.__init__ = my_init
-
-_autosummary_shorten_toc()
 
 python_use_unqualified_type_names = True
 # add_module_names = False
@@ -137,21 +124,7 @@ latex_elements = {
     'printindex': '\\def\\twocolumn[#1]{#1}\\footnotesize\\raggedright\\printindex',
 }
 
-# def maybe_skip_member(app, what, name, obj, skip, options):
-#     import inspect
-#     from sphinx.util.inspect import safe_getattr
-#     mod = safe_getattr(obj, '__module__', None)
-#     dp = options.get('documenter_parent', None)
-#     dp_all = list(safe_getattr(dp, '__all__', [])) if dp is not None else []
-#     if skip:
-#         return True
-#     if dp is not None and inspect.ismodule(dp) and mod is not None and dp.__name__ != mod and name not in dp_all:
-#         # print("SKIPPING[imported] ", [app, what, name, obj, skip, options, dp, mod])
-#         return True
-#     return None  # ask the next handler
-
 def setup(app):
-    # app.connect('autodoc-skip-member', maybe_skip_member)
     # -- Options for HTML output ---------------------------------------------
     app.add_css_file('theme.css')
     app.add_css_file('theme_tweak.css')

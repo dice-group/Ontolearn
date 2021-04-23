@@ -33,19 +33,19 @@ class XSDVocabulary(_Vocabulary):
         super().__init__(namespaces.XSD, remainder)
 
 
-OWL_THING: Final = OWLRDFVocabulary(namespaces.OWL, "Thing")
-OWL_NOTHING: Final = OWLRDFVocabulary(namespaces.OWL, "Nothing")
-OWL_TOP_OBJECT_PROPERTY: Final = OWLRDFVocabulary(namespaces.OWL, "topObjectProperty")
-OWL_BOTTOM_OBJECT_PROPERTY: Final = OWLRDFVocabulary(namespaces.OWL, "bottomObjectProperty")
-OWL_TOP_DATA_PROPERTY: Final = OWLRDFVocabulary(namespaces.OWL, "topDataProperty")
-OWL_BOTTOM_DATA_PROPERTY: Final = OWLRDFVocabulary(namespaces.OWL, "bottomDataProperty")
+OWL_THING: Final = OWLRDFVocabulary(namespaces.OWL, "Thing")  #:
+OWL_NOTHING: Final = OWLRDFVocabulary(namespaces.OWL, "Nothing")  #:
+OWL_TOP_OBJECT_PROPERTY: Final = OWLRDFVocabulary(namespaces.OWL, "topObjectProperty")  #:
+OWL_BOTTOM_OBJECT_PROPERTY: Final = OWLRDFVocabulary(namespaces.OWL, "bottomObjectProperty")  #:
+OWL_TOP_DATA_PROPERTY: Final = OWLRDFVocabulary(namespaces.OWL, "topDataProperty")  #:
+OWL_BOTTOM_DATA_PROPERTY: Final = OWLRDFVocabulary(namespaces.OWL, "bottomDataProperty")  #:
 
-RDFS_LITERAL: Final = _Vocabulary(namespaces.RDFS, "Literal")
+RDFS_LITERAL: Final = _Vocabulary(namespaces.RDFS, "Literal")  #:
 
-DECIMAL: Final = XSDVocabulary("decimal")
-INTEGER: Final = XSDVocabulary("integer")
-LONG: Final = XSDVocabulary("long")
-DOUBLE: Final = XSDVocabulary("double")
-FLOAT: Final = XSDVocabulary("float")
-BOOLEAN: Final = XSDVocabulary("boolean")
-DATE_TIME_STAMP: Final = XSDVocabulary("dateTimeStamp")
+DECIMAL: Final = XSDVocabulary("decimal")  #:
+INTEGER: Final = XSDVocabulary("integer")  #:
+LONG: Final = XSDVocabulary("long")  #:
+DOUBLE: Final = XSDVocabulary("double")  #:
+FLOAT: Final = XSDVocabulary("float")  #:
+BOOLEAN: Final = XSDVocabulary("boolean")  #:
+DATE_TIME_STAMP: Final = XSDVocabulary("dateTimeStamp")  #:
