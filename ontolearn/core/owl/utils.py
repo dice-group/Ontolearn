@@ -2,13 +2,11 @@ from collections import Counter
 from functools import singledispatchmethod, total_ordering
 from typing import Optional, Tuple, Iterable, Generic, TypeVar, Callable, List
 
-from owlapy import HasIRI
-from owlapy.base import HasIndex
 from owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, \
     OWLObjectCardinalityRestriction, OWLObjectHasSelf, \
     OWLObjectHasValue, OWLObjectOneOf, OWLObjectRestriction, HasFiller, HasCardinality, HasOperands, OWLNamedIndividual, \
-    OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality
+    OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality, HasIndex, HasIRI
 from owlapy.utils import as_index
 from sortedcontainers import SortedSet
 
@@ -267,8 +265,8 @@ class OrderedOWLObject:
         return self.o == other.o
 
 
-_N = TypeVar('_N')
-_O = TypeVar('_O')
+_N = TypeVar('_N')  #:
+_O = TypeVar('_O')  #:
 
 
 class EvaluatedDescriptionSet(Generic[_N, _O]):

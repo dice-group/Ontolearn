@@ -1,27 +1,99 @@
+import types
 from enum import Enum, auto
 from logging import warning
-from typing import Iterable, Set, Final
+from typing import Iterable, Set, Final, cast
 
 import owlready2
 
 from owlapy import IRI, namespaces
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
-    OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID \
+    OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, \
+    OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype \
     # OWLObjectSomeValuesFrom, OWLProperty, \
+from owlapy.owlready2.utils import ToOwlready2
 
 
-class BaseReasoner(Enum):
+class BaseReasoner_Owlready2(Enum):
     PELLET = auto()
 
 
 class OWLOntologyManager_Owlready2(OWLOntologyManager):
-    __slots__ = ()
+    __slots__ = '_world'
+
+    _world: owlready2.namespace.World
+
+    def __init__(self):
+        self._world = owlready2.World()
 
     def create_ontology(self, iri: IRI) -> 'OWLOntology_Owlready2':
         return OWLOntology_Owlready2(self, iri, load=False)
 
     def load_ontology(self, iri: IRI) -> 'OWLOntology_Owlready2':
         return OWLOntology_Owlready2(self, iri, load=True)
+
+    def apply_change(self, change: OWLOntologyChange):
+        if isinstance(change, AddImport):
+            ont_x: owlready2.namespace.Ontology = self._world.get_ontology(
+                change.get_ontology().get_ontology_id().get_ontology_iri().as_str())
+            ont_x.imported_ontologies.append(
+                self._world.get_ontology(change.get_import_declaration().get_iri().as_str()))
+        else:
+            # TODO XXX
+            raise NotImplementedError
+
+    def add_axiom(self, ontology: OWLOntology, axiom: OWLAxiom):
+        conv = ToOwlready2(self._world)
+        ont_x: owlready2.namespace.Ontology = conv.map_object(ontology)
+
+        if isinstance(axiom, OWLEquivalentClassesAxiom):
+            cls_a, cls_b = axiom.class_expressions()
+            thing_x: owlready2.entity.ThingClass = conv.map_concept(OWLThing)
+            with ont_x:
+                assert isinstance(cls_a, OWLClass), f'{cls_a} is no named class'
+                w_x: owlready2.entity.ThingClass = cast(thing_x,
+                                                        types.new_class(name=cls_a.get_iri().get_remainder(),
+                                                                        bases=(thing_x,)))
+                w_x.namespace = ont_x.get_namespace(cls_a.get_iri().get_namespace())
+                w_x.is_a.remove(thing_x)
+                w_x.equivalent_to.append(conv.map_concept(cls_b))
+        elif isinstance(axiom, OWLAnnotationAssertionAxiom):
+            prop_x = conv.map_object(axiom.get_property())
+            if prop_x is None:
+                with ont_x:
+                    prop_x: owlready2.annotation.AnnotationPropertyClass = cast(
+                        owlready2.AnnotationProperty,
+                        types.new_class(
+                            name=axiom.get_property().get_iri().get_remainder(),
+                            bases=(owlready2.AnnotationProperty,)))
+                    prop_x.namespace = ont_x.get_namespace(axiom.get_property().get_iri().get_namespace())
+            sub_x = self._world[axiom.get_subject().as_iri().as_str()]
+            assert sub_x is not None, f'{axiom.get_subject} not found in {ontology}'
+            if axiom.get_value().is_literal():
+                literal = axiom.get_value().as_literal()
+                if literal.get_datatype() == DoubleOWLDatatype:
+                    v = literal.parse_double()
+                else:
+                    # TODO XXX
+                    raise NotImplementedError
+                setattr(sub_x, prop_x.python_name, v)
+            else:
+                o_x = self._world[axiom.get_value().as_iri().as_str()]
+                assert o_x is not None, f'{axiom.get_value()} not found in {ontology}'
+                setattr(sub_x, prop_x.python_name, o_x)
+        else:
+            # TODO XXX
+            raise NotImplementedError
+
+    def save_ontology(self, ontology: OWLOntology, document_iri: IRI):
+        ont_x: owlready2.namespace.Ontology = self._world.get_ontology(
+            ontology.get_ontology_id().get_ontology_iri().as_str()
+        )
+        if document_iri.get_namespace().startswith('file:/'):
+            filename = document_iri.as_str()[len('file:/'):]
+            ont_x.save(file=filename)
+        else:
+            # TODO XXX
+            raise NotImplementedError
 
 
 _VERSION_IRI: Final = IRI.create(namespaces.OWL, "versionIRI")
@@ -36,7 +108,7 @@ class OWLOntology_Owlready2(OWLOntology):
 
     def __init__(self, manager: OWLOntologyManager_Owlready2, ontology_iri: IRI, load: bool):
         self._manager = manager
-        self._world = owlready2.World()
+        self._world = manager._world
         onto = self._world.get_ontology(ontology_iri.as_str())
         if load:
             onto = onto.load()
@@ -231,7 +303,7 @@ class OWLReasoner_Owlready2(OWLReasoner):
                 yield sp
                 yield from self._sub_object_properties_recursive(sp, seen_set)
 
-    def sub_object_properties(self, op: OWLObjectPropertyExpression, direct: bool = False)\
+    def sub_object_properties(self, op: OWLObjectPropertyExpression, direct: bool = False) \
             -> Iterable[OWLObjectPropertyExpression]:
         assert isinstance(op, OWLObjectPropertyExpression)
         if isinstance(op, OWLObjectProperty):
@@ -259,14 +331,14 @@ class OWLReasoner_Owlready2(OWLReasoner):
                     yield OWLClass(IRI.create(c.iri))
                 # Anonymous classes are ignored
 
-    def _sync_reasoner(self, other_reasoner: BaseReasoner = None, **kwargs) -> None:
+    def _sync_reasoner(self, other_reasoner: BaseReasoner_Owlready2 = None, **kwargs) -> None:
         """Call Owlready2's sync_reasoner method, which spawns a Java process on a temp file to infer more
 
         Keyword arguments:
             other_reasoner -- set to BaseReasoner.PELLET to use pellet
         """
-        assert other_reasoner is None or isinstance(other_reasoner, BaseReasoner)
-        if other_reasoner == BaseReasoner.PELLET:
+        assert other_reasoner is None or isinstance(other_reasoner, BaseReasoner_Owlready2)
+        if other_reasoner == BaseReasoner_Owlready2.PELLET:
             owlready2.sync_reasoner_pellet(self._world, **kwargs)
         else:
             owlready2.sync_reasoner(self._world, **kwargs)

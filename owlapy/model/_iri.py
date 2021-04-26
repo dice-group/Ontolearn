@@ -1,16 +1,11 @@
-import sys
 import weakref
 from abc import ABCMeta, abstractmethod
-from typing import Union, overload, Final, Protocol, ClassVar
+from typing import Final, Union, overload, Optional
 from weakref import WeakKeyDictionary
 
 from owlapy import namespaces
+from owlapy.model._base import OWLAnnotationSubject, OWLAnnotationValue
 from owlapy.namespaces import Namespaces
-
-
-class HasIndex(Protocol):
-    type_index: ClassVar[int]
-    def __eq__(self, other): ...
 
 
 class HasIRI(metaclass=ABCMeta):
@@ -38,7 +33,12 @@ class _WeakCached(type):
             return ret()
 
 
-class IRI(metaclass=_WeakCached):
+class _meta_IRI(ABCMeta, _WeakCached):
+    __slots__ = ()
+    pass
+
+
+class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
     """An IRI, consisting of a namespace and a remainder"""
     __slots__ = '_namespace', '_remainder', '__weakref__'
     type_index: Final = 0
@@ -51,6 +51,7 @@ class IRI(metaclass=_WeakCached):
             namespace = namespace.ns
         else:
             assert namespace[-1] in ("/", ":", "#")
+        import sys
         self._namespace = sys.intern(namespace)
         self._remainder = remainder
 
@@ -85,16 +86,19 @@ class IRI(metaclass=_WeakCached):
         return hash((self._namespace, self._remainder))
 
     def is_nothing(self):
-        from owlapy import vocabulary
-        return self == vocabulary.OWL_NOTHING.get_iri()
+        from owlapy import vocab
+        return self == vocab.OWL_NOTHING.get_iri()
 
     def is_thing(self):
-        from owlapy import vocabulary
-        return self == vocabulary.OWL_THING.get_iri()
+        from owlapy import vocab
+        return self == vocab.OWL_THING.get_iri()
 
     def is_reserved_vocabulary(self) -> bool:
         return self._namespace == namespaces.OWL or self._namespace == namespaces.RDF \
                or self._namespace == namespaces.RDFS or self._namespace == namespaces.XSD
+
+    def as_iri(self) -> 'IRI':
+        return self
 
     def as_str(self) -> str:
         return self._namespace + self._remainder

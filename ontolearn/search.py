@@ -10,10 +10,11 @@ from owlapy.model import OWLClassExpression
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.utils import as_index
 from superprop import super_prop
-from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree
+from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree, \
+    AbstractConceptNode
 from .core.owl.utils import OrderedOWLObject
 
-_N = TypeVar('_N')
+_N = TypeVar('_N')  #:
 
 
 # Due to a bug in Python, we cannot use the slots like we should be able to. Hence, the attribute access is also
@@ -190,7 +191,7 @@ class Node(_NodeConcept, _NodeLen, _NodeIndividualsCount, AbstractNode):
 
 
 class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeHeuristic,
-             _NodeParentRef['OENode'], AbstractNode, AbstractOEHeuristicNode):
+             _NodeParentRef['OENode'], AbstractNode, AbstractConceptNode, AbstractOEHeuristicNode):
     __slots__ = '_concept', '_len', '_individuals_count', '_quality', '_heuristic', \
                 '_parent_ref', '_horizontal_expansion', \
                 '_refinement_count', '__weakref__'
@@ -521,7 +522,7 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
         print_partial_tree_recursive(self.nodes[root_concept])
 
 
-_TN = TypeVar('_TN', bound='TreeNode')
+_TN = TypeVar('_TN', bound='TreeNode')  #:
 
 
 class TreeNode(Generic[_N]):

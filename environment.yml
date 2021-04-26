@@ -25,6 +25,7 @@ dependencies:
   # PIP
   - pip:
     # docs
+    - sphinxext-autox==0.0.2
     - sphinx-theme==1.0
     - sphinxcontrib-plantuml==0.20
     - plantuml-local-client==1.2021.3
