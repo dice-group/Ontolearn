@@ -265,8 +265,8 @@ class OrderedOWLObject:
         return self.o == other.o
 
 
-_N = TypeVar('_N')
-_O = TypeVar('_O')
+_N = TypeVar('_N')  #:
+_O = TypeVar('_O')  #:
 
 
 class EvaluatedDescriptionSet(Generic[_N, _O]):

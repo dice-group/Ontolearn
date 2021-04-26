@@ -81,10 +81,10 @@ class Accuracy(AbstractScorer):
     Accuracy is          acc = (tp + tn) / (tp + tn + fp+ fn). However,
     Concept learning papers (e.g. Learning OWL Class expression) appear to invernt their own accuracy metrics.
 
-    In OCEL =>    Accuracy of a concept = 1 - ( |E^+ \\ R(C)|+ |E^- AND R(C)|) / |E|)
+    In OCEL =>    Accuracy of a concept = 1 - ( \\|E^+ \\ R(C)\\|+ \\|E^- AND R(C)\\|) / \\|E\\|)
 
 
-    In CELOE  =>    Accuracy of a concept C = 1 - ( |R(A) \\ R(C)| + |R(C) \\ R(A)|)/n
+    In CELOE  =>    Accuracy of a concept C = 1 - ( \\|R(A) \\ R(C)\\| + \\|R(C) \\ R(A)\\|)/n
 
 
 

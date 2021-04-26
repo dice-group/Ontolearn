@@ -1,3 +1,9 @@
+"""The OWL-APy Model class and method names should match those of OWL-API [1]
+
+If OWL-API has streaming and getter API, it is enough to provide the streaming API only.
+
+[1] https://github.com/owlcs/owlapi"""
+
 from abc import ABCMeta, abstractmethod
 from typing import Generic, Iterable, Sequence, TypeVar, Union, Final, Optional, Protocol, ClassVar, List
 
@@ -7,14 +13,8 @@ from owlapy.model._base import OWLObject, OWLAnnotationObject, OWLAnnotationSubj
 from owlapy.model._iri import HasIRI, IRI
 MOVE(OWLObject, OWLAnnotationObject, OWLAnnotationSubject, OWLAnnotationValue, HasIRI, IRI)
 
-_T = TypeVar('_T')
-_C = TypeVar('_C', bound='OWLObject')
-
-"""The OWL-APy Model class and method names should match those of OWL-API [1]
-
-If OWL-API has streaming and getter API, it is enough to provide the streaming API only.
-
-[1] https://github.com/owlcs/owlapi"""
+_T = TypeVar('_T')  #:
+_C = TypeVar('_C', bound='OWLObject')  #:
 
 
 class HasIndex(Protocol):
@@ -428,7 +428,7 @@ class HasCardinality(metaclass=ABCMeta):
         pass
 
 
-_F = TypeVar('_F', bound=OWLPropertyRange)
+_F = TypeVar('_F', bound=OWLPropertyRange)  #:
 
 
 class OWLCardinalityRestriction(Generic[_F], OWLQuantifiedRestriction[_F], HasCardinality, metaclass=ABCMeta):
@@ -599,7 +599,7 @@ class OWLNamedIndividual(OWLIndividual, OWLEntity):
         return self._iri
 
 
-_M = TypeVar('_M', bound='OWLOntologyManager')
+_M = TypeVar('_M', bound='OWLOntologyManager')  #:
 
 
 class OWLOntologyID:

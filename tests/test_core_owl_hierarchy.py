@@ -7,7 +7,7 @@ from owlapy import IRI
 from owlapy.model import OWLClass, OWLObjectProperty
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 
-_T = TypeVar('_T')
+_T = TypeVar('_T')  #:
 
 setup_logging("logging_test.conf")
 

@@ -7,8 +7,8 @@ from owlapy.model import OWLClass, OWLReasoner, OWLObjectProperty, OWLDataProper
     OWLBottomObjectProperty, OWLTopDataProperty, OWLBottomDataProperty, OWLThing, OWLNothing, HasIRI
 from owlapy.utils import NamedFixedSet, iter_bits
 
-_S = TypeVar('_S', bound=HasIRI)
-_U = TypeVar('_U', bound='AbstractHierarchy')
+_S = TypeVar('_S', bound=HasIRI)  #:
+_U = TypeVar('_U', bound='AbstractHierarchy')  #:
 
 
 class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):

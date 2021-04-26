@@ -18,7 +18,7 @@ from .abstracts import BaseRefinement, AbstractScorer, AbstractNode, AbstractHeu
 from ontolearn.owlready2.static_funcs import decompose_to_atomic
 from .utils import oplogging
 
-_N = TypeVar('_N', bound=AbstractConceptNode)
+_N = TypeVar('_N', bound=AbstractConceptNode)  #:
 
 logger = logging.getLogger(__name__)
 
@@ -40,10 +40,8 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             ** E^+ \\cup E^- \\subseteq K_N
             ** E^+ \\cap E^- = \\emptyset
 
-    ##################################################################################################
-        The goal is to to learn a set of concepts $\\hypotheses \\subseteq \\ALCConcepts$ such that
-              ∀  H \\in \\hypotheses: { (K \\wedge H \\models E^+) \\wedge  \\neg( K \\wedge H \\models E^-) }.
-    ##################################################################################################
+    The goal is to to learn a set of concepts $\\hypotheses \\subseteq \\ALCConcepts$ such that
+          ∀  H \\in \\hypotheses: { (K \\wedge H \\models E^+) \\wedge  \\neg( K \\wedge H \\models E^-) }.
 
     """
     __slots__ = 'kb', 'lp', 'operator', 'heuristic_func', 'quality_func', 'max_num_of_concepts_tested', \
@@ -250,7 +248,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             hypotheses: A
 
         Returns:
-            return matrix of |individuals| x |hypotheses|
+            return matrix of \\|individuals\\| x \\|hypotheses\\|
         """
         labels = np.zeros((len(individuals), len(hypotheses)))
         for jth_hypo in range(len(hypotheses)):
