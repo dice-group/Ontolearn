@@ -76,36 +76,39 @@ plantuml_latex_output_format = 'pdf'
 # a list of builtin themes.
 #
 
-html_theme = 'sphinx_rtd_theme'
+stanford_theme_mod = True
 html_theme_options = {
     'navigation_depth': 6,
 }
-
-def _import_theme():
-    import os
-    import shutil
-    import sphinx_theme
-    html_theme = 'stanford_theme'
-    for _type in ['fonts']:
-        shutil.copytree(
-            os.path.join(sphinx_theme.get_html_theme_path(html_theme),
-                         html_theme, 'static', _type),
-            os.path.join('_static_gen', _type),
-            dirs_exist_ok=True)
-    shutil.copy2(
-        os.path.join(sphinx_theme.get_html_theme_path(html_theme),
-                     html_theme, 'static', 'css', 'theme.css'),
-        os.path.join('_static_gen', 'theme.css'),
-    )
-_import_theme()
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = [
-    '_static_gen',
     '_static'
 ]
+
+if stanford_theme_mod:
+    html_theme = 'sphinx_rtd_theme'
+    def _import_theme():
+        import os
+        import shutil
+        import sphinx_theme
+        html_theme = 'stanford_theme'
+        for _type in ['fonts']:
+            shutil.copytree(
+                os.path.join(sphinx_theme.get_html_theme_path(html_theme),
+                             html_theme, 'static', _type),
+                os.path.join('_static_gen', _type),
+                dirs_exist_ok=True)
+        shutil.copy2(
+            os.path.join(sphinx_theme.get_html_theme_path(html_theme),
+                         html_theme, 'static', 'css', 'theme.css'),
+            os.path.join('_static_gen', 'theme.css'),
+        )
+    _import_theme()
+    html_static_path = [ '_static_gen' ] + html_static_path
+
 
 # -- Options for LaTeX output ------------------------------------------------
 
@@ -126,6 +129,7 @@ latex_elements = {
 
 def setup(app):
     # -- Options for HTML output ---------------------------------------------
-    app.add_css_file('theme.css')
+    if stanford_theme_mod:
+        app.add_css_file('theme.css')
     app.add_css_file('theme_tweak.css')
     app.add_css_file('pygments.css')

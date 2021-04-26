@@ -14,7 +14,7 @@ from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, Abstract
     AbstractConceptNode
 from .core.owl.utils import OrderedOWLObject
 
-_N = TypeVar('_N')
+_N = TypeVar('_N')  #:
 
 
 # Due to a bug in Python, we cannot use the slots like we should be able to. Hence, the attribute access is also
@@ -522,7 +522,7 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
         print_partial_tree_recursive(self.nodes[root_concept])
 
 
-_TN = TypeVar('_TN', bound='TreeNode')
+_TN = TypeVar('_TN', bound='TreeNode')  #:
 
 
 class TreeNode(Generic[_N]):

@@ -3,7 +3,7 @@ from typing import Iterable, overload, TypeVar, Generic, Type, Tuple, Dict, List
 from owlapy import IRI
 from owlapy.model import OWLObject, HasIndex, HasIRI
 
-_HasIRI = TypeVar('_HasIRI', bound=HasIRI)
+_HasIRI = TypeVar('_HasIRI', bound=HasIRI)  #:
 
 
 class IRIFixedSet:

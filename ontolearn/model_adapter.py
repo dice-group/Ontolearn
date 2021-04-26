@@ -40,7 +40,7 @@ def _get_matching_opts(_Type, optargs, topargs, kwargs, prefix=None):
     return opts
 
 
-_N = TypeVar('_N', bound=AbstractNode)
+_N = TypeVar('_N', bound=AbstractNode)  #:
 
 
 class ModelAdapter:
