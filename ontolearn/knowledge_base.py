@@ -23,7 +23,7 @@ def _Default_OntologyManagerFactory() -> OWLOntologyManager:
 
 
 def _Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
-    from owlapy.owlready2.base import OWLOntology_Owlready2
+    from owlapy.owlready2 import OWLOntology_Owlready2
     from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
     from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
 

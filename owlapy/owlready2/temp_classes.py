@@ -6,8 +6,7 @@ import owlready2
 
 from owlapy import IRI
 from owlapy.model import OWLClass, OWLClassExpression, OWLNamedIndividual
-from owlapy.owlready2 import OWLReasoner_Owlready2
-from owlapy.owlready2.base import OWLOntology_Owlready2, BaseReasoner
+from owlapy.owlready2 import OWLReasoner_Owlready2, OWLOntology_Owlready2, BaseReasoner_Owlready2
 from owlapy.owlready2.utils import ToOwlready2
 
 
@@ -15,9 +14,9 @@ class OWLReasoner_Owlready2_TempClasses(OWLReasoner_Owlready2):
     __slots__ = '_cnt', '_conv', '_base_reasoner'
 
     _conv: ToOwlready2
-    _base_reasoner: BaseReasoner
+    _base_reasoner: BaseReasoner_Owlready2
 
-    def __init__(self, ontology: OWLOntology_Owlready2, base_reasoner: Optional[BaseReasoner] = None):
+    def __init__(self, ontology: OWLOntology_Owlready2, base_reasoner: Optional[BaseReasoner_Owlready2] = None):
         super().__init__(ontology)
         self._cnt = 1
         self._conv = ToOwlready2(world=self._world)

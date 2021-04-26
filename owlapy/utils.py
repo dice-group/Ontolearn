@@ -1,10 +1,9 @@
 from typing import Iterable, overload, TypeVar, Generic, Type, Tuple, Dict, List, cast
 
-from owlapy import IRI, HasIRI
-from owlapy.base import HasIndex
-from owlapy.model import OWLObject
+from owlapy import IRI
+from owlapy.model import OWLObject, HasIndex, HasIRI
 
-_HasIRI = TypeVar('_HasIRI', bound=HasIRI)
+_HasIRI = TypeVar('_HasIRI', bound=HasIRI)  #:
 
 
 class IRIFixedSet:
@@ -176,3 +175,5 @@ def as_index(o: OWLObject) -> HasIndex:
     i = cast(HasIndex, o)
     assert type(i).type_index
     return i
+
+

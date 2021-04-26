@@ -1,32 +1,26 @@
-from abc import ABCMeta, abstractmethod
-from typing import Generic, Iterable, Sequence, TypeVar, Union, Final, Optional
-
-from owlapy import vocabulary
-from owlapy.base import HasIRI, IRI
-
-_T = TypeVar('_T')
-
 """The OWL-APy Model class and method names should match those of OWL-API [1]
 
 If OWL-API has streaming and getter API, it is enough to provide the streaming API only.
 
 [1] https://github.com/owlcs/owlapi"""
 
+from abc import ABCMeta, abstractmethod
+from typing import Generic, Iterable, Sequence, TypeVar, Union, Final, Optional, Protocol, ClassVar, List
 
-class OWLObject(metaclass=ABCMeta):
-    __slots__ = ()
+from owlapy import vocab
+from owlapy._utils import MOVE
+from owlapy.model._base import OWLObject, OWLAnnotationObject, OWLAnnotationSubject, OWLAnnotationValue
+from owlapy.model._iri import HasIRI, IRI
+MOVE(OWLObject, OWLAnnotationObject, OWLAnnotationSubject, OWLAnnotationValue, HasIRI, IRI)
 
-    @abstractmethod
-    def __eq__(self, other):
-        pass
+_T = TypeVar('_T')  #:
+_C = TypeVar('_C', bound='OWLObject')  #:
 
-    @abstractmethod
-    def __hash__(self):
-        pass
 
-    @abstractmethod
-    def __repr__(self):
-        pass
+class HasIndex(Protocol):
+    type_index: ClassVar[int]
+
+    def __eq__(self, other): ...
 
 
 class HasOperands(Generic[_T], metaclass=ABCMeta):
@@ -434,7 +428,7 @@ class HasCardinality(metaclass=ABCMeta):
         pass
 
 
-_F = TypeVar('_F', bound=OWLPropertyRange)
+_F = TypeVar('_F', bound=OWLPropertyRange)  #:
 
 
 class OWLCardinalityRestriction(Generic[_F], OWLQuantifiedRestriction[_F], HasCardinality, metaclass=ABCMeta):
@@ -605,7 +599,7 @@ class OWLNamedIndividual(OWLIndividual, OWLEntity):
         return self._iri
 
 
-_M = TypeVar('_M', bound='OWLOntologyManager')
+_M = TypeVar('_M', bound='OWLOntologyManager')  #:
 
 
 class OWLOntologyID:
@@ -668,6 +662,27 @@ class OWLOntology(OWLObject, metaclass=ABCMeta):
         pass
 
 
+# noinspection PyUnresolvedReferences
+# noinspection PyDunderSlots
+class OWLOntologyChange(metaclass=ABCMeta):
+    __slots__ = ()
+
+    _ont: OWLOntology
+
+    @abstractmethod
+    def __init__(self, ontology: OWLOntology):
+        self._ont = ontology
+
+    def get_ontology(self) -> OWLOntology:
+        return self._ont
+
+
+class OWLAxiom(OWLObject, metaclass=ABCMeta):
+    __slots__ = ()
+    # TODO: XXX
+    pass
+
+
 class OWLOntologyManager(metaclass=ABCMeta):
     @abstractmethod
     def create_ontology(self, iri: IRI) -> OWLOntology:
@@ -675,6 +690,18 @@ class OWLOntologyManager(metaclass=ABCMeta):
 
     @abstractmethod
     def load_ontology(self, iri: IRI) -> OWLOntology:
+        pass
+
+    @abstractmethod
+    def apply_change(self, change: OWLOntologyChange):
+        pass
+
+    @abstractmethod
+    def add_axiom(self, ontology: OWLOntology, axiom: OWLAxiom):
+        pass
+
+    @abstractmethod
+    def save_ontology(self, ontology: OWLOntology, document_iri: IRI):
         pass
 
 
@@ -747,7 +774,7 @@ class OWLReasoner(metaclass=ABCMeta):
 # class OWLAnnotationProperty(metaclass=ABCMeta):
 #     type_index: Final = 1006
 #
-# class OWLAnonymousIndividual(metaclass=ABCMeta):
+# class OWLAnonymousIndividual(OWLIndividual, OWLAnnotationValue, OWLAnnotationSubject, metaclass=ABCMeta):
 #     type_index: Final = 1007
 #
 # class OWLAxiom(metaclass=ABCMeta):
@@ -782,25 +809,239 @@ class OWLReasoner(metaclass=ABCMeta):
 #
 # class OWLDataUnionOf(metaclass=ABCMeta):
 #     type_index: Final = 4005
-#
-# class OWLDatatype(OWLEntity, metaclass=ABCMeta):
-#     type_index: Final = 4001
-#
+
+
+class OWLDatatype(OWLEntity):
+    __slots__ = '_iri'
+
+    type_index: Final = 4001
+
+    _iri: IRI
+
+    def __init__(self, iri: Union[IRI, HasIRI]):
+        if isinstance(iri, HasIRI):
+            self._iri = iri.get_iri()
+        else:
+            assert isinstance(iri, IRI)
+            self._iri = iri
+
+    def get_iri(self) -> 'IRI':
+        return self._iri
+
+
 # class OWLDatatypeRestriction(metaclass=ABCMeta):
 #     type_index: Final = 4006
 #
 # class OWLFacetRestriction(metaclass=ABCMeta):
 #     type_index: Final = 4007
-#
-# class OWLLiteral(metaclass=ABCMeta):
-#     type_index: Final = 4008
+
+
+class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
+    __slots__ = ()
+
+    type_index: Final = 4008
+
+    def __new__(cls, value):
+        if isinstance(value, float):
+            return super().__new__(_OWLLiteralImplDouble)
+        # TODO XXX
+        raise NotImplementedError
+
+    def get_literal(self) -> str:
+        return str(self._v)
+
+    def parse_double(self) -> float:
+        raise ValueError
+
+    # noinspection PyMethodMayBeStatic
+    def is_literal(self) -> bool:
+        return True
+
+    def as_literal(self) -> 'OWLLiteral':
+        return self
+
+    @abstractmethod
+    def get_datatype(self) -> OWLDatatype:
+        pass
+
+
+class _OWLLiteralImplDouble(OWLLiteral):
+    __slots__ = '_v'
+
+    def __init__(self, value):
+        assert isinstance(value, float)
+        self._v = value
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._v == other._v
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self._v)
+
+    def __repr__(self):
+        return f'OWLLiteral({self._v})'
+
+    def parse_double(self) -> float:
+        return self._v
+
+    # noinspection PyMethodMayBeStatic
+    def get_datatype(self) -> OWLDatatype:
+        return DoubleOWLDatatype
+
+
+class OWLImportsDeclaration(HasIRI):
+    __slots__ = '_iri'
+
+    def __init__(self, import_iri: IRI):
+        self._iri = import_iri
+
+    def get_iri(self) -> IRI:
+        return self._iri
+
+
+class AddImport(OWLOntologyChange):
+    __slots__ = '_ont', '_declaration'
+
+    def __init__(self, ontology: OWLOntology, import_declaration: OWLImportsDeclaration):
+        super().__init__(ontology)
+        self._declaration = import_declaration
+
+    def get_import_declaration(self) -> OWLImportsDeclaration:
+        return self._declaration
+
+
+class OWLLogicalAxiom(OWLAxiom, metaclass=ABCMeta):
+    __slots__ = ()
+    pass
+
+
+class OWLClassAxiom(OWLLogicalAxiom, metaclass=ABCMeta):
+    __slots__ = ()
+    pass
+
+
+class OWLNaryAxiom(Generic[_C], OWLAxiom, metaclass=ABCMeta):
+    __slots__ = ()
+    pass
+
+
+# noinspection PyUnresolvedReferences
+# noinspection PyDunderSlots
+class OWLNaryClassAxiom(OWLClassAxiom, OWLNaryAxiom[OWLClassExpression], metaclass=ABCMeta):
+    __slots__ = ()
+
+    _class_expressions: List[OWLClassExpression]
+
+    @abstractmethod
+    def __init__(self, class_expressions: List[OWLClassExpression]):
+        self._class_expressions = [*class_expressions]
+
+    def class_expressions(self) -> Iterable[OWLClassExpression]:
+        yield from self._class_expressions
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._class_expressions == other._class_expressions
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self._class_expressions)
+
+    def __repr__(self):
+        return f'{type(self).__name__}({self._class_expressions})'
+
+
+class OWLEquivalentClassesAxiom(OWLNaryClassAxiom):
+    __slots__ = '_class_expressions'
+
+    def __init__(self, cls_a: OWLClassExpression, cls_b: OWLClassExpression):
+        super().__init__([cls_a, cls_b])
+
+
+class OWLAnnotationAxiom(OWLAxiom):
+    __slots__ = ()
+    # TODO: XXX
+    pass
+
+
+class OWLAnnotationProperty(OWLProperty):
+    __slots__ = '_iri'
+
+    def __init__(self, iri: IRI):
+        self._iri = iri
+
+    def get_iri(self) -> IRI:
+        return self._iri
+
+
+class OWLAnnotation(OWLObject):
+    __slots__ = '_property', '_value'
+
+    def __init__(self, property: OWLAnnotationProperty, value: OWLAnnotationValue):
+        self._property = property
+        self._value = value
+
+    def get_property(self) -> OWLAnnotationProperty:
+        return self._property
+
+    def get_value(self) -> OWLAnnotationValue:
+        return self._value
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._property == other._property and self._value == other._value
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._property, self._value))
+
+    def __repr__(self):
+        return f'OWLAnnotation({self._property}, {self._value})'
+
+
+class OWLAnnotationAssertionAxiom(OWLAnnotationAxiom):
+    __slots__ = '_subject', '_annotation'
+
+    def __init__(self, subject: OWLAnnotationSubject, annotation: OWLAnnotation):
+        assert isinstance(subject, OWLAnnotationSubject)
+        assert isinstance(annotation, OWLAnnotation)
+
+        self._subject = subject
+        self._annotation = annotation
+
+    def get_subject(self) -> OWLAnnotationSubject:
+        return self._subject
+
+    def get_property(self) -> OWLAnnotationProperty:
+        return self._annotation.get_property()
+
+    def get_value(self) -> OWLAnnotationValue:
+        return self._annotation.get_value()
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._subject == other._subject and self._annotation == other._annotation
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._subject, self._annotation))
+
+    def __repr__(self):
+        return f'OWLAnnotationAssertionAxiom({self._subject}, {self._annotation})'
 
 
 """Important constant objects section"""
 
-OWLThing: Final = OWLClass(vocabulary.OWL_THING.get_iri())
-OWLNothing: Final = OWLClass(vocabulary.OWL_NOTHING.get_iri())
-OWLTopObjectProperty: Final = OWLObjectProperty(vocabulary.OWL_TOP_OBJECT_PROPERTY.get_iri())
-OWLBottomObjectProperty: Final = OWLObjectProperty(vocabulary.OWL_BOTTOM_OBJECT_PROPERTY.get_iri())
-OWLTopDataProperty: Final = OWLDataProperty(vocabulary.OWL_TOP_DATA_PROPERTY.get_iri())
-OWLBottomDataProperty: Final = OWLDataProperty(vocabulary.OWL_BOTTOM_DATA_PROPERTY.get_iri())
+OWLThing: Final = OWLClass(vocab.OWL_THING.get_iri())  #:
+OWLNothing: Final = OWLClass(vocab.OWL_NOTHING.get_iri())  #:
+OWLTopObjectProperty: Final = OWLObjectProperty(vocab.OWL_TOP_OBJECT_PROPERTY.get_iri())  #:
+OWLBottomObjectProperty: Final = OWLObjectProperty(vocab.OWL_BOTTOM_OBJECT_PROPERTY.get_iri())  #:
+OWLTopDataProperty: Final = OWLDataProperty(vocab.OWL_TOP_DATA_PROPERTY.get_iri())  #:
+OWLBottomDataProperty: Final = OWLDataProperty(vocab.OWL_BOTTOM_DATA_PROPERTY.get_iri())  #:
+
+DoubleOWLDatatype: Final = OWLDatatype(vocab.DOUBLE)  #:
+IntegerOWLDatatype: Final = OWLDatatype(vocab.INTEGER)  #:
+BooleanOWLDatatype: Final = OWLDatatype(vocab.BOOLEAN)  #:
+TopDatatype: Final = OWLDatatype(vocab.RDFS_LITERAL)  #:

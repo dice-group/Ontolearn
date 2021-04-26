@@ -14,7 +14,7 @@ from .utils import read_csv
 
 # random.seed(0)  # Note: a module should not set the seed
 
-_N = TypeVar('_N')
+_N = TypeVar('_N')  #:
 
 
 class AbstractLearningProblem(metaclass=ABCMeta):
@@ -76,7 +76,7 @@ class AbstractHeuristic(Generic[_N], metaclass=ABCMeta):
         self.applied = 0
 
 
-_KB = TypeVar('_KB', bound='AbstractKnowledgeBase')
+_KB = TypeVar('_KB', bound='AbstractKnowledgeBase')  #:
 
 
 class BaseRefinement(Generic[_N], metaclass=ABCMeta):
@@ -86,9 +86,9 @@ class BaseRefinement(Generic[_N], metaclass=ABCMeta):
     Let C, D \\in N_c where N_c os a finite set of concepts.
 
     * Proposition 3.3 (Complete and Finite Refinement Operators) [1]
-        ** ρ(C) = {C ⊓ T} ∪ {D | D is not empty AND D \\sqset C}
-        *** The operator is finite,
-        *** The operator is complete as given a concept C, we can reach an arbitrary concept D such that D subset of C.
+      * ρ(C) = {C ⊓ T} ∪ {D \\| D is not empty AND D \\sqset C}
+        * The operator is finite,
+        * The operator is complete as given a concept C, we can reach an arbitrary concept D such that D subset of C.
 
     *) Theoretical Foundations of Refinement Operators [1].
 
@@ -164,6 +164,13 @@ class AbstractOEHeuristicNode(metaclass=ABCMeta):
     @property
     @abstractmethod
     def refinement_count(self) -> int:
+        pass
+
+
+class AbstractConceptNode(metaclass=ABCMeta):
+    @property
+    @abstractmethod
+    def concept(self) -> OWLClassExpression:
         pass
 
 
@@ -440,14 +447,14 @@ class AbstractDrill(ABC):
 
     def apply_rho(self, node: AbstractNode) -> Generator:
         """
-        Refine an OWL Class expression |= Observing next possible states
+        Refine an OWL Class expression \\|= Observing next possible states
 
         Computation O(N).
 
         1. Generate concepts by refining a node
-            1.1 Compute allowed length of refinements
-            1.2. Convert concepts if concepts do not belong to  self.concepts_to_ignore
-                Note that          i.str not in self.concepts_to_ignore => O(1) if a set is being used.
+        1.1. Compute allowed length of refinements
+        1.2. Convert concepts if concepts do not belong to  self.concepts_to_ignore
+             Note that          i.str not in self.concepts_to_ignore => O(1) if a set is being used.
         3. Return Generator
         """
         assert isinstance(node, AbstractNode)
