@@ -163,7 +163,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
             complement_ind_enc = self._find_instances(ce.get_operand())
             return all ^ complement_ind_enc
         else:
-            # TODO!
+            # TODO! XXX
             return 0
             # if self.complement_as_negation:
             #     ...
@@ -172,7 +172,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
 
     @_find_instances.register
     def _(self, ce: OWLObjectAllValuesFrom):
-        # TODO!
+        # TODO! XXX
         return 0
 
     def _lazy_cache_class(self, c: OWLClass) -> None:
