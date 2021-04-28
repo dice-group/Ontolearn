@@ -128,10 +128,14 @@ class NamedFixedSet(Generic[_HasIRI]):
         """
         if isinstance(arg, int):
             return map(self._Type, self._iri_set(arg))
-        elif isinstance(arg, self._Type):
-            return self._iri_set(arg.get_iri(), ignore_missing=ignore_missing)
         else:
-            return self._iri_set(map(self._Type.get_iri, arg), ignore_missing=ignore_missing)
+            try:
+                if isinstance(arg, self._Type):
+                    return self._iri_set(arg.get_iri(), ignore_missing=ignore_missing)
+                else:
+                    return self._iri_set(map(self._Type.get_iri, arg), ignore_missing=ignore_missing)
+            except KeyError as ke:
+                raise NameError(f"{self._Type(*ke.args)} not found in {type(self).__name__}") from ke
 
     def items(self) -> Iterable[Tuple[int, _HasIRI]]:
         """Return key-value pairs of bit => _HasIRI"""
