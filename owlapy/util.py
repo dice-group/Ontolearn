@@ -1,10 +1,130 @@
+from functools import singledispatchmethod
 from typing import Iterable, overload, TypeVar, Generic, Type, Tuple, Dict, List, cast
 
 from owlapy import IRI
-from owlapy.model import OWLObject, HasIndex, HasIRI
+from owlapy.model import OWLObject, HasIndex, HasIRI, OWLClassExpression, OWLClass, OWLObjectIntersectionOf, \
+    OWLObjectUnionOf, OWLObjectComplementOf, OWLNothing, OWLThing, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
+    OWLObjectHasValue, OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality, OWLObjectHasSelf, \
+    OWLObjectOneOf, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataExactCardinality, OWLDataHasValue, \
+    OWLDataAllValuesFrom, OWLDataSomeValuesFrom
 
 _HasIRI = TypeVar('_HasIRI', bound=HasIRI)  #:
 
+class NNF:
+    @singledispatchmethod
+    def get_class_nnf(self, ce: OWLClassExpression, negated: bool = False):
+        raise NotImplementedError
+
+    @get_class_nnf.register
+    def _(self, ce: OWLClass, negated: bool = False):
+        if negated:
+            if ce.is_owl_thing():
+                return OWLNothing
+            if ce.is_owl_nothing():
+                return OWLThing
+            return OWLObjectComplementOf(ce)
+        return ce
+
+    @get_class_nnf.register
+    def _(self, ce: OWLObjectIntersectionOf, negated: bool = False):
+        ops = map(lambda _: self.get_class_nnf(_, negated), ce.operands())
+        if negated:
+            return OWLObjectUnionOf(ops)
+        return OWLObjectIntersectionOf(ops)
+
+    @get_class_nnf.register
+    def _(self, ce: OWLObjectUnionOf, negated: bool = False):
+        ops = map(lambda _: self.get_class_nnf(_, negated), ce.operands())
+        if negated:
+            return OWLObjectIntersectionOf(ce)
+        return OWLObjectUnionOf(ops)
+
+    @get_class_nnf.register
+    def _(self, ce: OWLObjectComplementOf, negated: bool = False):
+        return self.get_class_nnf(ce.get_operand(), not negated)
+    
+    @get_class_nnf.register
+    def _(self, ce: OWLObjectSomeValuesFrom, negated: bool = False):
+        filler = self.get_class_nnf(ce.get_filler(), negated)
+        if negated:
+            return OWLObjectAllValuesFrom(ce.get_property(), filler)
+        return OWLObjectSomeValuesFrom(ce.get_property(), filler)
+    
+    @get_class_nnf.register
+    def _(self, ce: OWLObjectAllValuesFrom, negated: bool = False):
+        filler = self.get_class_nnf(ce.get_filler(), negated)
+        if negated:
+            return OWLObjectSomeValuesFrom(ce.get_property(), filler)
+        return OWLObjectAllValuesFrom(ce.get_property(), filler)
+    
+    @get_class_nnf.register
+    def _(self, ce: OWLObjectHasValue, negated: bool = False):
+        return self.get_class_nnf(ce.as_some_values_from(), negated)
+    
+    @get_class_nnf.register
+    def _(self, ce: OWLObjectMinCardinality, negated: bool = False):
+        card = ce.get_cardinality()
+        if negated:
+            card = max(0, card - 1)
+        filler = self.get_class_nnf(ce.get_filler(), negated=False)
+        if negated:
+            return OWLObjectMaxCardinality(card, ce.get_property(), filler)
+        return OWLObjectMinCardinality(card, ce.get_property(), filler)
+    
+    @get_class_nnf.register
+    def _(self, ce: OWLObjectExactCardinality, negated: bool = False):
+        return self.get_class_nnf(ce.as_intersection_of_min_max(), negated)
+
+    @get_class_nnf.register
+    def _(self, ce: OWLObjectMaxCardinality, negated: bool = False):
+        card = ce.get_cardinality()
+        if negated:
+            card = card + 1
+        filler = self.get_class_nnf(ce.get_filler(), negated=False)
+        if negated:
+            return OWLObjectMinCardinality(card, ce.get_property(), filler)
+        return OWLObjectMaxCardinality(card, ce.get_property(), filler)
+    
+    @get_class_nnf.register
+    def _(self, ce: OWLObjectHasSelf, negated: bool = False):
+        if negated:
+            return ce.get_object_complement_of()
+        return ce
+
+    @get_class_nnf.register
+    def _(self, ce: OWLObjectOneOf, negated: bool = False):
+        union = ce.as_object_union_of()
+        if isinstance(union, OWLObjectOneOf):
+            if negated:
+                return ce.get_object_complement_of()
+            return ce
+        return self.get_class_nnf(union, negated)
+
+    @get_class_nnf.register
+    def _(self, ce: OWLDataSomeValuesFrom, negated: bool = False):
+        ...
+
+    @get_class_nnf.register
+    def _(self, ce: OWLDataAllValuesFrom, negated: bool = False):
+        ...
+
+    @get_class_nnf.register
+    def _(self, ce: OWLDataHasValue, negated: bool = False):
+        ...
+
+    @get_class_nnf.register
+    def _(self, ce: OWLDataExactCardinality, negated: bool = False):
+        ...
+
+    @get_class_nnf.register
+    def _(self, ce: OWLDataMinCardinality, negated: bool = False):
+        ...
+
+    @get_class_nnf.register
+    def _(self, ce: OWLDataMaxCardinality, negated: bool = False):
+        ...
+
+# OWL-APy custom util start
 
 class IRIFixedSet:
     """A set of IRIs
@@ -179,5 +299,3 @@ def as_index(o: OWLObject) -> HasIndex:
     i = cast(HasIndex, o)
     assert type(i).type_index
     return i
-
-

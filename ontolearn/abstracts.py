@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from owlapy.model import OWLClassExpression, OWLOntology
-from owlapy.utils import iter_count
+from owlapy.util import iter_count
 from .data_struct import Experience
 from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
 from .owlready2.utils import get_full_iri
