@@ -11,6 +11,7 @@ from owlapy import vocab
 from owlapy._utils import MOVE
 from owlapy.model._base import OWLObject, OWLAnnotationObject, OWLAnnotationSubject, OWLAnnotationValue
 from owlapy.model._iri import HasIRI, IRI
+
 MOVE(OWLObject, OWLAnnotationObject, OWLAnnotationSubject, OWLAnnotationValue, HasIRI, IRI)
 
 _T = TypeVar('_T')  #:
@@ -55,6 +56,10 @@ class OWLClassExpression(OWLPropertyRange):
     def get_object_complement_of(self) -> 'OWLObjectComplementOf':
         pass
 
+    @abstractmethod
+    def get_nnf(self) -> 'OWLClassExpression':
+        pass
+
 
 class OWLAnonymousClassExpression(OWLClassExpression, metaclass=ABCMeta):
     """A Class Expression which is not a named Class"""
@@ -67,6 +72,10 @@ class OWLAnonymousClassExpression(OWLClassExpression, metaclass=ABCMeta):
 
     def get_object_complement_of(self) -> 'OWLObjectComplementOf':
         return OWLObjectComplementOf(self)
+
+    def get_nnf(self) -> 'OWLClassExpression':
+        from owlapy.util import NNF
+        return NNF().get_class_nnf(self)
 
 
 class OWLBooleanClassExpression(OWLAnonymousClassExpression, metaclass=ABCMeta):
@@ -155,6 +164,9 @@ class OWLClass(OWLClassExpression, OWLEntity):
 
     def get_object_complement_of(self) -> OWLObjectComplementOf:
         return OWLObjectComplementOf(self)
+
+    def get_nnf(self) -> 'OWLClass':
+        return self
 
 
 class OWLPropertyExpression(OWLObject, metaclass=ABCMeta):
@@ -766,51 +778,6 @@ class OWLReasoner(metaclass=ABCMeta):
         pass
 
 
-# TODO: a big todo plus intermediate classes (missing)
-#
-# class OWLAnnotation(metaclass=ABCMeta):
-#     type_index: Final = 5001
-#
-# class OWLAnnotationProperty(metaclass=ABCMeta):
-#     type_index: Final = 1006
-#
-# class OWLAnonymousIndividual(OWLIndividual, OWLAnnotationValue, OWLAnnotationSubject, metaclass=ABCMeta):
-#     type_index: Final = 1007
-#
-# class OWLAxiom(metaclass=ABCMeta):
-#     type_index: Final = 2000 + get_axiom_type().get_index()
-#
-# class OWLDataAllValuesFrom(metaclass=ABCMeta):
-#     type_index: Final = 3013
-#
-# class OWLDataComplementOf(metaclass=ABCMeta):
-#     type_index: Final = 4002
-#
-# class OWLDataExactCardinality(metaclass=ABCMeta):
-#     type_index: Final = 3016
-#
-# class OWLDataHasValue(metaclass=ABCMeta):
-#     type_index: Final = 3014
-#
-# class OWLDataIntersectionOf(metaclass=ABCMeta):
-#     type_index: Final = 4004
-#
-# class OWLDataMaxCardinality(metaclass=ABCMeta):
-#     type_index: Final = 3017
-#
-# class OWLDataMinCardinality(metaclass=ABCMeta):
-#     type_index: Final = 3015
-#
-# class OWLDataOneOf(metaclass=ABCMeta):
-#     type_index: Final = 4003
-#
-# class OWLDataSomeValuesFrom(metaclass=ABCMeta):
-#     type_index: Final = 3012
-#
-# class OWLDataUnionOf(metaclass=ABCMeta):
-#     type_index: Final = 4005
-
-
 class OWLDatatype(OWLEntity):
     __slots__ = '_iri'
 
@@ -891,6 +858,75 @@ class _OWLLiteralImplDouble(OWLLiteral):
         return DoubleOWLDatatype
 
 
+
+# TODO: a big todo plus intermediate classes (missing)
+
+class OWLQuantifiedDataRestriction(OWLQuantifiedRestriction[OWLDataRange],
+                                   OWLDataRestriction, metaclass=ABCMeta):
+    __slots__ = ()
+    pass
+
+class OWLDataCardinalityRestriction(OWLCardinalityRestriction[OWLDataRange],
+                                    OWLQuantifiedDataRestriction,
+                                    OWLDataRestriction, metaclass=ABCMeta):
+    __slots__ = ()
+    pass
+
+# class OWLAnnotation(metaclass=ABCMeta):
+#     type_index: Final = 5001
+#
+# class OWLAnnotationProperty(metaclass=ABCMeta):
+#     type_index: Final = 1006
+#
+# class OWLAnonymousIndividual(OWLIndividual, OWLAnnotationValue, OWLAnnotationSubject, metaclass=ABCMeta):
+#     type_index: Final = 1007
+#
+# class OWLAxiom(metaclass=ABCMeta):
+#     type_index: Final = 2000 + get_axiom_type().get_index()
+
+class OWLDataAllValuesFrom(OWLQuantifiedDataRestriction, metaclass=ABCMeta):
+    __slots__ = ()
+
+    type_index: Final = 3013
+
+# class OWLDataComplementOf(metaclass=ABCMeta):
+#     type_index: Final = 4002
+
+class OWLDataExactCardinality(OWLDataCardinalityRestriction, metaclass=ABCMeta):
+    __slots__ = ()
+
+    type_index: Final = 3016
+
+class OWLDataHasValue(OWLHasValueRestriction[OWLLiteral],
+                      OWLDataRestriction, metaclass=ABCMeta):
+    __slots__ = ()
+
+    type_index: Final = 3014
+
+# class OWLDataIntersectionOf(metaclass=ABCMeta):
+#     type_index: Final = 4004
+
+class OWLDataMaxCardinality(OWLDataCardinalityRestriction, metaclass=ABCMeta):
+    __slots__ = ()
+
+    type_index: Final = 3017
+
+class OWLDataMinCardinality(OWLDataCardinalityRestriction, metaclass=ABCMeta):
+    __slots__ = ()
+
+    type_index: Final = 3015
+
+# class OWLDataOneOf(metaclass=ABCMeta):
+#     type_index: Final = 4003
+#
+class OWLDataSomeValuesFrom(OWLQuantifiedDataRestriction, metaclass=ABCMeta):
+    __slots__ = ()
+
+    type_index: Final = 3012
+
+# class OWLDataUnionOf(metaclass=ABCMeta):
+#     type_index: Final = 4005
+
 class OWLImportsDeclaration(HasIRI):
     __slots__ = '_iri'
 
@@ -960,7 +996,7 @@ class OWLEquivalentClassesAxiom(OWLNaryClassAxiom):
         super().__init__([cls_a, cls_b])
 
 
-class OWLAnnotationAxiom(OWLAxiom):
+class OWLAnnotationAxiom(OWLAxiom, metaclass=ABCMeta):
     __slots__ = ()
     # TODO: XXX
     pass

@@ -7,7 +7,7 @@ from owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeVa
     OWLObjectCardinalityRestriction, OWLObjectHasSelf, \
     OWLObjectHasValue, OWLObjectOneOf, OWLObjectRestriction, HasFiller, HasCardinality, HasOperands, OWLNamedIndividual, \
     OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality, HasIndex, HasIRI
-from owlapy.utils import as_index
+from owlapy.util import as_index
 from sortedcontainers import SortedSet
 
 
