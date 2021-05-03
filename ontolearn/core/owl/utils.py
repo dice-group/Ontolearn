@@ -1,13 +1,13 @@
 from collections import Counter
-from functools import singledispatchmethod, total_ordering
-from typing import Optional, Tuple, Iterable, Generic, TypeVar, Callable, List
+from functools import singledispatchmethod
+from typing import Iterable, Generic, TypeVar, Callable, List
 
 from owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, \
     OWLObjectCardinalityRestriction, OWLObjectHasSelf, \
-    OWLObjectHasValue, OWLObjectOneOf, OWLObjectRestriction, HasFiller, HasCardinality, HasOperands, OWLNamedIndividual, \
-    OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality, HasIndex, HasIRI
-from owlapy.util import as_index
+    OWLObjectHasValue, OWLObjectOneOf, OWLNamedIndividual, \
+    OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality
+from owlapy.util import OrderedOWLObject
 from sortedcontainers import SortedSet
 
 
@@ -222,49 +222,6 @@ class OWLClassExpressionLengthMetric:
     #     return self.datatype_length
 
 
-@total_ordering
-class OrderedOWLObject:
-    __slots__ = 'o', '_chain'
-
-    o: HasIndex  # o: Intersection[OWLObject, HasIndex]
-    _chain: Optional[Tuple]
-
-    # we are limited by https://github.com/python/typing/issues/213 # o: Intersection[OWLObject, HasIndex]
-    def __init__(self, o: HasIndex):
-        self.o = o
-        self._chain = None
-
-    def _comparison_chain(self):
-        if self._chain is None:
-            c = [self.o.type_index]
-
-            if isinstance(self.o, OWLObjectRestriction):
-                c.append(OrderedOWLObject(as_index(self.o.get_property())))
-            if isinstance(self.o, HasFiller):
-                c.append(OrderedOWLObject(self.o.get_filler()))
-            if isinstance(self.o, HasCardinality):
-                c.append(self.o.get_cardinality())
-            if isinstance(self.o, HasOperands):
-                c.append(tuple(map(OrderedOWLObject, self.o.operands())))
-            if isinstance(self.o, HasIRI):
-                c.append(self.o.get_iri().as_str())
-
-            self._chain = tuple(c)
-
-        return self._chain
-
-    def __lt__(self, other):
-        if self.o.type_index < other.o.type_index:
-            return True
-        elif self.o.type_index > other.o.type_index:
-            return False
-        else:
-            return self._comparison_chain() < other._comparison_chain()
-
-    def __eq__(self, other):
-        return self.o == other.o
-
-
 _N = TypeVar('_N')  #:
 _O = TypeVar('_O')  #:
 
@@ -380,7 +337,7 @@ class ConceptOperandSorter:
 
     @sort.register
     def _(self, r: OWLObjectMinCardinality) -> OWLObjectMinCardinality:
-        t = OWLObjectMinCardinality(property=r.get_property(), cardinality=r.get_cardinality(),
+        t = OWLObjectMinCardinality(cardinality=r.get_cardinality(), property=r.get_property(),
                                     filler=self.sort(r.get_filler()))
         if t == r:
             return r
@@ -389,7 +346,7 @@ class ConceptOperandSorter:
 
     @sort.register
     def _(self, r: OWLObjectExactCardinality) -> OWLObjectExactCardinality:
-        t = OWLObjectExactCardinality(property=r.get_property(), cardinality=r.get_cardinality(),
+        t = OWLObjectExactCardinality(cardinality=r.get_cardinality(), property=r.get_property(),
                                       filler=self.sort(r.get_filler()))
         if t == r:
             return r
@@ -398,7 +355,7 @@ class ConceptOperandSorter:
 
     @sort.register
     def _(self, r: OWLObjectMaxCardinality) -> OWLObjectMaxCardinality:
-        t = OWLObjectMaxCardinality(property=r.get_property(), cardinality=r.get_cardinality(),
+        t = OWLObjectMaxCardinality(cardinality=r.get_cardinality(), property=r.get_property(),
                                     filler=self.sort(r.get_filler()))
         if t == r:
             return r
