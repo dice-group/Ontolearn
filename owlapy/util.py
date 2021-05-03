@@ -1,7 +1,7 @@
 from functools import singledispatchmethod, total_ordering
 from typing import Iterable, overload, TypeVar, Generic, Type, Tuple, Dict, List, cast, Optional
 
-from owlapy import IRI, HasIRI
+from owlapy import IRI
 from owlapy.model import OWLObject, HasIndex, HasIRI, OWLClassExpression, OWLClass, OWLObjectIntersectionOf, \
     OWLObjectUnionOf, OWLObjectComplementOf, OWLNothing, OWLThing, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectHasValue, OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality, OWLObjectHasSelf, \
@@ -153,27 +153,33 @@ class NNF:
 
     @get_class_nnf.register
     def _(self, ce: OWLDataSomeValuesFrom, negated: bool = False):
-        ...
+        # TODO XXX
+        raise NotImplementedError
 
     @get_class_nnf.register
     def _(self, ce: OWLDataAllValuesFrom, negated: bool = False):
-        ...
+        # TODO XXX
+        raise NotImplementedError
 
     @get_class_nnf.register
     def _(self, ce: OWLDataHasValue, negated: bool = False):
-        ...
+        # TODO XXX
+        raise NotImplementedError
 
     @get_class_nnf.register
     def _(self, ce: OWLDataExactCardinality, negated: bool = False):
-        ...
+        # TODO XXX
+        raise NotImplementedError
 
     @get_class_nnf.register
     def _(self, ce: OWLDataMinCardinality, negated: bool = False):
-        ...
+        # TODO XXX
+        raise NotImplementedError
 
     @get_class_nnf.register
     def _(self, ce: OWLDataMaxCardinality, negated: bool = False):
-        ...
+        # TODO XXX
+        raise NotImplementedError
 
 
 # OWL-APy custom util start
