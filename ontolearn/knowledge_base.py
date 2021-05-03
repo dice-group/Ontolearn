@@ -9,7 +9,7 @@ from owlapy import IRI
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLNamedIndividual, \
     OWLObjectProperty, OWLClass, OWLDataProperty
 from owlapy.render import DLSyntaxObjectRenderer
-from owlapy.utils import NamedFixedSet, popcount, iter_count
+from owlapy.util import NamedFixedSet, popcount, iter_count
 
 Factory = Callable
 

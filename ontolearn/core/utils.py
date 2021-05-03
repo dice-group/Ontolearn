@@ -1,6 +1,6 @@
 from typing import Iterable
 
-from owlapy.utils import iter_bits, popcount
+from owlapy.util import iter_bits, popcount
 
 
 class BitSet:

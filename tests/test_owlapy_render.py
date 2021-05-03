@@ -46,7 +46,7 @@ class Owlapy_DLRenderer_Test(unittest.TestCase):
         print(r)
         self.assertEqual(r, "∃ hasChild.{heinz}")
 
-        mincard = OWLObjectMinCardinality(property=has_child, cardinality=2, filler=OWLThing)
+        mincard = OWLObjectMinCardinality(cardinality=2, property=has_child, filler=OWLThing)
         r = renderer.render(mincard)
         print(r)
         self.assertEqual(r, "≥ 2 hasChild.⊤")
@@ -91,7 +91,7 @@ class Owlapy_ManchesterRenderer_Test(unittest.TestCase):
         print(r)
         self.assertEqual(r, "hasChild value heinz")
 
-        mincard = OWLObjectMinCardinality(property=has_child, cardinality=2, filler=OWLThing)
+        mincard = OWLObjectMinCardinality(cardinality=2, property=has_child, filler=OWLThing)
         r = renderer.render(mincard)
         print(r)
         self.assertEqual(r, "hasChild min 2 Thing")
