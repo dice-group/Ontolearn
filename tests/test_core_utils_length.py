@@ -50,7 +50,7 @@ class Core_OWLClassExpressionLengthMetric_Test(unittest.TestCase):
         # ∃ hasChild.{heinz}
         self.assertEqual(le, 3)
 
-        ce = OWLObjectMinCardinality(property=has_child, cardinality=2, filler=OWLThing)
+        ce = OWLObjectMinCardinality(cardinality=2, property=has_child, filler=OWLThing)
         le = cl.length(ce)
         # ≥ 2 hasChild.⊤
         self.assertEqual(le, 4)

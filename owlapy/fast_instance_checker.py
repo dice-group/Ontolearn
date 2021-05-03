@@ -8,7 +8,7 @@ from owlapy import IRI
 from owlapy.model import OWLReasoner, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
     OWLObjectProperty, OWLDataProperty, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
     OWLObjectPropertyExpression, OWLObjectComplementOf, OWLObjectAllValuesFrom
-from owlapy.utils import NamedFixedSet
+from owlapy.util import NamedFixedSet
 
 
 class OWLReasoner_FastInstanceChecker(OWLReasoner):
