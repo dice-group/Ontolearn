@@ -14,7 +14,8 @@ from sortedcontainers import SortedSet
 from . import KnowledgeBase
 from .abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic
 from .base_concept_learner import BaseConceptLearner
-from .core.owl.utils import EvaluatedDescriptionSet, OrderedOWLObject, ConceptOperandSorter
+from .core.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter
+from owlapy.util import OrderedOWLObject
 from .heuristics import CELOEHeuristic, OCELHeuristic
 from .learning_problem import PosNegLPStandard
 from .metrics import F1

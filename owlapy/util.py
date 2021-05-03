@@ -1,18 +1,67 @@
-from functools import singledispatchmethod
-from typing import Iterable, overload, TypeVar, Generic, Type, Tuple, Dict, List, cast
+from functools import singledispatchmethod, total_ordering
+from typing import Iterable, overload, TypeVar, Generic, Type, Tuple, Dict, List, cast, Optional
 
-from owlapy import IRI
+from owlapy import IRI, HasIRI
 from owlapy.model import OWLObject, HasIndex, HasIRI, OWLClassExpression, OWLClass, OWLObjectIntersectionOf, \
     OWLObjectUnionOf, OWLObjectComplementOf, OWLNothing, OWLThing, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectHasValue, OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality, OWLObjectHasSelf, \
     OWLObjectOneOf, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataExactCardinality, OWLDataHasValue, \
-    OWLDataAllValuesFrom, OWLDataSomeValuesFrom
+    OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLObjectRestriction, HasFiller, HasCardinality, HasOperands
 
 _HasIRI = TypeVar('_HasIRI', bound=HasIRI)  #:
+_O = TypeVar('_O')  #:
+
+
+@total_ordering
+class OrderedOWLObject:
+    __slots__ = 'o', '_chain'
+
+    o: HasIndex  # o: Intersection[OWLObject, HasIndex]
+    _chain: Optional[Tuple]
+
+    # we are limited by https://github.com/python/typing/issues/213 # o: Intersection[OWLObject, HasIndex]
+    def __init__(self, o: HasIndex):
+        self.o = o
+        self._chain = None
+
+    def _comparison_chain(self):
+        if self._chain is None:
+            c = [self.o.type_index]
+
+            if isinstance(self.o, OWLObjectRestriction):
+                c.append(OrderedOWLObject(as_index(self.o.get_property())))
+            if isinstance(self.o, HasFiller):
+                c.append(OrderedOWLObject(self.o.get_filler()))
+            if isinstance(self.o, HasCardinality):
+                c.append(self.o.get_cardinality())
+            if isinstance(self.o, HasOperands):
+                c.append(tuple(map(OrderedOWLObject, self.o.operands())))
+            if isinstance(self.o, HasIRI):
+                c.append(self.o.get_iri().as_str())
+
+            self._chain = tuple(c)
+
+        return self._chain
+
+    def __lt__(self, other):
+        if self.o.type_index < other.o.type_index:
+            return True
+        elif self.o.type_index > other.o.type_index:
+            return False
+        else:
+            return self._comparison_chain() < other._comparison_chain()
+
+    def __eq__(self, other):
+        return self.o == other.o
+
+
+def _sort_by_ordered_owl_object(i: Iterable[_O]) -> Iterable[_O]:
+    return sorted(i, key=OrderedOWLObject)
+
 
 class NNF:
     @singledispatchmethod
-    def get_class_nnf(self, ce: OWLClassExpression, negated: bool = False):
+    def get_class_nnf(self, ce: OWLClassExpression, negated: bool = False) -> OWLClassExpression:
         raise NotImplementedError
 
     @get_class_nnf.register
@@ -27,40 +76,42 @@ class NNF:
 
     @get_class_nnf.register
     def _(self, ce: OWLObjectIntersectionOf, negated: bool = False):
-        ops = map(lambda _: self.get_class_nnf(_, negated), ce.operands())
+        ops = map(lambda _: self.get_class_nnf(_, negated),
+                  _sort_by_ordered_owl_object(ce.operands()))
         if negated:
             return OWLObjectUnionOf(ops)
         return OWLObjectIntersectionOf(ops)
 
     @get_class_nnf.register
     def _(self, ce: OWLObjectUnionOf, negated: bool = False):
-        ops = map(lambda _: self.get_class_nnf(_, negated), ce.operands())
+        ops = map(lambda _: self.get_class_nnf(_, negated),
+                  _sort_by_ordered_owl_object(ce.operands()))
         if negated:
-            return OWLObjectIntersectionOf(ce)
+            return OWLObjectIntersectionOf(ops)
         return OWLObjectUnionOf(ops)
 
     @get_class_nnf.register
     def _(self, ce: OWLObjectComplementOf, negated: bool = False):
         return self.get_class_nnf(ce.get_operand(), not negated)
-    
+
     @get_class_nnf.register
     def _(self, ce: OWLObjectSomeValuesFrom, negated: bool = False):
         filler = self.get_class_nnf(ce.get_filler(), negated)
         if negated:
             return OWLObjectAllValuesFrom(ce.get_property(), filler)
         return OWLObjectSomeValuesFrom(ce.get_property(), filler)
-    
+
     @get_class_nnf.register
     def _(self, ce: OWLObjectAllValuesFrom, negated: bool = False):
         filler = self.get_class_nnf(ce.get_filler(), negated)
         if negated:
             return OWLObjectSomeValuesFrom(ce.get_property(), filler)
         return OWLObjectAllValuesFrom(ce.get_property(), filler)
-    
+
     @get_class_nnf.register
     def _(self, ce: OWLObjectHasValue, negated: bool = False):
         return self.get_class_nnf(ce.as_some_values_from(), negated)
-    
+
     @get_class_nnf.register
     def _(self, ce: OWLObjectMinCardinality, negated: bool = False):
         card = ce.get_cardinality()
@@ -70,7 +121,7 @@ class NNF:
         if negated:
             return OWLObjectMaxCardinality(card, ce.get_property(), filler)
         return OWLObjectMinCardinality(card, ce.get_property(), filler)
-    
+
     @get_class_nnf.register
     def _(self, ce: OWLObjectExactCardinality, negated: bool = False):
         return self.get_class_nnf(ce.as_intersection_of_min_max(), negated)
@@ -84,7 +135,7 @@ class NNF:
         if negated:
             return OWLObjectMinCardinality(card, ce.get_property(), filler)
         return OWLObjectMaxCardinality(card, ce.get_property(), filler)
-    
+
     @get_class_nnf.register
     def _(self, ce: OWLObjectHasSelf, negated: bool = False):
         if negated:
@@ -123,6 +174,7 @@ class NNF:
     @get_class_nnf.register
     def _(self, ce: OWLDataMaxCardinality, negated: bool = False):
         ...
+
 
 # OWL-APy custom util start
 
