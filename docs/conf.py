@@ -40,6 +40,8 @@ extensions = [
     'sphinx_rtd_theme',
 ]
 
+inheritance_graph_attrs = dict(rankdir="TB")
+
 myst_enable_extensions = [
     'colon_fence',
     'deflist',
