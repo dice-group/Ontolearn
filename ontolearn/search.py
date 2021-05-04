@@ -242,14 +242,34 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
         ))
 
 
-class LBLNode(OENode):
-    __slots__ = '_children'
+# noinspection PyUnresolvedReferences
+# noinspection PyDunderSlots
+class _NodeIndividuals(metaclass=ABCMeta):
+    __slots__ = ()
+
+    _individuals: Optional[set]
+
+    @abstractmethod
+    def __init__(self, individuals: Optional[set] = None):
+        self._individuals = individuals
+
+    @property
+    def individuals(self):
+        return self._individuals
+
+    @property
+    def individuals_count(self) -> Optional[int]:
+        return len(self._individuals)
+
+
+class LBLNode(_NodeIndividuals, OENode):
+    __slots__ = '_children', '_individuals'
 
     def __init__(self, concept: OWLClassExpression, length: int, individuals, parent_node: Optional['LBLNode'] = None,
                  is_root: bool = False):
-        super().__init__(concept=concept, length=length, parent_node=parent_node, is_root=is_root)
+        OENode.__init__(self, concept=concept, length=length, parent_node=parent_node, is_root=is_root)
+        _NodeIndividuals.__init__(self, individuals)
         self._children = set()
-        self._individuals = individuals
 
     def add_child(self, n):
         self._children.add(n)
@@ -268,14 +288,6 @@ class LBLNode(OENode):
     @parent_node.setter
     def parent_node(self, parent_node: Optional['LBLNode']):
         self._parent_ref = weakref.ref(parent_node)
-
-    @property
-    def individuals(self):
-        return self._individuals
-
-    @property
-    def individuals_count(self) -> Optional[int]:
-        return len(self._individuals)
 
 
 @total_ordering
@@ -420,7 +432,7 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
         self.items_in_queue.put((-node.heuristic, HeuristicOrderedNode(node)))  # gets the smallest one.
         self.nodes[node.concept] = node
 
-    def add_node(self, *, node: LBLNode, parent_node: LBLNode):
+    def add_node(self, *, node: LBLNode, parent_node: LBLNode) -> Optional[bool]:
         """
         Add a node into the search tree after calculating heuristic value given its parent.
 
