@@ -21,6 +21,17 @@ class ConceptGenerator:
                  class_hierarchy: Optional[ClassHierarchy] = None,
                  object_property_hierarchy: Optional[ObjectPropertyHierarchy] = None,
                  data_property_hierarchy: Optional[DatatypePropertyHierarchy] = None):
+        """Create a new Concept Generator
+
+        Args:
+            reasoner: OWL reasoner with ontology loaded
+            class_hierarchy: Class hierarchy to answer subclass queries. Created from the root ontology loaded in the
+                reasoner if not given
+            object_property_hierarchy: Object property hierarchy. Created from the root ontology loaded in the reasoner
+                if not given
+            data_property_hierarchy: Data property hierarchy. Created from the root ontology loaded in the reasoner
+                if not given
+        """
         self._reasoner = reasoner
 
         if class_hierarchy is None:
@@ -39,20 +50,44 @@ class ConceptGenerator:
         self._op_domains = dict()
 
     def get_leaf_concepts(self, concept: OWLClass):
-        """ Return : { x | (x subClassOf concept) AND not exist y: y subClassOf x )} """
+        """Get leaf classes
+
+        Args:
+            concept: atomic class for which to find leaf classes
+
+        Returns:
+            Leaf classes
+
+                { x \\| (x subClassOf concept) AND not exist y: y subClassOf x )} """
         assert isinstance(concept, OWLClass)
         yield from self._class_hierarchy.leaves(of=concept)
 
     @parametrized_performance_debugger()
     def negation_from_iterables(self, s: Iterable[OWLClassExpression]) -> Iterable[OWLObjectComplementOf]:
-        """ Return : { x | ( x \\equv not s} """
+        """Negate a sequence of Class Expressions
+
+        Args:
+            s: iterable of class expressions to negate
+
+        Returns:
+            negated form of input
+
+                { x \\| ( x \\equv not s} """
         for item in s:
             assert isinstance(item, OWLClassExpression)
             yield self.negation(item)
 
     @parametrized_performance_debugger()
     def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
-        """ Return : { x | ( x subClassOf concept )} """
+        """Direct sub classes of atomic class
+
+        Args:
+            concept: atomic concept
+
+        Returns:
+            direct sub classes of concept
+
+                { x \\| ( x subClassOf concept )} """
         assert isinstance(concept, OWLClass)
         yield from self._class_hierarchy.sub_classes(concept, direct=True)
 
@@ -150,11 +185,14 @@ class ConceptGenerator:
 
     @property
     def thing(self) -> OWLClass:
+        """OWL Thing"""
         return OWLThing
 
     @property
     def nothing(self) -> OWLClass:
+        """OWL Nothing"""
         return OWLNothing
 
     def clean(self):
+        """Clear any state and caches"""
         self._op_domains.clear()
