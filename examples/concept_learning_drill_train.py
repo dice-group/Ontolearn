@@ -5,15 +5,17 @@ Drill -- Deep Reinforcement Learning for Refinement Operators in ALC
 Drill with training.
 Author: Caglar Demir
 """
-from ontolearn import KnowledgeBase, LearningProblemGenerator, DrillSample, DrillAverage
-from ontolearn.util import sanity_checking_args
 from argparse import ArgumentParser
-import os
+
+from ontolearn import KnowledgeBase
+from ontolearn.learning_problem_generator import LearningProblemGenerator
+from ontolearn.rl import DrillAverage
+from ontolearn.utils import sanity_checking_args
 
 
 def start(args):
     sanity_checking_args(args)
-    kb = KnowledgeBase(args.path_knowledge_base)
+    kb = KnowledgeBase(path=args.path_knowledge_base)
     lp = LearningProblemGenerator(knowledge_base=kb, min_length=args.min_length, max_length=args.max_length)
     balanced_examples = lp.get_balanced_n_samples_per_examples(n=args.num_of_randomly_created_problems_per_concept,
                                                                min_num_problems=args.min_num_concepts,
