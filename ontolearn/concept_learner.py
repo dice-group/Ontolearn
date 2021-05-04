@@ -81,9 +81,6 @@ class CELOE(BaseConceptLearner[OENode]):
         self.min_he = 1
 
     def next_node_to_expand(self, step: int) -> OENode:
-        """
-        Return most promising node/concept based
-        """
         if not self.best_only:
             for node in reversed(self.heuristic_queue):
                 if node.quality < 1.0:
@@ -205,7 +202,7 @@ class CELOE(BaseConceptLearner[OENode]):
             return False
         assert 0 <= ref.quality <= 1.0
         # TODO: expression rewriting
-        self.heuristic_func.apply(ref)
+        self.heuristic_func.apply(ref, ref_individuals)
         if self.best_descriptions.maybe_add(ref):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("Better description found: %s", ref)
@@ -366,7 +363,7 @@ class LengthBaseLearner(BaseConceptLearner):
     def next_node_to_expand(self, step) -> LBLNode:
         return self.search_tree.get_most_promising()
 
-    def downward_refinement(self, node: LBLNode):
+    def downward_refinement(self, node: LBLNode) -> Iterable[LBLNode]:
         assert isinstance(node, LBLNode)
         refinements = (self.get_node(i, parent_node=node) for i in
                        self.operator.refine(node.concept, max_length=node.len + 1 + self.min_length)

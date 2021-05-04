@@ -2,10 +2,13 @@ from typing import Final
 
 import numpy as np
 
-from .abstracts import AbstractScorer, AbstractHeuristic, AbstractOEHeuristicNode
+from .abstracts import AbstractScorer, AbstractHeuristic, AbstractOEHeuristicNode, AbstractLearningProblem
+from .metrics import Accuracy
+from .search import LBLNode, OENode
 
 
 class CELOEHeuristic(AbstractHeuristic[AbstractOEHeuristicNode]):
+    """Heuristic like the CELOE Heuristic in DL-Learner"""
     __slots__ = 'gainBonusFactor', 'startNodeBonus', 'nodeRefinementPenalty', 'expansionPenaltyFactor'
 
     name: Final = 'CELOE_Heuristic'
@@ -20,16 +23,22 @@ class CELOEHeuristic(AbstractHeuristic[AbstractOEHeuristicNode]):
                  startNodeBonus: float = 0.1,
                  nodeRefinementPenalty: float = 0.001,
                  expansionPenaltyFactor: float = 0.1):
+        """Create a new CELOE Heuristic
+
+        Args:
+            gainBonusFactor: factor that weighs the increase in quality compared to the parent node
+            startNodeBonus: special value added to the root node
+            nodeRefinementPenalty: value that is substracted from the heuristic for each refinement attempt of this node
+            expansionPenaltyFactor: value that is substracted from the heuristic for each horizontal expansion of this
+                node
+        """
         super().__init__()
         self.gainBonusFactor = gainBonusFactor
         self.startNodeBonus = startNodeBonus
         self.nodeRefinementPenalty = nodeRefinementPenalty
         self.expansionPenaltyFactor = expansionPenaltyFactor
 
-    def score(self):
-        pass
-
-    def apply(self, node: AbstractOEHeuristicNode):
+    def apply(self, node: AbstractOEHeuristicNode, instances=None):
         self.applied += 1
 
         heuristic_val = 0
@@ -56,10 +65,7 @@ class DLFOILHeuristic(AbstractHeuristic):
         self.name = 'custom_dl_foil'
         # @todo Needs to be tested.
 
-    def score(self):
-        pass
-
-    def apply(self, node, parent_node=None):
+    def apply(self, node, instances=None):
         self.applied += 1
 
         instances = node.concept.instances
@@ -85,41 +91,32 @@ class DLFOILHeuristic(AbstractHeuristic):
         node.heuristic = gain
 
 
-class OCELHeuristic(AbstractScorer):
-    def __init__(self, pos=None, neg=None, unlabelled=None):
-        super().__init__(pos, neg, unlabelled)
-        self.name = 'OCEL_Heuristic'
-        self.applied = 0
+class OCELHeuristic(AbstractHeuristic):
+    __slots__ = 'lp', 'accuracy', 'gainBonusFactor', 'expansionPenaltyFactor'
 
-        self.gainBonusFactor = 0.5  # called alpha in the paper and gainBonusFactor in the original code
-        self.expansionPenaltyFactor = 0.02  # called beta in the paper
-        self.applied = 0
+    name: Final = 'OCEL_Heuristic'
 
-    def score(self):
-        pass
+    def __init__(self, *, learning_problem: AbstractLearningProblem, gainBonusFactor: float = 0.5,
+                 expansionPenaltyFactor: float = 0.02):
+        super().__init__()
+        self.lp = learning_problem
+        self.accuracy_method = Accuracy(learning_problem=learning_problem)
 
-    def apply(self, node, parent_node=None):
+        self.gainBonusFactor = gainBonusFactor   # called alpha in the paper and gainBonusFactor in the original code
+        self.expansionPenaltyFactor = expansionPenaltyFactor  # called beta in the paper
+
+    def apply(self, node, instances=None):
+        assert isinstance(node, LBLNode), "OCEL Heuristic requires instances information of a node"
+
         self.applied += 1
 
         heuristic_val = 0
-        accuracy = 0
         accuracy_gain = 0
+        _, accuracy = self.accuracy_method.score(instances)
 
-        uncovered_positives = len(self.pos.difference(node.concept.instances))
-        covered_negatives = len(self.neg.intersection(node.concept.instances))
-
-        accuracy += 1 - (uncovered_positives + covered_negatives) / (
-                len(self.pos) + len(self.neg))  # ACCURACY of Concept
-
-        accuracy_gain += accuracy
-        if parent_node is not None:
-            uncovered_positives_parent = len(self.pos.difference(parent_node.concept.instances))
-            covered_negatives_parent = len(self.neg.intersection(parent_node.concept.instances))
-
-            parent_accuracy = 1 - (
-                    uncovered_positives_parent + covered_negatives_parent) / (
-                                      len(self.pos) + len(self.neg))  # ACCURACY of Concept
-            accuracy_gain -= parent_accuracy
+        if node.parent_node is not None:
+            _, parent_accuracy = self.accuracy_method.score(node.parent_node.individuals)
+            accuracy_gain = accuracy - parent_accuracy
 
         heuristic_val += accuracy + self.gainBonusFactor * accuracy_gain - node.h_exp * self.expansionPenaltyFactor
         node.heuristic = round(heuristic_val, 5)
