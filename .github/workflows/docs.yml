@@ -22,17 +22,17 @@ jobs:
     - name: Install tox
       run: |
         # workaround for github bug where conda-tox is broken after self-upgrade
-        conda install -c conda-forge --no-update-deps tox $(conda -V|tr ' ' '=')
+        conda install -c conda-forge --no-update-deps tox-conda=0.7.1 $(conda -V|tr ' ' '=')
     - name: prepare required software
       run: |
         # epstopdf & dot & noto-fonts
         sudo apt install texlive-font-utils graphviz fonts-noto
     - name: Build docs with tox
       run: |
-        tox -e docs
+        tox -o -e docs
     - name: Build latex docs with tox
       run: |
-        tox -e docs latex
+        tox -o -e docs latex
     - name: Compile LaTeX document
       uses: docker://texlive/texlive:latest
       with:

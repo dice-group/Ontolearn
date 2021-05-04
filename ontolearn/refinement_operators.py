@@ -282,7 +282,16 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         super().__init__(knowledge_base)
 
     def _operands_len(self, _Type: Type[OWLNaryBooleanClassExpression],
-                      ops: List[OWLClassExpression]):
+                      ops: List[OWLClassExpression]) -> int:
+        """Calculate the length of a OWL Union or Intersection with operands ops
+
+        Args:
+            _Type: type of class expression (OWLObjectUnionOf or OWLObjectIntersectionOf)
+            ops: list of operands
+
+        Returns:
+            length of expression
+        """
         length = 0
         if len(ops) == 1:
             length += self.len(ops[0])
