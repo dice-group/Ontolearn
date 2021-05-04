@@ -1,4 +1,6 @@
 """ Test for refinement_operators.py"""
+from pytest import mark
+
 import json
 
 from ontolearn import KnowledgeBase
@@ -31,7 +33,17 @@ def test_length_refinement_operator():
         pass
 
 
+@mark.xfail
+def test_custom_refinement_operator():
+    r = DLSyntaxObjectRenderer()
+    rho = CustomRefinementOperator(kb)
+    for _ in enumerate(rho.refine(kb.thing)):
+        print(r.render(_[1]))
+        pass
+
+
 if __name__ == '__main__':
     test_celoe_refinement_operator()
     test_length_refinement_operator()
+    test_custom_refinement_operator()
 

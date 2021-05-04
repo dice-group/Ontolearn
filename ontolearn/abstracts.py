@@ -18,12 +18,18 @@ _N = TypeVar('_N')  #:
 
 
 class AbstractLearningProblem(metaclass=ABCMeta):
+    """Abstract learning problem"""
     __slots__ = 'kb'
 
     kb: 'AbstractKnowledgeBase'
 
     @abstractmethod
     def __init__(self, knowledge_base: 'AbstractKnowledgeBase'):
+        """create a new abstract learning problem
+
+        Args:
+            knowledge_base: the knowledge base
+        """
         self.kb = knowledge_base
 
 
@@ -36,14 +42,38 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
     name: ClassVar
 
     def __init__(self, learning_problem: AbstractLearningProblem):
+        """Create a new quality function
+
+        Args:
+            learning_problem: learning problem containing the ideal solution. the score function uses the learning
+                problem and the provided matching instances to calculate the quality score
+        """
         self.lp = learning_problem
         self.applied = 0
 
     @abstractmethod
     def score(self, instances) -> Tuple[bool, Optional[float]]:
+        """Quality score for a set of instances with regard to the learning problem
+
+        Args:
+            instances (set): instances to calculate a quality score for
+
+        Returns:
+             Tuple, first position indicating if the function could be applied, second position the quality value
+                in the range 0.0--1.0
+        """
         pass
 
-    def apply(self, node: 'AbstractNode', instances):
+    def apply(self, node: 'AbstractNode', instances) -> bool:
+        """Apply the quality function to a search tree node after calculating the quality score on the given instances
+
+        Args:
+            node: search tree node to set the quality on
+            instances (set): instances to calculate the quality for
+
+        Returns:
+            True if the quality function was applied successfully
+        """
         assert isinstance(node, AbstractNode)
         from ontolearn.search import _NodeQuality
         assert isinstance(node, _NodeQuality)
@@ -55,24 +85,36 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
         return ret
 
     def clean(self):
+        """Reset the state of the quality function, for example statistic counters"""
         self.applied = 0
 
 
 class AbstractHeuristic(Generic[_N], metaclass=ABCMeta):
+    """Abstract base class for heuristic functions.
+
+    Heuristic functions can guide the search process."""
     __slots__ = 'applied'
 
     applied: int
 
     @abstractmethod
     def __init__(self):
+        """Create a new heuristic function"""
         self.applied = 0
 
     @abstractmethod
-    def apply(self, node: _N):
+    def apply(self, node: _N, instances=None):
+        """Apply the heuristic on a search tree node and set its heuristic property to the calculated value
+
+        Args:
+            node: node to set the heuristic on
+            instances (set): set of instances covered by this node
+        """
         pass
 
     @abstractmethod
     def clean(self):
+        """Reset the state of the heuristic function, for example statistic counters"""
         self.applied = 0
 
 
@@ -107,11 +149,22 @@ class BaseRefinement(Generic[_N], metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, knowledge_base: _KB):
+        """Construct a new base refinement operator
+
+        Args:
+            knowledge_base: knowledge base to operate on
+        """
         self.kb = knowledge_base
 
     @abstractmethod
     def refine(self, *args, **kwargs) -> Iterable[OWLClassExpression]:
         """Refine a given concept
+
+        Args:
+            ce (OWLClassExpression): concept to refine
+
+        Returns:
+            new refined concepts
         """
         pass
 
@@ -122,25 +175,34 @@ class BaseRefinement(Generic[_N], metaclass=ABCMeta):
             concept: concept
 
         Returns:
-            length of concept according to some metric
+            length of concept according to some metric configured in the knowledge base
         """
         return self.kb.cl(concept)
 
 
 class AbstractNode(metaclass=ABCMeta):
+    """Abstract search tree node"""
     __slots__ = ()
 
     @abstractmethod
     def __init__(self):
+        """Create an abstract search tree node"""
         pass
 
     def __str__(self):
+        """string representation of node, by default its internal memory address"""
         addr = hex(id(self))
         addr = addr[0:2] + addr[6:-1]
         return f'{type(self)} at {addr}'
 
 
 class AbstractOEHeuristicNode(metaclass=ABCMeta):
+    """Abstract Node for the CELOEHeuristic heuristic function
+
+    This node must support quality, horizontal expansion (h_exp), is_root, parent_node and refinement_count
+    """
+    __slots__ = ()
+
     @property
     @abstractmethod
     def quality(self) -> Optional[float]:
@@ -168,6 +230,9 @@ class AbstractOEHeuristicNode(metaclass=ABCMeta):
 
 
 class AbstractConceptNode(metaclass=ABCMeta):
+    """Abstract search tree node which has a concept"""
+    __slots__ = ()
+
     @property
     @abstractmethod
     def concept(self) -> OWLClassExpression:
@@ -175,6 +240,7 @@ class AbstractConceptNode(metaclass=ABCMeta):
 
 
 class AbstractKnowledgeBase(metaclass=ABCMeta):
+    """Abstract knowledge base"""
     __slots__ = ()
 
     thing: OWLClassExpression
@@ -194,6 +260,7 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
 
     @abstractmethod
     def clean(self) -> None:
+        """This method should reset any caches and statistics in the knowledge base"""
         raise NotImplementedError
 
     @abstractmethod
@@ -203,32 +270,75 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
 
     @abstractmethod
     def individuals_set(self, *args, **kwargs) -> Set:
+        """Encode an individual, an iterable of individuals or the individuals that are instances of a given concept
+        into a set.
+
+        Args:
+            arg (OWLNamedIndividual): individual to encode
+            arg (Iterable[OWLNamedIndividual]): individuals to encode
+            arg (OWLClassExpression): encode individuals that are instances of this concept
+
+        Returns:
+            encoded set representation of individual(s)
+        """
         pass
 
 
 class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
+    """Abstract search tree for the Length based learner"""
     @abstractmethod
     def get_most_promising(self) -> _N:
+        """Find most "promising" node in the search tree that should be refined next
+
+        Returns:
+            most promising search tree node
+        """
         pass
 
     @abstractmethod
     def add_node(self, node: _N, parent_node: _N):
+        """Add a node to the search tree
+
+        Args:
+            node: node to add
+            parent_node: parent of that node
+        """
         pass
 
     @abstractmethod
     def clean(self):
+        """Reset the search tree state"""
         pass
 
     @abstractmethod
     def get_top_n(self, n: int) -> List[_N]:
+        """Retrieve the best n search tree nodes
+
+        Args:
+            n: maximum number of nodes
+
+        Returns:
+            list of top n search tree nodes
+        """
         pass
 
     @abstractmethod
     def show_search_tree(self, root_concept: OWLClassExpression, heading_step: str):
+        """Debugging function to print the search tree to standard output
+
+        Args:
+            root_concept: the tree is printed starting from this search tree node
+            heading_step: message to print at top of the output
+        """
         pass
 
     @abstractmethod
     def add_root(self, node: _N):
+        """Add the root node to the search tree
+
+        Args:
+            node: root node to add
+        """
         pass
 
 

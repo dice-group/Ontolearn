@@ -9,18 +9,29 @@ from owlapy.model import OWLObject, HasIndex, HasIRI, OWLClassExpression, OWLCla
     OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLObjectRestriction, HasFiller, HasCardinality, HasOperands
 
 _HasIRI = TypeVar('_HasIRI', bound=HasIRI)  #:
+_HasIndex = TypeVar('_HasIndex', bound=HasIndex)  #:
 _O = TypeVar('_O')  #:
 
 
 @total_ordering
 class OrderedOWLObject:
+    """Holder of OWL Objects that can be used for Python sorted
+
+    The Ordering is dependent on the type_index of the impl. classes recursively followed by all components of the
+    OWL Object.
+    """
     __slots__ = 'o', '_chain'
 
-    o: HasIndex  # o: Intersection[OWLObject, HasIndex]
+    o: _HasIndex  # o: Intersection[OWLObject, HasIndex]
     _chain: Optional[Tuple]
 
     # we are limited by https://github.com/python/typing/issues/213 # o: Intersection[OWLObject, HasIndex]
-    def __init__(self, o: HasIndex):
+    def __init__(self, o: _HasIndex):
+        """OWL Object holder with a defined sort order
+
+        Args:
+            o: OWL Object
+        """
         self.o = o
         self._chain = None
 
@@ -60,8 +71,18 @@ def _sort_by_ordered_owl_object(i: Iterable[_O]) -> Iterable[_O]:
 
 
 class NNF:
+    """This class contains functions to transform a Class Expression into Negation Normal Form"""
     @singledispatchmethod
     def get_class_nnf(self, ce: OWLClassExpression, negated: bool = False) -> OWLClassExpression:
+        """Convert a Class Expression to Negation Normal Form. Operands will be sorted.
+
+        Args:
+            ce: Class Expression
+            negated: whether the result should be negated
+
+        Returns:
+            Class Expression in Negation Normal Form
+            """
         raise NotImplementedError
 
     @get_class_nnf.register
@@ -354,6 +375,7 @@ def iter_count(i: Iterable) -> int:
 
 
 def as_index(o: OWLObject) -> HasIndex:
+    """Cast OWL Object to HasIndex"""
     i = cast(HasIndex, o)
     assert type(i).type_index
     return i
