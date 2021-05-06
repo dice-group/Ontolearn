@@ -288,6 +288,22 @@ class ConceptGenerator:
         """
         return self._class_hierarchy
 
+    def object_property_hierarchy(self) -> ObjectPropertyHierarchy:
+        """Access the Object property hierarchy of this concept generator
+
+        Returns:
+            object property hierarchy
+        """
+        return self._object_property_hierarchy
+
+    def data_property_hierarchy(self) -> DatatypePropertyHierarchy:
+        """Access the Datatype property hierarchy of this concept generator
+
+        Returns:
+            data property hierarchy
+        """
+        return self._data_property_hierarchy
+
     @property
     def thing(self) -> OWLClass:
         """OWL Thing"""
