@@ -56,13 +56,13 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def get_top_entity(cls) -> _S:
-        """The most general concept in this hierarchy, which contains all the concepts"""
+        """The most general entity in this hierarchy, which contains all the entities"""
         pass
 
     @classmethod
     @abstractmethod
     def get_bottom_entity(cls) -> _S:
-        """The most specific concept in this hierarchy, which contains none of the concepts"""
+        """The most specific entity in this hierarchy, which contains none of the entities"""
         pass
 
     @staticmethod
