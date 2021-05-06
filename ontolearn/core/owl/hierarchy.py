@@ -55,13 +55,13 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def get_top_concept(cls) -> _S:
+    def get_top_entity(cls) -> _S:
         """The most general concept in this hierarchy, which contains all the concepts"""
         pass
 
     @classmethod
     @abstractmethod
-    def get_bottom_concept(cls) -> _S:
+    def get_bottom_entity(cls) -> _S:
         """The most specific concept in this hierarchy, which contains none of the concepts"""
         pass
 
@@ -151,7 +151,7 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
             super-entities
 
         """
-        if entity == type(self).get_bottom_concept():
+        if entity == type(self).get_bottom_entity():
             if not direct:
                 yield from self.items()
             else:
@@ -195,7 +195,7 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
             sub-entities
 
         """
-        if entity == type(self).get_top_concept():
+        if entity == type(self).get_top_entity():
             if not direct:
                 yield from self.items()
             else:
@@ -219,13 +219,13 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
             yield i
 
     def roots(self, of: Optional[_S] = None) -> Iterable[_S]:
-        if of is not None and of != type(self).get_bottom_concept():
+        if of is not None and of != type(self).get_bottom_entity():
             yield from self._ent_enc(self._root_set & self._parents_map_trans[self._ent_enc(of)])
         else:
             yield from self._ent_enc(self._root_set)
 
     def leaves(self, of: Optional[_S] = None) -> Iterable[_S]:
-        if of is not None and of != type(self).get_top_concept():
+        if of is not None and of != type(self).get_top_entity():
             yield from self._ent_enc(self._leaf_set & self._children_map_trans[self._ent_enc(of)])
         else:
             yield from self._ent_enc(self._leaf_set)
@@ -246,11 +246,11 @@ class ClassHierarchy(AbstractHierarchy[OWLClass]):
         """
 
     @classmethod
-    def get_top_concept(cls) -> OWLClass:
+    def get_top_entity(cls) -> OWLClass:
         return OWLThing
 
     @classmethod
-    def get_bottom_concept(cls) -> OWLClass:
+    def get_bottom_entity(cls) -> OWLClass:
         return OWLNothing
 
     def _hierarchy_down_generator(self, reasoner: OWLReasoner) -> Iterable[Tuple[OWLClass, Iterable[OWLClass]]]:
@@ -278,11 +278,11 @@ class ClassHierarchy(AbstractHierarchy[OWLClass]):
 
 class ObjectPropertyHierarchy(AbstractHierarchy[OWLObjectProperty]):
     @classmethod
-    def get_top_concept(cls) -> OWLObjectProperty:
+    def get_top_entity(cls) -> OWLObjectProperty:
         return OWLTopObjectProperty
 
     @classmethod
-    def get_bottom_concept(cls) -> OWLObjectProperty:
+    def get_bottom_entity(cls) -> OWLObjectProperty:
         return OWLBottomObjectProperty
 
     def _hierarchy_down_generator(self, reasoner: OWLReasoner) \
@@ -325,11 +325,11 @@ class ObjectPropertyHierarchy(AbstractHierarchy[OWLObjectProperty]):
 
 class DatatypePropertyHierarchy(AbstractHierarchy[OWLDataProperty]):
     @classmethod
-    def get_top_concept(cls) -> OWLDataProperty:
+    def get_top_entity(cls) -> OWLDataProperty:
         return OWLTopDataProperty
 
     @classmethod
-    def get_bottom_concept(cls) -> OWLDataProperty:
+    def get_bottom_entity(cls) -> OWLDataProperty:
         return OWLBottomDataProperty
 
     def _hierarchy_down_generator(self, reasoner: OWLReasoner) \
