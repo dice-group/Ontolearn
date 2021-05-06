@@ -92,6 +92,14 @@ class ConceptGenerator:
         yield from self._class_hierarchy.sub_classes(concept, direct=True)
 
     def _object_property_domain(self, prop: OWLObjectProperty):
+        """Get the domain of a property
+
+        Args:
+            prop: object property
+
+        Returns:
+            domain of the property
+        """
         if prop not in self._op_domains:
             self._op_domains[prop] = frozenset(self._reasoner.object_property_domains(prop))
         return self._op_domains[prop]
@@ -99,6 +107,15 @@ class ConceptGenerator:
     def most_general_existential_restrictions(self, *,
                                               domain: OWLClassExpression, filler: Optional[OWLClassExpression] = None) \
             -> Iterable[OWLObjectSomeValuesFrom]:
+        """Find most general restrictions that are applicable to a domain
+
+        Args:
+            domain: domain for which to search properties
+            filler: optional filler to put in the restriction (not normally used)
+
+        Returns:
+            existential restrictions
+        """
         if filler is None:
             filler = self.thing
         assert isinstance(domain, OWLClass)  # for now, only named classes supported
@@ -111,6 +128,15 @@ class ConceptGenerator:
     def most_general_universal_restrictions(self, *,
                                             domain: OWLClassExpression, filler: Optional[OWLClassExpression] = None) \
             -> Iterable[OWLObjectAllValuesFrom]:
+        """Find most general restrictions that are applicable to a domain
+
+        Args:
+            domain: domain for which to search properties
+            filler: optional filler to put in the restriction (not normally used)
+
+        Returns:
+            universal restrictions
+        """
         if filler is None:
             filler = self.thing
         assert isinstance(domain, OWLClass)  # for now, only named classes supported
@@ -122,6 +148,14 @@ class ConceptGenerator:
 
     # noinspection PyMethodMayBeStatic
     def intersection(self, ops: Iterable[OWLClassExpression]) -> OWLObjectIntersectionOf:
+        """Create intersection of class expression
+
+        Args:
+            ops: operands of the intersection
+
+        Returns:
+            intersection with all operands (intersections are merged)
+        """
         operands = []
         for c in ops:
             if isinstance(c, OWLObjectIntersectionOf):
@@ -134,6 +168,14 @@ class ConceptGenerator:
 
     # noinspection PyMethodMayBeStatic
     def union(self, ops: Iterable[OWLClassExpression]) -> OWLObjectUnionOf:
+        """Create union of class expressions
+
+        Args:
+            ops: operands of the union
+
+        Returns:
+            union with all operands (unions are merged)
+        """
         operands = []
         for c in ops:
             if isinstance(c, OWLObjectUnionOf):
@@ -145,30 +187,80 @@ class ConceptGenerator:
         return OWLObjectUnionOf(operands)
 
     def get_direct_parents(self, concept: OWLClassExpression) -> Iterable[OWLClass]:
+        """Direct parent concepts
+
+        Args:
+            concept: concept to find super concepts of
+
+        Returns:
+            direct parent concepts
+        """
         assert isinstance(concept, OWLClass)
         yield from self._class_hierarchy.super_classes(concept, direct=True)
 
     def get_all_direct_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
+        """All direct sub concepts of a concept
+
+        Args:
+            concept: parent concept for which to get sub concepts
+
+        Returns:
+            direct sub concepts
+        """
         assert isinstance(concept, OWLClass)
         yield from self._class_hierarchy.sub_classes(concept, direct=True)
 
     def get_all_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
+        """All sub concepts of a concept
+
+        Args:
+            concept: parent concept for which to get sub concepts
+
+        Returns:
+            sub concepts
+        """
         assert isinstance(concept, OWLClass)
         yield from self._class_hierarchy.sub_classes(concept, direct=False)
 
     # noinspection PyMethodMayBeStatic
-    def existential_restriction(self, concept: OWLClassExpression, property: OWLObjectPropertyExpression) \
+    def existential_restriction(self, filler: OWLClassExpression, property: OWLObjectPropertyExpression) \
             -> OWLObjectSomeValuesFrom:
+        """Create existential restriction
+
+        Args:
+            property: property
+            filler: filler of the restriction
+
+        Returns:
+            existential restriction
+        """
         assert isinstance(property, OWLObjectPropertyExpression)
-        return OWLObjectSomeValuesFrom(property=property, filler=concept)
+        return OWLObjectSomeValuesFrom(property=property, filler=filler)
 
     # noinspection PyMethodMayBeStatic
-    def universal_restriction(self, concept: OWLClassExpression, property: OWLObjectPropertyExpression) \
+    def universal_restriction(self, filler: OWLClassExpression, property: OWLObjectPropertyExpression) \
             -> OWLObjectAllValuesFrom:
+        """Create universal restriction
+
+        Args:
+            property: property
+            filler: filler of the restriction
+
+        Returns:
+            universal restriction
+        """
         assert isinstance(property, OWLObjectPropertyExpression)
-        return OWLObjectAllValuesFrom(property=property, filler=concept)
+        return OWLObjectAllValuesFrom(property=property, filler=filler)
 
     def negation(self, concept: OWLClassExpression) -> OWLClassExpression:
+        """Create negation of a concept
+
+        Args:
+            concept: class expression
+
+        Returns:
+            negation of concept
+        """
         if concept.is_owl_thing():
             return self.nothing
         elif isinstance(concept, OWLObjectComplementOf):
@@ -177,10 +269,23 @@ class ConceptGenerator:
             return concept.get_object_complement_of()
 
     def contains_class(self, concept: OWLClassExpression) -> bool:
+        """Check if an atomic class is contained within this concept generator
+
+        Args:
+            concept: atomic class
+
+        Returns:
+            whether the class is contained in the concept generator
+        """
         assert isinstance(concept, OWLClass)
         return concept in self._class_hierarchy
 
     def class_hierarchy(self) -> ClassHierarchy:
+        """Access the Class Hierarchy of this Concept Generator
+
+        Returns:
+            class hierarchy
+        """
         return self._class_hierarchy
 
     @property
