@@ -143,7 +143,20 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         self.describe()
 
     def ontology(self) -> OWLOntology:
+        """Root Ontology loaded in this knowledge base
+
+        Returns:
+            Ontology
+        """
         return self._ontology
+
+    def reasoner(self) -> OWLReasoner:
+        """Reasoner loaded in this knowledge base
+
+        Returns:
+            reasoner
+        """
+        return self._reasoner
 
     def ignore_and_copy(self, ignored_classes: Optional[Iterable[OWLClass]] = None,
                         ignored_object_properties: Optional[Iterable[OWLObjectProperty]] = None,

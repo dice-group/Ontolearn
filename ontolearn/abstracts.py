@@ -1,3 +1,4 @@
+import logging
 import random
 from abc import ABCMeta, abstractmethod, ABC
 from typing import Set, List, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional, Generator, SupportsFloat
@@ -119,6 +120,8 @@ class AbstractHeuristic(Generic[_N], metaclass=ABCMeta):
 
 
 _KB = TypeVar('_KB', bound='AbstractKnowledgeBase')  #:
+
+logger = logging.getLogger(__name__)
 
 
 class BaseRefinement(Generic[_N], metaclass=ABCMeta):
@@ -251,12 +254,12 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
         pass
 
     def describe(self) -> None:
-        """Print a short description of the Knowledge Base to standard output"""
+        """Print a short description of the Knowledge Base to the info logger output"""
         properties_count = iter_count(self.ontology().object_properties_in_signature()) + iter_count(
             self.ontology().data_properties_in_signature())
-        print(f'Number of named classes: {iter_count(self.ontology().classes_in_signature())}\n'
-              f'Number of individuals: {self.individuals_count()}\n'
-              f'Number of properties: {properties_count}')
+        logger.info(f'Number of named classes: {iter_count(self.ontology().classes_in_signature())}\n'
+                    f'Number of individuals: {self.individuals_count()}\n'
+                    f'Number of properties: {properties_count}')
 
     @abstractmethod
     def clean(self) -> None:
@@ -286,6 +289,7 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
 
 class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
     """Abstract search tree for the Length based learner"""
+
     @abstractmethod
     def get_most_promising(self) -> _N:
         """Find most "promising" node in the search tree that should be refined next
@@ -497,7 +501,8 @@ class AbstractDrill(ABC):
                 self.optimizer.step()
         self.heuristic_func.net.train().eval()
 
-    def sequence_of_actions(self, root: AbstractNode) -> Tuple[List[Tuple[AbstractNode, AbstractNode]], List[SupportsFloat]]:
+    def sequence_of_actions(self, root: AbstractNode) -> Tuple[
+        List[Tuple[AbstractNode, AbstractNode]], List[SupportsFloat]]:
         """
         Perform self.num_of_sequential_actions number of actions
 
@@ -700,7 +705,8 @@ class AbstractDrill(ABC):
             sum_of_rewards_per_actions.append(sum(rewards))
         return sum_of_rewards_per_actions
 
-    def exploration_exploitation_tradeoff(self, current_state: AbstractNode, next_states: List[AbstractNode]) -> AbstractNode:
+    def exploration_exploitation_tradeoff(self, current_state: AbstractNode,
+                                          next_states: List[AbstractNode]) -> AbstractNode:
         """
         Exploration vs Exploitation tradeoff at finding next state.
         (1) Exploration

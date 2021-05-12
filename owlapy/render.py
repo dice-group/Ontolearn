@@ -206,7 +206,7 @@ class ManchesterOWLSyntaxOWLObjectRenderer(OWLObjectRenderer):
     _sfp: Callable[[OWLEntity], str]
 
     def __init__(self, short_form_provider: Callable[[OWLEntity], str] = _simple_short_form_provider):
-        """Create a new DL Syntax renderer
+        """Create a new Manchester Syntax renderer
 
         Args:
             short_form_provider: custom short form provider
