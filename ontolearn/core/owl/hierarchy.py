@@ -156,6 +156,8 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
                 yield from self.items()
             else:
                 yield from self.leaves()
+        elif entity == type(self).get_top_entity():
+            yield from {}
         else:
             if not direct:
                 yield from self._ent_enc(self._parents_map_trans[self._ent_enc(entity)])
@@ -169,6 +171,8 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
               A is always a parent of A"""
         if a == b:
             return True
+        if a == type(self).get_top_entity():
+            return True
         if self._ent_enc(a) & self._parents_map_trans[self._ent_enc(b)]:
             return True
         return False
@@ -179,6 +183,8 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
         Note:
               A is always a child of A"""
         if a == b:
+            return True
+        if a == type(self).get_bottom_entity():
             return True
         if self._ent_enc(a) & self._children_map_trans[self._ent_enc(b)]:
             return True
@@ -200,6 +206,8 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
                 yield from self.items()
             else:
                 yield from self.roots()
+        elif entity == type(self).get_bottom_entity():
+            yield from {}
         else:
             if not direct:
                 yield from self._ent_enc(self._children_map_trans[self._ent_enc(entity)])
