@@ -637,8 +637,8 @@ class ExampleRefinement(BaseRefinement):
      A top down/downward refinement operator refinement operator in ALC.
     """
 
-    def __init__(self, kb: KnowledgeBase):
-        super().__init__(kb)
+    def __init__(self, knowledge_base: KnowledgeBase):
+        super().__init__(knowledge_base)
 
     @parametrized_performance_debugger()
     def refine_atomic_concept(self, concept: 'Concept') -> Set:
@@ -750,8 +750,8 @@ class ExampleRefinement(BaseRefinement):
 class ExpressRefinement(BaseRefinement[Node]):
     """ A top down refinement operator refinement operator in ALC."""
 
-    def __init__(self, kb, max_child_length=25, downsample=True, expressivity=0.8):
-        super().__init__(kb)
+    def __init__(self, knowledge_base, max_child_length=25, downsample=True, expressivity=0.8):
+        super().__init__(knowledge_base)
         self.max_child_length = max_child_length
         self.downsample = downsample
         self.expressivity = expressivity
@@ -887,7 +887,9 @@ class ExpressRefinement(BaseRefinement[Node]):
         if not any_refinement:
             yield concept
 
-    def refine(self, concept) -> Generator:
+    def refine(self, concept, **kwargs) -> Generator:
+        # we ignore additional arguments like "max_length" or "current_domain" that might be supplied by the
+        # algorithm by using **kwargs
         if self.len(concept) == 1:
             yield from self.refine_atomic_concept(concept)
         elif isinstance(concept, OWLObjectComplementOf):
