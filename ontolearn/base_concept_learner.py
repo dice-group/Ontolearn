@@ -270,7 +270,8 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
     def assign_labels_to_individuals(self, *, individuals: List[OWLNamedIndividual], hypotheses: List[_N]) -> np.ndarray:
         """
-        Use each search tree node as a hypothesis, and use it as a binary function to assign 1 or 0 to each individual.
+        Use each given search tree node as a hypothesis, and use it as a binary function to assign 1 or 0 to each
+        individual.
 
         Args:
             individuals: A list of OWL individuals.
@@ -323,6 +324,13 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         return self.quality_func.applied
 
     def save_best_hypothesis(self, n: int = 10, path='Predictions', rdf_format='rdfxml') -> None:
+        """Serialise the best hypotheses to a file
+
+        Args:
+            n: maximum number of hypotheses to save
+            path: filename base (extension will be added automatically)
+            rdf_format: serialisation format. currently supported: "rdfxml"
+        """
         SNS: Final = 'https://dice-research.org/predictions-schema/'
         NS: Final = 'https://dice-research.org/predictions/' + str(time.time()) + '#'
 
