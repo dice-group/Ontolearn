@@ -6,7 +6,8 @@ import json
 from ontolearn import KnowledgeBase
 from ontolearn.utils import setup_logging
 from owlapy.render import DLSyntaxObjectRenderer
-from ontolearn.refinement_operators import CustomRefinementOperator, ModifiedCELOERefinement, LengthBasedRefinement
+from ontolearn.refinement_operators import CustomRefinementOperator, ModifiedCELOERefinement, LengthBasedRefinement, \
+    ExpressRefinement
 from ontolearn.search import Node
 
 setup_logging("logging_test.conf")
@@ -42,8 +43,20 @@ def test_custom_refinement_operator():
         pass
 
 
-if __name__ == '__main__':
-    test_celoe_refinement_operator()
-    test_length_refinement_operator()
-    test_custom_refinement_operator()
+def test_express_refinement_operator():
+    r = DLSyntaxObjectRenderer()
+    rho = ExpressRefinement(kb)
+    for _ in enumerate(rho.refine(kb.thing)):
+        print(r.render(_[1]))
+        pass
 
+
+if __name__ == '__main__':
+    for fn in [
+        test_celoe_refinement_operator,
+        test_length_refinement_operator,
+        test_express_refinement_operator,
+        test_custom_refinement_operator,
+    ]:
+        print(fn)
+        fn()
