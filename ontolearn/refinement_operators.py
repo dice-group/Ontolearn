@@ -759,55 +759,56 @@ class ExpressRefinement(BaseRefinement[Node]):
     def refine_atomic_concept(self, concept: OWLClass):
         if concept.is_owl_nothing():
             yield from {OWLNothing}
-        # Get all subconcepts
-        iter_container_sub = list(self.kb.get_all_sub_concepts(concept))
-        if iter_container_sub == []:
-            iter_container_sub = [concept]
-        iter_container_restrict = []
-        # Get negations of all subconcepts
-        iter_container_neg = list(self.kb.negation_from_iterables(iter_container_sub))
-        # (3) Create ∀.r.C and ∃.r.C where r is the most general relation and C in Fillers
-        Fillers = {concept, OWLThing, OWLNothing} if len(iter_container_sub) < 5 else {concept, OWLThing, OWLNothing}.union(set(random.sample(iter_container_sub, k=5))).union(set(random.sample(iter_container_neg, k=5)))
-        for C in Fillers:
-            if self.len(C) + 2 <= self.max_child_length:
-                iter_container_restrict.append(set(self.kb.most_general_universal_restrictions(domain=concept, filler=C)))
-                iter_container_restrict.append(set(self.kb.most_general_existential_restrictions(domain=concept, filler=C)))       
-        iter_container_restrict = list(set(chain.from_iterable(iter_container_restrict)))
-        container = iter_container_restrict + iter_container_neg + iter_container_sub
-        if self.downsample:# downsampling is necessary if no enough computation resources
-            assert self.expressivity < 1, "When downsampling, the expressivity is less than 1"
-            m = int(self.expressivity*len(container))
-            container = random.sample(container, k=max(m,1))
         else:
-            self.expressivity = 1.
-        if concept.is_owl_thing(): # If this is satisfied then all possible refinements are subconcepts
-            if iter_container_neg + iter_container_restrict:
+            # Get all subconcepts
+            iter_container_sub = list(self.kb.get_all_sub_concepts(concept))
+            if iter_container_sub == []:
+                iter_container_sub = [concept]
+            iter_container_restrict = []
+            # Get negations of all subconcepts
+            iter_container_neg = list(self.kb.negation_from_iterables(iter_container_sub))
+            # (3) Create ∀.r.C and ∃.r.C where r is the most general relation and C in Fillers
+            Fillers = {concept, OWLThing, OWLNothing} if len(iter_container_sub) < 5 else {concept, OWLThing, OWLNothing}.union(set(random.sample(iter_container_sub, k=5))).union(set(random.sample(iter_container_neg, k=5)))
+            for C in Fillers:
+                if self.len(C) + 2 <= self.max_child_length:
+                    iter_container_restrict.append(set(self.kb.most_general_universal_restrictions(domain=concept, filler=C)))
+                    iter_container_restrict.append(set(self.kb.most_general_existential_restrictions(domain=concept, filler=C)))       
+            iter_container_restrict = list(set(chain.from_iterable(iter_container_restrict)))
+            container = iter_container_restrict + iter_container_neg + iter_container_sub
+            if self.downsample:# downsampling is necessary if no enough computation resources
+                assert self.expressivity < 1, "When downsampling, the expressivity is less than 1"
+                m = int(self.expressivity*len(container))
+                container = random.sample(container, k=max(m,1))
+            else:
+                self.expressivity = 1.
+            if concept.is_owl_thing(): # If this is satisfied then all possible refinements are subconcepts
+                if iter_container_neg + iter_container_restrict:
+                    any_refinement = True
+                    yield from iter_container_neg + iter_container_restrict
+            del iter_container_restrict, iter_container_neg
+            any_refinement = False
+            #Yield all subconcepts
+            if iter_container_sub:
                 any_refinement = True
-                yield from iter_container_neg + iter_container_restrict
-        del iter_container_restrict, iter_container_neg
-        any_refinement = False
-        #Yield all subconcepts
-        if iter_container_sub:
-            any_refinement = True
-            yield from iter_container_sub
-        for sub in iter_container_sub:
-            for other_ref in container:
-                if sub != other_ref and self.len(sub) + self.len(other_ref) < self.max_child_length:
-                    if concept.is_owl_thing() or (other_ref in iter_container_sub):
-                        union = self.kb.union([sub,other_ref])
-                        yield union
-                        any_refinement = True
-                    elif not other_ref in iter_container_sub :
-                        union = self.kb.union([sub, other_ref])
-                        union = self.kb.intersection([concept, union])
-                        if self.len(union) <= self.max_child_length:
+                yield from iter_container_sub
+            for sub in iter_container_sub:
+                for other_ref in container:
+                    if sub != other_ref and self.len(sub) + self.len(other_ref) < self.max_child_length:
+                        if concept.is_owl_thing() or (other_ref in iter_container_sub):
+                            union = self.kb.union([sub,other_ref])
                             yield union
                             any_refinement = True
-                    intersect = self.kb.intersection([sub, other_ref])
-                    if self.len(intersect) <= self.max_child_length:
-                        yield intersect
-                        any_refinement = True
-            if not any_refinement and not concept.is_owl_nothing():
+                        elif not other_ref in iter_container_sub :
+                            union = self.kb.union([sub, other_ref])
+                            union = self.kb.intersection([concept, union])
+                            if self.len(union) <= self.max_child_length:
+                                yield union
+                                any_refinement = True
+                        intersect = self.kb.intersection([sub, other_ref])
+                        if self.len(intersect) <= self.max_child_length:
+                            yield intersect
+                            any_refinement = True
+            if not any_refinement:
                 print(f"No refinements found for {repr(concept)}")
                 yield concept
             
