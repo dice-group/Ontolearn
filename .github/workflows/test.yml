@@ -17,7 +17,7 @@ jobs:
     - name: Install tox
       run: |
         # workaround for github bug where conda-tox is broken after self-upgrade
-        conda install -c conda-forge --no-update-deps tox-conda=0.7.1 $(conda -V|tr ' ' '=')
+        conda install -c conda-forge --no-update-deps tox=3.23.1 $(conda -V|tr ' ' '=')
     - name: Test with tox
       run: |
         tox -o
