@@ -1,10 +1,13 @@
 import sys
+import time
 from queue import PriorityQueue
-from typing import Literal, Optional, Iterable, Callable, Set, Tuple, Dict, List
+from typing import Literal, Optional, Iterable, Callable, Set, Tuple, Dict, List, Final
 
 import numpy as np
 
-from owlapy.model import OWLClassExpression
+from owlapy import IRI
+from owlapy.model import OWLClassExpression, OWLOntologyManager, OWLOntology, AddImport, OWLImportsDeclaration, \
+    OWLClass, OWLEquivalentClassesAxiom
 from .abstracts import BaseRefinement
 from .knowledge_base import KnowledgeBase
 from .refinement_operators import LengthBasedRefinement
@@ -413,3 +416,29 @@ class LearningProblemGenerator:
                                           concept) < self.max_length else self.operator.len(
                                           concept)):
             yield i
+
+    def export_concepts(self, concepts: List[Node], path: str):
+        """Serialise the given concepts to a file
+
+        Args:
+            concepts: list of Node objects
+            path: filename base (extension will be added automatically)
+        """
+        NS: Final = 'https://dice-research.org/problems/' + str(time.time()) + '#'
+
+        from ontolearn import KnowledgeBase
+        assert isinstance(self.kb, KnowledgeBase)
+
+        from owlapy.owlready2 import OWLOntologyManager_Owlready2
+        manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
+
+        ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
+        manager.load_ontology(IRI.create(self.kb.path))
+        kb_iri = self.kb.ontology().get_ontology_id().get_ontology_iri()
+        manager.apply_change(AddImport(ontology, OWLImportsDeclaration(kb_iri)))
+        for ith, h in enumerate(concepts):
+            cls_a: OWLClass = OWLClass(IRI.create(NS, "Prob_" + str(ith)))
+            equivalent_classes_axiom = OWLEquivalentClassesAxiom(cls_a, h.concept)
+            manager.add_axiom(ontology, equivalent_classes_axiom)
+
+        manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))
