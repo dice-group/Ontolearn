@@ -5,10 +5,11 @@ from typing import Iterable, Set, Final, cast
 
 import owlready2
 
-from owlapy import IRI, namespaces
+from owlapy import namespaces
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
     OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, \
-    OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype \
+    OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype, \
+    IRI \
     # OWLObjectSomeValuesFrom, OWLProperty, \
 from owlapy.owlready2.utils import ToOwlready2
 

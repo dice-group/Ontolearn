@@ -1,9 +1,8 @@
+import os
+from argparse import ArgumentParser
+
 from ontolearn import KnowledgeBase
 from ontolearn.binders import DLLearnerBinder
-import pandas as pd
-from argparse import ArgumentParser
-import os
-
 from ontolearn.concept_learner import CELOE, OCEL, CustomConceptLearner
 from ontolearn.experiments import Experiments
 from ontolearn.heuristics import DLFOILHeuristic

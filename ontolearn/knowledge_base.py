@@ -5,9 +5,8 @@ from .abstracts import AbstractKnowledgeBase
 from .concept_generator import ConceptGenerator
 from .core.owl.utils import OWLClassExpressionLengthMetric
 from .core.utils import BitSet
-from owlapy import IRI
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLNamedIndividual, \
-    OWLObjectProperty, OWLClass, OWLDataProperty
+    OWLObjectProperty, OWLClass, OWLDataProperty, IRI
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.util import NamedFixedSet, popcount, iter_count
 

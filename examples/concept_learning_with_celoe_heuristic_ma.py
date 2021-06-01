@@ -3,8 +3,7 @@ import os
 import random
 
 from ontolearn.model_adapter import ModelAdapter
-from owlapy import IRI
-from owlapy.model import OWLClass, OWLNamedIndividual
+from owlapy.model import OWLClass, OWLNamedIndividual, IRI
 from ontolearn.utils import setup_logging
 
 setup_logging()
