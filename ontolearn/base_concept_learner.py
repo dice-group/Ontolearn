@@ -6,10 +6,9 @@ from typing import List, Set, Tuple, Dict, Optional, Iterable, Generic, TypeVar,
 import numpy as np
 import pandas as pd
 
-from owlapy import IRI
 from owlapy.model import OWLClassExpression, OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
     OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, OWLAnnotationAssertionAxiom, OWLAnnotation, \
-    OWLAnnotationProperty, OWLLiteral
+    OWLAnnotationProperty, OWLLiteral, IRI
 from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, AbstractKnowledgeBase, \
     AbstractLearningProblem, AbstractConceptNode

@@ -16,9 +16,9 @@ describe) are stefan, markus, and martin. And our negative examples
 could write the following Python code:
 
 ```py
-from owlapy import IRI
+
 from owlapy.namespaces import Namespaces
-from owlapy.model import OWLNamedIndividual
+from owlapy.model import OWLNamedIndividual, IRI
 
 NS = Namespaces('ex', 'http://example.com/father#')
 

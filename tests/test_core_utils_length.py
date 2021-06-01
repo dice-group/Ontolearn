@@ -2,10 +2,9 @@ import unittest
 
 from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric
 from ontolearn.utils import setup_logging
-from owlapy import IRI
 from owlapy.model import OWLClass, OWLObjectProperty, OWLObjectUnionOf, OWLObjectSomeValuesFrom, \
     OWLObjectComplementOf, OWLObjectIntersectionOf, OWLThing, OWLNamedIndividual, OWLObjectOneOf, OWLObjectHasValue, \
-    OWLObjectMinCardinality
+    OWLObjectMinCardinality, IRI
 
 setup_logging("logging_test.conf")
 

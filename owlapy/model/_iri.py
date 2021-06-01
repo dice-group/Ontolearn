@@ -1,6 +1,6 @@
 import weakref
 from abc import ABCMeta, abstractmethod
-from typing import Final, Union, overload, Optional
+from typing import Final, Union, overload
 from weakref import WeakKeyDictionary
 
 from owlapy import namespaces
