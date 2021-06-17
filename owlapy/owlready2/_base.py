@@ -183,14 +183,20 @@ class OWLReasoner_Owlready2(OWLReasoner):
             warning("direct not implemented")
         pe_x: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
         for dom in pe_x.domain:
-            yield OWLClass(IRI.create(dom.iri))
+            if isinstance(dom, owlready2.ThingClass):
+                yield OWLClass(IRI.create(dom.iri))
+            else:
+                pass # XXX TODO
 
     def object_property_ranges(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
         if direct:
             warning("direct not implemented")
         pe_x: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
         for rng in pe_x.range:
-            yield OWLClass(IRI.create(rng.iri))
+            if isinstance(rng, owlready2.ThingClass):
+                yield OWLClass(IRI.create(rng.iri))
+            else:
+                pass # XXX TODO
 
     def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
         """Return the named classes that are directly equivalent to the class expression"""
