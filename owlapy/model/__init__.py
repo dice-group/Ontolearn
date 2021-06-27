@@ -178,6 +178,9 @@ class OWLPropertyExpression(OWLObject, metaclass=ABCMeta):
     def is_object_property_expression(self) -> bool:
         return False
 
+    def is_owl_top_object_property(self) -> bool:
+        return False
+
 
 class OWLRestriction(OWLAnonymousClassExpression):
     __slots__ = ()
@@ -250,6 +253,10 @@ class OWLObjectProperty(OWLObjectPropertyExpression, OWLProperty):
 
     def get_iri(self) -> IRI:
         return self._iri
+
+    def is_owl_top_object_property(self) -> bool:
+        from owlapy.vocab import OWL_TOP_OBJECT_PROPERTY
+        return self.get_iri() == OWL_TOP_OBJECT_PROPERTY.get_iri()
 
 
 class OWLObjectInverseOf(OWLObjectPropertyExpression):
