@@ -787,6 +787,10 @@ class OWLReasoner(metaclass=ABCMeta):
     def get_root_ontology(self) -> OWLOntology:
         pass
 
+    @abstractmethod
+    def super_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
+        pass
+
 
 class OWLDatatype(OWLEntity):
     __slots__ = '_iri'
