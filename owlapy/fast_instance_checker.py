@@ -78,6 +78,9 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
     def sub_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
         yield from self._base_reasoner.sub_classes(ce, direct=direct)
 
+    def super_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
+        yield from self._base_reasoner.super_classes(ce, direct=direct)
+
     def types(self, ind: OWLNamedIndividual, direct: bool = False) -> Iterable[OWLClass]:
         yield from self._base_reasoner.types(ind, direct=direct)
 
