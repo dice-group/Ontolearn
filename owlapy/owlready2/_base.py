@@ -279,6 +279,22 @@ class OWLReasoner_Owlready2(OWLReasoner):
         else:
             raise NotImplementedError("sub classes for complex class expressions not implemented", ce)
 
+    def super_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
+        if isinstance(ce, OWLClass):
+            c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
+            if direct:
+                for sc in c_x.is_a:
+                    if isinstance(sc, owlready2.ThingClass):
+                        yield OWLClass(IRI.create(sc.iri))
+                    # Anonymous classes are ignored
+            else:
+                # indirect
+                for sc in c_x.ancestors(include_self=False):
+                    if isinstance(sc, owlready2.ThingClass):
+                        yield OWLClass(IRI.create(sc.iri))
+        else:
+            raise NotImplementedError("super classes for complex class expressions not implemented", ce)
+
     def _sub_data_properties_recursive(self, dp: OWLDataProperty, seen_set: Set) -> Iterable[OWLDataProperty]:
         p_x: owlready2.DataPropertyClass = self._world[dp.get_iri().as_str()]
         assert isinstance(p_x, owlready2.DataPropertyClass)
