@@ -558,7 +558,7 @@ class OWLObjectHasValue(OWLHasValueRestriction[OWLIndividual], OWLObjectRestrict
 
     def get_property(self) -> OWLObjectPropertyExpression:
         return self._property
-    
+
     def as_some_values_from(self) -> OWLClassExpression:
         return OWLObjectSomeValuesFrom(self.get_property(), OWLObjectOneOf(self.get_filler()))
 
@@ -861,7 +861,6 @@ class _OWLLiteralImplDouble(OWLLiteral):
         return DoubleOWLDatatype
 
 
-
 # TODO: a big todo plus intermediate classes (missing)
 
 class OWLQuantifiedDataRestriction(OWLQuantifiedRestriction[OWLDataRange],
@@ -869,11 +868,13 @@ class OWLQuantifiedDataRestriction(OWLQuantifiedRestriction[OWLDataRange],
     __slots__ = ()
     pass
 
+
 class OWLDataCardinalityRestriction(OWLCardinalityRestriction[OWLDataRange],
                                     OWLQuantifiedDataRestriction,
                                     OWLDataRestriction, metaclass=ABCMeta):
     __slots__ = ()
     pass
+
 
 # class OWLAnnotation(metaclass=ABCMeta):
 #     type_index: Final = 5001
@@ -892,6 +893,7 @@ class OWLDataAllValuesFrom(OWLQuantifiedDataRestriction, metaclass=ABCMeta):
 
     type_index: Final = 3013
 
+
 # class OWLDataComplementOf(metaclass=ABCMeta):
 #     type_index: Final = 4002
 
@@ -900,11 +902,13 @@ class OWLDataExactCardinality(OWLDataCardinalityRestriction, metaclass=ABCMeta):
 
     type_index: Final = 3016
 
+
 class OWLDataHasValue(OWLHasValueRestriction[OWLLiteral],
                       OWLDataRestriction, metaclass=ABCMeta):
     __slots__ = ()
 
     type_index: Final = 3014
+
 
 # class OWLDataIntersectionOf(metaclass=ABCMeta):
 #     type_index: Final = 4004
@@ -914,10 +918,12 @@ class OWLDataMaxCardinality(OWLDataCardinalityRestriction, metaclass=ABCMeta):
 
     type_index: Final = 3017
 
+
 class OWLDataMinCardinality(OWLDataCardinalityRestriction, metaclass=ABCMeta):
     __slots__ = ()
 
     type_index: Final = 3015
+
 
 # class OWLDataOneOf(metaclass=ABCMeta):
 #     type_index: Final = 4003
@@ -926,6 +932,7 @@ class OWLDataSomeValuesFrom(OWLQuantifiedDataRestriction, metaclass=ABCMeta):
     __slots__ = ()
 
     type_index: Final = 3012
+
 
 # class OWLDataUnionOf(metaclass=ABCMeta):
 #     type_index: Final = 4005
