@@ -23,6 +23,7 @@ dependencies:
   # # building
   - build=0.3.1.post1
   # PIP
+  - pip=21.0.1
   - pip:
     # docs
     - sphinxext-autox==0.0.2

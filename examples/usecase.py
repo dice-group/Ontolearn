@@ -5,9 +5,8 @@ from ontolearn.concept_learner import CELOE
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import Accuracy, F1
 from ontolearn.utils import setup_logging
-from owlapy import IRI
 from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.model import OWLNamedIndividual, OWLClass, OWLObjectSomeValuesFrom, OWLObjectProperty, OWLThing
+from owlapy.model import OWLNamedIndividual, OWLClass, OWLObjectSomeValuesFrom, OWLObjectProperty, OWLThing, IRI
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer
 

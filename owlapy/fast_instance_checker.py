@@ -4,10 +4,9 @@ from logging import warning
 from types import MappingProxyType
 from typing import Iterable, Dict, Mapping
 
-from owlapy import IRI
 from owlapy.model import OWLReasoner, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
     OWLObjectProperty, OWLDataProperty, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
-    OWLObjectPropertyExpression, OWLObjectComplementOf, OWLObjectAllValuesFrom
+    OWLObjectPropertyExpression, OWLObjectComplementOf, OWLObjectAllValuesFrom, IRI
 from owlapy.util import NamedFixedSet
 
 

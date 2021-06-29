@@ -4,13 +4,13 @@ import types
 from functools import singledispatchmethod
 from typing import List, Callable
 
-from owlapy import IRI, namespaces
+from owlapy import namespaces
 from owlapy.io import OWLObjectRenderer
 from owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLBooleanClassExpression, OWLNaryBooleanClassExpression, \
     OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, OWLClassExpression, OWLRestriction, \
     OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectHasSelf, OWLObjectHasValue, \
-    OWLObjectOneOf, OWLNamedIndividual, OWLEntity
+    OWLObjectOneOf, OWLNamedIndividual, OWLEntity, IRI
 
 _DL_SYNTAX = types.SimpleNamespace(
     SUBCLASS="⊑",

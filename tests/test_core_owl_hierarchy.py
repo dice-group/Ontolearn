@@ -3,8 +3,7 @@ from typing import TypeVar
 
 from ontolearn.core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, AbstractHierarchy
 from ontolearn.utils import setup_logging
-from owlapy import IRI
-from owlapy.model import OWLClass, OWLObjectProperty
+from owlapy.model import OWLClass, OWLObjectProperty, IRI
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 
 _T = TypeVar('_T')  #:

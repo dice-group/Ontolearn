@@ -2,8 +2,7 @@
 import json
 from ontolearn import KnowledgeBase
 from ontolearn.utils import setup_logging
-from owlapy import IRI
-from owlapy.model import OWLClass
+from owlapy.model import OWLClass, IRI
 from owlapy.owlready2 import OWLReasoner_Owlready2
 
 setup_logging("logging_test.conf")
