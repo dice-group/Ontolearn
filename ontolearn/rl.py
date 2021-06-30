@@ -16,24 +16,65 @@ from torch import nn
 import numpy as np
 import functools
 from torch.functional import F
-from typing import List, Any, Set, Tuple
+from typing import List, Any, Set, Tuple, Iterable
 from collections import namedtuple, deque
 from torch.nn.init import xavier_normal_
 from itertools import chain
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ExponentialLR
 
-# random.seed(1)  # do not set random in a module, set it in the main script
+
+class Drill(AbstractDrill):
+    def __init__(self, knowledge_base,
+                 path_of_embeddings=None,
+                 drill_first_out_channels=32,
+                 refinement_operator=None, quality_func=None, gamma=None,
+                 pretrained_model_path=None, iter_bound=None, max_num_of_concepts_tested=None, verbose=None,
+                 terminate_on_goal=True, ignored_concepts=None,
+                 max_len_replay_memory=None, batch_size=None, epsilon_decay=None, epsilon_min=None,
+                 num_epochs_per_replay=None, num_episodes_per_replay=None, learning_rate=None, relearn_ratio=None,
+                 max_runtime=None, num_of_sequential_actions=None, num_episode=None, num_workers=32):
+        AbstractDrill.__init__(self,
+                               path_of_embeddings=path_of_embeddings,
+                               reward_func=Reward,
+                               max_len_replay_memory=max_len_replay_memory,
+                               batch_size=batch_size, epsilon_min=epsilon_min,
+                               num_epochs_per_replay=num_epochs_per_replay,
+                               representation_mode='averaging',
+                               epsilon_decay=epsilon_decay,
+                               num_of_sequential_actions=num_of_sequential_actions, num_episode=num_episode,
+                               learning_rate=learning_rate,
+                               num_workers=num_workers)
+        self.sample_size = 1
+        arg_net = {'input_shape': (4 * self.sample_size, self.embedding_dim),
+                   'first_out_channels': 32, 'second_out_channels': 16, 'third_out_channels': 8,
+                   'kernel_size': 3}
+        self.heuristic_func = DrillHeuristic(mode='averaging', model_args=arg_net)
+        self.optimizer = torch.optim.Adam(self.heuristic_func.net.parameters(), lr=self.learning_rate)
+
+        if pretrained_model_path:
+            m = torch.load(pretrained_model_path, torch.device('cpu'))
+            self.heuristic_func.net.load_state_dict(m)
+
+    def init_training(self,pos_uri, neg_uri):
+        print('init_training')
+        print(pos_uri)
+        print(neg_uri)
+        exit(1)
+        print(type(pos_uri))
+        for i in pos_uri:
+            print(type(i))
+            break
+        print('BLOCKER I NEED string representation of individuals to get embeddings')
+        exit(1)
+    def terminate_training(self):
+        print('terminate_training')
 
 
 class DrillAverage(AbstractDrill, BaseConceptLearner):
-    """
-    Convolutional DQL concept learning agent based on input averaging
-    """
-
     def __init__(self, knowledge_base,
                  path_of_embeddings=None,
-                 refinement_operator=None, quality_func=F1(),
+                 refinement_operator=None, quality_func=None,
                  pretrained_model_path=None,
                  iter_bound=None, max_num_of_concepts_tested=None, verbose=None,
                  terminate_on_goal=True, ignored_concepts=None, max_child_length=None,
@@ -42,10 +83,10 @@ class DrillAverage(AbstractDrill, BaseConceptLearner):
                  max_runtime=5, num_of_sequential_actions=None, num_episode=None, num_workers=32):
 
         if refinement_operator is None:
-            refinement_operator = LengthBasedRefinement(kb=knowledge_base)
+            refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base)
         AbstractDrill.__init__(self,
                                path_of_embeddings=path_of_embeddings,
-                               reward_func=Reward(),
+                               reward_func=Reward,
                                max_len_replay_memory=max_len_replay_memory,
                                batch_size=batch_size, epsilon_min=epsilon_min,
                                num_epochs_per_replay=num_epochs_per_replay,
@@ -79,6 +120,29 @@ class DrillAverage(AbstractDrill, BaseConceptLearner):
                                     max_num_of_concepts_tested=max_num_of_concepts_tested,
                                     max_runtime=max_runtime,
                                     verbose=verbose, name='DrillAverage')
+
+    def clean(self):
+        pass
+
+    def best_hypotheses(self, n=10) -> Iterable:
+        """Get the current best found hypotheses according to the quality
+
+        Args:
+            n: Maximum number of results
+
+        Returns:
+            iterable with hypotheses in form of search tree nodes
+        """
+        print('best_hyo')
+        exit(1)
+
+    def downward_refinement(self, *args, **kwargs):
+        print('downward_refinement')
+        exit(1)
+
+    def show_search_tree(self, *args, **kwargs):
+        print('show_search_tree')
+        exit(1)
 
     def represent_examples(self, *, pos: Set[str], neg: Set[str]) -> Tuple[torch.Tensor, torch.Tensor]:
         """
@@ -169,11 +233,8 @@ class DrillAverage(AbstractDrill, BaseConceptLearner):
         return self.terminate()
 
 
+"""
 class DrillSample(AbstractDrill, BaseConceptLearner):
-    """
-    Convolutional DQL concept learning agent based on input sampling
-    """
-
     def __init__(self, knowledge_base,
                  path_of_embeddings=None,
                  refinement_operator=None, quality_func=F1(),
@@ -223,12 +284,6 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
                                     verbose=verbose, name='DrillSample')
 
     def represent_examples(self, *, pos, neg) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-
-        @param pos:
-        @param neg:
-        @return:
-        """
         assert isinstance(pos, set) and isinstance(neg, set)
         try:
             assert len(pos) >= self.sample_size and len(neg) >= self.sample_size
@@ -248,13 +303,6 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
         return emb_pos, emb_neg
 
     def init_training(self, pos_uri: Set[str], neg_uri: Set[str]) -> None:
-        """
-        Initialize training for DrillSample.
-
-        @param pos_uri: A set of positive examples where each example corresponds to a string representation of an individual/instance.
-        @param neg_uri: A set of negative examples where each example corresponds to a string representation of an individual/instance.
-        @return:
-        """
         # (1) Sample from positive and negative examples without replacement.
         if self.sample_size > len(pos_uri):
             print('positive examples less than ', self.sample_size)
@@ -298,9 +346,6 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
         self.epsilon = 1
 
     def fit(self, pos: Set[str], neg: Set[str], ignore: Set[str] = None, max_runtime=None):
-        """
-        Find hypotheses that explain pos and neg.
-        """
         self.default_state_rl()
         self.initialize_learning_problem(pos=pos, neg=neg, all_instances=self.kb.thing.instances, ignore=ignore)
         self.emb_pos, self.emb_neg = self.represent_examples(pos=pos, neg=neg)
@@ -332,19 +377,20 @@ class DrillSample(AbstractDrill, BaseConceptLearner):
             json.dump(self.seen_examples, file_descriptor, indent=3)
         return self
 
+"""
 
-class DrillHeuristic(AbstractScorer):
+
+class DrillHeuristic():
     """
     Heuristic in Convolutional DQL concept learning.
     Heuristic implements a convolutional neural network.
     """
 
     def __init__(self, pos=None, neg=None, model=None, mode=None, model_args=None):
-        super().__init__(pos, neg, unlabelled=None)
         if model:
             self.net = model
         elif mode in ['averaging', 'sampling']:
-            self.net = Drill(model_args)
+            self.net = DrillNet(model_args)
             self.mode = mode
             self.name = 'DrillHeuristic_' + self.mode
         else:
@@ -363,7 +409,7 @@ class DrillHeuristic(AbstractScorer):
         node.heuristic = predicted_q_val
 
 
-class Drill(nn.Module):
+class DrillNet(nn.Module):
     """
     A neural model for Deep Q-Learning.
 
@@ -381,7 +427,7 @@ class Drill(nn.Module):
     """
 
     def __init__(self, args):
-        super(Drill, self).__init__()
+        super(DrillNet, self).__init__()
         self.in_channels, self.embedding_dim = args['input_shape']
         self.loss = nn.MSELoss()
 
