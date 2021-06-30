@@ -355,7 +355,6 @@ class AbstractDrill(ABC):
                  num_episode=None, num_of_sequential_actions=None, max_len_replay_memory=None,
                  representation_mode=None, batch_size=1024, epsilon_decay=None, epsilon_min=None,
                  num_epochs_per_replay=None, num_workers=32):
-        # @TODO refactor the code for the sake of readability
         self.instance_embeddings = read_csv(path_of_embeddings)
         self.embedding_dim = self.instance_embeddings.shape[1]
         self.reward_func = reward_func
@@ -788,15 +787,15 @@ class AbstractDrill(ABC):
         @return: self
         """
         # We need a better way of login,
-        self.logger.info('Training starts.')
+        #self.logger.info('Training starts.')
         print(f'Training starts.\nNumber of learning problem:{len(dataset)},\t Relearn ratio:{relearn_ratio}')
         counter = 1
         # 1.
         for _ in range(relearn_ratio):
             for (alc_concept_str, positives, negatives) in dataset:
-                self.logger.info(
-                    'Goal Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str,
-                                                                      len(positives), len(negatives)))
+                #self.logger.info(
+                #    'Goal Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str,
+                #                                                      len(positives), len(negatives)))
                 # 2.
                 print(f'RL training on {counter}.th learning problem starts')
                 sum_of_rewards_per_actions = self.rl_learning_loop(pos_uri=positives, neg_uri=negatives)

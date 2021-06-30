@@ -8,27 +8,37 @@ Author: Caglar Demir
 from argparse import ArgumentParser
 
 from ontolearn import KnowledgeBase
+from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.learning_problem_generator import LearningProblemGenerator
-from ontolearn.rl import DrillAverage
-from ontolearn.utils import sanity_checking_args
+from ontolearn.rl import Drill
+from ontolearn.metrics import Accuracy
 
 
 def start(args):
-    sanity_checking_args(args)
     kb = KnowledgeBase(path=args.path_knowledge_base)
+
     lp = LearningProblemGenerator(knowledge_base=kb, min_length=args.min_length, max_length=args.max_length)
+
+    print(kb)
     balanced_examples = lp.get_balanced_n_samples_per_examples(n=args.num_of_randomly_created_problems_per_concept,
                                                                min_num_problems=args.min_num_concepts,
                                                                num_diff_runs=1,  # This must be optimized
                                                                min_num_instances=args.min_num_instances_per_concept)
-
-    drill_average = DrillAverage(pretrained_model_path=args.pretrained_drill_avg_path,
-                                 knowledge_base=kb, path_of_embeddings=args.path_knowledge_base_embeddings,
-                                 num_of_sequential_actions=args.num_of_sequential_actions,
-                                 num_episode=args.num_episode, batch_size=args.batch_size,
-                                 verbose=args.verbose,
-                                 num_workers=args.num_workers)
-    drill_average.train(balanced_examples)
+    for (concept, pos, neg) in balanced_examples:
+        print(concept)
+        for p in pos:
+            print(p)
+            print(kb._ind_enc(p))
+            exit(1)
+            exit(1)
+    print(balanced_examples)
+    exit(1)
+    drill = Drill(knowledge_base=kb,
+                  path_of_embeddings=args.path_knowledge_base_embeddings,
+                  refinement_operator=LengthBasedRefinement(knowledge_base=kb),
+                  quality_func=Accuracy(learning_problem=lp))
+    drill.train(balanced_examples)
+    exit(1)
     # Vanilla testing
     for result in drill_average.fit_from_iterable(balanced_examples, max_runtime=args.max_test_time_per_concept):
         print(result)
