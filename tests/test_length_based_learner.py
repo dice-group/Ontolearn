@@ -12,8 +12,7 @@ from ontolearn.model_adapter import ModelAdapter
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.search import SearchTreePriorityQueue
 from ontolearn.utils import setup_logging
-from owlapy import IRI
-from owlapy.model import OWLNamedIndividual, OWLClass
+from owlapy.model import OWLNamedIndividual, OWLClass, IRI
 
 setup_logging("logging_test.conf")
 

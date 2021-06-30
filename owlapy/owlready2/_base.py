@@ -5,10 +5,11 @@ from typing import Iterable, Set, Final, cast
 
 import owlready2
 
-from owlapy import IRI, namespaces
+from owlapy import namespaces
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
     OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, \
-    OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype \
+    OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype, \
+    IRI \
     # OWLObjectSomeValuesFrom, OWLProperty, \
 from owlapy.owlready2.utils import ToOwlready2
 
@@ -182,14 +183,20 @@ class OWLReasoner_Owlready2(OWLReasoner):
             warning("direct not implemented")
         pe_x: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
         for dom in pe_x.domain:
-            yield OWLClass(IRI.create(dom.iri))
+            if isinstance(dom, owlready2.ThingClass):
+                yield OWLClass(IRI.create(dom.iri))
+            else:
+                pass # XXX TODO
 
     def object_property_ranges(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
         if direct:
             warning("direct not implemented")
         pe_x: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
         for rng in pe_x.range:
-            yield OWLClass(IRI.create(rng.iri))
+            if isinstance(rng, owlready2.ThingClass):
+                yield OWLClass(IRI.create(rng.iri))
+            else:
+                pass # XXX TODO
 
     def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
         """Return the named classes that are directly equivalent to the class expression"""
@@ -271,6 +278,22 @@ class OWLReasoner_Owlready2(OWLReasoner):
                 yield from self._named_sub_classes_recursive(ce, seen_set)
         else:
             raise NotImplementedError("sub classes for complex class expressions not implemented", ce)
+
+    def super_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
+        if isinstance(ce, OWLClass):
+            c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
+            if direct:
+                for sc in c_x.is_a:
+                    if isinstance(sc, owlready2.ThingClass):
+                        yield OWLClass(IRI.create(sc.iri))
+                    # Anonymous classes are ignored
+            else:
+                # indirect
+                for sc in c_x.ancestors(include_self=False):
+                    if isinstance(sc, owlready2.ThingClass):
+                        yield OWLClass(IRI.create(sc.iri))
+        else:
+            raise NotImplementedError("super classes for complex class expressions not implemented", ce)
 
     def _sub_data_properties_recursive(self, dp: OWLDataProperty, seen_set: Set) -> Iterable[OWLDataProperty]:
         p_x: owlready2.DataPropertyClass = self._world[dp.get_iri().as_str()]

@@ -1,12 +1,11 @@
 from functools import singledispatchmethod, total_ordering
 from typing import Iterable, overload, TypeVar, Generic, Type, Tuple, Dict, List, cast, Optional
 
-from owlapy import IRI
 from owlapy.model import OWLObject, HasIndex, HasIRI, OWLClassExpression, OWLClass, OWLObjectIntersectionOf, \
     OWLObjectUnionOf, OWLObjectComplementOf, OWLNothing, OWLThing, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectHasValue, OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality, OWLObjectHasSelf, \
     OWLObjectOneOf, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataExactCardinality, OWLDataHasValue, \
-    OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLObjectRestriction, HasFiller, HasCardinality, HasOperands
+    OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLObjectRestriction, HasFiller, HasCardinality, HasOperands, IRI
 
 _HasIRI = TypeVar('_HasIRI', bound=HasIRI)  #:
 _HasIndex = TypeVar('_HasIndex', bound=HasIndex)  #:

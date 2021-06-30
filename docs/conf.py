@@ -21,7 +21,6 @@ project = 'Ontolearn'
 copyright = '2021, The Ontolearn team'
 author = 'Ontolearn team'
 
-
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -92,6 +91,7 @@ html_static_path = [
 
 if stanford_theme_mod:
     html_theme = 'sphinx_rtd_theme'
+
     def _import_theme():
         import os
         import shutil
@@ -108,9 +108,9 @@ if stanford_theme_mod:
                          html_theme, 'static', 'css', 'theme.css'),
             os.path.join('_static_gen', 'theme.css'),
         )
-    _import_theme()
-    html_static_path = [ '_static_gen' ] + html_static_path
 
+    _import_theme()
+    html_static_path = ['_static_gen'] + html_static_path
 
 # -- Options for LaTeX output ------------------------------------------------
 
@@ -128,6 +128,7 @@ latex_elements = {
 ''',
     'printindex': '\\def\\twocolumn[#1]{#1}\\footnotesize\\raggedright\\printindex',
 }
+
 
 def setup(app):
     # -- Options for HTML output ---------------------------------------------

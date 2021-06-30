@@ -1,9 +1,8 @@
 import unittest
 
-from owlapy import IRI
 from owlapy.model import OWLClass, OWLObjectProperty, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
     OWLThing, OWLObjectComplementOf, OWLObjectUnionOf, OWLNamedIndividual, OWLObjectOneOf, OWLObjectHasValue, \
-    OWLObjectMinCardinality
+    OWLObjectMinCardinality, IRI
 from owlapy.render import DLSyntaxObjectRenderer, ManchesterOWLSyntaxOWLObjectRenderer
 
 
