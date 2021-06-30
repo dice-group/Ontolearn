@@ -18,7 +18,8 @@ this tiny ontology as an example.
 To load an ontology, use the following Python code:
 
 ```py
-from owlapy import IRI
+
+from owlapy.model import IRI
 from owlapy.owlready2 import OWLOntologyManager_Owlready2
 
 mgr = OWLOntologyManager_Owlready2()

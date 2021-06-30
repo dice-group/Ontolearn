@@ -1,9 +1,8 @@
 import unittest
 
 import owlapy.owlready2.utils
-from owlapy import IRI
 from owlapy.model import OWLObjectProperty, OWLNamedIndividual, OWLThing, OWLClass, OWLObjectUnionOf, \
-    OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectComplementOf
+    OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectComplementOf, IRI
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 

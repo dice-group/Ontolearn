@@ -1,8 +1,8 @@
 import unittest
 
-from owlapy import IRI, namespaces
+from owlapy import namespaces
 from owlapy.namespaces import Namespaces
-from owlapy.model import OWLClass, OWLObjectUnionOf
+from owlapy.model import OWLClass, OWLObjectUnionOf, IRI
 from owlapy.util import IRIFixedSet
 
 base = Namespaces("ex", "http://example.org/")

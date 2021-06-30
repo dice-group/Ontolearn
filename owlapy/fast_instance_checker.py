@@ -4,10 +4,9 @@ from logging import warning
 from types import MappingProxyType
 from typing import Iterable, Dict, Mapping
 
-from owlapy import IRI
 from owlapy.model import OWLReasoner, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
     OWLObjectProperty, OWLDataProperty, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
-    OWLObjectPropertyExpression, OWLObjectComplementOf, OWLObjectAllValuesFrom
+    OWLObjectPropertyExpression, OWLObjectComplementOf, OWLObjectAllValuesFrom, IRI
 from owlapy.util import NamedFixedSet
 
 
@@ -78,6 +77,9 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
 
     def sub_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
         yield from self._base_reasoner.sub_classes(ce, direct=direct)
+
+    def super_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
+        yield from self._base_reasoner.super_classes(ce, direct=direct)
 
     def types(self, ind: OWLNamedIndividual, direct: bool = False) -> Iterable[OWLClass]:
         yield from self._base_reasoner.types(ind, direct=direct)

@@ -5,9 +5,8 @@ from typing import Literal, Optional, Iterable, Callable, Set, Tuple, Dict, List
 
 import numpy as np
 
-from owlapy import IRI
 from owlapy.model import OWLClassExpression, OWLOntologyManager, OWLOntology, AddImport, OWLImportsDeclaration, \
-    OWLClass, OWLEquivalentClassesAxiom
+    OWLClass, OWLEquivalentClassesAxiom, IRI
 from .abstracts import BaseRefinement
 from .knowledge_base import KnowledgeBase
 from .refinement_operators import LengthBasedRefinement

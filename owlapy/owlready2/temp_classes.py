@@ -4,8 +4,7 @@ from typing import Iterable, cast, Optional
 
 import owlready2
 
-from owlapy import IRI
-from owlapy.model import OWLClass, OWLClassExpression, OWLNamedIndividual
+from owlapy.model import OWLClass, OWLClassExpression, OWLNamedIndividual, IRI
 from owlapy.owlready2 import OWLReasoner_Owlready2, OWLOntology_Owlready2, BaseReasoner_Owlready2
 from owlapy.owlready2.utils import ToOwlready2
 
