@@ -22,6 +22,33 @@ from .metrics import F1
 from .refinement_operators import LengthBasedRefinement
 from .search import SearchTreePriorityQueue
 from .utils import oplogging
+from abc import ABCMeta
+from .concept_learner import BaseConceptLearner
+from .abstracts import AbstractDrill, AbstractScorer
+from .utils import *
+from .search import Node, SearchTreePriorityQueue
+from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction, Experience
+from .refinement_operators import LengthBasedRefinement
+from .metrics import F1
+from .heuristics import Reward
+import time
+import json
+import random
+import torch
+from torch import nn
+import numpy as np
+import functools
+from torch.functional import F
+from typing import List, Any, Set, Tuple, Iterable, Optional
+from collections import namedtuple, deque
+from torch.nn.init import xavier_normal_
+from itertools import chain
+import matplotlib.pyplot as plt
+from torch.optim.lr_scheduler import ExponentialLR
+
+from owlapy.model import OWLNamedIndividual, OWLClassExpression
+from ontolearn.search import HeuristicOrderedNode, OENode, TreeNode, LengthOrderedNode, LBLNode, LBLSearchTree, \
+    QualityOrderedNode
 
 pd.set_option('display.max_columns', 100)
 
@@ -145,10 +172,10 @@ class CELOE(BaseConceptLearner[OENode]):
 
         if max_runtime is not None:
             self.max_runtime = max_runtime
-
         root = self.make_node(_concept_operand_sorter.sort(self.start_class), is_root=True)
         self._add_node(root, None)
         assert len(self.heuristic_queue) == 1
+        # TODO:CD:suggest to add another assert,e.g. assert #. of instance in root > 1
 
         self.start_time = time.time()
         for j in range(1, self.iter_bound):
@@ -190,10 +217,13 @@ class CELOE(BaseConceptLearner[OENode]):
         return tree_parent
 
     def _add_node(self, ref: OENode, tree_parent: Optional[TreeNode[OENode]]):
+        # TODO:CD: Why have this constraint ?
+        #  We should not ignore a concept due to this constraint.
+        #  It might be the case that new path to ref.concept is a better path. Hence, we should update its parent depending on the new heuristic value.
+        #  Solution: If concept exists we should compare its first heuristic value  with the new one
         if ref.concept in self.search_tree:
             # ignoring refinement, it has been refined from another parent
             return False
-
         self.search_tree[ref.concept] = TreeNode(ref, tree_parent, is_root=ref.is_root)
         ref_individuals = self.kb.individuals_set(ref.concept)
         ref.individuals_count = len(ref_individuals)
@@ -304,6 +334,291 @@ class OCEL(CELOE):
                          heuristic_func=OCELHeuristic(),
                          terminate_on_goal=terminate_on_goal,
                          iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested)
+
+
+class Drill(AbstractDrill, BaseConceptLearner):
+    search_tree: Dict[OWLClassExpression, TreeNode[OENode]]
+    heuristic_queue: 'SortedSet[OENode]'
+
+    def __init__(self, knowledge_base,
+                 path_of_embeddings=None,
+                 drill_first_out_channels=32,
+                 refinement_operator=None, quality_func=None, gamma=None,
+                 pretrained_model_path=None, iter_bound=None, max_num_of_concepts_tested=None, verbose=None,
+                 terminate_on_goal=True, ignored_concepts=None,
+                 max_len_replay_memory=None, batch_size=None, epsilon_decay=None, epsilon_min=None,
+                 num_epochs_per_replay=None, num_episodes_per_replay=None, learning_rate=None, relearn_ratio=None,
+                 max_results: int = 10,best_only: bool = False,calculate_min_max: bool = True,
+                 max_runtime=None, num_of_sequential_actions=None, num_episode=None, num_workers=32):
+        AbstractDrill.__init__(self,
+                               path_of_embeddings=path_of_embeddings,
+                               reward_func=Reward,
+                               max_len_replay_memory=max_len_replay_memory,
+                               batch_size=batch_size, epsilon_min=epsilon_min,
+                               num_epochs_per_replay=num_epochs_per_replay,
+                               representation_mode='averaging',
+                               epsilon_decay=epsilon_decay,
+                               num_of_sequential_actions=num_of_sequential_actions, num_episode=num_episode,
+                               learning_rate=learning_rate,
+                               num_workers=num_workers)
+        self.sample_size = 1
+        arg_net = {'input_shape': (4 * self.sample_size, self.embedding_dim),
+                   'first_out_channels': 32, 'second_out_channels': 16, 'third_out_channels': 8,
+                   'kernel_size': 3}
+        self.heuristic_func = DrillHeuristic(mode='averaging', model_args=arg_net)
+        self.optimizer = torch.optim.Adam(self.heuristic_func.net.parameters(), lr=self.learning_rate)
+
+        if pretrained_model_path:
+            m = torch.load(pretrained_model_path, torch.device('cpu'))
+            self.heuristic_func.net.load_state_dict(m)
+
+        BaseConceptLearner.__init__(self, knowledge_base=knowledge_base,
+                                    refinement_operator=refinement_operator,
+                                    quality_func=quality_func,
+                                    heuristic_func=self.heuristic_func,
+                                    terminate_on_goal=terminate_on_goal,
+                                    iter_bound=iter_bound,
+                                    max_num_of_concepts_tested=max_num_of_concepts_tested,
+                                    max_runtime=max_runtime)
+        print('Number of parameters: ', sum([p.numel() for p in self.heuristic_func.net.parameters()]))
+
+        self.search_tree = dict()
+        self.heuristic_queue = SortedSet(key=HeuristicOrderedNode)
+        self.best_descriptions = EvaluatedDescriptionSet(max_size=max_results, ordering=QualityOrderedNode)
+
+        self.best_only = best_only
+        self.calculate_min_max = calculate_min_max
+
+        self.max_he = 0
+        self.min_he = 1
+
+    def best_hypotheses(self, n=10) -> Iterable:
+        print('best_hypotheses')
+        exit(1)
+
+    def clean(self):
+        print('clean')
+        exit(1)
+
+    def downward_refinement(self, *args, **kwargs):
+        print('downward_refinement')
+        exit(1)
+
+    def fit(self, *args, **kwargs):
+        print('fit')
+        exit(1)
+
+    def show_search_tree(self, heading_step: str, top_n: int = 10) -> None:
+        print('show_search_tree')
+        exit(1)
+
+    def init_training(self, pos_uri: Set[OWLNamedIndividual], neg_uri: Set[OWLNamedIndividual]) -> None:
+        """
+
+        @param pos_uri: A set of positive examples where each example corresponds to a string representation of an individual/instance.
+        @param neg_uri: A set of negative examples where each example corresponds to a string representation of an individual/instance.
+        @return:
+        """
+        # 1.
+        self.reward_func.pos = pos_uri
+        self.reward_func.neg = neg_uri
+
+        # 2. Obtain embeddings of positive and negative examples.
+        self.emb_pos = torch.tensor(
+            self.instance_embeddings.loc[[owl_indv.get_iri().as_str() for owl_indv in pos_uri]].values,
+            dtype=torch.float32)
+        self.emb_neg = torch.tensor(
+            self.instance_embeddings.loc[[owl_indv.get_iri().as_str() for owl_indv in neg_uri]].values,
+            dtype=torch.float32)
+
+        # (3) Take the mean of positive and negative examples and reshape it into (1,1,embedding_dim) for mini batching.
+        self.emb_pos = torch.mean(self.emb_pos, dim=0)
+        self.emb_pos = self.emb_pos.view(1, 1, self.emb_pos.shape[0])
+        self.emb_neg = torch.mean(self.emb_neg, dim=0)
+        self.emb_neg = self.emb_neg.view(1, 1, self.emb_neg.shape[0])
+        # Sanity checking
+        if torch.isnan(self.emb_pos).any() or torch.isinf(self.emb_pos).any():
+            print(string_balanced_pos)
+            raise ValueError('invalid value detected in E+,\n{0}'.format(self.emb_pos))
+        if torch.isnan(self.emb_neg).any() or torch.isinf(self.emb_neg).any():
+            raise ValueError('invalid value detected in E-,\n{0}'.format(self.emb_neg))
+
+        # Default exploration exploitation tradeoff.
+        self.epsilon = 1
+
+    def terminate_training(self):
+        print('terminate_training')
+
+    def make_node(self, c: OWLClassExpression, parent_node: Optional[OENode] = None, is_root: bool = False) -> OENode:
+        # This is copyied from CELOE.
+        # This function should be defined in abstract_concept_learner
+        r = OENode(c, self.kb.cl(c), parent_node=parent_node, is_root=is_root)
+        return r
+
+    def _add_node(self, ref: OENode, tree_parent: Optional[TreeNode[OENode]]):
+        self.search_tree[ref.concept] = TreeNode(ref, tree_parent, is_root=ref.is_root)
+        ref_individuals = self.kb.individuals_set(ref.concept)
+        ref.individuals_count = len(ref_individuals)
+        self.quality_func.apply(ref, ref_individuals)  # AccuracyOrTooWeak(n)
+        if ref.quality == 0:  # > too weak
+            return False
+        assert 0 <= ref.quality <= 1.0
+        # TODO: expression rewriting
+        self.heuristic_func.apply(ref, ref_individuals)
+        if self.best_descriptions.maybe_add(ref):
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Better description found: %s", ref)
+        self.heuristic_queue.add(ref)
+        # TODO: implement noise
+        return True
+
+    def rl_learning_loop(self, pos_uri: Set[str], neg_uri: Set[str]) -> List[float]:
+        """
+        RL agent learning loop over learning problem defined
+        @param pos_uri: A set of URIs indicating E^+
+        @param neg_uri: A set of URIs indicating E^-
+
+        Computation
+
+        1. Initialize training
+
+        2. Learning loop: Stopping criteria
+            ***self.num_episode** OR ***self.epsilon < self.epsilon_min***
+
+        2.1. Perform sequence of actions
+
+        2.2. Decrease exploration rate
+
+        2.3. Form experiences
+
+        2.4. Experience Replay
+
+        2.5. Return sum of actions
+
+        @return: List of sum of rewards per episode.
+        """
+
+        # (1)
+        self.init_training(pos_uri=pos_uri, neg_uri=neg_uri)
+
+        root = self.make_node(_concept_operand_sorter.sort(self.start_class), is_root=True)
+        print(root)
+
+        self._add_node(root, None)
+        print(root)
+
+        exit(1)
+
+        # (2) Assign embeddings of root/first state.
+        self.assign_embeddings(root)
+        sum_of_rewards_per_actions = []
+        log_every_n_episodes = int(self.num_episode * .1) + 1
+
+        # (2)
+        for th in range(self.num_episode):
+            # (2.1)
+            sequence_of_states, rewards = self.sequence_of_actions(root)
+
+            if th % log_every_n_episodes == 0:
+                self.logger.info(
+                    '{0}.th iter. SumOfRewards: {1:.2f}\tEpsilon:{2:.2f}\t|ReplayMem.|:{3}'.format(th, sum(rewards),
+                                                                                                   self.epsilon, len(
+                            self.experiences)))
+
+            # (2.2)
+            self.epsilon -= self.epsilon_decay
+            if self.epsilon < self.epsilon_min:
+                break
+
+            # (2.3)
+            self.form_experiences(sequence_of_states, rewards)
+
+            # (2.4)
+            if th % self.num_epochs_per_replay == 0 and len(self.experiences) > 1:
+                self.learn_from_replay_memory()
+            sum_of_rewards_per_actions.append(sum(rewards))
+        return sum_of_rewards_per_actions
+
+
+class DrillHeuristic():
+    """
+    Heuristic in Convolutional DQL concept learning.
+    Heuristic implements a convolutional neural network.
+    """
+
+    def __init__(self, pos=None, neg=None, model=None, mode=None, model_args=None):
+        if model:
+            self.net = model
+        elif mode in ['averaging', 'sampling']:
+            self.net = DrillNet(model_args)
+            self.mode = mode
+            self.name = 'DrillHeuristic_' + self.mode
+        else:
+            raise ValueError
+        self.net.eval()
+
+    def score(self, node, parent_node=None):
+        """ Compute heuristic value of root node only"""
+        if parent_node is None and node.is_root:
+            return torch.FloatTensor([.0001]).squeeze()
+        raise ValueError
+
+    def apply(self, node, parent_node=None):
+        """ Assign predicted Q-value to node object."""
+        predicted_q_val = self.score(node, parent_node)
+        node.heuristic = predicted_q_val
+
+
+class DrillNet(nn.Module):
+    """
+    A neural model for Deep Q-Learning.
+
+    An input Drill has the following form
+            1. indexes of individuals belonging to current state (s).
+            2. indexes of individuals belonging to next state state (s_prime).
+            3. indexes of individuals provided as positive examples.
+            4. indexes of individuals provided as negative examples.
+
+    Given such input, we from a sparse 3D Tensor where  each slice is a **** N *** by ***D***
+    where N is the number of individuals and D is the number of dimension of embeddings.
+    Given that N on the current benchmark datasets < 10^3, we can get away with this computation. By doing so
+    we do not need to subsample from given inputs.
+
+    """
+
+    def __init__(self, args):
+        super(DrillNet, self).__init__()
+        self.in_channels, self.embedding_dim = args['input_shape']
+        self.loss = nn.MSELoss()
+
+        self.conv1 = nn.Conv2d(in_channels=self.in_channels,
+                               out_channels=args['first_out_channels'],
+                               kernel_size=args['kernel_size'],
+                               padding=1, stride=1, bias=True)
+
+        # Fully connected layers.
+        self.size_of_fc1 = int(args['first_out_channels'] * self.embedding_dim)
+        self.fc1 = nn.Linear(in_features=self.size_of_fc1, out_features=self.size_of_fc1 // 2)
+        self.fc2 = nn.Linear(in_features=self.size_of_fc1 // 2, out_features=1)
+
+        self.init()
+        assert self.__sanity_checking(torch.rand(32, 4, 1, self.embedding_dim)).shape == (32, 1)
+
+    def init(self):
+        xavier_normal_(self.fc1.weight.data)
+        xavier_normal_(self.conv1.weight.data)
+
+    def __sanity_checking(self, X):
+        return self.forward(X)
+
+    def forward(self, X: torch.FloatTensor):
+        # X denotes a batch of tensors where each tensor has the shape of (4, 1, embedding_dim)
+        # 4 => S, S', E^+, E^- \in R^embedding_dim
+        # @TODO: Later batch norm and residual learning block.
+        X = F.relu(self.conv1(X))
+        X = X.view(X.shape[0], X.shape[1] * X.shape[2] * X.shape[3])
+        X = F.relu(self.fc1(X))
+        return self.fc2(X)
 
 
 class LengthBaseLearner(BaseConceptLearner):
