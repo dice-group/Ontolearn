@@ -193,7 +193,7 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
              _NodeParentRef['OENode'], AbstractNode, AbstractConceptNode, AbstractOEHeuristicNode):
     __slots__ = '_concept', '_len', '_individuals_count', '_quality', '_heuristic', \
                 '_parent_ref', '_horizontal_expansion', \
-                '_refinement_count', '__weakref__'
+                '_refinement_count', '__weakref__', 'embeddings'
 
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
 
@@ -211,6 +211,7 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
         self._horizontal_expansion = length
         self._refinement_count = 0
         AbstractNode.__init__(self)
+        self.embeddings = None
 
     @property
     def h_exp(self) -> int:
