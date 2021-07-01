@@ -116,8 +116,8 @@ class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
         Returns:
             :True if this IRI is equal to <http://www.w3.org/2002/07/owl#Nothing> and otherwise False
         """
-        from owlapy import vocab
-        return self == vocab.OWL_NOTHING.get_iri()
+        from owlapy.vocab import OWLRDFVocabulary
+        return self == OWLRDFVocabulary.OWL_NOTHING.get_iri()
 
     def is_thing(self):
         """Determines if this IRI is equal to the IRI that owl:Thing is named with.
@@ -125,8 +125,8 @@ class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
         Returns:
             :True if this IRI is equal to <http://www.w3.org/2002/07/owl#Thing> and otherwise False
         """
-        from owlapy import vocab
-        return self == vocab.OWL_THING.get_iri()
+        from owlapy.vocab import OWLRDFVocabulary
+        return self == OWLRDFVocabulary.OWL_THING.get_iri()
 
     def is_reserved_vocabulary(self) -> bool:
         """Determines if this IRI is in the reserved vocabulary. An IRI is in the reserved vocabulary if it starts with
