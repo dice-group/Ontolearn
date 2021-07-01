@@ -40,7 +40,7 @@ class Owlapy_DLRenderer_Test(unittest.TestCase):
         print(r)
         self.assertEqual(r, "{heinz ⊔ marie}")
 
-        hasvalue = OWLObjectHasValue(property=has_child, value=i1)
+        hasvalue = OWLObjectHasValue(property=has_child, individual=i1)
         r = renderer.render(hasvalue)
         print(r)
         self.assertEqual(r, "∃ hasChild.{heinz}")
@@ -85,7 +85,7 @@ class Owlapy_ManchesterRenderer_Test(unittest.TestCase):
         print(r)
         self.assertEqual(r, "{heinz , marie}")
 
-        hasvalue = OWLObjectHasValue(property=has_child, value=i1)
+        hasvalue = OWLObjectHasValue(property=has_child, individual=i1)
         r = renderer.render(hasvalue)
         print(r)
         self.assertEqual(r, "hasChild value heinz")
