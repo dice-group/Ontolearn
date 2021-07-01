@@ -13,6 +13,11 @@ class HasIRI(metaclass=ABCMeta):
 
     @abstractmethod
     def get_iri(self) -> 'IRI':
+        """Gets the IRI of this object.
+
+        Returns:
+            The IRI of this object
+        """
         pass
 
 
@@ -61,11 +66,31 @@ class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
 
     @overload
     @staticmethod
-    def create(namespace: str, remainder: str) -> 'IRI': ...
+    def create(namespace: str, remainder: str) -> 'IRI':
+        """Creates an IRI by concatenating two strings. The full IRI is an IRI that contains the characters in
+        namespace + remainder.
+
+        Args:
+            namespace: The first string
+            remainder: The second string
+
+        Returns:
+            An IRI whose characters consist of prefix + suffix.
+        """
+        ...
 
     @overload
     @staticmethod
-    def create(string: str) -> 'IRI': ...
+    def create(string: str) -> 'IRI':
+        """Creates an IRI from the specified String.
+
+        Args:
+            string: The String that specifies the IRI
+
+        Returns:
+            The IRI that has the specified string representation.
+        """
+        ...
 
     @staticmethod
     def create(string, remainder=None) -> 'IRI':
@@ -86,28 +111,63 @@ class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
         return hash((self._namespace, self._remainder))
 
     def is_nothing(self):
+        """Determines if this IRI is equal to the IRI that owl:Nothing is named with.
+
+        Returns:
+            True if this IRI is equal to <http://www.w3.org/2002/07/owl#Nothing> and otherwise False
+        """
         from owlapy import vocab
         return self == vocab.OWL_NOTHING.get_iri()
 
     def is_thing(self):
+        """Determines if this IRI is equal to the IRI that owl:Thing is named with.
+
+        Returns:
+            True if this IRI is equal to <http://www.w3.org/2002/07/owl#Thing> and otherwise False
+        """
         from owlapy import vocab
         return self == vocab.OWL_THING.get_iri()
 
     def is_reserved_vocabulary(self) -> bool:
+        """Determines if this IRI is in the reserved vocabulary. An IRI is in the reserved vocabulary if it starts with
+        <http://www.w3.org/1999/02/22-rdf-syntax-ns#> or <http://www.w3.org/2000/01/rdf-schema#> or
+        <http://www.w3.org/2001/XMLSchema#> or <http://www.w3.org/2002/07/owl#>
+
+        Returns:
+            True if the IRI is in the reserved vocabulary, otherwise False.
+        """
         return self._namespace == namespaces.OWL or self._namespace == namespaces.RDF \
                or self._namespace == namespaces.RDFS or self._namespace == namespaces.XSD
 
     def as_iri(self) -> 'IRI':
+        # documented in parent
         return self
 
     def as_str(self) -> str:
+        """
+        Returns:
+            the string that specifies the IRI
+        """
         return self._namespace + self._remainder
 
     def get_short_form(self) -> str:
+        """Gets the short form.
+
+        Returns:
+            A string that represents the short form.
+        """
         return self._remainder
 
     def get_namespace(self) -> str:
+        """
+        Returns:
+            the namespace as string
+        """
         return self._namespace
 
     def get_remainder(self) -> str:
+        """
+        Returns:
+            the remainder (coincident with NCName usually) for this IRI.
+        """
         return self._remainder
