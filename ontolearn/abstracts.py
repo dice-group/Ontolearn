@@ -420,6 +420,15 @@ class AbstractDrill(ABC):
         @return:
         """
 
+    @abstractmethod
+    def rl_learning_loop(self, pos_uri: Set[str], neg_uri: Set[str]) -> List[float]:
+        """
+        Reinforcement Learning loop
+        for each learning problem
+            for each episode
+                ...
+        """
+
     def next_node_to_expand(self, t: int = None) -> AbstractNode:
         """
         Return a node that maximizes the heuristic function at time t
@@ -574,6 +583,8 @@ class AbstractDrill(ABC):
         assert isinstance(node, AbstractNode)
         # 1.
         # (1.1)
+        print(node)
+        raise NotImplementedError('Currently Debuging')
         length = len(node) + 3 if len(node) + 3 <= self.max_child_length else self.max_child_length
         # (1.2)
         for i in self.operator.refine(node, maxlength=length):  # O(N)
@@ -586,7 +597,7 @@ class AbstractDrill(ABC):
         if self.representation_mode == 'averaging':
             # (2) if input node has not seen before, assign embeddings.
             if node.embeddings is None:
-                str_idx = [get_full_iri(i).replace('\n', '') for i in node.concept.instances]
+                str_idx = [i.get_iri().as_str() for i in self.kb.individuals(node.concept)]
                 if len(str_idx) == 0:
                     emb = torch.zeros(self.sample_size, self.instance_embeddings.shape[1])
                 else:
@@ -605,6 +616,7 @@ class AbstractDrill(ABC):
                     print((1, self.sample_size, self.instance_embeddings.shape[1]))
                     raise
         elif self.representation_mode == 'sampling':
+            # @TODO CD:Not sure whether we need DRILL SAMPLE anymore ?
             if node.embeddings is None:
                 str_idx = [get_full_iri(i).replace('\n', '') for i in node.concept.instances]
                 if len(str_idx) >= self.sample_size:
@@ -643,66 +655,6 @@ class AbstractDrill(ABC):
         # Save model.
         torch.save(self.heuristic_func.net.state_dict(),
                    self.storage_path + '/{0}.pth'.format(self.heuristic_func.name))
-
-    def rl_learning_loop(self, pos_uri: Set[str], neg_uri: Set[str]) -> List[float]:
-        """
-        RL agent learning loop over learning problem defined
-        @param pos_uri: A set of URIs indicating E^+
-        @param neg_uri: A set of URIs indicating E^-
-
-        Computation
-
-        1. Initialize training
-
-        2. Learning loop: Stopping criteria
-            ***self.num_episode** OR ***self.epsilon < self.epsilon_min***
-
-        2.1. Perform sequence of actions
-
-        2.2. Decrease exploration rate
-
-        2.3. Form experiences
-
-        2.4. Experience Replay
-
-        2.5. Return sum of actions
-
-        @return: List of sum of rewards per episode.
-        """
-
-        # (1)
-        self.init_training(pos_uri=pos_uri, neg_uri=neg_uri)
-        root = self.operator.get_node(self.start_class, root=True)
-        # (2) Assign embeddings of root/first state.
-        self.assign_embeddings(root)
-
-        sum_of_rewards_per_actions = []
-        log_every_n_episodes = int(self.num_episode * .1) + 1
-
-        # (2)
-        for th in range(self.num_episode):
-            # (2.1)
-            sequence_of_states, rewards = self.sequence_of_actions(root)
-
-            if th % log_every_n_episodes == 0:
-                self.logger.info(
-                    '{0}.th iter. SumOfRewards: {1:.2f}\tEpsilon:{2:.2f}\t|ReplayMem.|:{3}'.format(th, sum(rewards),
-                                                                                                   self.epsilon, len(
-                            self.experiences)))
-
-            # (2.2)
-            self.epsilon -= self.epsilon_decay
-            if self.epsilon < self.epsilon_min:
-                break
-
-            # (2.3)
-            self.form_experiences(sequence_of_states, rewards)
-
-            # (2.4)
-            if th % self.num_epochs_per_replay == 0 and len(self.experiences) > 1:
-                self.learn_from_replay_memory()
-            sum_of_rewards_per_actions.append(sum(rewards))
-        return sum_of_rewards_per_actions
 
     def exploration_exploitation_tradeoff(self, current_state: AbstractNode,
                                           next_states: List[AbstractNode]) -> AbstractNode:
@@ -787,15 +739,13 @@ class AbstractDrill(ABC):
         @return: self
         """
         # We need a better way of login,
-        #self.logger.info('Training starts.')
+        print('Training starts.')
         print(f'Training starts.\nNumber of learning problem:{len(dataset)},\t Relearn ratio:{relearn_ratio}')
         counter = 1
         # 1.
         for _ in range(relearn_ratio):
             for (alc_concept_str, positives, negatives) in dataset:
-                #self.logger.info(
-                #    'Goal Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str,
-                #                                                      len(positives), len(negatives)))
+                print('Goal Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str,len(positives), len(negatives)))
                 # 2.
                 print(f'RL training on {counter}.th learning problem starts')
                 sum_of_rewards_per_actions = self.rl_learning_loop(pos_uri=positives, neg_uri=negatives)
