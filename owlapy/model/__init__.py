@@ -265,8 +265,8 @@ class OWLObjectInverseOf(OWLObjectPropertyExpression):
 
     _inverse_property: OWLObjectProperty
 
-    def __init__(self, inverse_property: OWLObjectProperty):
-        self._inverse_property = inverse_property
+    def __init__(self, property: OWLObjectProperty):
+        self._inverse_property = property
 
     def get_inverse(self) -> OWLObjectProperty:
         return self._inverse_property
@@ -559,8 +559,8 @@ class OWLObjectHasValue(OWLHasValueRestriction[OWLIndividual], OWLObjectRestrict
     _property: OWLObjectPropertyExpression
     _v: OWLIndividual
 
-    def __init__(self, property: OWLObjectPropertyExpression, value: OWLIndividual):
-        super().__init__(value)
+    def __init__(self, property: OWLObjectPropertyExpression, individual: OWLIndividual):
+        super().__init__(individual)
         self._property = property
 
     def get_property(self) -> OWLObjectPropertyExpression:
