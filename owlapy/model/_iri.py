@@ -114,7 +114,7 @@ class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
         """Determines if this IRI is equal to the IRI that owl:Nothing is named with.
 
         Returns:
-            True if this IRI is equal to <http://www.w3.org/2002/07/owl#Nothing> and otherwise False
+            :True if this IRI is equal to <http://www.w3.org/2002/07/owl#Nothing> and otherwise False
         """
         from owlapy import vocab
         return self == vocab.OWL_NOTHING.get_iri()
@@ -123,7 +123,7 @@ class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
         """Determines if this IRI is equal to the IRI that owl:Thing is named with.
 
         Returns:
-            True if this IRI is equal to <http://www.w3.org/2002/07/owl#Thing> and otherwise False
+            :True if this IRI is equal to <http://www.w3.org/2002/07/owl#Thing> and otherwise False
         """
         from owlapy import vocab
         return self == vocab.OWL_THING.get_iri()
