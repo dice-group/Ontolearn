@@ -10,5 +10,4 @@ Author:
 __version__ = '0.2.0.dev'
 
 from .knowledge_base import KnowledgeBase
-from .rl import DrillAverage
 __all__ = 'KnowledgeBase',
