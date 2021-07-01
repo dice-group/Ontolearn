@@ -9,7 +9,7 @@ many help texts copied from OWL API
 from abc import ABCMeta, abstractmethod
 from typing import Generic, Iterable, Sequence, TypeVar, Union, Final, Optional, Protocol, ClassVar, List
 
-from owlapy import vocab
+from owlapy.vocab import OWLRDFVocabulary, XSDVocabulary
 from owlapy._utils import MOVE
 from owlapy.model._base import OWLObject, OWLAnnotationObject, OWLAnnotationSubject, OWLAnnotationValue
 from owlapy.model._iri import HasIRI, IRI
@@ -1821,17 +1821,18 @@ class OWLAnnotationAssertionAxiom(OWLAnnotationAxiom):
 
 """Important constant objects section"""
 
-OWLThing: Final = OWLClass(vocab.OWL_THING.get_iri())  #: : :The OWL Class corresponding to owl:Thing
-OWLNothing: Final = OWLClass(vocab.OWL_NOTHING.get_iri())  #: : :The OWL Class corresponding to owl:Nothing
+OWLThing: Final = OWLClass(OWLRDFVocabulary.OWL_THING.get_iri())  #: : :The OWL Class corresponding to owl:Thing
+OWLNothing: Final = OWLClass(OWLRDFVocabulary.OWL_NOTHING.get_iri())  #: : :The OWL Class corresponding to owl:Nothing
 #: the built in top object property
-OWLTopObjectProperty: Final = OWLObjectProperty(vocab.OWL_TOP_OBJECT_PROPERTY.get_iri())
+OWLTopObjectProperty: Final = OWLObjectProperty(OWLRDFVocabulary.OWL_TOP_OBJECT_PROPERTY.get_iri())
 #: the built in bottom object property
-OWLBottomObjectProperty: Final = OWLObjectProperty(vocab.OWL_BOTTOM_OBJECT_PROPERTY.get_iri())
-OWLTopDataProperty: Final = OWLDataProperty(vocab.OWL_TOP_DATA_PROPERTY.get_iri())  #: the built in top data property
+OWLBottomObjectProperty: Final = OWLObjectProperty(OWLRDFVocabulary.OWL_BOTTOM_OBJECT_PROPERTY.get_iri())
+#: the built in top data property
+OWLTopDataProperty: Final = OWLDataProperty(OWLRDFVocabulary.OWL_TOP_DATA_PROPERTY.get_iri())
 #: the built in bottom data property
-OWLBottomDataProperty: Final = OWLDataProperty(vocab.OWL_BOTTOM_DATA_PROPERTY.get_iri())
+OWLBottomDataProperty: Final = OWLDataProperty(OWLRDFVocabulary.OWL_BOTTOM_DATA_PROPERTY.get_iri())
 
-DoubleOWLDatatype: Final = OWLDatatype(vocab.DOUBLE)  #: An object representing a double datatype.
-IntegerOWLDatatype: Final = OWLDatatype(vocab.INTEGER)  #: An object representing an integer datatype.
-BooleanOWLDatatype: Final = OWLDatatype(vocab.BOOLEAN)  #: An object representing the boolean datatype.
-TopDatatype: Final = OWLDatatype(vocab.RDFS_LITERAL)  #: The OWL Datatype corresponding to the top data type
+DoubleOWLDatatype: Final = OWLDatatype(XSDVocabulary.DOUBLE)  #: An object representing a double datatype.
+IntegerOWLDatatype: Final = OWLDatatype(XSDVocabulary.INTEGER)  #: An object representing an integer datatype.
+BooleanOWLDatatype: Final = OWLDatatype(XSDVocabulary.BOOLEAN)  #: An object representing the boolean datatype.
+TopDatatype: Final = OWLDatatype(OWLRDFVocabulary.RDFS_LITERAL)  #: The OWL Datatype corresponding to the top data type
