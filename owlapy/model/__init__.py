@@ -676,7 +676,7 @@ class OWLOntology(OWLObject, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_manager(self) -> _M:
+    def get_owl_ontology_manager(self) -> _M:
         pass
 
     @abstractmethod
