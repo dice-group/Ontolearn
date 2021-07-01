@@ -64,7 +64,7 @@ class OWLClassExpression(OWLPropertyRange):
         is equivalent to owl:Thing.
 
         Returns:
-            True this expression is owl:Thing
+            :True if this expression is owl:Thing
         """
         pass
 
@@ -251,7 +251,7 @@ class OWLPropertyExpression(OWLObject, metaclass=ABCMeta):
         """Determines if this is the owl:topObjectProperty.
 
         Returns:
-            True if this property is the owl:topObjectProperty
+            :True if this property is the owl:topObjectProperty
         """
         return False
 
@@ -472,7 +472,8 @@ class HasFiller(Generic[_T], metaclass=ABCMeta):
 
 
 class OWLHasValueRestriction(Generic[_T], OWLRestriction, HasFiller[_T], metaclass=ABCMeta):
-    """
+    """OWLHasValueRestriction.
+
     Args:
         _T: the value type
     """
@@ -581,6 +582,7 @@ class OWLObjectAllValuesFrom(OWLQuantifiedObjectRestriction):
 
 
 class OWLNaryBooleanClassExpression(OWLBooleanClassExpression, HasOperands[OWLClassExpression]):
+    """OWLNaryBooleanClassExpression."""
     __slots__ = ()
 
     _operands: Sequence[OWLClassExpression]
@@ -643,7 +645,8 @@ _F = TypeVar('_F', bound=OWLPropertyRange)  #:
 
 
 class OWLCardinalityRestriction(Generic[_F], OWLQuantifiedRestriction[_F], HasCardinality, metaclass=ABCMeta):
-    """
+    """.
+
     Args:
         _F: type of filler
     """
@@ -1103,7 +1106,7 @@ class OWLOntologyManager(metaclass=ABCMeta):
             change: The change to be applied
 
         Raises:
-            ChangeApplied.UNSUCCESSFULLY if the change was not applied successfully.
+            ChangeApplied.UNSUCCESSFULLY: if the change was not applied successfully.
         """
         pass
 
@@ -1117,7 +1120,7 @@ class OWLOntologyManager(metaclass=ABCMeta):
             axiom: The axiom to be added
 
         Raises:
-            ChangeApplied.UNSUCCESSFULLY if the axiom could not be added.
+            ChangeApplied.UNSUCCESSFULLY: if the axiom could not be added.
         """
         pass
 
@@ -1153,7 +1156,7 @@ class OWLReasoner(metaclass=ABCMeta):
                 (False).
 
         Returns:
-            Let N = equivalent_classes(DataSomeValuesFrom(pe rdfs:Literal)). If direct is True: then if N is not
+            :Let N = equivalent_classes(DataSomeValuesFrom(pe rdfs:Literal)). If direct is True: then if N is not
             empty then the return value is N, else the return value is the result of
             super_classes(DataSomeValuesFrom(pe rdfs:Literal), true). If direct is False: then the result of
             super_classes(DataSomeValuesFrom(pe rdfs:Literal), false) together with N if N is non-empty.
@@ -1172,7 +1175,7 @@ class OWLReasoner(metaclass=ABCMeta):
                 (False).
 
         Returns:
-            Let N = equivalent_classes(ObjectSomeValuesFrom(pe owl:Thing)). If direct is True: then if N is not empty
+            :Let N = equivalent_classes(ObjectSomeValuesFrom(pe owl:Thing)). If direct is True: then if N is not empty
             then the return value is N, else the return value is the result of
             super_classes(ObjectSomeValuesFrom(pe owl:Thing), true). If direct is False: then the result of
             super_classes(ObjectSomeValuesFrom(pe owl:Thing), false) together with N if N is non-empty.
@@ -1190,7 +1193,7 @@ class OWLReasoner(metaclass=ABCMeta):
                 (False).
 
         Returns:
-            Let N = equivalent_classes(ObjectSomeValuesFrom(ObjectInverseOf(pe) owl:Thing)). If direct is True: then
+            :Let N = equivalent_classes(ObjectSomeValuesFrom(ObjectInverseOf(pe) owl:Thing)). If direct is True: then
             if N is not empty then the return value is N, else the return value is the result of
             super_classes(ObjectSomeValuesFrom(ObjectInverseOf(pe) owl:Thing), true). If direct is False: then
             the result of super_classes(ObjectSomeValuesFrom(ObjectInverseOf(pe) owl:Thing), false) together with N
@@ -1818,12 +1821,15 @@ class OWLAnnotationAssertionAxiom(OWLAnnotationAxiom):
 
 """Important constant objects section"""
 
-OWLThing: Final = OWLClass(vocab.OWL_THING.get_iri())  #: The OWL Class corresponding to owl:Thing
-OWLNothing: Final = OWLClass(vocab.OWL_NOTHING.get_iri())  #: The OWL Class corresponding to owl:Nothing
-OWLTopObjectProperty: Final = OWLObjectProperty(vocab.OWL_TOP_OBJECT_PROPERTY.get_iri())  #: the built in top object property
-OWLBottomObjectProperty: Final = OWLObjectProperty(vocab.OWL_BOTTOM_OBJECT_PROPERTY.get_iri())  #: the built in bottom object property
+OWLThing: Final = OWLClass(vocab.OWL_THING.get_iri())  #: : :The OWL Class corresponding to owl:Thing
+OWLNothing: Final = OWLClass(vocab.OWL_NOTHING.get_iri())  #: : :The OWL Class corresponding to owl:Nothing
+#: the built in top object property
+OWLTopObjectProperty: Final = OWLObjectProperty(vocab.OWL_TOP_OBJECT_PROPERTY.get_iri())
+#: the built in bottom object property
+OWLBottomObjectProperty: Final = OWLObjectProperty(vocab.OWL_BOTTOM_OBJECT_PROPERTY.get_iri())
 OWLTopDataProperty: Final = OWLDataProperty(vocab.OWL_TOP_DATA_PROPERTY.get_iri())  #: the built in top data property
-OWLBottomDataProperty: Final = OWLDataProperty(vocab.OWL_BOTTOM_DATA_PROPERTY.get_iri())  #: the built in bottom data property
+#: the built in bottom data property
+OWLBottomDataProperty: Final = OWLDataProperty(vocab.OWL_BOTTOM_DATA_PROPERTY.get_iri())
 
 DoubleOWLDatatype: Final = OWLDatatype(vocab.DOUBLE)  #: An object representing a double datatype.
 IntegerOWLDatatype: Final = OWLDatatype(vocab.INTEGER)  #: An object representing an integer datatype.
