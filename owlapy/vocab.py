@@ -1,3 +1,5 @@
+from abc import ABCMeta
+from enum import Enum, EnumMeta
 from typing import Final
 
 from owlapy import namespaces
@@ -24,28 +26,28 @@ class _Vocabulary(HasIRI):
         return f"<<{self._namespace.prefix}:{self._remainder}>>"
 
 
-class OWLRDFVocabulary(_Vocabulary):
+class _meta_Enum(ABCMeta, EnumMeta):
+    __slots__ = ()
     pass
 
 
-class XSDVocabulary(_Vocabulary):
+class OWLRDFVocabulary(_Vocabulary, Enum, metaclass=_meta_Enum):
+    OWL_THING = (namespaces.OWL, "Thing")  #:
+    OWL_NOTHING = (namespaces.OWL, "Nothing")  #:
+    OWL_TOP_OBJECT_PROPERTY = (namespaces.OWL, "topObjectProperty")  #:
+    OWL_BOTTOM_OBJECT_PROPERTY = (namespaces.OWL, "bottomObjectProperty")  #:
+    OWL_TOP_DATA_PROPERTY = (namespaces.OWL, "topDataProperty")  #:
+    OWL_BOTTOM_DATA_PROPERTY = (namespaces.OWL, "bottomDataProperty")  #:
+    RDFS_LITERAL = (namespaces.RDFS, "Literal")  #:
+
+
+class XSDVocabulary(_Vocabulary, Enum, metaclass=_meta_Enum):
     def __init__(self, remainder: str):
         super().__init__(namespaces.XSD, remainder)
-
-
-OWL_THING: Final = OWLRDFVocabulary(namespaces.OWL, "Thing")  #:
-OWL_NOTHING: Final = OWLRDFVocabulary(namespaces.OWL, "Nothing")  #:
-OWL_TOP_OBJECT_PROPERTY: Final = OWLRDFVocabulary(namespaces.OWL, "topObjectProperty")  #:
-OWL_BOTTOM_OBJECT_PROPERTY: Final = OWLRDFVocabulary(namespaces.OWL, "bottomObjectProperty")  #:
-OWL_TOP_DATA_PROPERTY: Final = OWLRDFVocabulary(namespaces.OWL, "topDataProperty")  #:
-OWL_BOTTOM_DATA_PROPERTY: Final = OWLRDFVocabulary(namespaces.OWL, "bottomDataProperty")  #:
-
-RDFS_LITERAL: Final = _Vocabulary(namespaces.RDFS, "Literal")  #:
-
-DECIMAL: Final = XSDVocabulary("decimal")  #:
-INTEGER: Final = XSDVocabulary("integer")  #:
-LONG: Final = XSDVocabulary("long")  #:
-DOUBLE: Final = XSDVocabulary("double")  #:
-FLOAT: Final = XSDVocabulary("float")  #:
-BOOLEAN: Final = XSDVocabulary("boolean")  #:
-DATE_TIME_STAMP: Final = XSDVocabulary("dateTimeStamp")  #:
+    DECIMAL: Final = "decimal"  #:
+    INTEGER: Final = "integer"  #:
+    LONG: Final = "long"  #:
+    DOUBLE: Final = "double"  #:
+    FLOAT: Final = "float"  #:
+    BOOLEAN: Final = "boolean"  #:
+    DATE_TIME_STAMP: Final = "dateTimeStamp"  #:
