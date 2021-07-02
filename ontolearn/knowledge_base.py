@@ -98,7 +98,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         AbstractKnowledgeBase.__init__(self)
         self.path = path
         if ontology is not None:
-            self._manager = ontology.get_manager()
+            self._manager = ontology.get_owl_ontology_manager()
             self._ontology = ontology
         elif ontologymanager_factory is not None:
             self._manager = ontologymanager_factory()
