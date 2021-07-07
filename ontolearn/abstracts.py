@@ -277,7 +277,7 @@ class AbstractLearningProblem(metaclass=ABCMeta):
     __slots__ = ()
 
     @abstractmethod
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         """create a new abstract learning problem"""
         pass
 

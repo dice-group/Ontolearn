@@ -100,9 +100,9 @@ class Celoe_Test(unittest.TestCase):
                                 settings['problems']['Uncle']['negative_examples'])))
 
         model = ModelAdapter(learner_type=CELOE, knowledge_base=kb, max_runtime=1000, max_num_of_concepts_tested=100)
-        model.fit(PosNegLPStandard(pos=pos_aunt, neg=neg_aunt))
+        model.fit(pos=pos_aunt, neg=neg_aunt)
         kb.clean()
-        model.fit(PosNegLPStandard(pos=pos_uncle, neg=neg_uncle))
+        model.fit(pos=pos_uncle, neg=neg_uncle)
 
         print("First fitted on Aunt then on Uncle:")
         hypotheses = list(model.best_hypotheses(n=2))
@@ -110,7 +110,7 @@ class Celoe_Test(unittest.TestCase):
         kb.clean()
         kb = KnowledgeBase(path=PATH_FAMILY)
         model = ModelAdapter(learner_type=CELOE, knowledge_base=kb, max_runtime=1000, max_num_of_concepts_tested=100)
-        model.fit(PosNegLPStandard(pos=pos_uncle, neg=neg_uncle))
+        model.fit(pos=pos_uncle, neg=neg_uncle)
 
         print("Only fitted on Uncle:")
         hypotheses = list(model.best_hypotheses(n=2))
