@@ -11,7 +11,7 @@ from owlapy.model import OWLClassExpression, OWLNamedIndividual, OWLOntologyMana
     OWLAnnotationProperty, OWLLiteral, IRI
 from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, AbstractKnowledgeBase, \
-    AbstractLearningProblem, AbstractConceptNode
+    AbstractConceptNode
 from .utils import oplogging
 
 _N = TypeVar('_N', bound=AbstractConceptNode)  #:
@@ -54,12 +54,12 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     max_num_of_concepts_tested: Optional[int]
     terminate_on_goal: Optional[bool]
     max_child_length: Optional[int]
-    goal_found: bool
+    _goal_found: bool
+    _number_of_tested_concepts: int
     start_class: Optional[OWLClassExpression]
     iter_bound: Optional[int]
     max_runtime: Optional[int]
     start_time: Optional[float]
-    name: Optional[str]
 
     @abstractmethod
     def __init__(self,
@@ -153,7 +153,9 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         """
         Clear all states of the concept learner
         """
-        pass
+        self._number_of_tested_concepts = 0
+        self._goal_found = False
+        self.start_time = None
 
     def train(self, *args, **kwargs):
         pass
@@ -173,10 +175,10 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             logger.info('Elapsed runtime: {0} seconds'.format(round(time.time() - self.start_time, 4)))
             logger.info('Number of concepts tested:{0}'.format(self.number_of_tested_concepts))
             if self._goal_found:
-                t = 'A goal concept found:{0}'.format(self.goal_found)
+                t = 'A goal concept found:{0}'
             else:
-                t = 'Current best concept:{0}'.format(list(self.best_hypotheses(n=1))[0])
-            logger.info(t)
+                t = 'Current best concept:{0}'
+            logger.info(t.format(list(self.best_hypotheses(n=1))[0]))
 
         if logger.isEnabledFor(oplogging.TRACE):
             self.show_search_tree('Final')
