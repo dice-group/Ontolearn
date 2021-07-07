@@ -1,3 +1,4 @@
+from ontolearn.search import EvoLearnerNode
 from ontolearn.fitness_functions import LinearPressureFitness
 from ontolearn.metrics import Accuracy
 from owlapy.render import DLSyntaxObjectRenderer
@@ -154,12 +155,18 @@ class EvoLearner(BaseConceptLearner):
         self.print_top_n_individuals(self.result_population)
         return self
 
-    # TODO: Wrap returned values in Nodes?
+    # TODO: Think about the node wrapping
     def best_hypotheses(self, n=5, key='fitness'):
         assert self.result_population is not None
         assert len(self.result_population) > 0
+
         best_inds = tools.selBest(self.result_population, k=n, fit_attr=key)
-        return [gp.compile(ind, self.pset) for ind in best_inds]
+        best_concepts = [gp.compile(ind, self.pset) for ind in best_inds]
+
+        for con, ind in zip(best_concepts, best_inds):
+            individuals_count = len(self.kb.individuals_set(con))
+            yield EvoLearnerNode(con, self.kb.cl(con), individuals_count, ind.quality.values[0],
+                                 len(ind), ind.height)
 
     def _fitness_func(self, individual):
         concept = gp.compile(individual, self.pset)
