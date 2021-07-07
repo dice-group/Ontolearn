@@ -32,6 +32,10 @@ class _meta_Enum(ABCMeta, EnumMeta):
 
 
 class OWLRDFVocabulary(_Vocabulary, Enum, metaclass=_meta_Enum):
+    def __new__(cls, namespace: Namespaces, remainder: str, *args):
+        obj = object.__new__(cls)
+        obj._value_ = f"{namespace.prefix}:{remainder}"
+        return obj
     OWL_THING = (namespaces.OWL, "Thing")  #:
     OWL_NOTHING = (namespaces.OWL, "Nothing")  #:
     OWL_TOP_OBJECT_PROPERTY = (namespaces.OWL, "topObjectProperty")  #:
@@ -42,6 +46,10 @@ class OWLRDFVocabulary(_Vocabulary, Enum, metaclass=_meta_Enum):
 
 
 class XSDVocabulary(_Vocabulary, Enum, metaclass=_meta_Enum):
+    def __new__(cls, remainder: str, *args):
+        obj = object.__new__(cls)
+        obj._value_ = f"{namespaces.XSD.prefix}:{remainder}"
+        return obj
     def __init__(self, remainder: str):
         super().__init__(namespaces.XSD, remainder)
     DECIMAL: Final = "decimal"  #:
