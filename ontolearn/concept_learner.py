@@ -137,14 +137,15 @@ class CELOE(BaseConceptLearner[OENode]):
 
         return map(make_node_with_parent, refinements)
 
-    def fit(self, learning_problem: PosNegLPStandard,
-            max_runtime: Optional[int] = None):
+    def fit(self, *args, **kwargs):
         """
         Find hypotheses that explain pos and neg.
         """
         self.clean()
+        max_runtime = kwargs.pop("max_runtime", None)
+        learning_problem = self.construct_learning_problem(PosNegLPStandard, args, kwargs)
+
         assert not self.search_tree
-        assert isinstance(learning_problem, PosNegLPStandard)
         self._learning_problem = learning_problem.encode_kb(self.kb)
 
         if max_runtime is not None:
@@ -377,12 +378,12 @@ class LengthBaseLearner(BaseConceptLearner):
                        if i not in self.concepts_to_ignore)
         return refinements
 
-    def fit(self, learning_problem: AbstractLearningProblem):
+    def fit(self, *args, **kwargs):
         """
         Find hypotheses that explain pos and neg.
         """
         self.clean()
-        assert isinstance(learning_problem, AbstractLearningProblem)
+        learning_problem = self.construct_learning_problem(PosNegLPStandard, args, kwargs)
         kb_learning_problem = learning_problem.encode_kb(knowledge_base=self.kb)
         self.start_time = time.time()
         root = self.get_node(self.start_class, is_root=True)
