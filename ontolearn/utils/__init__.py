@@ -114,11 +114,17 @@ def read_csv(path):
     return df
 
 
-def assertion_path_isfile(path):
+def assertion_path_isfile(path) -> None:
+    try:
+        assert path is not None
+    except AssertionError:
+        print(f'Path can not be:{path}')
+        raise
+
     try:
         assert os.path.isfile(path)
-    except AssertionError:
-        print(f'{path} is not found.')
+    except (AssertionError, TypeError):
+        print(f'Input:{path} not found.')
         raise
 
 

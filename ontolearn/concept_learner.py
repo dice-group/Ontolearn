@@ -348,7 +348,7 @@ class Drill(AbstractDrill, BaseConceptLearner):
                  terminate_on_goal=True, ignored_concepts=None,
                  max_len_replay_memory=None, batch_size=None, epsilon_decay=None, epsilon_min=None,
                  num_epochs_per_replay=None, num_episodes_per_replay=None, learning_rate=None, relearn_ratio=None,
-                 max_results: int = 10,best_only: bool = False,calculate_min_max: bool = True,
+                 max_results: int = 10, best_only: bool = False, calculate_min_max: bool = True,
                  max_runtime=None, num_of_sequential_actions=None, num_episode=None, num_workers=32):
         AbstractDrill.__init__(self,
                                path_of_embeddings=path_of_embeddings,
@@ -422,6 +422,8 @@ class Drill(AbstractDrill, BaseConceptLearner):
         # 1.
         self.reward_func.pos = pos_uri
         self.reward_func.neg = neg_uri
+        self.lp = PosNegLPStandard(knowledge_base=self.kb, pos=pos_uri, neg=neg_uri)
+        self.quality_func.set_lp(self.lp)
 
         # 2. Obtain embeddings of positive and negative examples.
         self.emb_pos = torch.tensor(
@@ -455,22 +457,13 @@ class Drill(AbstractDrill, BaseConceptLearner):
         r = OENode(c, self.kb.cl(c), parent_node=parent_node, is_root=is_root)
         return r
 
-    def _add_node(self, ref: OENode, tree_parent: Optional[TreeNode[OENode]]):
+    def add_root(self, ref: OENode, tree_parent: Optional[TreeNode[OENode]]):
         self.search_tree[ref.concept] = TreeNode(ref, tree_parent, is_root=ref.is_root)
         ref_individuals = self.kb.individuals_set(ref.concept)
         ref.individuals_count = len(ref_individuals)
         self.quality_func.apply(ref, ref_individuals)  # AccuracyOrTooWeak(n)
         if ref.quality == 0:  # > too weak
-            return False
-        assert 0 <= ref.quality <= 1.0
-        # TODO: expression rewriting
-        self.heuristic_func.apply(ref, ref_individuals)
-        if self.best_descriptions.maybe_add(ref):
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("Better description found: %s", ref)
-        self.heuristic_queue.add(ref)
-        # TODO: implement noise
-        return True
+            raise ValueError(f'Root Concept can not have quality 0::{ref}')
 
     def rl_learning_loop(self, pos_uri: Set[str], neg_uri: Set[str]) -> List[float]:
         """
@@ -500,15 +493,9 @@ class Drill(AbstractDrill, BaseConceptLearner):
 
         # (1)
         self.init_training(pos_uri=pos_uri, neg_uri=neg_uri)
-
+        # (2) Create
         root = self.make_node(_concept_operand_sorter.sort(self.start_class), is_root=True)
-        print(root)
-
-        self._add_node(root, None)
-        print(root)
-
-        exit(1)
-
+        self.add_root(root, None)
         # (2) Assign embeddings of root/first state.
         self.assign_embeddings(root)
         sum_of_rewards_per_actions = []

@@ -42,7 +42,7 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
 
     name: ClassVar
 
-    def __init__(self, learning_problem: AbstractLearningProblem):
+    def __init__(self, learning_problem: AbstractLearningProblem = None):
         """Create a new quality function
 
         Args:
@@ -51,6 +51,9 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
         """
         self.lp = learning_problem
         self.applied = 0
+
+    def set_lp(self, learning_problem):
+        self.lp = learning_problem
 
     @abstractmethod
     def score(self, instances) -> Tuple[bool, Optional[float]]:
@@ -526,7 +529,6 @@ class AbstractDrill(ABC):
 
         """
         assert isinstance(root, AbstractNode)
-
         current_state = root
         path_of_concepts = []
         rewards = []
@@ -534,6 +536,8 @@ class AbstractDrill(ABC):
         for _ in range(self.num_of_sequential_actions):
             # (1.1)
             next_states = list(self.apply_rho(current_state))
+
+            exit(1)
             # (1.2)
             if len(next_states) == 0:  # DEAD END
                 assert (len(current_state) + 3) <= self.max_child_length
@@ -583,14 +587,15 @@ class AbstractDrill(ABC):
         assert isinstance(node, AbstractNode)
         # 1.
         # (1.1)
-        print(node)
-        raise NotImplementedError('Currently Debuging')
-        length = len(node) + 3 if len(node) + 3 <= self.max_child_length else self.max_child_length
+        length = self.kb.cl(node.concept) + 3 if self.kb.cl(
+            node.concept) + 3 <= self.max_child_length else self.max_child_length
         # (1.2)
-        for i in self.operator.refine(node, maxlength=length):  # O(N)
-            if i.str not in self.concepts_to_ignore:  # O(1)
-                yield self.operator.get_node(i, parent_node=node)  # O(1)
+        for i in self.operator.refine(node, max_length=length):  # O(N)
+            print(i)
 
+            #if i.str not in self.concepts_to_ignore:  # O(1)
+            #    yield self.operator.get_node(i, parent_node=node)  # O(1)
+        exit(1)
     def assign_embeddings(self, node: AbstractNode) -> None:
         assert isinstance(node, AbstractNode)
         # (1) Detect mode
@@ -745,7 +750,8 @@ class AbstractDrill(ABC):
         # 1.
         for _ in range(relearn_ratio):
             for (alc_concept_str, positives, negatives) in dataset:
-                print('Goal Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str,len(positives), len(negatives)))
+                print(
+                    'Goal Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
                 # 2.
                 print(f'RL training on {counter}.th learning problem starts')
                 sum_of_rewards_per_actions = self.rl_learning_loop(pos_uri=positives, neg_uri=negatives)
