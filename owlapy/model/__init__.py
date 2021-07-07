@@ -376,8 +376,7 @@ class OWLObjectProperty(OWLObjectPropertyExpression, OWLProperty):
 
     def is_owl_top_object_property(self) -> bool:
         # documented in parent
-        from owlapy.vocab import OWL_TOP_OBJECT_PROPERTY
-        return self.get_iri() == OWL_TOP_OBJECT_PROPERTY.get_iri()
+        return self.get_iri() == OWLRDFVocabulary.OWL_TOP_OBJECT_PROPERTY.get_iri()
 
 
 class OWLObjectInverseOf(OWLObjectPropertyExpression):

@@ -7,6 +7,7 @@ from operator import concat
 from ontolearn import KnowledgeBase
 from ontolearn.concept_learner import LengthBaseLearner
 from ontolearn.heuristics import CELOEHeuristic
+from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1
 from ontolearn.model_adapter import ModelAdapter
 from ontolearn.refinement_operators import LengthBasedRefinement
@@ -47,7 +48,7 @@ def test_lengthbasedlearner():
                 ignored_concepts=concepts_to_ignore,
                 verbose=True)
 
-            returned_val = model.fit(pos=p, neg=n)
+            returned_val = model.fit(PosNegLPStandard(knowledge_base=model.kb, pos=p, neg=n))
             assert returned_val == model
 
 

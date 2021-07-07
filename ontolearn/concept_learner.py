@@ -12,7 +12,7 @@ from owlapy.model import OWLClassExpression
 from owlapy.render import DLSyntaxObjectRenderer
 from sortedcontainers import SortedSet
 from . import KnowledgeBase
-from .abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic
+from .abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic, AbstractLearningProblem
 from .base_concept_learner import BaseConceptLearner
 from .core.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter
 from owlapy.util import OrderedOWLObject
@@ -32,7 +32,7 @@ _concept_operand_sorter = ConceptOperandSorter()
 
 class CELOE(BaseConceptLearner[OENode]):
     __slots__ = 'best_descriptions', 'max_he', 'min_he', 'best_only', 'calculate_min_max', 'heuristic_queue', \
-                'search_tree'
+                'search_tree', '_learning_problem', '_max_runtime'
 
     name = 'celoe_python'
 
@@ -46,10 +46,10 @@ class CELOE(BaseConceptLearner[OENode]):
     search_tree: Dict[OWLClassExpression, TreeNode[OENode]]
     heuristic_queue: 'SortedSet[OENode]'
     best_descriptions: EvaluatedDescriptionSet[OENode, QualityOrderedNode]
+    _learning_problem: Optional[PosNegLPStandard]
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
-                 learning_problem: PosNegLPStandard,
                  refinement_operator: Optional[BaseRefinement[OENode]] = None,
                  quality_func: Optional[AbstractScorer] = None,
                  heuristic_func: Optional[AbstractHeuristic] = None,
@@ -61,7 +61,6 @@ class CELOE(BaseConceptLearner[OENode]):
                  best_only: bool = False,
                  calculate_min_max: bool = True):
         super().__init__(knowledge_base=knowledge_base,
-                         learning_problem=learning_problem,
                          refinement_operator=refinement_operator,
                          quality_func=quality_func,
                          heuristic_func=heuristic_func,
@@ -79,6 +78,8 @@ class CELOE(BaseConceptLearner[OENode]):
 
         self.max_he = 0
         self.min_he = 1
+        self._learning_problem = None
+        self._max_runtime = None
 
     def next_node_to_expand(self, step: int) -> OENode:
         if not self.best_only:
@@ -129,22 +130,27 @@ class CELOE(BaseConceptLearner[OENode]):
 
             node.increment_h_exp()
             node.refinement_count = len(refinements)
-            self.heuristic_func.apply(node)
+            self.heuristic_func.apply(node, None, self._learning_problem)
 
         def make_node_with_parent(c: OWLClassExpression):
             return self.make_node(c, parent_node=node)
 
         return map(make_node_with_parent, refinements)
 
-    def fit(self,
+    def fit(self, learning_problem: PosNegLPStandard,
             max_runtime: Optional[int] = None):
         """
         Find hypotheses that explain pos and neg.
         """
+        self.clean()
         assert not self.search_tree
+        assert isinstance(learning_problem, PosNegLPStandard)
+        self._learning_problem = learning_problem
 
         if max_runtime is not None:
-            self.max_runtime = max_runtime
+            self._max_runtime = max_runtime
+        else:
+            self._max_runtime = self.max_runtime
 
         root = self.make_node(_concept_operand_sorter.sort(self.start_class), is_root=True)
         self._add_node(root, None)
@@ -177,7 +183,7 @@ class CELOE(BaseConceptLearner[OENode]):
                 # This is purely a statistical function, it does not influence CELOE
                 self.update_min_max_horiz_exp(most_promising)
 
-            if time.time() - self.start_time > self.max_runtime:
+            if time.time() - self.start_time > self._max_runtime:
                 return self.terminate()
 
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
@@ -197,12 +203,13 @@ class CELOE(BaseConceptLearner[OENode]):
         self.search_tree[ref.concept] = TreeNode(ref, tree_parent, is_root=ref.is_root)
         ref_individuals = self.kb.individuals_set(ref.concept)
         ref.individuals_count = len(ref_individuals)
-        self.quality_func.apply(ref, ref_individuals)  # AccuracyOrTooWeak(n)
+        self.quality_func.apply(ref, ref_individuals, self._learning_problem)  # AccuracyOrTooWeak(n)
+        self._number_of_tested_concepts += 1
         if ref.quality == 0:  # > too weak
             return False
         assert 0 <= ref.quality <= 1.0
         # TODO: expression rewriting
-        self.heuristic_func.apply(ref, ref_individuals)
+        self.heuristic_func.apply(ref, ref_individuals, self._learning_problem)
         if self.best_descriptions.maybe_add(ref):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("Better description found: %s", ref)
@@ -289,6 +296,8 @@ class CELOE(BaseConceptLearner[OENode]):
         self.heuristic_queue.clear()
         self.best_descriptions.items.clear()
         self.search_tree.clear()
+        self._learning_problem = None
+        self._max_runtime = None
         super().clean()
 
 
@@ -322,7 +331,6 @@ class LengthBaseLearner(BaseConceptLearner):
 
     def __init__(self, *,
                  knowledge_base: KnowledgeBase,
-                 learning_problem: PosNegLPStandard,
                  refinement_operator: Optional[BaseRefinement] = None,
                  search_tree: Optional[LBLSearchTree] = None,
                  quality_func: Optional[AbstractScorer] = None,
@@ -338,14 +346,13 @@ class LengthBaseLearner(BaseConceptLearner):
         if refinement_operator is None:
             refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base)
         if quality_func is None:
-            quality_func = F1(learning_problem=learning_problem)
+            quality_func = F1()
         if heuristic_func is None:
             heuristic_func = CELOEHeuristic()
         if search_tree is None:
             search_tree = SearchTreePriorityQueue(quality_func=quality_func, heuristic_func=heuristic_func)
 
         super().__init__(knowledge_base=knowledge_base,
-                         learning_problem=learning_problem,
                          refinement_operator=refinement_operator,
                          quality_func=quality_func,
                          heuristic_func=heuristic_func,
@@ -370,17 +377,22 @@ class LengthBaseLearner(BaseConceptLearner):
                        if i not in self.concepts_to_ignore)
         return refinements
 
-    def fit(self):
+    def fit(self, learning_problem: AbstractLearningProblem):
         """
         Find hypotheses that explain pos and neg.
         """
+        self.clean()
+        assert isinstance(learning_problem, AbstractLearningProblem)
         self.start_time = time.time()
         root = self.get_node(self.start_class, is_root=True)
-        self.search_tree.add_root(node=root)
+        self.search_tree.add_root(node=root, learning_problem=learning_problem)
+        self._number_of_tested_concepts = 1
         for j in range(1, self.iter_bound):
             most_promising = self.next_node_to_expand(j)
             for ref in self.downward_refinement(most_promising):
-                goal_found = self.search_tree.add_node(node=ref, parent_node=most_promising)
+                goal_found = self.search_tree.add_node(node=ref, parent_node=most_promising,
+                                                       learning_problem=learning_problem)
+                self._number_of_tested_concepts += 1
                 if goal_found:
                     if self.terminate_on_goal:
                         return self.terminate()
@@ -389,10 +401,9 @@ class LengthBaseLearner(BaseConceptLearner):
         return self.terminate()
 
     def clean(self):
-        self.quality_func.clean()
-        self.heuristic_func.clean()
         self.search_tree.clean()
         self.concepts_to_ignore.clear()
+        super().clean()
 
     def best_hypotheses(self, n=10) -> Iterable[LBLNode]:
         yield from self.search_tree.get_top_n(n)
