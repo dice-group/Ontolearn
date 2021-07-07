@@ -51,7 +51,7 @@ class ExpressRefinement_Test(unittest.TestCase):
             typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
             typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
 
-            model = model.fit(PosNegLPStandard(pos=typed_pos, neg=typed_neg))
+            model = model.fit(pos=typed_pos, neg=typed_neg)
 
             hypotheses = list(model.best_hypotheses(n=3))
             [print(_) for _ in hypotheses]
