@@ -10,8 +10,9 @@ from argparse import ArgumentParser
 from ontolearn import KnowledgeBase
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.learning_problem_generator import LearningProblemGenerator
-from ontolearn.rl import Drill
-from ontolearn.metrics import Accuracy
+from ontolearn.concept_learner import Drill
+from ontolearn.metrics import F1
+
 
 
 def start(args):
@@ -19,24 +20,16 @@ def start(args):
 
     lp = LearningProblemGenerator(knowledge_base=kb, min_length=args.min_length, max_length=args.max_length)
 
-    print(kb)
     balanced_examples = lp.get_balanced_n_samples_per_examples(n=args.num_of_randomly_created_problems_per_concept,
                                                                min_num_problems=args.min_num_concepts,
                                                                num_diff_runs=1,  # This must be optimized
                                                                min_num_instances=args.min_num_instances_per_concept)
-    for (concept, pos, neg) in balanced_examples:
-        print(concept)
-        for p in pos:
-            print(p)
-            print(kb._ind_enc(p))
-            exit(1)
-            exit(1)
-    print(balanced_examples)
-    exit(1)
+
     drill = Drill(knowledge_base=kb,
                   path_of_embeddings=args.path_knowledge_base_embeddings,
                   refinement_operator=LengthBasedRefinement(knowledge_base=kb),
-                  quality_func=Accuracy(learning_problem=lp))
+                  quality_func=F1()
+                  )
     drill.train(balanced_examples)
     exit(1)
     # Vanilla testing

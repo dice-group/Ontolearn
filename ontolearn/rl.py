@@ -16,15 +16,18 @@ from torch import nn
 import numpy as np
 import functools
 from torch.functional import F
-from typing import List, Any, Set, Tuple, Iterable
+from typing import List, Any, Set, Tuple, Iterable, Optional
 from collections import namedtuple, deque
 from torch.nn.init import xavier_normal_
 from itertools import chain
 import matplotlib.pyplot as plt
 from torch.optim.lr_scheduler import ExponentialLR
 
+from owlapy.model import OWLNamedIndividual,OWLClassExpression
+from ontolearn.search import HeuristicOrderedNode, OENode, TreeNode, LengthOrderedNode, LBLNode, LBLSearchTree, \
+    QualityOrderedNode
 
-class Drill(AbstractDrill):
+class Drill(AbstractDrill, BaseConceptLearner):
     def __init__(self, knowledge_base,
                  path_of_embeddings=None,
                  drill_first_out_channels=32,
@@ -56,19 +59,143 @@ class Drill(AbstractDrill):
             m = torch.load(pretrained_model_path, torch.device('cpu'))
             self.heuristic_func.net.load_state_dict(m)
 
-    def init_training(self,pos_uri, neg_uri):
-        print('init_training')
-        print(pos_uri)
-        print(neg_uri)
+        BaseConceptLearner.__init__(self, knowledge_base=knowledge_base,
+                                    refinement_operator=refinement_operator,
+                                    quality_func=quality_func,
+                                    heuristic_func=self.heuristic_func,
+                                    terminate_on_goal=terminate_on_goal,
+                                    iter_bound=iter_bound,
+                                    max_num_of_concepts_tested=max_num_of_concepts_tested,
+                                    max_runtime=max_runtime)
+        print('Number of parameters: ', sum([p.numel() for p in self.heuristic_func.net.parameters()]))
+
+    def best_hypotheses(self, n=10) -> Iterable:
+        print('best_hypotheses')
         exit(1)
-        print(type(pos_uri))
-        for i in pos_uri:
-            print(type(i))
-            break
-        print('BLOCKER I NEED string representation of individuals to get embeddings')
+
+    def clean(self):
+        print('clean')
         exit(1)
+
+    def downward_refinement(self, *args, **kwargs):
+        print('downward_refinement')
+        exit(1)
+
+    def fit(self, *args, **kwargs):
+        print('fit')
+        exit(1)
+
+    def show_search_tree(self, heading_step: str, top_n: int = 10) -> None:
+        print('show_search_tree')
+        exit(1)
+
+    def init_training(self, pos_uri: Set[OWLNamedIndividual], neg_uri: Set[OWLNamedIndividual]) -> None:
+        """
+
+        @param pos_uri: A set of positive examples where each example corresponds to a string representation of an individual/instance.
+        @param neg_uri: A set of negative examples where each example corresponds to a string representation of an individual/instance.
+        @return:
+        """
+        # 1.
+        self.reward_func.pos = pos_uri
+        self.reward_func.neg = neg_uri
+
+        # 2. Obtain embeddings of positive and negative examples.
+        self.emb_pos = torch.tensor(
+            self.instance_embeddings.loc[[owl_indv.get_iri().as_str() for owl_indv in pos_uri]].values,
+            dtype=torch.float32)
+        self.emb_neg = torch.tensor(
+            self.instance_embeddings.loc[[owl_indv.get_iri().as_str() for owl_indv in neg_uri]].values,
+            dtype=torch.float32)
+
+        # (3) Take the mean of positive and negative examples and reshape it into (1,1,embedding_dim) for mini batching.
+        self.emb_pos = torch.mean(self.emb_pos, dim=0)
+        self.emb_pos = self.emb_pos.view(1, 1, self.emb_pos.shape[0])
+        self.emb_neg = torch.mean(self.emb_neg, dim=0)
+        self.emb_neg = self.emb_neg.view(1, 1, self.emb_neg.shape[0])
+        # Sanity checking
+        if torch.isnan(self.emb_pos).any() or torch.isinf(self.emb_pos).any():
+            print(string_balanced_pos)
+            raise ValueError('invalid value detected in E+,\n{0}'.format(self.emb_pos))
+        if torch.isnan(self.emb_neg).any() or torch.isinf(self.emb_neg).any():
+            raise ValueError('invalid value detected in E-,\n{0}'.format(self.emb_neg))
+
+        # Default exploration exploitation tradeoff.
+        self.epsilon = 1
+
     def terminate_training(self):
         print('terminate_training')
+
+    def make_node(self, c: OWLClassExpression, parent_node: Optional[OENode] = None, is_root: bool = False) -> OENode:
+        # This is copyied from CELOE.
+        # This function should be defined in abstract_concept_learner
+        r = OENode(c, self.kb.cl(c), parent_node=parent_node, is_root=is_root)
+        return r
+    def rl_learning_loop(self, pos_uri: Set[str], neg_uri: Set[str]) -> List[float]:
+        """
+        RL agent learning loop over learning problem defined
+        @param pos_uri: A set of URIs indicating E^+
+        @param neg_uri: A set of URIs indicating E^-
+
+        Computation
+
+        1. Initialize training
+
+        2. Learning loop: Stopping criteria
+            ***self.num_episode** OR ***self.epsilon < self.epsilon_min***
+
+        2.1. Perform sequence of actions
+
+        2.2. Decrease exploration rate
+
+        2.3. Form experiences
+
+        2.4. Experience Replay
+
+        2.5. Return sum of actions
+
+        @return: List of sum of rewards per episode.
+        """
+
+        # (1)
+        self.init_training(pos_uri=pos_uri, neg_uri=neg_uri)
+
+        root = self.make_node(_concept_operand_sorter.sort(self.start_class), is_root=True)
+        self._add_node(root, None)
+
+        exit(1)
+
+        root = self.operator.get_node(self.start_class, root=True)
+        # (2) Assign embeddings of root/first state.
+        self.assign_embeddings(root)
+
+        sum_of_rewards_per_actions = []
+        log_every_n_episodes = int(self.num_episode * .1) + 1
+
+        # (2)
+        for th in range(self.num_episode):
+            # (2.1)
+            sequence_of_states, rewards = self.sequence_of_actions(root)
+
+            if th % log_every_n_episodes == 0:
+                self.logger.info(
+                    '{0}.th iter. SumOfRewards: {1:.2f}\tEpsilon:{2:.2f}\t|ReplayMem.|:{3}'.format(th, sum(rewards),
+                                                                                                   self.epsilon, len(
+                            self.experiences)))
+
+            # (2.2)
+            self.epsilon -= self.epsilon_decay
+            if self.epsilon < self.epsilon_min:
+                break
+
+            # (2.3)
+            self.form_experiences(sequence_of_states, rewards)
+
+            # (2.4)
+            if th % self.num_epochs_per_replay == 0 and len(self.experiences) > 1:
+                self.learn_from_replay_memory()
+            sum_of_rewards_per_actions.append(sum(rewards))
+        return sum_of_rewards_per_actions
 
 
 class DrillAverage(AbstractDrill, BaseConceptLearner):
