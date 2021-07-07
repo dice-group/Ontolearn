@@ -17,7 +17,7 @@ from .base_concept_learner import BaseConceptLearner
 from .core.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter
 from owlapy.util import OrderedOWLObject
 from .heuristics import CELOEHeuristic, OCELHeuristic
-from .learning_problem import PosNegLPStandard
+from .learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from .metrics import F1
 from .refinement_operators import LengthBasedRefinement
 from .search import SearchTreePriorityQueue
@@ -46,7 +46,7 @@ class CELOE(BaseConceptLearner[OENode]):
     search_tree: Dict[OWLClassExpression, TreeNode[OENode]]
     heuristic_queue: 'SortedSet[OENode]'
     best_descriptions: EvaluatedDescriptionSet[OENode, QualityOrderedNode]
-    _learning_problem: Optional[PosNegLPStandard]
+    _learning_problem: Optional[EncodedPosNegLPStandard]
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
@@ -145,7 +145,7 @@ class CELOE(BaseConceptLearner[OENode]):
         self.clean()
         assert not self.search_tree
         assert isinstance(learning_problem, PosNegLPStandard)
-        self._learning_problem = learning_problem
+        self._learning_problem = learning_problem.encode_kb(self.kb)
 
         if max_runtime is not None:
             self._max_runtime = max_runtime
@@ -291,11 +291,11 @@ class CELOE(BaseConceptLearner[OENode]):
                 logger.info("minimum horizontal expansion is now %d", self.min_he)
 
     def clean(self):
+        self.heuristic_queue.clear()
+        self.best_descriptions.clean()
+        self.search_tree.clear()
         self.max_he = 0
         self.min_he = 1
-        self.heuristic_queue.clear()
-        self.best_descriptions.items.clear()
-        self.search_tree.clear()
         self._learning_problem = None
         self._max_runtime = None
         super().clean()
@@ -383,15 +383,16 @@ class LengthBaseLearner(BaseConceptLearner):
         """
         self.clean()
         assert isinstance(learning_problem, AbstractLearningProblem)
+        kb_learning_problem = learning_problem.encode_kb(knowledge_base=self.kb)
         self.start_time = time.time()
         root = self.get_node(self.start_class, is_root=True)
-        self.search_tree.add_root(node=root, learning_problem=learning_problem)
+        self.search_tree.add_root(node=root, kb_learning_problem=kb_learning_problem)
         self._number_of_tested_concepts = 1
         for j in range(1, self.iter_bound):
             most_promising = self.next_node_to_expand(j)
             for ref in self.downward_refinement(most_promising):
                 goal_found = self.search_tree.add_node(node=ref, parent_node=most_promising,
-                                                       learning_problem=learning_problem)
+                                                       kb_learning_problem=kb_learning_problem)
                 self._number_of_tested_concepts += 1
                 if goal_found:
                     if self.terminate_on_goal:

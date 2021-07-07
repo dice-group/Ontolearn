@@ -48,7 +48,7 @@ def test_lengthbasedlearner():
                 ignored_concepts=concepts_to_ignore,
                 verbose=True)
 
-            returned_val = model.fit(PosNegLPStandard(knowledge_base=model.kb, pos=p, neg=n))
+            returned_val = model.fit(PosNegLPStandard(pos=p, neg=n))
             assert returned_val == model
 
 

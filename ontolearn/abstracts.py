@@ -18,20 +18,9 @@ from .utils import read_csv
 _N = TypeVar('_N')  #:
 
 
-class AbstractLearningProblem(metaclass=ABCMeta):
-    """Abstract learning problem"""
-    __slots__ = 'kb'
-
-    kb: 'AbstractKnowledgeBase'
-
-    @abstractmethod
-    def __init__(self, knowledge_base: 'AbstractKnowledgeBase'):
-        """create a new abstract learning problem
-
-        Args:
-            knowledge_base: the knowledge base
-        """
-        self.kb = knowledge_base
+class EncodedLearningProblem(metaclass=ABCMeta):
+    """Encoded Abstract learning problem for use in Scorers"""
+    __slots__ = ()
 
 
 class AbstractScorer(Generic[_N], metaclass=ABCMeta):
@@ -47,7 +36,7 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def score(self, instances, learning_problem: AbstractLearningProblem) -> Tuple[bool, Optional[float]]:
+    def score(self, instances, learning_problem: EncodedLearningProblem) -> Tuple[bool, Optional[float]]:
         """Quality score for a set of instances with regard to the learning problem
 
         Args:
@@ -60,7 +49,7 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
         """
         pass
 
-    def apply(self, node: 'AbstractNode', instances, learning_problem: AbstractLearningProblem) -> bool:
+    def apply(self, node: 'AbstractNode', instances, learning_problem: EncodedLearningProblem) -> bool:
         """Apply the quality function to a search tree node after calculating the quality score on the given instances
 
         Args:
@@ -71,7 +60,7 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
         Returns:
             True if the quality function was applied successfully
         """
-        assert isinstance(learning_problem, AbstractLearningProblem)
+        assert isinstance(learning_problem, EncodedLearningProblem)
         assert isinstance(node, AbstractNode)
         from ontolearn.search import _NodeQuality
         assert isinstance(node, _NodeQuality)
@@ -94,7 +83,7 @@ class AbstractHeuristic(Generic[_N], metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def apply(self, node: _N, instances, learning_problem: AbstractLearningProblem):
+    def apply(self, node: _N, instances, learning_problem: EncodedLearningProblem):
         """Apply the heuristic on a search tree node and set its heuristic property to the calculated value
 
         Args:
@@ -283,6 +272,21 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
         pass
 
 
+class AbstractLearningProblem(metaclass=ABCMeta):
+    """Abstract learning problem"""
+    __slots__ = ()
+
+    @abstractmethod
+    def __init__(self):
+        """create a new abstract learning problem"""
+        pass
+
+    @abstractmethod
+    def encode_kb(self, knowledge_base: AbstractKnowledgeBase) -> 'EncodedLearningProblem':
+        """encode the learning problem into the knowledge base"""
+        pass
+
+
 class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
     """Abstract search tree for the Length based learner"""
 
@@ -296,13 +300,13 @@ class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def add_node(self, node: _N, parent_node: _N, learning_problem: AbstractLearningProblem):
+    def add_node(self, node: _N, parent_node: _N, kb_learning_problem: EncodedLearningProblem):
         """Add a node to the search tree
 
         Args:
             node: node to add
             parent_node: parent of that node
-            learning_problem: underlying learning problem to compare the quality to
+            kb_learning_problem: underlying learning problem to compare the quality to
         """
         pass
 
@@ -334,12 +338,12 @@ class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def add_root(self, node: _N, learning_problem: AbstractLearningProblem):
+    def add_root(self, node: _N, kb_learning_problem: EncodedLearningProblem):
         """Add the root node to the search tree
 
         Args:
             node: root node to add
-            learning_problem: underlying learning problem to compare the quality to
+            kb_learning_problem: underlying learning problem to compare the quality to
         """
         pass
 

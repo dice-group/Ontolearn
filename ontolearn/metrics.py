@@ -1,7 +1,7 @@
 from typing import Final, Tuple
 
 from .abstracts import AbstractScorer
-from .learning_problem import PosNegLPStandard
+from .learning_problem import EncodedPosNegLPStandard
 
 
 class Recall(AbstractScorer):
@@ -9,7 +9,7 @@ class Recall(AbstractScorer):
 
     name: Final = 'Recall'
 
-    def score(self, instances, learning_problem: PosNegLPStandard):
+    def score(self, instances, learning_problem: EncodedPosNegLPStandard):
         if len(instances) == 0:
             return False, 0
         tp = len(learning_problem.kb_pos.intersection(instances))
@@ -26,7 +26,7 @@ class Precision(AbstractScorer):
 
     name: Final = 'Precision'
 
-    def score(self, instances, learning_problem: PosNegLPStandard):
+    def score(self, instances, learning_problem: EncodedPosNegLPStandard):
         if len(instances) == 0:
             return False, 0
         tp = len(learning_problem.kb_pos.intersection(instances))
@@ -43,7 +43,7 @@ class F1(AbstractScorer):
 
     name: Final = 'F1'
 
-    def score(self, instances, learning_problem: PosNegLPStandard):
+    def score(self, instances, learning_problem: EncodedPosNegLPStandard):
         if len(instances) == 0:
             return False, 0
 
@@ -90,7 +90,7 @@ class Accuracy(AbstractScorer):
 
     name: Final = 'Accuracy'
 
-    def score(self, instances, learning_problem: PosNegLPStandard) -> Tuple[bool, float]:
+    def score(self, instances, learning_problem: EncodedPosNegLPStandard) -> Tuple[bool, float]:
         if len(instances) == 0:
             return False, 0
 
