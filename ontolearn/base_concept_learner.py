@@ -1,7 +1,7 @@
 import logging
 import time
 from abc import ABCMeta, abstractmethod
-from typing import List, Set, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, cast
+from typing import List, Set, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, cast, Callable
 
 import numpy as np
 import pandas as pd
@@ -15,6 +15,7 @@ from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, Abstra
 from .utils import oplogging
 
 _N = TypeVar('_N', bound=AbstractConceptNode)  #:
+Factory = Callable
 
 logger = logging.getLogger(__name__)
 
@@ -40,14 +41,13 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
           ∀  H \\in \\hypotheses: { (K \\wedge H \\models E^+) \\wedge  \\neg( K \\wedge H \\models E^-) }.
 
     """
-    __slots__ = 'kb', 'lp', 'operator', 'heuristic_func', 'quality_func', 'max_num_of_concepts_tested', \
-                'terminate_on_goal', 'max_child_length', 'goal_found', 'start_class', 'iter_bound', 'max_runtime', \
-                'start_time', 'name'
+    __slots__ = 'kb', 'operator', 'heuristic_func', 'quality_func', 'max_num_of_concepts_tested', \
+                'terminate_on_goal', 'max_child_length', 'start_class', 'iter_bound', 'max_runtime', \
+                'start_time', '_goal_found', '_number_of_tested_concepts'
 
     name: ClassVar[str]
 
     kb: AbstractKnowledgeBase
-    lp: AbstractLearningProblem
     operator: BaseRefinement
     heuristic_func: AbstractHeuristic
     quality_func: AbstractScorer
@@ -64,7 +64,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     @abstractmethod
     def __init__(self,
                  knowledge_base: Optional[AbstractKnowledgeBase] = None,
-                 learning_problem: Optional[AbstractLearningProblem] = None,
                  refinement_operator: Optional[BaseRefinement] = None,
                  heuristic_func: Optional[AbstractHeuristic] = None,
                  quality_func: Optional[AbstractScorer] = None,
@@ -79,7 +78,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         Args:
             knowledge_base: knowledge base which is used to learn and test concepts. required, but can be taken
                 from the learning problem if not specified
-            learning_problem: learning problem describing the positive and negative individuals to describe
             refinement_operator: operator used to generate refinements. defaults to `ModifiedCELOERefinement`
             heuristic_func: function to guide the search heuristic. defaults to `CELOEHeuristic`
             quality_func: function to evaluate the quality of solution concepts. defaults to `F1`
@@ -92,7 +90,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             root_concept: the start concept to begin the search from. defaults to OWL Thing
         """
         self.kb = knowledge_base
-        self.lp = learning_problem
         self.operator = refinement_operator
         self.heuristic_func = heuristic_func
         self.quality_func = quality_func
@@ -104,7 +101,8 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         self.max_child_length = max_child_length
         # self.store_onto_flag = False
         self.start_time = None
-        self.goal_found = False
+        self._goal_found = False
+        self._number_of_tested_concepts = 0
         # self.storage_path, _ = create_experiment_folder()
         # self.last_path = None  # path of lastly stored onto.
         self.__default_values()
@@ -114,10 +112,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         """
         Fill all params with plausible default values.
         """
-        if self.kb is None:
-            assert isinstance(self.lp, AbstractLearningProblem)
-            self.kb = self.lp.kb
-
         if self.max_child_length is None:
             self.max_child_length = 10
 
@@ -133,9 +127,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         if self.quality_func is None:
             from ontolearn.metrics import F1
-            from ontolearn.learning_problem import PosNegLPStandard
-            assert isinstance(self.lp, PosNegLPStandard)
-            self.quality_func = F1(self.lp)
+            self.quality_func = F1()
 
         if self.start_class is None:
             self.start_class = self.kb.thing
@@ -161,8 +153,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         """
         Clear all states of the concept learner
         """
-        self.quality_func.clean()
-        self.heuristic_func.clean()
+        pass
 
     def train(self, *args, **kwargs):
         pass
@@ -181,7 +172,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         if logger.isEnabledFor(logging.INFO):
             logger.info('Elapsed runtime: {0} seconds'.format(round(time.time() - self.start_time, 4)))
             logger.info('Number of concepts tested:{0}'.format(self.number_of_tested_concepts))
-            if self.goal_found:
+            if self._goal_found:
                 t = 'A goal concept found:{0}'.format(self.goal_found)
             else:
                 t = 'Current best concept:{0}'.format(list(self.best_hypotheses(n=1))[0])
@@ -320,7 +311,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
     @property
     def number_of_tested_concepts(self):
-        return self.quality_func.applied
+        return self._number_of_tested_concepts
 
     def save_best_hypothesis(self, n: int = 10, path='Predictions', rdf_format='rdfxml') -> None:
         """Serialise the best hypotheses to a file

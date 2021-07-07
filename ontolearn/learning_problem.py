@@ -62,3 +62,8 @@ class PosNegLPStandard(AbstractLearningProblem):
         self.kb_neg = kb_neg
         self.kb_all = kb_all
         self.kb_diff = kb_all.difference(kb_pos.union(kb_neg))
+
+
+class PosNegUndLP(AbstractLearningProblem):
+    ...
+    # XXX: TODO

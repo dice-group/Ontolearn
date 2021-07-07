@@ -3,8 +3,9 @@ from typing import Final
 import numpy as np
 
 from .abstracts import AbstractScorer, AbstractHeuristic, AbstractOEHeuristicNode, AbstractLearningProblem
+from .learning_problem import PosNegLPStandard, PosNegUndLP
 from .metrics import Accuracy
-from .search import LBLNode, OENode
+from .search import LBLNode
 
 
 class CELOEHeuristic(AbstractHeuristic[AbstractOEHeuristicNode]):
@@ -32,15 +33,12 @@ class CELOEHeuristic(AbstractHeuristic[AbstractOEHeuristicNode]):
             expansionPenaltyFactor: value that is substracted from the heuristic for each horizontal expansion of this
                 node
         """
-        super().__init__()
         self.gainBonusFactor = gainBonusFactor
         self.startNodeBonus = startNodeBonus
         self.nodeRefinementPenalty = nodeRefinementPenalty
         self.expansionPenaltyFactor = expansionPenaltyFactor
 
-    def apply(self, node: AbstractOEHeuristicNode, instances=None):
-        self.applied += 1
-
+    def apply(self, node: AbstractOEHeuristicNode, instances, learning_problem: AbstractLearningProblem):
         heuristic_val = 0
         heuristic_val += node.quality
 
@@ -55,34 +53,33 @@ class CELOEHeuristic(AbstractHeuristic[AbstractOEHeuristicNode]):
         heuristic_val -= node.refinement_count * self.nodeRefinementPenalty
         node.heuristic = round(heuristic_val, 5)
 
-    def clean(self):
-        super().clean()
-
 
 class DLFOILHeuristic(AbstractHeuristic):
-    def __init__(self, pos=None, neg=None, unlabelled=None):
-        super().__init__(pos, neg, unlabelled)
-        self.name = 'custom_dl_foil'
-        # @todo Needs to be tested.
+    __slots__ = ()
 
-    def apply(self, node, instances=None):
-        self.applied += 1
+    name: Final = 'custom_dl_foil'
+
+    def __init__(self):
+        # @todo Needs to be tested.
+        ...
+
+    def apply(self, node, instances, learning_problem: PosNegUndLP):
 
         instances = node.concept.instances
         if len(instances) == 0:
             node.heuristic = 0
             return False
 
-        p_1 = len(self.pos.intersection(instances))  # number of positive examples covered by the concept
-        n_1 = len(self.neg.intersection(instances))  # number of negative examples covered by the concept
-        u_1 = len(self.unlabelled.intersection(instances))
+        p_1 = len(learning_problem.kb_pos.intersection(instances))  # number of positive examples covered by the concept
+        n_1 = len(learning_problem.kb_neg.intersection(instances))  # number of negative examples covered by the concept
+        u_1 = len(learning_problem.kb_unlabelled.intersection(instances))
         term1 = np.log(p_1 / (p_1 + n_1 + u_1))
 
-        if parent_node:
-            parent_inst = parent_node.concept.instances
-            p_0 = len(self.pos.intersection(parent_inst))  # number of positive examples covered by the concept
-            n_0 = len(self.neg.intersection(parent_inst))  # number of negative examples covered by the concept
-            u_0 = len(self.unlabelled.intersection(parent_inst))
+        if node.parent_node:
+            parent_inst = node.parent_node.individuals
+            p_0 = len(learning_problem.kb_pos.intersection(parent_inst))  # number of positive examples covered by the concept
+            n_0 = len(learning_problem.kb_neg.intersection(parent_inst))  # number of negative examples covered by the concept
+            u_0 = len(learning_problem.kb_unlabelled.intersection(parent_inst))
             term2 = np.log(p_0 / (p_0 + n_0 + u_0))
         else:
             term2 = 0
@@ -92,30 +89,27 @@ class DLFOILHeuristic(AbstractHeuristic):
 
 
 class OCELHeuristic(AbstractHeuristic):
-    __slots__ = 'lp', 'accuracy', 'gainBonusFactor', 'expansionPenaltyFactor'
+    __slots__ = 'accuracy', 'gainBonusFactor', 'expansionPenaltyFactor'
 
     name: Final = 'OCEL_Heuristic'
 
-    def __init__(self, *, learning_problem: AbstractLearningProblem, gainBonusFactor: float = 0.5,
+    def __init__(self, *, gainBonusFactor: float = 0.5,
                  expansionPenaltyFactor: float = 0.02):
         super().__init__()
-        self.lp = learning_problem
-        self.accuracy_method = Accuracy(learning_problem=learning_problem)
+        self.accuracy_method = Accuracy()
 
         self.gainBonusFactor = gainBonusFactor   # called alpha in the paper and gainBonusFactor in the original code
         self.expansionPenaltyFactor = expansionPenaltyFactor  # called beta in the paper
 
-    def apply(self, node, instances=None):
+    def apply(self, node, instances, learning_problem: PosNegLPStandard):
         assert isinstance(node, LBLNode), "OCEL Heuristic requires instances information of a node"
-
-        self.applied += 1
 
         heuristic_val = 0
         accuracy_gain = 0
-        _, accuracy = self.accuracy_method.score(instances)
+        _, accuracy = self.accuracy_method.score(instances, learning_problem)
 
         if node.parent_node is not None:
-            _, parent_accuracy = self.accuracy_method.score(node.parent_node.individuals)
+            _, parent_accuracy = self.accuracy_method.score(node.parent_node.individuals, learning_problem)
             accuracy_gain = accuracy - parent_accuracy
 
         heuristic_val += accuracy + self.gainBonusFactor * accuracy_gain - node.h_exp * self.expansionPenaltyFactor
