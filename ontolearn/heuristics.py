@@ -2,8 +2,8 @@ from typing import Final
 
 import numpy as np
 
-from .abstracts import AbstractScorer, AbstractHeuristic, AbstractOEHeuristicNode, AbstractLearningProblem
-from .learning_problem import PosNegLPStandard, PosNegUndLP
+from .abstracts import AbstractScorer, AbstractHeuristic, AbstractOEHeuristicNode, EncodedLearningProblem
+from .learning_problem import EncodedPosNegUndLP, EncodedPosNegLPStandard
 from .metrics import Accuracy
 from .search import LBLNode
 
@@ -38,7 +38,7 @@ class CELOEHeuristic(AbstractHeuristic[AbstractOEHeuristicNode]):
         self.nodeRefinementPenalty = nodeRefinementPenalty
         self.expansionPenaltyFactor = expansionPenaltyFactor
 
-    def apply(self, node: AbstractOEHeuristicNode, instances, learning_problem: AbstractLearningProblem):
+    def apply(self, node: AbstractOEHeuristicNode, instances, learning_problem: EncodedLearningProblem):
         heuristic_val = 0
         heuristic_val += node.quality
 
@@ -63,7 +63,7 @@ class DLFOILHeuristic(AbstractHeuristic):
         # @todo Needs to be tested.
         ...
 
-    def apply(self, node, instances, learning_problem: PosNegUndLP):
+    def apply(self, node, instances, learning_problem: EncodedPosNegUndLP):
 
         instances = node.concept.instances
         if len(instances) == 0:
@@ -101,7 +101,7 @@ class OCELHeuristic(AbstractHeuristic):
         self.gainBonusFactor = gainBonusFactor   # called alpha in the paper and gainBonusFactor in the original code
         self.expansionPenaltyFactor = expansionPenaltyFactor  # called beta in the paper
 
-    def apply(self, node, instances, learning_problem: PosNegLPStandard):
+    def apply(self, node, instances, learning_problem: EncodedPosNegLPStandard):
         assert isinstance(node, LBLNode), "OCEL Heuristic requires instances information of a node"
 
         heuristic_val = 0

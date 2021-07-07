@@ -11,7 +11,7 @@ from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.util import as_index, OrderedOWLObject
 from superprop import super_prop
 from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree, \
-    AbstractConceptNode, AbstractLearningProblem
+    AbstractConceptNode, AbstractLearningProblem, EncodedLearningProblem
 
 _N = TypeVar('_N')  #:
 
@@ -424,21 +424,22 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
         self.items_in_queue.put((-n.heuristic, HeuristicOrderedNode(n)))  # gets the smallest one.
         self.nodes[n.concept] = n
 
-    def add_root(self, node, learning_problem):
+    def add_root(self, node, kb_learning_problem):
         assert node.is_root
         assert not self.nodes
-        self.quality_func.apply(node, node.individuals, learning_problem)
-        self.heuristic_func.apply(node, node.individuals, learning_problem)
+        self.quality_func.apply(node, node.individuals, kb_learning_problem)
+        self.heuristic_func.apply(node, node.individuals, kb_learning_problem)
         self.items_in_queue.put((-node.heuristic, HeuristicOrderedNode(node)))  # gets the smallest one.
         self.nodes[node.concept] = node
 
-    def add_node(self, *, node: LBLNode, parent_node: LBLNode, learning_problem: AbstractLearningProblem) -> Optional[bool]:
+    def add_node(self, *, node: LBLNode, parent_node: LBLNode, kb_learning_problem: EncodedLearningProblem) -> Optional[bool]:
         """
         Add a node into the search tree after calculating heuristic value given its parent.
 
         Args:
             node: A Node object
             parent_node: A Node object
+            kb_learning_problem: the encoded learning problem to compare the quality on
 
         Returns:
             True if node is a "goal node", i.e. quality_metric(node)=1.0
@@ -450,7 +451,7 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
         """
         if node.concept in self.nodes and node.parent_node != parent_node:
             old_heuristic = node.heuristic
-            self.heuristic_func.apply(node, node.individuals, learning_problem)
+            self.heuristic_func.apply(node, node.individuals, kb_learning_problem)
             new_heuristic = node.heuristic
             if new_heuristic > old_heuristic:
                 node.parent_node.remove_child(node)
@@ -460,10 +461,10 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
                 self.nodes[node.concept] = node
         else:
             # @todos reconsider it.
-            self.quality_func.apply(node, node.individuals, learning_problem)
+            self.quality_func.apply(node, node.individuals, kb_learning_problem)
             if node.quality == 0:
                 return False
-            self.heuristic_func.apply(node, node.individuals, learning_problem)
+            self.heuristic_func.apply(node, node.individuals, kb_learning_problem)
             self.items_in_queue.put((-node.heuristic, HeuristicOrderedNode(node)))  # gets the smallest one.
             self.nodes[node.concept] = node
             parent_node.add_child(node)
