@@ -1,7 +1,7 @@
 from typing import Final, Tuple
 
 from .abstracts import AbstractScorer
-from .learning_problem import PosNegLPStandard
+from .learning_problem import EncodedPosNegLPStandard
 
 
 class Recall(AbstractScorer):
@@ -9,13 +9,11 @@ class Recall(AbstractScorer):
 
     name: Final = 'Recall'
 
-    lp: PosNegLPStandard
-
-    def score(self, instances):
+    def score(self, instances, learning_problem: EncodedPosNegLPStandard):
         if len(instances) == 0:
             return False, 0
-        tp = len(self.lp.kb_pos.intersection(instances))
-        fn = len(self.lp.kb_pos.difference(instances))
+        tp = len(learning_problem.kb_pos.intersection(instances))
+        fn = len(learning_problem.kb_pos.difference(instances))
         try:
             recall = tp / (tp + fn)
             return True, round(recall, 5)
@@ -28,13 +26,11 @@ class Precision(AbstractScorer):
 
     name: Final = 'Precision'
 
-    lp: PosNegLPStandard
-
-    def score(self, instances):
+    def score(self, instances, learning_problem: EncodedPosNegLPStandard):
         if len(instances) == 0:
             return False, 0
-        tp = len(self.lp.kb_pos.intersection(instances))
-        fp = len(self.lp.kb_neg.intersection(instances))
+        tp = len(learning_problem.kb_pos.intersection(instances))
+        fp = len(learning_problem.kb_neg.intersection(instances))
         try:
             precision = tp / (tp + fp)
             return True, round(precision, 5)
@@ -47,17 +43,15 @@ class F1(AbstractScorer):
 
     name: Final = 'F1'
 
-    lp: PosNegLPStandard
-
-    def score(self, instances):
+    def score(self, instances, learning_problem: EncodedPosNegLPStandard):
         if len(instances) == 0:
             return False, 0
 
-        tp = len(self.lp.kb_pos.intersection(instances))
-        # tn = len(self.lp.kb_neg.difference(instances))
+        tp = len(learning_problem.kb_pos.intersection(instances))
+        # tn = len(learning_problem.kb_neg.difference(instances))
 
-        fp = len(self.lp.kb_neg.intersection(instances))
-        fn = len(self.lp.kb_pos.difference(instances))
+        fp = len(learning_problem.kb_neg.intersection(instances))
+        fn = len(learning_problem.kb_pos.difference(instances))
 
         try:
             recall = tp / (tp + fn)
@@ -96,20 +90,18 @@ class Accuracy(AbstractScorer):
 
     name: Final = 'Accuracy'
 
-    lp: PosNegLPStandard
-
-    def score(self, instances) -> Tuple[bool, float]:
+    def score(self, instances, learning_problem: EncodedPosNegLPStandard) -> Tuple[bool, float]:
         if len(instances) == 0:
             return False, 0
 
-        tp = len(self.lp.kb_pos.intersection(instances))
-        tn = len(self.lp.kb_neg.difference(instances))
+        tp = len(learning_problem.kb_pos.intersection(instances))
+        tn = len(learning_problem.kb_neg.difference(instances))
 
         # FP corresponds to CN in Learning OWL Class Expressions OCEL paper, i.e., cn = |R(C) \AND
         # E^-| covered negatives
-        fp = len(self.lp.kb_neg.intersection(instances))
+        fp = len(learning_problem.kb_neg.intersection(instances))
         # FN corresponds to UP in Learning OWL Class Expressions OCEL paper, i.e., up = |E^+ \ R(C)|
-        fn = len(self.lp.kb_pos.difference(instances))
+        fn = len(learning_problem.kb_pos.difference(instances))
         # uncovered positives
 
         acc = (tp + tn) / (tp + tn + fp + fn)

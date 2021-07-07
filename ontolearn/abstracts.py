@@ -18,46 +18,30 @@ from .utils import read_csv
 _N = TypeVar('_N')  #:
 
 
-class AbstractLearningProblem(metaclass=ABCMeta):
-    """Abstract learning problem"""
-    __slots__ = 'kb'
-
-    kb: 'AbstractKnowledgeBase'
-
-    @abstractmethod
-    def __init__(self, knowledge_base: 'AbstractKnowledgeBase'):
-        """create a new abstract learning problem
-
-        Args:
-            knowledge_base: the knowledge base
-        """
-        self.kb = knowledge_base
+class EncodedLearningProblem(metaclass=ABCMeta):
+    """Encoded Abstract learning problem for use in Scorers"""
+    __slots__ = ()
 
 
 class AbstractScorer(Generic[_N], metaclass=ABCMeta):
     """
     An abstract class for quality functions.
     """
-    __slots__ = 'lp', 'applied'
+    __slots__ = ()
 
     name: ClassVar
 
-    def __init__(self, learning_problem: AbstractLearningProblem):
-        """Create a new quality function
-
-        Args:
-            learning_problem: learning problem containing the ideal solution. the score function uses the learning
-                problem and the provided matching instances to calculate the quality score
-        """
-        self.lp = learning_problem
-        self.applied = 0
+    def __init__(self, *args, **kwargs):
+        """Create a new quality function"""
+        pass
 
     @abstractmethod
-    def score(self, instances) -> Tuple[bool, Optional[float]]:
+    def score(self, instances, learning_problem: EncodedLearningProblem) -> Tuple[bool, Optional[float]]:
         """Quality score for a set of instances with regard to the learning problem
 
         Args:
             instances (set): instances to calculate a quality score for
+            learning_problem: underlying learning problem to compare the quality to
 
         Returns:
              Tuple, first position indicating if the function could be applied, second position the quality value
@@ -65,58 +49,49 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
         """
         pass
 
-    def apply(self, node: 'AbstractNode', instances) -> bool:
+    def apply(self, node: 'AbstractNode', instances, learning_problem: EncodedLearningProblem) -> bool:
         """Apply the quality function to a search tree node after calculating the quality score on the given instances
 
         Args:
             node: search tree node to set the quality on
             instances (set): instances to calculate the quality for
+            learning_problem: underlying learning problem to compare the quality to
 
         Returns:
             True if the quality function was applied successfully
         """
+        assert isinstance(learning_problem, EncodedLearningProblem)
         assert isinstance(node, AbstractNode)
         from ontolearn.search import _NodeQuality
         assert isinstance(node, _NodeQuality)
-        self.applied += 1
 
-        ret, q = self.score(instances)
+        ret, q = self.score(instances, learning_problem)
         if q is not None:
             node.quality = q
         return ret
-
-    def clean(self):
-        """Reset the state of the quality function, for example statistic counters"""
-        self.applied = 0
 
 
 class AbstractHeuristic(Generic[_N], metaclass=ABCMeta):
     """Abstract base class for heuristic functions.
 
     Heuristic functions can guide the search process."""
-    __slots__ = 'applied'
-
-    applied: int
+    __slots__ = ()
 
     @abstractmethod
     def __init__(self):
         """Create a new heuristic function"""
-        self.applied = 0
+        pass
 
     @abstractmethod
-    def apply(self, node: _N, instances=None):
+    def apply(self, node: _N, instances, learning_problem: EncodedLearningProblem):
         """Apply the heuristic on a search tree node and set its heuristic property to the calculated value
 
         Args:
             node: node to set the heuristic on
-            instances (set): set of instances covered by this node
+            instances (set, optional): set of instances covered by this node
+            learning_problem: underlying learning problem to compare the heuristic to
         """
         pass
-
-    @abstractmethod
-    def clean(self):
-        """Reset the state of the heuristic function, for example statistic counters"""
-        self.applied = 0
 
 
 _KB = TypeVar('_KB', bound='AbstractKnowledgeBase')  #:
@@ -231,6 +206,16 @@ class AbstractOEHeuristicNode(metaclass=ABCMeta):
     def refinement_count(self) -> int:
         pass
 
+    @property
+    @abstractmethod
+    def heuristic(self) -> Optional[float]:
+        pass
+
+    @heuristic.setter
+    @abstractmethod
+    def heuristic(self, v: float):
+        pass
+
 
 class AbstractConceptNode(metaclass=ABCMeta):
     """Abstract search tree node which has a concept"""
@@ -287,6 +272,21 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
         pass
 
 
+class AbstractLearningProblem(metaclass=ABCMeta):
+    """Abstract learning problem"""
+    __slots__ = ()
+
+    @abstractmethod
+    def __init__(self):
+        """create a new abstract learning problem"""
+        pass
+
+    @abstractmethod
+    def encode_kb(self, knowledge_base: AbstractKnowledgeBase) -> 'EncodedLearningProblem':
+        """encode the learning problem into the knowledge base"""
+        pass
+
+
 class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
     """Abstract search tree for the Length based learner"""
 
@@ -300,12 +300,13 @@ class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def add_node(self, node: _N, parent_node: _N):
+    def add_node(self, node: _N, parent_node: _N, kb_learning_problem: EncodedLearningProblem):
         """Add a node to the search tree
 
         Args:
             node: node to add
             parent_node: parent of that node
+            kb_learning_problem: underlying learning problem to compare the quality to
         """
         pass
 
@@ -337,11 +338,12 @@ class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def add_root(self, node: _N):
+    def add_root(self, node: _N, kb_learning_problem: EncodedLearningProblem):
         """Add the root node to the search tree
 
         Args:
             node: root node to add
+            kb_learning_problem: underlying learning problem to compare the quality to
         """
         pass
 
