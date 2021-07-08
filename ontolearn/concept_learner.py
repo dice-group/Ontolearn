@@ -538,10 +538,8 @@ class Drill(AbstractDrill, BaseConceptLearner):
         # (1)
         for _ in range(self.num_of_sequential_actions):
             assert isinstance(current_state, RL_State)
-            print(current_state)
             # (1.1) Observe Next RL states, i.e., refine an OWL class expression
             next_rl_states = list(self.apply_rho(current_state))
-
 
             # (1.2)
             if len(next_rl_states) == 0:  # DEAD END
@@ -675,17 +673,18 @@ class Drill(AbstractDrill, BaseConceptLearner):
             # (2) if input node has not seen before, assign embeddings.
             if rl_state.embeddings is None:
                 assert rl_state.instances is None
-                # OWL INDV REPRESENTATION
-                rl_state.instances = set(self.kb.individuals(rl_state.concept))
+                assert isinstance(rl_state.concept, OWLClassExpression)
+                instances = list(self.kb.individuals(rl_state.concept))
                 try:
-                    assert len(rl_state.instances) > 0
+                    assert len(instances) > 0
                 except AssertionError:
                     print(rl_state)
-                    print(rl_state.instances)
                     print(rl_state.concept)
                     for i in self.kb.individuals(rl_state.concept):
                         print(i)
                     raise
+
+                rl_state.instances = instances
                 # BITSET REPRESENTATION
                 rl_state.instances_set = self.kb.individuals_set(rl_state.concept)
                 str_idx = [i.get_iri().as_str() for i in rl_state.instances]
@@ -699,9 +698,8 @@ class Drill(AbstractDrill, BaseConceptLearner):
             else:
                 """ Embeddings already assigned."""
 
-
                 try:
-                    assert len(rl_state.instances)>0
+                    assert len(rl_state.instances) > 0
                 except:
                     print(rl_state)
                     raise
