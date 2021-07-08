@@ -12,12 +12,12 @@ from owlapy.model import OWLClassExpression
 from owlapy.render import DLSyntaxObjectRenderer
 from sortedcontainers import SortedSet
 from . import KnowledgeBase
-from .abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic
+from .abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic, AbstractLearningProblem
 from .base_concept_learner import BaseConceptLearner
 from .core.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter
 from owlapy.util import OrderedOWLObject
 from .heuristics import CELOEHeuristic, OCELHeuristic
-from .learning_problem import PosNegLPStandard
+from .learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from .metrics import F1
 from .refinement_operators import LengthBasedRefinement
 from .search import SearchTreePriorityQueue
@@ -39,7 +39,8 @@ from torch import nn
 import numpy as np
 import functools
 from torch.functional import F
-from typing import List, Any, Set, Tuple, Iterable, Optional
+from typing import List, Any, Set, Tuple, Iterable, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional, Generator, \
+    SupportsFloat
 from collections import namedtuple, deque
 from torch.nn.init import xavier_normal_
 from itertools import chain
@@ -48,7 +49,8 @@ from torch.optim.lr_scheduler import ExponentialLR
 
 from owlapy.model import OWLNamedIndividual, OWLClassExpression
 from ontolearn.search import HeuristicOrderedNode, OENode, TreeNode, LengthOrderedNode, LBLNode, LBLSearchTree, \
-    QualityOrderedNode
+    QualityOrderedNode, RL_State
+from ontolearn.abstracts import AbstractNode
 
 pd.set_option('display.max_columns', 100)
 
@@ -59,7 +61,7 @@ _concept_operand_sorter = ConceptOperandSorter()
 
 class CELOE(BaseConceptLearner[OENode]):
     __slots__ = 'best_descriptions', 'max_he', 'min_he', 'best_only', 'calculate_min_max', 'heuristic_queue', \
-                'search_tree'
+                'search_tree', '_learning_problem', '_max_runtime'
 
     name = 'celoe_python'
 
@@ -73,10 +75,10 @@ class CELOE(BaseConceptLearner[OENode]):
     search_tree: Dict[OWLClassExpression, TreeNode[OENode]]
     heuristic_queue: 'SortedSet[OENode]'
     best_descriptions: EvaluatedDescriptionSet[OENode, QualityOrderedNode]
+    _learning_problem: Optional[EncodedPosNegLPStandard]
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
-                 learning_problem: PosNegLPStandard,
                  refinement_operator: Optional[BaseRefinement[OENode]] = None,
                  quality_func: Optional[AbstractScorer] = None,
                  heuristic_func: Optional[AbstractHeuristic] = None,
@@ -88,7 +90,6 @@ class CELOE(BaseConceptLearner[OENode]):
                  best_only: bool = False,
                  calculate_min_max: bool = True):
         super().__init__(knowledge_base=knowledge_base,
-                         learning_problem=learning_problem,
                          refinement_operator=refinement_operator,
                          quality_func=quality_func,
                          heuristic_func=heuristic_func,
@@ -106,6 +107,9 @@ class CELOE(BaseConceptLearner[OENode]):
 
         self.max_he = 0
         self.min_he = 1
+        # TODO: CD: This could be defined in BaseConceptLearner as it is used in all classes that inherits from BaseConceptLearner
+        self._learning_problem = None
+        self._max_runtime = None
 
     def next_node_to_expand(self, step: int) -> OENode:
         if not self.best_only:
@@ -156,22 +160,27 @@ class CELOE(BaseConceptLearner[OENode]):
 
             node.increment_h_exp()
             node.refinement_count = len(refinements)
-            self.heuristic_func.apply(node)
+            self.heuristic_func.apply(node, None, self._learning_problem)
 
         def make_node_with_parent(c: OWLClassExpression):
             return self.make_node(c, parent_node=node)
 
         return map(make_node_with_parent, refinements)
 
-    def fit(self,
+    def fit(self, learning_problem: PosNegLPStandard,
             max_runtime: Optional[int] = None):
         """
         Find hypotheses that explain pos and neg.
         """
+        self.clean()
         assert not self.search_tree
+        assert isinstance(learning_problem, PosNegLPStandard)
+        self._learning_problem = learning_problem.encode_kb(self.kb)
 
         if max_runtime is not None:
-            self.max_runtime = max_runtime
+            self._max_runtime = max_runtime
+        else:
+            self._max_runtime = self.max_runtime
         root = self.make_node(_concept_operand_sorter.sort(self.start_class), is_root=True)
         self._add_node(root, None)
         assert len(self.heuristic_queue) == 1
@@ -204,7 +213,7 @@ class CELOE(BaseConceptLearner[OENode]):
                 # This is purely a statistical function, it does not influence CELOE
                 self.update_min_max_horiz_exp(most_promising)
 
-            if time.time() - self.start_time > self.max_runtime:
+            if time.time() - self.start_time > self._max_runtime:
                 return self.terminate()
 
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
@@ -227,12 +236,13 @@ class CELOE(BaseConceptLearner[OENode]):
         self.search_tree[ref.concept] = TreeNode(ref, tree_parent, is_root=ref.is_root)
         ref_individuals = self.kb.individuals_set(ref.concept)
         ref.individuals_count = len(ref_individuals)
-        self.quality_func.apply(ref, ref_individuals)  # AccuracyOrTooWeak(n)
+        self.quality_func.apply(ref, ref_individuals, self._learning_problem)  # AccuracyOrTooWeak(n)
+        self._number_of_tested_concepts += 1
         if ref.quality == 0:  # > too weak
             return False
         assert 0 <= ref.quality <= 1.0
         # TODO: expression rewriting
-        self.heuristic_func.apply(ref, ref_individuals)
+        self.heuristic_func.apply(ref, ref_individuals, self._learning_problem)
         if self.best_descriptions.maybe_add(ref):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("Better description found: %s", ref)
@@ -314,11 +324,13 @@ class CELOE(BaseConceptLearner[OENode]):
                 logger.info("minimum horizontal expansion is now %d", self.min_he)
 
     def clean(self):
+        self.heuristic_queue.clear()
+        self.best_descriptions.clean()
+        self.search_tree.clear()
         self.max_he = 0
         self.min_he = 1
-        self.heuristic_queue.clear()
-        self.best_descriptions.items.clear()
-        self.search_tree.clear()
+        self._learning_problem = None
+        self._max_runtime = None
         super().clean()
 
 
@@ -352,7 +364,7 @@ class Drill(AbstractDrill, BaseConceptLearner):
                  max_runtime=None, num_of_sequential_actions=None, num_episode=None, num_workers=32):
         AbstractDrill.__init__(self,
                                path_of_embeddings=path_of_embeddings,
-                               reward_func=Reward,
+                               reward_func=Reward(),
                                max_len_replay_memory=max_len_replay_memory,
                                batch_size=batch_size, epsilon_min=epsilon_min,
                                num_epochs_per_replay=num_epochs_per_replay,
@@ -388,42 +400,41 @@ class Drill(AbstractDrill, BaseConceptLearner):
 
         self.best_only = best_only
         self.calculate_min_max = calculate_min_max
+        self._learning_problem = None
 
         self.max_he = 0
         self.min_he = 1
 
     def best_hypotheses(self, n=10) -> Iterable:
-        print('best_hypotheses')
-        exit(1)
+        ValueError('best_hypotheses')
 
     def clean(self):
-        print('clean')
-        exit(1)
+        ValueError('clean')
 
     def downward_refinement(self, *args, **kwargs):
-        print('downward_refinement')
-        exit(1)
+        ValueError('downward_refinement')
 
     def fit(self, *args, **kwargs):
-        print('fit')
-        exit(1)
+        ValueError('fit')
 
     def show_search_tree(self, heading_step: str, top_n: int = 10) -> None:
-        print('show_search_tree')
-        exit(1)
+        ValueError('show_search_tree')
+
+    def terminate_training(self):
+        ValueError('terminate_training')
 
     def init_training(self, pos_uri: Set[OWLNamedIndividual], neg_uri: Set[OWLNamedIndividual]) -> None:
         """
+        Initialize training.
 
-        @param pos_uri: A set of positive examples where each example corresponds to a string representation of an individual/instance.
-        @param neg_uri: A set of negative examples where each example corresponds to a string representation of an individual/instance.
+
         @return:
         """
         # 1.
-        self.reward_func.pos = pos_uri
-        self.reward_func.neg = neg_uri
-        self.lp = PosNegLPStandard(knowledge_base=self.kb, pos=pos_uri, neg=neg_uri)
-        self.quality_func.set_lp(self.lp)
+        # Generate a Learning Problem
+        self._learning_problem = PosNegLPStandard(pos=pos_uri, neg=neg_uri).encode_kb(self.kb)
+        # Update REWARD FUNC FOR each learning problem
+        self.reward_func.lp = self._learning_problem
 
         # 2. Obtain embeddings of positive and negative examples.
         self.emb_pos = torch.tensor(
@@ -448,69 +459,55 @@ class Drill(AbstractDrill, BaseConceptLearner):
         # Default exploration exploitation tradeoff.
         self.epsilon = 1
 
-    def terminate_training(self):
-        print('terminate_training')
+    def create_rl_state(self, c: OWLClassExpression, parent_state: Optional[RL_State] = None,
+                        is_root: bool = False) -> RL_State:
+        # Create State
+        rl_state = RL_State(c, parent_state=parent_state, is_root=is_root)
+        # Assign Embeddings to it. Later, assign_embeddings can be also done in RL_STATE
+        self.assign_embeddings(rl_state)
+        rl_state.length = self.kb.cl(c)
+        return rl_state
 
-    def make_node(self, c: OWLClassExpression, parent_node: Optional[OENode] = None, is_root: bool = False) -> OENode:
-        # This is copyied from CELOE.
-        # This function should be defined in abstract_concept_learner
-        r = OENode(c, self.kb.cl(c), parent_node=parent_node, is_root=is_root)
-        return r
+    def apply_rho(self, rl_state: RL_State) -> Generator:
+        """
+        Refine an OWL Class expression \\|= Observing next possible states
 
-    def add_root(self, ref: OENode, tree_parent: Optional[TreeNode[OENode]]):
-        self.search_tree[ref.concept] = TreeNode(ref, tree_parent, is_root=ref.is_root)
-        ref_individuals = self.kb.individuals_set(ref.concept)
-        ref.individuals_count = len(ref_individuals)
-        self.quality_func.apply(ref, ref_individuals)  # AccuracyOrTooWeak(n)
-        if ref.quality == 0:  # > too weak
-            raise ValueError(f'Root Concept can not have quality 0::{ref}')
+        Computation O(N).
+
+        1. Generate concepts by refining a node
+        1.1. Compute allowed length of refinements
+        1.2. Convert concepts if concepts do not belong to  self.concepts_to_ignore
+             Note that          i.str not in self.concepts_to_ignore => O(1) if a set is being used.
+        3. Return Generator
+        """
+        assert isinstance(rl_state, RL_State)
+        # 1.
+        # (1.1)
+        # self.kb.cl(node.concept)
+        length = rl_state.length + 3 if rl_state.length + 3 <= self.max_child_length else self.max_child_length
+        # (1.2)
+        for i in self.operator.refine(rl_state.concept, max_length=length):  # O(N)
+            # TODO: CURRENTLY IGNORED the checking not wanted concetpts if i.str not in self.concepts_to_ignore:  # O(1)
+            yield self.create_rl_state(i, parent_state=rl_state)  # O(1)
 
     def rl_learning_loop(self, pos_uri: Set[str], neg_uri: Set[str]) -> List[float]:
-        """
-        RL agent learning loop over learning problem defined
-        @param pos_uri: A set of URIs indicating E^+
-        @param neg_uri: A set of URIs indicating E^-
-
-        Computation
-
-        1. Initialize training
-
-        2. Learning loop: Stopping criteria
-            ***self.num_episode** OR ***self.epsilon < self.epsilon_min***
-
-        2.1. Perform sequence of actions
-
-        2.2. Decrease exploration rate
-
-        2.3. Form experiences
-
-        2.4. Experience Replay
-
-        2.5. Return sum of actions
-
-        @return: List of sum of rewards per episode.
-        """
-
-        # (1)
+        # (1) Initialize
         self.init_training(pos_uri=pos_uri, neg_uri=neg_uri)
-        # (2) Create
-        root = self.make_node(_concept_operand_sorter.sort(self.start_class), is_root=True)
-        self.add_root(root, None)
-        # (2) Assign embeddings of root/first state.
-        self.assign_embeddings(root)
+        root_rl_state = self.create_rl_state(self.start_class, is_root=True)
+        self.quality_func.apply(root_rl_state, root_rl_state.instances_set, self._learning_problem)
+
         sum_of_rewards_per_actions = []
         log_every_n_episodes = int(self.num_episode * .1) + 1
 
         # (2)
         for th in range(self.num_episode):
             # (2.1)
-            sequence_of_states, rewards = self.sequence_of_actions(root)
+            sequence_of_states, rewards = self.sequence_of_actions(root_rl_state)
 
             if th % log_every_n_episodes == 0:
-                self.logger.info(
-                    '{0}.th iter. SumOfRewards: {1:.2f}\tEpsilon:{2:.2f}\t|ReplayMem.|:{3}'.format(th, sum(rewards),
-                                                                                                   self.epsilon, len(
-                            self.experiences)))
+                print('{0}.th iter. SumOfRewards: {1:.2f}\tEpsilon:{2:.2f}\t|ReplayMem.|:{3}'.format(th, sum(rewards),
+                                                                                                     self.epsilon, len(
+                        self.experiences)))
 
             # (2.2)
             self.epsilon -= self.epsilon_decay
@@ -525,6 +522,345 @@ class Drill(AbstractDrill, BaseConceptLearner):
                 self.learn_from_replay_memory()
             sum_of_rewards_per_actions.append(sum(rewards))
         return sum_of_rewards_per_actions
+
+    def sequence_of_actions(self, root_rl_state: RL_State) -> Tuple[
+        List[Tuple[AbstractNode, AbstractNode]], List[SupportsFloat]]:
+        assert isinstance(root_rl_state, RL_State)
+
+        current_state = root_rl_state
+        path_of_concepts = []
+        rewards = []
+
+        assert len(current_state.embeddings) > 0  # Embeddings are initialized
+        assert current_state.quality > 0
+        assert current_state.heuristic is None
+
+        # (1)
+        for _ in range(self.num_of_sequential_actions):
+            assert isinstance(current_state, RL_State)
+            print(current_state)
+            # (1.1) Observe Next RL states, i.e., refine an OWL class expression
+            next_rl_states = list(self.apply_rho(current_state))
+
+
+            # (1.2)
+            if len(next_rl_states) == 0:  # DEAD END
+                assert (current_state.length + 3) <= self.max_child_length
+                print('No nexst state')
+                break
+            # (1.3)
+            next_selected_rl_state = self.exploration_exploitation_tradeoff(current_state, next_rl_states)
+            print(f'CURRENT:{current_state}')
+            print(f'CURRENT:{next_selected_rl_state}')
+            exit(1)
+
+            print(next_selected_rl_state)
+
+            if len(next_selected_rl_state.instances) == 0:  # Dead End
+                print('BREAK')
+                print(next_selected_rl_state)
+                break
+            # (1.4) Remember the concept path
+            path_of_concepts.append((current_state, next_selected_rl_state))
+
+            # (1.5)
+            rewards.append(self.reward_func.apply(current_state, next_selected_rl_state))
+            # (1.6)
+            current_state = next_selected_rl_state
+        print('asd')
+        exit(1)
+        # (2)
+        return path_of_concepts, rewards
+
+    def next_node_to_expand(self, t: int = None) -> AbstractNode:
+        """
+        Return a node that maximizes the heuristic function at time t
+        @param t:
+        @return:
+        """
+        if self.verbose > 1:
+            self.search_tree.show_search_tree(self.start_class, t)
+        return self.search_tree.get_most_promising()
+
+    def form_experiences(self, state_pairs: List, rewards: List) -> None:
+        """
+        Form experiences from a sequence of concepts and corresponding rewards.
+
+        state_pairs - a list of tuples containing two consecutive states
+        reward      - a list of reward.
+
+        Gamma is 1.
+
+        Return
+        X - a list of embeddings of current concept, next concept, positive examples, negative examples
+        y - argmax Q value.
+        """
+
+        for th, consecutive_states in enumerate(state_pairs):
+            e, e_next = consecutive_states
+            self.experiences.append(
+                (e, e_next, max(rewards[th:])))  # given e, e_next, Q val is the max Q value reachable.
+
+    def learn_from_replay_memory(self) -> None:
+        """
+        Learning by replaying memory
+        @return:
+        """
+
+        current_state_batch, next_state_batch, q_values = self.experiences.retrieve()
+        current_state_batch = torch.cat(current_state_batch, dim=0)
+        next_state_batch = torch.cat(next_state_batch, dim=0)
+        q_values = torch.Tensor(q_values)
+
+        try:
+            assert current_state_batch.shape[1] == next_state_batch.shape[1] == self.emb_pos.shape[1] == \
+                   self.emb_neg.shape[1]
+
+        except AssertionError as e:
+            print(current_state_batch.shape)
+            print(next_state_batch.shape)
+            print(self.emb_pos.shape)
+            print(self.emb_neg.shape)
+            print('Wrong format.')
+            print(e)
+            raise
+
+        assert current_state_batch.shape[2] == next_state_batch.shape[2] == self.emb_pos.shape[2] == self.emb_neg.shape[
+            2]
+        dataset = PrepareBatchOfTraining(current_state_batch=current_state_batch,
+                                         next_state_batch=next_state_batch,
+                                         p=self.emb_pos, n=self.emb_neg, q=q_values)
+        num_experience = len(dataset)
+        data_loader = torch.utils.data.DataLoader(dataset,
+                                                  batch_size=self.batch_size, shuffle=True,
+                                                  num_workers=self.num_workers)
+        print(f'Number of experiences:{num_experience}')
+        print('DQL agent is learning via experience replay')
+        self.heuristic_func.net.train()
+        for m in range(self.num_epochs_per_replay):
+            total_loss = 0
+            for X, y in data_loader:
+                self.optimizer.zero_grad()  # zero the gradient buffers
+                # forward
+                predicted_q = self.heuristic_func.net.forward(X)
+                # loss
+                loss = self.heuristic_func.net.loss(predicted_q, y)
+                total_loss += loss.item()
+                # compute the derivative of the loss w.r.t. the parameters using backpropagation
+                loss.backward()
+                # clip gradients if gradients are killed. =>torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
+                self.optimizer.step()
+        self.heuristic_func.net.train().eval()
+
+    def update_search(self, concepts, predicted_Q_values):
+        """
+        @param concepts:
+        @param predicted_Q_values:
+        @return:
+        """
+        # simple loop.
+        for child_node, pred_Q in zip(concepts, predicted_Q_values):
+            child_node.heuristic = pred_Q
+            self.search_tree.quality_func.apply(child_node)
+            if child_node.quality > 0:  # > too weak, ignore.
+                self.search_tree.add(child_node)
+            if child_node.quality == 1:
+                return child_node
+
+    def assign_embeddings(self, rl_state: RL_State) -> None:
+        assert isinstance(rl_state, RL_State)
+
+        # (1) Detect mode
+        if self.representation_mode == 'averaging':
+            # (2) if input node has not seen before, assign embeddings.
+            if rl_state.embeddings is None:
+                assert rl_state.instances is None
+                # OWL INDV REPRESENTATION
+                rl_state.instances = set(self.kb.individuals(rl_state.concept))
+                try:
+                    assert len(rl_state.instances) > 0
+                except AssertionError:
+                    print(rl_state)
+                    print(rl_state.instances)
+                    print(rl_state.concept)
+                    for i in self.kb.individuals(rl_state.concept):
+                        print(i)
+                    raise
+                # BITSET REPRESENTATION
+                rl_state.instances_set = self.kb.individuals_set(rl_state.concept)
+                str_idx = [i.get_iri().as_str() for i in rl_state.instances]
+                if len(str_idx) == 0:
+                    emb = torch.zeros(self.sample_size, self.instance_embeddings.shape[1])
+                else:
+                    emb = torch.tensor(self.instance_embeddings.loc[str_idx].values, dtype=torch.float32)
+                    emb = torch.mean(emb, dim=0)
+                emb = emb.view(1, self.sample_size, self.instance_embeddings.shape[1])
+                rl_state.embeddings = emb
+            else:
+                """ Embeddings already assigned."""
+
+
+                try:
+                    assert len(rl_state.instances)>0
+                except:
+                    print(rl_state)
+                    raise
+
+                try:
+                    assert rl_state.embeddings.shape == (1, self.sample_size, self.instance_embeddings.shape[1])
+                except AssertionError as e:
+                    print(e)
+                    print(rl_state)
+                    print(rl_state.embeddings.shape)
+                    print((1, self.sample_size, self.instance_embeddings.shape[1]))
+                    raise
+        elif self.representation_mode == 'sampling':
+            if node.embeddings is None:
+                str_idx = [get_full_iri(i).replace('\n', '') for i in node.concept.instances]
+                if len(str_idx) >= self.sample_size:
+                    sampled_str_idx = random.sample(str_idx, self.sample_size)
+                    emb = torch.tensor(self.instance_embeddings.loc[sampled_str_idx].values, dtype=torch.float32)
+                else:
+                    num_rows_to_fill = self.sample_size - len(str_idx)
+                    emb = torch.tensor(self.instance_embeddings.loc[str_idx].values, dtype=torch.float32)
+                    emb = torch.cat((torch.zeros(num_rows_to_fill, self.instance_embeddings.shape[1]), emb))
+                emb = emb.view(1, self.sample_size, self.instance_embeddings.shape[1])
+                node.embeddings = emb
+            else:
+                """ Embeddings already assigned."""
+                try:
+                    assert node.embeddings.shape == (1, self.sample_size, self.instance_embeddings.shape[1])
+                except AssertionError:
+                    print(node)
+                    print(self.sample_size)
+                    print(node.embeddings.shape)
+                    print((1, self.sample_size, self.instance_embeddings.shape[1]))
+                    raise ValueError
+        else:
+            raise ValueError
+
+        # @todo remove this testing in experiments.
+        if torch.isnan(rl_state.embeddings).any() or torch.isinf(rl_state.embeddings).any():
+            # No individual contained in the input concept.
+            # Sanity checking.
+            raise ValueError
+
+    def save_weights(self):
+        """
+        Save pytorch weights.
+        @return:
+        """
+        # Save model.
+        torch.save(self.heuristic_func.net.state_dict(),
+                   self.storage_path + '/{0}.pth'.format(self.heuristic_func.name))
+
+    def exploration_exploitation_tradeoff(self, current_state: AbstractNode,
+                                          next_states: List[AbstractNode]) -> AbstractNode:
+        """
+        Exploration vs Exploitation tradeoff at finding next state.
+        (1) Exploration
+        (2) Exploitation
+        """
+        if np.random.random() < self.epsilon:
+            next_state = random.choice(next_states)
+            self.assign_embeddings(next_state)
+        else:
+            next_state = self.exploitation(current_state, next_states)
+        self.quality_func.apply(next_state, next_state.instances_set, self._learning_problem)
+        return next_state
+
+    def exploitation(self, current_state: AbstractNode, next_states: List[AbstractNode]) -> AbstractNode:
+        """
+        Find next node that is assigned with highest predicted Q value.
+
+        (1) Predict Q values : predictions.shape => torch.Size([n, 1]) where n = len(next_states)
+
+        (2) Find the index of max value in predictions
+
+        (3) Use the index to obtain next state.
+
+        (4) Return next state.
+        """
+        predictions: torch.Tensor = self.predict_Q(current_state, next_states)
+        argmax_id = int(torch.argmax(predictions))
+        next_state = next_states[argmax_id]
+        """
+        # Sanity checking
+        print('#'*10)
+        for s, q in zip(next_states, predictions):
+            print(s, q)
+        print('#'*10)
+        print(next_state,f'\t {torch.max(predictions)}')
+        """
+        return next_state
+
+    def predict_Q(self, current_state: AbstractNode, next_states: List[AbstractNode]) -> torch.Tensor:
+        """
+        Predict promise of next states given current state.
+        @param current_state:
+        @param next_states:
+        @return: predicted Q values.
+        """
+        self.assign_embeddings(current_state)
+        assert len(next_states) > 0
+        with torch.no_grad():
+            self.heuristic_func.net.eval()
+            # create batch batch.
+            next_state_batch = []
+            for _ in next_states:
+                self.assign_embeddings(_)
+                next_state_batch.append(_.embeddings)
+            next_state_batch = torch.cat(next_state_batch, dim=0)
+            ds = PrepareBatchOfPrediction(current_state.embeddings,
+                                          next_state_batch,
+                                          self.emb_pos,
+                                          self.emb_neg)
+            predictions = self.heuristic_func.net.forward(ds.get_all())
+        return predictions
+
+    def train(self, dataset: Iterable[Tuple[str, Set, Set]], relearn_ratio: int = 2):
+        """
+        Train RL agent on learning problems with relearn_ratio.
+        @param dataset: An iterable containing training data. Each item corresponds to a tuple of string representation
+        of target concept, a set of positive examples in the form of URIs amd a set of negative examples in the form of
+        URIs, respectively.
+        @param relearn_ratio: An integer indicating the number of times dataset is iterated.
+
+        # @TODO determine Big-O
+
+        Computation
+        1. Dataset and relearn_ratio loops: Learn each problem relearn_ratio times,
+
+        2. Learning loop
+
+        3. Take post process action that implemented by subclass.
+
+        @return: self
+        """
+        # We need a better way of login,
+        print('Training starts.')
+        print(f'Training starts.\nNumber of learning problem:{len(dataset)},\t Relearn ratio:{relearn_ratio}')
+        counter = 1
+        # 1.
+        for _ in range(relearn_ratio):
+            for (alc_concept_str, positives, negatives) in dataset:
+                print(
+                    'Goal Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str,
+                                                                      len(positives), len(negatives)))
+                # 2.
+                print(f'RL training on {counter}.th learning problem starts')
+                sum_of_rewards_per_actions = self.rl_learning_loop(pos_uri=positives, neg_uri=negatives)
+
+                print(f'Sum of Rewards in first 3 trajectory:{sum_of_rewards_per_actions[:3]}')
+                print(f'Sum of Rewards in last 3 trajectory:{sum_of_rewards_per_actions[:3]}')
+                self.seen_examples.setdefault(counter, dict()).update(
+                    {'Concept': alc_concept_str, 'Positives': list(positives), 'Negatives': list(negatives)})
+
+                counter += 1
+                if counter % 100 == 0:
+                    self.save_weights()
+                # 3.
+        return self.terminate_training()
 
 
 class DrillHeuristic():
@@ -624,7 +960,6 @@ class LengthBaseLearner(BaseConceptLearner):
 
     def __init__(self, *,
                  knowledge_base: KnowledgeBase,
-                 learning_problem: PosNegLPStandard,
                  refinement_operator: Optional[BaseRefinement] = None,
                  search_tree: Optional[LBLSearchTree] = None,
                  quality_func: Optional[AbstractScorer] = None,
@@ -640,14 +975,13 @@ class LengthBaseLearner(BaseConceptLearner):
         if refinement_operator is None:
             refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base)
         if quality_func is None:
-            quality_func = F1(learning_problem=learning_problem)
+            quality_func = F1()
         if heuristic_func is None:
             heuristic_func = CELOEHeuristic()
         if search_tree is None:
             search_tree = SearchTreePriorityQueue(quality_func=quality_func, heuristic_func=heuristic_func)
 
         super().__init__(knowledge_base=knowledge_base,
-                         learning_problem=learning_problem,
                          refinement_operator=refinement_operator,
                          quality_func=quality_func,
                          heuristic_func=heuristic_func,
@@ -672,17 +1006,23 @@ class LengthBaseLearner(BaseConceptLearner):
                        if i not in self.concepts_to_ignore)
         return refinements
 
-    def fit(self):
+    def fit(self, learning_problem: AbstractLearningProblem):
         """
         Find hypotheses that explain pos and neg.
         """
+        self.clean()
+        assert isinstance(learning_problem, AbstractLearningProblem)
+        kb_learning_problem = learning_problem.encode_kb(knowledge_base=self.kb)
         self.start_time = time.time()
         root = self.get_node(self.start_class, is_root=True)
-        self.search_tree.add_root(node=root)
+        self.search_tree.add_root(node=root, kb_learning_problem=kb_learning_problem)
+        self._number_of_tested_concepts = 1
         for j in range(1, self.iter_bound):
             most_promising = self.next_node_to_expand(j)
             for ref in self.downward_refinement(most_promising):
-                goal_found = self.search_tree.add_node(node=ref, parent_node=most_promising)
+                goal_found = self.search_tree.add_node(node=ref, parent_node=most_promising,
+                                                       kb_learning_problem=kb_learning_problem)
+                self._number_of_tested_concepts += 1
                 if goal_found:
                     if self.terminate_on_goal:
                         return self.terminate()
@@ -691,10 +1031,9 @@ class LengthBaseLearner(BaseConceptLearner):
         return self.terminate()
 
     def clean(self):
-        self.quality_func.clean()
-        self.heuristic_func.clean()
         self.search_tree.clean()
         self.concepts_to_ignore.clear()
+        super().clean()
 
     def best_hypotheses(self, n=10) -> Iterable[LBLNode]:
         yield from self.search_tree.get_top_n(n)

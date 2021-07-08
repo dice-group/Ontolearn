@@ -250,6 +250,9 @@ class EvaluatedDescriptionSet(Generic[_N, _O]):
             return True
         return False
 
+    def clean(self):
+        self.items.clear()
+
     def worst(self):
         return self.items[0]
 

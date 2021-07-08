@@ -11,7 +11,7 @@ from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.util import as_index, OrderedOWLObject
 from superprop import super_prop
 from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree, \
-    AbstractConceptNode
+    AbstractConceptNode, AbstractLearningProblem, EncodedLearningProblem
 
 _N = TypeVar('_N')  #:
 
@@ -193,7 +193,7 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
              _NodeParentRef['OENode'], AbstractNode, AbstractConceptNode, AbstractOEHeuristicNode):
     __slots__ = '_concept', '_len', '_individuals_count', '_quality', '_heuristic', \
                 '_parent_ref', '_horizontal_expansion', \
-                '_refinement_count', '__weakref__', 'embeddings'
+                '_refinement_count', '__weakref__'
 
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
 
@@ -211,7 +211,6 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
         self._horizontal_expansion = length
         self._refinement_count = 0
         AbstractNode.__init__(self)
-        self.embeddings = None
 
     @property
     def h_exp(self) -> int:
@@ -240,6 +239,50 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
             f'H_exp:{self.h_exp}',
             f'|RC|:{self.refinement_count}',
             _NodeIndividualsCount.__str__(self),
+        ))
+
+
+class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, _NodeParentRef['OENode'], AbstractNode):
+    renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
+    __slots__ = '_concept', '_quality', '_heuristic', '_parent_ref', 'embeddings', 'individuals','instances_set', 'length', 'parent_state'
+
+    def __init__(self, concept: OWLClassExpression, parent_state: Optional['RL_State'] = None, is_root: bool = False,
+                 embeddings=None, instances=None, instances_set=None, length=None):
+        _NodeConcept.__init__(self, concept)
+        _NodeQuality.__init__(self)
+        _NodeHeuristic.__init__(self)
+        self.parent_state = parent_state
+        self.embeddings = embeddings  # tensor
+        self.individuals = instances  # list
+        self.instances_set = instances_set  # bitset
+        self.length = length
+
+        AbstractNode.__init__(self)
+
+    @property
+    def instances(self):
+        return self.individuals
+
+    @instances.setter
+    def instances(self, x):
+        assert isinstance(x, set)
+        self.individuals=x
+
+    def __str__(self):
+
+        if self.embeddings is None:
+            s = 'Not Init.'
+        else:
+            s = self.embeddings.shape
+
+        return "\t".join((
+            AbstractNode.__str__(self),
+            _NodeConcept.__str__(self),
+            _NodeQuality.__str__(self),
+            _NodeHeuristic.__str__(self),
+            f'|Instance|:{len(self.instances)}',
+            f'Embeddings:{s}',
+            f'Length:{self.length}',
         ))
 
 
@@ -425,21 +468,23 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
         self.items_in_queue.put((-n.heuristic, HeuristicOrderedNode(n)))  # gets the smallest one.
         self.nodes[n.concept] = n
 
-    def add_root(self, *, node: LBLNode):
+    def add_root(self, node, kb_learning_problem):
         assert node.is_root
         assert not self.nodes
-        self.quality_func.apply(node, node.individuals)
-        self.heuristic_func.apply(node)
+        self.quality_func.apply(node, node.individuals, kb_learning_problem)
+        self.heuristic_func.apply(node, node.individuals, kb_learning_problem)
         self.items_in_queue.put((-node.heuristic, HeuristicOrderedNode(node)))  # gets the smallest one.
         self.nodes[node.concept] = node
 
-    def add_node(self, *, node: LBLNode, parent_node: LBLNode) -> Optional[bool]:
+    def add_node(self, *, node: LBLNode, parent_node: LBLNode, kb_learning_problem: EncodedLearningProblem) -> Optional[
+        bool]:
         """
         Add a node into the search tree after calculating heuristic value given its parent.
 
         Args:
             node: A Node object
             parent_node: A Node object
+            kb_learning_problem: the encoded learning problem to compare the quality on
 
         Returns:
             True if node is a "goal node", i.e. quality_metric(node)=1.0
@@ -451,7 +496,7 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
         """
         if node.concept in self.nodes and node.parent_node != parent_node:
             old_heuristic = node.heuristic
-            self.heuristic_func.apply(node)
+            self.heuristic_func.apply(node, node.individuals, kb_learning_problem)
             new_heuristic = node.heuristic
             if new_heuristic > old_heuristic:
                 node.parent_node.remove_child(node)
@@ -461,10 +506,10 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
                 self.nodes[node.concept] = node
         else:
             # @todos reconsider it.
-            self.quality_func.apply(node, node.individuals)
+            self.quality_func.apply(node, node.individuals, kb_learning_problem)
             if node.quality == 0:
                 return False
-            self.heuristic_func.apply(node)
+            self.heuristic_func.apply(node, node.individuals, kb_learning_problem)
             self.items_in_queue.put((-node.heuristic, HeuristicOrderedNode(node)))  # gets the smallest one.
             self.nodes[node.concept] = node
             parent_node.add_child(node)

@@ -234,21 +234,15 @@ class LengthBasedRefinement(BaseRefinement[Node]):
                 if max_length >= other_length + self.len(ref_concept):
                     yield self.kb.intersection(concept_left + [ref_concept] + concept_right)
 
-    def refine(self, concept: OWLClass, max_length=3, apply_combinations=None) -> Iterable[OWLClass]:
+    def refine(self, concept: OWLClassExpression, max_length=3, apply_combinations=None) -> Iterable[OWLClass]:
         """
         OWLClassExpression is not used in the current impl.
         """
-        print(OWLClass)
-        print(type(concept))
-        try:
-            assert isinstance(concept, OWLClass)
-        except:
-            print(concept)
-            print(type(concept))
-            exit(1)
+        assert isinstance(concept, OWLClassExpression)
+
         if apply_combinations:
             self.apply_combinations = apply_combinations
-        if isinstance(concept, OWLClass):
+        if isinstance(concept, OWLClass): # CD: concepts with length 1
             if concept.is_owl_thing():
                 yield from self.refine_top_concept(concept, max_length)
             else:

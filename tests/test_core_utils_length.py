@@ -44,7 +44,7 @@ class Core_OWLClassExpressionLengthMetric_Test(unittest.TestCase):
         # {heinz ⊔ marie}
         self.assertEqual(le, 1)
 
-        ce = OWLObjectHasValue(property=has_child, value=i1)
+        ce = OWLObjectHasValue(property=has_child, individual=i1)
         le = cl.length(ce)
         # ∃ hasChild.{heinz}
         self.assertEqual(le, 3)

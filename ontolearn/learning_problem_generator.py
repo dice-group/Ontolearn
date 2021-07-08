@@ -109,7 +109,7 @@ class LearningProblemGenerator:
         3. Each example contains
 
         Args:
-            n: ???
+            n: number of samples
             min_num_problems:
             max_length:
             min_length:
@@ -118,7 +118,7 @@ class LearningProblemGenerator:
             search_algo:
 
         Returns:
-            ???
+            List of tuples containing the target OWLClassExpression, a set of positive examples and a set of negative examples
         """
 
         def concept_sanity_check(x):
