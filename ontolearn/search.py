@@ -244,7 +244,9 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
 
 class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, _NodeParentRef['OENode'], AbstractNode):
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
-    __slots__ = '_concept', '_quality', '_heuristic', '_parent_ref', 'embeddings', 'individuals','instances_set', 'length', 'parent_state'
+    __slots__ = '_concept', '_quality', '_heuristic', \
+                '_parent_ref', 'embeddings', 'individuals', \
+                'instances_set', 'length', 'parent_state','instances'
 
     def __init__(self, concept: OWLClassExpression, parent_state: Optional['RL_State'] = None, is_root: bool = False,
                  embeddings=None, instances=None, instances_set=None, length=None):
@@ -253,35 +255,25 @@ class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, _NodeParentRef['OENod
         _NodeHeuristic.__init__(self)
         self.parent_state = parent_state
         self.embeddings = embeddings  # tensor
-        self.individuals = instances  # list
+        self.instances = instances  # list
         self.instances_set = instances_set  # bitset
         self.length = length
 
         AbstractNode.__init__(self)
 
-    @property
-    def instances(self):
-        return self.individuals
-
-    @instances.setter
-    def instances(self, x):
-        assert isinstance(x, set)
-        self.individuals=x
-
     def __str__(self):
 
-        if self.embeddings is None:
+        if self.instances is None:
             s = 'Not Init.'
         else:
-            s = self.embeddings.shape
+            s = len(self.instances)
 
         return "\t".join((
             AbstractNode.__str__(self),
             _NodeConcept.__str__(self),
             _NodeQuality.__str__(self),
             _NodeHeuristic.__str__(self),
-            f'|Instance|:{len(self.instances)}',
-            f'Embeddings:{s}',
+            f'|Instance|:{s}',
             f'Length:{self.length}',
         ))
 
