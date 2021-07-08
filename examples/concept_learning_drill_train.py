@@ -13,8 +13,6 @@ from ontolearn.learning_problem_generator import LearningProblemGenerator
 from ontolearn.concept_learner import Drill
 from ontolearn.metrics import F1
 
-
-
 def start(args):
     kb = KnowledgeBase(path=args.path_knowledge_base)
 
@@ -24,12 +22,10 @@ def start(args):
                                                                min_num_problems=args.min_num_concepts,
                                                                num_diff_runs=1,  # This must be optimized
                                                                min_num_instances=args.min_num_instances_per_concept)
-
     drill = Drill(knowledge_base=kb,
                   path_of_embeddings=args.path_knowledge_base_embeddings,
                   refinement_operator=LengthBasedRefinement(knowledge_base=kb),
-                  quality_func=F1()
-                  )
+                  quality_func=F1())
     drill.train(balanced_examples)
     exit(1)
     # Vanilla testing

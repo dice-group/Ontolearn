@@ -58,21 +58,20 @@ for str_target_concept, examples in settings['problems'].items():
 
     typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
     typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
-    lp = PosNegLPStandard(knowledge_base=kb, pos=typed_pos, neg=typed_neg)
+    lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
 
-    qual = Accuracy(learning_problem=lp)
+    qual = Accuracy()
     heur = CELOEHeuristic(expansionPenaltyFactor=0.05, startNodeBonus=1.0, nodeRefinementPenalty=0.01)
     op = ModifiedCELOERefinement(knowledge_base=target_kb, use_negation=False, use_all_constructor=False)
 
     model = CELOE(knowledge_base=target_kb,
                   max_runtime=600,
-                  learning_problem=lp,
                   refinement_operator=op,
                   quality_func=qual,
                   heuristic_func=heur,
                   max_num_of_concepts_tested=10_000_000_000,
                   iter_bound=10_000_000_000)
-    model.fit()
+    model.fit(lp)
 
     model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
     # Get Top n hypotheses

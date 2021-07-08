@@ -131,7 +131,7 @@ class OWLOntology_Owlready2(OWLOntology):
         for i in self._onto.individuals():
             yield OWLNamedIndividual(IRI.create(i.iri))
 
-    def get_manager(self) -> OWLOntologyManager_Owlready2:
+    def get_owl_ontology_manager(self) -> OWLOntologyManager_Owlready2:
         return self._manager
 
     def get_ontology_id(self) -> OWLOntologyID:
