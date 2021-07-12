@@ -20,17 +20,15 @@ from .heuristics import CELOEHeuristic, OCELHeuristic
 from .learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from .metrics import F1
 from .refinement_operators import LengthBasedRefinement
-from .search import SearchTreePriorityQueue
 from .utils import oplogging
 from abc import ABCMeta
 from .concept_learner import BaseConceptLearner
 from .abstracts import AbstractDrill, AbstractScorer
 from .utils import *
-from .search import Node, SearchTreePriorityQueue
+from .search import Node, SearchTreePriorityQueue, DRILLSearchTreePriorityQueue
 from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction, Experience
 from .refinement_operators import LengthBasedRefinement
 from .metrics import F1
-from .heuristics import Reward
 import time
 import json
 import random
@@ -354,25 +352,28 @@ class Drill(AbstractDrill, BaseConceptLearner):
 
     def __init__(self, knowledge_base,
                  path_of_embeddings=None,
-                 drill_first_out_channels=32,
-                 refinement_operator=None, quality_func=None, gamma=None,
+                 refinement_operator=None, quality_func=None,
+                 reward_func=None, batch_size=32, num_workers=4,
+                 drill_first_out_channels=32, gamma=None,
                  pretrained_model_path=None, iter_bound=None, max_num_of_concepts_tested=None, verbose=None,
                  terminate_on_goal=True, ignored_concepts=None,
-                 max_len_replay_memory=None, batch_size=None, epsilon_decay=None, epsilon_min=None,
+                 max_len_replay_memory=None, epsilon_decay=None, epsilon_min=None,
                  num_epochs_per_replay=None, num_episodes_per_replay=None, learning_rate=None, relearn_ratio=None,
                  max_results: int = 10, best_only: bool = False, calculate_min_max: bool = True,
-                 max_runtime=None, num_of_sequential_actions=None, num_episode=None, num_workers=32):
+                 max_runtime=None, num_of_sequential_actions=None, num_episode=None):
         AbstractDrill.__init__(self,
                                path_of_embeddings=path_of_embeddings,
-                               reward_func=Reward(),
+                               reward_func=reward_func,
                                max_len_replay_memory=max_len_replay_memory,
+                               num_episodes_per_replay=num_episodes_per_replay,
                                batch_size=batch_size, epsilon_min=epsilon_min,
                                num_epochs_per_replay=num_epochs_per_replay,
                                representation_mode='averaging',
                                epsilon_decay=epsilon_decay,
                                num_of_sequential_actions=num_of_sequential_actions, num_episode=num_episode,
                                learning_rate=learning_rate,
-                               num_workers=num_workers)
+                               num_workers=num_workers, verbose=verbose
+                               )
         self.sample_size = 1
         arg_net = {'input_shape': (4 * self.sample_size, self.embedding_dim),
                    'first_out_channels': 32, 'second_out_channels': 16, 'third_out_channels': 8,
@@ -394,34 +395,140 @@ class Drill(AbstractDrill, BaseConceptLearner):
                                     max_runtime=max_runtime)
         print('Number of parameters: ', sum([p.numel() for p in self.heuristic_func.net.parameters()]))
 
-        self.search_tree = dict()
-        self.heuristic_queue = SortedSet(key=HeuristicOrderedNode)
-        self.best_descriptions = EvaluatedDescriptionSet(max_size=max_results, ordering=QualityOrderedNode)
-
-        self.best_only = best_only
-        self.calculate_min_max = calculate_min_max
+        self.search_tree = DRILLSearchTreePriorityQueue()
         self._learning_problem = None
 
-        self.max_he = 0
-        self.min_he = 1
-
     def best_hypotheses(self, n=10) -> Iterable:
-        ValueError('best_hypotheses')
+        assert self.search_tree is not None
+        assert len(self.search_tree) > 1
+        return [i for i in self.search_tree.get_top_n_nodes(n)]
 
     def clean(self):
-        ValueError('clean')
+        self.emb_pos, self.emb_neg = None, None
+        self.goal_found = False
+        self.start_time = None
+        if len(self.search_tree) != 0:
+            self.search_tree.clean()
+
+        try:
+            assert len(self.search_tree) == 0
+        except AssertionError:
+            print(len(self.search_tree))
+            exit(1)
 
     def downward_refinement(self, *args, **kwargs):
         ValueError('downward_refinement')
 
-    def fit(self, *args, **kwargs):
-        ValueError('fit')
+    def next_node_to_expand(self, t: int = None) -> RL_State:
+        """
+        Return a node that maximizes the heuristic function at time t
+        @param t:
+        @return:
+        """
+        if self.verbose > 5:
+            self.search_tree.show_search_tree(t)
+        return self.search_tree.get_most_promising()
+
+    def initialize_class_expression_learning_problem(self, pos: Set[OWLNamedIndividual], neg: Set[OWLNamedIndividual]):
+        """
+            Determine the learning problem and initialize the search.
+            1) Convert the string representation of an individuals into the owlready2 representation.
+            2) Sample negative examples if necessary.
+            3) Initialize the root and search tree.
+            """
+        self.clean()
+
+        assert isinstance(pos, set) and isinstance(neg, set)
+        assert 0 < len(pos) and 0 < len(neg)
+
+        # 1.
+        # Generate a Learning Problem
+        self._learning_problem = PosNegLPStandard(pos=pos, neg=neg).encode_kb(self.kb)
+        # 2. Obtain embeddings of positive and negative examples.
+        self.emb_pos = torch.tensor(
+            self.instance_embeddings.loc[[owl_indv.get_iri().as_str() for owl_indv in pos]].values,
+            dtype=torch.float32)
+        self.emb_neg = torch.tensor(
+            self.instance_embeddings.loc[[owl_indv.get_iri().as_str() for owl_indv in neg]].values,
+            dtype=torch.float32)
+
+        # (3) Take the mean of positive and negative examples and reshape it into (1,1,embedding_dim) for mini batching.
+        self.emb_pos = torch.mean(self.emb_pos, dim=0)
+        self.emb_pos = self.emb_pos.view(1, 1, self.emb_pos.shape[0])
+        self.emb_neg = torch.mean(self.emb_neg, dim=0)
+        self.emb_neg = self.emb_neg.view(1, 1, self.emb_neg.shape[0])
+        # Sanity checking
+        if torch.isnan(self.emb_pos).any() or torch.isinf(self.emb_pos).any():
+            print(string_balanced_pos)
+            raise ValueError('invalid value detected in E+,\n{0}'.format(self.emb_pos))
+        if torch.isnan(self.emb_neg).any() or torch.isinf(self.emb_neg).any():
+            raise ValueError('invalid value detected in E-,\n{0}'.format(self.emb_neg))
+
+        # Initialize ROOT STATE
+        root_rl_state = self.create_rl_state(self.start_class, is_root=True)
+        self.quality_func.apply(root_rl_state, root_rl_state.instances_bitset, self._learning_problem)
+        return root_rl_state
+
+    def fit(self, pos: Set[OWLNamedIndividual], neg: Set[OWLNamedIndividual], max_runtime=None):
+        if max_runtime:
+            assert isinstance(max_runtime, int)
+            self.max_runtime = max_runtime
+        # 2. Initialize learning problem
+        root_state = self.initialize_class_expression_learning_problem(pos=pos, neg=neg)
+        root_state.heuristic = 0
+        self.search_tree.add(root_state)
+        # (3) Add root state into search tree
+        self.start_time = time.time()
+        # 5. Iterate until the second criterion is satisfied.
+        for i in range(1, self.iter_bound):
+            most_promising = self.next_node_to_expand(i)
+            next_possible_states = []
+            for ref in self.apply_rho(most_promising):
+                if len(ref.instances):
+                    # Compute quality
+                    self.quality_func.apply(ref, ref.instances_bitset, self._learning_problem)
+                    if ref.quality == 0:
+                        continue
+                    next_possible_states.append(ref)
+                    if ref.quality == 1:
+                        break
+            try:
+                assert len(next_possible_states) > 0
+            except AssertionError:
+                if self.verbose > 1:
+                    print(f'DEAD END at {most_promising}')
+                continue
+
+            if len(next_possible_states) == 0:
+                # We do not need to compute Q value based on embeddings of "zeros".
+                continue
+            predicted_Q_values = self.predict_Q(current_state=most_promising, next_states=next_possible_states)
+            self.goal_found = self.update_search(next_possible_states, predicted_Q_values)
+            if self.goal_found:
+                if self.terminate_on_goal:
+                    return self.terminate()
+            if time.time() - self.start_time > self.max_runtime:
+                return self.terminate()
+            if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
+                return self.terminate()
 
     def show_search_tree(self, heading_step: str, top_n: int = 10) -> None:
         ValueError('show_search_tree')
 
     def terminate_training(self):
         ValueError('terminate_training')
+
+    def fit_from_iterable(self,
+                          dataset: List[Tuple[OWLClassExpression, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]],
+                          max_runtime: int = None, best_n_class_expressions: int = None) -> Generator:
+        for (target_ce, p, n) in dataset:
+            if self.verbose > 0:
+                print('#' * 10)
+                print(f'TARGET OWL CLASS EXPRESSION:\n{target_ce}')
+                print(f'|Sampled Positive|:{len(p)}\t|Sampled Negative|:{len(n)}')
+                print('#' * 10)
+            self.fit(pos=p, neg=n, max_runtime=max_runtime)
+            yield self.best_hypotheses(best_n_class_expressions)
 
     def init_training(self, pos_uri: Set[OWLNamedIndividual], neg_uri: Set[OWLNamedIndividual]) -> None:
         """
@@ -435,7 +542,6 @@ class Drill(AbstractDrill, BaseConceptLearner):
         self._learning_problem = PosNegLPStandard(pos=pos_uri, neg=neg_uri).encode_kb(self.kb)
         # Update REWARD FUNC FOR each learning problem
         self.reward_func.lp = self._learning_problem
-
         # 2. Obtain embeddings of positive and negative examples.
         self.emb_pos = torch.tensor(
             self.instance_embeddings.loc[[owl_indv.get_iri().as_str() for owl_indv in pos_uri]].values,
@@ -483,44 +589,90 @@ class Drill(AbstractDrill, BaseConceptLearner):
         assert isinstance(rl_state, RL_State)
         # 1.
         # (1.1)
-        # self.kb.cl(node.concept)
         length = rl_state.length + 3 if rl_state.length + 3 <= self.max_child_length else self.max_child_length
         # (1.2)
-        for i in self.operator.refine(rl_state.concept, max_length=length):  # O(N)
+        for i in self.operator.refine(rl_state.concept):  # O(N)
             # TODO: CURRENTLY IGNORED the checking not wanted concetpts if i.str not in self.concepts_to_ignore:  # O(1)
             yield self.create_rl_state(i, parent_state=rl_state)  # O(1)
 
-    def rl_learning_loop(self, pos_uri: Set[str], neg_uri: Set[str]) -> List[float]:
-        # (1) Initialize
+    def learn_from_illustration(self, sequence_of_goal_path: List[RL_State]):
+        """
+        sequence_of_goal_path: ⊤,Parent,Parent ⊓ Daughter
+        """
+
+        current_state = sequence_of_goal_path.pop(0)
+        rewards = []
+        sequence_of_states = []
+        while len(sequence_of_goal_path) > 0:
+            self.assign_embeddings(current_state)
+            current_state.length = self.kb.cl(current_state.concept)
+            if current_state.quality is None:
+                self.quality_func.apply(current_state, current_state.instances_bitset, self._learning_problem)
+
+            next_state = sequence_of_goal_path.pop(0)
+            self.assign_embeddings(next_state)
+            next_state.length = self.kb.cl(next_state.concept)
+            if next_state.quality is None:
+                self.quality_func.apply(next_state, next_state.instances_bitset, self._learning_problem)
+
+            sequence_of_states.append((current_state, next_state))
+            rewards.append(self.reward_func.apply(current_state, next_state))
+            current_state = next_state
+
+        for x in range(2):
+            self.form_experiences(sequence_of_states, rewards)
+        self.learn_from_replay_memory()
+
+    def rl_learning_loop(self, pos_uri: Set[OWLNamedIndividual], neg_uri: Set[OWLNamedIndividual],
+                         goal_path: List[RL_State] = None) -> List[float]:
+        """
+        Standard RL training loop
+
+        1. Initialize RL environment for training
+
+        2. Training Loop
+        """
+        # 2.
+        # (1) Initialize RL environment for training
         self.init_training(pos_uri=pos_uri, neg_uri=neg_uri)
         root_rl_state = self.create_rl_state(self.start_class, is_root=True)
-        self.quality_func.apply(root_rl_state, root_rl_state.instances_set, self._learning_problem)
-
+        self.quality_func.apply(root_rl_state, root_rl_state.instances_bitset, self._learning_problem)
         sum_of_rewards_per_actions = []
         log_every_n_episodes = int(self.num_episode * .1) + 1
+        # (2) Goal trajectory demonstration
+        if goal_path:
+            self.learn_from_illustration(goal_path)
 
-        # (2)
+        # (3)
         for th in range(self.num_episode):
             # (2.1)
             sequence_of_states, rewards = self.sequence_of_actions(root_rl_state)
 
+            if self.verbose >= 10:
+                print('#' * 10, end='')
+                print(f'{th}\t.th Sequence of Actions', end='')
+                print('#' * 10)
+                for step, (current_state, next_state) in enumerate(sequence_of_states):
+                    print(f'{step}. Transition \n{current_state}\n----->\n{next_state}')
+                    print(f'Reward:{rewards[step]}')
+
             if th % log_every_n_episodes == 0:
-                print('{0}.th iter. SumOfRewards: {1:.2f}\tEpsilon:{2:.2f}\t|ReplayMem.|:{3}'.format(th, sum(rewards),
-                                                                                                     self.epsilon, len(
-                        self.experiences)))
-
-            # (2.2)
-            self.epsilon -= self.epsilon_decay
-            if self.epsilon < self.epsilon_min:
-                break
-
-            # (2.3)
+                if self.verbose >= 1:
+                    print('{0}.th iter. SumOfRewards: {1:.2f}\tEpsilon:{2:.2f}\t|ReplayMem.|:{3}'.format(th, sum(rewards),
+                                                                                                         self.epsilon, len(
+                            self.experiences)))
+            # (2.2) Form experiences for Experience Replay
             self.form_experiences(sequence_of_states, rewards)
-
-            # (2.4)
-            if th % self.num_epochs_per_replay == 0 and len(self.experiences) > 1:
-                self.learn_from_replay_memory()
             sum_of_rewards_per_actions.append(sum(rewards))
+
+            # (2.3) Experience Replay
+            if th % self.num_episodes_per_replay == 0:
+                self.learn_from_replay_memory()
+            # 2.4  Epsilon greedy => Exploration Exploitation
+            if self.epsilon < 0:
+                break
+            self.epsilon -= self.epsilon_decay
+
         return sum_of_rewards_per_actions
 
     def sequence_of_actions(self, root_rl_state: RL_State) -> Tuple[
@@ -540,45 +692,20 @@ class Drill(AbstractDrill, BaseConceptLearner):
             assert isinstance(current_state, RL_State)
             # (1.1) Observe Next RL states, i.e., refine an OWL class expression
             next_rl_states = list(self.apply_rho(current_state))
-
             # (1.2)
             if len(next_rl_states) == 0:  # DEAD END
-                assert (current_state.length + 3) <= self.max_child_length
-                print('No nexst state')
+                # assert (current_state.length + 3) <= self.max_child_length
+                print('No next state')
                 break
             # (1.3)
             next_selected_rl_state = self.exploration_exploitation_tradeoff(current_state, next_rl_states)
-            print(f'CURRENT:{current_state}')
-            print(f'CURRENT:{next_selected_rl_state}')
-            exit(1)
-
-            print(next_selected_rl_state)
-
-            if len(next_selected_rl_state.instances) == 0:  # Dead End
-                print('BREAK')
-                print(next_selected_rl_state)
-                break
             # (1.4) Remember the concept path
             path_of_concepts.append((current_state, next_selected_rl_state))
-
             # (1.5)
             rewards.append(self.reward_func.apply(current_state, next_selected_rl_state))
             # (1.6)
             current_state = next_selected_rl_state
-        print('asd')
-        exit(1)
-        # (2)
         return path_of_concepts, rewards
-
-    def next_node_to_expand(self, t: int = None) -> AbstractNode:
-        """
-        Return a node that maximizes the heuristic function at time t
-        @param t:
-        @return:
-        """
-        if self.verbose > 1:
-            self.search_tree.show_search_tree(self.start_class, t)
-        return self.search_tree.get_most_promising()
 
     def form_experiences(self, state_pairs: List, rewards: List) -> None:
         """
@@ -594,6 +721,9 @@ class Drill(AbstractDrill, BaseConceptLearner):
         y - argmax Q value.
         """
 
+        if self.verbose > 1:
+            print('Form Experiences for the training')
+
         for th, consecutive_states in enumerate(state_pairs):
             e, e_next = consecutive_states
             self.experiences.append(
@@ -604,6 +734,8 @@ class Drill(AbstractDrill, BaseConceptLearner):
         Learning by replaying memory
         @return:
         """
+        if self.verbose > 1:
+            print('Learn from Experience')
 
         current_state_batch, next_state_batch, q_values = self.experiences.retrieve()
         current_state_batch = torch.cat(current_state_batch, dim=0)
@@ -632,8 +764,9 @@ class Drill(AbstractDrill, BaseConceptLearner):
         data_loader = torch.utils.data.DataLoader(dataset,
                                                   batch_size=self.batch_size, shuffle=True,
                                                   num_workers=self.num_workers)
-        print(f'Number of experiences:{num_experience}')
-        print('DQL agent is learning via experience replay')
+        if self.verbose > 1:
+            print(f'Number of experiences:{num_experience}')
+            print('DQL agent is learning via experience replay')
         self.heuristic_func.net.train()
         for m in range(self.num_epochs_per_replay):
             total_loss = 0
@@ -648,6 +781,9 @@ class Drill(AbstractDrill, BaseConceptLearner):
                 loss.backward()
                 # clip gradients if gradients are killed. =>torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
                 self.optimizer.step()
+            if self.verbose > 1:
+                print(f'{m}.th Epoch average loss during training:{total_loss / num_experience}')
+
         self.heuristic_func.net.train().eval()
 
     def update_search(self, concepts, predicted_Q_values):
@@ -656,54 +792,44 @@ class Drill(AbstractDrill, BaseConceptLearner):
         @param predicted_Q_values:
         @return:
         """
-        # simple loop.
         for child_node, pred_Q in zip(concepts, predicted_Q_values):
             child_node.heuristic = pred_Q
-            self.search_tree.quality_func.apply(child_node)
             if child_node.quality > 0:  # > too weak, ignore.
                 self.search_tree.add(child_node)
             if child_node.quality == 1:
                 return child_node
 
     def assign_embeddings(self, rl_state: RL_State) -> None:
+        """
+        Assign embeddings to an rl state. An rl state is represented with vector representation of
+        all individuals belonging to a respective OWLClassExpression
+        """
         assert isinstance(rl_state, RL_State)
 
-        # (1) Detect mode
+        # (1) Detect mode of representing OWLClassExpression
         if self.representation_mode == 'averaging':
             # (2) if input node has not seen before, assign embeddings.
             if rl_state.embeddings is None:
-                assert rl_state.instances is None
                 assert isinstance(rl_state.concept, OWLClassExpression)
-                instances = list(self.kb.individuals(rl_state.concept))
-                try:
-                    assert len(instances) > 0
-                except AssertionError:
-                    print(rl_state)
-                    print(rl_state.concept)
-                    for i in self.kb.individuals(rl_state.concept):
-                        print(i)
-                    raise
-
-                rl_state.instances = instances
-                # BITSET REPRESENTATION
-                rl_state.instances_set = self.kb.individuals_set(rl_state.concept)
-                str_idx = [i.get_iri().as_str() for i in rl_state.instances]
-                if len(str_idx) == 0:
-                    emb = torch.zeros(self.sample_size, self.instance_embeddings.shape[1])
+                # (3) Retrieval instances via our retrieval function (R(C)). Be aware Open World and Closed World Assumption
+                rl_state.instances = set(self.kb.individuals(rl_state.concept))
+                # (4) Retrieval instances in terms of bitset.
+                rl_state.instances_bitset = self.kb.individuals_set(rl_state.concept)
+                # (5) |R(C)|=\emptyset ?
+                if len(rl_state.instances) == 0:
+                    # If|R(C)|=\emptyset, then represent C with zeros
+                    emb = torch.zeros(1, self.sample_size, self.instance_embeddings.shape[1])
                 else:
+                    # If|R(C)| \not= \emptyset, then take the mean of individuals.
+                    str_idx = [i.get_iri().as_str() for i in rl_state.instances]
+                    assert len(str_idx) > 0
                     emb = torch.tensor(self.instance_embeddings.loc[str_idx].values, dtype=torch.float32)
                     emb = torch.mean(emb, dim=0)
-                emb = emb.view(1, self.sample_size, self.instance_embeddings.shape[1])
+                    emb = emb.view(1, self.sample_size, self.instance_embeddings.shape[1])
+                # (6) Assign embeddings
                 rl_state.embeddings = emb
             else:
                 """ Embeddings already assigned."""
-
-                try:
-                    assert len(rl_state.instances) > 0
-                except:
-                    print(rl_state)
-                    raise
-
                 try:
                     assert rl_state.embeddings.shape == (1, self.sample_size, self.instance_embeddings.shape[1])
                 except AssertionError as e:
@@ -764,7 +890,7 @@ class Drill(AbstractDrill, BaseConceptLearner):
             self.assign_embeddings(next_state)
         else:
             next_state = self.exploitation(current_state, next_states)
-        self.quality_func.apply(next_state, next_state.instances_set, self._learning_problem)
+        self.quality_func.apply(next_state, next_state.instances_bitset, self._learning_problem)
         return next_state
 
     def exploitation(self, current_state: AbstractNode, next_states: List[AbstractNode]) -> AbstractNode:
@@ -824,8 +950,6 @@ class Drill(AbstractDrill, BaseConceptLearner):
         URIs, respectively.
         @param relearn_ratio: An integer indicating the number of times dataset is iterated.
 
-        # @TODO determine Big-O
-
         Computation
         1. Dataset and relearn_ratio loops: Learn each problem relearn_ratio times,
 
@@ -835,24 +959,48 @@ class Drill(AbstractDrill, BaseConceptLearner):
 
         @return: self
         """
-        # We need a better way of login,
-        print('Training starts.')
-        print(f'Training starts.\nNumber of learning problem:{len(dataset)},\t Relearn ratio:{relearn_ratio}')
+        if self.verbose > 0:
+            print(f'Training starts.\nNumber of learning problem:{len(dataset)},\t Relearn ratio:{relearn_ratio}')
         counter = 1
+        renderer = DLSyntaxObjectRenderer()
+
+        def retrieve_concept_chain(node):
+            """
+            Given a node return its parent hierarchy
+            @param node:
+            @return:
+            """
+            hierarchy = deque()
+            if node.parent_node:
+                hierarchy.appendleft(node.parent_node)
+                while hierarchy[-1].parent_node is not None:
+                    hierarchy.append(hierarchy[-1].parent_node)
+                hierarchy.appendleft(node)
+            return hierarchy
+
         # 1.
         for _ in range(relearn_ratio):
-            for (alc_concept_str, positives, negatives) in dataset:
-                print(
-                    'Goal Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str,
-                                                                      len(positives), len(negatives)))
-                # 2.
-                print(f'RL training on {counter}.th learning problem starts')
-                sum_of_rewards_per_actions = self.rl_learning_loop(pos_uri=positives, neg_uri=negatives)
+            for (target_owl_ce, positives, negatives) in dataset:
 
-                print(f'Sum of Rewards in first 3 trajectory:{sum_of_rewards_per_actions[:3]}')
-                print(f'Sum of Rewards in last 3 trajectory:{sum_of_rewards_per_actions[:3]}')
+                if self.verbose > 0:
+                    print(
+                        'Goal Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(target_owl_ce,
+                                                                          len(positives), len(negatives)))
+                    print(f'RL training on {counter}.th learning problem starts')
+
+                goal_path = list(reversed(retrieve_concept_chain(target_owl_ce)))
+                # goal_path: [⊤, Daughter, Daughter ⊓ Mother]
+                sum_of_rewards_per_actions = self.rl_learning_loop(pos_uri=positives, neg_uri=negatives,
+                                                                   goal_path=goal_path)
+
+                if self.verbose > 2:
+                    print(f'Sum of Rewards in first 3 trajectory:{sum_of_rewards_per_actions[:3]}')
+                    print(f'Sum of Rewards in last 3 trajectory:{sum_of_rewards_per_actions[:3]}')
+
                 self.seen_examples.setdefault(counter, dict()).update(
-                    {'Concept': alc_concept_str, 'Positives': list(positives), 'Negatives': list(negatives)})
+                    {'Concept': renderer.render(target_owl_ce.concept),
+                     'Positives': [i.get_iri().as_str() for i in positives],
+                     'Negatives': [i.get_iri().as_str() for i in negatives]})
 
                 counter += 1
                 if counter % 100 == 0:
@@ -861,7 +1009,7 @@ class Drill(AbstractDrill, BaseConceptLearner):
         return self.terminate_training()
 
 
-class DrillHeuristic():
+class DrillHeuristic:
     """
     Heuristic in Convolutional DQL concept learning.
     Heuristic implements a convolutional neural network.
@@ -935,7 +1083,6 @@ class DrillNet(nn.Module):
     def forward(self, X: torch.FloatTensor):
         # X denotes a batch of tensors where each tensor has the shape of (4, 1, embedding_dim)
         # 4 => S, S', E^+, E^- \in R^embedding_dim
-        # @TODO: Later batch norm and residual learning block.
         X = F.relu(self.conv1(X))
         X = X.view(X.shape[0], X.shape[1] * X.shape[2] * X.shape[3])
         X = F.relu(self.fc1(X))

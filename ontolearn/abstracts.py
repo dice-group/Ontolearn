@@ -12,6 +12,7 @@ from .data_struct import Experience
 from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
 from .owlready2.utils import get_full_iri
 from .utils import read_csv
+from collections import OrderedDict, defaultdict
 
 _N = TypeVar('_N')  #:
 
@@ -247,7 +248,6 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
         logger.info(f'Number of named classes: {iter_count(self.ontology().classes_in_signature())}\n'
                     f'Number of individuals: {self.individuals_count()}\n'
                     f'Number of properties: {properties_count}')
-
     @abstractmethod
     def clean(self) -> None:
         """This method should reset any caches and statistics in the knowledge base"""
@@ -350,15 +350,17 @@ class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
         pass
 
 
-class AbstractDrill(ABC):
+class AbstractDrill:
     """
     Abstract class for Convolutional DQL concept learning
     """
 
     def __init__(self, path_of_embeddings, reward_func, learning_rate=None,
-                 num_episode=None, num_of_sequential_actions=None, max_len_replay_memory=None,
-                 representation_mode=None, batch_size=1024, epsilon_decay=None, epsilon_min=None,
-                 num_epochs_per_replay=None, num_workers=32):
+                 num_episode=None,
+                 num_episodes_per_replay=None,
+                 num_of_sequential_actions=None, max_len_replay_memory=None,
+                 representation_mode=None, batch_size=None, epsilon_decay=None, epsilon_min=None,
+                 num_epochs_per_replay=None, num_workers=None, verbose=0):
         self.instance_embeddings = read_csv(path_of_embeddings)
         self.embedding_dim = self.instance_embeddings.shape[1]
         self.reward_func = reward_func
@@ -378,21 +380,8 @@ class AbstractDrill(ABC):
         self.epsilon_decay = epsilon_decay
         self.epsilon_min = epsilon_min
         self.batch_size = batch_size
-
-        if self.learning_rate is None:
-            self.learning_rate = .001
-        if self.num_episode is None:
-            self.num_episode = 759
-        if self.max_len_replay_memory is None:
-            self.max_len_replay_memory = 1024
-        if self.num_of_sequential_actions is None:
-            self.num_of_sequential_actions = 10
-        if self.epsilon_decay is None:
-            self.epsilon_decay = .001
-        if self.epsilon_min is None:
-            self.epsilon_min = 0
-        if self.num_epochs_per_replay is None:
-            self.num_epochs_per_replay = 100
+        self.verbose = verbose
+        self.num_episodes_per_replay = num_episodes_per_replay
 
         # will be filled
         self.optimizer = None  # torch.optim.Adam(self.model_net.parameters(), lr=self.learning_rate)
@@ -402,11 +391,6 @@ class AbstractDrill(ABC):
         self.start_time = None
         self.goal_found = False
         self.experiences = Experience(maxlen=self.max_len_replay_memory)
-
-    def default_state_rl(self):
-        self.emb_pos, self.emb_neg = None, None
-        self.goal_found = False
-        self.start_time = None
 
     @abstractmethod
     def init_training(self, *args, **kwargs):
@@ -423,3 +407,90 @@ class AbstractDrill(ABC):
         Save weights and training data after training phase.
         @return:
         """
+
+
+class DRILLAbstractTree:
+    @abstractmethod
+    def __init__(self):
+        self._nodes = dict()
+
+    def __len__(self):
+        return len(self._nodes)
+
+    def __getitem__(self, item):
+        return self._nodes[item]
+
+    def __setitem__(self, k, v):
+        self._nodes[k] = v
+
+    def __iter__(self):
+        for k, node in self._nodes.items():
+            yield node
+
+    def get_top_n_nodes(self, n: int, key='quality'):
+        self.sort_search_tree_by_decreasing_order(key=key)
+        for ith, dict_ in enumerate(self._nodes.items()):
+            if ith >= n:
+                break
+            k, node = dict_
+            yield node
+
+    def redundancy_check(self, n):
+        if n in self._nodes:
+            return False
+        return True
+
+    @property
+    def nodes(self):
+        return self._nodes
+
+    @abstractmethod
+    def add(self, *args, **kwargs):
+        pass
+
+    def sort_search_tree_by_decreasing_order(self, *, key: str):
+        if key == 'heuristic':
+            sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].heuristic, reverse=True)
+        elif key == 'quality':
+            sorted_x = sorted(self._nodes.items(), key=lambda kv: kv[1].quality, reverse=True)
+        elif key == 'length':
+            sorted_x = sorted(self._nodes.items(), key=lambda kv: len(kv[1]), reverse=True)
+        else:
+            raise ValueError('Wrong Key. Key must be heuristic, quality or concept_length')
+
+        self._nodes = OrderedDict(sorted_x)
+
+    def best_hypotheses(self, n=10) -> List:
+        assert self.search_tree is not None
+        assert len(self.search_tree) > 1
+        return [i for i in self.search_tree.get_top_n_nodes(n)]
+
+    def show_search_tree(self, th, top_n=10):
+        """
+        Show search tree.
+        """
+        print(f'######## {th}.step\t Top 10 nodes in Search Tree \t |Search Tree|={self.__len__()} ###########')
+        predictions = list(self.get_top_n_nodes(top_n))
+        for ith, node in enumerate(predictions):
+            print(f'{ith + 1}-\t{node}')
+        print('######## Search Tree ###########\n')
+        return predictions
+
+    def show_best_nodes(self, top_n, key=None):
+        assert key
+        self.sort_search_tree_by_decreasing_order(key=key)
+        return self.show_search_tree('Final', top_n=top_n + 1)
+
+    @staticmethod
+    def save_current_top_n_nodes(key=None, n=10, path=None):
+
+        """
+        Save current top_n nodes
+        """
+        assert path
+        assert key
+        assert isinstance(n, int)
+        pass
+
+    def clean(self):
+        self._nodes.clear()
