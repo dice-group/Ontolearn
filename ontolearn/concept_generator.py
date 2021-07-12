@@ -1,4 +1,4 @@
-from typing import Iterable, Optional, AbstractSet, Dict
+from typing import Iterable, Optional, AbstractSet, Dict, Generator
 
 from ontolearn.core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from ontolearn.utils import parametrized_performance_debugger
@@ -156,6 +156,8 @@ class ConceptGenerator:
         Returns:
             intersection with all operands (intersections are merged)
         """
+        # TODO CD: I would rather prefer def intersection(self, a: OWLClassExpression, b: OWLClassExpression)
+        # TODO: This is more advantages as one does not need to create a tuple of a list before intersection two expressions.
         operands = []
         for c in ops:
             if isinstance(c, OWLObjectIntersectionOf):
@@ -165,6 +167,36 @@ class ConceptGenerator:
                 operands.append(c)
         # operands = _avoid_overly_redundand_operands(operands)
         return OWLObjectIntersectionOf(operands)
+
+    @staticmethod
+    def intersect_from_iterables(a_operands=Iterable[OWLClassExpression],
+                                 b_operands=Iterable[OWLClassExpression]) -> Generator:
+        """ Create an intersection of each class expression in a_operands with each class expression in b_operands"""
+        seen = set()
+        for i in a_operands:
+            for j in b_operands:
+                if (i, j) in seen:
+                    continue
+
+                i_and_j = OWLObjectIntersectionOf((i, j))
+                seen.add((i, j))
+                seen.add((j, i))
+                yield i_and_j
+
+    @staticmethod
+    def union_from_iterables(a_operands=Iterable[OWLClassExpression],
+                             b_operands=Iterable[OWLClassExpression]) -> Generator:
+        """ Create an union of each class expression in a_operands with each class expression in b_operands"""
+        seen = set()
+        for i in a_operands:
+            for j in b_operands:
+                if (i, j) in seen:
+                    continue
+
+                i_and_j = OWLObjectUnionOf((i, j))
+                seen.add((i, j))
+                seen.add((j, i))
+                yield i_and_j
 
     # noinspection PyMethodMayBeStatic
     def union(self, ops: Iterable[OWLClassExpression]) -> OWLObjectUnionOf:
