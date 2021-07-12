@@ -174,8 +174,11 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
 
     @_find_instances.register
     def _(self, ce: OWLObjectAllValuesFrom):
-        # TODO! XXX
-        return 0
+        return self._find_instances(
+            OWLObjectSomeValuesFrom(
+                property=ce.get_property(),
+                filler=ce.get_filler().get_object_complement_of().get_nnf()
+            ).get_object_complement_of())
 
     def _lazy_cache_class(self, c: OWLClass) -> None:
         if c in self._cls_to_ind:
