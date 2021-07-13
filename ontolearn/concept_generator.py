@@ -9,13 +9,15 @@ from owlapy.model import OWLClass, OWLClassExpression, OWLObjectComplementOf, OW
 
 class ConceptGenerator:
     """A class that can generate some sorts of OWL Class Expressions"""
-    __slots__ = '_class_hierarchy', '_object_property_hierarchy', '_data_property_hierarchy', '_reasoner', '_op_domains'
+    __slots__ = '_class_hierarchy', '_object_property_hierarchy', '_data_property_hierarchy', '_reasoner', \
+                '_op_domains', '_op_ranges'
 
     _class_hierarchy: ClassHierarchy
     _object_property_hierarchy: ObjectPropertyHierarchy
     _data_property_hierarchy: DatatypePropertyHierarchy
     _reasoner: OWLReasoner
     _op_domains: Dict[OWLObjectProperty, AbstractSet[OWLClass]]
+    _op_ranges: Dict[OWLObjectProperty, AbstractSet[OWLClass]]
 
     def __init__(self, reasoner: OWLReasoner,
                  class_hierarchy: Optional[ClassHierarchy] = None,
@@ -48,6 +50,7 @@ class ConceptGenerator:
         self._data_property_hierarchy = data_property_hierarchy
 
         self._op_domains = dict()
+        self._op_ranges = dict()
 
     def get_leaf_concepts(self, concept: OWLClass):
         """Get leaf classes
@@ -103,6 +106,19 @@ class ConceptGenerator:
         if prop not in self._op_domains:
             self._op_domains[prop] = frozenset(self._reasoner.object_property_domains(prop))
         return self._op_domains[prop]
+
+    def _object_property_range(self, prop: OWLObjectProperty):
+        """Get the range of a property
+
+        Args:
+            prop: object property
+
+        Returns:
+            range of the property
+        """
+        if prop not in self._op_ranges:
+            self._op_ranges[prop] = frozenset(self._reasoner.object_property_ranges(prop))
+        return self._op_ranges[prop]
 
     def most_general_existential_restrictions(self, *,
                                               domain: OWLClassExpression, filler: Optional[OWLClassExpression] = None) \
