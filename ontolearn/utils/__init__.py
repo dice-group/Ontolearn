@@ -3,12 +3,16 @@ import os
 import pickle
 import random
 import time
+from typing import Type, Callable, Set, TypeVar
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from owlapy.model import OWLNamedIndividual, IRI, OWLClass, HasIRI
 from sklearn.manifold import TSNE
 
 from ontolearn.utils.log_config import setup_logging  # noqa: F401
+
+Factory = Callable
 
 # DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
 DEFAULT_FMT = 'Func:{name} took {elapsed:0.8f}s'
@@ -151,3 +155,58 @@ def sanity_checking_args(args):
 
     if hasattr(args, 'batch_size'):
         assert args.batch_size > 1
+
+
+_T = TypeVar('_T', bound=HasIRI)
+
+
+def _read_iri_file(file: str, type_: Factory[[IRI], _T]) -> Set[_T]:
+    """Read a text file containing IRIs (one per line) and return the content as a set of instances created by the
+    given type
+
+    Args:
+        file: path to the text file with the IRIs of the named individuals
+        type_: factory or type to create from the IRI
+
+    Returns:
+        set of type_ instances with these IRIs
+    """
+
+    def optional_angles(iri: str):
+        if iri.startswith('<'):
+            return iri[1:-1]
+        else:
+            return iri
+
+    with open(file, 'r') as f:
+        inds = map(type_,
+                   map(IRI.create,
+                       map(optional_angles,
+                           f.read().splitlines())))
+    return set(inds)
+
+
+def read_individuals_file(file: str) -> Set[OWLNamedIndividual]:
+    """Read a text file containing IRIs of Named Individuals (one per line) and return the content as a set of OWL
+    Named Individuals
+
+    Args:
+        file: path to the text file with the IRIs of the named individuals
+
+    Returns:
+        set of OWLNamedIndividual with these IRIs
+    """
+    return _read_iri_file(file, OWLNamedIndividual)
+
+
+def read_named_classes_file(file: str) -> Set[OWLClass]:
+    """Read a text file containing IRIs of OWL Named Classes (one per line) and return the content as a set of OWL
+    Classes
+
+    Args:
+        file: path to the text file with the IRIs of the classes
+
+    Returns:
+        set of OWLNamedIndividual with these IRIs
+    """
+    return _read_iri_file(file, OWLClass)
