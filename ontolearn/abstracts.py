@@ -248,6 +248,7 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
         logger.info(f'Number of named classes: {iter_count(self.ontology().classes_in_signature())}\n'
                     f'Number of individuals: {self.individuals_count()}\n'
                     f'Number of properties: {properties_count}')
+
     @abstractmethod
     def clean(self) -> None:
         """This method should reset any caches and statistics in the knowledge base"""
@@ -356,22 +357,21 @@ class AbstractDrill:
     """
 
     def __init__(self, path_of_embeddings, reward_func, learning_rate=None,
-                 num_episode=None,
-                 num_episodes_per_replay=None,
+                 num_episode=None, num_episodes_per_replay=None, epsilon=None,
                  num_of_sequential_actions=None, max_len_replay_memory=None,
                  representation_mode=None, batch_size=None, epsilon_decay=None, epsilon_min=None,
                  num_epochs_per_replay=None, num_workers=None, verbose=0):
+        self.name='DRILL'
         self.instance_embeddings = read_csv(path_of_embeddings)
         self.embedding_dim = self.instance_embeddings.shape[1]
         self.reward_func = reward_func
-        assert reward_func
         self.representation_mode = representation_mode
         assert representation_mode in ['averaging', 'sampling']
         # Will be filled by child class
         self.heuristic_func = None
         self.num_workers = num_workers
         # constants
-        self.epsilon = 1
+        self.epsilon = epsilon
         self.learning_rate = learning_rate
         self.num_episode = num_episode
         self.num_of_sequential_actions = num_of_sequential_actions
@@ -391,6 +391,34 @@ class AbstractDrill:
         self.start_time = None
         self.goal_found = False
         self.experiences = Experience(maxlen=self.max_len_replay_memory)
+
+    def attributes_sanity_checking_rl(self):
+        assert len(self.instance_embeddings) > 0
+        assert self.embedding_dim > 0
+        if self.num_workers is None:
+            self.num_workers = 4
+        if self.epsilon is None:
+            self.epsilon = 1
+        if self.learning_rate is None:
+            self.learning_rate = .001
+        if self.num_episode is None:
+            self.num_episode = 1
+        if self.num_of_sequential_actions is None:
+            self.num_of_sequential_actions = 3
+        if self.num_epochs_per_replay is None:
+            self.num_epochs_per_replay = 1
+        if self.max_len_replay_memory is None:
+            self.max_len_replay_memory = 256
+        if self.epsilon_decay is None:
+            self.epsilon_decay = 0.01
+        if self.epsilon_min is None:
+            self.epsilon_min = 0
+        if self.batch_size is None:
+            self.batch_size = 1024
+        if self.verbose is None:
+            self.verbose = 0
+        if self.num_episodes_per_replay is None:
+            self.num_episodes_per_replay = 2
 
     @abstractmethod
     def init_training(self, *args, **kwargs):

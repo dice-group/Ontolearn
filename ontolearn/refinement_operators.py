@@ -30,30 +30,25 @@ class LengthBasedRefinement(BaseRefinement):
             self.top_refinements.append(ref)
 
     def refine_top(self) -> Iterable:
-        """
-        Refine Top Class Expression
-        """
-
-        # 1. Store all named classes.
+        """ Refine Top Class Expression """
+        """ (1) Store all named classes """
         iterable_container = []
         all_subs = [i for i in self.kb.get_all_sub_concepts(self.kb.thing)]
         iterable_container.append(all_subs)
-        # 2. Negate (1) and store it.
+        """ (2) Negate (1) and store it """
         iterable_container.append(self.kb.negation_from_iterables((i for i in all_subs)))
-        # 3. Add Nothing
+        """ (3) Add Nothing """
         iterable_container.append([self.kb.nothing])
-        # 3. Get all most general restrictions and store them \forall r. T, \exist r. T
+        """ (4) Get all most general restrictions and store them \forall r. T, \exist r. T """
         iterable_container.append(self.kb.most_general_universal_restrictions(domain=self.kb.thing, filler=None))
         iterable_container.append(self.kb.most_general_existential_restrictions(domain=self.kb.thing, filler=None))
-        # 4. Generate all refinements of given concept that have length at ***** most max_length*****
+        """ (5) Generate all refinements of given concept that have length less or equal to the maximum refinement length constraint """
         yield from self.apply_union_and_intersection_from_iterable(iterable_container)
 
     def apply_union_and_intersection_from_iterable(self, cont: Iterable[Generator]) -> Iterable:
-        """
-        Create Union and Intersection OWL Class Expressions
+        """ Create Union and Intersection OWL Class Expressions
         1. Create OWLObjectIntersectionOf via logical conjunction of cartesian product of input owl class expressions
         2. Create OWLObjectUnionOf class expression via logical disjunction pf cartesian product of input owl class expressions
-
         Repeat 1 and 2 until all concepts having max_len_refinement_top reached.
         """
         cumulative_refinements = dict()
@@ -173,67 +168,6 @@ class LengthBasedRefinement(BaseRefinement):
                     yield class_expression
                 # TODO: No need to intersect disjoint expressions
                 yield self.kb.intersection((class_expression, ref_concept_A))
-
-    def refine_top_concept(self, concept: OWLClass, max_length: int = None) -> Generator:
-        refinement_gate = set()
-        # A mapping where keys are lengths (integer) and values are catehgorized refinements of c
-        cumulative_refinements = dict()
-
-        # 1.
-        generator_container = [self.kb.get_all_sub_concepts(concept)]
-
-        # 2.
-        if max_length >= 2 and (self.len(concept) + 1 < self.max_child_length):
-            generator_container.append(self.kb.negation_from_iterables(self.kb.get_all_sub_concepts(concept)))
-
-        # 3. and 4.
-        if max_length >= 3 and (self.len(concept) + 2 < self.max_child_length):
-            generator_container.append(self.kb.most_general_existential_restrictions(domain=concept))
-            generator_container.append(self.kb.most_general_universal_restrictions(domain=concept))
-
-        a = chain.from_iterable(generator_container)
-        for concept_ref in a:
-            if self.kb.individuals_count(concept_ref) >= self.min_num_instances:
-                if concept_ref in refinement_gate:
-                    raise ValueError
-                else:
-                    refinement_gate.add(concept_ref)
-                    cumulative_refinements.setdefault(self.len(concept_ref), set()).add(concept_ref)
-                    yield concept_ref
-            else:
-                """ Ignore concept that does not satisfy constraint"""
-
-        # 5.
-        # The computation in bellow needs to be optimized and parallelized.
-        if self.apply_combinations:
-            if len(cumulative_refinements) > 0:
-                old_len_cumulative_refinements = len(cumulative_refinements)
-                while True:
-                    temp: Dict[int, Set[OWLClassExpression]] = dict()
-                    for k, v in cumulative_refinements.items():
-                        for kk, vv in cumulative_refinements.items():
-                            length = k + kk
-                            if (max_length > length) and (self.max_child_length > length + 1):
-                                for i in v:
-                                    for j in vv:
-
-                                        if (i, j) in refinement_gate:
-                                            continue
-
-                                        refinement_gate.add((i, j))
-                                        refinement_gate.add((j, i))
-                                        union = self.kb.union((i, j))
-                                        temp.setdefault(self.len(union), set()).add(union)
-                                        intersect = self.kb.intersection((i, j))
-                                        temp.setdefault(self.len(intersect), set()).add(intersect)
-                                        yield intersect
-                                        yield union
-
-                    cumulative_refinements.update(temp)
-                    new_len_cumulative_refinements = len(cumulative_refinements)
-                    if old_len_cumulative_refinements == new_len_cumulative_refinements:
-                        break
-                    old_len_cumulative_refinements = new_len_cumulative_refinements
 
     def refine(self, class_expression) -> Generator:
         assert isinstance(class_expression, OWLClassExpression)
