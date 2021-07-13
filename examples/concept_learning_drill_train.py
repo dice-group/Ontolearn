@@ -49,35 +49,24 @@ def start(args):
         min_num_problems=args.min_num_concepts,
         num_diff_runs=args.min_num_concepts // 2)
 
-    drill = Drill(
-        knowledge_base=kb,
-        path_of_embeddings=args.path_knowledge_base_embeddings,
-        refinement_operator=LengthBasedRefinement(knowledge_base=kb),
-        quality_func=F1(),
-        reward_func=Reward(),
-        batch_size=args.batch_size,
-        pretrained_model_path=args.pretrained_drill_avg_path,
-        drill_first_out_channels=args.drill_first_out_channels,
-        gamma=args.gamma,
-        num_of_sequential_actions=args.num_of_sequential_actions,
-        num_episode=args.num_episode,
-        max_len_replay_memory=args.max_len_replay_memory,
-        epsilon_decay=args.epsilon_decay,
-        num_episodes_per_replay=args.num_episodes_per_replay,
-        num_epochs_per_replay=args.num_epochs_per_replay,
-        relearn_ratio=args.relearn_ratio,
-        learning_rate=args.learning_rate,
-        verbose=args.verbose,
-        num_workers=args.num_workers)
+    drill = Drill(knowledge_base=kb, path_of_embeddings=args.path_knowledge_base_embeddings,
+                  refinement_operator=LengthBasedRefinement(knowledge_base=kb), quality_func=F1(), reward_func=Reward(),
+                  batch_size=args.batch_size, num_workers=args.num_workers,
+                  pretrained_model_path=args.pretrained_drill_avg_path, verbose=args.verbose,
+                  max_len_replay_memory=args.max_len_replay_memory, epsilon_decay=args.epsilon_decay,
+                  num_epochs_per_replay=args.num_epochs_per_replay,
+                  num_episodes_per_replay=args.num_episodes_per_replay, learning_rate=args.learning_rate,
+                  num_of_sequential_actions=args.num_of_sequential_actions, num_episode=args.num_episode)
     drill.train(balanced_examples)
     # Vanilla testing
-    for result, learning_problem in zip(drill.fit_from_iterable(balanced_examples, best_n_class_expressions=1,
-                                                                max_runtime=args.max_test_time_per_concept),
-                                        balanced_examples):
+    for result_dict, learning_problem in zip(
+            drill.fit_from_iterable(balanced_examples, max_runtime=args.max_test_time_per_concept),
+            balanced_examples):
         target_class_expression, sampled_positive_examples, sampled_negative_examples = learning_problem
         print(f'\nTarget Class Expression:{target_class_expression}')
         print(f'| sampled E^+|:{len(sampled_positive_examples)}\t| sampled E^-|:{len(sampled_negative_examples)}')
-        print(f'BEST FOUND:\t{result[0]}')
+        for k, v in result_dict.items():
+            print(f'{k}:{v}')
 
 
 if __name__ == '__main__':
@@ -90,11 +79,11 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=1, help='Number of cpus used during batching')
     parser.add_argument("--verbose", type=int, default=0, help='Higher integer reflects more info during computation')
     # Concept Generation Related
-    parser.add_argument("--min_num_concepts", type=int, default=10)
+    parser.add_argument("--min_num_concepts", type=int, default=1)
     parser.add_argument("--min_length", type=int, default=5, help='Min length of concepts to be used')
     parser.add_argument("--max_length", type=int, default=5, help='Max length of concepts to be used')
     parser.add_argument("--min_num_instances_ratio_per_concept", type=float, default=.01)  # %1
-    parser.add_argument("--max_num_instances_ratio_per_concept", type=float, default=.60)  # %30
+    parser.add_argument("--max_num_instances_ratio_per_concept", type=float, default=.90)  # %30
     parser.add_argument("--num_of_randomly_created_problems_per_concept", type=int, default=1)
     # DQL related
     parser.add_argument("--num_episode", type=int, default=1, help='Number of trajectories created for a given lp.')
