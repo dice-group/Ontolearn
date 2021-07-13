@@ -18,9 +18,9 @@ from .core.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter
 from owlapy.util import OrderedOWLObject
 from .heuristics import CELOEHeuristic, OCELHeuristic
 from .learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
-from .metrics import F1
+from .metrics import F1, Accuracy
 from .refinement_operators import LengthBasedRefinement
-from .utils import oplogging
+from .utils import oplogging, create_experiment_folder
 from abc import ABCMeta
 from .concept_learner import BaseConceptLearner
 from .abstracts import AbstractDrill, AbstractScorer
@@ -351,16 +351,12 @@ class Drill(AbstractDrill, BaseConceptLearner):
     heuristic_queue: 'SortedSet[OENode]'
 
     def __init__(self, knowledge_base,
-                 path_of_embeddings=None,
-                 refinement_operator=None, quality_func=None,
-                 reward_func=None, batch_size=32, num_workers=4,
-                 drill_first_out_channels=32, gamma=None,
-                 pretrained_model_path=None, iter_bound=None, max_num_of_concepts_tested=None, verbose=None,
-                 terminate_on_goal=True, ignored_concepts=None,
-                 max_len_replay_memory=None, epsilon_decay=None, epsilon_min=None,
-                 num_epochs_per_replay=None, num_episodes_per_replay=None, learning_rate=None, relearn_ratio=None,
-                 max_results: int = 10, best_only: bool = False, calculate_min_max: bool = True,
-                 max_runtime=None, num_of_sequential_actions=None, num_episode=None):
+                 path_of_embeddings: str, refinement_operator: LengthBasedRefinement, quality_func: AbstractScorer,
+                 reward_func=None, batch_size=None, num_workers=None, pretrained_model_path=None,
+                 iter_bound=None, max_num_of_concepts_tested=None, verbose=None, terminate_on_goal=None,
+                 max_len_replay_memory=None, epsilon_decay=None, epsilon_min=None, num_epochs_per_replay=None,
+                 num_episodes_per_replay=None, learning_rate=None, max_runtime=None, num_of_sequential_actions=None,
+                 num_episode=None):
         AbstractDrill.__init__(self,
                                path_of_embeddings=path_of_embeddings,
                                reward_func=reward_func,
@@ -374,12 +370,14 @@ class Drill(AbstractDrill, BaseConceptLearner):
                                learning_rate=learning_rate,
                                num_workers=num_workers, verbose=verbose
                                )
+
         self.sample_size = 1
         arg_net = {'input_shape': (4 * self.sample_size, self.embedding_dim),
                    'first_out_channels': 32, 'second_out_channels': 16, 'third_out_channels': 8,
                    'kernel_size': 3}
         self.heuristic_func = DrillHeuristic(mode='averaging', model_args=arg_net)
-        self.optimizer = torch.optim.Adam(self.heuristic_func.net.parameters(), lr=self.learning_rate)
+        if self.learning_rate:
+            self.optimizer = torch.optim.Adam(self.heuristic_func.net.parameters(), lr=self.learning_rate)
 
         if pretrained_model_path:
             m = torch.load(pretrained_model_path, torch.device('cpu'))
@@ -398,7 +396,11 @@ class Drill(AbstractDrill, BaseConceptLearner):
         self.search_tree = DRILLSearchTreePriorityQueue()
         self._learning_problem = None
 
-    def best_hypotheses(self, n=10) -> Iterable:
+        self.attributes_sanity_checking_rl()
+
+        self.storage_path, _ = create_experiment_folder()
+
+    def best_hypotheses(self, n=1) -> Iterable:
         assert self.search_tree is not None
         assert len(self.search_tree) > 1
         return [i for i in self.search_tree.get_top_n_nodes(n)]
@@ -414,7 +416,7 @@ class Drill(AbstractDrill, BaseConceptLearner):
             assert len(self.search_tree) == 0
         except AssertionError:
             print(len(self.search_tree))
-            exit(1)
+            raise AssertionError('EMPTY search tree')
 
     def downward_refinement(self, *args, **kwargs):
         ValueError('downward_refinement')
@@ -470,6 +472,15 @@ class Drill(AbstractDrill, BaseConceptLearner):
         return root_rl_state
 
     def fit(self, pos: Set[OWLNamedIndividual], neg: Set[OWLNamedIndividual], max_runtime=None):
+        """
+        Find an OWL Class Expression h s.t.
+        \forall e in E^+ K \model h(e)
+        \forall e in E^- K \not\model h(e)
+        """
+        assert isinstance(pos, set) and isinstance(neg, set)
+        assert sum([type(_) == OWLNamedIndividual for _ in pos]) == len(pos)
+        assert sum([type(_) == OWLNamedIndividual for _ in pos]) == len(neg)
+
         if max_runtime:
             assert isinstance(max_runtime, int)
             self.max_runtime = max_runtime
@@ -519,16 +530,40 @@ class Drill(AbstractDrill, BaseConceptLearner):
         ValueError('terminate_training')
 
     def fit_from_iterable(self,
-                          dataset: List[Tuple[OWLClassExpression, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]],
-                          max_runtime: int = None, best_n_class_expressions: int = None) -> Generator:
+                          dataset: List[Tuple[object, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]],
+                          max_runtime: int = None) -> List:
+        """
+        dataset is a list of tuples where the first item is either str or OWLclass expreesion indicating target concept
+        """
+        if max_runtime:
+            self.max_runtime = max_runtime
+        renderer = DLSyntaxObjectRenderer()
+
+        results = []
         for (target_ce, p, n) in dataset:
             if self.verbose > 0:
                 print('#' * 10)
                 print(f'TARGET OWL CLASS EXPRESSION:\n{target_ce}')
                 print(f'|Sampled Positive|:{len(p)}\t|Sampled Negative|:{len(n)}')
                 print('#' * 10)
+            start_time = time.time()
             self.fit(pos=p, neg=n, max_runtime=max_runtime)
-            yield self.best_hypotheses(best_n_class_expressions)
+            rn = time.time() - start_time
+            h: RL_State = self.best_hypotheses()[0]
+            # TODO:CD: We need to remove this first returned boolean for the sake of readability.
+            _, f_measure = F1().score(instances=h.instances_bitset, learning_problem=self._learning_problem)
+            _, accuracy = Accuracy().score(instances=h.instances_bitset, learning_problem=self._learning_problem)
+
+            report = {'Target': str(target_ce),
+                      'Prediction': renderer.render(h.concept),
+                      'F-measure': f_measure,
+                      'Accuracy': accuracy,
+                      'NumClassTested': -1,
+                      # TODO:CD: We need to count how many times scorrer is appliedself.quality_func.num_times_applied,
+                      'Runtime': rn}
+            results.append(report)
+
+        return results
 
     def init_training(self, pos_uri: Set[OWLNamedIndividual], neg_uri: Set[OWLNamedIndividual]) -> None:
         """
@@ -658,9 +693,11 @@ class Drill(AbstractDrill, BaseConceptLearner):
 
             if th % log_every_n_episodes == 0:
                 if self.verbose >= 1:
-                    print('{0}.th iter. SumOfRewards: {1:.2f}\tEpsilon:{2:.2f}\t|ReplayMem.|:{3}'.format(th, sum(rewards),
-                                                                                                         self.epsilon, len(
-                            self.experiences)))
+                    print(
+                        '{0}.th iter. SumOfRewards: {1:.2f}\tEpsilon:{2:.2f}\t|ReplayMem.|:{3}'.format(th, sum(rewards),
+                                                                                                       self.epsilon,
+                                                                                                       len(
+                                                                                                           self.experiences)))
             # (2.2) Form experiences for Experience Replay
             self.form_experiences(sequence_of_states, rewards)
             sum_of_rewards_per_actions.append(sum(rewards))

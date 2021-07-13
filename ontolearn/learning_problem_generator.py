@@ -36,7 +36,7 @@ class old_LearningProblemGenerator:
     def __init__(self, knowledge_base: KnowledgeBase, refinement_operator: Optional[BaseRefinement] = None,
                  num_problems: int = 10_000, num_diff_runs: int = 100,
                  min_num_instances: Optional[int] = None, max_num_instances: int = sys.maxsize,
-                 min_length: int = 3, max_length: int = 5, depth: int = 10,
+                 min_length: int = 3, max_length: int = 5, depth: int = 20,
                  search_algo: SearchAlgos = 'strict-dfs'):
         """
         Generate concepts via search algorithm to satisfy constraints.
@@ -512,6 +512,9 @@ class LearningProblemGenerator:
             for d in self.balanced_n_sampled_lp(n, example_node.instances):
                 assert len(d['string_balanced_pos']) == len(d['string_balanced_neg'])
                 res.append((example_node, d['string_balanced_pos'], d['string_balanced_neg']))
+
+            if len(res)>min_num_problems:
+                break
         try:
             assert len(gen_examples) > 0
         except AssertionError:
@@ -658,6 +661,9 @@ class LearningProblemGenerator:
             assert isinstance(num_problems, int)
             self.num_problems = num_problems // self.num_diff_runs
 
+        if self.num_problems == 0:
+            self.num_problems += 1
+
         if max_length:
             assert isinstance(max_length, int)
             self.max_length = max_length
@@ -742,12 +748,15 @@ class LearningProblemGenerator:
             except StopIteration:
                 print('All top concepts are refined.')
                 break
+            if rl_state.concept.is_owl_nothing():
+                continue
 
             if constrain_func(rl_state):
                 valid_states_gate.add(rl_state)
                 yield rl_state
                 if strict:
                     if len(valid_states_gate) >= self.num_problems * self.num_diff_runs:
+                        print(f'|Valid Expressions|={len(valid_states_gate)}')
                         break
 
             temp_gate = set()
@@ -767,7 +776,6 @@ class LearningProblemGenerator:
             if strict:
                 if len(valid_states_gate) >= self.num_problems * self.num_diff_runs:
                     break
-
         # sanity checking after the search.
         try:
             assert len(valid_states_gate) >= self.num_diff_runs * self.num_problems
