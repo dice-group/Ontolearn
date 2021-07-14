@@ -39,7 +39,7 @@ class LengthBasedRefinement(BaseRefinement):
         iterable_container.append(self.kb.negation_from_iterables((i for i in all_subs)))
         """ (3) Add Nothing """
         iterable_container.append([self.kb.nothing])
-        """ (4) Get all most general restrictions and store them \forall r. T, \exist r. T """
+        """ (4) Get all most general restrictions and store them forall r. T, \exist r. T """
         iterable_container.append(self.kb.most_general_universal_restrictions(domain=self.kb.thing, filler=None))
         iterable_container.append(self.kb.most_general_existential_restrictions(domain=self.kb.thing, filler=None))
         """ (5) Generate all refinements of given concept that have length less or equal to the maximum refinement length constraint """
@@ -83,7 +83,7 @@ class LengthBasedRefinement(BaseRefinement):
                 if len_ <= self.max_len_refinement_top:
                     """ 3.4 Intersect concepts having length i with concepts having length j"""
                     intersect_of_concepts = self.kb.intersect_from_iterables(cumulative_refinements[i],
-                                                                             cumulative_refinements[j])
+                                                                         cumulative_refinements[j])
                     """ 3.4 Union concepts having length i with concepts having length j"""
                     union_of_concepts = self.kb.union_from_iterables(cumulative_refinements[i],
                                                                      cumulative_refinements[j])
@@ -103,7 +103,7 @@ class LengthBasedRefinement(BaseRefinement):
         for k, v in larger_cumulative_refinements.items():
             yield from v
 
-    def refine_atomic_concept(self, class_expression: OWLClassExpression) -> Generator:
+    def refine_atomic_concept(self, class_expression: OWLClassExpression) -> Iterable[OWLClassExpression]:
         """
         Refine an atomic class expressions, i.e,. length 1
         """
@@ -115,18 +115,18 @@ class LengthBasedRefinement(BaseRefinement):
                 yield self.kb.intersection((class_expression, i))
         # Previously; yield self.kb.intersection(node.concept, self.kb.thing)
 
-    def refine_complement_of(self, class_expression: OWLObjectComplementOf) -> Generator:
+    def refine_complement_of(self, class_expression: OWLObjectComplementOf) -> Iterable[OWLClassExpression]:
         """
         Refine OWLObjectComplementOf
         1- Get All direct parents
         2- Negate (1)
         3- Intersection with T
         """
-        assert isinstance(class_expression,OWLObjectComplementOf)
+        assert isinstance(class_expression, OWLObjectComplementOf)
         yield from self.kb.negation_from_iterables(self.kb.get_direct_parents(self.kb.negation(class_expression)))
         yield self.kb.intersection((class_expression, self.kb.thing))
 
-    def refine_object_some_values_from(self, class_expression: OWLObjectSomeValuesFrom) -> Generator:
+    def refine_object_some_values_from(self, class_expression: OWLObjectSomeValuesFrom) -> Iterable[OWLClassExpression]:
         assert isinstance(class_expression, OWLObjectSomeValuesFrom)
         # rule 1: \exists r.D = > for all r.E
         for i in self.refine(class_expression.get_filler()):
@@ -134,7 +134,7 @@ class LengthBasedRefinement(BaseRefinement):
         # rule 2: \exists r.D = > \exists r.D AND T
         yield self.kb.intersection((class_expression, self.kb.thing))
 
-    def refine_object_all_values_from(self, class_expression: OWLObjectAllValuesFrom):
+    def refine_object_all_values_from(self, class_expression: OWLObjectAllValuesFrom) -> Iterable[OWLClassExpression]:
         assert isinstance(class_expression, OWLObjectAllValuesFrom)
         # rule 1: \forall r.D = > \forall r.E
         for i in self.refine(class_expression.get_filler()):
@@ -142,7 +142,7 @@ class LengthBasedRefinement(BaseRefinement):
         # rule 2: \forall r.D = > \forall r.D AND T
         yield self.kb.intersection((class_expression, self.kb.thing))
 
-    def refine_object_union_of(self, class_expression: OWLObjectUnionOf):
+    def refine_object_union_of(self, class_expression: OWLObjectUnionOf)-> Iterable[OWLClassExpression]:
         """
         Refine C =A AND B
         """
@@ -155,7 +155,7 @@ class LengthBasedRefinement(BaseRefinement):
                     yield class_expression
                 yield self.kb.union((class_expression, ref_concept_A))
 
-    def refine_object_intersection_of(self, class_expression: OWLClassExpression):
+    def refine_object_intersection_of(self, class_expression: OWLClassExpression)-> Iterable[OWLClassExpression]:
         """
         Refine C =A AND B
         """
@@ -169,7 +169,7 @@ class LengthBasedRefinement(BaseRefinement):
                 # TODO: No need to intersect disjoint expressions
                 yield self.kb.intersection((class_expression, ref_concept_A))
 
-    def refine(self, class_expression) -> Generator:
+    def refine(self, class_expression) -> Iterable[OWLClassExpression]:
         assert isinstance(class_expression, OWLClassExpression)
         if class_expression.is_owl_thing():
             yield from self.top_refinements

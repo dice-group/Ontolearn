@@ -600,10 +600,10 @@ class Drill(AbstractDrill, BaseConceptLearner):
         # Default exploration exploitation tradeoff.
         self.epsilon = 1
 
-    def create_rl_state(self, c: OWLClassExpression, parent_state: Optional[RL_State] = None,
+    def create_rl_state(self, c: OWLClassExpression, parent_node: Optional[RL_State] = None,
                         is_root: bool = False) -> RL_State:
         # Create State
-        rl_state = RL_State(c, parent_state=parent_state, is_root=is_root)
+        rl_state = RL_State(c, parent_node=parent_node, is_root=is_root)
         # Assign Embeddings to it. Later, assign_embeddings can be also done in RL_STATE
         self.assign_embeddings(rl_state)
         rl_state.length = self.kb.cl(c)
@@ -628,13 +628,12 @@ class Drill(AbstractDrill, BaseConceptLearner):
         # (1.2)
         for i in self.operator.refine(rl_state.concept):  # O(N)
             # TODO: CURRENTLY IGNORED the checking not wanted concetpts if i.str not in self.concepts_to_ignore:  # O(1)
-            yield self.create_rl_state(i, parent_state=rl_state)  # O(1)
+            yield self.create_rl_state(i, parent_node=rl_state)  # O(1)
 
     def learn_from_illustration(self, sequence_of_goal_path: List[RL_State]):
         """
         sequence_of_goal_path: ⊤,Parent,Parent ⊓ Daughter
         """
-
         current_state = sequence_of_goal_path.pop(0)
         rewards = []
         sequence_of_states = []
@@ -647,13 +646,12 @@ class Drill(AbstractDrill, BaseConceptLearner):
             next_state = sequence_of_goal_path.pop(0)
             self.assign_embeddings(next_state)
             next_state.length = self.kb.cl(next_state.concept)
-            if next_state.quality is None:
+            if next_state.quality is  None:
                 self.quality_func.apply(next_state, next_state.instances_bitset, self._learning_problem)
 
             sequence_of_states.append((current_state, next_state))
             rewards.append(self.reward_func.apply(current_state, next_state))
             current_state = next_state
-
         for x in range(2):
             self.form_experiences(sequence_of_states, rewards)
         self.learn_from_replay_memory()
@@ -979,6 +977,16 @@ class Drill(AbstractDrill, BaseConceptLearner):
             predictions = self.heuristic_func.net.forward(ds.get_all())
         return predictions
 
+    @staticmethod
+    def retrieve_concept_chain(rl_state: RL_State) -> List[RL_State]:
+        hierarchy = deque()
+        if rl_state.parent_node:
+            hierarchy.appendleft(rl_state.parent_node)
+            while hierarchy[-1].parent_node is not None:
+                hierarchy.append(hierarchy[-1].parent_node)
+            hierarchy.appendleft(rl_state)
+        return list(hierarchy)
+
     def train(self, dataset: Iterable[Tuple[str, Set, Set]], relearn_ratio: int = 2):
         """
         Train RL agent on learning problems with relearn_ratio.
@@ -1001,20 +1009,6 @@ class Drill(AbstractDrill, BaseConceptLearner):
         counter = 1
         renderer = DLSyntaxObjectRenderer()
 
-        def retrieve_concept_chain(node):
-            """
-            Given a node return its parent hierarchy
-            @param node:
-            @return:
-            """
-            hierarchy = deque()
-            if node.parent_node:
-                hierarchy.appendleft(node.parent_node)
-                while hierarchy[-1].parent_node is not None:
-                    hierarchy.append(hierarchy[-1].parent_node)
-                hierarchy.appendleft(node)
-            return hierarchy
-
         # 1.
         for _ in range(relearn_ratio):
             for (target_owl_ce, positives, negatives) in dataset:
@@ -1025,7 +1019,7 @@ class Drill(AbstractDrill, BaseConceptLearner):
                                                                           len(positives), len(negatives)))
                     print(f'RL training on {counter}.th learning problem starts')
 
-                goal_path = list(reversed(retrieve_concept_chain(target_owl_ce)))
+                goal_path = list(reversed(self.retrieve_concept_chain(target_owl_ce)))
                 # goal_path: [⊤, Daughter, Daughter ⊓ Mother]
                 sum_of_rewards_per_actions = self.rl_learning_loop(pos_uri=positives, neg_uri=negatives,
                                                                    goal_path=goal_path)
@@ -1124,115 +1118,6 @@ class DrillNet(nn.Module):
         X = X.view(X.shape[0], X.shape[1] * X.shape[2] * X.shape[3])
         X = F.relu(self.fc1(X))
         return self.fc2(X)
-
-
-class LengthBaseLearner(BaseConceptLearner):
-    """
-    CD: An idea for next possible work.
-    Propose a Heuristic func based on embeddings
-    Use LengthBasedRef.
-    """
-    __slots__ = 'search_tree', 'concepts_to_ignore', 'min_length'
-
-    name = 'LengthBaseLearner'
-
-    kb: KnowledgeBase
-    search_tree: LBLSearchTree
-    min_length: int
-
-    def __init__(self, *,
-                 knowledge_base: KnowledgeBase,
-                 refinement_operator: Optional[BaseRefinement] = None,
-                 search_tree: Optional[LBLSearchTree] = None,
-                 quality_func: Optional[AbstractScorer] = None,
-                 heuristic_func: Optional[AbstractHeuristic] = None,
-                 iter_bound: int = 10_000,
-                 terminate_on_goal: bool = False,
-                 max_num_of_concepts_tested: int = 10_000,
-                 min_length: int = 1,
-                 ignored_concepts=None):
-
-        if ignored_concepts is None:
-            ignored_concepts = {}
-        if refinement_operator is None:
-            refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base)
-        if quality_func is None:
-            quality_func = F1()
-        if heuristic_func is None:
-            heuristic_func = CELOEHeuristic()
-        if search_tree is None:
-            search_tree = SearchTreePriorityQueue(quality_func=quality_func, heuristic_func=heuristic_func)
-
-        super().__init__(knowledge_base=knowledge_base,
-                         refinement_operator=refinement_operator,
-                         quality_func=quality_func,
-                         heuristic_func=heuristic_func,
-                         terminate_on_goal=terminate_on_goal,
-                         iter_bound=iter_bound,
-                         max_num_of_concepts_tested=max_num_of_concepts_tested
-                         )
-        self.search_tree = search_tree
-        self.concepts_to_ignore = ignored_concepts
-        self.min_length = min_length
-
-    def get_node(self, c: OWLClassExpression, **kwargs):
-        return LBLNode(c, self.kb.cl(c), self.kb.individuals_set(c), **kwargs)
-
-    def next_node_to_expand(self, step) -> LBLNode:
-        return self.search_tree.get_most_promising()
-
-    def downward_refinement(self, node: LBLNode) -> Iterable[LBLNode]:
-        assert isinstance(node, LBLNode)
-        refinements = (self.get_node(i, parent_node=node) for i in
-                       self.operator.refine(node.concept, max_length=node.len + 1 + self.min_length)
-                       if i not in self.concepts_to_ignore)
-        return refinements
-
-    def fit(self, learning_problem: AbstractLearningProblem):
-        """
-        Find hypotheses that explain pos and neg.
-        """
-        self.clean()
-        assert isinstance(learning_problem, AbstractLearningProblem)
-        kb_learning_problem = learning_problem.encode_kb(knowledge_base=self.kb)
-        self.start_time = time.time()
-        root = self.get_node(self.start_class, is_root=True)
-        self.search_tree.add_root(node=root, kb_learning_problem=kb_learning_problem)
-        self._number_of_tested_concepts = 1
-        for j in range(1, self.iter_bound):
-            most_promising = self.next_node_to_expand(j)
-            for ref in self.downward_refinement(most_promising):
-                goal_found = self.search_tree.add_node(node=ref, parent_node=most_promising,
-                                                       kb_learning_problem=kb_learning_problem)
-                self._number_of_tested_concepts += 1
-                if goal_found:
-                    if self.terminate_on_goal:
-                        return self.terminate()
-            if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
-                return self.terminate()
-        return self.terminate()
-
-    def clean(self):
-        self.search_tree.clean()
-        self.concepts_to_ignore.clear()
-        super().clean()
-
-    def best_hypotheses(self, n=10) -> Iterable[LBLNode]:
-        yield from self.search_tree.get_top_n(n)
-
-    def show_search_tree(self, heading_step: str, top_n: int = 10) -> None:
-        rdr = DLSyntaxObjectRenderer()
-
-        self.search_tree.show_search_tree(root_concept=self.start_class, heading_step=heading_step)
-
-        print('######## ', heading_step, 'step Best Hypotheses ###########')
-
-        predictions = list(self.best_hypotheses(top_n))
-        for ith, node in enumerate(predictions):
-            print('{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(ith + 1, rdr.render(node.concept),
-                                                              type(self.quality_func).name, node.quality,
-                                                              node.heuristic))
-        print('######## Search Tree ###########\n')
 
 
 class CustomConceptLearner(CELOE):
