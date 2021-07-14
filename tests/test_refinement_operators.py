@@ -29,7 +29,7 @@ def test_celoe_refinement_operator():
 def test_length_refinement_operator():
     r = DLSyntaxObjectRenderer()
     rho = LengthBasedRefinement(kb)
-    for _ in enumerate(rho.refine(kb.thing, max_length=5, apply_combinations=False)):
+    for _ in enumerate(rho.refine(kb.thing)):
         print(r.render(_[1]))
         pass
 
