@@ -59,14 +59,13 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
         Returns:
             True if the quality function was applied successfully
         """
-        try:
-            assert isinstance(learning_problem, EncodedLearningProblem)
-        except AssertionError:
-            print(f'Expected EncodedLearningProblem but got {type(learning_problem)}')
-            raise AssertionError
-        assert isinstance(node, AbstractNode)
+        assert isinstance(learning_problem,
+                          EncodedLearningProblem), f'Expected EncodedLearningProblem but got {type(learning_problem)}'
+        assert isinstance(node,
+                          AbstractNode), f'Expected AbstractNode but got {type(node)}'
         from ontolearn.search import _NodeQuality
-        assert isinstance(node, _NodeQuality)
+        assert isinstance(node,
+                          _NodeQuality), f'Expected _NodeQuality but got {type(_NodeQuality)}'
 
         ret, q = self.score(instances, learning_problem)
         if q is not None:
@@ -361,7 +360,7 @@ class AbstractDrill:
                  num_of_sequential_actions=None, max_len_replay_memory=None,
                  representation_mode=None, batch_size=None, epsilon_decay=None, epsilon_min=None,
                  num_epochs_per_replay=None, num_workers=None, verbose=0):
-        self.name='DRILL'
+        self.name = 'DRILL'
         self.instance_embeddings = read_csv(path_of_embeddings)
         self.embedding_dim = self.instance_embeddings.shape[1]
         self.reward_func = reward_func

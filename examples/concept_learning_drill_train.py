@@ -46,15 +46,16 @@ def start(args):
 
     balanced_examples = lp.get_balanced_n_samples_per_examples(
         n=args.num_of_randomly_created_problems_per_concept,
+        min_length=args.min_length,
+        max_length=args.max_length,
         min_num_problems=args.min_num_concepts,
         num_diff_runs=args.min_num_concepts // 2)
-
     drill = Drill(knowledge_base=kb, path_of_embeddings=args.path_knowledge_base_embeddings,
                   refinement_operator=LengthBasedRefinement(knowledge_base=kb), quality_func=F1(), reward_func=Reward(),
                   batch_size=args.batch_size, num_workers=args.num_workers,
                   pretrained_model_path=args.pretrained_drill_avg_path, verbose=args.verbose,
                   max_len_replay_memory=args.max_len_replay_memory, epsilon_decay=args.epsilon_decay,
-                  num_epochs_per_replay=args.num_epochs_per_replay,
+                  num_epochs_per_replay=args.num_epochs_per_replay,terminate_on_goal=False,
                   num_episodes_per_replay=args.num_episodes_per_replay, learning_rate=args.learning_rate,
                   num_of_sequential_actions=args.num_of_sequential_actions, num_episode=args.num_episode)
     drill.train(balanced_examples)
@@ -78,9 +79,10 @@ if __name__ == '__main__':
                         default='../embeddings/ConEx_Family/ConEx_entity_embeddings.csv')
     parser.add_argument('--num_workers', type=int, default=1, help='Number of cpus used during batching')
     parser.add_argument("--verbose", type=int, default=0, help='Higher integer reflects more info during computation')
+
     # Concept Generation Related
     parser.add_argument("--min_num_concepts", type=int, default=1)
-    parser.add_argument("--min_length", type=int, default=5, help='Min length of concepts to be used')
+    parser.add_argument("--min_length", type=int, default=3, help='Min length of concepts to be used')
     parser.add_argument("--max_length", type=int, default=5, help='Max length of concepts to be used')
     parser.add_argument("--min_num_instances_ratio_per_concept", type=float, default=.01)  # %1
     parser.add_argument("--max_num_instances_ratio_per_concept", type=float, default=.90)  # %30

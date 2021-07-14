@@ -11,7 +11,8 @@ from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.util import as_index, OrderedOWLObject
 from superprop import super_prop
 from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree, \
-    AbstractConceptNode, AbstractLearningProblem, EncodedLearningProblem,DRILLAbstractTree
+    AbstractConceptNode, AbstractLearningProblem, EncodedLearningProblem, DRILLAbstractTree
+
 _N = TypeVar('_N')  #:
 
 
@@ -240,27 +241,36 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
             _NodeIndividualsCount.__str__(self),
         ))
 
-@total_ordering
-class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, _NodeParentRef['OENode'], AbstractNode):
+
+class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode):
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
     __slots__ = '_concept', '_quality', '_heuristic', \
-                '_parent_ref', 'embeddings', 'individuals', \
-                'instances_bitset', 'length', 'parent_state', 'instances', '__weakref__'
+                'embeddings', 'individuals', \
+                'instances_bitset', 'length', 'instances', 'parent_node', 'is_root'
 
-    def __init__(self, concept: OWLClassExpression, parent_state: Optional['RL_State'] = None, is_root: bool = False,
+    def __init__(self, concept: OWLClassExpression, parent_node: Optional['RL_State'] = None, is_root: bool = False,
                  embeddings=None, instances=None, instances_set=None, length=None):
         _NodeConcept.__init__(self, concept)
         _NodeQuality.__init__(self)
         _NodeHeuristic.__init__(self)
-        _NodeParentRef.__init__(self, parent_node=parent_state, is_root=is_root)
+        # _NodeParentRef.__init__(self, parent_node=parent_node, is_root=is_root)
+        # TODO: CD _NodeParentRef causes unintended results:
+        #  Without using _NodeParentRef, one can reach the top class expression via recursive calling parent_node
+        #  However, if one uses _NodeParentRef amd comments self.parent_node and self.is_root, we can reach T.
+        AbstractNode.__init__(self)
+        self.parent_node = parent_node
+        self.is_root = is_root
 
-        self.parent_state = parent_state
         self.embeddings = embeddings  # tensor
         self.instances = instances  # list
         self.instances_bitset = instances_set  # bitset
         self.length = length
+        self.__sanity_checking()
 
-        AbstractNode.__init__(self)
+    def __sanity_checking(self):
+        assert self.concept
+        if self.is_root is False:
+            assert self.parent_node
 
     def __str__(self):
 
@@ -279,10 +289,12 @@ class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, _NodeParentRef['OENod
         ))
 
     def __lt__(self, other):
-        return self.quality < other.quality
+        return self.heuristic <= other.heuristic
 
     def __gt__(self, other):
-        return self.quality > other.quality
+        return self.heuristic > other.heuristic
+
+
 # noinspection PyUnresolvedReferences
 # noinspection PyDunderSlots
 class _NodeIndividuals(metaclass=ABCMeta):
@@ -591,7 +603,6 @@ class TreeNode(Generic[_N]):
         if not is_root:
             assert isinstance(parent_tree_node, TreeNode)
             parent_tree_node.children.add(self)
-
 
 
 class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
