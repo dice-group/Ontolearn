@@ -36,12 +36,15 @@ import json
 import time
 
 full_computation_time = time.time()
+from ontolearn.utils import setup_logging
+
+setup_logging()
 
 
 def sanity_checking_args(args):
     try:
         assert os.path.isfile(args.path_knowledge_base)
-    except AssertionError as e:
+    except AssertionError:
         print(f'--path_knowledge_base ***{args.path_knowledge_base}*** does not lead to a file.')
         exit(1)
     assert os.path.isfile(args.path_knowledge_base_embeddings)
@@ -69,18 +72,20 @@ def start(args):
                 settings['problems'].items()]
 
     print(f'Number of problems {len(problems)} on {kb}')
-
+    # @ TODO write curl for getting DL-learner binaries
     # Initialize models
-    #celoe = DLLearnerBinder(binary_path=args.path_dl_learner, kb_path=args.path_knowledge_base, model='celoe')
-    #ocel = DLLearnerBinder(binary_path=args.path_dl_learner, kb_path=args.path_knowledge_base, model='ocel')
-    #eltl = DLLearnerBinder(binary_path=args.path_dl_learner, kb_path=args.path_knowledge_base, model='eltl')
+    # celoe = DLLearnerBinder(binary_path=args.path_dl_learner, kb_path=args.path_knowledge_base, model='celoe')
+    # ocel = DLLearnerBinder(binary_path=args.path_dl_learner, kb_path=args.path_knowledge_base, model='ocel')
+    # eltl = DLLearnerBinder(binary_path=args.path_dl_learner, kb_path=args.path_knowledge_base, model='eltl')
     drill = Drill(knowledge_base=kb, path_of_embeddings=args.path_knowledge_base_embeddings,
                   refinement_operator=LengthBasedRefinement(knowledge_base=kb), quality_func=F1(),
                   num_workers=args.num_workers, pretrained_model_path=args.pretrained_drill_avg_path,
                   verbose=args.verbose)
 
     Experiments(max_test_time_per_concept=args.max_test_time_per_concept).start(dataset=problems,
-                                                                                models=[drill])
+                                                                                models=[drill,
+                                                                                        # celoe,ocel,eltl
+                                                                                        ])
 
 
 if __name__ == '__main__':
@@ -90,13 +95,15 @@ if __name__ == '__main__':
                         default='KGs/Family/family-benchmark_rich_background.owl')
     parser.add_argument("--path_knowledge_base_embeddings", type=str,
                         default='embeddings/ConEx_Family/ConEx_entity_embeddings.csv')
-    parser.add_argument("--path_lp", type=str,default='LPs/Family/lp.json')
-    parser.add_argument('--pretrained_drill_avg_path', type=str, default='pre_trained_agents/Family/DrillHeuristic_averaging/DrillHeuristic_averaging.pth',help='Provide a path of .pth file')
+    parser.add_argument("--path_lp", type=str, default='LPs/Family/lp.json')
+    parser.add_argument('--pretrained_drill_avg_path', type=str,
+                        default='pre_trained_agents/Family/DrillHeuristic_averaging/DrillHeuristic_averaging.pth',
+                        help='Provide a path of .pth file')
     # Binaries for DL-learner
-    parser.add_argument("--path_dl_learner", type=str,default='/home/demir/Desktop/Softwares/DRILL/dllearner-1.4.0')
+    parser.add_argument("--path_dl_learner", type=str, default='/home/demir/Desktop/Softwares/DRILL/dllearner-1.4.0')
     # Concept Learning Testing
     parser.add_argument("--iter_bound", type=int, default=10_000, help='iter_bound during testing.')
-    parser.add_argument('--max_test_time_per_concept', type=int, default=10, help='Max. runtime during testing')
+    parser.add_argument('--max_test_time_per_concept', type=int, default=3, help='Max. runtime during testing')
     # General
     parser.add_argument("--verbose", type=int, default=0)
     parser.add_argument('--num_workers', type=int, default=4, help='Number of cpus used during batching')

@@ -109,17 +109,16 @@ class Experiments:
         assert isinstance(dataset[0], tuple)
         assert isinstance(dataset[0], tuple)
         shuffle(dataset)
-
+        """ (1) Convert string representation of positive and negative examples into OWLNamedIndividual """
         for i in range(len(dataset)):
             t, p, n = dataset[i]
-
             typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
             typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
             dataset[i] = (t, typed_pos, typed_neg)
 
         results = dict()
         counter = 1
-
+        """ (1) Predict OWL Class Expression """
         for m in models:
             print(
                 f'{m.name} starts on {len(dataset)} number of problems. Max Runtime per problem is set to {self.max_test_time_per_concept} seconds.')

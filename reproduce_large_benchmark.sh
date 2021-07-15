@@ -29,10 +29,10 @@ drill_avg_path_biopax=$PWD'/pre_trained_agents/Biopax/DrillHeuristic_averaging/D
 
 
 echo "Start Testing on Family on automatically generated learning problems"
-python experiments_standard.py --path_lp $family_benchmark_lp_path --path_knowledge_base $family_dataset_path --path_knowledge_base_embeddings $family_kge --pretrained_drill_avg_path $drill_avg_path_family --path_dl_learner $path_dl_learner
+python experiments_standard.py --path_lp "$family_benchmark_lp_path" --path_knowledge_base "$family_dataset_path" --path_knowledge_base_embeddings "$family_kge" --pretrained_drill_avg_path "$drill_avg_path_family" --path_dl_learner "$path_dl_learner"
 echo "Start Testing on Carcinogenesis on automatically generated learning problems"
-python experiments_standard.py --path_lp $carcinogenesis_benchmark_lp_path --path_knowledge_base $carcinogenesis_dataset_path --path_knowledge_base_embeddings  $carcinogenesis_kge --pretrained_drill_avg_path $drill_avg_path_carcinogenesis --path_dl_learner $path_dl_learner
+python experiments_standard.py --path_lp "$carcinogenesis_benchmark_lp_path" --path_knowledge_base "$carcinogenesis_dataset_path" --path_knowledge_base_embeddings  "$carcinogenesis_kge" --pretrained_drill_avg_path "$drill_avg_path_carcinogenesis" --path_dl_learner $path_dl_learner
 echo "Start Testing on Mutagenesis on automatically generated learning problems"
-python experiments_standard.py --path_lp $mutagenesis_benchmark_lp_path --path_knowledge_base $mutagenesis_dataset_path --path_knowledge_base_embeddings  $mutagenesis_kge --pretrained_drill_avg_path $drill_avg_path_mutagenesis --path_dl_learner $path_dl_learner
+python experiments_standard.py --path_lp "$mutagenesis_benchmark_lp_path" --path_knowledge_base "$mutagenesis_dataset_path" --path_knowledge_base_embeddings  "$mutagenesis_kge" --pretrained_drill_avg_path "$drill_avg_path_mutagenesis" --path_dl_learner "$path_dl_learner"
 echo "Start Testing on Biopax on automatically generated learning problems"
-python experiments_standard.py --path_lp $biopax_benchmark_lp_path --path_knowledge_base $biopax_dataset_path --path_knowledge_base_embeddings  $biopax_kge --pretrained_drill_avg_path $drill_avg_path_biopax --path_dl_learner $path_dl_learner
+python experiments_standard.py --path_lp "$biopax_benchmark_lp_path" --path_knowledge_base "$biopax_dataset_path" --path_knowledge_base_embeddings  "$biopax_kge" --pretrained_drill_avg_path "$drill_avg_path_biopax" --path_dl_learner $path_dl_learner

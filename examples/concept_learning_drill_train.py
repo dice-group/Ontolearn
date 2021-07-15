@@ -18,7 +18,8 @@ from owlapy.model import OWLClass, IRI
 
 from owlapy.model import OWLOntology, OWLReasoner
 
-
+from ontolearn.utils import setup_logging
+setup_logging()
 def ClosedWorld_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
     from owlapy.owlready2 import OWLOntology_Owlready2
     from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
@@ -55,7 +56,7 @@ def start(args):
                   batch_size=args.batch_size, num_workers=args.num_workers,
                   pretrained_model_path=args.pretrained_drill_avg_path, verbose=args.verbose,
                   max_len_replay_memory=args.max_len_replay_memory, epsilon_decay=args.epsilon_decay,
-                  num_epochs_per_replay=args.num_epochs_per_replay,terminate_on_goal=False,
+                  num_epochs_per_replay=args.num_epochs_per_replay,
                   num_episodes_per_replay=args.num_episodes_per_replay, learning_rate=args.learning_rate,
                   num_of_sequential_actions=args.num_of_sequential_actions, num_episode=args.num_episode)
     drill.train(balanced_examples)
