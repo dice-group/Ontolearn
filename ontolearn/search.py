@@ -242,18 +242,18 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
         ))
 
 
-class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode):
+class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode,_NodeParentRef['RL_State']):
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
     __slots__ = '_concept', '_quality', '_heuristic', \
                 'embeddings', 'individuals', \
-                'instances_bitset', 'length', 'instances', 'parent_node', 'is_root'
+                'instances_bitset', 'length', 'instances', 'parent_node', 'is_root','_parent_ref','__weakref__'
 
     def __init__(self, concept: OWLClassExpression, parent_node: Optional['RL_State'] = None, is_root: bool = False,
                  embeddings=None, instances=None, instances_set=None, length=None):
         _NodeConcept.__init__(self, concept)
         _NodeQuality.__init__(self)
         _NodeHeuristic.__init__(self)
-        # _NodeParentRef.__init__(self, parent_node=parent_node, is_root=is_root)
+        _NodeParentRef.__init__(self, parent_node=parent_node, is_root=is_root)
         # TODO: CD _NodeParentRef causes unintended results:
         #  Without using _NodeParentRef, one can reach the top class expression via recursive calling parent_node
         #  However, if one uses _NodeParentRef amd comments self.parent_node and self.is_root, we can reach T.
