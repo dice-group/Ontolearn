@@ -1,3 +1,4 @@
+from ontolearn.ea_initialization import EAInitialization, EARandomInitialization
 from ontolearn.search import EvoLearnerNode
 from ontolearn.fitness_functions import LinearPressureFitness
 from ontolearn.metrics import Accuracy
@@ -17,8 +18,9 @@ from owlapy.model import OWLClassExpression, OWLObjectPropertyExpression
 class EvoLearner(BaseConceptLearner):
 
     __slots__ = 'fitness_func', 'expressivity', 'population_size', 'num_generations',  \
-                'random_max_height', 'height_limit', 'pset', 'toolbox', 'result_population', '_learning_problem'
-
+                'height_limit', 'pset', 'toolbox', 'result_population', '_learning_problem', \
+                'init_method', 'tournament_size'
+                
     name = 'evolearner'
 
     pset: gp.PrimitiveSetTyped
@@ -29,12 +31,13 @@ class EvoLearner(BaseConceptLearner):
                  knowledge_base: KnowledgeBase,
                  quality_func: Optional[AbstractScorer] = None,
                  fitness_func: Optional[AbstractFitness] = None,
+                 init_method: Optional[EAInitialization] = None,
                  terminate_on_goal: Optional[bool] = None,
                  max_runtime: Optional[int] = None,
                  expressivity: Optional[str] = None,
+                 tournament_size: Optional[int] = None,
                  population_size: Optional[int] = None,
                  num_generations: Optional[int] = None,
-                 random_max_height: Optional[int] = None,
                  height_limit: Optional[int] = None):
 
         if quality_func is None:
@@ -46,10 +49,11 @@ class EvoLearner(BaseConceptLearner):
                          max_runtime=max_runtime)
 
         self.fitness_func = fitness_func
+        self.init_method = init_method
         self.expressivity = expressivity
+        self.tournament_size = tournament_size
         self.population_size = population_size
         self.num_generations = num_generations
-        self.random_max_height = random_max_height
         self.height_limit = height_limit
 
         self.result_population = None
@@ -61,17 +65,22 @@ class EvoLearner(BaseConceptLearner):
         if self.fitness_func is None:
             self.fitness_func = LinearPressureFitness()
 
+        if self.init_method is None:
+            self.init_method = EARandomInitialization(min_height=3,
+                                                      max_height=6,
+                                                      method="full")
+
         if self.expressivity is None:
             self.expressivity = "ALC"
+
+        if self.tournament_size is None:
+            self.tournament_size = 7
 
         if self.population_size is None:
             self.population_size = 800
 
         if self.num_generations is None:
             self.num_generations = 200
-
-        if self.random_max_height is None:
-            self.random_max_height = 6
 
         if self.height_limit is None:
             self.height_limit = 17
@@ -111,16 +120,16 @@ class EvoLearner(BaseConceptLearner):
         creator.create("Individual", gp.PrimitiveTree, fitness=creator.Fitness, quality=creator.Quality)
 
         toolbox = base.Toolbox()
-        toolbox.register("expr", gp.genHalfAndHalf, pset=self.pset, min_=3, max_=6)
-        toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr)
+        toolbox.register("create_tree", self.init_method.get_individual, pset=self.pset)
+        toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.create_tree)
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
         toolbox.register("compile", gp.compile, pset=self.pset)
 
         toolbox.register("evaluate", self._fitness_func)
-        toolbox.register("select", tools.selTournament, tournsize=7)
+        toolbox.register("select", tools.selTournament, tournsize=self.tournament_size)
         toolbox.register("mate", gp.cxOnePoint)
-        toolbox.register("expr_mut", gp.genHalfAndHalf, min_=1, max_=3)
-        toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=self.pset)
+        toolbox.register("create_tree_mut", gp.genHalfAndHalf, min_=1, max_=3)
+        toolbox.register("mutate", gp.mutUniform, expr=toolbox.create_tree_mut, pset=self.pset)
 
         toolbox.decorate("mate", gp.staticLimit(key=operator.attrgetter("height"),
                                                 max_value=self.height_limit))
@@ -146,8 +155,8 @@ class EvoLearner(BaseConceptLearner):
         learning_problem = self.construct_learning_problem(PosNegLPStandard, args, kwargs)
         self._learning_problem = learning_problem.encode_kb(self.kb)
 
-        # Use standard random init for now
         population = self.toolbox.population(n=self.population_size)
+
         # TODO: Add classes for algorithms
         self.result_population = algorithms.eaSimple(population, self.toolbox, 0.9, 0.1, self.num_generations)[0]
         # self.result_population = self.algorithm.evolve(self.toolbox, population,
@@ -231,3 +240,4 @@ class PrimitiveFactory:
             return self.knowledge_base.universal_restriction(filler, property_)
 
         return existential_restriction, universal_restriction
+    

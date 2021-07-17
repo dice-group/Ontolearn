@@ -22,7 +22,7 @@ with open('synthetic_problems.json') as json_file:
 
 kb = KnowledgeBase(path=settings['data_path'])
 
-random.seed(20)
+#random.seed(20)
 
 # noinspection DuplicatedCode
 for str_target_concept, examples in settings['problems'].items():
