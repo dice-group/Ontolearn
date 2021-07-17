@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 from deap.gp import Primitive, PrimitiveSetTyped
 
 
-class EAInitialization(metaclass=ABCMeta):
+class AbstractEAInitialization(metaclass=ABCMeta):
     """Abstract base class for initialization methods for evolutionary algorithms.
 
     """
@@ -18,7 +18,7 @@ class EAInitialization(metaclass=ABCMeta):
         pass
 
 
-class EARandomInitialization(EAInitialization):
+class EARandomInitialization(AbstractEAInitialization):
     """Rnndom initialization methods for evolutionary algorithms.
 
     """

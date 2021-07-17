@@ -66,7 +66,7 @@ for str_target_concept, examples in settings['problems'].items():
                   quality_func=qual,
                   fitness_func=fitness
                   )
-    model.fit(lp)
+    model.fit(lp, verbose=True)
 
     model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
     # Get Top n hypotheses

@@ -1,4 +1,5 @@
-from ontolearn.ea_initialization import EAInitialization, EARandomInitialization
+from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
+from ontolearn.ea_initialization import AbstractEAInitialization, EARandomInitialization
 from ontolearn.search import EvoLearnerNode
 from ontolearn.fitness_functions import LinearPressureFitness
 from ontolearn.metrics import Accuracy
@@ -10,17 +11,17 @@ from typing import Callable, Optional
 from ontolearn.knowledge_base import KnowledgeBase
 import operator
 
-from deap import algorithms, base, creator, tools, gp
+from deap import base, creator, tools, gp
 
 from owlapy.model import OWLClassExpression, OWLObjectPropertyExpression
 
 
 class EvoLearner(BaseConceptLearner):
 
-    __slots__ = 'fitness_func', 'expressivity', 'population_size', 'num_generations',  \
-                'height_limit', 'pset', 'toolbox', 'result_population', '_learning_problem', \
-                'init_method', 'tournament_size'
-                
+    __slots__ = 'fitness_func', 'init_method', 'algorithm', 'expressivity', 'tournament_size',  \
+                'population_size', 'num_generations', 'height_limit', 'pset', 'toolbox', \
+                '_learning_problem', 'result_population'
+
     name = 'evolearner'
 
     pset: gp.PrimitiveSetTyped
@@ -31,7 +32,8 @@ class EvoLearner(BaseConceptLearner):
                  knowledge_base: KnowledgeBase,
                  quality_func: Optional[AbstractScorer] = None,
                  fitness_func: Optional[AbstractFitness] = None,
-                 init_method: Optional[EAInitialization] = None,
+                 init_method: Optional[AbstractEAInitialization] = None,
+                 algorithm: Optional[AbstractEvolutionaryAlgorithm] = None,
                  terminate_on_goal: Optional[bool] = None,
                  max_runtime: Optional[int] = None,
                  expressivity: Optional[str] = None,
@@ -50,6 +52,7 @@ class EvoLearner(BaseConceptLearner):
 
         self.fitness_func = fitness_func
         self.init_method = init_method
+        self.algorithm = algorithm
         self.expressivity = expressivity
         self.tournament_size = tournament_size
         self.population_size = population_size
@@ -66,9 +69,10 @@ class EvoLearner(BaseConceptLearner):
             self.fitness_func = LinearPressureFitness()
 
         if self.init_method is None:
-            self.init_method = EARandomInitialization(min_height=3,
-                                                      max_height=6,
-                                                      method="full")
+            self.init_method = EARandomInitialization()
+
+        if self.algorithm is None:
+            self.algorithm = EASimple()
 
         if self.expressivity is None:
             self.expressivity = "ALC"
@@ -155,13 +159,14 @@ class EvoLearner(BaseConceptLearner):
         learning_problem = self.construct_learning_problem(PosNegLPStandard, args, kwargs)
         self._learning_problem = learning_problem.encode_kb(self.kb)
 
-        population = self.toolbox.population(n=self.population_size)
+        verbose = kwargs.pop("verbose", False)
 
-        # TODO: Add classes for algorithms
-        self.result_population = algorithms.eaSimple(population, self.toolbox, 0.9, 0.1, self.num_generations)[0]
-        # self.result_population = self.algorithm.evolve(self.toolbox, population,
-        #                                               self.num_generations, kwargs)
-        self.print_top_n_individuals(self.result_population)
+        self.result_population = self.toolbox.population(n=self.population_size)
+        self.algorithm.evolve(self.toolbox, 
+                              self.result_population, 
+                              self.num_generations,
+                              verbose=verbose)
+
         return self
 
     # TODO: Think about the node wrapping
@@ -183,15 +188,9 @@ class EvoLearner(BaseConceptLearner):
         quality = self.quality_func.score(instances, self._learning_problem)
         individual.quality.values = (quality[1],)
         self.fitness_func.apply(individual)
-        # For deap build in algorithms
-        return individual.fitness.values
 
-    def print_top_n_individuals(self, individuals, top_n=5, key='fitness'):
-        rdr = DLSyntaxObjectRenderer()
-        best_inds = tools.selBest(individuals, k=top_n, fit_attr=key)
-        best_concepts = [(gp.compile(ind, self.pset), ind.quality) for ind in best_inds]
-        for concept in best_concepts:
-            print(rdr.render(concept[0]), concept[1])
+    def print_top_n_individuals(self, top_n=5, key='fitness'):
+        [print(node) for node in self.best_hypotheses(n=top_n, key=key)]
 
     # Dummy for now
     def show_search_tree(self, heading_step: str, top_n: int = 10) -> None:
