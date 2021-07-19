@@ -6,7 +6,7 @@ from owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeVa
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, \
     OWLObjectCardinalityRestriction, OWLObjectHasSelf, \
     OWLObjectHasValue, OWLObjectOneOf, OWLNamedIndividual, \
-    OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality
+    OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLClassExpression, OWLThing
 from owlapy.util import OrderedOWLObject
 from sortedcontainers import SortedSet
 
@@ -380,3 +380,87 @@ class ConceptOperandSorter:
             return r
         else:
             return t
+
+
+class OperandSetTransform:
+    def simplify(self, o: OWLClassExpression) -> OWLClassExpression:
+        return self._simplify(o).get_nnf()
+
+    # single dispatch is still not implemented in mypy, see https://github.com/python/mypy/issues/2904
+    @singledispatchmethod
+    def _simplify(self, o: _O) -> _O:
+        raise NotImplementedError
+
+    @_simplify.register
+    def _(self, o: OWLClass) -> OWLClass:
+        return o
+
+    @_simplify.register
+    def _(self, p: OWLObjectProperty) -> OWLObjectProperty:
+        return p
+
+    @_simplify.register
+    def _(self, i: OWLNamedIndividual) -> OWLNamedIndividual:
+        return i
+
+    @_simplify.register
+    def _(self, e: OWLObjectSomeValuesFrom) -> OWLObjectSomeValuesFrom:
+        return OWLObjectSomeValuesFrom(property=e.get_property(), filler=self._simplify(e.get_filler()))
+
+    @_simplify.register
+    def _(self, e: OWLObjectAllValuesFrom) -> OWLObjectAllValuesFrom:
+        return OWLObjectAllValuesFrom(property=e.get_property(), filler=self._simplify(e.get_filler()))
+
+    @_simplify.register
+    def _(self, c: OWLObjectUnionOf) -> OWLClassExpression:
+        s = set(map(self._simplify, set(c.operands())))
+        if OWLThing in s:
+            return OWLThing
+        elif len(s) == 1:
+            return s.pop()
+        return OWLObjectUnionOf(_sort_by_ordered_owl_object(s))
+
+    @_simplify.register
+    def _(self, c: OWLObjectIntersectionOf) -> OWLClassExpression:
+        s = set(map(self._simplify, set(c.operands())))
+        s.discard(OWLThing)
+        if not s:
+            return OWLThing
+        elif len(s) == 1:
+            return s.pop()
+        return OWLObjectIntersectionOf(_sort_by_ordered_owl_object(s))
+
+    @_simplify.register
+    def _(self, n: OWLObjectComplementOf) -> OWLObjectComplementOf:
+        return n
+
+    @_simplify.register
+    def _(self, p: OWLObjectInverseOf) -> OWLObjectInverseOf:
+        return p
+
+    @_simplify.register
+    def _(self, r: OWLObjectMinCardinality) -> OWLObjectMinCardinality:
+        return OWLObjectMinCardinality(cardinality=r.get_cardinality(), property=r.get_property(),
+                                       filler=self._simplify(r.get_filler()))
+
+    @_simplify.register
+    def _(self, r: OWLObjectExactCardinality) -> OWLObjectExactCardinality:
+        return OWLObjectExactCardinality(cardinality=r.get_cardinality(), property=r.get_property(),
+                                         filler=self._simplify(r.get_filler()))
+
+    @_simplify.register
+    def _(self, r: OWLObjectMaxCardinality) -> OWLObjectMaxCardinality:
+        return OWLObjectMaxCardinality(cardinality=r.get_cardinality(), property=r.get_property(),
+                                       filler=self._simplify(r.get_filler()))
+
+    @_simplify.register
+    def _(self, r: OWLObjectHasSelf) -> OWLObjectHasSelf:
+        return r
+
+    @_simplify.register
+    def _(self, r: OWLObjectHasValue):
+        return r
+
+    @_simplify.register
+    def _(self, r: OWLObjectOneOf):
+        return OWLObjectOneOf(_sort_by_ordered_owl_object(set(r.individuals())))
