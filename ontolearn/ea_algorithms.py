@@ -1,7 +1,9 @@
 from abc import ABCMeta, abstractmethod
 from typing import ClassVar, Final, Optional
 from deap.algorithms import varAnd
+from deap.base import Toolbox
 from heapq import nlargest
+import time
 
 
 class AbstractEvolutionaryAlgorithm(metaclass=ABCMeta):
@@ -46,7 +48,12 @@ class AbstractEvolutionaryAlgorithm(metaclass=ABCMeta):
             self.elite_size = 0.1
 
     @abstractmethod
-    def evolve(self, toolbox, population, num_generations, verbose=False):
+    def evolve(self, 
+               toolbox: Toolbox, 
+               population, 
+               num_generations: int, 
+               start_time: float, 
+               verbose: bool = False) -> bool:
         pass
 
 
@@ -65,12 +72,18 @@ class EASimple(AbstractEvolutionaryAlgorithm):
                          elitism=elitism,
                          elite_size=elite_size)
 
-    def evolve(self, toolbox, population, num_generations, verbose=False):
+    def evolve(self, 
+               toolbox: Toolbox, 
+               population, 
+               num_generations: int, 
+               start_time: float, 
+               verbose: bool = False) -> bool:
+
         num_elite = self.elite_size*len(population) if self.elitism else 0
         num_tournaments = len(population) - num_elite
 
         for p in population:
-            toolbox.evaluate(p)
+            toolbox.apply_fitness(p)
 
         elite = []
         gen = 1
@@ -84,7 +97,7 @@ class EASimple(AbstractEvolutionaryAlgorithm):
 
             for off in offspring:
                 if not off.fitness.valid:
-                    toolbox.evaluate(off)
+                    toolbox.apply_fitness(off)
                     if off.quality.values[0] == 1.0:
                         goal_found = True
 
@@ -93,5 +106,10 @@ class EASimple(AbstractEvolutionaryAlgorithm):
             if verbose:
                 print("\nGeneration: ", gen, "-----------------------------")
                 toolbox.print()
+
+            if (time.time() - start_time) > toolbox.max_runtime():
+                return goal_found
             
             gen += 1
+        
+        return goal_found

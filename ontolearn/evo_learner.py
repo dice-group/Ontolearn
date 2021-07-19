@@ -14,6 +14,7 @@ import operator
 from deap import base, creator, tools, gp
 
 from owlapy.model import OWLClassExpression, OWLObjectPropertyExpression
+import time
 
 
 class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
@@ -23,6 +24,15 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                 '_learning_problem', 'result_population'
 
     name = 'evolearner'
+
+    fitness_func: AbstractFitness
+    init_method: AbstractEAInitialization
+    algorithm: AbstractEvolutionaryAlgorithm
+    expressivity: str
+    tournament_size: int
+    population_size: int
+    num_generations: int
+    height_limit: int
 
     pset: gp.PrimitiveSetTyped
     toolbox: base.Toolbox
@@ -129,7 +139,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
         toolbox.register("compile", gp.compile, pset=self.pset)
 
-        toolbox.register("evaluate", self._fitness_func)
+        toolbox.register("apply_fitness", self._fitness_func)
         toolbox.register("select", tools.selTournament, tournsize=self.tournament_size)
         toolbox.register("mate", gp.cxOnePoint)
         toolbox.register("create_tree_mut", gp.genHalfAndHalf, min_=1, max_=3)
@@ -142,6 +152,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
         toolbox.register("print", self.print_top_n_individuals)
         toolbox.register("terminate_on_goal", lambda: self.terminate_on_goal)
+        toolbox.register("max_runtime", lambda: self.max_runtime)
         toolbox.register("pset", lambda: self.pset)
 
         return toolbox
@@ -161,13 +172,15 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
         verbose = kwargs.pop("verbose", False)
 
+        self.start_time = time.time()
         self.result_population = self.toolbox.population(n=self.population_size)
-        self.algorithm.evolve(self.toolbox, 
-                              self.result_population, 
-                              self.num_generations,
-                              verbose=verbose)
+        self._goal_found = self.algorithm.evolve(self.toolbox, 
+                                                 self.result_population, 
+                                                 self.num_generations,
+                                                 self.start_time,
+                                                 verbose=verbose)
 
-        return self
+        return self.terminate()
 
     # TODO: Think about the node wrapping
     def best_hypotheses(self, n=5, key='fitness'):

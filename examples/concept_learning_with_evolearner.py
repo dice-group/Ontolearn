@@ -62,10 +62,9 @@ for str_target_concept, examples in settings['problems'].items():
     fitness = LinearPressureFitness(gain=2048, penalty=1)
 
     model = EvoLearner(knowledge_base=target_kb,
-                  max_runtime=600,
-                  quality_func=qual,
-                  fitness_func=fitness
-                  )
+                       max_runtime=600,
+                       quality_func=qual,
+                       fitness_func=fitness)
     model.fit(lp, verbose=True)
 
     model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
