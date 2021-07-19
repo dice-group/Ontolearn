@@ -16,7 +16,7 @@ from deap import base, creator, tools, gp
 from owlapy.model import OWLClassExpression, OWLObjectPropertyExpression
 
 
-class EvoLearner(BaseConceptLearner):
+class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
     __slots__ = 'fitness_func', 'init_method', 'algorithm', 'expressivity', 'tournament_size',  \
                 'population_size', 'num_generations', 'height_limit', 'pset', 'toolbox', \
@@ -191,18 +191,6 @@ class EvoLearner(BaseConceptLearner):
 
     def print_top_n_individuals(self, top_n=5, key='fitness'):
         [print(node) for node in self.best_hypotheses(n=top_n, key=key)]
-
-    # Dummy for now
-    def show_search_tree(self, heading_step: str, top_n: int = 10) -> None:
-        exit(1)
-
-    # Dummy for now
-    def next_node_to_expand(self, *args, **kwargs):
-        exit(1)
-
-    # Dummy for now
-    def downward_refinement(self, *args, **kwargs):
-        exit(1)
 
     def clean(self):
         self.result_population = None

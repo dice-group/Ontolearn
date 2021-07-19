@@ -13,7 +13,7 @@ from owlapy.render import DLSyntaxObjectRenderer
 from sortedcontainers import SortedSet
 from . import KnowledgeBase
 from .abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic, AbstractLearningProblem
-from .base_concept_learner import BaseConceptLearner
+from .base_concept_learner import RefinementBasedConceptLearner
 from .core.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter
 from owlapy.util import OrderedOWLObject
 from .heuristics import CELOEHeuristic, OCELHeuristic
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 _concept_operand_sorter = ConceptOperandSorter()
 
 
-class CELOE(BaseConceptLearner[OENode]):
+class CELOE(RefinementBasedConceptLearner[OENode]):
     __slots__ = 'best_descriptions', 'max_he', 'min_he', 'best_only', 'calculate_min_max', 'heuristic_queue', \
                 'search_tree', '_learning_problem', '_max_runtime'
 
@@ -316,7 +316,7 @@ class OCEL(CELOE):
                          iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested)
 
 
-class LengthBaseLearner(BaseConceptLearner):
+class LengthBaseLearner(RefinementBasedConceptLearner):
     """
     CD: An idea for next possible work.
     Propose a Heuristic func based on embeddings
