@@ -165,20 +165,22 @@ class CELOE(BaseConceptLearner[OENode]):
 
         return map(make_node_with_parent, refinements)
 
-    def fit(self, learning_problem: PosNegLPStandard,
-            max_runtime: Optional[int] = None):
+    def fit(self, *args, **kwargs):
         """
         Find hypotheses that explain pos and neg.
         """
         self.clean()
+        max_runtime = kwargs.pop("max_runtime", None)
+        learning_problem = self.construct_learning_problem(PosNegLPStandard, args, kwargs)
+
         assert not self.search_tree
-        assert isinstance(learning_problem, PosNegLPStandard)
         self._learning_problem = learning_problem.encode_kb(self.kb)
 
         if max_runtime is not None:
             self._max_runtime = max_runtime
         else:
             self._max_runtime = self.max_runtime
+
         root = self.make_node(_concept_operand_sorter.sort(self.start_class), is_root=True)
         self._add_node(root, None)
         assert len(self.heuristic_queue) == 1
@@ -231,6 +233,7 @@ class CELOE(BaseConceptLearner[OENode]):
         if ref.concept in self.search_tree:
             # ignoring refinement, it has been refined from another parent
             return False
+
         self.search_tree[ref.concept] = TreeNode(ref, tree_parent, is_root=ref.is_root)
         ref_individuals = self.kb.individuals_set(ref.concept)
         ref.individuals_count = len(ref_individuals)

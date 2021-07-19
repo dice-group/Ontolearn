@@ -1,7 +1,7 @@
 import logging
 import time
 from abc import ABCMeta, abstractmethod
-from typing import List, Set, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, cast, Callable
+from typing import List, Set, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, cast, Callable, Type
 
 import numpy as np
 import pandas as pd
@@ -11,10 +11,11 @@ from owlapy.model import OWLClassExpression, OWLNamedIndividual, OWLOntologyMana
     OWLAnnotationProperty, OWLLiteral, IRI
 from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, AbstractKnowledgeBase, \
-    AbstractConceptNode
+    AbstractConceptNode, AbstractLearningProblem
 from .utils import oplogging
 
 _N = TypeVar('_N', bound=AbstractConceptNode)  #:
+_X = TypeVar('_X', bound=AbstractLearningProblem)  #:
 Factory = Callable
 
 logger = logging.getLogger(__name__)
@@ -206,6 +207,28 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             Iterable[_N]: refinement results as new search tree nodes (they still need to be added to the tree)
         """
         pass
+
+    def construct_learning_problem(self, type_: Type[_X], xargs: Tuple, xkwargs: Dict) -> _X:
+        """Construct learning problem of given type based on args and kwargs. If a learning problem is contained in
+        args or the learning_problem kwarg, it is used. otherwise, a new learning problem of type type_ is created
+        with args and kwargs as parameters.
+
+        Args:
+            type_: type of the learning problem
+            xargs: the positional arguments
+            xkwargs: the keyword arguments
+
+        Returns:
+            the learning problem
+        """
+        learning_problem = xkwargs.pop("learning_problem", None)
+        if learning_problem is None and xargs and isinstance(xargs[0], AbstractLearningProblem):
+            learning_problem = xargs[0]
+            xargs = xargs[1:]
+        if learning_problem is None:
+            learning_problem = type_(*xargs, **xkwargs)
+        assert isinstance(learning_problem, type_)
+        return learning_problem
 
     @abstractmethod
     def fit(self, *args, **kwargs):

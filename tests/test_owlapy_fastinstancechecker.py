@@ -4,7 +4,7 @@ from pytest import mark
 
 from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
 from owlapy.model import OWLClass, OWLObjectProperty, OWLNamedIndividual, OWLObjectIntersectionOf, \
-    OWLObjectSomeValuesFrom, OWLThing, OWLObjectComplementOf, IRI
+    OWLObjectSomeValuesFrom, OWLThing, OWLObjectComplementOf, IRI, OWLObjectAllValuesFrom, OWLNothing
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 
 
@@ -74,6 +74,27 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
         with_child = set(reasoner_open.instances(
             OWLObjectSomeValuesFrom(property=has_child, filler=OWLThing)))
         self.assertEqual(all_inds - unknown_child, with_child)
+
+    def test_all_values(self):
+        NS = "http://example.com/father#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
+
+        male = OWLClass(IRI.create(NS, 'male'))
+        female = OWLClass(IRI.create(NS, 'female'))
+        has_child = OWLObjectProperty(IRI(NS, 'hasChild'))
+
+        base_reasoner = OWLReasoner_Owlready2(onto)
+        reasoner_nd = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner, negation_default=True)
+
+        # note, these answers are all wrong under OWA
+        only_male_child = frozenset(reasoner_nd.instances(OWLObjectAllValuesFrom(property=has_child, filler=male)))
+        only_female_child = frozenset(reasoner_nd.instances(OWLObjectAllValuesFrom(property=has_child, filler=female)))
+        no_child = frozenset(reasoner_nd.instances(OWLObjectAllValuesFrom(property=has_child, filler=OWLNothing)))
+        target_inst = frozenset({OWLNamedIndividual(IRI('http://example.com/father#', 'michelle')),
+                                 OWLNamedIndividual(IRI('http://example.com/father#', 'heinz'))})
+        self.assertEqual(no_child, target_inst)
+        print(no_child)
 
     @mark.xfail
     def test_complement2(self):

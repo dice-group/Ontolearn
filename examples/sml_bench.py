@@ -5,9 +5,9 @@ from ontolearn import KnowledgeBase
 from ontolearn.concept_learner import CELOE
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import Accuracy, F1
-from ontolearn.utils import setup_logging
+from ontolearn.utils import setup_logging, read_individuals_file
 from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.model import OWLNamedIndividual, IRI
+from owlapy.model import IRI
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer  # noqa: F401
 
@@ -20,17 +20,17 @@ def run(data_file, pos_file, neg_file):
                                                negation_default=True)
 
     kb = KnowledgeBase(ontology=onto, reasoner=reasoner)
-    pos = read_individuals(pos_file)
-    neg = read_individuals(neg_file)
+    pos = read_individuals_file(pos_file)
+    neg = read_individuals_file(neg_file)
 
-    lp = PosNegLPStandard(kb, pos, neg)
+    lp = PosNegLPStandard(pos, neg)
 
-    pred_acc = Accuracy(lp)
-    f1 = F1(lp)
-    alg = CELOE(kb, lp,
+    pred_acc = Accuracy()
+    f1 = F1()
+    alg = CELOE(kb,
                 max_runtime=600,
                 max_num_of_concepts_tested=1_000_000)
-    alg.fit()
+    alg.fit(lp)
     # render = ManchesterOWLSyntaxOWLObjectRenderer()
     render = DLSyntaxObjectRenderer()
     print("solutions:")
@@ -38,18 +38,12 @@ def run(data_file, pos_file, neg_file):
     for h in alg.best_hypotheses(3):
         individuals_set = kb.individuals_set(h.concept)
         print(f'{i}: {render.render(h.concept)} ('
-              f'pred. acc.: {pred_acc.score(individuals_set)[1]}, '
-              f'F-Measure: {f1.score(individuals_set)[1]}'
+              f'pred. acc.: {pred_acc.score(individuals_set, lp)[1]}, '
+              f'F-Measure: {f1.score(individuals_set, lp)[1]}'
               f') [Node '
               f'quality: {h.quality}, h-exp: {h.h_exp}, RC: {h.refinement_count}'
               f']')
         i += 1
-
-
-def read_individuals(file):
-    with open(file, 'r') as f:
-        pos = map(OWLNamedIndividual, map(IRI.create, f.read().splitlines()))
-    return set(pos)
 
 
 def main():
