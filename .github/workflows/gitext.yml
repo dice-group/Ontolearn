@@ -1,0 +1,15 @@
+name: Verify external files
+
+on: [push]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 5
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Verify external files
+      run: |
+        ./download_big.sh -A
