@@ -146,3 +146,4 @@ cython_debug/
 
 # Ontolearn logs
 Log/
+pre_trained_agents.zip
