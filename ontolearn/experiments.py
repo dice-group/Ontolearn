@@ -1,9 +1,10 @@
 from typing import List, Tuple, Set, Dict, Any, Iterable
+from owlapy.model import OWLClass, OWLNamedIndividual, IRI, OWLClassExpression
 import numpy as np
 import json
 from sklearn.model_selection import KFold
-
 import time
+from random import shuffle
 
 
 class Experiments:
@@ -12,47 +13,52 @@ class Experiments:
         self.max_test_time_per_concept = max_test_time_per_concept
 
     @staticmethod
-    def store_report(model, learning_problems: List[List], predictions: List[dict]) -> Tuple[str, Dict[str, Any]]:
+    def store_report(model, learning_problems: List[Iterable], test_report: List[dict]) -> Tuple[str, Dict[str, Any]]:
         """
 
         @param model: concept learner
         @param learning_problems: A list of learning problems (lps) where lp corresponds to [target concept, positive
         and negative examples, respectively.
-        @param predictions: A list of predictions (preds) where
-        pred => { 'Prediction': str, 'F-measure': float, 'Accuracy', 'Runtime':float}
+        @param test_report: A list of predictions (preds) where
+        test_report => { 'Prediction': str, 'F-measure': float, 'Accuracy', 'Runtime':float}
         @return:
         """
-        assert len(learning_problems) == len(predictions)
-        assert isinstance(learning_problems, list) and isinstance(learning_problems[0], list)
-        assert isinstance(predictions, list) and isinstance(predictions[0], dict)
+        assert len(learning_problems) == len(test_report)
+        assert isinstance(learning_problems, list)  # and isinstance(learning_problems[0], list)
+        assert isinstance(test_report, list) and isinstance(test_report[0], dict)
 
         store_json = dict()
-        for (th, lp, pred) in zip(range(len(learning_problems)), learning_problems, predictions):
+        print('###############')
+        """ (1) Convert E^+ and E^- into strings to store them in JSON format """
+        for (th, lp, pred) in zip(range(len(learning_problems)), learning_problems, test_report):
             report = dict()
-            report['TargetConcept'] = lp[0]
-            report['Positives'], report['Negatives'] = list(lp[1]), list(lp[2])  # 'set' is not JSON serializable.
+            target_class_expression, typed_positive, typed_negative = lp
             report.update(pred)
+            report['Positives'], report['Negatives'] = [owl_indv.get_iri().as_str() for owl_indv in typed_positive], [owl_indv.get_iri().as_str() for owl_indv in typed_negative]
             store_json[th] = report
-
-        # json serialize
+        print('##################')
+        """ (2) Serialize classification report """
         with open(model.storage_path + '/classification_reports.json', 'w') as file_descriptor:
             json.dump(store_json, file_descriptor, indent=3)
-
         del store_json
-
-        # json serialize
+        """ (3) Deserialize (2) for the sake of validating its correctness"""
         with open(model.storage_path + '/classification_reports.json', 'r') as read_file:
             report = json.load(read_file)
-        array_res = np.array([[v['F-measure'], v['Accuracy'], v['Runtime']] for k, v in report.items()])
-        f1, acc, time = array_res[:, 0], array_res[:, 1], array_res[:, 2]
+        array_res = np.array(
+            [[v['F-measure'], v['Accuracy'], v['NumClassTested'], v['Runtime']] for k, v in report.items()])
+        # Extract Infos
+        f1, acc, num_concept_tested, runtime = array_res[:, 0], array_res[:, 1], array_res[:, 2], array_res[:, 3]
         del array_res
-        m = '{}\t F-measure:(avg.{:.2f} | std.{:.2f})\tAccuracy:(avg.{:.2f} | std.{:.2f})\t' \
-            'Runtime:(avg.{:.2f} | std.{:.2f})'.format(model.name,
-                                                       f1.mean(), f1.std(),
-                                                       acc.mean(),
-                                                       acc.std(),
-                                                       time.mean(), time.std())
-        return m, {'F-measure': f1, 'Accuracy': acc, 'Runtime': time}
+        report_str = '{}\t F-measure:(avg.{:.2f} | std.{:.2f})\tAccuracy:(avg.{:.2f} | std.{:.2f})\t' \
+            '\tNumClassTested:(avg.{:.2f} | std.{:.2f})\tRuntime:(avg.{:.2f} | std.{:.2f})'.format(model.name,
+                                                                                                   f1.mean(), f1.std(),
+                                                                                                   acc.mean(),
+                                                                                                   acc.std(),
+                                                                                                   num_concept_tested.mean(),
+                                                                                                   num_concept_tested.std(),
+                                                                                                   runtime.mean(),
+                                                                                                   runtime.std())
+        return report_str, {'F-measure': f1, 'Accuracy': acc, 'NumClassTested': num_concept_tested, 'Runtime': runtime}
 
     def start_KFold(self, k=None, dataset: List[Tuple[str, Set, Set]] = None, models: Iterable = None):
         """
@@ -71,7 +77,7 @@ class Experiments:
         assert k
         dataset = np.array(dataset)  # due to indexing feature required in the sklearn.KFold.
 
-        kf = KFold(n_splits=k, random_state=self.random_state_k_fold)
+        kf = KFold(n_splits=k, random_state=self.random_state_k_fold, shuffle=True)
 
         results = dict()
         counter = 1
@@ -82,21 +88,56 @@ class Experiments:
             for m in models:
                 m.train(train)
                 test_report: List[dict] = m.fit_from_iterable(test, max_runtime=self.max_test_time_per_concept)
-                str_report, dict_report = self.store_report(m, test, test_report)
-                print(str_report)
-                results.setdefault(m.name, []).append((counter, dict_report))
+                report_str, report_dict = self.store_report(m, test, test_report)
+                results.setdefault(m.name, []).append((counter, report_dict))
             print(f'##### FOLD:{counter} took {round(time.time() - start_time_fold)} seconds #####')
             counter += 1
 
         self.report_results(results)
 
-    @staticmethod
-    def report_results(k_fold_cross_validation):
-        print('\n##### K-FOLD CROSS VALUATION RESULTS #####')
-        for learner_name, v in k_fold_cross_validation.items():
-            r=np.array([[report['F-measure'],report['Accuracy'],report['Runtime']] for (fold, report) in v])
-            f1_mean, f1_std = r[:,0].mean(), r[:,0].std()
-            acc_mean, acc_std = r[:,1].mean(), r[:,1].std()
-            runtime_mean, runtime_std = r[:,2].mean(), r[:,2].std()
+    def start(self, dataset: List[Tuple[str, Set, Set]] = None, models: List = None):
+        """
+        Perform KFold cross validation
+        @param models:
+        @param k:
+        @param dataset: A list of tuples where a tuple (i,j,k) where i denotes the target concept
+        j denotes the set of positive examples and k denotes the set of negative examples.
+        @return:
+        """
+        assert len(models) > 0
+        assert len(dataset) > 0
+        assert isinstance(dataset[0], tuple)
+        assert isinstance(dataset[0], tuple)
+        shuffle(dataset)
+        """ (1) Convert string representation of positive and negative examples into OWLNamedIndividual """
+        for i in range(len(dataset)):
+            t, p, n = dataset[i]
+            typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
+            typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
+            dataset[i] = (t, typed_pos, typed_neg)
+
+        results = dict()
+        counter = 1
+        """ (1) Predict OWL Class Expression """
+        for m in models:
             print(
-                f'{learner_name}\t F-measure:(avg.{f1_mean:.2f} | std.{f1_std:.2f})\tAccuracy:(avg.{acc_mean:.2f} | std.{acc_std:.2f})\tRuntime:(avg.{runtime_mean:.2f} | std.{runtime_std:.2f})')
+                f'{m.name} starts on {len(dataset)} number of problems. Max Runtime per problem is set to {self.max_test_time_per_concept} seconds.')
+            test_report: List[dict] = m.fit_from_iterable(dataset, max_runtime=self.max_test_time_per_concept)
+            str_report, dict_report = self.store_report(m, dataset, test_report)
+            results.setdefault(m.name, []).append((counter, dict_report))
+        self.report_results(results, num_problems=len(dataset))
+
+    @staticmethod
+    def report_results(results, num_problems):
+        print(f'\n##### RESULTS on {num_problems} number of learning problems#####')
+        for learner_name, v in results.items():
+            r = np.array([[report['F-measure'], report['Accuracy'], report['NumClassTested'], report['Runtime']] for
+                          (fold, report) in v])
+            f1_mean, f1_std = r[:, 0].mean(), r[:, 0].std()
+            acc_mean, acc_std = r[:, 1].mean(), r[:, 1].std()
+            num_concept_tested_mean, num_concept_tested_std = r[:, 2].mean(), r[:, 2].std()
+
+            runtime_mean, runtime_std = r[:, 3].mean(), r[:, 3].std()
+
+            print(
+                f'{learner_name}\t F-measure:(avg. {f1_mean:.2f} | std. {f1_std:.2f})\tAccuracy:(avg. {acc_mean:.2f} | std. {acc_std:.2f})\t\tNumClassTested:(avg. {num_concept_tested_mean:.2f} | std. {num_concept_tested_std:.2f})\t\tRuntime:(avg.{runtime_mean:.2f} | std.{runtime_std:.2f})')

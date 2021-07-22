@@ -46,7 +46,6 @@ class F1(AbstractScorer):
     def score(self, instances, learning_problem: EncodedPosNegLPStandard):
         if len(instances) == 0:
             return False, 0
-
         tp = len(learning_problem.kb_pos.intersection(instances))
         # tn = len(learning_problem.kb_neg.difference(instances))
 

@@ -1,4 +1,4 @@
-from typing import Iterable, Optional, AbstractSet, Dict
+from typing import Iterable, Optional, AbstractSet, Dict, Generator
 
 from ontolearn.core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from ontolearn.utils import parametrized_performance_debugger
@@ -66,19 +66,51 @@ class ConceptGenerator:
         yield from self._class_hierarchy.leaves(of=concept)
 
     @parametrized_performance_debugger()
-    def negation_from_iterables(self, s: Iterable[OWLClassExpression]) -> Iterable[OWLObjectComplementOf]:
+    def negation_from_iterables(self, class_expressions: Iterable[OWLClassExpression]):
         """Negate a sequence of Class Expressions
 
         Args:
-            s: iterable of class expressions to negate
+            class_expressions: iterable of class expressions to negate
 
         Returns:
             negated form of input
 
                 { x \\| ( x \\equv not s} """
-        for item in s:
+        for item in class_expressions:
             assert isinstance(item, OWLClassExpression)
             yield self.negation(item)
+
+    @staticmethod
+    def intersect_from_iterables(a_operands: Iterable[OWLClassExpression], b_operands: Iterable[OWLClassExpression]) -> \
+            Iterable[OWLObjectComplementOf]:
+        """ Create an intersection of each class expression in a_operands with each class expression in b_operands"""
+        assert isinstance(a_operands, Generator) is False and isinstance(b_operands, Generator) is False
+        seen = set()
+        # TODO: if input sizes say 10^4, we can employ multiprocessing
+        for i in a_operands:
+            for j in b_operands:
+                if (i, j) in seen:
+                    continue
+                i_and_j = OWLObjectIntersectionOf((i, j))
+                seen.add((i, j))
+                seen.add((j, i))
+                yield i_and_j
+
+    @staticmethod
+    def union_from_iterables(a_operands: Iterable[OWLClassExpression],
+                             b_operands: Iterable[OWLClassExpression]) -> Iterable[OWLObjectUnionOf]:
+        """ Create an union of each class expression in a_operands with each class expression in b_operands"""
+        assert (isinstance(a_operands, Generator) is False) and (isinstance(b_operands, Generator) is False)
+        # TODO: if input sizes say 10^4, we can employ multiprocessing
+        seen = set()
+        for i in a_operands:
+            for j in b_operands:
+                if (i, j) in seen:
+                    continue
+                i_and_j = OWLObjectUnionOf((i, j))
+                seen.add((i, j))
+                seen.add((j, i))
+                yield i_and_j
 
     @parametrized_performance_debugger()
     def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
@@ -172,6 +204,8 @@ class ConceptGenerator:
         Returns:
             intersection with all operands (intersections are merged)
         """
+        # TODO CD: I would rather prefer def intersection(self, a: OWLClassExpression, b: OWLClassExpression)
+        # TODO: This is more advantages as one does not need to create a tuple of a list before intersection two expressions.
         operands = []
         for c in ops:
             if isinstance(c, OWLObjectIntersectionOf):

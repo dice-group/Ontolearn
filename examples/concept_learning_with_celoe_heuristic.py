@@ -58,7 +58,7 @@ for str_target_concept, examples in settings['problems'].items():
 
     typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
     typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
-    lp = PosNegLPStandard(knowledge_base=kb, pos=typed_pos, neg=typed_neg)
+    lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
 
     qual = Accuracy()
     heur = CELOEHeuristic(expansionPenaltyFactor=0.05, startNodeBonus=1.0, nodeRefinementPenalty=0.01)
