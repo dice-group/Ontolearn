@@ -237,29 +237,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         Once finished, the results can be queried with the `best_hypotheses` function"""
         pass
 
-    def fit_from_iterable(self, dataset: List[Tuple[str, Set, Set]], max_runtime: int = None) -> List[Dict]:
-        if max_runtime:
-            self.max_runtime = max_runtime
-
-        results = []
-        assert isinstance(dataset, List)
-        for (alc_concept_str, positives, negatives) in dataset:
-            # self.logger.info('Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(alc_concept_str, len(positives), len(negatives)))
-            start_time = time.time()
-            self.fit(pos=positives, neg=negatives)
-            h = self.best_hypotheses(1)[0]
-            individuals = self.kb.convert_owlready2_individuals_to_uri_from_iterable(h.concept.instances)
-
-            from ontolearn.metrics import F1
-            f_measure = F1().score(pos=positives, neg=negatives, instances=individuals)
-            from ontolearn.metrics import Accuracy
-            accuracy = Accuracy().score(pos=positives, neg=negatives, instances=individuals)
-            results.append({'Prediction': h.concept.str,
-                            'F-measure': f_measure,
-                            'Accuracy': accuracy,
-                            'Runtime': time.time() - start_time})
-        return results
-
     @abstractmethod
     def best_hypotheses(self, n=10) -> Iterable[_N]:
         """Get the current best found hypotheses according to the quality

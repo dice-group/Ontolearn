@@ -3,7 +3,7 @@ from typing import List, Dict
 from .utils import create_experiment_folder
 import re
 import time
-
+import logging
 
 class DLLearnerBinder:
     """
@@ -19,8 +19,8 @@ class DLLearnerBinder:
         self.name = model
         self.max_runtime = max_runtime
         self.storage_path, _ = create_experiment_folder()
-        # self.logger = create_logger(name=self.name, p=self.storage_path)
         self.best_predictions = None
+        self.config_name_identifier = None
 
     def write_dl_learner_config(self, pos: List[str], neg: List[str]) -> str:
         """
@@ -51,10 +51,7 @@ class DLLearnerBinder:
         Text.append("rendering = \"dlsyntax\"")
         Text.append("// knowledge source definition")
 
-        # perform cross validation
         Text.append("cli.type = \"org.dllearner.cli.CLI\"")
-        # Text.append("cli.performCrossValidation = \"true\"")
-        # Text.append("cli.nrOfFolds = 10\n")
         Text.append("ks.type = \"OWL File\"")
         Text.append("\n")
 
@@ -62,9 +59,6 @@ class DLLearnerBinder:
 
         Text.append(
             "ks.fileName = \"" + self.kb_path + '\"')
-        # Text.append(
-        #    "ks.fileName = \"" + '/home/demir/Desktop/DL/dllearner-1.4.0/examples/carcinogenesis/carcinogenesis.owl\"')  # carcinogenesis/carcinogenesis.ow
-
         Text.append("\n")
         Text.append("reasoner.type = \"closed world reasoner\"")
         Text.append("reasoner.sources = { ks }")
@@ -72,19 +66,17 @@ class DLLearnerBinder:
 
         Text.append("lp.type = \"PosNegLPStandard\"")
         Text.append("accuracyMethod.type = \"fmeasure\"")
-
         Text.append("\n")
-
         Text.append("lp.positiveExamples =" + pos_string)
         Text.append("\n")
-
         Text.append("lp.negativeExamples =" + neg_string)
         Text.append("\n")
         Text.append("alg.writeSearchTree = \"true\"")
 
         Text.append("op.type = \"rho\"")
-
+        Text.append("op.useNumericDatatypes = \"false\"")
         Text.append("op.useCardinalityRestrictions = \"false\"")
+
         if self.name == 'celoe':
             Text.append("alg.type = \"celoe\"")
             Text.append("alg.stopOnFirstDefinition = \"true\"")
@@ -99,9 +91,9 @@ class DLLearnerBinder:
             raise ValueError('Wrong algorithm chosen.')
 
         Text.append("alg.maxExecutionTimeInSeconds = " + str(self.max_runtime))
-
         Text.append("\n")
-        pathToConfig = self.storage_path + '/' + self.name + '.conf'  # /home/demir/Desktop/DL/DL-Learner-1.3.0/examples/family-benchmark
+
+        pathToConfig = self.storage_path + '/' + self.name + '_' + datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")+ '.conf'
 
         with open(pathToConfig, "wb") as wb:
             for i in Text:
@@ -127,11 +119,11 @@ class DLLearnerBinder:
         res = subprocess.run([self.binary_path + 'bin/cli', pathToConfig], stdout=subprocess.PIPE,
                              universal_newlines=True)
         total_runtime = round(time.time() - total_runtime, 3)
-        self.best_predictions = self.parse_dl_learner_output(res.stdout.splitlines())
+        self.best_predictions = self.parse_dl_learner_output(res.stdout.splitlines(), pathToConfig)
         self.best_predictions['Runtime'] = total_runtime
         return self
 
-    def best_hypotheses(self):
+    def best_hypothesis(self):
         """
         return predictions if exists.
         """
@@ -140,7 +132,7 @@ class DLLearnerBinder:
         else:
             print('Not prediction found.')
 
-    def parse_dl_learner_output(self, output_of_dl_learner) -> Dict:
+    def parse_dl_learner_output(self, output_of_dl_learner, file_path) -> Dict:
         """
         Parse the output received from executing dl-learner.
         @return: A dictionary of {'Prediction': ..., 'Accuracy': ..., 'F-measure': ...}
@@ -149,13 +141,26 @@ class DLLearnerBinder:
         best_concept_str = None
         acc = -1.0
         f_measure = -1.0
+        search_info = None
+        num_expression_tested = -1
+
+        # DL-learner does not provide a unified output :(
+        # ELTL  => No info pertaining to the number of concept tested, number of retrieval etc.
+        # CELOE => Algorithm terminated successfully (time: 245ms, 188 descriptions tested, 69 nodes in the search tree).
+        # OCEL  => Algorithm stopped (4505 descriptions tested).
+
+        time.time()
+        txt_path = file_path + '.txt'  # self.storage_path + '/output_' + self.name + '_' + str(time.time()) + '.txt'
 
         # (1) Store output of dl learner and extract solutions.
-        with open(self.storage_path + '/output_' + self.name + '.txt', 'w') as w:
+        with open(txt_path, 'w') as w:
             for th, sentence in enumerate(output_of_dl_learner):
                 w.write(sentence + '\n')
                 if 'solutions' in sentence and '1:' in output_of_dl_learner[th + 1]:
                     solutions = output_of_dl_learner[th:]
+
+                if 'Algorithm' in sentence:
+                    search_info = sentence
 
             # check whether solutions found
             if solutions:  # if solution found, check the correctness of relevant part of dl-learner output.
@@ -164,7 +169,7 @@ class DLLearnerBinder:
                     assert 'solutions' in solutions[0]
                     assert len(solutions) > 0
                     assert '1: ' in solutions[1][:5]
-                except AssertionError as ast:
+                except AssertionError:
                     print(type(solutions))
                     print('####')
                     print(solutions[0])
@@ -177,11 +182,19 @@ class DLLearnerBinder:
                 print('#################')
                 for i in output_of_dl_learner[-3:-1]:
                     print(i)
+                    if 'descriptions' in i:
+                        search_info = i
                 print('#################')
                 print('#######{}##########'.format(self.name))
                 print('#################')
-                return {'Model': self.name, 'Prediction': best_concept_str, 'Accuracy': float(acc),
-                        'F-measure': float(f_measure)}
+
+                _ = re.findall(r'\d+ descriptions tested', search_info)
+                assert len(_) == 1
+                # Get the numbers
+                num_expression_tested = int(re.findall(r'\d+', _[0])[0])
+
+                return {'Model': self.name, 'Prediction': best_concept_str, 'Accuracy': float(acc) * .01,
+                        'F-measure': float(f_measure) * .01, 'NumClassTested': int(num_expression_tested)}
 
         # top_predictions must have the following form
         """solutions ......:
@@ -207,6 +220,10 @@ class DLLearnerBinder:
             assert len(predicted_accuracy_info) == 1
             assert predicted_accuracy_info[0][-1] == '%'  # percentage sign
             acc = re.findall(r'\d+\.?\d+', predicted_accuracy_info[0])[0]
+            _ = re.findall(r'\d+ descriptions tested', search_info)
+            assert len(_) == 1
+            # Get the numbers
+            num_expression_tested = int(re.findall(r'\d+', _[0])[0])
 
         elif self.name in ['celoe', 'eltl']:
             # e.g. => 1: Sister ⊔ (∃ married.Brother) (pred. acc.: 90.24%, F-measure: 91.11%)
@@ -231,10 +248,21 @@ class DLLearnerBinder:
 
             acc = re.findall(r'\d+\.?\d+', predicted_accuracy_info[0])[0]
             f_measure = re.findall(r'\d+\.?\d+', f_measure_info[0])[0]
+
+            if search_info is not None:
+                # search_info is expected to be " Algorithm terminated successfully (time: 252ms, 188 descriptions tested, 69 nodes in the search tree)."
+                _ = re.findall(r'\d+ descriptions tested', search_info)
+                if len(_) == 0:
+                    assert self.name == 'eltl'
+                else:
+                    assert len(_) == 1
+                    # Get the numbers
+                    num_expression_tested = int(re.findall(r'\d+', _[0])[0])
         else:
             raise ValueError
-
-        return {'Prediction': best_concept_str, 'Accuracy': float(acc), 'F-measure': float(f_measure)}
+        # 100% into range between 1.0 and 0.0
+        return {'Prediction': best_concept_str, 'Accuracy': float(acc) * .01, 'F-measure': float(f_measure) * .01,
+                'NumClassTested': int(num_expression_tested)}
 
     @staticmethod
     def train(dataset: List = None) -> None:
@@ -255,4 +283,4 @@ class DLLearnerBinder:
             assert isinstance(max_runtime, int)
             self.max_runtime = max_runtime
 
-        return [self.fit(pos=p, neg=n, max_runtime=self.max_runtime).best_hypotheses() for (s, p, n) in dataset]
+        return [self.fit(pos=p, neg=n, max_runtime=self.max_runtime).best_hypothesis() for (s, p, n) in dataset]

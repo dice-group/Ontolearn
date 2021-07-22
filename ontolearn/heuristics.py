@@ -5,7 +5,7 @@ import numpy as np
 from .abstracts import AbstractScorer, AbstractHeuristic, AbstractOEHeuristicNode, EncodedLearningProblem
 from .learning_problem import EncodedPosNegUndLP, EncodedPosNegLPStandard
 from .metrics import Accuracy
-from .search import LBLNode
+from .search import LBLNode, RL_State
 
 
 class CELOEHeuristic(AbstractHeuristic[AbstractOEHeuristicNode]):
@@ -77,8 +77,10 @@ class DLFOILHeuristic(AbstractHeuristic):
 
         if node.parent_node:
             parent_inst = node.parent_node.individuals
-            p_0 = len(learning_problem.kb_pos.intersection(parent_inst))  # number of positive examples covered by the concept
-            n_0 = len(learning_problem.kb_neg.intersection(parent_inst))  # number of negative examples covered by the concept
+            p_0 = len(
+                learning_problem.kb_pos.intersection(parent_inst))  # number of positive examples covered by the concept
+            n_0 = len(
+                learning_problem.kb_neg.intersection(parent_inst))  # number of negative examples covered by the concept
             u_0 = len(learning_problem.kb_unlabelled.intersection(parent_inst))
             term2 = np.log(p_0 / (p_0 + n_0 + u_0))
         else:
@@ -98,7 +100,7 @@ class OCELHeuristic(AbstractHeuristic):
         super().__init__()
         self.accuracy_method = Accuracy()
 
-        self.gainBonusFactor = gainBonusFactor   # called alpha in the paper and gainBonusFactor in the original code
+        self.gainBonusFactor = gainBonusFactor  # called alpha in the paper and gainBonusFactor in the original code
         self.expansionPenaltyFactor = expansionPenaltyFactor  # called beta in the paper
 
     def apply(self, node, instances, learning_problem: EncodedPosNegLPStandard):
@@ -115,80 +117,32 @@ class OCELHeuristic(AbstractHeuristic):
         heuristic_val += accuracy + self.gainBonusFactor * accuracy_gain - node.h_exp * self.expansionPenaltyFactor
         node.heuristic = round(heuristic_val, 5)
 
+class Reward:
+    def __init__(self, reward_of_goal=5.0, beta=.04, alpha=.5):
+        self.name = 'DRILL_Reward'
+        self.lp = None
+        self.reward_of_goal = reward_of_goal
+        self.beta = beta
+        self.alpha = alpha
 
-class Reward(AbstractScorer):
-    def __init__(self, pos=None, neg=None, unlabelled=None):
-        super().__init__(pos, neg, unlabelled)
-        self.name = 'F1'
-        self.beta = 0
-        self.noise = 0
+    @property
+    def learning_problem(self):
+        return self.lp
 
-        self.reward_of_goal = 100.0
-        self.gainBonusFactor = self.reward_of_goal * .1
+    @learning_problem.setter
+    def learning_problem(self, x):
+        assert isinstance(x, EncodedLearningProblem)
+        self.lp = x
 
-    def score(self, pos, neg, instances):
-        self.pos = pos
-        self.neg = neg
-
-        tp = len(self.pos.intersection(instances))
-        tn = len(self.neg.difference(instances))
-
-        fp = len(self.neg.intersection(instances))
-        fn = len(self.pos.difference(instances))
-        try:
-            recall = tp / (tp + fn)
-            precision = tp / (tp + fp)
-            f_1 = 2 * ((precision * recall) / (precision + recall))
-        except ZeroDivisionError:
-            f_1 = 0
-
-        return round(f_1, 5)
-
-    def apply(self, node):
-        """
-        Calculate F1-score and assigns it into quality variable of node.
-        """
-        self.applied += 1
-
-        instances = node.concept.instances
-        if len(instances) == 0:
-            node.quality = 0
-            return False
-
-        tp = len(self.pos.intersection(instances))
-        # tn = len(self.neg.difference(instances))
-
-        fp = len(self.neg.intersection(instances))
-        fn = len(self.pos.difference(instances))
-
-        try:
-            recall = tp / (tp + fn)
-        except ZeroDivisionError:
-            node.quality = 0
-            return False
-
-        try:
-            precision = tp / (tp + fp)
-        except ZeroDivisionError:
-            node.quality = 0
-            return False
-
-        if precision == 0 or recall == 0:
-            node.quality = 0
-            return False
-
-        f_1 = 2 * ((precision * recall) / (precision + recall))
-        node.quality = round(f_1, 5)
-
-        assert node.quality
-
-    def calculate(self, current_state, next_state=None) -> float:
-        self.apply(current_state)
-        self.apply(next_state)
-        if next_state.quality == 1.0:
-            return self.reward_of_goal
-        reward = 0
-        reward += next_state.quality
-        if next_state.quality > current_state.quality:
-            reward += (next_state.quality - current_state.quality) * self.gainBonusFactor
-        return reward
+    def apply(self, rl_state: RL_State, next_rl_state: RL_State):
+        assert next_rl_state.quality is not None
+        assert rl_state.quality is not None
+        reward = next_rl_state.quality
+        if next_rl_state.quality == 1.0:
+            reward = self.reward_of_goal
+        else:
+            # Reward => being better than parent.
+            reward += (next_rl_state.quality - rl_state.quality) * self.alpha
+        # Regret => Length penalization.
+        reward -= next_rl_state.length * self.beta
+        return max(reward, 0)
