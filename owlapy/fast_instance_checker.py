@@ -1,3 +1,4 @@
+import logging
 import operator
 from functools import singledispatchmethod, reduce
 from logging import warning
@@ -6,20 +7,24 @@ from typing import Iterable, Dict, Mapping
 
 from owlapy.model import OWLReasoner, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
     OWLObjectProperty, OWLDataProperty, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
-    OWLObjectPropertyExpression, OWLObjectComplementOf, OWLObjectAllValuesFrom, IRI
+    OWLObjectPropertyExpression, OWLObjectComplementOf, OWLObjectAllValuesFrom, IRI, OWLObjectInverseOf
 from owlapy.util import NamedFixedSet
+
+
+logger = logging.getLogger(__name__)
 
 
 class OWLReasoner_FastInstanceChecker(OWLReasoner):
     """Tries to check instances fast (but maybe incomplete)"""
     __slots__ = '_ontology', '_base_reasoner', \
-                '_ind_enc', '_cls_to_ind', '_obj_prop', '_objectsomevalues_cache', \
+                '_ind_enc', '_cls_to_ind', '_obj_prop', '_obj_prop_inv', '_objectsomevalues_cache', \
                 '_negation_default'
 
     _ontology: OWLOntology
     _base_reasoner: OWLReasoner
     _cls_to_ind: Dict[OWLClass, int]  # Class => individuals
     _obj_prop: Dict[OWLObjectProperty, Mapping[int, int]]  # ObjectProperty => { individual => individuals }
+    _obj_prop_inv: Dict[OWLObjectProperty, Mapping[int, int]]  # ObjectProperty => { individual => individuals }
     _ind_enc: NamedFixedSet[OWLNamedIndividual]
     _objectsomevalues_cache: Dict[OWLClassExpression, int]  # ObjectSomeValuesFrom => individuals
 
@@ -38,6 +43,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
     def _init(self):
         self._cls_to_ind = dict()
         self._obj_prop = dict()
+        self._obj_prop_inv = dict()
         individuals = self._ontology.individuals_in_signature()
         self._ind_enc = NamedFixedSet(OWLNamedIndividual, individuals)
         self._objectsomevalues_cache = dict()
@@ -61,10 +67,16 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
     def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable:
         yield from self._base_reasoner.data_property_values(ind, pe)
 
-    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectProperty) -> Iterable[OWLNamedIndividual]:
+    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
+            -> Iterable[OWLNamedIndividual]:
         self._lazy_cache_obj_prop(pe)
         ind_enc = self._ind_enc(ind)
-        yield from self._ind_enc(self._obj_prop[pe][ind_enc])
+        if isinstance(pe, OWLObjectProperty):
+            yield from self._ind_enc(self._obj_prop[pe][ind_enc])
+        elif isinstance(pe, OWLObjectInverseOf):
+            yield from self._ind_enc(self._obj_prop_inv[pe.get_named_property()][ind_enc])
+        else:
+            raise NotImplementedError
 
     def flush(self) -> None:
         self._base_reasoner.flush()
@@ -94,10 +106,18 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
     def get_root_ontology(self) -> OWLOntology:
         return self._ontology
 
-    def _lazy_cache_obj_prop(self, pe: OWLObjectProperty) -> None:
+    def _lazy_cache_obj_prop(self, pe: OWLObjectPropertyExpression) -> None:
         """Get all individuals involved in this object property and put them in a Dict"""
-        if pe in self._obj_prop:
-            return
+        if isinstance(pe, OWLObjectInverseOf):
+            inverse = True
+            if pe.get_named_property() in self._obj_prop_inv:
+                return
+        elif isinstance(pe, OWLObjectProperty):
+            inverse = False
+            if pe in self._obj_prop:
+                return
+        else:
+            raise NotImplementedError
 
         # Dict with Individual => Set[Individual]
         opc: Dict[int, int] = dict()
@@ -107,8 +127,14 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
         if isinstance(self._ontology, OWLOntology_Owlready2):
             import owlready2
             # _x => owlready2 objects
-            p_x: owlready2.ObjectProperty = self._ontology._world[pe.get_iri().as_str()]
-            for s_x, o_x in p_x.get_relations():
+            p_x: owlready2.ObjectProperty = self._ontology._world[pe.get_named_property().get_iri().as_str()]
+            for l_x, r_x in p_x.get_relations():
+                if inverse:
+                    o_x = l_x
+                    s_x = r_x
+                else:
+                    s_x = l_x
+                    o_x = r_x
                 if isinstance(s_x, owlready2.Thing) and isinstance(o_x, owlready2.Thing):
                     s_enc = self._ind_enc(OWLNamedIndividual(IRI.create(s_x.iri)))
                     o_enc = self._ind_enc(OWLNamedIndividual(IRI.create(o_x.iri)))
@@ -120,7 +146,10 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
             for s_enc, s in self._ind_enc.items():
                 opc[s_enc] = self._ind_enc(self._base_reasoner.object_property_values(s, pe))
 
-        self._obj_prop[pe] = MappingProxyType(opc)
+        if inverse:
+            self._obj_prop_inv[pe.get_named_property()] = MappingProxyType(opc)
+        else:
+            self._obj_prop[pe] = MappingProxyType(opc)
 
     # single dispatch is still not implemented in mypy, see https://github.com/python/mypy/issues/2904
     @singledispatchmethod
@@ -146,12 +175,19 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
             return self._objectsomevalues_cache[ce]
 
         p = ce.get_property()
-        assert isinstance(p, OWLObjectProperty)
+        assert isinstance(p, OWLObjectPropertyExpression)
         self._lazy_cache_obj_prop(p)
 
         filler_ind_enc = self._find_instances(ce.get_filler())
         ind_enc = 0
-        for s_enc, o_set_enc in self._obj_prop[p].items():
+        if isinstance(p, OWLObjectInverseOf):
+            ops = self._obj_prop_inv[p.get_named_property()]
+        elif isinstance(p, OWLObjectProperty):
+            ops = self._obj_prop[p]
+        else:
+            raise ValueError
+
+        for s_enc, o_set_enc in ops.items():
             if o_set_enc & filler_ind_enc:
                 ind_enc |= s_enc
 
