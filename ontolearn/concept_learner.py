@@ -222,6 +222,9 @@ class CELOE(BaseConceptLearner[OENode]):
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 return self.terminate()
 
+            if logger.isEnabledFor(oplogging.TRACE) and j % 100 == 0:
+                self._log_current_best(j)
+
         return self.terminate()
 
     def node_tree_parent(self, node: OENode) -> TreeNode[OENode]:
@@ -260,6 +263,16 @@ class CELOE(BaseConceptLearner[OENode]):
         self.heuristic_queue.add(ref)
         # TODO: implement noise
         return True
+
+    def _log_current_best(self, heading_step, top_n: int = 10) -> None:
+        logger.debug('######## %s step Best Hypotheses ###########', heading_step)
+
+        predictions = list(self.best_hypotheses(top_n))
+        for ith, node in enumerate(predictions):
+            logger.debug('{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(
+                ith + 1, DLSyntaxObjectRenderer().render(node.concept),
+                type(self.quality_func).name, node.quality,
+                node.heuristic))
 
     def show_search_tree(self, heading_step: str, top_n: int = 10) -> None:
         """
