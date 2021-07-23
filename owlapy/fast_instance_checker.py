@@ -166,6 +166,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
             return all ^ complement_ind_enc
         else:
             # TODO! XXX
+            logger.warning("Object Complement Of not implemented at %s", ce)
             return 0
             # if self.complement_as_negation:
             #     ...
