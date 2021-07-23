@@ -238,7 +238,7 @@ class EvaluatedDescriptionSet(Generic[_N, _O]):
         self._Ordering = ordering
         self.items = SortedSet(key=self._Ordering)
 
-    def maybe_add(self, node):
+    def maybe_add(self, node: _N):
         if len(self.items) == self._max_size:
             worst = self.items[0]
             if self._Ordering(node) > self._Ordering(worst):

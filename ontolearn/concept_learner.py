@@ -2,9 +2,10 @@ import logging
 import time
 from contextlib import contextmanager
 from itertools import islice
-from typing import Iterable, Optional, Dict
+from typing import Iterable, Optional, Dict, Set
 
 import pandas as pd
+from ontolearn.core.owl.utils import OperandSetTransform
 
 from ontolearn.search import HeuristicOrderedNode, OENode, TreeNode, LengthOrderedNode, LBLNode, LBLSearchTree, \
     QualityOrderedNode
@@ -59,7 +60,7 @@ _concept_operand_sorter = ConceptOperandSorter()
 
 class CELOE(BaseConceptLearner[OENode]):
     __slots__ = 'best_descriptions', 'max_he', 'min_he', 'best_only', 'calculate_min_max', 'heuristic_queue', \
-                'search_tree', '_learning_problem', '_max_runtime'
+                'search_tree', '_learning_problem', '_max_runtime', '_seen_norm_concepts'
 
     name = 'celoe_python'
 
@@ -71,6 +72,7 @@ class CELOE(BaseConceptLearner[OENode]):
     calculate_min_max: bool
 
     search_tree: Dict[OWLClassExpression, TreeNode[OENode]]
+    seen_norm_concepts: Set[OWLClassExpression]
     heuristic_queue: 'SortedSet[OENode]'
     best_descriptions: EvaluatedDescriptionSet[OENode, QualityOrderedNode]
     _learning_problem: Optional[EncodedPosNegLPStandard]
@@ -98,6 +100,7 @@ class CELOE(BaseConceptLearner[OENode]):
 
         self.search_tree = dict()
         self.heuristic_queue = SortedSet(key=HeuristicOrderedNode)
+        self._seen_norm_concepts = set()
         self.best_descriptions = EvaluatedDescriptionSet(max_size=max_results, ordering=QualityOrderedNode)
 
         self.best_only = best_only
@@ -219,6 +222,9 @@ class CELOE(BaseConceptLearner[OENode]):
             if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 return self.terminate()
 
+            if logger.isEnabledFor(oplogging.TRACE) and j % 100 == 0:
+                self._log_current_best(j)
+
         return self.terminate()
 
     def node_tree_parent(self, node: OENode) -> TreeNode[OENode]:
@@ -234,6 +240,13 @@ class CELOE(BaseConceptLearner[OENode]):
             # ignoring refinement, it has been refined from another parent
             return False
 
+        norm_concept = OperandSetTransform().simplify(ref.concept)
+        if norm_concept in self._seen_norm_concepts:
+            norm_seen = True
+        else:
+            norm_seen = False
+            self._seen_norm_concepts.add(norm_concept)
+
         self.search_tree[ref.concept] = TreeNode(ref, tree_parent, is_root=ref.is_root)
         ref_individuals = self.kb.individuals_set(ref.concept)
         ref.individuals_count = len(ref_individuals)
@@ -244,12 +257,22 @@ class CELOE(BaseConceptLearner[OENode]):
         assert 0 <= ref.quality <= 1.0
         # TODO: expression rewriting
         self.heuristic_func.apply(ref, ref_individuals, self._learning_problem)
-        if self.best_descriptions.maybe_add(ref):
+        if not norm_seen and self.best_descriptions.maybe_add(ref):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("Better description found: %s", ref)
         self.heuristic_queue.add(ref)
         # TODO: implement noise
         return True
+
+    def _log_current_best(self, heading_step, top_n: int = 10) -> None:
+        logger.debug('######## %s step Best Hypotheses ###########', heading_step)
+
+        predictions = list(self.best_hypotheses(top_n))
+        for ith, node in enumerate(predictions):
+            logger.debug('{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(
+                ith + 1, DLSyntaxObjectRenderer().render(node.concept),
+                type(self.quality_func).name, node.quality,
+                node.heuristic))
 
     def show_search_tree(self, heading_step: str, top_n: int = 10) -> None:
         """
@@ -328,6 +351,7 @@ class CELOE(BaseConceptLearner[OENode]):
         self.heuristic_queue.clear()
         self.best_descriptions.clean()
         self.search_tree.clear()
+        self._seen_norm_concepts.clear()
         self.max_he = 0
         self.min_he = 1
         self._learning_problem = None
