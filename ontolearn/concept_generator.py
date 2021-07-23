@@ -194,6 +194,50 @@ class ConceptGenerator:
             if domain.is_owl_thing() or domain in self._object_property_domain(prop):
                 yield OWLObjectAllValuesFrom(property=prop, filler=filler)
 
+    def most_general_existential_restrictions_inverse(self, *,
+                                                      domain: OWLClassExpression,
+                                                      filler: Optional[OWLClassExpression] = None) \
+            -> Iterable[OWLObjectSomeValuesFrom]:
+        """Find most general inverse existential restrictions that are applicable to a domain
+
+        Args:
+            domain: domain for which to search properties
+            filler: optional filler to put in the restriction (not normally used)
+
+        Returns:
+            existential restrictions over inverse property
+        """
+        if filler is None:
+            filler = self.thing
+        assert isinstance(domain, OWLClass)  # for now, only named classes supported
+        assert isinstance(filler, OWLClassExpression)
+
+        for prop in self._object_property_hierarchy.most_general_roles():
+            if domain.is_owl_thing() or domain in self._object_property_range(prop):
+                yield OWLObjectSomeValuesFrom(property=prop.get_inverse_property(), filler=filler)
+
+    def most_general_universal_restrictions_inverse(self, *,
+                                                    domain: OWLClassExpression,
+                                                    filler: Optional[OWLClassExpression] = None) \
+            -> Iterable[OWLObjectAllValuesFrom]:
+        """Find most general universal inverse restrictions that are applicable to a domain
+
+        Args:
+            domain: domain for which to search properties
+            filler: optional filler to put in the restriction (not normally used)
+
+        Returns:
+            universal restrictions over inverse property
+        """
+        if filler is None:
+            filler = self.thing
+        assert isinstance(domain, OWLClass)  # for now, only named classes supported
+        assert isinstance(filler, OWLClassExpression)
+
+        for prop in self._object_property_hierarchy.most_general_roles():
+            if domain.is_owl_thing() or domain in self._object_property_range(prop):
+                yield OWLObjectAllValuesFrom(property=prop.get_inverse_property(), filler=filler)
+
     # noinspection PyMethodMayBeStatic
     def intersection(self, ops: Iterable[OWLClassExpression]) -> OWLObjectIntersectionOf:
         """Create intersection of class expression
