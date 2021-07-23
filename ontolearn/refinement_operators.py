@@ -263,10 +263,11 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         """
         assert isinstance(ce, OWLClass)
 
-        # iter_container: List[Iterable[OWLClassExpression]] = []
+        iter_container: List[Iterable[OWLClassExpression]] = []
         # (1) Generate all_sub_concepts. Note that originally CELOE obtains only direct subconcepts
-        for i in self.kb.get_direct_sub_concepts(ce):
-            yield i
+        iter_container.append(self.kb.get_direct_sub_concepts(ce))
+        # for i in self.kb.get_direct_sub_concepts(ce):
+        #     yield i
 
         # (2.1) Generate all direct_sub_concepts
         # for i in self.kb.get_direct_sub_concepts(ce):
@@ -277,43 +278,58 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
             # TODO probably not correct/complete
             if max_length >= 2 and (self.len(ce) + 1 <= self.max_child_length):
                 # (2.2) Create negation of all leaf_concepts
-                # iter_container.append(self.kb.negation_from_iterables(self.kb.get_leaf_concepts(ce)))
-                yield from self.kb.negation_from_iterables(self.kb.get_leaf_concepts(ce))
+                iter_container.append(self.kb.negation_from_iterables(self.kb.get_leaf_concepts(ce)))
+                # yield from self.kb.negation_from_iterables(self.kb.get_leaf_concepts(ce))
 
         if max_length >= 3 and (self.len(ce) + 2 <= self.max_child_length):
             # (2.3) Create ∀.r.T and ∃.r.T where r is the most general relation.
-            # iter_container.append(self.kb.most_general_existential_restrictions(ce))
-            yield from self.kb.most_general_existential_restrictions(domain=ce)
+            iter_container.append(self.kb.most_general_existential_restrictions(domain=ce))
+            # yield from self.kb.most_general_existential_restrictions(domain=ce)
             if self.use_all_constructor:
-                # iter_container.append(self.kb.most_general_universal_restriction(ce))
-                yield from self.kb.most_general_universal_restrictions(domain=ce)
-            yield self.kb.intersection((ce, ce))
-            yield self.kb.union((ce, ce))
+                iter_container.append(self.kb.most_general_universal_restrictions(domain=ce))
+                # yield from self.kb.most_general_universal_restrictions(domain=ce)
+
+            # yield self.kb.intersection((ce, ce))
+            # yield self.kb.union((ce, ce))
 
         # a, b = tee(chain.from_iterable(iter_container))
+        refs = []
+        for i in chain.from_iterable(iter_container):
+            yield i
+            refs.append(i)
 
         # Compute all possible combinations of the disjunction and conjunctions.
-        # mem = set()
-        # for i in a:
-        #     assert i is not None
-        #     yield i
-        #     for j in copy.copy(b):
-        #         assert j is not None
-        #         if (i == j) or ((i, j) in mem) or ((j, i) in mem):
-        #             continue
-        #         mem.add((j, i))
-        #         mem.add((i, j))
-        #         length = self.len(i) + self.len(j)
-        #
-        #         if (max_length >= length) and (self.max_child_length >= length + 1):
-        #             if not i.is_owl_thing() and not j.is_owl_thing():
-        #                 temp_union = self.kb.union((i, j))
-        #                 if self.kb.individuals_count(temp_union) < self.kb.individuals_count():
-        #                     yield temp_union
-        #
-        #             temp_intersection = self.kb.intersection((i, j))
-        #             if self.kb.individuals_count(temp_intersection) > 0:
-        #                 yield temp_intersection
+        mem = set()
+        for i in refs:
+            # assert i is not None
+            # yield i
+            i_inds = self.kb.individuals_set(i)
+            for j in refs:
+                # assert j is not None
+                if (i, j) in mem or i == j:
+                    continue
+                mem.add((j, i))
+                mem.add((i, j))
+                length = self.len(i) + self.len(j) + 1
+
+                if (max_length >= length) and (self.max_child_length >= length + 1):
+                    if not i.is_owl_thing() and not j.is_owl_thing():
+                        j_inds = self.kb.individuals_set(j)
+                        if not j_inds.difference(i_inds):
+                            # already contained
+                            continue
+                        else:
+                            yield self.kb.union((i, j))
+                        # if self.kb.individuals_count(temp_union) < self.kb.individuals_count():
+                        #     yield temp_union
+
+                        if not j_inds.intersection(i_inds):
+                            # empty
+                            continue
+                        else:
+                            yield self.kb.intersection((i, j))
+                        # temp_intersection = self.kb.intersection((i, j))
+                        # if self.kb.individuals_count(temp_intersection) > 0:
 
     def refine_complement_of(self, ce: OWLObjectComplementOf, max_length: int,
                              current_domain: Optional[OWLClassExpression] = None) -> Iterable[OWLClassExpression]:
@@ -384,13 +400,13 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         for i in range(len(operands)):
             concept_left, concept, concept_right = operands[:i], operands[i], operands[i + 1:]
             concept_length = self.len(concept)
-            other_length = self._operands_len(OWLObjectUnionOf, concept_left + concept_right)
 
             for ref_concept in self.refine(concept,
-                                           max_length=max_length - concept_length + other_length,
+                                           max_length=max_length - self.len(ce) + concept_length,
                                            current_domain=current_domain):
-                if max_length >= other_length + self.len(ref_concept):
-                    yield self.kb.union(concept_left + [ref_concept] + concept_right)
+                union = self.kb.union(concept_left + [ref_concept] + concept_right)
+                if max_length >= self.len(union):
+                    yield union
 
     def refine_object_intersection_of(self, ce: OWLObjectIntersectionOf, max_length: int,
                                       current_domain: Optional[OWLClassExpression]):
@@ -403,15 +419,15 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         for i in range(len(operands)):
             concept_left, concept, concept_right = operands[:i], operands[i], operands[i + 1:]
             concept_length = self.len(concept)
-            other_length = self._operands_len(OWLObjectIntersectionOf, concept_left + concept_right)
 
             for ref_concept in self.refine(concept,
-                                           max_length=max_length - concept_length + other_length,
+                                           max_length=max_length - self.len(ce) + concept_length,
                                            current_domain=current_domain):
-                if max_length >= other_length + self.len(ref_concept):
+                intersection = self.kb.intersection(concept_left + [ref_concept] + concept_right)
+                if max_length >= self.len(ref_concept):
                     # if other_concept.instances.isdisjoint(ref_concept.instances):
                     #    continue
-                    yield self.kb.intersection(concept_left + [ref_concept] + concept_right)
+                    yield intersection
 
     def refine(self, ce: OWLClassExpression, max_length: int, current_domain: OWLClassExpression) \
             -> Iterable[OWLClassExpression]:
