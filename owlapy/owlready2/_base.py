@@ -71,8 +71,12 @@ class OWLOntologyManager_Owlready2(OWLOntologyManager):
             assert sub_x is not None, f'{axiom.get_subject} not found in {ontology}'
             if axiom.get_value().is_literal():
                 literal = axiom.get_value().as_literal()
-                if literal.get_datatype() == DoubleOWLDatatype:
+                if literal.is_double():
                     v = literal.parse_double()
+                elif literal.is_integer():
+                    v = literal.parse_integer()
+                elif literal.is_boolean():
+                    v = literal.parse_boolean()
                 else:
                     # TODO XXX
                     raise NotImplementedError
