@@ -195,7 +195,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
     """
      A top down/downward refinement operator refinement operator in ALC.
     """
-    __slots__ = 'max_child_length', 'use_negation', 'use_all_constructor'
+    __slots__ = 'max_child_length', 'use_negation', 'use_all_constructor', 'use_inverse'
 
     _Node: Final = OENode
 
@@ -208,7 +208,8 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
                  knowledge_base: KnowledgeBase,
                  max_child_length=10,
                  use_negation: bool = True,
-                 use_all_constructor: bool = True):
+                 use_all_constructor: bool = True,
+                 use_inverse: bool = True):
         # self.topRefinementsCumulative = dict()
         # self.topRefinementsLength = 0
         # self.combos = dict()
@@ -217,6 +218,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         self.max_child_length = max_child_length
         self.use_negation = use_negation
         self.use_all_constructor = use_all_constructor
+        self.use_inverse = use_inverse
         super().__init__(knowledge_base)
 
     def _operands_len(self, _Type: Type[OWLNaryBooleanClassExpression],
@@ -288,6 +290,12 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
             if self.use_all_constructor:
                 iter_container.append(self.kb.most_general_universal_restrictions(domain=ce))
                 # yield from self.kb.most_general_universal_restrictions(domain=ce)
+            if self.use_inverse:
+                iter_container.append(self.kb.most_general_existential_restrictions_inverse(domain=ce))
+                # yield from self.kb.most_general_existential_restrictions_inverse(domain=ce)
+                if self.use_all_constructor:
+                    iter_container.append(self.kb.most_general_universal_restrictions_inverse(domain=ce))
+                    # yield from self.kb.most_general_universal_restrictions_inverse(domain=ce)
 
             # yield self.kb.intersection((ce, ce))
             # yield self.kb.union((ce, ce))
