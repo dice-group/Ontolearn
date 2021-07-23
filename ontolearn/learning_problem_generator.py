@@ -6,7 +6,9 @@ from typing import Literal, Optional, Iterable, Callable, Set, Tuple, Dict, List
 import numpy as np
 
 from owlapy.model import OWLClassExpression, OWLOntologyManager, OWLOntology, AddImport, OWLImportsDeclaration, \
-    OWLClass, OWLEquivalentClassesAxiom, IRI, OWLNamedIndividual
+    OWLClass, OWLEquivalentClassesAxiom, IRI, OWLNamedIndividual, OWLAnnotationAssertionAxiom, OWLAnnotation, \
+    OWLAnnotationProperty, OWLLiteral
+
 from .abstracts import BaseRefinement
 from .knowledge_base import KnowledgeBase
 from .refinement_operators import LengthBasedRefinement
@@ -55,14 +57,16 @@ class LearningProblemGenerator:
         self.num_diff_runs = num_diff_runs
         self.num_problems = num_problems // self.num_diff_runs
 
-    def export_concepts(self, concepts: List, path: str):
+    def export_concepts(self, concepts: List[Node], path: str):
         """Serialise the given concepts to a file
 
         Args:
             concepts: list of Node objects
             path: filename base (extension will be added automatically)
         """
-        NS: Final = 'https://dice-research.org/problems/' + str(time.time()) + '#'
+        SNS: Final = 'https://dice-research.org/predictions-schema/'
+        NS: Final = 'https://dice-research.org/predictions/' + str(time.time()) + '#'
+        # NS: Final = 'https://dice-research.org/problems/' + str(time.time()) + '#'
 
         from ontolearn import KnowledgeBase
         assert isinstance(self.kb, KnowledgeBase)
@@ -75,9 +79,13 @@ class LearningProblemGenerator:
         kb_iri = self.kb.ontology().get_ontology_id().get_ontology_iri()
         manager.apply_change(AddImport(ontology, OWLImportsDeclaration(kb_iri)))
         for ith, h in enumerate(concepts):
-            cls_a: OWLClass = OWLClass(IRI.create(NS, "Prob_" + str(ith)))
+            cls_a: OWLClass = OWLClass(IRI.create(NS, "Pred_" + str(ith)))
             equivalent_classes_axiom = OWLEquivalentClassesAxiom(cls_a, h.concept)
             manager.add_axiom(ontology, equivalent_classes_axiom)
+
+            num_inds = OWLAnnotationAssertionAxiom(cls_a.get_iri(), OWLAnnotation(
+                OWLAnnotationProperty(IRI.create(SNS, "covered_inds")), OWLLiteral(h.individuals_count)))
+            manager.add_axiom(ontology, num_inds)
 
         manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))
 
