@@ -5,7 +5,8 @@ from owlapy.model import OWLObject, HasIndex, HasIRI, OWLClassExpression, OWLCla
     OWLObjectUnionOf, OWLObjectComplementOf, OWLNothing, OWLThing, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectHasValue, OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality, OWLObjectHasSelf, \
     OWLObjectOneOf, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataExactCardinality, OWLDataHasValue, \
-    OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLObjectRestriction, HasFiller, HasCardinality, HasOperands, IRI
+    OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLObjectRestriction, HasFiller, HasCardinality, HasOperands, IRI, \
+    OWLObjectInverseOf
 
 _HasIRI = TypeVar('_HasIRI', bound=HasIRI)  #:
 _HasIndex = TypeVar('_HasIndex', bound=HasIndex)  #:
@@ -40,6 +41,8 @@ class OrderedOWLObject:
 
             if isinstance(self.o, OWLObjectRestriction):
                 c.append(OrderedOWLObject(as_index(self.o.get_property())))
+            if isinstance(self.o, OWLObjectInverseOf):
+                c.append(self.o.get_named_property().get_iri().as_str())
             if isinstance(self.o, HasFiller):
                 c.append(OrderedOWLObject(self.o.get_filler()))
             if isinstance(self.o, HasCardinality):
@@ -48,6 +51,8 @@ class OrderedOWLObject:
                 c.append(tuple(map(OrderedOWLObject, self.o.operands())))
             if isinstance(self.o, HasIRI):
                 c.append(self.o.get_iri().as_str())
+            if len(c) == 1:
+                raise NotImplementedError(type(self.o))
 
             self._chain = tuple(c)
 

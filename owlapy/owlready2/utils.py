@@ -5,7 +5,7 @@ import owlready2
 
 from owlapy.model import OWLClassExpression, OWLPropertyExpression, OWLObjectProperty, OWLClass, \
     OWLObjectComplementOf, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
-    OWLObjectPropertyExpression, OWLObject, OWLOntology, OWLAnnotationProperty, IRI
+    OWLObjectPropertyExpression, OWLObject, OWLOntology, OWLAnnotationProperty, IRI, OWLObjectInverseOf
 
 
 class ToOwlready2:
@@ -43,6 +43,11 @@ class ToOwlready2:
     @singledispatchmethod
     def _to_owlready2_property(self, p: OWLPropertyExpression) -> owlready2.Property:
         raise NotImplementedError
+
+    @_to_owlready2_property.register
+    def _(self, p: OWLObjectInverseOf):
+        p_x = self._to_owlready2_property(p.get_named_property())
+        return owlready2.Inverse(p_x)
 
     @_to_owlready2_property.register
     def _(self, p: OWLObjectProperty) -> owlready2.prop.ObjectPropertyClass:
@@ -83,12 +88,16 @@ class FromOwlready2:
         raise NotImplementedError
 
     @singledispatchmethod
-    def _from_owlready2_property(self, c: owlready2.PropertyClass) -> OWLPropertyExpression:
+    def _from_owlready2_property(self, c: Union[owlready2.PropertyClass, owlready2.Inverse]) -> OWLPropertyExpression:
         raise NotImplementedError
 
     @_from_owlready2_property.register
     def _(self, p: owlready2.ObjectPropertyClass) -> OWLObjectProperty:
         return OWLObjectProperty(IRI.create(p.iri))
+
+    @_from_owlready2_property.register
+    def _(self, i: owlready2.Inverse) -> OWLObjectInverseOf:
+        return OWLObjectInverseOf(self._from_owlready2_property(i.property))
 
     @map_concept.register
     def _(self, c: owlready2.ThingClass) -> OWLClass:

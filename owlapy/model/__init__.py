@@ -595,8 +595,7 @@ class OWLNaryBooleanClassExpression(OWLBooleanClassExpression, HasOperands[OWLCl
 
     def operands(self) -> Iterable[OWLClassExpression]:
         # documented in parent
-        for o in self._operands:
-            yield o
+        yield from self._operands
 
     def __repr__(self):
         return f'{type(self).__name__}({repr(self._operands)})'
@@ -1231,7 +1230,8 @@ class OWLReasoner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectProperty) -> Iterable[OWLNamedIndividual]:
+    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
+            -> Iterable[OWLNamedIndividual]:
         """Gets the object property values for the specified individual and object property expression.
 
         Args:
@@ -1290,7 +1290,7 @@ class OWLReasoner(metaclass=ABCMeta):
         specified data property expression with respect to the imports closure of the root ontology.
 
         Args:
-            pe: The data property whose strict (direct) subproperties are to be retrieved.
+            dp: The data property whose strict (direct) subproperties are to be retrieved.
             direct: Specifies if the direct subproperties should be retrieved (True) or if the all subproperties
                 (descendants) should be retrieved (False).
 
@@ -1310,7 +1310,7 @@ class OWLReasoner(metaclass=ABCMeta):
         ontology.
 
         Args:
-            pe: The object property expression whose strict (direct) subproperties are to be retrieved.
+            op: The object property expression whose strict (direct) subproperties are to be retrieved.
             direct: Specifies if the direct subproperties should be retrieved (True) or if the all subproperties
                 (descendants) should be retrieved (False).
 
@@ -1408,7 +1408,11 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
         Args:
             value: The value of the literal
         """
-        if isinstance(value, float):
+        if isinstance(value, bool):
+            return super().__new__(_OWLLiteralImplBoolean)
+        elif isinstance(value, int):
+            return super().__new__(_OWLLiteralImplInteger)
+        elif isinstance(value, float):
             return super().__new__(_OWLLiteralImplDouble)
         # TODO XXX
         raise NotImplementedError
@@ -1421,12 +1425,42 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
         """
         return str(self._v)
 
+    def is_boolean(self) -> bool:
+        """Whether this literal is typed as boolean"""
+        return False
+
+    def parse_boolean(self) -> bool:
+        """Parses the lexical value of this literal into a bool. The lexical value of this literal should be in the
+        lexical space of the boolean datatype ("http://www.w3.org/2001/XMLSchema#"boolean).
+
+        Returns:
+            A bool value that is represented by this literal.
+        """
+        raise ValueError
+
+    def is_double(self) -> bool:
+        """Whether this literal is typed as double"""
+        return False
+
     def parse_double(self) -> float:
         """Parses the lexical value of this literal into a double. The lexical value of this literal should be in the
         lexical space of the double datatype ("http://www.w3.org/2001/XMLSchema#"double).
 
         Returns:
             A double value that is represented by this literal.
+        """
+        raise ValueError
+
+    def is_integer(self) -> bool:
+        """Whether this literal is typed as integer"""
+        return False
+
+    def parse_integer(self) -> int:
+        """Parses the lexical value of this literal into an integer. The lexical value of this literal should be in the
+        lexical space of the integer datatype ("http://www.w3.org/2001/XMLSchema#"integer).
+
+        Returns:
+            An integer value that is represented by this literal.
         """
         raise ValueError
 
@@ -1452,6 +1486,8 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
 class _OWLLiteralImplDouble(OWLLiteral):
     __slots__ = '_v'
 
+    _v : float
+
     def __init__(self, value):
         assert isinstance(value, float)
         self._v = value
@@ -1467,6 +1503,9 @@ class _OWLLiteralImplDouble(OWLLiteral):
     def __repr__(self):
         return f'OWLLiteral({self._v})'
 
+    def is_double(self) -> bool:
+        return True
+
     def parse_double(self) -> float:
         # documented in parent
         return self._v
@@ -1476,6 +1515,71 @@ class _OWLLiteralImplDouble(OWLLiteral):
         # documented in parent
         return DoubleOWLDatatype
 
+
+class _OWLLiteralImplInteger(OWLLiteral):
+    __slots__ = '_v'
+
+    _v: int
+
+    def __init__(self, value):
+        assert isinstance(value, int)
+        self._v = value
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._v == other._v
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self._v)
+
+    def __repr__(self):
+        return f'OWLLiteral({self._v})'
+
+    def is_integer(self) -> bool:
+        return True
+
+    def parse_integer(self) -> int:
+        # documented in parent
+        return self._v
+
+    # noinspection PyMethodMayBeStatic
+    def get_datatype(self) -> OWLDatatype:
+        # documented in parent
+        return IntegerOWLDatatype
+
+
+class _OWLLiteralImplBoolean(OWLLiteral):
+    __slots__ = '_v'
+
+    _v : bool
+
+    def __init__(self, value):
+        assert isinstance(value, bool)
+        self._v = value
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._v == other._v
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self._v)
+
+    def __repr__(self):
+        return f'OWLLiteral({self._v})'
+
+    def is_boolean(self) -> bool:
+        return True
+
+    def parse_boolean(self) -> bool:
+        # documented in parent
+        return self._v
+
+    # noinspection PyMethodMayBeStatic
+    def get_datatype(self) -> OWLDatatype:
+        # documented in parent
+        return BooleanOWLDatatype
 
 # TODO: a big todo plus intermediate classes (missing)
 
