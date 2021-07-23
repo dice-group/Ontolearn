@@ -595,8 +595,7 @@ class OWLNaryBooleanClassExpression(OWLBooleanClassExpression, HasOperands[OWLCl
 
     def operands(self) -> Iterable[OWLClassExpression]:
         # documented in parent
-        for o in self._operands:
-            yield o
+        yield from self._operands
 
     def __repr__(self):
         return f'{type(self).__name__}({repr(self._operands)})'
@@ -1231,7 +1230,8 @@ class OWLReasoner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectProperty) -> Iterable[OWLNamedIndividual]:
+    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
+            -> Iterable[OWLNamedIndividual]:
         """Gets the object property values for the specified individual and object property expression.
 
         Args:
@@ -1310,7 +1310,7 @@ class OWLReasoner(metaclass=ABCMeta):
         ontology.
 
         Args:
-            pe: The object property expression whose strict (direct) subproperties are to be retrieved.
+            op: The object property expression whose strict (direct) subproperties are to be retrieved.
             direct: Specifies if the direct subproperties should be retrieved (True) or if the all subproperties
                 (descendants) should be retrieved (False).
 
