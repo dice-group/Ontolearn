@@ -48,13 +48,13 @@ upload_file() {
         exit 2
     fi
 
-    sha256=($(sha256sum "$1"))
-    if [[ -z "${sha256[0]}" ]]; then
+    sha256="$(sha256sum "$1" | awk '{print $1}')"
+    if [[ -z "$sha256" ]]; then
         echo "Error: sha256sum failed"
         exit 2
     fi
 
-    size="$(( stat --printf="%s" "$1" 2>/dev/null || stat -f%z "$1" 2>/dev/null ) | awk '{print $1}')"
+    size="$( ( stat --printf="%s" "$1" 2>/dev/null || stat -f%z "$1" 2>/dev/null ) | awk '{print $1}')"
     if [[ -z "$size" ]]; then
         echo "Error: stat failed"
         exit 2
@@ -86,7 +86,7 @@ upload_file() {
     echo "#% GitExt 0.1"
     echo "path:$filepath"
     echo "oid:$oid"
-    echo "sha256sum:${sha256[0]}"
+    echo "sha256sum:$sha256"
     echo "size:$size"
 
     exec 1>&6 6>&-
@@ -98,16 +98,16 @@ upload_file() {
     cp "$1" "$newf"
     ret=0
     check_size=-1
-    upload_test="$(curl -f -s -I "$HTTP"/"$dirname$root"/"$oid$ext")" || ret=$?
+    upload_test="$(curl -f -s -I "$HTTP/$dirname$root/$oid$ext")" || ret=$?
     if [[ "$ret" -eq 0 ]]; then
         check_size="$(find_content_length "$upload_test")"
     fi
     if [[ "$check_size" -ne "$size" ]]; then
-        curl -f -n -T "$1" -C- --ssl --ftp-create-dirs "$FTP"/"$dirname$root"/"$oid$ext"
+        curl -f -n -T "$1" -C- --ssl --ftp-create-dirs "$FTP/$dirname$root/$oid$ext"
     else
         echo '(cached)'
     fi
-    upload_test="$(curl -f -s -I "$HTTP"/"$dirname$root"/"$oid$ext")"
+    upload_test="$(curl -f -s -I "$HTTP/$dirname$root/$oid$ext")"
     check_size="$(find_content_length "$upload_test")"
     if [[ -z "$check_size" ]] || [[ "$check_size" -ne "$size" ]]; then
         echo "Upload failed, size mismatch"
