@@ -1,57 +1,35 @@
 import logging
+import random
 import time
+from collections import deque
 from contextlib import contextmanager
 from itertools import islice
-from typing import Iterable, Optional, Dict, Set
+from typing import Dict, Set, List, Tuple, Iterable, Optional, Generator, SupportsFloat
 
-import pandas as pd
-from ontolearn.core.owl.utils import OperandSetTransform
-
-from ontolearn.search import HeuristicOrderedNode, OENode, TreeNode, LengthOrderedNode, LBLNode, LBLSearchTree, \
-    QualityOrderedNode
-from owlapy.model import OWLClassExpression
-from owlapy.render import DLSyntaxObjectRenderer
-from sortedcontainers import SortedSet
-from . import KnowledgeBase
-from .abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic, AbstractLearningProblem
-from .base_concept_learner import BaseConceptLearner
-from .core.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter
-from owlapy.util import OrderedOWLObject
-from .heuristics import CELOEHeuristic, OCELHeuristic
-from .learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
-from .metrics import F1, Accuracy
-from .refinement_operators import LengthBasedRefinement
-from .utils import oplogging, create_experiment_folder
-from abc import ABCMeta
-from .concept_learner import BaseConceptLearner
-from .abstracts import AbstractDrill, AbstractScorer
-from .utils import *
-from .search import Node, SearchTreePriorityQueue, DRILLSearchTreePriorityQueue
-from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction, Experience
-from .refinement_operators import LengthBasedRefinement
-from .metrics import F1
-import time
-import json
-import random
+import numpy as np
 import torch
 from torch import nn
-import numpy as np
-import functools
 from torch.functional import F
-from typing import List, Any, Set, Tuple, Iterable, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional, Generator, \
-    SupportsFloat
-from collections import namedtuple, deque
 from torch.nn.init import xavier_normal_
-from itertools import chain
-import matplotlib.pyplot as plt
-from torch.optim.lr_scheduler import ExponentialLR
 
-from owlapy.model import OWLNamedIndividual, OWLClassExpression
-from ontolearn.search import HeuristicOrderedNode, OENode, TreeNode, LengthOrderedNode, LBLNode, LBLSearchTree, \
+from ontolearn import KnowledgeBase
+from ontolearn.abstracts import AbstractDrill, AbstractScorer, AbstractNode, BaseRefinement, AbstractHeuristic
+from ontolearn.base_concept_learner import BaseConceptLearner
+from ontolearn.core.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter, OperandSetTransform
+from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
+from ontolearn.heuristics import OCELHeuristic
+from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
+from ontolearn.metrics import Accuracy, F1
+from ontolearn.refinement_operators import LengthBasedRefinement
+from ontolearn.search import DRILLSearchTreePriorityQueue, HeuristicOrderedNode, OENode, TreeNode, LengthOrderedNode, \
     QualityOrderedNode, RL_State
-from ontolearn.abstracts import AbstractNode
+from ontolearn.utils import oplogging, create_experiment_folder
+from owlapy.model import OWLClassExpression, OWLNamedIndividual
+from owlapy.render import DLSyntaxObjectRenderer
+from owlapy.util import OrderedOWLObject
+from sortedcontainers import SortedSet
 
-pd.set_option('display.max_columns', 100)
+# pd.set_option('display.max_columns', 100)
 
 logger = logging.getLogger(__name__)
 
@@ -192,7 +170,7 @@ class CELOE(BaseConceptLearner[OENode]):
         self.start_time = time.time()
         for j in range(1, self.iter_bound):
             most_promising = self.next_node_to_expand(j)
-            tree_parent = self.node_tree_parent(most_promising)
+            tree_parent = self.tree_node(most_promising)
             minimum_length = most_promising.h_exp
             if logger.isEnabledFor(oplogging.TRACE):
                 logger.debug("now refining %s", most_promising)
@@ -227,7 +205,7 @@ class CELOE(BaseConceptLearner[OENode]):
 
         return self.terminate()
 
-    def node_tree_parent(self, node: OENode) -> TreeNode[OENode]:
+    def tree_node(self, node: OENode) -> TreeNode[OENode]:
         tree_parent = self.search_tree[node.concept]
         return tree_parent
 
@@ -501,8 +479,8 @@ class Drill(AbstractDrill, BaseConceptLearner):
     def fit(self, pos: Set[OWLNamedIndividual], neg: Set[OWLNamedIndividual], max_runtime=None):
         """
         Find an OWL Class Expression h s.t.
-        \forall e in E^+ K \model h(e)
-        \forall e in E^- K \not\model h(e)
+        \\forall e in E^+ K \\model h(e)
+        \\forall e in E^- K \\not\\model h(e)
         """
         assert isinstance(pos, set) and isinstance(neg, set)
         assert sum([type(_) == OWLNamedIndividual for _ in pos]) == len(pos)
