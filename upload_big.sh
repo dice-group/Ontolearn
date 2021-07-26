@@ -8,9 +8,11 @@ set -eu
 FTP=ftp://hobbitdata.informatik.uni-leipzig.de/public/GitExt/OntoPy
 HTTP=https://hobbitdata.informatik.uni-leipzig.de/GitExt/OntoPy
 
-git_dir="$(git rev-parse --path-format=relative --git-dir)"
-repo_root="$(git rev-parse --path-format=relative --show-toplevel)"
-repo_root="${repo_root%/}"
+abs2rel() { perl -l -MFile::Spec -e'print File::Spec->abs2rel(@ARGV)' "$@"; }
+
+git_dir="$(git rev-parse --git-dir)"
+repo_root="$(git rev-parse --show-toplevel)"
+repo_root="$(abs2rel "$repo_root")"
 if [[ -z "$git_dir" ]] || [[ -z "$repo_root" ]]; then
    exit 2
 fi
@@ -21,7 +23,7 @@ find_content_length() {
 
 if ! command -v sha256sum >/dev/null; then
     sha256sum() {
-        sha256=$(openssl sha256 "$1")
+        sha256="$(openssl sha256 "$1")"
         echo "$(echo "$sha256"|awk -v FS='= ' '{print $NF}')""  ""$1"
     }
 fi
