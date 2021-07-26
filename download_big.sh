@@ -7,9 +7,11 @@ set -eu
 
 HTTP=https://hobbitdata.informatik.uni-leipzig.de/GitExt/OntoPy
 
-git_dir="$(git rev-parse --path-format=relative --git-dir 2>/dev/null || :)"
-repo_root="$(git rev-parse --path-format=relative --show-toplevel 2>/dev/null || :)"
-repo_root="${repo_root%/}"
+abs2rel() { perl -l -MFile::Spec -e'print File::Spec->abs2rel(@ARGV)' "$@"; }
+
+git_dir="$(git rev-parse --git-dir 2>/dev/null || :)"
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || :)"
+repo_root="$(abs2rel "$repo_root")"
 if [[ -z "$git_dir" ]] || [[ -z "$repo_root" ]]; then
     echo "No git detected"
     repo_root=.
@@ -17,7 +19,7 @@ fi
 
 if ! command -v sha256sum >/dev/null; then
     sha256sum() {
-        sha256=$(openssl sha256 "$1")
+        sha256="$(openssl sha256 "$1")"
         echo "$(echo "$sha256"|awk -v FS='= ' '{print $NF}')""  ""$1"
     }
 fi
