@@ -5,8 +5,6 @@
 
 set -eu
 
-HTTP=https://hobbitdata.informatik.uni-leipzig.de/GitExt/OntoPy
-
 abs2rel() { perl -l -MFile::Spec -e'print File::Spec->abs2rel(@ARGV)' "$@"; }
 
 git_dir="$(git rev-parse --git-dir)"
@@ -45,14 +43,14 @@ check_file() {
         fi
         local_info["oid"]="$noid"
 
-        sha256=($(sha256sum "$o"))
-        if [[ -z "${sha256[0]}" ]]; then
+        sha256="$(sha256sum "$o" | awk '{print $1}')"
+        if [[ -z "$sha256" ]]; then
             echo "Error: sha256sum failed"
             exit 2
         fi
-        local_info["sha256sum"]="${sha256[0]}"
+        local_info["sha256sum"]="$sha256"
 
-        size="$(( stat --printf="%s" "$o" 2>/dev/null || stat -f%z "$o" 2>/dev/null ) | awk '{print $1}')"
+        size="$( ( stat --printf="%s" "$o" 2>/dev/null || stat -f%z "$o" 2>/dev/null ) | awk '{print $1}')"
         if [[ -z "$size" ]]; then
             echo "Error: stat failed"
             exit 2
@@ -138,11 +136,8 @@ check_file() {
         _dta=""
     fi
 
-    filepath="${link_info["path"]}"
-
-    skip=0
     if [[ -f "$o" ]]; then
-        if [[ "${sha256[0]}" == "${link_info["sha256sum"]}" ]]; then
+        if [[ "$sha256" == "${link_info["sha256sum"]}" ]]; then
             if [[ "$auto_mode" -eq 1 ]]; then
                 :
             else

@@ -70,8 +70,8 @@ download_file() {
 
     skip=0
     if [[ -f "$o" ]]; then
-        sha256=($(sha256sum "$o"))
-        if [[ "${sha256[0]}" == "${link_info["sha256sum"]}" ]]; then
+        sha256="$(sha256sum "$o" | awk '{print $1}')"
+        if [[ "$sha256" == "${link_info["sha256sum"]}" ]]; then
             echo "Already exists: $filepath..."
             skip=1
         else
@@ -100,18 +100,18 @@ download_file() {
             cp "$localf" "$o"
             echo '(cached)'
         else
-            curl -f -o "$o".part -C- "$HTTP"/"$dirname$root"/"$oid$ext"
+            curl -f -o "$o".part -C- "$HTTP/$dirname$root/$oid$ext"
             mv "$o".part "$o"
         fi
 
-        sha256=($(sha256sum "$o"))
-        if [[ "${sha256[0]}" != "${link_info["sha256sum"]}" ]]; then
+        sha256="$(sha256sum "$o" | awk '{print $1}')"
+        if [[ "$sha256" != "${link_info["sha256sum"]}" ]]; then
             echo "Error: sha256sum failed"
             exit 2
         fi
     fi
 
-    size="$(( stat --printf="%s" "$o" 2>/dev/null || stat -f%z "$o" 2>/dev/null ) | awk '{print $1}')"
+    size="$( ( stat --printf="%s" "$o" 2>/dev/null || stat -f%z "$o" 2>/dev/null ) | awk '{print $1}')"
     if [[ "$size" -ne "${link_info["size"]}" ]]; then
         echo "Error: size mismatch"
         exit 2
