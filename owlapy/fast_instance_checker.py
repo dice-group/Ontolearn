@@ -6,6 +6,7 @@ from logging import warning
 from types import MappingProxyType
 from typing import Callable, Iterable, Dict, Mapping, Set
 
+from ontolearn.utils import LRUCache
 from owlapy.model import OWLObjectOneOf, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
     OWLObjectProperty, OWLDataProperty, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
     OWLObjectPropertyExpression, OWLObjectComplementOf, OWLObjectAllValuesFrom, IRI, OWLObjectInverseOf, \
@@ -32,7 +33,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
     _obj_prop_inv: Dict[OWLObjectProperty, Mapping[int, int]]  # ObjectProperty => { individual => individuals }
     _data_prop: Dict[OWLDataProperty, Mapping[int, Set[OWLLiteral]]]  # DataProperty => { individual => literals }
     _ind_enc: NamedFixedSet[OWLNamedIndividual]
-    _objectsomevalues_cache: Dict[OWLClassExpression, int]  # ObjectSomeValuesFrom => individuals
+    _objectsomevalues_cache: LRUCache[OWLClassExpression, int]  # ObjectSomeValuesFrom => individuals
     _datasomevalues_cache: Dict[OWLClassExpression, int]  # DataSomeValuesFrom => individuals
     _objectcardinality_cache: Dict[OWLClassExpression, int]  # ObjectCardinalityRestriction => individuals
 
@@ -48,14 +49,14 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
         self._negation_default = negation_default
         self._init()
 
-    def _init(self):
+    def _init(self, osv_cache_size=128):
         self._cls_to_ind = dict()
         self._obj_prop = dict()
         self._obj_prop_inv = dict()
         self._data_prop = dict()
         individuals = self._ontology.individuals_in_signature()
         self._ind_enc = NamedFixedSet(OWLNamedIndividual, individuals)
-        self._objectsomevalues_cache = dict()
+        self._objectsomevalues_cache = LRUCache(maxsize=osv_cache_size)
         self._datasomevalues_cache = dict()
         self._objectcardinality_cache = dict()
 
