@@ -36,7 +36,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
     _datasomevalues_cache: Dict[OWLClassExpression, int]  # DataSomeValuesFrom => individuals
     _objectcardinality_cache: Dict[OWLClassExpression, int]  # ObjectCardinalityRestriction => individuals
 
-    def __init__(self, ontology: OWLOntology, base_reasoner: OWLReasoner, *, negation_default=True):
+    def __init__(self, ontology: OWLOntology, base_reasoner: OWLReasoner, *, negation_default=False):
         """Fast instance checker
 
         Args:

@@ -136,7 +136,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
     def test_cardinality_restrictions(self):
         NS = "http://dl-learner.org/mutagenesis#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/mutagenesis/mutagenesis.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/Mutagenesis/mutagenesis.owl"))
 
         hydrogen_3 = OWLClass(IRI.create(NS, 'Hydrogen-3'))
         atom = OWLClass(IRI.create(NS, 'Atom'))
@@ -171,7 +171,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
     def test_data_properties(self):
         NS = "http://dl-learner.org/mutagenesis#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/mutagenesis/mutagenesis.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/Mutagenesis/mutagenesis.owl"))
 
         act = OWLDataProperty(IRI(NS, 'act'))
         fused_rings = OWLDataProperty(IRI(NS, 'hasThreeOrMoreFusedRings'))
