@@ -143,7 +143,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
         has_atom = OWLObjectProperty(IRI(NS, 'hasAtom'))
 
         base_reasoner = OWLReasoner_Owlready2(onto)
-        reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner)
+        reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner, negation_default=True)
 
         inst = frozenset(reasoner.instances(OWLObjectExactCardinality(cardinality=2,
                                                                       property=has_atom,
@@ -180,7 +180,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
         charge = OWLDataProperty(IRI(NS, 'charge'))
 
         base_reasoner = OWLReasoner_Owlready2(onto)
-        reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner)
+        reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner, negation_default=True)
 
         self.assertEqual([], list(reasoner.sub_data_properties(act, direct=True)))
 
