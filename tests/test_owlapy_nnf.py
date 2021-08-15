@@ -24,9 +24,13 @@
 #
 import unittest
 
-from owlapy.model import OWLClass, OWLObjectProperty, OWLNamedIndividual, OWLObjectComplementOf, \
+from owlapy.datatype_restriction_factory import DatatypeRestrictionFactory
+from owlapy.model import OWLObjectProperty, OWLNamedIndividual, OWLObjectComplementOf, \
     OWLObjectAllValuesFrom, OWLObjectSomeValuesFrom, OWLObjectIntersectionOf, OWLObjectUnionOf, \
-    OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectHasValue, OWLObjectOneOf, OWLClassExpression, IRI
+    OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectHasValue, OWLObjectOneOf, OWLClassExpression, IRI, \
+    BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLClass, OWLDataAllValuesFrom, OWLDataComplementOf, \
+    OWLDataIntersectionOf, OWLDataProperty, OWLDataSomeValuesFrom, OWLDataUnionOf, \
+    OWLDataHasValue, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataOneOf, OWLLiteral
 from owlapy.util import NNF
 
 
@@ -251,3 +255,130 @@ class Owlapy_NNF_Test(unittest.TestCase):
         comp = self.get_nnf(neg)
         self.assertEqual(comp, nnf)
 
+    def testPosDataAllValuesFrom(self):
+        cls = OWLDataAllValuesFrom(OWLDataProperty(iri("p")), IntegerOWLDatatype)
+        self.assertEqual(cls.get_nnf(), cls)
+
+    def testNegDataAllValuesFrom(self):
+        property = OWLDataProperty(iri("p"))
+        all_values_from = OWLDataAllValuesFrom(property, IntegerOWLDatatype)
+        cls = all_values_from.get_object_complement_of()
+        nnf = OWLDataSomeValuesFrom(property, OWLDataComplementOf(IntegerOWLDatatype))
+        self.assertEqual(cls.get_nnf(), nnf)
+
+    def testPosDataSomeValuesFrom(self):
+        cls = OWLDataSomeValuesFrom(OWLDataProperty(iri("p")), IntegerOWLDatatype)
+        self.assertEqual(cls.get_nnf(), cls)
+
+    def testNegDataSomeValuesFrom(self):
+        property = OWLDataProperty(iri("p"))
+        some_values_from = OWLDataSomeValuesFrom(property, IntegerOWLDatatype)
+        cls = OWLDataComplementOf(some_values_from)
+        nnf = OWLDataAllValuesFrom(property, OWLDataComplementOf(IntegerOWLDatatype))
+        self.assertEqual(self.get_nnf(cls), nnf)
+
+    def testPosDataIntersectionOf(self):
+        cls = OWLDataIntersectionOf((BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype))
+        self.assertEqual(self.get_nnf(cls), cls)
+
+    def testNegDataIntersectionOf(self):
+        cls = OWLDataComplementOf(OWLDataIntersectionOf(
+            (BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype)))
+        nnf = OWLDataUnionOf(
+            (OWLDataComplementOf(BooleanOWLDatatype),
+             OWLDataComplementOf(DoubleOWLDatatype),
+             OWLDataComplementOf(IntegerOWLDatatype)))
+        self.assertEqual(self.get_nnf(cls), nnf)
+
+    def testPosDataUnionOf(self):
+        cls = OWLDataUnionOf((BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype))
+        self.assertEqual(self.get_nnf(cls), cls)
+
+    def testNegDataUnionOf(self):
+        cls = OWLDataComplementOf(OWLDataUnionOf((BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype)))
+        nnf = OWLDataIntersectionOf(
+            (OWLDataComplementOf(BooleanOWLDatatype),
+             OWLDataComplementOf(DoubleOWLDatatype),
+             OWLDataComplementOf(IntegerOWLDatatype)))
+        self.assertEqual(self.get_nnf(cls), nnf)
+
+    def testPosDataMinCardinality(self):
+        prop = OWLDataProperty(iri("p"))
+        cls = OWLDataMinCardinality(cardinality=3, property=prop, filler=IntegerOWLDatatype)
+        self.assertEqual(cls.get_nnf(), cls)
+
+    def testNegDataMinCardinality(self):
+        prop = OWLDataProperty(iri("p"))
+        filler = IntegerOWLDatatype
+        cls = OWLDataMinCardinality(cardinality=3, property=prop, filler=filler).get_object_complement_of()
+        nnf = OWLDataMaxCardinality(cardinality=2, property=prop, filler=filler)
+        self.assertEqual(cls.get_nnf(), nnf)
+
+    def testPosDataMaxCardinality(self):
+        prop = OWLDataProperty(iri("p"))
+        cls = OWLDataMaxCardinality(cardinality=3, property=prop, filler=IntegerOWLDatatype)
+        self.assertEqual(cls.get_nnf(), cls)
+
+    def testNegDataMaxCardinality(self):
+        prop = OWLDataProperty(iri("p"))
+        filler = IntegerOWLDatatype
+        cls = OWLDataMaxCardinality(cardinality=3, property=prop, filler=filler).get_object_complement_of()
+        nnf = OWLDataMinCardinality(cardinality=4, property=prop, filler=filler)
+        self.assertEqual(cls.get_nnf(), nnf)
+
+    def testDatatype(self):
+        desc = IntegerOWLDatatype
+        nnf = IntegerOWLDatatype
+        comp = self.get_nnf(desc)
+        self.assertEqual(nnf, comp)
+
+    def testDataDoubleNegation(self):
+        desc = OWLDataComplementOf(IntegerOWLDatatype)
+        neg = OWLDataComplementOf(desc)
+        nnf = IntegerOWLDatatype
+        comp = self.get_nnf(neg)
+        self.assertEqual(nnf, comp)
+
+    def testDataTripleNegation(self):
+        desc = OWLDataComplementOf(OWLDataComplementOf(IntegerOWLDatatype))
+        neg = OWLDataComplementOf(desc)
+        nnf = OWLDataComplementOf(IntegerOWLDatatype)
+        comp = self.get_nnf(neg)
+        self.assertEqual(nnf, comp)
+
+    def testDataHasValue(self):
+        prop = OWLDataProperty(iri("p"))
+        literal = OWLLiteral(5)
+        desc = OWLDataHasValue(prop, literal)
+        neg = OWLDataComplementOf(desc)
+        nnf = OWLDataAllValuesFrom(prop, OWLDataComplementOf(OWLDataOneOf(literal)))
+        comp = self.get_nnf(neg)
+        self.assertEqual(nnf, comp)
+
+    def testDataNestedA(self):
+        factory = DatatypeRestrictionFactory()
+        restriction = factory.get_min_max_exclusive_restriction(5, 6)
+        prop = OWLDataProperty(iri("p"))
+        filler_a = OWLDataUnionOf((IntegerOWLDatatype, DoubleOWLDatatype))
+        op_a = OWLDataSomeValuesFrom(prop, filler_a)
+        op_b = OWLDataIntersectionOf((restriction, IntegerOWLDatatype))
+        desc = OWLDataUnionOf((op_a, op_b))
+        nnf = OWLDataIntersectionOf(
+                (OWLDataAllValuesFrom(prop, OWLDataIntersectionOf((OWLDataComplementOf(DoubleOWLDatatype),
+                                                                   OWLDataComplementOf(IntegerOWLDatatype)))),
+                 OWLDataUnionOf((OWLDataComplementOf(IntegerOWLDatatype), OWLDataComplementOf(restriction)))))
+        neg = OWLDataComplementOf(desc)
+        comp = self.get_nnf(neg)
+        self.assertEqual(comp, nnf)
+
+    def testDataNestedB(self):
+        desc = OWLDataIntersectionOf(
+            (OWLDataIntersectionOf((IntegerOWLDatatype, DoubleOWLDatatype)),
+             OWLDataComplementOf(OWLDataUnionOf((BooleanOWLDatatype, OWLDataOneOf(OWLLiteral(True)))))))
+        neg = OWLDataComplementOf(desc)
+        nnf = OWLDataUnionOf(
+            (OWLDataUnionOf((BooleanOWLDatatype, OWLDataOneOf(OWLLiteral(True)))),
+             OWLDataUnionOf((OWLDataComplementOf(DoubleOWLDatatype),
+                             OWLDataComplementOf(IntegerOWLDatatype)))))
+        comp = self.get_nnf(neg)
+        self.assertEqual(comp, nnf)
