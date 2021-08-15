@@ -23,7 +23,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
     """Tries to check instances fast (but maybe incomplete)"""
     __slots__ = '_ontology', '_base_reasoner', \
                 '_ind_enc', '_cls_to_ind', '_obj_prop', '_obj_prop_inv', '_data_prop', '_objectsomevalues_cache', \
-                '_negation_default', '_datasomevalues_cache'
+                '_negation_default', '_datasomevalues_cache', '_objectcardinality_cache'
 
     _ontology: OWLOntology
     _base_reasoner: OWLReasoner
@@ -34,6 +34,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
     _ind_enc: NamedFixedSet[OWLNamedIndividual]
     _objectsomevalues_cache: Dict[OWLClassExpression, int]  # ObjectSomeValuesFrom => individuals
     _datasomevalues_cache: Dict[OWLClassExpression, int]  # DataSomeValuesFrom => individuals
+    _objectcardinality_cache: Dict[OWLClassExpression, int]  # ObjectCardinalityRestriction => individuals
 
     def __init__(self, ontology: OWLOntology, base_reasoner: OWLReasoner, *, negation_default=True):
         """Fast instance checker
@@ -56,6 +57,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
         self._ind_enc = NamedFixedSet(OWLNamedIndividual, individuals)
         self._objectsomevalues_cache = dict()
         self._datasomevalues_cache = dict()
+        self._objectcardinality_cache = dict()
 
     def reset(self):
         """The reset method shall reset any cached state"""
@@ -163,7 +165,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
             self._obj_prop[pe] = MappingProxyType(opc)
 
     def _lazy_cache_data_prop(self, pe: OWLDataPropertyExpression) -> None:
-        """Get all individuals involved in this data property and put them in a Dict"""
+        """Get all individuals and values involved in this data property and put them in a Dict"""
         assert(isinstance(pe, OWLDataProperty))
         if pe in self._data_prop:
             return
@@ -284,8 +286,8 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
 
     def _get_instances_object_card_restriction(self, ce: OWLObjectCardinalityRestriction,
                                                operator_: Callable):
-        if ce in self._objectsomevalues_cache:
-            return self._objectsomevalues_cache[ce]
+        if ce in self._objectcardinality_cache:
+            return self._objectcardinality_cache[ce]
 
         p = ce.get_property()
         card = ce.get_cardinality()
@@ -306,7 +308,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
             if operator_(bin(o_set_enc & filler_ind_enc).count('1'), card):
                 ind_enc |= s_enc
 
-        self._objectsomevalues_cache[ce] = ind_enc
+        self._objectcardinality_cache[ce] = ind_enc
         return ind_enc
 
     @_find_instances.register
