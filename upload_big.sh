@@ -107,8 +107,10 @@ upload_file() {
     else
         echo '(cached)'
     fi
-    upload_test="$(curl -f -s -I "$HTTP/$dirname$root/$oid$ext")"
-    check_size="$(find_content_length "$upload_test")"
+    upload_test="$(curl -f -s -I "$HTTP/$dirname$root/$oid$ext")" || ret=$?
+    if [[ "$ret" -eq 0 ]]; then
+        check_size="$(find_content_length "$upload_test")"
+    fi
     if [[ -z "$check_size" ]] || [[ "$check_size" -ne "$size" ]]; then
         echo "Upload failed, size mismatch"
         exit 2
