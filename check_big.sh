@@ -80,7 +80,9 @@ check_file() {
 
     if [[ -f "$f" ]]; then
         while IFS=: read -r k v; do
-            link_info["$k"]="$v"
+            if [[ -n "$k" ]]; then
+                link_info["$k"]="$v"
+            fi
         done <"$f"
     else
         if [[ -f "$o" ]]; then
