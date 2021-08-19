@@ -16,10 +16,10 @@ Factory = Callable
 logger = logging.getLogger(__name__)
 
 
-def _Default_OntologyManagerFactory() -> OWLOntologyManager:
+def _Default_OntologyManagerFactory(world_store=None) -> OWLOntologyManager:
     from owlapy.owlready2 import OWLOntologyManager_Owlready2
 
-    return OWLOntologyManager_Owlready2()
+    return OWLOntologyManager_Owlready2(world_store=world_store)
 
 
 def _Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
@@ -73,7 +73,8 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
                  reasoner_factory: Factory[[OWLOntology], OWLReasoner] = _Default_ReasonerFactory,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
                  length_metric_factory: Optional[Factory[[], OWLClassExpressionLengthMetric]] = None,
-                 individuals_cache_size=128):
+                 individuals_cache_size=128,
+                 backend_store: bool = False):
         ...
 
     @overload
@@ -96,7 +97,8 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
                  reasoner: Optional[OWLReasoner] = None,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
 
-                 individuals_cache_size=128):
+                 individuals_cache_size=128,
+                 backend_store: bool = False):
         AbstractKnowledgeBase.__init__(self)
         self.path = path
         if ontology is not None:
@@ -105,13 +107,21 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         elif ontologymanager_factory is not None:
             self._manager = ontologymanager_factory()
         else:  # default to Owlready2 implementation
-            self._manager = _Default_OntologyManagerFactory()
+            if path is not None and backend_store:
+                self._manager = _Default_OntologyManagerFactory(world_store=path + ".or2")
+            else:
+                self._manager = _Default_OntologyManagerFactory()
             # raise TypeError("neither ontology nor manager factory given")
 
         if ontology is None:
             if path is None:
                 raise TypeError("path missing")
             self._ontology = self._manager.load_ontology(IRI.create('file://' + self.path))
+
+            from owlapy.owlready2 import OWLOntologyManager_Owlready2
+            if isinstance(self._manager, OWLOntologyManager_Owlready2) and backend_store:
+                self._manager.save_world()
+                logger.debug("Synced world to backend store")
 
         if reasoner is not None:
             self._reasoner = reasoner
