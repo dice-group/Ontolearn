@@ -3,11 +3,10 @@ from ontolearn.ea_initialization import AbstractEAInitialization, EARandomInitia
 from ontolearn.search import EvoLearnerNode
 from ontolearn.fitness_functions import LinearPressureFitness
 from ontolearn.metrics import Accuracy
-from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.learning_problem import EncodedPosNegLPStandard, PosNegLPStandard
 from ontolearn.base_concept_learner import BaseConceptLearner
 from ontolearn.abstracts import AbstractFitness, AbstractScorer
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 from ontolearn.knowledge_base import KnowledgeBase
 import operator
 
@@ -21,13 +20,14 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
     __slots__ = 'fitness_func', 'init_method', 'algorithm', 'expressivity', 'tournament_size',  \
                 'population_size', 'num_generations', 'height_limit', 'pset', 'toolbox', \
-                '_learning_problem', 'result_population'
+                '_learning_problem', '_result_population', 'mut_uniform_gen'
 
     name = 'evolearner'
 
     fitness_func: AbstractFitness
     init_method: AbstractEAInitialization
     algorithm: AbstractEvolutionaryAlgorithm
+    mut_uniform_gen: AbstractEAInitialization
     expressivity: str
     tournament_size: int
     population_size: int
@@ -37,6 +37,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
     pset: gp.PrimitiveSetTyped
     toolbox: base.Toolbox
     _learning_problem: EncodedPosNegLPStandard
+    _result_population: 'List[creator.Individual]'
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
@@ -44,13 +45,14 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                  fitness_func: Optional[AbstractFitness] = None,
                  init_method: Optional[AbstractEAInitialization] = None,
                  algorithm: Optional[AbstractEvolutionaryAlgorithm] = None,
+                 mut_uniform_gen: Optional[AbstractEAInitialization] = None,
                  terminate_on_goal: Optional[bool] = None,
                  max_runtime: Optional[int] = None,
-                 expressivity: Optional[str] = None,
-                 tournament_size: Optional[int] = None,
-                 population_size: Optional[int] = None,
-                 num_generations: Optional[int] = None,
-                 height_limit: Optional[int] = None):
+                 expressivity: str = 'ALC',
+                 tournament_size: int = 7,
+                 population_size: int = 800,
+                 num_generations: int = 200,
+                 height_limit: int = 17):
 
         if quality_func is None:
             quality_func = Accuracy()
@@ -63,13 +65,14 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         self.fitness_func = fitness_func
         self.init_method = init_method
         self.algorithm = algorithm
+        self.mut_uniform_gen = mut_uniform_gen
         self.expressivity = expressivity
         self.tournament_size = tournament_size
         self.population_size = population_size
         self.num_generations = num_generations
         self.height_limit = height_limit
 
-        self.result_population = None
+        self._result_population = None
 
         self.__setup()
 
@@ -84,20 +87,8 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         if self.algorithm is None:
             self.algorithm = EASimple()
 
-        if self.expressivity is None:
-            self.expressivity = "ALC"
-
-        if self.tournament_size is None:
-            self.tournament_size = 7
-
-        if self.population_size is None:
-            self.population_size = 800
-
-        if self.num_generations is None:
-            self.num_generations = 200
-
-        if self.height_limit is None:
-            self.height_limit = 17
+        if self.mut_uniform_gen is None:
+            self.mut_uniform_gen = EARandomInitialization(min_height=1, max_height=3)
 
         self.pset = self.__build_primitive_set()
         self.toolbox = self.__build_toolbox()
@@ -142,7 +133,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         toolbox.register("apply_fitness", self._fitness_func)
         toolbox.register("select", tools.selTournament, tournsize=self.tournament_size)
         toolbox.register("mate", gp.cxOnePoint)
-        toolbox.register("create_tree_mut", gp.genHalfAndHalf, min_=1, max_=3)
+        toolbox.register("create_tree_mut", self.mut_uniform_gen.get_individual)
         toolbox.register("mutate", gp.mutUniform, expr=toolbox.create_tree_mut, pset=self.pset)
 
         toolbox.decorate("mate", gp.staticLimit(key=operator.attrgetter("height"),
@@ -170,24 +161,23 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         learning_problem = self.construct_learning_problem(PosNegLPStandard, args, kwargs)
         self._learning_problem = learning_problem.encode_kb(self.kb)
 
-        verbose = kwargs.pop("verbose", False)
+        verbose = kwargs.pop("verbose", 0)
 
         self.start_time = time.time()
-        self.result_population = self.toolbox.population(n=self.population_size)
-        self._goal_found = self.algorithm.evolve(self.toolbox, 
-                                                 self.result_population, 
+        self._result_population = self.toolbox.population(n=self.population_size)
+        self._goal_found = self.algorithm.evolve(self.toolbox,
+                                                 self._result_population,
                                                  self.num_generations,
                                                  self.start_time,
                                                  verbose=verbose)
 
         return self.terminate()
 
-    # TODO: Think about the node wrapping
     def best_hypotheses(self, n=5, key='fitness'):
-        assert self.result_population is not None
-        assert len(self.result_population) > 0
+        assert self._result_population is not None
+        assert len(self._result_population) > 0
 
-        best_inds = tools.selBest(self.result_population, k=n, fit_attr=key)
+        best_inds = tools.selBest(self._result_population, k=n, fit_attr=key)
         best_concepts = [gp.compile(ind, self.pset) for ind in best_inds]
 
         for con, ind in zip(best_concepts, best_inds):
@@ -206,7 +196,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         [print(node) for node in self.best_hypotheses(n=top_n, key=key)]
 
     def clean(self):
-        self.result_population = None
+        self._result_population = None
         super().clean()
 
 
@@ -240,4 +230,3 @@ class PrimitiveFactory:
             return self.knowledge_base.universal_restriction(filler, property_)
 
         return existential_restriction, universal_restriction
-    

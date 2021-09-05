@@ -1,9 +1,12 @@
 from abc import ABCMeta, abstractmethod
-from typing import ClassVar, Final, Optional
+from typing import ClassVar, Final, List, Optional
 from deap.algorithms import varAnd
 from deap.base import Toolbox
+from deap import creator
 from heapq import nlargest
-import time
+import time, logging
+
+logger = logging.getLogger(__name__)
 
 
 class AbstractEvolutionaryAlgorithm(metaclass=ABCMeta):
@@ -14,17 +17,22 @@ class AbstractEvolutionaryAlgorithm(metaclass=ABCMeta):
 
     name: ClassVar[str]
 
+    crossover_pr: float
+    mutation_pr: float
+    elitism: bool
+    elite_size: float
+
     def __init__(self,
-                 crossover_pr: Optional[float] = None,
-                 mutation_pr: Optional[float] = None,
-                 elitism: Optional[bool] = None,
-                 elite_size: Optional[float] = None):
+                 crossover_pr: float = 0.9,
+                 mutation_pr: float= 0.1,
+                 elitism: bool = False,
+                 elite_size: float = 0.1):
         """Create a new evolutionary algorithm
 
         Args:
             crossover_pb: crossover probability
             mutation_pb: mutation probability
-            elitism: whether to use elitism. default to False
+            elitism: whether to use elitism. Defaults to False
             elite_size: ratio of individuals that are kept between generations if elitism is used
         """
         self.crossover_pr = crossover_pr
@@ -32,27 +40,12 @@ class AbstractEvolutionaryAlgorithm(metaclass=ABCMeta):
         self.elitism = elitism
         self.elite_size = elite_size
 
-        self.__set_default_values()
-
-    def __set_default_values(self):
-        if self.crossover_pr is None:
-            self.crossover_pr = 0.9
-
-        if self.mutation_pr is None:
-            self.mutation_pr = 0.1
-
-        if self.elitism is None:
-            self.elitism = False
-
-        if self.elite_size is None:
-            self.elite_size = 0.1
-
     @abstractmethod
-    def evolve(self, 
-               toolbox: Toolbox, 
-               population, 
-               num_generations: int, 
-               start_time: float, 
+    def evolve(self,
+               toolbox: Toolbox,
+               population: 'List[creator.Individual]',
+               num_generations: int,
+               start_time: float,
                verbose: bool = False) -> bool:
         pass
 
@@ -63,23 +56,23 @@ class EASimple(AbstractEvolutionaryAlgorithm):
     name: Final = 'EASimple'
 
     def __init__(self,
-                 crossover_pr: Optional[float] = None,
-                 mutation_pr: Optional[float] = None,
-                 elitism: Optional[bool] = None,
-                 elite_size: Optional[float] = None):
+                 crossover_pr: float = 0.9,
+                 mutation_pr: float = 0.1,
+                 elitism: bool = False,
+                 elite_size: float = 0.1):
         super().__init__(crossover_pr=crossover_pr,
                          mutation_pr=mutation_pr,
                          elitism=elitism,
                          elite_size=elite_size)
 
-    def evolve(self, 
-               toolbox: Toolbox, 
-               population, 
-               num_generations: int, 
-               start_time: float, 
-               verbose: bool = False) -> bool:
+    def evolve(self,
+               toolbox: Toolbox,
+               population: 'List[creator.Individual]',
+               num_generations: int,
+               start_time: float,
+               verbose: int = 0) -> bool:
 
-        num_elite = self.elite_size*len(population) if self.elitism else 0
+        num_elite = int(self.elite_size*len(population)) if self.elitism else 0
         num_tournaments = len(population) - num_elite
 
         for p in population:
@@ -103,13 +96,13 @@ class EASimple(AbstractEvolutionaryAlgorithm):
 
             population[:] = offspring + elite
 
-            if verbose:
-                print("\nGeneration: ", gen, "-----------------------------")
+            if verbose > 0:
+                logger.info(f"Generation: {gen}")
                 toolbox.print()
 
             if (time.time() - start_time) > toolbox.max_runtime():
                 return goal_found
-            
+
             gen += 1
-        
+
         return goal_found

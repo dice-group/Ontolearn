@@ -242,14 +242,14 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
         ))
 
 
-class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, AbstractNode):
+class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, AbstractNode, AbstractConceptNode):
     __slots__ = '_concept', '_len', '_individuals_count', '_quality', '_tree_length', '_tree_depth'
 
     _tree_length: int
     _tree_depth: int
 
-    def __init__(self, 
-                 concept: OWLClassExpression, 
+    def __init__(self,
+                 concept: OWLClassExpression,
                  length: int,
                  individuals_count: int,
                  quality: float,
@@ -262,6 +262,14 @@ class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality
         AbstractNode.__init__(self)
         self._tree_length = tree_length
         self._tree_depth = tree_depth
+
+    @property
+    def tree_length(self):
+        return self._tree_length
+
+    @property
+    def tree_depth(self):
+        return self._tree_depth
 
     def __str__(self):
         return "\t".join((

@@ -1,6 +1,7 @@
 import random
 from abc import ABCMeta, abstractmethod
-from deap.gp import Primitive, PrimitiveSetTyped
+from typing import List, Union
+from deap.gp import Primitive, PrimitiveSetTyped, Terminal
 
 
 class AbstractEAInitialization(metaclass=ABCMeta):
@@ -14,7 +15,7 @@ class AbstractEAInitialization(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_individual(self, pset: PrimitiveSetTyped):
+    def get_individual(self, pset: PrimitiveSetTyped, type_: type):
         pass
 
 
@@ -23,6 +24,10 @@ class EARandomInitialization(AbstractEAInitialization):
 
     """
     __slots__ = 'min_height', 'max_height', 'method'
+
+    min_height: int
+    max_height: int
+    method: str
 
     def __init__(self, min_height: int = 3, max_height: int = 6, method: str = "rhh"):
         """
@@ -36,22 +41,25 @@ class EARandomInitialization(AbstractEAInitialization):
         self.max_height = max_height
         self.method = method
 
-    def get_individual(self, pset: PrimitiveSetTyped):
+    def get_individual(self, pset: PrimitiveSetTyped, type_: type = None):
+        if type_ is None:
+            type_ = pset.ret
+
         use_grow = (self.method == 'grow' or (self.method == 'rhh' and random.random() < 0.5))
 
-        individual = []
+        individual: List[Union[Primitive, Terminal]] = []
         height = random.randint(self.min_height, self.max_height)
-        self._build_tree(individual, pset, height, 0, pset.ret, use_grow)
+        self._build_tree(individual, pset, height, 0, type_, use_grow)
         return individual
 
-    def _build_tree(self, tree, 
-                    pset: PrimitiveSetTyped, 
-                    height: int, 
-                    current_height: int, 
+    def _build_tree(self, tree,
+                    pset: PrimitiveSetTyped,
+                    height: int,
+                    current_height: int,
                     type_: type,
                     use_grow: bool):
 
-        if current_height == height or len(pset.primitives[type_]) == 0: 
+        if current_height == height or len(pset.primitives[type_]) == 0:
             tree.append(random.choice(pset.terminals[type_]))
         else:
             operators = []
@@ -59,7 +67,7 @@ class EARandomInitialization(AbstractEAInitialization):
                 operators = pset.primitives[type_] + pset.terminals[type_]
             else:
                 operators = pset.primitives[type_]
-            
+
             operator = random.choice(operators)
             tree.append(operator)
 

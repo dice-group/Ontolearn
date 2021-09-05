@@ -75,5 +75,4 @@ for str_target_concept, examples in settings['problems'].items():
                                 hypotheses=hypotheses)
     # print(predictions)
     [print(_) for _ in hypotheses]
-    break
     # exit(1)

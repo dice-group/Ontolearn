@@ -100,6 +100,8 @@ class AbstractFitness(metaclass=ABCMeta):
     Fitness functions guide the evolutionary process."""
     __slots__ = ()
 
+    name: ClassVar[str]
+
     @abstractmethod
     def __init__(self):
         """Create a new fitness function"""
@@ -107,7 +109,7 @@ class AbstractFitness(metaclass=ABCMeta):
 
     @abstractmethod
     def apply(self, individual):
-        """Apply the fitness function on an and set its fitness attribute to the calculated value
+        """Apply the fitness function on an individual and set its fitness attribute to the calculated value
 
         Args:
             individual: individual to set the fitness on
