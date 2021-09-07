@@ -324,7 +324,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
 
         ind_enc = 0
         if isinstance(filler, OWLDatatype):
-            # TODO: Currently we just assume that the values are of the correct type (also
+            # TODO: Currently we just assume that the values are of the given type (also
             # done in DLLearner)
             ind_enc = reduce(operator.or_, ops.keys())
         elif isinstance(filler, OWLDataOneOf):

@@ -1,4 +1,3 @@
-
 from functools import singledispatchmethod
 from typing import Iterable, Union
 from owlapy.model import OWLDatatype, OWLDatatypeRestriction, OWLFacet, OWLFacetRestriction, OWLLiteral
@@ -26,7 +25,6 @@ class DatatypeRestrictionFactory():
         return self.get_owl_datatype_restriction(r.get_facet_value().get_datatype(), r)
 
     def get_min_max_exclusive_restriction(self, min_: float, max_: float) -> OWLDatatypeRestriction:
-        # TODO:
         if isinstance(min_, float) and isinstance(max_, int):
             max_ = float(max_)
         if isinstance(max_, float) and isinstance(min_, int):
@@ -37,7 +35,6 @@ class DatatypeRestrictionFactory():
         return self.get_owl_datatype_restriction(r_min.get_facet_value().get_datatype(), restrictions)
 
     def get_min_max_inclusive_restriction(self, min_: float, max_: float) -> OWLDatatypeRestriction:
-        # TODO:
         if isinstance(min_, float) and isinstance(max_, int):
             max_ = float(max_)
         if isinstance(max_, float) and isinstance(min_, int):
@@ -48,7 +45,8 @@ class DatatypeRestrictionFactory():
         return self.get_owl_datatype_restriction(r_min.get_facet_value().get_datatype(), restrictions)
 
     def get_owl_datatype_restriction(self, type_: OWLDatatype,
-                restrictions: Union[OWLFacetRestriction, Iterable[OWLFacetRestriction]]) -> OWLDatatypeRestriction:
+                                     restrictions: Union[OWLFacetRestriction, Iterable[OWLFacetRestriction]]) \
+            -> OWLDatatypeRestriction:
         if isinstance(restrictions, OWLFacetRestriction):
             restrictions = restrictions,
         return OWLDatatypeRestriction(type_, restrictions)
