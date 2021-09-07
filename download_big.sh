@@ -43,7 +43,9 @@ download_file() {
 
     declare -A link_info
     while IFS=: read -r k v; do
-        link_info["$k"]="$v"
+        if [[ -n "$k" ]]; then
+            link_info["$k"]="$v"
+        fi
     done <"$f"
 
     hdr="#% GitExt 0.1"
