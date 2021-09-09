@@ -16,6 +16,7 @@ dependencies:
   - tox=3.23.1
   - tox-conda=0.8.0
   - pytest=6.2.2
+  - pytest-codeblocks=0.11.2
   # docs
   - sphinx=3.5.3
   - sphinx_rtd_theme=0.5.1
