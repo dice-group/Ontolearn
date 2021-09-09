@@ -51,12 +51,8 @@ abstract BaseConceptLearner
 package ontolearn.concept_learner {
 class CELOE
 }
-package ontolearn.concept_learner {
-class LengthBaseLearner
-}
 
 BaseConceptLearner <|-- CELOE
-BaseConceptLearner <|-- LengthBaseLearner
 :::
 :::{raw} latex
 \end{wrapfigure}
@@ -332,10 +328,7 @@ OWLReasoner -* ConceptGenerator
 
 BaseRefinement *-- AbstractKnowledgeBase
 
-AbstractScorer *-- AbstractLearningProblem
-
 BaseConceptLearner *-- AbstractKnowledgeBase
-BaseConceptLearner *-- AbstractLearningProblem
 BaseConceptLearner *-- BaseRefinement : refinement_operator
 BaseConceptLearner *-- AbstractScorer : quality_func
 BaseConceptLearner *-- AbstractHeuristic : heuristic_func
