@@ -20,10 +20,9 @@ lp = PosNegLPStandard(pos=positive_examples, neg=negative_examples)
 
 # Learning Algorithm
 
-Currently, two [Base Concept
-Learners](ontolearn.base_concept_learner.BaseConceptLearner) are
-provided in our Ontolearn library. The [length base
-learner](ontolearn.concept_learner.LengthBaseLearner) and the
+Currently, one [Base Concept
+Learner](ontolearn.base_concept_learner.BaseConceptLearner) is
+provided in our Ontolearn library. The
 [modified CELOE algorithm](ontolearn.concept_learner.CELOE). Each
 algorithm may have different available configuration. However at
 minimum they require a [knowledge
