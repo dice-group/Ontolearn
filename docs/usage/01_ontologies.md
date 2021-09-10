@@ -17,8 +17,7 @@ this tiny ontology as an example.
 
 To load an ontology, use the following Python code:
 
-```py
-
+```python
 from owlapy.model import IRI
 from owlapy.owlready2 import OWLOntologyManager_Owlready2
 
@@ -36,7 +35,8 @@ us. Currently, Ontolearn contains one such manager: The
 Now, we can already inspect the contents of the ontology. For example,
 to list all individuals:
 
-```py
+<!--pytest-codeblocks:cont-->
+```python
 for ind in onto.individuals_in_signature():
     print(ind)
 ```
@@ -60,7 +60,8 @@ available to choose from.
 
 To load any reasoner, follow this Python code:
 
-```py
+<!--pytest-codeblocks:cont-->
+```python
 from owlapy.owlready2 import OWLReasoner_Owlready2
 from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker

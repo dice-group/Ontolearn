@@ -5,10 +5,9 @@ To simplify the connection between all the
 model adaptor available that automatically constructs and connects them.
 Here is how to implement the previous example using the Model Adaptor:
 
-```py
+```python
 from ontolearn.concept_learner import CELOE
 from ontolearn.heuristics import CELOEHeuristic
-from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import Accuracy
 from ontolearn.model_adapter import ModelAdapter
 from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
@@ -41,19 +40,18 @@ negative_examples = {OWLNamedIndividual(IRI.create(NS, 'heinz')),
 model = ModelAdapter(learner_type=CELOE,
                      ontologymanager_factory=OWLOntologyManager_Owlready2,  # (*)
                      reasoner_factory=my_reasoner_factory,  # (*)
-                     )
+                     path="KGs/father.owl",
+                     quality_type=Accuracy,
+                     heuristic_type=CELOEHeuristic,
+                     expansionPenaltyFactor=0.05,
+                     startNodeBonus=1.0,
+                     nodeRefinementPenalty=0.01,
+                    )
 
 # no need to construct the IRI here ourselves
-model.fit(path="../KGs/father.owl",
-          learning_problem_type=PosNegLPStandard,  # (*)
-          quality_type=Accuracy,
-          heuristic_type=CELOEHeuristic,
-          expansionPenaltyFactor=0.05,
-          startNodeBonus=1.0,
-          nodeRefinementPenalty=0.01,
-          pos=positive_examples,
+model.fit(pos=positive_examples,
           neg=negative_examples,
-          )
+         )
 
 dlsr = DLSyntaxObjectRenderer()
 

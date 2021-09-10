@@ -16,8 +16,6 @@ except FileNotFoundError:
 with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 
-model = ModelAdapter(path=settings['data_path'])
-
 random.seed(0)
 
 # noinspection DuplicatedCode
@@ -50,14 +48,14 @@ for str_target_concept, examples in settings['problems'].items():
 
     typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
     typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
+    model = ModelAdapter(path=settings['data_path'],
+                         ignore=concepts_to_ignore,
+                         max_runtime=600,
+                         max_num_of_concepts_tested=10_000_000_000,
+                         iter_bound=10_000_000_000,
+                         expansionPenaltyFactor=0.01)
 
-    model = model.fit(pos=typed_pos, neg=typed_neg,
-                      ignore=concepts_to_ignore,
-                      max_runtime=600,
-                      max_num_of_concepts_tested=10_000_000_000,
-                      iter_bound=10_000_000_000,
-                      expansionPenaltyFactor=0.01
-                      )
+    model = model.fit(pos=typed_pos, neg=typed_neg)
 
     # model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
     # Get Top n hypotheses

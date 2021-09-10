@@ -146,4 +146,13 @@ cython_debug/
 
 # Ontolearn logs
 Log/
+
+embeddings/
+# Big files
 pre_trained_agents.zip
+embeddings.zip
+KGs/dbpedia_2016-10.owl
+KGs/Nctrer/nctrer.owl
+KGs/Mutagenesis/mutagenesis.owl
+KGs/Carcinogenesis/carcinogenesis.owl
+KGs.zip

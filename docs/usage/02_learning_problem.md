@@ -1,3 +1,20 @@
+<!--
+```python
+from owlapy.model import IRI
+from owlapy.owlready2 import OWLOntologyManager_Owlready2
+from owlapy.owlready2 import OWLReasoner_Owlready2
+from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
+from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
+
+mgr = OWLOntologyManager_Owlready2()
+onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
+
+structural_reasoner = OWLReasoner_Owlready2(onto)
+temp_classes_reasoner = OWLReasoner_Owlready2_TempClasses(onto)
+fast_instance_checker = OWLReasoner_FastInstanceChecker(onto, temp_classes_reasoner)
+```
+-->
+
 # Defining a Learning Problem
 
 The Structured Machine Learning implemented in our Ontolearn library
@@ -15,8 +32,8 @@ describe) are stefan, markus, and martin. And our negative examples
 (individuals to not describe) are heinz, anna, and michelle. Then we
 could write the following Python code:
 
-```py
-
+<!--pytest-codeblocks:cont-->
+```python
 from owlapy.namespaces import Namespaces
 from owlapy.model import OWLNamedIndividual, IRI
 
@@ -41,7 +58,8 @@ Hierarchy generator as well as other Ontology-related state required
 for the Structured Machine Learning library. It is required to run a
 learning algorithm. Creation is done like follows:
 
-```py
+<!--pytest-codeblocks:cont-->
+```python
 from ontolearn import KnowledgeBase
 
 kb = KnowledgeBase(ontology=onto, reasoner=fast_instance_checker)
@@ -57,9 +75,10 @@ Now the learning problem can be captured in its respective object, the
 [positive-negative standard learning
 problem](ontolearn.learning_problem.PosNegLPStandard):
 
-```py
+<!--pytest-codeblocks:cont-->
+```python
 from ontolearn.learning_problem import PosNegLPStandard
 
-lp = PosNegLPStandard(kb, pos=positive_examples, neg=negative_examples)
+lp = PosNegLPStandard(pos=positive_examples, neg=negative_examples)
 ```
 
