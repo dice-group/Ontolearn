@@ -7,7 +7,7 @@ The goal of ontolearn is to provide efficient solutions for concept learning on 
 Author:
     The Ontolearn team <onto-learn@lists.uni-paderborn.de>
 """
-__version__ = '0.2.0'
+__version__ = '0.3.0.dev'
 
 from .knowledge_base import KnowledgeBase
 __all__ = 'KnowledgeBase',
