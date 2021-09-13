@@ -26,7 +26,7 @@ jobs:
     - name: prepare required software
       run: |
         # epstopdf & dot & noto-fonts
-        sudo apt install texlive-font-utils graphviz fonts-noto
+        sudo apt update && sudo apt install texlive-font-utils graphviz fonts-noto
     - name: Build docs with tox
       run: |
         tox -o -e docs
