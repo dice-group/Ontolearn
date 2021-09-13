@@ -1,0 +1,29 @@
+name: Depublish docs
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Create placeholder webpage
+      run: |
+        mkdir empty_page
+        echo "<body onload=\"window.location.host = window.location.host.replace(/^.*--/, '')\">This branch has been completed</body>" > empty_page/index.html
+    - name: Depublish from netlify
+      uses: nwtgck/actions-netlify@v1.2
+      with:
+        publish-dir: 'empty_page'
+        production-deploy: false
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        deploy-message: "Depublish from GitHub Actions ${{ github.sha }}"
+        alias: ${{ github.head_ref }}
+        enable-pull-request-comment: false
+        enable-commit-comment: false
+      env:
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      timeout-minutes: 5

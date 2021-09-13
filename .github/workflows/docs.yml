@@ -1,0 +1,55 @@
+name: Build docs
+
+on:
+  push:
+    branches:
+     - master
+     - develop
+  pull_request:
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 5
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: add conda to path
+      run: |
+        # $CONDA is an environment variable pointing to the root of the miniconda directory
+        echo "$CONDA/bin" >> $GITHUB_PATH
+    - name: Install tox
+      run: |
+        # workaround for github bug where conda-tox is broken after self-upgrade
+        conda install -c conda-forge --no-update-deps tox=3.23.1 $(conda -V|tr ' ' '=')
+    - name: prepare required software
+      run: |
+        # epstopdf & dot & noto-fonts
+        sudo apt install texlive-font-utils graphviz fonts-noto
+    - name: Build docs with tox
+      run: |
+        tox -o -e docs
+    - name: Build latex docs with tox
+      run: |
+        tox -o -e docs latex
+    - name: Compile LaTeX document
+      uses: docker://texlive/texlive:latest
+      with:
+        args: make -C docs/_build/latex
+    - run: |
+        cp docs/_build/latex/ontolearn.pdf docs/_build/html/
+    - name: Deploy to netlify
+      uses: nwtgck/actions-netlify@v1.2
+      with:
+        publish-dir: 'docs/_build/html'
+        production-branch: develop
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        deploy-message: "Deploy from GitHub Actions ${{ github.sha }}"
+        alias: ${{ github.head_ref }}
+        enable-pull-request-comment: false
+        enable-commit-comment: false
+      env:
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      timeout-minutes: 5

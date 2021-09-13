@@ -44,6 +44,7 @@ htmlcov/
 .coverage.*
 .cache
 nosetests.xml
+coverage.json
 coverage.xml
 *.cover
 *.py,cover
@@ -70,6 +71,9 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/_static_gen/
+# managed by sphinx autosummary in api.rst
+docs/source/
 
 # PyBuilder
 .pybuilder/
@@ -139,3 +143,16 @@ cython_debug/
 
 # Pycharm IDE
 .idea/
+
+# Ontolearn logs
+Log/
+
+embeddings/
+# Big files
+pre_trained_agents.zip
+embeddings.zip
+KGs/dbpedia_2016-10.owl
+KGs/Nctrer/nctrer.owl
+KGs/Mutagenesis/mutagenesis.owl
+KGs/Carcinogenesis/carcinogenesis.owl
+KGs.zip

@@ -1,13 +1,18 @@
 import datetime
-import logging
 import os
 import pickle
-import time
-import copy
-import matplotlib.pyplot as plt
-from sklearn.manifold import TSNE
 import random
+import time
+from typing import Type, Callable, Set, TypeVar
+
+import matplotlib.pyplot as plt
 import pandas as pd
+from owlapy.model import OWLNamedIndividual, IRI, OWLClass, HasIRI
+from sklearn.manifold import TSNE
+
+from ontolearn.utils.log_config import setup_logging  # noqa: F401
+
+Factory = Callable
 
 # DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
 DEFAULT_FMT = 'Func:{name} took {elapsed:0.8f}s'
@@ -16,18 +21,20 @@ flag_for_performance = False
 
 def parametrized_performance_debugger(fmt=DEFAULT_FMT):
     def decorate(func):
-        def clocked(*_args):
-            t0 = time.time()
-            _result = func(*_args)
-            elapsed = time.time() - t0
-            name = func.__name__
-            args = ', '.join(repr(arg) for arg in _args)
-            result = repr(_result)
-            if flag_for_performance:
+        if flag_for_performance:
+            def clocked(*_args):
+                t0 = time.time()
+                _result = func(*_args)
+                elapsed = time.time() - t0
+                name = func.__name__
+                args = ', '.join(repr(arg) for arg in _args)
+                result = repr(_result)
                 print(fmt.format(**locals()))
-            return _result
+                return _result
 
-        return clocked
+            return clocked
+        else:
+            return func
 
     return decorate
 
@@ -35,9 +42,9 @@ def parametrized_performance_debugger(fmt=DEFAULT_FMT):
 def performance_debugger(func_name):
     def function_name_decorator(func):
         def debug(*args, **kwargs):
-            starT = time.time()
+            start = time.time()
             r = func(*args, **kwargs)
-            print(func_name, ' took ', round(time.time() - starT, 4), ' seconds')
+            print(func_name, ' took ', round(time.time() - start, 4), ' seconds')
 
             return r
 
@@ -46,65 +53,15 @@ def performance_debugger(func_name):
     return function_name_decorator
 
 
-def decompose(number, upperlimit, bisher, combosTmp):
-    """
-    TODO: Explain why we need it. We have simply hammered the java code into python here
-    TODO: After fully understanding, we could optimize the computation if necessary
-    TODO: By simply vectorizing the computations.
-    :param number:
-    :param upperlimit:
-    :param bisher:
-    :param combosTmp:
-    :return:
-    """
-    i = min(number, upperlimit)
-    while i >= 1:
-        newbisher = list()
-
-        if i == 0:
-            newbisher = bisher
-            newbisher.append(i)
-        elif number - i != 1:
-            newbisher = copy.copy(bisher)
-            newbisher.append(i)
-
-        if number - i > 1:
-            decompose(number - i - 1, i, newbisher, combosTmp)
-        elif number - i == 0:
-            combosTmp.append(newbisher)
-
-        i -= 1
-
-
-def getCombos(length: int, max_length: int):
-    """
-    :param i:
-    :param max_length:
-    :return:
-    """
-    combosTmp = []
-    decompose(length, max_length, [], combosTmp)
-    return combosTmp
-
-
-def incCrossProduct(baseset, newset, exp_gen):
-    retset = set()
-
-    if len(baseset) == 0:
-        for c in newset:
-            retset.add(c)
-        return retset
-    for i in baseset:
-        for j in newset:
-            retset.add(exp_gen.union(i, j))
-    return retset
-
-
 def create_experiment_folder(folder_name='Log'):
-    directory = os.getcwd() + '/' + folder_name + '/'
-    folder_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    path_of_folder = directory + folder_name
-    os.makedirs(path_of_folder)
+    from ontolearn.utils import log_config
+    if log_config.log_dirs:
+        path_of_folder = log_config.log_dirs[-1]
+    else:
+        directory = os.getcwd() + '/' + folder_name + '/'
+        folder_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        path_of_folder = directory + folder_name
+        os.makedirs(path_of_folder)
     return path_of_folder, path_of_folder[:path_of_folder.rfind('/')]
 
 
@@ -119,38 +76,6 @@ def deserializer(*, path: str, serialized_name: str):
         obj_ = pickle.load(f)
     f.close()
     return obj_
-
-
-def get_full_iri(x):
-    return x.namespace.base_iri + x.name
-
-
-def create_logger(*, name, p):
-    """
-    @todos We should create a better logging.
-    @param name:
-    @param p:
-    @return:
-    """
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
-    # create file handler which logs even debug messages
-    fh = logging.FileHandler(p + '/info.log', 'w', 'utf-8')
-    fh.setLevel(logging.INFO)
-
-    # create console handler with a higher log level
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-
-    # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    ch.setFormatter(formatter)
-    fh.setFormatter(formatter)
-    # add the handlers to logger
-    # logger.addHandler(ch) # do not print in console.
-    logger.addHandler(fh)
-
-    return logger
 
 
 def apply_TSNE_on_df(df) -> None:
@@ -193,11 +118,17 @@ def read_csv(path):
     return df
 
 
-def assertion_path_isfile(path):
+def assertion_path_isfile(path) -> None:
+    try:
+        assert path is not None
+    except AssertionError:
+        print(f'Path can not be:{path}')
+        raise
+
     try:
         assert os.path.isfile(path)
-    except AssertionError:
-        print(f'{path} is not found.')
+    except (AssertionError, TypeError):
+        print(f'Input:{path} not found.')
         raise
 
 
@@ -206,13 +137,13 @@ def sanity_checking_args(args):
         assert os.path.isfile(args.path_knowledge_base)
     except AssertionError:
         print(f'--path_knowledge_base ***{args.path_knowledge_base}*** does not lead to a file.')
-        exit(1)
+        raise
 
     try:
         assert os.path.isfile(args.path_knowledge_base_embeddings)
     except AssertionError:
         print(f'--path_knowledge_base_embeddings ***{args.path_knowledge_base_embeddings}*** does not lead to a file.')
-        exit(1)
+        raise
 
     assert args.min_length > 0
     assert args.max_length > 0
@@ -230,3 +161,58 @@ def sanity_checking_args(args):
 
     if hasattr(args, 'batch_size'):
         assert args.batch_size > 1
+
+
+_T = TypeVar('_T', bound=HasIRI)
+
+
+def _read_iri_file(file: str, type_: Factory[[IRI], _T]) -> Set[_T]:
+    """Read a text file containing IRIs (one per line) and return the content as a set of instances created by the
+    given type
+
+    Args:
+        file: path to the text file with the IRIs of the named individuals
+        type_: factory or type to create from the IRI
+
+    Returns:
+        set of type_ instances with these IRIs
+    """
+
+    def optional_angles(iri: str):
+        if iri.startswith('<'):
+            return iri[1:-1]
+        else:
+            return iri
+
+    with open(file, 'r') as f:
+        inds = map(type_,
+                   map(IRI.create,
+                       map(optional_angles,
+                           f.read().splitlines())))
+    return set(inds)
+
+
+def read_individuals_file(file: str) -> Set[OWLNamedIndividual]:
+    """Read a text file containing IRIs of Named Individuals (one per line) and return the content as a set of OWL
+    Named Individuals
+
+    Args:
+        file: path to the text file with the IRIs of the named individuals
+
+    Returns:
+        set of OWLNamedIndividual with these IRIs
+    """
+    return _read_iri_file(file, OWLNamedIndividual)
+
+
+def read_named_classes_file(file: str) -> Set[OWLClass]:
+    """Read a text file containing IRIs of OWL Named Classes (one per line) and return the content as a set of OWL
+    Classes
+
+    Args:
+        file: path to the text file with the IRIs of the classes
+
+    Returns:
+        set of OWLNamedIndividual with these IRIs
+    """
+    return _read_iri_file(file, OWLClass)
