@@ -2,9 +2,11 @@ from typing import Iterable, Optional, AbstractSet, Dict, Generator
 
 from ontolearn.core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from ontolearn.utils import parametrized_performance_debugger
-from owlapy.model import OWLClass, OWLClassExpression, OWLObjectComplementOf, OWLObjectSomeValuesFrom, \
+from owlapy.model import OWLObjectHasValue, OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectPropertyExpression, OWLThing, \
-    OWLNothing, OWLReasoner, OWLObjectProperty
+    OWLNothing, OWLReasoner, OWLObjectProperty, OWLClass, OWLClassExpression, OWLObjectComplementOf, \
+    OWLObjectExactCardinality, OWLDataAllValuesFrom, OWLDataPropertyExpression, OWLDataRange, OWLDataSomeValuesFrom, \
+    OWLDataHasValue, OWLIndividual, OWLLiteral
 
 
 class ConceptGenerator:
@@ -345,6 +347,110 @@ class ConceptGenerator:
         """
         assert isinstance(property, OWLObjectPropertyExpression)
         return OWLObjectAllValuesFrom(property=property, filler=filler)
+
+    def has_value_restriction(self, individual: OWLIndividual, property: OWLObjectPropertyExpression) \
+            -> OWLObjectHasValue:
+        """Create object has value restriction
+
+        Args:
+            property: property
+            individual: individual of the restriction
+
+        Returns:
+            object has value restriction
+        """
+        assert isinstance(property, OWLObjectPropertyExpression)
+        return OWLObjectHasValue(property=property, individual=individual)
+
+    def min_cardinality_restriction(self, filler: OWLClassExpression,
+                                    property: OWLObjectPropertyExpression, card: int) \
+            -> OWLObjectMinCardinality:
+        """Create min cardinality restriction
+
+        Args:
+            filler: filler of the restriction
+            property: property
+            card: cardinality of the restriction
+
+        Returns:
+            min cardinality restriction
+        """
+        assert isinstance(property, OWLObjectPropertyExpression)
+        return OWLObjectMinCardinality(cardinality=card, property=property, filler=filler)
+
+    def max_cardinality_restriction(self, filler: OWLClassExpression,
+                                    property: OWLObjectPropertyExpression, card: int) \
+            -> OWLObjectMaxCardinality:
+        """Create max cardinality restriction
+
+        Args:
+            filler: filler of the restriction
+            property: property
+            card: cardinality of the restriction
+
+        Returns:
+            max cardinality restriction
+        """
+        assert isinstance(property, OWLObjectPropertyExpression)
+        return OWLObjectMaxCardinality(cardinality=card, property=property, filler=filler)
+
+    def exact_cardinality_restriction(self, filler: OWLClassExpression,
+                                      property: OWLObjectPropertyExpression, card: int) \
+            -> OWLObjectExactCardinality:
+        """Create exact cardinality restriction
+
+        Args:
+            filler: filler of the restriction
+            property: property
+            card: cardinality of the restriction
+
+        Returns:
+            exact cardinality restriction
+        """
+        assert isinstance(property, OWLObjectPropertyExpression)
+        return OWLObjectExactCardinality(cardinality=card, property=property, filler=filler)
+
+    def data_existential_restriction(self, filler: OWLDataRange, property: OWLDataPropertyExpression) \
+            -> OWLDataSomeValuesFrom:
+        """Create data existential restriction
+
+        Args:
+            filler: filler of the restriction
+            property: property
+
+        Returns:
+            data existential restriction
+        """
+        assert isinstance(property, OWLDataPropertyExpression)
+        return OWLDataSomeValuesFrom(property=property, filler=filler)
+
+    def data_universal_restriction(self, filler: OWLDataRange, property: OWLDataPropertyExpression) \
+            -> OWLDataAllValuesFrom:
+        """Create data universal restriction
+
+        Args:
+            filler: filler of the restriction
+            property: property
+
+        Returns:
+            data universal restriction
+        """
+        assert isinstance(property, OWLDataPropertyExpression)
+        return OWLDataAllValuesFrom(property=property, filler=filler)
+
+    def data_has_value_restriction(self, value: OWLLiteral, property: OWLDataPropertyExpression) \
+            -> OWLDataHasValue:
+        """Create data has value restriction
+
+        Args:
+            value: value of the restriction
+            property: property
+
+        Returns:
+            data has value restriction
+        """
+        assert isinstance(property, OWLDataPropertyExpression)
+        return OWLDataHasValue(property=property, value=value)
 
     def negation(self, concept: OWLClassExpression) -> OWLClassExpression:
         """Create negation of a concept

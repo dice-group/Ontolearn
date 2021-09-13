@@ -20,4 +20,5 @@ jobs:
         conda install -c conda-forge --no-update-deps tox=3.23.1 $(conda -V|tr ' ' '=')
     - name: Test with tox
       run: |
+        ./download_big.sh KGs/Mutagenesis/mutagenesis.owl
         tox -o

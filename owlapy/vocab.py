@@ -1,6 +1,7 @@
 from abc import ABCMeta
 from enum import Enum, EnumMeta
-from typing import Final
+from typing import Final, Callable
+from operator import lt, le, gt, ge
 
 from owlapy import namespaces
 from owlapy.model._iri import HasIRI, IRI
@@ -50,6 +51,7 @@ class XSDVocabulary(_Vocabulary, Enum, metaclass=_meta_Enum):
         obj = object.__new__(cls)
         obj._value_ = f"{namespaces.XSD.prefix}:{remainder}"
         return obj
+
     def __init__(self, remainder: str):
         super().__init__(namespaces.XSD, remainder)
     DECIMAL: Final = "decimal"  #:
@@ -59,3 +61,28 @@ class XSDVocabulary(_Vocabulary, Enum, metaclass=_meta_Enum):
     FLOAT: Final = "float"  #:
     BOOLEAN: Final = "boolean"  #:
     DATE_TIME_STAMP: Final = "dateTimeStamp"  #:
+
+
+class OWLFacet(_Vocabulary, Enum, metaclass=_meta_Enum):
+    def __new__(cls, remainder: str, *args):
+        obj = object.__new__(cls)
+        obj._value_ = f"{namespaces.XSD.prefix}:{remainder}"
+        return obj
+
+    def __init__(self, remainder: str, symbolic_form: str, operator: Callable):
+        super().__init__(namespaces.XSD, remainder)
+        self._symbolic_form = symbolic_form
+        self._operator = operator
+
+    @property
+    def symbolic_form(self):
+        return self._symbolic_form
+
+    @property
+    def operator(self):
+        return self._operator
+
+    MIN_INCLUSIVE: Final = ("minInclusive", "≥", ge)  #:
+    MIN_EXCLUSIVE: Final = ("minExclusive", ">", gt)  #:
+    MAX_INCLUSIVE: Final = ("maxInclusive", "≤", le)  #:
+    MAX_EXCLUSIVE: Final = ("maxExclusive", "<", lt)  #:

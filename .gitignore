@@ -144,6 +144,9 @@ cython_debug/
 # Pycharm IDE
 .idea/
 
+# VS Code
+.vscode/
+
 # Ontolearn logs
 Log/
 

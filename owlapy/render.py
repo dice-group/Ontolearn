@@ -6,11 +6,15 @@ from typing import List, Callable
 
 from owlapy import namespaces
 from owlapy.io import OWLObjectRenderer
-from owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
+from owlapy.model import OWLLiteral, OWLNaryDataRange, OWLObject, OWLClass, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLBooleanClassExpression, OWLNaryBooleanClassExpression, \
     OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, OWLClassExpression, OWLRestriction, \
     OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectHasSelf, OWLObjectHasValue, \
-    OWLObjectOneOf, OWLNamedIndividual, OWLEntity, IRI
+    OWLObjectOneOf, OWLNamedIndividual, OWLEntity, IRI, OWLPropertyExpression, OWLDataSomeValuesFrom, \
+    OWLFacetRestriction, OWLDatatypeRestriction, OWLDatatype, OWLDataAllValuesFrom, OWLDataComplementOf, \
+    OWLDataUnionOf, OWLDataIntersectionOf, OWLDataHasValue, OWLDataOneOf, OWLDataMaxCardinality, \
+    OWLDataMinCardinality, OWLDataExactCardinality
+
 
 _DL_SYNTAX = types.SimpleNamespace(
     SUBCLASS="⊑",
@@ -36,14 +40,6 @@ _DL_SYNTAX = types.SimpleNamespace(
     SELF="self",
 )
 
-
-# TODO
-# _FACETS = MappingProxyType({
-#     OWLFacet.MIN_INCLUSIVE: "\u2265", # >=
-#     OWLFacet.MIN_EXCLUSIVE: "\u003e", # >
-#     OWLFacet.MAX_INCLUSIVE: "\u2264", # <=
-#     OWLFacet.MAX_EXCLUSIVE: "\u003c", # <
-# })
 
 def _simple_short_form_provider(e: OWLEntity) -> str:
     iri: IRI = e.get_iri()
@@ -87,7 +83,7 @@ class DLSyntaxObjectRenderer(OWLObjectRenderer):
             return self._sfp(o)
 
     @render.register
-    def _(self, p: OWLObjectProperty) -> str:
+    def _(self, p: OWLPropertyExpression) -> str:
         return self._sfp(p)
 
     @render.register
@@ -147,32 +143,79 @@ class DLSyntaxObjectRenderer(OWLObjectRenderer):
         return "{%s}" % (" %s " % _DL_SYNTAX.OR).join(
             "%s" % (self.render(_)) for _ in r.individuals())
 
-    # TODO
-    # @render.register
-    # def _(self, r: OWLFacetRestriction):
-    #     return "%s %s" % (_FACETS.get(r.get_facet(), r.get_facet().get_symbolic_form()), r.get_facet_value())
+    @render.register
+    def _(self, e: OWLDataSomeValuesFrom) -> str:
+        return "%s %s.%s" % (_DL_SYNTAX.EXISTS, self.render(e.get_property()), self._render_nested(e.get_filler()))
 
-    # TODO
-    # @render.register
-    # def _(self, r: OWLDatatypeRestriction):
-    #     s = [self.render(_) for _ in r.facet_restrictions()]
-    #     return "%s[%s]" % (self.render(r.get_datatype()), (" %s " % _DL_SYNTAX.COMMA).join(s))
+    @render.register
+    def _(self, e: OWLDataAllValuesFrom) -> str:
+        return "%s %s.%s" % (_DL_SYNTAX.FORALL, self.render(e.get_property()), self._render_nested(e.get_filler()))
+
+    @render.register
+    def _(self, r: OWLFacetRestriction) -> str:
+        return "%s %s" % (r.get_facet().symbolic_form, r.get_facet_value().get_literal())
+
+    @render.register
+    def _(self, r: OWLDatatypeRestriction) -> str:
+        s = [self.render(_) for _ in r.get_facet_restrictions()]
+        return "%s[%s]" % (self.render(r.get_datatype()), (" %s " % _DL_SYNTAX.COMMA).join(s))
+
+    @render.register
+    def _(self, r: OWLDataHasValue):
+        return "%s %s.{%s}" % (_DL_SYNTAX.EXISTS, self.render(r.get_property()),
+                               self.render(r.get_filler()))
+
+    @render.register
+    def _(self, r: OWLDataMinCardinality) -> str:
+        return "%s %s %s.%s" % (
+            _DL_SYNTAX.MIN, r.get_cardinality(), self.render(r.get_property()), self._render_nested(r.get_filler()))
+
+    @render.register
+    def _(self, r: OWLDataExactCardinality) -> str:
+        return "%s %s %s.%s" % (
+            _DL_SYNTAX.EQUAL, r.get_cardinality(), self.render(r.get_property()), self._render_nested(r.get_filler()))
+
+    @render.register
+    def _(self, r: OWLDataMaxCardinality) -> str:
+        return "%s %s %s.%s" % (
+            _DL_SYNTAX.MAX, r.get_cardinality(), self.render(r.get_property()), self._render_nested(r.get_filler()))
+
+    @render.register
+    def _(self, r: OWLDataOneOf):
+        return "{%s}" % (" %s " % _DL_SYNTAX.OR).join(
+            "%s" % (self.render(_)) for _ in r.values())
 
     # TODO
     # @render.register
     # def _(self, r: OWLObjectPropertyChain):
     #     return (" %s " % _DL_SYNTAX.COMP).join(self.render(_) for _ in r.property_chain())
 
-    # TODO
-    # @render.register
-    # def _(self, t: OWLDatatype):
-    #     return self._sfp(t.get_iri())
+    @render.register
+    def _(self, n: OWLDataComplementOf) -> str:
+        return "%s%s" % (_DL_SYNTAX.NOT, self._render_nested(n.get_data_range()))
+
+    @render.register
+    def _(self, c: OWLDataUnionOf) -> str:
+        return (" %s " % _DL_SYNTAX.OR).join(self._render_operands(c))
+
+    @render.register
+    def _(self, c: OWLDataIntersectionOf) -> str:
+        return (" %s " % _DL_SYNTAX.AND).join(self._render_operands(c))
+
+    @render.register
+    def _(self, t: OWLDatatype) -> str:
+        return self._sfp(t)
+
+    @render.register
+    def _(self, t: OWLLiteral) -> str:
+        return t.get_literal()
 
     def _render_operands(self, c: OWLNaryBooleanClassExpression) -> List[str]:
         return [self._render_nested(_) for _ in c.operands()]
 
     def _render_nested(self, c: OWLClassExpression) -> str:
-        if isinstance(c, OWLBooleanClassExpression) or isinstance(c, OWLRestriction):
+        if isinstance(c, OWLBooleanClassExpression) or isinstance(c, OWLRestriction) \
+                                                    or isinstance(c, OWLNaryDataRange):
             return "(%s)" % self.render(c)
         else:
             return self.render(c)
@@ -231,7 +274,7 @@ class ManchesterOWLSyntaxOWLObjectRenderer(OWLObjectRenderer):
             return self._sfp(o)
 
     @render.register
-    def _(self, p: OWLObjectProperty) -> str:
+    def _(self, p: OWLPropertyExpression) -> str:
         return self._sfp(p)
 
     @render.register
@@ -291,32 +334,79 @@ class ManchesterOWLSyntaxOWLObjectRenderer(OWLObjectRenderer):
         return "{%s}" % (" %s " % _MAN_SYNTAX.COMMA).join(
             "%s" % (self.render(_)) for _ in r.individuals())
 
-    # TODO
-    # @render.register
-    # def _(self, r: OWLFacetRestriction):
-    #     return "%s %s" % (_FACETS.get(r.get_facet(), r.get_facet().get_symbolic_form()), r.get_facet_value())
+    @render.register
+    def _(self, e: OWLDataSomeValuesFrom) -> str:
+        return "%s %s %s" % (self.render(e.get_property()), _MAN_SYNTAX.EXISTS, self._render_nested(e.get_filler()))
 
-    # TODO
-    # @render.register
-    # def _(self, r: OWLDatatypeRestriction):
-    #     s = [self.render(_) for _ in r.facet_restrictions()]
-    #     return "%s[%s]" % (self.render(r.get_datatype()), (" %s " % _MAN_SYNTAX.COMMA).join(s))
+    @render.register
+    def _(self, e: OWLDataAllValuesFrom) -> str:
+        return "%s %s %s" % (self.render(e.get_property()), _MAN_SYNTAX.FORALL, self._render_nested(e.get_filler()))
+
+    @render.register
+    def _(self, r: OWLFacetRestriction):
+        return "%s %s" % (r.get_facet().symbolic_form, r.get_facet_value().get_literal())
+
+    @render.register
+    def _(self, r: OWLDatatypeRestriction):
+        s = [self.render(_) for _ in r.get_facet_restrictions()]
+        return "%s[%s]" % (self.render(r.get_datatype()), (" %s " % _MAN_SYNTAX.COMMA).join(s))
+
+    @render.register
+    def _(self, r: OWLDataHasValue):
+        return "%s %s %s" % (self.render(r.get_property()), _MAN_SYNTAX.VALUE,
+                             self.render(r.get_filler()))
+
+    @render.register
+    def _(self, r: OWLDataMinCardinality) -> str:
+        return "%s %s %s %s" % (
+            self.render(r.get_property()), _MAN_SYNTAX.MIN, r.get_cardinality(), self._render_nested(r.get_filler()))
+
+    @render.register
+    def _(self, r: OWLDataExactCardinality) -> str:
+        return "%s %s %s %s" % (
+            self.render(r.get_property()), _MAN_SYNTAX.EQUAL, r.get_cardinality(), self._render_nested(r.get_filler()))
+
+    @render.register
+    def _(self, r: OWLDataMaxCardinality) -> str:
+        return "%s %s %s %s" % (
+            self.render(r.get_property()), _MAN_SYNTAX.MAX, r.get_cardinality(), self._render_nested(r.get_filler()))
+
+    @render.register
+    def _(self, r: OWLDataOneOf):
+        return "{%s}" % (" %s " % _MAN_SYNTAX.COMMA).join(
+            "%s" % (self.render(_)) for _ in r.values())
 
     # TODO
     # @render.register
     # def _(self, r: OWLObjectPropertyChain):
     #     return (" %s " % _MAN_SYNTAX.COMP).join(self.render(_) for _ in r.property_chain())
 
-    # TODO
-    # @render.register
-    # def _(self, t: OWLDatatype):
-    #     return self._sfp(t.get_iri())
+    @render.register
+    def _(self, n: OWLDataComplementOf) -> str:
+        return "%s %s" % (_MAN_SYNTAX.NOT, self._render_nested(n.get_data_range()))
+
+    @render.register
+    def _(self, c: OWLDataUnionOf) -> str:
+        return (" %s " % _MAN_SYNTAX.OR).join(self._render_operands(c))
+
+    @render.register
+    def _(self, c: OWLDataIntersectionOf) -> str:
+        return (" %s " % _MAN_SYNTAX.AND).join(self._render_operands(c))
+
+    @render.register
+    def _(self, t: OWLDatatype):
+        return self._sfp(t)
+
+    @render.register
+    def _(self, t: OWLLiteral) -> str:
+        return t.get_literal()
 
     def _render_operands(self, c: OWLNaryBooleanClassExpression) -> List[str]:
         return [self._render_nested(_) for _ in c.operands()]
 
     def _render_nested(self, c: OWLClassExpression) -> str:
-        if isinstance(c, OWLBooleanClassExpression) or isinstance(c, OWLRestriction):
+        if isinstance(c, OWLBooleanClassExpression) or isinstance(c, OWLRestriction) \
+                                                    or isinstance(c, OWLNaryDataRange):
             return "(%s)" % self.render(c)
         else:
             return self.render(c)
