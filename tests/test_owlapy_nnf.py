@@ -24,13 +24,13 @@
 #
 import unittest
 
-from owlapy.datatype_restriction_factory import DatatypeRestrictionFactory
 from owlapy.model import OWLObjectProperty, OWLNamedIndividual, OWLObjectComplementOf, \
     OWLObjectAllValuesFrom, OWLObjectSomeValuesFrom, OWLObjectIntersectionOf, OWLObjectUnionOf, \
     OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectHasValue, OWLObjectOneOf, OWLClassExpression, IRI, \
     BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLClass, OWLDataAllValuesFrom, OWLDataComplementOf, \
     OWLDataIntersectionOf, OWLDataProperty, OWLDataSomeValuesFrom, OWLDataUnionOf, \
     OWLDataHasValue, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataOneOf, OWLLiteral
+from owlapy.model.providers import OWLDatatypeMinMaxExclusiveRestriction
 from owlapy.util import NNF
 
 
@@ -356,8 +356,7 @@ class Owlapy_NNF_Test(unittest.TestCase):
         self.assertEqual(nnf, comp)
 
     def testDataNestedA(self):
-        factory = DatatypeRestrictionFactory()
-        restriction = factory.get_min_max_exclusive_restriction(5, 6)
+        restriction = OWLDatatypeMinMaxExclusiveRestriction(5, 6)
         prop = OWLDataProperty(iri("p"))
         filler_a = OWLDataUnionOf((IntegerOWLDatatype, DoubleOWLDatatype))
         op_a = OWLDataSomeValuesFrom(prop, filler_a)

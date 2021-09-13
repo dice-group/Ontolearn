@@ -1,16 +1,15 @@
 import unittest
 
-from pytest import mark
-
 from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.datatype_restriction_factory import DatatypeRestrictionFactory
 from owlapy.model import OWLObjectOneOf, OWLObjectProperty, OWLNamedIndividual, OWLObjectIntersectionOf, \
     OWLObjectSomeValuesFrom, OWLThing, OWLObjectComplementOf, IRI, OWLObjectAllValuesFrom, OWLNothing, \
     OWLObjectHasValue, DoubleOWLDatatype, OWLClass, OWLDataAllValuesFrom, OWLDataComplementOf, \
     OWLDataHasValue, OWLDataIntersectionOf, OWLDataOneOf, OWLDataProperty, OWLDataSomeValuesFrom, \
     OWLDataUnionOf, OWLLiteral, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectMinCardinality
-
+from owlapy.model.providers import OWLDatatypeMinMaxInclusiveRestriction, \
+    OWLDatatypeMinMaxExclusiveRestriction
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from pytest import mark
 
 
 class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
@@ -192,8 +191,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
         self.assertEqual(inst, target_inst)
 
         # OWLDatatypeRestriction
-        factory = DatatypeRestrictionFactory()
-        restriction = factory.get_min_max_inclusive_restriction(-3.0, -2.8)
+        restriction = OWLDatatypeMinMaxInclusiveRestriction(-3.0, -2.8)
         inst = frozenset(reasoner.instances(OWLDataSomeValuesFrom(property=lumo, filler=restriction)))
         target_inst = frozenset({OWLNamedIndividual(IRI(NS, 'd149')),
                                  OWLNamedIndividual(IRI(NS, 'd29')),
@@ -207,7 +205,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
         self.assertEqual(inst, inst2)
 
         # OWLDataComplementOf
-        restriction = factory.get_min_max_exclusive_restriction(-2.0, 0.88)
+        restriction = OWLDatatypeMinMaxExclusiveRestriction(-2.0, 0.88)
         inst = frozenset(reasoner.instances(OWLDataSomeValuesFrom(property=charge,
                                                                   filler=OWLDataComplementOf(restriction))))
         target_inst = frozenset({OWLNamedIndividual(IRI(NS, 'd195_12')),
@@ -228,7 +226,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
         self.assertEqual(inst, target_inst)
 
         # OWLDataUnionOf
-        restriction = factory.get_min_max_exclusive_restriction(5.07, 5.3)
+        restriction = OWLDatatypeMinMaxExclusiveRestriction(5.07, 5.3)
         inst = frozenset(reasoner.instances(
             OWLDataSomeValuesFrom(property=logp,
                                   filler=OWLDataUnionOf((

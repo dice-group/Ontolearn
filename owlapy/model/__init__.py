@@ -1410,8 +1410,11 @@ class OWLDatatypeRestriction(OWLDataRange):
     _type: OWLDatatype
     _facet_restrictions: Sequence['OWLFacetRestriction']
 
-    def __init__(self, type_: OWLDatatype, facet_restrictions: Iterable['OWLFacetRestriction']):
+    def __init__(self, type_: OWLDatatype, facet_restrictions: Union['OWLFacetRestriction',
+                                                                     Iterable['OWLFacetRestriction']]):
         self._type = type_
+        if isinstance(facet_restrictions, OWLFacetRestriction):
+            facet_restrictions = facet_restrictions,
         self._facet_restrictions = tuple(facet_restrictions)
 
     def get_datatype(self) -> OWLDatatype:
@@ -1443,9 +1446,12 @@ class OWLFacetRestriction(OWLObject):
     _facet: OWLFacet
     _literal: 'OWLLiteral'
 
-    def __init__(self, facet: OWLFacet, literal: 'OWLLiteral'):
+    def __init__(self, facet: OWLFacet, literal: Union['OWLLiteral', float, int, bool]):
         self._facet = facet
-        self._literal = literal
+        if isinstance(literal, OWLLiteral):
+            self._literal = literal
+        else:
+            self._literal = OWLLiteral(literal)
 
     def get_facet(self) -> OWLFacet:
         return self._facet

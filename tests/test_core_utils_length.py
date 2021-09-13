@@ -2,7 +2,7 @@ import unittest
 
 from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric
 from ontolearn.utils import setup_logging
-from owlapy.datatype_restriction_factory import DatatypeRestrictionFactory
+from owlapy.model.providers import OWLDatatypeMinMaxInclusiveRestriction
 from owlapy.model import OWLDataUnionOf, OWLLiteral, OWLObjectProperty, OWLObjectUnionOf, OWLObjectSomeValuesFrom, \
     OWLObjectComplementOf, OWLObjectIntersectionOf, OWLThing, OWLNamedIndividual, OWLObjectOneOf, OWLObjectHasValue, \
     OWLObjectMinCardinality, IRI, DoubleOWLDatatype, IntegerOWLDatatype, OWLClass, \
@@ -64,8 +64,7 @@ class Core_OWLClassExpressionLengthMetric_Test(unittest.TestCase):
         # ∃ hasAge.¬xsd:double
         self.assertEqual(le, 4)
 
-        factory = DatatypeRestrictionFactory()
-        datatype_restriction = factory.get_min_max_inclusive_restriction(40, 80)
+        datatype_restriction = OWLDatatypeMinMaxInclusiveRestriction(40, 80)
 
         ce = OWLDataSomeValuesFrom(property=has_age, filler=OWLDataUnionOf([datatype_restriction, IntegerOWLDatatype]))
         le = cl.length(ce)
