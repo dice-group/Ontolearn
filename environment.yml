@@ -7,26 +7,27 @@ dependencies:
   - matplotlib=3.3.4
   - pandas=1.2.3
   - pytorch=1.8.0
-  - rdflib=5.0.0
+  - rdflib=6.0.0
   - scikit-learn=0.24.1
-  - sortedcontainers=2.3.0
-  - owlready2=0.29
+  - sortedcontainers=2.4.0
+  - owlready2=0.34
   - flask=1.1.2
   # testing
-  - tox=3.23.1
-  - tox-conda=0.8.0
-  - pytest=6.2.2
+  - tox=3.24.3
+  - tox-conda=0.8.3
+  - pytest=6.2.4
+  - pytest-codeblocks=0.11.2
   # docs
-  - sphinx=3.5.3
+  - sphinx=4.0.2
   - sphinx_rtd_theme=0.5.1
-  - myst-parser=0.13.5
+  - myst-parser=0.15.2
   # # building
-  - build=0.3.1.post1
+  - build=0.6.0
   # PIP
   - pip=21.0.1
   - pip:
     # docs
     - sphinxext-autox==0.0.2
     - sphinx-theme==1.0
-    - sphinxcontrib-plantuml==0.20
-    - plantuml-local-client==1.2021.3
+    - sphinxcontrib-plantuml==0.21
+    - plantuml-local-client==1.2021.10

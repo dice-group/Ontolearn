@@ -9,13 +9,12 @@ Ontolearn is an open-source software library for explainable structured machine 
 ### Installation from source
 
 ```shell
-git clone https://github.com/dice-group/OntoPy.git
-cd OntoPy
+git clone https://github.com/dice-group/Ontolearn.git
+cd Ontolearn
 conda create --name temp python=3.8
 conda activate temp
 conda env update --name temp
-python -c 'from setuptools import setup; setup()' develop  # OR
-# export PYTHONPATH=$PWD
+python -c 'from setuptools import setup; setup()' develop
 python -c "import ontolearn"
 tox  # to test
 ```

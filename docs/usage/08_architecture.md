@@ -8,7 +8,7 @@ Here we present the class hierarchies of Ontolearn.
 \renewcommand{\sphinxincludegraphics}[1]{\origsphinxincludegraphics[scale=.5]{#1}}
 :::
 
-### Knowledge Base organisation
+## Knowledge Base organisation
 
 :::{raw} latex
 \begin{wrapfigure}{r}{.55\linewidth}\vspace{-60pt}\raggedleft%
@@ -39,7 +39,7 @@ and caching instance queries and encoding instances.
 \vspace{20pt}\WFclear
 :::
 
-### Learning Algorithms
+## Learning Algorithms
 
 :::{raw} latex
 \begin{wrapfigure}{r}{.55\linewidth}\vspace{-50pt}\raggedleft%
@@ -51,12 +51,8 @@ abstract BaseConceptLearner
 package ontolearn.concept_learner {
 class CELOE
 }
-package ontolearn.concept_learner {
-class LengthBaseLearner
-}
 
 BaseConceptLearner <|-- CELOE
-BaseConceptLearner <|-- LengthBaseLearner
 :::
 :::{raw} latex
 \end{wrapfigure}
@@ -70,7 +66,7 @@ result.
 \vspace{40pt}\WFclear
 :::
 
-### Heuristics
+## Heuristics
 
 :::{raw} latex
 \begin{wrapfigure}{r}{.3\linewidth}\vspace{-50pt}\raggedleft%
@@ -100,7 +96,7 @@ invented and tested.
 \vspace{\baselineskip}\WFclear
 :::
 
-### Refinement Operators
+## Refinement Operators
 
 :::{raw} latex
 \begin{wrapfigure}{r}{.55\linewidth}\raggedleft%
@@ -137,7 +133,7 @@ the concepts by increasing length.
 \WFclear
 :::
 
-### Learning Problem types
+## Learning Problem types
 
 :::{raw} latex
 \begin{wrapfigure}{r}{.4\linewidth}\vspace{-50pt}\raggedleft%
@@ -165,7 +161,7 @@ not be covered by the learning result).
 \vspace{3\baselineskip}\WFclear
 :::
 
-### Search trees and nodes
+## Search trees and nodes
 
 :::{raw} latex
 \begin{wrapfigure}{r}{.65\linewidth}\vspace{-40pt}\raggedleft%
@@ -212,7 +208,7 @@ possibly to present the algorithm results.
 \vspace{7\baselineskip}\WFclear
 :::
 
-### OWL Hierarchies
+## OWL Hierarchies
 
 :::{raw} latex
 \begin{wrapfigure}{r}{.7\linewidth}\vspace{-40pt}\raggedleft%
@@ -246,7 +242,7 @@ relation, for example sub-classes and super-classes.
 \vspace{3\baselineskip}\WFclear
 :::
 
-### Quality Functions
+## Quality Functions
 
 :::{raw} latex
 \begin{wrapfigure}{r}{.65\linewidth}\vspace{-40pt}\raggedleft%%
@@ -332,10 +328,7 @@ OWLReasoner -* ConceptGenerator
 
 BaseRefinement *-- AbstractKnowledgeBase
 
-AbstractScorer *-- AbstractLearningProblem
-
 BaseConceptLearner *-- AbstractKnowledgeBase
-BaseConceptLearner *-- AbstractLearningProblem
 BaseConceptLearner *-- BaseRefinement : refinement_operator
 BaseConceptLearner *-- AbstractScorer : quality_func
 BaseConceptLearner *-- AbstractHeuristic : heuristic_func

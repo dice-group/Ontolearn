@@ -12,7 +12,7 @@ from owlapy.model import OWLClassExpression, OWLOntologyManager, OWLOntology, Ad
 from .abstracts import BaseRefinement
 from .knowledge_base import KnowledgeBase
 from .refinement_operators import LengthBasedRefinement
-from .search import Node, LengthOrderedNode, RL_State
+from .search import Node, LengthOrderedNode, RL_State, _NodeIndividuals
 from .utils import balanced_sets
 from collections import deque
 
@@ -83,9 +83,19 @@ class LearningProblemGenerator:
             equivalent_classes_axiom = OWLEquivalentClassesAxiom(cls_a, h.concept)
             manager.add_axiom(ontology, equivalent_classes_axiom)
 
-            num_inds = OWLAnnotationAssertionAxiom(cls_a.get_iri(), OWLAnnotation(
-                OWLAnnotationProperty(IRI.create(SNS, "covered_inds")), OWLLiteral(h.individuals_count)))
-            manager.add_axiom(ontology, num_inds)
+            count = None
+            try:
+                count = h.individuals_count
+            except AttributeError:
+                if isinstance(h, RL_State):
+                    inst = h.instances
+                    if inst is not None:
+                        count = len(inst)
+
+            if count is not None:
+                num_inds = OWLAnnotationAssertionAxiom(cls_a.get_iri(), OWLAnnotation(
+                    OWLAnnotationProperty(IRI.create(SNS, "covered_inds")), OWLLiteral(count)))
+                manager.add_axiom(ontology, num_inds)
 
         manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))
 
@@ -438,13 +448,19 @@ class LearningProblemGenerator:
 
             """ (2) Select next state to be refined from valid examples """
             if len(valid_examples) > 0:
-                state = next(iter(valid_examples))
-                valid_examples.discard(state)
+                try:
+                    state = next(iter(valid_examples))
+                    valid_examples.discard(state)
+                except StopIteration:
+                    pass
                 continue
 
             if len(invalid_examples) > 0:
-                state = next(iter(valid_examples))
-                invalid_examples.discard(state)
+                try:
+                    state = next(iter(valid_examples))
+                    invalid_examples.discard(state)
+                except StopIteration:
+                    pass
                 continue
 
             print('Constraints are not fulfilled')
