@@ -2,6 +2,10 @@ name: Lint
 
 on: [push]
 
+env:
+  tox_dep: 'tox=3.23.1'
+  conda_dep: '$(conda -V|tr " " "=")'
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -14,19 +18,24 @@ jobs:
       run: |
         # $CONDA is an environment variable pointing to the root of the miniconda directory
         echo "$CONDA/bin" >> $GITHUB_PATH
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v2
+    - uses: actions/cache@v2
       with:
-        python-version: 3.8
-    - name: Install dependencies
+        key: ${{ runner.os }}-conda-${{ env.tox_dep }}
+        path: /usr/share/miniconda
+    - name: Install tox
       run: |
-        conda env update --file environment.yml --name base
+        # workaround for github bug where conda-tox is broken after self-upgrade
+        conda install -c conda-forge --no-update-deps ${{ env.tox_dep }} ${{ env.conda_dep }}
     - name: Flake8 annotations matcher
       uses: rbialon/flake8-annotations@v1
+    - uses: actions/cache@v2
+      with:
+        key: ${{ runner.os }}-${{ env.tox_dep }}-lint-${{ hashFiles('environment.yml', 'tox.ini') }}
+        path: .tox
     - name: Lint with flake8
       run: |
         conda install flake8
         # exit-zero treats all errors as warnings. The line length is configured in tox.ini
-        flake8 . --count --exit-zero --max-complexity=10 --statistics --show-source
+        tox -o -e lint -- --exit-zero --max-complexity=10 --statistics --show-source
         # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --statistics >/dev/null
+        tox -o -e lint -- --count --select=E9,F63,F7,F82 --statistics >/dev/null
