@@ -1,4 +1,5 @@
 import subprocess
+from datetime import datetime
 from typing import List, Dict
 from .utils import create_experiment_folder
 import re
@@ -93,7 +94,7 @@ class DLLearnerBinder:
         Text.append("alg.maxExecutionTimeInSeconds = " + str(self.max_runtime))
         Text.append("\n")
 
-        pathToConfig = self.storage_path + '/' + self.name + '_' + datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")+ '.conf'
+        pathToConfig = self.storage_path + '/' + self.name + '_' + datetime.now().strftime("%Y%m%d_%H%M%S_%f")+ '.conf'
 
         with open(pathToConfig, "wb") as wb:
             for i in Text:
