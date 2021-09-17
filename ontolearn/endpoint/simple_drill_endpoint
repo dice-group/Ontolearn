@@ -9,6 +9,7 @@ from typing import List
 
 from flask import Flask, request, Response, abort
 from flask import make_response
+from owlapy.model import OWLNamedIndividual
 
 from experiments_standard import ClosedWorld_ReasonerFactory
 from ontolearn import KnowledgeBase
@@ -60,7 +61,10 @@ def create_flask_app():
             app.logger.debug(learning_problem)
             no_of_hypotheses = request.form.get("no_of_hypotheses", 1, type=int)
             try:
-                drill.fit(set(learning_problem["positives"]), set(learning_problem["negatives"]),
+                from owlapy.model import IRI
+                typed_pos = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["positives"]))))
+                typed_neg = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["negatives"]))))
+                drill.fit(typed_pos, typed_neg,
                           max_runtime=args.max_test_time_per_concept)
             except Exception as e:
                 app.logger.debug(e)
