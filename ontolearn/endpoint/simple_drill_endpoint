@@ -9,6 +9,7 @@ from typing import List
 
 from flask import Flask, request, Response, abort
 from flask import make_response
+from owlapy.model import OWLNamedIndividual
 
 from experiments_standard import ClosedWorld_ReasonerFactory
 from ontolearn import KnowledgeBase
@@ -60,15 +61,24 @@ def create_flask_app():
             app.logger.debug(learning_problem)
             no_of_hypotheses = request.form.get("no_of_hypotheses", 1, type=int)
             try:
-                drill.fit(set(learning_problem["positives"]), set(learning_problem["negatives"]),
+                from owlapy.model import IRI
+                typed_pos = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["positives"]))))
+                typed_neg = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["negatives"]))))
+                drill.fit(typed_pos, typed_neg,
                           max_runtime=args.max_test_time_per_concept)
             except Exception as e:
                 app.logger.debug(e)
                 abort(400)
-            hypotheses: List[Node] = list(drill.best_hypotheses(no_of_hypotheses))
-            file = io.BytesIO(b"")  # BytesIO has the same interface as File. So this should be fine
-            export_concepts(kb, hypotheses, file)
-            return Response(file.getvalue().decode('utf-8'), mimetype="application/rdf+xml")
+            import tempfile
+            tmp = tempfile.NamedTemporaryFile()
+            try:
+                drill.save_best_hypothesis(no_of_hypotheses, tmp.name)
+            except Exception as ex:
+                print(ex)
+            hypotheses_ser = io.open(tmp.name+'.owl', mode="r", encoding="utf-8").read()
+            from pathlib import Path
+            Path(tmp.name+'.owl').unlink(True)
+            return Response(hypotheses_ser, mimetype="application/rdf+xml")
         finally:
             ready = True
             lock.release()
