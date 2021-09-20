@@ -15,7 +15,6 @@ from experiments_standard import ClosedWorld_ReasonerFactory
 from ontolearn import KnowledgeBase
 from ontolearn.heuristics import Reward
 from ontolearn.metrics import F1
-from ontolearn.owlready2.static_funcs import export_concepts
 from ontolearn.concept_learner import Drill
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.search import Node
