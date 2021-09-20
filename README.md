@@ -80,7 +80,9 @@ Feel free to create a pull request
 
 Run
 ```shell
-flake8
+tox -e lint --
 ```
+
+This will run [flake8](https://flake8.pycqa.org/) on the source code.
 
 For any further questions, please contact:  ```onto-learn@lists.uni-paderborn.de```

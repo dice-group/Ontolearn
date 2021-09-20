@@ -6,7 +6,8 @@ from owlapy.model import OWLObject, HasIndex, HasIRI, OWLClassExpression, OWLCla
     OWLObjectHasValue, OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality, OWLObjectHasSelf, \
     OWLObjectOneOf, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataExactCardinality, OWLDataHasValue, \
     OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLObjectRestriction, HasFiller, HasCardinality, HasOperands, IRI, \
-    OWLObjectInverseOf
+    OWLObjectInverseOf, OWLDatatypeRestriction, OWLDataComplementOf, OWLDatatype, OWLDataUnionOf, \
+    OWLDataIntersectionOf, OWLDataOneOf
 
 _HasIRI = TypeVar('_HasIRI', bound=HasIRI)  #:
 _HasIndex = TypeVar('_HasIndex', bound=HasIndex)  #:
@@ -178,33 +179,86 @@ class NNF:
 
     @get_class_nnf.register
     def _(self, ce: OWLDataSomeValuesFrom, negated: bool = False):
-        # TODO XXX
-        raise NotImplementedError
+        filler = self.get_class_nnf(ce.get_filler(), negated)
+        if negated:
+            return OWLDataAllValuesFrom(ce.get_property(), filler)
+        return OWLDataSomeValuesFrom(ce.get_property(), filler)
 
     @get_class_nnf.register
     def _(self, ce: OWLDataAllValuesFrom, negated: bool = False):
-        # TODO XXX
-        raise NotImplementedError
+        filler = self.get_class_nnf(ce.get_filler(), negated)
+        if negated:
+            return OWLDataSomeValuesFrom(ce.get_property(), filler)
+        return OWLDataAllValuesFrom(ce.get_property(), filler)
+
+    @get_class_nnf.register
+    def _(self, ce: OWLDatatypeRestriction, negated: bool = False):
+        if negated:
+            return OWLDataComplementOf(ce)
+        return ce
+
+    @get_class_nnf.register
+    def _(self, ce: OWLDatatype, negated: bool = False):
+        if negated:
+            return OWLDataComplementOf(ce)
+        return ce
+
+    @get_class_nnf.register
+    def _(self, ce: OWLDataComplementOf, negated: bool = False):
+        return self.get_class_nnf(ce.get_data_range(), not negated)
 
     @get_class_nnf.register
     def _(self, ce: OWLDataHasValue, negated: bool = False):
-        # TODO XXX
-        raise NotImplementedError
+        return self.get_class_nnf(ce.as_some_values_from(), negated)
+
+    @get_class_nnf.register
+    def _(self, ce: OWLDataOneOf, negated: bool = False):
+        if len(list(ce.values())) == 1:
+            if negated:
+                return OWLDataComplementOf(ce)
+            return ce
+        union = OWLDataUnionOf([OWLDataOneOf(v) for v in ce.values()])
+        return self.get_class_nnf(union, negated)
+
+    @get_class_nnf.register
+    def _(self, ce: OWLDataIntersectionOf, negated: bool = False):
+        ops = map(lambda _: self.get_class_nnf(_, negated),
+                  _sort_by_ordered_owl_object(ce.operands()))
+        if negated:
+            return OWLDataUnionOf(ops)
+        return OWLDataIntersectionOf(ops)
+
+    @get_class_nnf.register
+    def _(self, ce: OWLDataUnionOf, negated: bool = False):
+        ops = map(lambda _: self.get_class_nnf(_, negated),
+                  _sort_by_ordered_owl_object(ce.operands()))
+        if negated:
+            return OWLDataIntersectionOf(ops)
+        return OWLDataUnionOf(ops)
 
     @get_class_nnf.register
     def _(self, ce: OWLDataExactCardinality, negated: bool = False):
-        # TODO XXX
-        raise NotImplementedError
+        return self.get_class_nnf(ce.as_intersection_of_min_max(), negated)
 
     @get_class_nnf.register
     def _(self, ce: OWLDataMinCardinality, negated: bool = False):
-        # TODO XXX
-        raise NotImplementedError
+        card = ce.get_cardinality()
+        if negated:
+            card = max(0, card - 1)
+        filler = self.get_class_nnf(ce.get_filler(), negated=False)
+        if negated:
+            return OWLDataMaxCardinality(card, ce.get_property(), filler)
+        return OWLDataMinCardinality(card, ce.get_property(), filler)
 
     @get_class_nnf.register
     def _(self, ce: OWLDataMaxCardinality, negated: bool = False):
-        # TODO XXX
-        raise NotImplementedError
+        card = ce.get_cardinality()
+        if negated:
+            card = card + 1
+        filler = self.get_class_nnf(ce.get_filler(), negated=False)
+        if negated:
+            return OWLDataMinCardinality(card, ce.get_property(), filler)
+        return OWLDataMaxCardinality(card, ce.get_property(), filler)
 
 
 # OWL-APy custom util start
