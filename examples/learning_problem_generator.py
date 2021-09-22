@@ -1,5 +1,6 @@
 import os
 
+from experiments_standard import ClosedWorld_ReasonerFactory
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem_generator import LearningProblemGenerator
 from ontolearn.utils import setup_logging
@@ -14,7 +15,7 @@ except FileNotFoundError:
 path = '../KGs/Biopax/biopax.owl'
 
 # kb = KnowledgeBase(path=path, reasoner_factory=OWLReasoner_Owlready2_TempClasses)
-kb = KnowledgeBase(path=path)
+kb = KnowledgeBase(path=path, reasoner_factory=ClosedWorld_ReasonerFactory)
 lp = LearningProblemGenerator(knowledge_base=kb)
 num_inds = kb.individuals_count()
 concepts = list(lp.get_concepts(num_problems=5000,
