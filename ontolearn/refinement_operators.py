@@ -311,7 +311,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         for i in refs:
             # assert i is not None
             # yield i
-            i_inds = self.kb.individuals_set(i)
+            i_inds = None
             for j in refs:
                 # assert j is not None
                 if (i, j) in mem or i == j:
@@ -322,6 +322,8 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
                 if (max_length >= length) and (self.max_child_length >= length + 1):
                     if not i.is_owl_thing() and not j.is_owl_thing():
+                        if i_inds is None:
+                            i_inds = self.kb.individuals_set(i)
                         j_inds = self.kb.individuals_set(j)
                         if not j_inds.difference(i_inds):
                             # already contained

@@ -23,8 +23,11 @@ class OWLOntologyManager_Owlready2(OWLOntologyManager):
 
     _world: owlready2.namespace.World
 
-    def __init__(self):
-        self._world = owlready2.World()
+    def __init__(self, world_store=None):
+        if world_store is None:
+            self._world = owlready2.World()
+        else:
+            self._world = owlready2.World(filename=world_store)
 
     def create_ontology(self, iri: IRI) -> 'OWLOntology_Owlready2':
         return OWLOntology_Owlready2(self, iri, load=False)
@@ -99,6 +102,9 @@ class OWLOntologyManager_Owlready2(OWLOntologyManager):
         else:
             # TODO XXX
             raise NotImplementedError
+
+    def save_world(self):
+        self._world.save()
 
 
 _VERSION_IRI: Final = IRI.create(namespaces.OWL, "versionIRI")
