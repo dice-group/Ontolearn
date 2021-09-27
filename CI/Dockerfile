@@ -18,7 +18,7 @@ RUN conda activate package_env && python setup.py egg_info && pip install -r *.e
 # copy files (as late as possbile to encourage caching)
 COPY ./ ./
 
-# install OntoPy
+# install Ontolearn
 RUN conda activate package_env && pip install -e .
 
 # run tests

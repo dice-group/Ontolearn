@@ -1,12 +1,28 @@
+<!--
+```python
+from owlapy.namespaces import Namespaces
+from owlapy.model import OWLNamedIndividual, IRI
+from ontolearn import KnowledgeBase
+from ontolearn.learning_problem import PosNegLPStandard
+
+NS = Namespaces('ex', 'http://example.com/father#')
+kb = KnowledgeBase(path="KGs/father.owl")
+
+positive_examples = {OWLNamedIndividual(IRI.create(NS, 'stefan')),
+                     OWLNamedIndividual(IRI.create(NS, 'markus')),
+                     OWLNamedIndividual(IRI.create(NS, 'martin'))}
+negative_examples = {OWLNamedIndividual(IRI.create(NS, 'heinz')),
+                     OWLNamedIndividual(IRI.create(NS, 'anna')),
+                     OWLNamedIndividual(IRI.create(NS, 'michelle'))}
+lp = PosNegLPStandard(pos=positive_examples, neg=negative_examples)
+```
+-->
+
 # Learning Algorithm
 
-With a [learning problem](02_learning_problem) defined, it is now
-possible to configure the learning algorithm.
-
-Currently, two [Base Concept
-Learners](ontolearn.base_concept_learner.BaseConceptLearner) are
-provided in our Ontolearn library. The [length base
-learner](ontolearn.concept_learner.LengthBaseLearner) and the
+Currently, one [Base Concept
+Learner](ontolearn.base_concept_learner.BaseConceptLearner) is
+provided in our Ontolearn library. The
 [modified CELOE algorithm](ontolearn.concept_learner.CELOE). Each
 algorithm may have different available configuration. However at
 minimum they require a [knowledge
@@ -17,10 +33,11 @@ learning problem.
 
 Let us now configure the modified CELOE algorithm:
 
-```py
+<!--pytest-codeblocks:cont-->
+```python
 from ontolearn.concept_learner import CELOE
 
-alg = CELOE(kb, learning_problem=lp)
+alg = CELOE(kb)
 ```
 
 There are further configuration choices of CELOE, such as the
@@ -42,15 +59,17 @@ of concepts that will be tested before giving up) or `iter_bound`
 To use another quality function, first create an instance of the
 function:
 
-```py
+<!--pytest-codeblocks:cont-->
+```python
 from ontolearn.metrics import Accuracy
 
-pred_acc = Accuracy(learning_problem=lp)
+pred_acc = Accuracy()
 ```
 
 ### Configuring the heuristic
 
-```py
+<!--pytest-codeblocks:cont-->
+```python
 from ontolearn.heuristics import CELOEHeuristic
 
 heur = CELOEHeuristic(
@@ -61,8 +80,9 @@ heur = CELOEHeuristic(
 
 Then, configure everything on the algorithm:
 
-```py
-alg = CELOE(kb, learning_problem=lp, quality_func=pred_acc, heuristic_func=heur)
+<!--pytest-codeblocks:cont-->
+```python
+alg = CELOE(kb, quality_func=pred_acc, heuristic_func=heur)
 ```
 
 ## Running the algorithm
@@ -73,12 +93,13 @@ method. Afterwards, you can fetch the result using the
 [best_hypotheses](ontolearn.base_concept_learner.BaseConceptLearner.best_hypotheses)
 method:
 
-```py
+<!--pytest-codeblocks:cont-->
+```python
 from owlapy.render import DLSyntaxObjectRenderer
 
-dlsr = DLSyntaxRenderer()
+dlsr = DLSyntaxObjectRenderer()
 
-alg.fit()
+alg.fit(learning_problem=lp)
 
 for desc in alg.best_hypotheses(1):
     print('The result:', dlsr.render(desc.concept), 'has quality', desc.quality)

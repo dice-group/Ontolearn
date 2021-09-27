@@ -2,12 +2,14 @@ from collections import Counter
 from functools import singledispatchmethod
 from typing import Iterable, Generic, TypeVar, Callable, List
 
-from owlapy.model import OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
+from owlapy.model import OWLDataProperty, OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, \
-    OWLObjectCardinalityRestriction, OWLObjectHasSelf, \
-    OWLObjectHasValue, OWLObjectOneOf, OWLNamedIndividual, \
-    OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality
-from owlapy.util import OrderedOWLObject
+    OWLObjectCardinalityRestriction, OWLObjectHasSelf, OWLObjectHasValue, OWLObjectOneOf, OWLNamedIndividual, \
+    OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLClassExpression, OWLThing, \
+    OWLDataSomeValuesFrom, OWLDataOneOf, OWLDatatypeRestriction, OWLDataComplementOf, OWLDataAllValuesFrom, \
+    OWLDataCardinalityRestriction, OWLDatatype, OWLDataHasValue, OWLDataUnionOf, OWLDataIntersectionOf \
+
+from owlapy.util import OrderedOWLObject, iter_count
 from sortedcontainers import SortedSet
 
 
@@ -29,9 +31,9 @@ class OWLClassExpressionLengthMetric:
         data_all_values_length: Data All Values: ∀ p.t
         data_has_value_length: Data Has Value: ∃ p.{V}
         data_cardinality_length: Data Cardinality restriction: ≤n r.t
-        object_propery_length: Obj. Property: ∃ r.C
+        object_property_length: Obj. Property: ∃ r.C
         object_inverse_length: Inverse property: ∃ r⁻.C
-        data_propery_length: Data Property: ∃ p.t
+        data_property_length: Data Property: ∃ p.t
         datatype_length: Datatype: ^^datatype
         data_one_of_length: Data One of: ∃ p.{U,V,W}
         data_complement_length: Data Complement: ¬datatype
@@ -43,7 +45,7 @@ class OWLClassExpressionLengthMetric:
                 'object_some_values_length', 'object_all_values_length', 'object_has_value_length', \
                 'object_cardinality_length', 'object_has_self_length', 'object_one_of_length', \
                 'data_some_values_length', 'data_all_values_length', 'data_has_value_length', \
-                'data_cardinality_length', 'object_propery_length', 'object_inverse_length', 'data_propery_length', \
+                'data_cardinality_length', 'object_property_length', 'object_inverse_length', 'data_property_length', \
                 'datatype_length', 'data_one_of_length', 'data_complement_length', 'data_intersection_length', \
                 'data_union_length'
 
@@ -61,9 +63,9 @@ class OWLClassExpressionLengthMetric:
     data_all_values_length: int
     data_has_value_length: int
     data_cardinality_length: int
-    object_propery_length: int
+    object_property_length: int
     object_inverse_length: int
-    data_propery_length: int
+    data_property_length: int
     datatype_length: int
     data_one_of_length: int
     data_complement_length: int
@@ -85,9 +87,9 @@ class OWLClassExpressionLengthMetric:
                  data_all_values_length: int,
                  data_has_value_length: int,
                  data_cardinality_length: int,
-                 object_propery_length: int,
+                 object_property_length: int,
                  object_inverse_length: int,
-                 data_propery_length: int,
+                 data_property_length: int,
                  datatype_length: int,
                  data_one_of_length: int,
                  data_complement_length: int,
@@ -108,9 +110,9 @@ class OWLClassExpressionLengthMetric:
         self.data_all_values_length = data_all_values_length
         self.data_has_value_length = data_has_value_length
         self.data_cardinality_length = data_cardinality_length
-        self.object_propery_length = object_propery_length
+        self.object_property_length = object_property_length
         self.object_inverse_length = object_inverse_length
-        self.data_propery_length = data_propery_length
+        self.data_property_length = data_property_length
         self.datatype_length = datatype_length
         self.data_one_of_length = data_one_of_length
         self.data_complement_length = data_complement_length
@@ -134,9 +136,9 @@ class OWLClassExpressionLengthMetric:
             data_all_values_length=1,
             data_has_value_length=2,
             data_cardinality_length=2,
-            object_propery_length=1,
+            object_property_length=1,
             object_inverse_length=2,
-            data_propery_length=1,
+            data_property_length=1,
             datatype_length=1,
             data_one_of_length=1,
             data_complement_length=1,
@@ -155,7 +157,7 @@ class OWLClassExpressionLengthMetric:
 
     @length.register
     def _(self, p: OWLObjectProperty) -> int:
-        return self.object_propery_length
+        return self.object_property_length
 
     @length.register
     def _(self, e: OWLObjectSomeValuesFrom) -> int:
@@ -204,22 +206,68 @@ class OWLClassExpressionLengthMetric:
         return self.object_has_self_length + self.length(s.get_property())
 
     @length.register
-    def _(self, v: OWLObjectHasValue):
+    def _(self, v: OWLObjectHasValue) -> int:
         return self.object_has_value_length + self.length(v.get_property())
 
     @length.register
-    def _(self, o: OWLObjectOneOf):
+    def _(self, o: OWLObjectOneOf) -> int:
         return self.object_one_of_length
 
-    # TODO
-    # @length.register
-    # def _(self, n: OWLDatatypeRestriction):
-    #     return iter_count(n.facet_restrictions())
+    @length.register
+    def _(self, p: OWLDataProperty) -> int:
+        return self.data_property_length
 
-    # TODO
-    # @length.register
-    # def _(self, t: OWLDatatype):
-    #     return self.datatype_length
+    @length.register
+    def _(self, e: OWLDataSomeValuesFrom) -> int:
+        return self.data_some_values_length \
+               + self.length(e.get_property()) \
+               + self.length(e.get_filler())
+
+    @length.register
+    def _(self, e: OWLDataAllValuesFrom) -> int:
+        return self.data_all_values_length \
+               + self.length(e.get_property()) \
+               + self.length(e.get_filler())
+
+    @length.register
+    def _(self, e: OWLDataCardinalityRestriction) -> int:
+        return self.data_cardinality_length \
+               + self.length(e.get_property()) \
+               + self.length(e.get_filler())
+
+    @length.register
+    def _(self, v: OWLDataHasValue) -> int:
+        return self.data_has_value_length + self.length(v.get_property())
+
+    @length.register
+    def _(self, o: OWLDataOneOf) -> int:
+        return self.data_one_of_length
+
+    @length.register
+    def _(self, n: OWLDatatypeRestriction) -> int:
+        return iter_count(n.get_facet_restrictions())
+
+    @length.register
+    def _(self, n: OWLDataComplementOf) -> int:
+        return self.data_complement_length + self.length(n.get_data_range())
+
+    @length.register
+    def _(self, c: OWLDataUnionOf) -> int:
+        length = -self.data_union_length
+        for op in c.operands():
+            length += self.length(op) + self.data_union_length
+        return length
+
+    @length.register
+    def _(self, c: OWLDataIntersectionOf) -> int:
+        length = -self.data_intersection_length
+        for op in c.operands():
+            length += self.length(op) + self.data_intersection_length
+        return length
+
+    @length.register
+    def _(self, t: OWLDatatype) -> int:
+        return self.datatype_length
 
 
 _N = TypeVar('_N')  #:
@@ -238,7 +286,7 @@ class EvaluatedDescriptionSet(Generic[_N, _O]):
         self._Ordering = ordering
         self.items = SortedSet(key=self._Ordering)
 
-    def maybe_add(self, node):
+    def maybe_add(self, node: _N):
         if len(self.items) == self._max_size:
             worst = self.items[0]
             if self._Ordering(node) > self._Ordering(worst):
@@ -380,3 +428,87 @@ class ConceptOperandSorter:
             return r
         else:
             return t
+
+
+class OperandSetTransform:
+    def simplify(self, o: OWLClassExpression) -> OWLClassExpression:
+        return self._simplify(o).get_nnf()
+
+    # single dispatch is still not implemented in mypy, see https://github.com/python/mypy/issues/2904
+    @singledispatchmethod
+    def _simplify(self, o: _O) -> _O:
+        raise NotImplementedError
+
+    @_simplify.register
+    def _(self, o: OWLClass) -> OWLClass:
+        return o
+
+    @_simplify.register
+    def _(self, p: OWLObjectProperty) -> OWLObjectProperty:
+        return p
+
+    @_simplify.register
+    def _(self, i: OWLNamedIndividual) -> OWLNamedIndividual:
+        return i
+
+    @_simplify.register
+    def _(self, e: OWLObjectSomeValuesFrom) -> OWLObjectSomeValuesFrom:
+        return OWLObjectSomeValuesFrom(property=e.get_property(), filler=self._simplify(e.get_filler()))
+
+    @_simplify.register
+    def _(self, e: OWLObjectAllValuesFrom) -> OWLObjectAllValuesFrom:
+        return OWLObjectAllValuesFrom(property=e.get_property(), filler=self._simplify(e.get_filler()))
+
+    @_simplify.register
+    def _(self, c: OWLObjectUnionOf) -> OWLClassExpression:
+        s = set(map(self._simplify, set(c.operands())))
+        if OWLThing in s:
+            return OWLThing
+        elif len(s) == 1:
+            return s.pop()
+        return OWLObjectUnionOf(_sort_by_ordered_owl_object(s))
+
+    @_simplify.register
+    def _(self, c: OWLObjectIntersectionOf) -> OWLClassExpression:
+        s = set(map(self._simplify, set(c.operands())))
+        s.discard(OWLThing)
+        if not s:
+            return OWLThing
+        elif len(s) == 1:
+            return s.pop()
+        return OWLObjectIntersectionOf(_sort_by_ordered_owl_object(s))
+
+    @_simplify.register
+    def _(self, n: OWLObjectComplementOf) -> OWLObjectComplementOf:
+        return n
+
+    @_simplify.register
+    def _(self, p: OWLObjectInverseOf) -> OWLObjectInverseOf:
+        return p
+
+    @_simplify.register
+    def _(self, r: OWLObjectMinCardinality) -> OWLObjectMinCardinality:
+        return OWLObjectMinCardinality(cardinality=r.get_cardinality(), property=r.get_property(),
+                                       filler=self._simplify(r.get_filler()))
+
+    @_simplify.register
+    def _(self, r: OWLObjectExactCardinality) -> OWLObjectExactCardinality:
+        return OWLObjectExactCardinality(cardinality=r.get_cardinality(), property=r.get_property(),
+                                         filler=self._simplify(r.get_filler()))
+
+    @_simplify.register
+    def _(self, r: OWLObjectMaxCardinality) -> OWLObjectMaxCardinality:
+        return OWLObjectMaxCardinality(cardinality=r.get_cardinality(), property=r.get_property(),
+                                       filler=self._simplify(r.get_filler()))
+
+    @_simplify.register
+    def _(self, r: OWLObjectHasSelf) -> OWLObjectHasSelf:
+        return r
+
+    @_simplify.register
+    def _(self, r: OWLObjectHasValue):
+        return r
+
+    @_simplify.register
+    def _(self, r: OWLObjectOneOf):
+        return OWLObjectOneOf(_sort_by_ordered_owl_object(set(r.individuals())))

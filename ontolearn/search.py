@@ -11,7 +11,7 @@ from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.util import as_index, OrderedOWLObject
 from superprop import super_prop
 from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree, \
-    AbstractConceptNode, AbstractLearningProblem, EncodedLearningProblem
+    AbstractConceptNode, AbstractLearningProblem, EncodedLearningProblem, DRILLAbstractTree
 
 _N = TypeVar('_N')  #:
 
@@ -283,6 +283,59 @@ class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality
         ))
 
 
+class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodeParentRef['RL_State']):
+    renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
+    __slots__ = '_concept', '_quality', '_heuristic', \
+                'embeddings', 'individuals', \
+                'instances_bitset', 'length', 'instances', 'parent_node', 'is_root', '_parent_ref', '__weakref__'
+
+    def __init__(self, concept: OWLClassExpression, parent_node: Optional['RL_State'] = None, is_root: bool = False,
+                 embeddings=None, instances=None, instances_set=None, length=None):
+        _NodeConcept.__init__(self, concept)
+        _NodeQuality.__init__(self)
+        _NodeHeuristic.__init__(self)
+        _NodeParentRef.__init__(self, parent_node=parent_node, is_root=is_root)
+        # TODO: CD _NodeParentRef causes unintended results:
+        #  Without using _NodeParentRef, one can reach the top class expression via recursive calling parent_node
+        #  However, if one uses _NodeParentRef amd comments self.parent_node and self.is_root, we can reach T.
+        AbstractNode.__init__(self)
+        self.parent_node = parent_node
+        self.is_root = is_root
+
+        self.embeddings = embeddings  # tensor
+        self.instances = instances  # list
+        self.instances_bitset = instances_set  # bitset
+        self.length = length
+        self.__sanity_checking()
+
+    def __sanity_checking(self):
+        assert self.concept
+        if self.is_root is False:
+            assert self.parent_node
+
+    def __str__(self):
+
+        if self.instances is None:
+            s = 'Not Init.'
+        else:
+            s = len(self.instances)
+
+        return "\t".join((
+            AbstractNode.__str__(self),
+            _NodeConcept.__str__(self),
+            _NodeQuality.__str__(self),
+            _NodeHeuristic.__str__(self),
+            f'|Instance|:{s}',
+            f'Length:{self.length}',
+        ))
+
+    def __lt__(self, other):
+        return self.heuristic <= other.heuristic
+
+    def __gt__(self, other):
+        return self.heuristic > other.heuristic
+
+
 # noinspection PyUnresolvedReferences
 # noinspection PyDunderSlots
 class _NodeIndividuals(metaclass=ABCMeta):
@@ -473,7 +526,8 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
         self.items_in_queue.put((-node.heuristic, HeuristicOrderedNode(node)))  # gets the smallest one.
         self.nodes[node.concept] = node
 
-    def add_node(self, *, node: LBLNode, parent_node: LBLNode, kb_learning_problem: EncodedLearningProblem) -> Optional[bool]:
+    def add_node(self, *, node: LBLNode, parent_node: LBLNode, kb_learning_problem: EncodedLearningProblem) -> Optional[
+        bool]:
         """
         Add a node into the search tree after calculating heuristic value given its parent.
 
@@ -590,3 +644,91 @@ class TreeNode(Generic[_N]):
         if not is_root:
             assert isinstance(parent_tree_node, TreeNode)
             parent_tree_node.children.add(self)
+
+
+class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
+    """
+
+    Search tree based on priority queue.
+
+    Parameters
+    ----------
+    quality_func : An instance of a subclass of AbstractScorer that measures the quality of a node.
+    heuristic_func : An instance of a subclass of AbstractScorer that measures the promise of a node.
+
+    Attributes
+    ----------
+    quality_func : An instance of a subclass of AbstractScorer that measures the quality of a node.
+    heuristic_func : An instance of a subclass of AbstractScorer that measures the promise of a node.
+    items_in_queue: An instance of PriorityQueue Class.
+    .nodes: A dictionary where keys are string representation of nodes and values are corresponding node objects.
+    nodes: A property method for ._nodes.
+    expressionTests: not being used .
+    str_to_obj_instance_mapping: not being used.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.items_in_queue = PriorityQueue()
+
+    def add(self, node: RL_State):
+        """
+        Append a node into the search tree.
+        Parameters
+        ----------
+        node : A RL_State object
+        Returns
+        -------
+        None
+        """
+        assert node.quality > 0
+        assert node.heuristic is not None
+        self.items_in_queue.put((-node.heuristic, node))  # gets the smallest one.
+        self.nodes[node] = node
+
+    def get_most_promising(self) -> Node:
+        """
+        Gets the current most promising node from Queue.
+
+        Returns
+        -------
+        node: A node object
+        """
+        _, most_promising_str = self.items_in_queue.get()  # get
+        try:
+            node = self.nodes[most_promising_str]
+            # We do not need to put the node again into the queue.
+            # self.items_in_queue.put((-node.heuristic, node.concept.name))
+            return node
+        except KeyError:
+            print(most_promising_str, 'is not found')
+            print('####')
+            for k, v in self.nodes.items():
+                print(k)
+            exit(1)
+
+    def get_top_n(self, n: int, key='quality') -> List[Node]:
+        """
+        Gets the top n nodes determined by key from the search tree.
+
+        Returns
+        -------
+        top_n_predictions: A list of node objects
+        """
+        all_nodes = self.refined_nodes + self.nodes.values()
+        all_nodes.union(self.nodes)
+
+        if key == 'quality':
+            top_n_predictions = sorted(all_nodes, key=lambda node: node.quality, reverse=True)[:n]
+        elif key == 'heuristic':
+            top_n_predictions = sorted(all_nodes, key=lambda node: node.heuristic, reverse=True)[:n]
+        elif key == 'length':
+            top_n_predictions = sorted(self.nodes.values(), key=lambda node: len(node), reverse=True)[:n]
+        else:
+            print('Wrong Key:{0}\tProgram exist.'.format(key))
+            raise KeyError
+        return top_n_predictions
+
+    def clean(self):
+        self.items_in_queue = PriorityQueue()
+        self._nodes.clear()

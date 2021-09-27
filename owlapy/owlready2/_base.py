@@ -9,7 +9,7 @@ from owlapy import namespaces
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
     OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, \
     OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype, \
-    IRI \
+    IRI, OWLObjectInverseOf \
     # OWLObjectSomeValuesFrom, OWLProperty, \
 from owlapy.owlready2.utils import ToOwlready2
 
@@ -23,8 +23,11 @@ class OWLOntologyManager_Owlready2(OWLOntologyManager):
 
     _world: owlready2.namespace.World
 
-    def __init__(self):
-        self._world = owlready2.World()
+    def __init__(self, world_store=None):
+        if world_store is None:
+            self._world = owlready2.World()
+        else:
+            self._world = owlready2.World(filename=world_store)
 
     def create_ontology(self, iri: IRI) -> 'OWLOntology_Owlready2':
         return OWLOntology_Owlready2(self, iri, load=False)
@@ -71,8 +74,12 @@ class OWLOntologyManager_Owlready2(OWLOntologyManager):
             assert sub_x is not None, f'{axiom.get_subject} not found in {ontology}'
             if axiom.get_value().is_literal():
                 literal = axiom.get_value().as_literal()
-                if literal.get_datatype() == DoubleOWLDatatype:
+                if literal.is_double():
                     v = literal.parse_double()
+                elif literal.is_integer():
+                    v = literal.parse_integer()
+                elif literal.is_boolean():
+                    v = literal.parse_boolean()
                 else:
                     # TODO XXX
                     raise NotImplementedError
@@ -95,6 +102,9 @@ class OWLOntologyManager_Owlready2(OWLOntologyManager):
         else:
             # TODO XXX
             raise NotImplementedError
+
+    def save_world(self):
+        self._world.save()
 
 
 _VERSION_IRI: Final = IRI.create(namespaces.OWL, "versionIRI")
@@ -215,11 +225,20 @@ class OWLReasoner_Owlready2(OWLReasoner):
         for val in p._get_values_for_individual(i):
             yield val
 
-    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectProperty) -> Iterable[OWLNamedIndividual]:
-        i: owlready2.Thing = self._world[ind.get_iri().as_str()]
-        p: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
-        for val in p._get_values_for_individual(i):
-            yield OWLNamedIndividual(IRI.create(val.iri))
+    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
+            -> Iterable[OWLNamedIndividual]:
+        if isinstance(pe, OWLObjectProperty):
+            i: owlready2.Thing = self._world[ind.get_iri().as_str()]
+            p: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
+            for val in p._get_values_for_individual(i):
+                yield OWLNamedIndividual(IRI.create(val.iri))
+        elif isinstance(pe, OWLObjectInverseOf):
+            i: owlready2.Thing = self._world[ind.get_iri().as_str()]
+            p: owlready2.ObjectPropertyClass = self._world[pe.get_named_property().get_iri().as_str()]
+            for val in p._get_inverse_values_for_individual(i):
+                yield OWLNamedIndividual(IRI.create(val.iri))
+        else:
+            raise NotImplementedError(pe)
 
     def flush(self) -> None:
         pass

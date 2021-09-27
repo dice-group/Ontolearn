@@ -25,8 +25,8 @@ installation links to get started with the library.
 
 * Download (clone) the source code
   ```shell
-  git clone https://github.com/dice-group/OntoPy.git
-  cd OntoPy
+  git clone https://github.com/dice-group/Ontolearn.git
+  cd Ontolearn
   ```
 * Load the dependencies into a new conda environment called "temp" (you can name it however you like)
   ```shell
@@ -119,4 +119,4 @@ Feel free to create a pull request.
 
 For any further questions, please contact: ```onto-learn@lists.uni-paderborn.de```
 or open an issue on our [GitHub issues
-page](https://github.com/dice-group/OntoPy/issues).
+page](https://github.com/dice-group/Ontolearn/issues).

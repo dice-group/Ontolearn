@@ -7,9 +7,10 @@ many help texts copied from OWL API
 [1] https://github.com/owlcs/owlapi"""
 
 from abc import ABCMeta, abstractmethod
+from functools import total_ordering
 from typing import Generic, Iterable, Sequence, TypeVar, Union, Final, Optional, Protocol, ClassVar, List
 
-from owlapy.vocab import OWLRDFVocabulary, XSDVocabulary
+from owlapy.vocab import OWLRDFVocabulary, XSDVocabulary, OWLFacet
 from owlapy._utils import MOVE
 from owlapy.model._base import OWLObject, OWLAnnotationObject, OWLAnnotationSubject, OWLAnnotationValue
 from owlapy.model._iri import HasIRI, IRI
@@ -255,6 +256,14 @@ class OWLPropertyExpression(OWLObject, metaclass=ABCMeta):
         """
         return False
 
+    def is_owl_top_data_property(self) -> bool:
+        """Determines if this is the owl:topDataProperty.
+
+        Returns:
+            :True if this property is the owl:topDataProperty
+        """
+        return False
+
 
 class OWLRestriction(OWLAnonymousClassExpression):
     """Represents a Object Property Restriction or Data Property Restriction in the OWL 2 specification."""
@@ -336,7 +345,7 @@ class OWLDataProperty(OWLDataPropertyExpression, OWLProperty):
 
     def __init__(self, iri: IRI):
         """Gets an instance of OWLDataProperty that has the specified IRI.
-        
+
         Args:
             iri: The IRI.
         """
@@ -345,6 +354,10 @@ class OWLDataProperty(OWLDataPropertyExpression, OWLProperty):
     def get_iri(self) -> IRI:
         # documented in parent
         return self._iri
+
+    def is_owl_top_data_property(self) -> bool:
+        # documented in parent
+        return self.get_iri() == OWLRDFVocabulary.OWL_TOP_DATA_PROPERTY.get_iri()
 
 
 class OWLObjectProperty(OWLObjectPropertyExpression, OWLProperty):
@@ -360,7 +373,7 @@ class OWLObjectProperty(OWLObjectPropertyExpression, OWLProperty):
 
     def __init__(self, iri: IRI):
         """Gets an instance of OWLObjectProperty that has the specified IRI.
-        
+
         Args:
             iri: The IRI.
         """
@@ -528,11 +541,11 @@ class OWLObjectSomeValuesFrom(OWLQuantifiedObjectRestriction):
 
     def __init__(self, property: OWLObjectPropertyExpression, filler: OWLClassExpression):
         """Gets an OWLObjectSomeValuesFrom restriction
-        
+
         Args:
             property: The object property that the restriction acts along.
             filler: The class expression that is the filler.
-            
+
         Returns:
             An OWLObjectSomeValuesFrom restriction along the specified property with the specified filler
         """
@@ -595,8 +608,7 @@ class OWLNaryBooleanClassExpression(OWLBooleanClassExpression, HasOperands[OWLCl
 
     def operands(self) -> Iterable[OWLClassExpression]:
         # documented in parent
-        for o in self._operands:
-            yield o
+        yield from self._operands
 
     def __repr__(self):
         return f'{type(self).__name__}({repr(self._operands)})'
@@ -693,7 +705,7 @@ class OWLObjectCardinalityRestriction(OWLCardinalityRestriction[OWLClassExpressi
         return NotImplemented
 
     def __hash__(self):
-        hash((self._property, self._cardinality, self._filler))
+        return hash((self._property, self._cardinality, self._filler))
 
 
 class OWLObjectMinCardinality(OWLObjectCardinalityRestriction):
@@ -1231,7 +1243,8 @@ class OWLReasoner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectProperty) -> Iterable[OWLNamedIndividual]:
+    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
+            -> Iterable[OWLNamedIndividual]:
         """Gets the object property values for the specified individual and object property expression.
 
         Args:
@@ -1290,7 +1303,7 @@ class OWLReasoner(metaclass=ABCMeta):
         specified data property expression with respect to the imports closure of the root ontology.
 
         Args:
-            pe: The data property whose strict (direct) subproperties are to be retrieved.
+            dp: The data property whose strict (direct) subproperties are to be retrieved.
             direct: Specifies if the direct subproperties should be retrieved (True) or if the all subproperties
                 (descendants) should be retrieved (False).
 
@@ -1310,7 +1323,7 @@ class OWLReasoner(metaclass=ABCMeta):
         ontology.
 
         Args:
-            pe: The object property expression whose strict (direct) subproperties are to be retrieved.
+            op: The object property expression whose strict (direct) subproperties are to be retrieved.
             direct: Specifies if the direct subproperties should be retrieved (True) or if the all subproperties
                 (descendants) should be retrieved (False).
 
@@ -1363,7 +1376,7 @@ class OWLReasoner(metaclass=ABCMeta):
         pass
 
 
-class OWLDatatype(OWLEntity):
+class OWLDatatype(OWLEntity, OWLDataRange):
     """Represents a Datatype (named data range) in the OWL 2 Specification."""
     __slots__ = '_iri'
 
@@ -1388,12 +1401,74 @@ class OWLDatatype(OWLEntity):
         return self._iri
 
 
-# class OWLDatatypeRestriction(metaclass=ABCMeta):
-#     type_index: Final = 4006
-#
-#
-# class OWLFacetRestriction(metaclass=ABCMeta):
-#     type_index: Final = 4007
+class OWLDatatypeRestriction(OWLDataRange):
+    """Represents a DatatypeRestriction data range in the OWL 2 Specification."""
+    __slots__ = '_type', '_facet_restrictions'
+
+    type_index: Final = 4006
+
+    _type: OWLDatatype
+    _facet_restrictions: Sequence['OWLFacetRestriction']
+
+    def __init__(self, type_: OWLDatatype, facet_restrictions: Union['OWLFacetRestriction',
+                                                                     Iterable['OWLFacetRestriction']]):
+        self._type = type_
+        if isinstance(facet_restrictions, OWLFacetRestriction):
+            facet_restrictions = facet_restrictions,
+        self._facet_restrictions = tuple(facet_restrictions)
+
+    def get_datatype(self) -> OWLDatatype:
+        return self._type
+
+    def get_facet_restrictions(self) -> Sequence['OWLFacetRestriction']:
+        return self._facet_restrictions
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._type == other._type \
+                   and self._facet_restrictions == other._facet_restrictions
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._type, self._facet_restrictions))
+
+    def __repr__(self):
+        return f'OWLDatatypeRestriction({repr(self._type)}, {repr(self._facet_restrictions)})'
+
+
+class OWLFacetRestriction(OWLObject):
+    """A facet restriction is used to restrict a particular datatype."""
+
+    __slots__ = '_facet', '_literal'
+
+    type_index: Final = 4007
+
+    _facet: OWLFacet
+    _literal: 'OWLLiteral'
+
+    def __init__(self, facet: OWLFacet, literal: Union['OWLLiteral', float, int, bool]):
+        self._facet = facet
+        if isinstance(literal, OWLLiteral):
+            self._literal = literal
+        else:
+            self._literal = OWLLiteral(literal)
+
+    def get_facet(self) -> OWLFacet:
+        return self._facet
+
+    def get_facet_value(self) -> 'OWLLiteral':
+        return self._literal
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._facet == other._facet and self._literal == other._literal
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._facet, self._literal))
+
+    def __repr__(self):
+        return f'OWLFacetRestriction({self._facet}, {repr(self._literal)})'
 
 
 class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
@@ -1408,7 +1483,11 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
         Args:
             value: The value of the literal
         """
-        if isinstance(value, float):
+        if isinstance(value, bool):
+            return super().__new__(_OWLLiteralImplBoolean)
+        elif isinstance(value, int):
+            return super().__new__(_OWLLiteralImplInteger)
+        elif isinstance(value, float):
             return super().__new__(_OWLLiteralImplDouble)
         # TODO XXX
         raise NotImplementedError
@@ -1421,12 +1500,42 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
         """
         return str(self._v)
 
+    def is_boolean(self) -> bool:
+        """Whether this literal is typed as boolean"""
+        return False
+
+    def parse_boolean(self) -> bool:
+        """Parses the lexical value of this literal into a bool. The lexical value of this literal should be in the
+        lexical space of the boolean datatype ("http://www.w3.org/2001/XMLSchema#"boolean).
+
+        Returns:
+            A bool value that is represented by this literal.
+        """
+        raise ValueError
+
+    def is_double(self) -> bool:
+        """Whether this literal is typed as double"""
+        return False
+
     def parse_double(self) -> float:
         """Parses the lexical value of this literal into a double. The lexical value of this literal should be in the
         lexical space of the double datatype ("http://www.w3.org/2001/XMLSchema#"double).
 
         Returns:
             A double value that is represented by this literal.
+        """
+        raise ValueError
+
+    def is_integer(self) -> bool:
+        """Whether this literal is typed as integer"""
+        return False
+
+    def parse_integer(self) -> int:
+        """Parses the lexical value of this literal into an integer. The lexical value of this literal should be in the
+        lexical space of the integer datatype ("http://www.w3.org/2001/XMLSchema#"integer).
+
+        Returns:
+            An integer value that is represented by this literal.
         """
         raise ValueError
 
@@ -1442,18 +1551,98 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
     @abstractmethod
     def get_datatype(self) -> OWLDatatype:
         """Gets the OWLDatatype which types this literal.
-        
+
         Returns:
             The OWLDatatype that types this literal.
         """
         pass
 
 
+@total_ordering
 class _OWLLiteralImplDouble(OWLLiteral):
     __slots__ = '_v'
 
+    _v: float
+
     def __init__(self, value):
         assert isinstance(value, float)
+        self._v = value
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._v == other._v
+        return NotImplemented
+
+    def __lt__(self, other):
+        if type(other) is type(self):
+            return self._v < other._v
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self._v)
+
+    def __repr__(self):
+        return f'OWLLiteral({self._v})'
+
+    def is_double(self) -> bool:
+        return True
+
+    def parse_double(self) -> float:
+        # documented in parent
+        return self._v
+
+    # noinspection PyMethodMayBeStatic
+    def get_datatype(self) -> OWLDatatype:
+        # documented in parent
+        return DoubleOWLDatatype
+
+
+@total_ordering
+class _OWLLiteralImplInteger(OWLLiteral):
+    __slots__ = '_v'
+
+    _v: int
+
+    def __init__(self, value):
+        assert isinstance(value, int)
+        self._v = value
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._v == other._v
+        return NotImplemented
+
+    def __lt__(self, other):
+        if type(other) is type(self):
+            return self._v < other._v
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self._v)
+
+    def __repr__(self):
+        return f'OWLLiteral({self._v})'
+
+    def is_integer(self) -> bool:
+        return True
+
+    def parse_integer(self) -> int:
+        # documented in parent
+        return self._v
+
+    # noinspection PyMethodMayBeStatic
+    def get_datatype(self) -> OWLDatatype:
+        # documented in parent
+        return IntegerOWLDatatype
+
+
+class _OWLLiteralImplBoolean(OWLLiteral):
+    __slots__ = '_v'
+
+    _v: bool
+
+    def __init__(self, value):
+        assert isinstance(value, bool)
         self._v = value
 
     def __eq__(self, other):
@@ -1467,23 +1656,32 @@ class _OWLLiteralImplDouble(OWLLiteral):
     def __repr__(self):
         return f'OWLLiteral({self._v})'
 
-    def parse_double(self) -> float:
+    def is_boolean(self) -> bool:
+        return True
+
+    def parse_boolean(self) -> bool:
         # documented in parent
         return self._v
 
     # noinspection PyMethodMayBeStatic
     def get_datatype(self) -> OWLDatatype:
         # documented in parent
-        return DoubleOWLDatatype
+        return BooleanOWLDatatype
 
-
-# TODO: a big todo plus intermediate classes (missing)
 
 class OWLQuantifiedDataRestriction(OWLQuantifiedRestriction[OWLDataRange],
                                    OWLDataRestriction, metaclass=ABCMeta):
     """A quantified data restriction."""
     __slots__ = ()
-    pass
+
+    _filler: OWLDataRange
+
+    def __init__(self, filler: OWLDataRange):
+        self._filler = filler
+
+    def get_filler(self) -> OWLDataRange:
+        # documented in parent (HasFiller)
+        return self._filler
 
 
 class OWLDataCardinalityRestriction(OWLCardinalityRestriction[OWLDataRange],
@@ -1491,8 +1689,34 @@ class OWLDataCardinalityRestriction(OWLCardinalityRestriction[OWLDataRange],
                                     OWLDataRestriction, metaclass=ABCMeta):
     """Represents Data Property Cardinality Restrictions in the OWL 2 specification"""
     __slots__ = ()
-    pass
 
+    _property: OWLDataPropertyExpression
+
+    @abstractmethod
+    def __init__(self, cardinality: int, property: OWLDataPropertyExpression, filler: OWLDataRange):
+        super().__init__(cardinality, filler)
+        self._property = property
+
+    def get_property(self) -> OWLDataPropertyExpression:
+        # documented in parent
+        return self._property
+
+    def __repr__(self):
+        return f"{type(self).__name__}(" \
+               f"property={repr(self.get_property())},{self.get_cardinality()},filler={repr(self.get_filler())})"
+
+    def __eq__(self, other):
+        if type(other) == type(self):
+            return self._property == other._property \
+                   and self._cardinality == other._cardinality \
+                   and self._filler == other._filler
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._property, self._cardinality, self._filler))
+
+
+# TODO: a big todo plus intermediate classes (missing)
 
 # class OWLAnnotation(metaclass=ABCMeta):
 #     """Annotations are used in the various types of annotation axioms, which bind annotations to their subjects (i.e.
@@ -1519,66 +1743,304 @@ class OWLDataCardinalityRestriction(OWLCardinalityRestriction[OWLDataRange],
 #     type_index: Final = 2000 + get_axiom_type().get_index()
 
 
-class OWLDataAllValuesFrom(OWLQuantifiedDataRestriction, metaclass=ABCMeta):
+class OWLDataAllValuesFrom(OWLQuantifiedDataRestriction):
     """Represents DataAllValuesFrom class expressions in the OWL 2 Specification."""
-    __slots__ = ()
+    __slots__ = '_property'
 
     type_index: Final = 3013
 
+    _property: OWLDataPropertyExpression
 
-# class OWLDataComplementOf(metaclass=ABCMeta):
-#     """Represents DataComplementOf in the OWL 2 Specification."""
-#     type_index: Final = 4002
+    def __init__(self, property: OWLDataPropertyExpression, filler: OWLDataRange):
+        """Gets an OWLDataAllValuesFrom restriction
+
+        Args:
+            property: The data property that the restriction acts along.
+            filler: The data range that is the filler.
+
+        Returns:
+            An OWLDataAllValuesFrom restriction along the specified property with the specified filler
+        """
+        super().__init__(filler)
+        self._property = property
+
+    def __repr__(self):
+        return f"OWLDataAllValuesFrom(property={repr(self._property)},filler={repr(self._filler)})"
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._filler == other._filler and self._property == other._property
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._filler, self._property))
+
+    def get_property(self) -> OWLDataPropertyExpression:
+        # documented in parent
+        return self._property
 
 
-class OWLDataExactCardinality(OWLDataCardinalityRestriction, metaclass=ABCMeta):
+class OWLDataComplementOf(OWLDataRange):
+    """Represents DataComplementOf in the OWL 2 Specification."""
+    type_index: Final = 4002
+
+    _data_range: OWLDataRange
+
+    def __init__(self, data_range: OWLDataRange):
+        """
+        Args:
+            data_range: data range to complement
+        """
+        self._data_range = data_range
+
+    def get_data_range(self) -> OWLDataRange:
+        """
+        Returns:
+            the wrapped data range
+        """
+        return self._data_range
+
+    def __repr__(self):
+        return f"OWLDataComplementOf({repr(self._data_range)})"
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._data_range == other._data_range
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self._data_range)
+
+
+class OWLDataExactCardinality(OWLDataCardinalityRestriction):
     """Represents DataExactCardinality restrictions in the OWL 2 Specification."""
-    __slots__ = ()
+    __slots__ = '_cardinality', '_filler', '_property'
 
     type_index: Final = 3016
 
+    def __init__(self, cardinality: int, property: OWLDataPropertyExpression, filler: OWLDataRange):
+        """
+        Args:
+            cardinality: Cannot be negative.
+            property: The property that the restriction acts along.
+            filler: data range for restriction
 
-class OWLDataHasValue(OWLHasValueRestriction[OWLLiteral], OWLDataRestriction, metaclass=ABCMeta):
+        Returns:
+            a DataExactCardinality on the specified property
+        """
+        super().__init__(cardinality, property, filler)
+
+    def as_intersection_of_min_max(self) -> OWLObjectIntersectionOf:
+        """Obtains an equivalent form that is a conjunction of a min cardinality and max cardinality restriction.
+
+        Returns:
+            The semantically equivalent but structurally simpler form (= 1 R D) = >= 1 R D and <= 1 R D
+        """
+        args = self.get_property(), self.get_cardinality(), self.get_filler()
+        return OWLObjectIntersectionOf((OWLDataMinCardinality(*args), OWLDataMaxCardinality(*args)))
+
+
+class OWLDataHasValue(OWLHasValueRestriction[OWLLiteral], OWLDataRestriction):
     """Represents DataHasValue restrictions in the OWL 2 Specification."""
-    __slots__ = ()
+    __slots__ = '_property'
 
     type_index: Final = 3014
 
+    _property: OWLDataPropertyExpression
 
-# class OWLDataIntersectionOf(metaclass=ABCMeta):
-#     """Represents DataIntersectionOf  in the OWL 2 Specification."""
-#     type_index: Final = 4004
+    def __init__(self, property: OWLDataPropertyExpression, value: OWLLiteral):
+        """Gets an OWLDataHasValue restriction
+
+        Args:
+            property: The data property that the restriction acts along.
+            filler: The literal value
+
+        Returns:
+            An OWLDataHasValue restriction along the specified property with the specified literal
+        """
+        super().__init__(value)
+        self._property = property
+
+    def __repr__(self):
+        return f"OWLDataHasValue(property={repr(self._property)},value={repr(self._v)})"
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._v == other._v and self._property == other._property
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._v, self._property))
+
+    def as_some_values_from(self) -> OWLClassExpression:
+        """A convenience method that obtains this restriction as an existential restriction with a nominal filler.
+
+        Returns:
+            The existential equivalent of this value restriction. simp(HasValue(p a)) = some(p {a})
+        """
+        return OWLDataSomeValuesFrom(self.get_property(), OWLDataOneOf(self.get_filler()))
+
+    def get_property(self) -> OWLDataPropertyExpression:
+        # documented in parent
+        return self._property
 
 
-class OWLDataMaxCardinality(OWLDataCardinalityRestriction, metaclass=ABCMeta):
+class OWLDataMaxCardinality(OWLDataCardinalityRestriction):
     """Represents DataMaxCardinality restrictions in the OWL 2 Specification."""
-    __slots__ = ()
+    __slots__ = '_cardinality', '_filler', '_property'
 
     type_index: Final = 3017
 
+    def __init__(self, cardinality: int, property: OWLDataPropertyExpression, filler: OWLDataRange):
+        """
+        Args:
+            cardinality: Cannot be negative.
+            property: The property that the restriction acts along.
+            filler: data range for restriction
 
-class OWLDataMinCardinality(OWLDataCardinalityRestriction, metaclass=ABCMeta):
+        Returns:
+            a DataMaxCardinality on the specified property
+        """
+        super().__init__(cardinality, property, filler)
+
+
+class OWLDataMinCardinality(OWLDataCardinalityRestriction):
     """Represents DataMinCardinality restrictions in the OWL 2 Specification."""
-    __slots__ = ()
+    __slots__ = '_cardinality', '_filler', '_property'
 
     type_index: Final = 3015
 
+    def __init__(self, cardinality: int, property: OWLDataPropertyExpression, filler: OWLDataRange):
+        """
+        Args:
+            cardinality: Cannot be negative.
+            property: The property that the restriction acts along.
+            filler: data range for restriction
 
-# class OWLDataOneOf(metaclass=ABCMeta):
-#     """Represents DataOneOf in the OWL 2 Specification."""
-#     type_index: Final = 4003
+        Returns:
+            a DataMinCardinality on the specified property
+        """
+        super().__init__(cardinality, property, filler)
 
 
-class OWLDataSomeValuesFrom(OWLQuantifiedDataRestriction, metaclass=ABCMeta):
+class OWLDataOneOf(OWLDataRange):
+    """Represents DataOneOf in the OWL 2 Specification."""
+    type_index: Final = 4003
+
+    _values: Sequence[OWLLiteral]
+
+    def __init__(self, values: Union[OWLLiteral, Iterable[OWLLiteral]]):
+        if isinstance(values, OWLLiteral):
+            self._values = values,
+        else:
+            for _ in values:
+                assert isinstance(_, OWLLiteral)
+            self._values = tuple(values)
+
+    def values(self) -> Iterable[OWLLiteral]:
+        """Gets the values that are in the oneOf.
+
+         Returns:
+             The values of this {@code DataOneOf} class expression.
+        """
+        yield from self._values
+
+    def operands(self) -> Iterable[OWLLiteral]:
+        # documented in parent
+        yield from self.values()
+
+    def __hash__(self):
+        return hash(self._values)
+
+    def __eq__(self, other):
+        if type(other) == type(self):
+            return self._values == other._values
+        return NotImplemented
+
+    def __repr__(self):
+        return f'OWLDataOneOf({self._values})'
+
+
+class OWLDataSomeValuesFrom(OWLQuantifiedDataRestriction):
     """Represents a DataSomeValuesFrom restriction in the OWL 2 Specification."""
-    __slots__ = ()
+    __slots__ = '_property'
 
     type_index: Final = 3012
 
+    _property: OWLDataPropertyExpression
 
-# class OWLDataUnionOf(metaclass=ABCMeta):
-#     """Represents a DataUnionOf data range in the OWL 2 Specification."""
-#     type_index: Final = 4005
+    def __init__(self, property: OWLDataPropertyExpression, filler: OWLDataRange):
+        """Gets an OWLDataSomeValuesFrom restriction
+
+        Args:
+            property: The data property that the restriction acts along.
+            filler: The data range that is the filler.
+
+        Returns:
+            An OWLDataSomeValuesFrom restriction along the specified property with the specified filler
+        """
+        super().__init__(filler)
+        self._property = property
+
+    def __repr__(self):
+        return f"OWLDataSomeValuesFrom(property={repr(self._property)},filler={repr(self._filler)})"
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._filler == other._filler and self._property == other._property
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._filler, self._property))
+
+    def get_property(self) -> OWLDataPropertyExpression:
+        # documented in parent
+        return self._property
+
+
+class OWLNaryDataRange(OWLDataRange, HasOperands[OWLDataRange]):
+    """OWLNaryDataRange."""
+    __slots__ = ()
+
+    _operands: Sequence[OWLDataRange]
+
+    def __init__(self, operands: Iterable[OWLDataRange]):
+        """
+        Args:
+            operands: data ranges
+        """
+        self._operands = tuple(operands)
+
+    def operands(self) -> Sequence[OWLDataRange]:
+        # documented in parent
+        yield from self._operands
+
+    def __repr__(self):
+        return f'{type(self).__name__}({repr(self._operands)})'
+
+    def __eq__(self, other):
+        if type(other) == type(self):
+            return self._operands == other._operands
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self._operands)
+
+
+class OWLDataUnionOf(OWLNaryDataRange):
+    """Represents a DataUnionOf data range in the OWL 2 Specification."""
+    __slots__ = '_operands'
+    type_index: Final = 4005
+
+    _operands: Sequence[OWLDataRange]
+
+
+class OWLDataIntersectionOf(OWLNaryDataRange):
+    """Represents DataIntersectionOf  in the OWL 2 Specification."""
+    __slots__ = '_operands'
+    type_index: Final = 4004
+
+    _operands: Sequence[OWLDataRange]
 
 
 class OWLImportsDeclaration(HasIRI):

@@ -1,21 +1,25 @@
-from typing import Iterable, Optional, AbstractSet, Dict
+from typing import Iterable, Optional, AbstractSet, Dict, Generator
 
 from ontolearn.core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from ontolearn.utils import parametrized_performance_debugger
-from owlapy.model import OWLClass, OWLClassExpression, OWLObjectComplementOf, OWLObjectSomeValuesFrom, \
+from owlapy.model import OWLObjectHasValue, OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectPropertyExpression, OWLThing, \
-    OWLNothing, OWLReasoner, OWLObjectProperty
+    OWLNothing, OWLReasoner, OWLObjectProperty, OWLClass, OWLClassExpression, OWLObjectComplementOf, \
+    OWLObjectExactCardinality, OWLDataAllValuesFrom, OWLDataPropertyExpression, OWLDataRange, OWLDataSomeValuesFrom, \
+    OWLDataHasValue, OWLIndividual, OWLLiteral
 
 
 class ConceptGenerator:
     """A class that can generate some sorts of OWL Class Expressions"""
-    __slots__ = '_class_hierarchy', '_object_property_hierarchy', '_data_property_hierarchy', '_reasoner', '_op_domains'
+    __slots__ = '_class_hierarchy', '_object_property_hierarchy', '_data_property_hierarchy', '_reasoner', \
+                '_op_domains', '_op_ranges'
 
     _class_hierarchy: ClassHierarchy
     _object_property_hierarchy: ObjectPropertyHierarchy
     _data_property_hierarchy: DatatypePropertyHierarchy
     _reasoner: OWLReasoner
     _op_domains: Dict[OWLObjectProperty, AbstractSet[OWLClass]]
+    _op_ranges: Dict[OWLObjectProperty, AbstractSet[OWLClass]]
 
     def __init__(self, reasoner: OWLReasoner,
                  class_hierarchy: Optional[ClassHierarchy] = None,
@@ -48,6 +52,7 @@ class ConceptGenerator:
         self._data_property_hierarchy = data_property_hierarchy
 
         self._op_domains = dict()
+        self._op_ranges = dict()
 
     def get_leaf_concepts(self, concept: OWLClass):
         """Get leaf classes
@@ -63,19 +68,51 @@ class ConceptGenerator:
         yield from self._class_hierarchy.leaves(of=concept)
 
     @parametrized_performance_debugger()
-    def negation_from_iterables(self, s: Iterable[OWLClassExpression]) -> Iterable[OWLObjectComplementOf]:
+    def negation_from_iterables(self, class_expressions: Iterable[OWLClassExpression]):
         """Negate a sequence of Class Expressions
 
         Args:
-            s: iterable of class expressions to negate
+            class_expressions: iterable of class expressions to negate
 
         Returns:
             negated form of input
 
                 { x \\| ( x \\equv not s} """
-        for item in s:
+        for item in class_expressions:
             assert isinstance(item, OWLClassExpression)
             yield self.negation(item)
+
+    @staticmethod
+    def intersect_from_iterables(a_operands: Iterable[OWLClassExpression], b_operands: Iterable[OWLClassExpression]) -> \
+            Iterable[OWLObjectComplementOf]:
+        """ Create an intersection of each class expression in a_operands with each class expression in b_operands"""
+        assert isinstance(a_operands, Generator) is False and isinstance(b_operands, Generator) is False
+        seen = set()
+        # TODO: if input sizes say 10^4, we can employ multiprocessing
+        for i in a_operands:
+            for j in b_operands:
+                if (i, j) in seen:
+                    continue
+                i_and_j = OWLObjectIntersectionOf((i, j))
+                seen.add((i, j))
+                seen.add((j, i))
+                yield i_and_j
+
+    @staticmethod
+    def union_from_iterables(a_operands: Iterable[OWLClassExpression],
+                             b_operands: Iterable[OWLClassExpression]) -> Iterable[OWLObjectUnionOf]:
+        """ Create an union of each class expression in a_operands with each class expression in b_operands"""
+        assert (isinstance(a_operands, Generator) is False) and (isinstance(b_operands, Generator) is False)
+        # TODO: if input sizes say 10^4, we can employ multiprocessing
+        seen = set()
+        for i in a_operands:
+            for j in b_operands:
+                if (i, j) in seen:
+                    continue
+                i_and_j = OWLObjectUnionOf((i, j))
+                seen.add((i, j))
+                seen.add((j, i))
+                yield i_and_j
 
     @parametrized_performance_debugger()
     def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
@@ -103,6 +140,19 @@ class ConceptGenerator:
         if prop not in self._op_domains:
             self._op_domains[prop] = frozenset(self._reasoner.object_property_domains(prop))
         return self._op_domains[prop]
+
+    def _object_property_range(self, prop: OWLObjectProperty):
+        """Get the range of a property
+
+        Args:
+            prop: object property
+
+        Returns:
+            range of the property
+        """
+        if prop not in self._op_ranges:
+            self._op_ranges[prop] = frozenset(self._reasoner.object_property_ranges(prop))
+        return self._op_ranges[prop]
 
     def most_general_existential_restrictions(self, *,
                                               domain: OWLClassExpression, filler: Optional[OWLClassExpression] = None) \
@@ -146,6 +196,50 @@ class ConceptGenerator:
             if domain.is_owl_thing() or domain in self._object_property_domain(prop):
                 yield OWLObjectAllValuesFrom(property=prop, filler=filler)
 
+    def most_general_existential_restrictions_inverse(self, *,
+                                                      domain: OWLClassExpression,
+                                                      filler: Optional[OWLClassExpression] = None) \
+            -> Iterable[OWLObjectSomeValuesFrom]:
+        """Find most general inverse existential restrictions that are applicable to a domain
+
+        Args:
+            domain: domain for which to search properties
+            filler: optional filler to put in the restriction (not normally used)
+
+        Returns:
+            existential restrictions over inverse property
+        """
+        if filler is None:
+            filler = self.thing
+        assert isinstance(domain, OWLClass)  # for now, only named classes supported
+        assert isinstance(filler, OWLClassExpression)
+
+        for prop in self._object_property_hierarchy.most_general_roles():
+            if domain.is_owl_thing() or domain in self._object_property_range(prop):
+                yield OWLObjectSomeValuesFrom(property=prop.get_inverse_property(), filler=filler)
+
+    def most_general_universal_restrictions_inverse(self, *,
+                                                    domain: OWLClassExpression,
+                                                    filler: Optional[OWLClassExpression] = None) \
+            -> Iterable[OWLObjectAllValuesFrom]:
+        """Find most general universal inverse restrictions that are applicable to a domain
+
+        Args:
+            domain: domain for which to search properties
+            filler: optional filler to put in the restriction (not normally used)
+
+        Returns:
+            universal restrictions over inverse property
+        """
+        if filler is None:
+            filler = self.thing
+        assert isinstance(domain, OWLClass)  # for now, only named classes supported
+        assert isinstance(filler, OWLClassExpression)
+
+        for prop in self._object_property_hierarchy.most_general_roles():
+            if domain.is_owl_thing() or domain in self._object_property_range(prop):
+                yield OWLObjectAllValuesFrom(property=prop.get_inverse_property(), filler=filler)
+
     # noinspection PyMethodMayBeStatic
     def intersection(self, ops: Iterable[OWLClassExpression]) -> OWLObjectIntersectionOf:
         """Create intersection of class expression
@@ -156,6 +250,8 @@ class ConceptGenerator:
         Returns:
             intersection with all operands (intersections are merged)
         """
+        # TODO CD: I would rather prefer def intersection(self, a: OWLClassExpression, b: OWLClassExpression)
+        # TODO: This is more advantages as one does not need to create a tuple of a list before intersection two expressions.
         operands = []
         for c in ops:
             if isinstance(c, OWLObjectIntersectionOf):
@@ -251,6 +347,110 @@ class ConceptGenerator:
         """
         assert isinstance(property, OWLObjectPropertyExpression)
         return OWLObjectAllValuesFrom(property=property, filler=filler)
+
+    def has_value_restriction(self, individual: OWLIndividual, property: OWLObjectPropertyExpression) \
+            -> OWLObjectHasValue:
+        """Create object has value restriction
+
+        Args:
+            property: property
+            individual: individual of the restriction
+
+        Returns:
+            object has value restriction
+        """
+        assert isinstance(property, OWLObjectPropertyExpression)
+        return OWLObjectHasValue(property=property, individual=individual)
+
+    def min_cardinality_restriction(self, filler: OWLClassExpression,
+                                    property: OWLObjectPropertyExpression, card: int) \
+            -> OWLObjectMinCardinality:
+        """Create min cardinality restriction
+
+        Args:
+            filler: filler of the restriction
+            property: property
+            card: cardinality of the restriction
+
+        Returns:
+            min cardinality restriction
+        """
+        assert isinstance(property, OWLObjectPropertyExpression)
+        return OWLObjectMinCardinality(cardinality=card, property=property, filler=filler)
+
+    def max_cardinality_restriction(self, filler: OWLClassExpression,
+                                    property: OWLObjectPropertyExpression, card: int) \
+            -> OWLObjectMaxCardinality:
+        """Create max cardinality restriction
+
+        Args:
+            filler: filler of the restriction
+            property: property
+            card: cardinality of the restriction
+
+        Returns:
+            max cardinality restriction
+        """
+        assert isinstance(property, OWLObjectPropertyExpression)
+        return OWLObjectMaxCardinality(cardinality=card, property=property, filler=filler)
+
+    def exact_cardinality_restriction(self, filler: OWLClassExpression,
+                                      property: OWLObjectPropertyExpression, card: int) \
+            -> OWLObjectExactCardinality:
+        """Create exact cardinality restriction
+
+        Args:
+            filler: filler of the restriction
+            property: property
+            card: cardinality of the restriction
+
+        Returns:
+            exact cardinality restriction
+        """
+        assert isinstance(property, OWLObjectPropertyExpression)
+        return OWLObjectExactCardinality(cardinality=card, property=property, filler=filler)
+
+    def data_existential_restriction(self, filler: OWLDataRange, property: OWLDataPropertyExpression) \
+            -> OWLDataSomeValuesFrom:
+        """Create data existential restriction
+
+        Args:
+            filler: filler of the restriction
+            property: property
+
+        Returns:
+            data existential restriction
+        """
+        assert isinstance(property, OWLDataPropertyExpression)
+        return OWLDataSomeValuesFrom(property=property, filler=filler)
+
+    def data_universal_restriction(self, filler: OWLDataRange, property: OWLDataPropertyExpression) \
+            -> OWLDataAllValuesFrom:
+        """Create data universal restriction
+
+        Args:
+            filler: filler of the restriction
+            property: property
+
+        Returns:
+            data universal restriction
+        """
+        assert isinstance(property, OWLDataPropertyExpression)
+        return OWLDataAllValuesFrom(property=property, filler=filler)
+
+    def data_has_value_restriction(self, value: OWLLiteral, property: OWLDataPropertyExpression) \
+            -> OWLDataHasValue:
+        """Create data has value restriction
+
+        Args:
+            value: value of the restriction
+            property: property
+
+        Returns:
+            data has value restriction
+        """
+        assert isinstance(property, OWLDataPropertyExpression)
+        return OWLDataHasValue(property=property, value=value)
 
     def negation(self, concept: OWLClassExpression) -> OWLClassExpression:
         """Create negation of a concept

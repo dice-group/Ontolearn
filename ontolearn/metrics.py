@@ -46,7 +46,6 @@ class F1(AbstractScorer):
     def score(self, instances, learning_problem: EncodedPosNegLPStandard):
         if len(instances) == 0:
             return False, 0
-
         tp = len(learning_problem.kb_pos.intersection(instances))
         # tn = len(learning_problem.kb_neg.difference(instances))
 
@@ -108,3 +107,31 @@ class Accuracy(AbstractScorer):
         # acc = 1 - ((fp + fn) / len(self.pos) + len(self.neg)) # from Learning OWL Class Expressions.
 
         return True, round(acc, 5)
+
+
+class WeightedAccuracy(AbstractScorer):
+    __slots__ = ()
+
+    name: Final = 'WeightedAccuracy'
+
+    def score(self, instances, learning_problem: EncodedPosNegLPStandard):
+        if len(instances) == 0:
+            return False, 0
+
+        ap = len(learning_problem.kb_pos)
+        an = len(learning_problem.kb_neg)
+
+        tp = len(learning_problem.kb_pos.intersection(instances))
+        tn = len(learning_problem.kb_neg.difference(instances))
+
+        # FP corresponds to CN in Learning OWL Class Expressions OCEL paper, i.e., cn = |R(C) \AND
+        # E^-| covered negatives
+        fp = len(learning_problem.kb_neg.intersection(instances))
+        # FN corresponds to UP in Learning OWL Class Expressions OCEL paper, i.e., up = |E^+ \ R(C)|
+        fn = len(learning_problem.kb_pos.difference(instances))
+        # uncovered positives
+
+        wacc = ((tp/ap) + (tn/an)) / ((tp/ap) + (tn/an) + (fp/an) + (fn/ap))
+        # acc = 1 - ((fp + fn) / len(self.pos) + len(self.neg)) # from Learning OWL Class Expressions.
+
+        return True, round(wacc, 5)
