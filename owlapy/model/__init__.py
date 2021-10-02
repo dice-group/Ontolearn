@@ -10,7 +10,7 @@ from abc import ABCMeta, abstractmethod
 from functools import total_ordering
 from typing import Generic, Iterable, Sequence, TypeVar, Union, Final, Optional, Protocol, ClassVar, List
 from pandas import Timedelta
-from datetime import datetime
+from datetime import datetime, date
 
 from owlapy.vocab import OWLRDFVocabulary, XSDVocabulary, OWLFacet
 from owlapy._utils import MOVE
@@ -21,7 +21,7 @@ MOVE(OWLObject, OWLAnnotationObject, OWLAnnotationSubject, OWLAnnotationValue, H
 
 _T = TypeVar('_T')  #:
 _C = TypeVar('_C', bound='OWLObject')  #:
-Literals = Union['OWLLiteral', int, float, bool, Timedelta, datetime]  #:
+Literals = Union['OWLLiteral', int, float, bool, Timedelta, datetime, date]  #:
 
 
 class HasIndex(Protocol):
@@ -1492,6 +1492,8 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
             return super().__new__(_OWLLiteralImplInteger)
         elif isinstance(value, float):
             return super().__new__(_OWLLiteralImplDouble)
+        elif isinstance(value, date):
+            return super().__new__(_OWLLiteralImplDate)
         elif isinstance(value, datetime):
             return super().__new__(_OWLLiteralImplDateTime)
         elif isinstance(value, Timedelta):
@@ -1546,11 +1548,24 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
         """
         raise ValueError
 
+    def is_date(self) -> bool:
+        """Whether this literal is typed as date"""
+        return False
+
+    def parse_date(self) -> date:
+        """Parses the lexical value of this literal into a date. The lexical value of this literal should be in the
+        lexical space of the date datatype ("http://www.w3.org/2001/XMLSchema#date").
+
+        Returns:
+            A date value that is represented by this literal.
+        """
+        raise ValueError
+
     def is_datetime(self) -> bool:
         """Whether this literal is typed as dateTime"""
         return False
 
-    def parse_datetime(self) -> Timedelta:
+    def parse_datetime(self) -> datetime:
         """Parses the lexical value of this literal into a datetime. The lexical value of this literal should be in the
         lexical space of the dateTime datatype ("http://www.w3.org/2001/XMLSchema#dateTime").
 
@@ -1700,6 +1715,45 @@ class _OWLLiteralImplBoolean(OWLLiteral):
     def get_datatype(self) -> OWLDatatype:
         # documented in parent
         return BooleanOWLDatatype
+
+
+@total_ordering
+class _OWLLiteralImplDate(OWLLiteral):
+    __slots__ = '_v'
+
+    _v: date
+
+    def __init__(self, value):
+        assert isinstance(value, date)
+        self._v = value
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._v == other._v
+        return NotImplemented
+
+    def __lt__(self, other):
+        if type(other) is type(self):
+            return self._v < other._v
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self._v)
+
+    def __repr__(self):
+        return f'OWLLiteral({self._v})'
+
+    def is_date(self) -> bool:
+        return True
+
+    def parse_date(self) -> date:
+        # documented in parent
+        return self._v
+
+    # noinspection PyMethodMayBeStatic
+    def get_datatype(self) -> OWLDatatype:
+        # documented in parent
+        return DateOWLDatatype
 
 
 @total_ordering
@@ -2407,6 +2461,7 @@ OWLBottomDataProperty: Final = OWLDataProperty(OWLRDFVocabulary.OWL_BOTTOM_DATA_
 DoubleOWLDatatype: Final = OWLDatatype(XSDVocabulary.DOUBLE)  #: An object representing a double datatype.
 IntegerOWLDatatype: Final = OWLDatatype(XSDVocabulary.INTEGER)  #: An object representing an integer datatype.
 BooleanOWLDatatype: Final = OWLDatatype(XSDVocabulary.BOOLEAN)  #: An object representing the boolean datatype.
+DateOWLDatatype: Final = OWLDatatype(XSDVocabulary.DATE)  #: An object representing the date datatype.
 DateTimeOWLDatatype: Final = OWLDatatype(XSDVocabulary.DATE_TIME)  #: An object representing the dateTime datatype.
 DurationOWLDatatype: Final = OWLDatatype(XSDVocabulary.DURATION)  #: An object representing the duration datatype.
 TopDatatype: Final = OWLDatatype(OWLRDFVocabulary.RDFS_LITERAL)  #: The OWL Datatype corresponding to the top data type
