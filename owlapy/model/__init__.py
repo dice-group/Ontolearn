@@ -9,6 +9,7 @@ many help texts copied from OWL API
 from abc import ABCMeta, abstractmethod
 from functools import total_ordering
 from typing import Generic, Iterable, Sequence, TypeVar, Union, Final, Optional, Protocol, ClassVar, List
+from pandas import Timedelta
 
 from owlapy.vocab import OWLRDFVocabulary, XSDVocabulary, OWLFacet
 from owlapy._utils import MOVE
@@ -19,6 +20,7 @@ MOVE(OWLObject, OWLAnnotationObject, OWLAnnotationSubject, OWLAnnotationValue, H
 
 _T = TypeVar('_T')  #:
 _C = TypeVar('_C', bound='OWLObject')  #:
+Literals = Union['OWLLiteral', int, float, bool, Timedelta]  #:
 
 
 class HasIndex(Protocol):
@@ -1446,7 +1448,7 @@ class OWLFacetRestriction(OWLObject):
     _facet: OWLFacet
     _literal: 'OWLLiteral'
 
-    def __init__(self, facet: OWLFacet, literal: Union['OWLLiteral', float, int, bool]):
+    def __init__(self, facet: OWLFacet, literal: Literals):
         self._facet = facet
         if isinstance(literal, OWLLiteral):
             self._literal = literal
@@ -1489,6 +1491,8 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
             return super().__new__(_OWLLiteralImplInteger)
         elif isinstance(value, float):
             return super().__new__(_OWLLiteralImplDouble)
+        elif isinstance(value, Timedelta):
+            return super().__new__(_OWLLiteralImplDuration)
         # TODO XXX
         raise NotImplementedError
 
@@ -1506,7 +1510,7 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
 
     def parse_boolean(self) -> bool:
         """Parses the lexical value of this literal into a bool. The lexical value of this literal should be in the
-        lexical space of the boolean datatype ("http://www.w3.org/2001/XMLSchema#"boolean).
+        lexical space of the boolean datatype ("http://www.w3.org/2001/XMLSchema#boolean").
 
         Returns:
             A bool value that is represented by this literal.
@@ -1519,7 +1523,7 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
 
     def parse_double(self) -> float:
         """Parses the lexical value of this literal into a double. The lexical value of this literal should be in the
-        lexical space of the double datatype ("http://www.w3.org/2001/XMLSchema#"double).
+        lexical space of the double datatype ("http://www.w3.org/2001/XMLSchema#double").
 
         Returns:
             A double value that is represented by this literal.
@@ -1532,10 +1536,23 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
 
     def parse_integer(self) -> int:
         """Parses the lexical value of this literal into an integer. The lexical value of this literal should be in the
-        lexical space of the integer datatype ("http://www.w3.org/2001/XMLSchema#"integer).
+        lexical space of the integer datatype ("http://www.w3.org/2001/XMLSchema#integer").
 
         Returns:
             An integer value that is represented by this literal.
+        """
+        raise ValueError
+
+    def is_duration(self) -> bool:
+        """Whether this literal is typed as duration"""
+        return False
+
+    def parse_duration(self) -> Timedelta:
+        """Parses the lexical value of this literal into a Timedelta. The lexical value of this literal should be in the
+        lexical space of the duration datatype ("http://www.w3.org/2001/XMLSchema#duration").
+
+        Returns:
+            A Timedelta value that is represented by this literal.
         """
         raise ValueError
 
@@ -1667,6 +1684,45 @@ class _OWLLiteralImplBoolean(OWLLiteral):
     def get_datatype(self) -> OWLDatatype:
         # documented in parent
         return BooleanOWLDatatype
+
+
+@total_ordering
+class _OWLLiteralImplDuration(OWLLiteral):
+    __slots__ = '_v'
+
+    _v: Timedelta
+
+    def __init__(self, value):
+        assert isinstance(value, Timedelta)
+        self._v = value
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._v == other._v
+        return NotImplemented
+
+    def __lt__(self, other):
+        if type(other) is type(self):
+            return self._v < other._v
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self._v)
+
+    def __repr__(self):
+        return f'OWLLiteral({self._v})'
+
+    def is_duration(self) -> bool:
+        return True
+
+    def parse_duration(self) -> Timedelta:
+        # documented in parent
+        return self._v
+
+    # noinspection PyMethodMayBeStatic
+    def get_datatype(self) -> OWLDatatype:
+        # documented in parent
+        return DurationOWLDatatype
 
 
 class OWLQuantifiedDataRestriction(OWLQuantifiedRestriction[OWLDataRange],
@@ -2296,4 +2352,5 @@ OWLBottomDataProperty: Final = OWLDataProperty(OWLRDFVocabulary.OWL_BOTTOM_DATA_
 DoubleOWLDatatype: Final = OWLDatatype(XSDVocabulary.DOUBLE)  #: An object representing a double datatype.
 IntegerOWLDatatype: Final = OWLDatatype(XSDVocabulary.INTEGER)  #: An object representing an integer datatype.
 BooleanOWLDatatype: Final = OWLDatatype(XSDVocabulary.BOOLEAN)  #: An object representing the boolean datatype.
+DurationOWLDatatype: Final = OWLDatatype(XSDVocabulary.DURATION)  #: An object representing the duration datatype.
 TopDatatype: Final = OWLDatatype(OWLRDFVocabulary.RDFS_LITERAL)  #: The OWL Datatype corresponding to the top data type
