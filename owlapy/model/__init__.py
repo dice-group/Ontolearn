@@ -9,8 +9,6 @@ many help texts copied from OWL API
 from abc import ABCMeta, abstractmethod
 from functools import total_ordering
 from typing import Generic, Iterable, Sequence, TypeVar, Union, Final, Optional, Protocol, ClassVar, List
-from pandas import Timedelta
-from owlready2 import declare_datatype
 
 from owlapy.vocab import OWLRDFVocabulary, XSDVocabulary, OWLFacet
 from owlapy._utils import MOVE
@@ -2299,15 +2297,3 @@ DoubleOWLDatatype: Final = OWLDatatype(XSDVocabulary.DOUBLE)  #: An object repre
 IntegerOWLDatatype: Final = OWLDatatype(XSDVocabulary.INTEGER)  #: An object representing an integer datatype.
 BooleanOWLDatatype: Final = OWLDatatype(XSDVocabulary.BOOLEAN)  #: An object representing the boolean datatype.
 TopDatatype: Final = OWLDatatype(OWLRDFVocabulary.RDFS_LITERAL)  #: The OWL Datatype corresponding to the top data type
-
-
-def _parse_duration_datatype(literal: str):
-    return Timedelta(literal)
-
-
-def _unparse_duration_datatype(literal: Timedelta):
-    return literal.isoformat()
-
-
-declare_datatype(Timedelta, "http://www.w3.org/2001/XMLSchema#duration",
-                 _parse_duration_datatype, _unparse_duration_datatype)
