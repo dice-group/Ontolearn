@@ -1,8 +1,9 @@
 from typing import Union
+from datetime import datetime
 from owlapy.model import OWLDatatypeRestriction, OWLFacet, OWLFacetRestriction
 from pandas import Timedelta
 
-Restriction_Literals = Union[float, Timedelta]
+Restriction_Literals = Union[float, Timedelta, datetime]
 
 
 def OWLDatatypeMaxExclusiveRestriction(max_: Restriction_Literals) -> OWLDatatypeRestriction:
