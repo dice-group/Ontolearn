@@ -10,7 +10,6 @@ class LinearPressureFitness(AbstractFitness):
     name: Final = 'Linear_Pressure_Fitness'
 
     def __init__(self, gain: float = 2048.0, penalty: float = 1.0):
-        super().__init__()
         self.gain = gain
         self.penalty = penalty
 

@@ -37,7 +37,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
     pset: gp.PrimitiveSetTyped
     toolbox: base.Toolbox
     _learning_problem: EncodedPosNegLPStandard
-    _result_population: 'List[creator.Individual]'
+    _result_population: List['creator.Individual']
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
@@ -141,7 +141,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         toolbox.decorate("mutate", gp.staticLimit(key=operator.attrgetter("height"),
                                                   max_value=self.height_limit))
 
-        toolbox.register("print", self.print_top_n_individuals)
+        toolbox.register("get_top_hypotheses", self._get_top_hypotheses)
         toolbox.register("terminate_on_goal", lambda: self.terminate_on_goal)
         toolbox.register("max_runtime", lambda: self.max_runtime)
         toolbox.register("pset", lambda: self.pset)
@@ -150,8 +150,9 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
     def register_op(self, alias: str, function: Callable, *args, **kargs):
         self.toolbox.register(alias, function, *args, **kargs)
-        self.toolbox.decorate(alias, gp.staticLimit(key=operator.attrgetter("height"),
-                                                    max_value=self.height_limit))
+        if alias == 'mate' or alias == 'mutate':
+            self.toolbox.decorate(alias, gp.staticLimit(key=operator.attrgetter("height"),
+                                                        max_value=self.height_limit))
 
     def fit(self, *args, **kwargs):
         """
@@ -164,12 +165,12 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         verbose = kwargs.pop("verbose", 0)
 
         self.start_time = time.time()
-        self._result_population = self.toolbox.population(n=self.population_size)
-        self._goal_found = self.algorithm.evolve(self.toolbox,
-                                                 self._result_population,
-                                                 self.num_generations,
-                                                 self.start_time,
-                                                 verbose=verbose)
+        population = self.toolbox.population(n=self.population_size)
+        self._goal_found, self._result_population = self.algorithm.evolve(self.toolbox,
+                                                                          population,
+                                                                          self.num_generations,
+                                                                          self.start_time,
+                                                                          verbose=verbose)
 
         return self.terminate()
 
@@ -177,7 +178,10 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         assert self._result_population is not None
         assert len(self._result_population) > 0
 
-        best_inds = tools.selBest(self._result_population, k=n, fit_attr=key)
+        yield from self._get_top_hypotheses(self._result_population, n, key)
+
+    def _get_top_hypotheses(self, population, n: int = 5, key: str = 'fitness'):
+        best_inds = tools.selBest(population, k=n, fit_attr=key)
         best_concepts = [gp.compile(ind, self.pset) for ind in best_inds]
 
         for con, ind in zip(best_concepts, best_inds):
@@ -191,9 +195,6 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         quality = self.quality_func.score(instances, self._learning_problem)
         individual.quality.values = (quality[1],)
         self.fitness_func.apply(individual)
-
-    def print_top_n_individuals(self, top_n=5, key='fitness'):
-        [print(node) for node in self.best_hypotheses(n=top_n, key=key)]
 
     def clean(self):
         self._result_population = None
