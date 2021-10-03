@@ -4,7 +4,7 @@ import random
 from owlapy.model import OWLNamedIndividual, IRI
 
 from ontolearn import KnowledgeBase
-from ontolearn.evo_learner import EvoLearner
+from ontolearn.concept_learner import EvoLearner
 from ontolearn.utils import setup_logging
 
 random.seed(1)

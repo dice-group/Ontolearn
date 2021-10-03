@@ -3,7 +3,7 @@ import os
 import random
 
 from ontolearn import KnowledgeBase
-from ontolearn.evo_learner import EvoLearner
+from ontolearn.concept_learner import EvoLearner
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import Accuracy
 from ontolearn.fitness_functions import LinearPressureFitness
