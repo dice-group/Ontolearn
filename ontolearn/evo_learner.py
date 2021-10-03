@@ -1,18 +1,19 @@
 from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
-from ontolearn.ea_initialization import AbstractEAInitialization, EARandomInitialization
+from ontolearn.ea_initialization import AbstractEAInitialization, EARandomInitialization, EARandomWalkInitialization
+from ontolearn.ea_utils import OperatorVocabulary, PrimitiveFactory
 from ontolearn.search import EvoLearnerNode
 from ontolearn.fitness_functions import LinearPressureFitness
 from ontolearn.metrics import Accuracy
 from ontolearn.learning_problem import EncodedPosNegLPStandard, PosNegLPStandard
 from ontolearn.base_concept_learner import BaseConceptLearner
 from ontolearn.abstracts import AbstractFitness, AbstractScorer
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Set
 from ontolearn.knowledge_base import KnowledgeBase
 import operator
 
 from deap import base, creator, tools, gp
 
-from owlapy.model import OWLClassExpression, OWLObjectPropertyExpression
+from owlapy.model import OWLClass, OWLClassExpression, OWLNamedIndividual
 import time
 
 
@@ -37,7 +38,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
     pset: gp.PrimitiveSetTyped
     toolbox: base.Toolbox
     _learning_problem: EncodedPosNegLPStandard
-    _result_population: List['creator.Individual']
+    _result_population: Optional[List['creator.Individual']]
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
@@ -77,12 +78,11 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         self.__setup()
 
     def __setup(self):
-
         if self.fitness_func is None:
             self.fitness_func = LinearPressureFitness()
 
         if self.init_method is None:
-            self.init_method = EARandomInitialization()
+            self.init_method = EARandomWalkInitialization()
 
         if self.algorithm is None:
             self.algorithm = EASimple()
@@ -94,7 +94,6 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         self.toolbox = self.__build_toolbox()
 
     def __build_primitive_set(self) -> gp.PrimitiveSetTyped:
-
         ontology = self.kb.ontology()
         factory = PrimitiveFactory(self.kb)
         union = factory.create_union()
@@ -102,20 +101,22 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
         pset = gp.PrimitiveSetTyped("concept_tree", [], OWLClassExpression)
         pset.addPrimitive(self.kb.negation, [OWLClassExpression], OWLClassExpression,
-                          name='negation')
+                          name=OperatorVocabulary.NEGATION)
         pset.addPrimitive(union, [OWLClassExpression, OWLClassExpression], OWLClassExpression,
-                          name="union")
+                          name=OperatorVocabulary.UNION)
         pset.addPrimitive(intersection, [OWLClassExpression, OWLClassExpression], OWLClassExpression,
-                          name="intersection")
+                          name=OperatorVocabulary.INTERSECTION)
 
         for property_ in ontology.object_properties_in_signature():
             name = property_.get_iri().get_remainder()
             existential, universal = factory.create_existential_universal(property_)
-            pset.addPrimitive(existential, [OWLClassExpression], OWLClassExpression, name="exists" + name)
-            pset.addPrimitive(universal, [OWLClassExpression], OWLClassExpression, name="forall" + name)
+            pset.addPrimitive(existential, [OWLClassExpression], OWLClassExpression,
+                              name=OperatorVocabulary.EXISTENTIAL + name)
+            pset.addPrimitive(universal, [OWLClassExpression], OWLClassExpression,
+                              name=OperatorVocabulary.UNIVERSAL + name)
 
         for class_ in ontology.classes_in_signature():
-            pset.addTerminal(class_, OWLClassExpression, name=class_.get_iri().get_remainder())
+            pset.addTerminal(class_, OWLClass, name=class_.get_iri().get_remainder())
 
         return pset
 
@@ -125,15 +126,13 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         creator.create("Individual", gp.PrimitiveTree, fitness=creator.Fitness, quality=creator.Quality)
 
         toolbox = base.Toolbox()
-        toolbox.register("create_tree", self.init_method.get_individual, pset=self.pset)
-        toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.create_tree)
-        toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+        toolbox.register("population", self.init_method.get_population, creator.Individual, self.pset)
         toolbox.register("compile", gp.compile, pset=self.pset)
 
         toolbox.register("apply_fitness", self._fitness_func)
         toolbox.register("select", tools.selTournament, tournsize=self.tournament_size)
         toolbox.register("mate", gp.cxOnePoint)
-        toolbox.register("create_tree_mut", self.mut_uniform_gen.get_individual)
+        toolbox.register("create_tree_mut", self.mut_uniform_gen.get_expression)
         toolbox.register("mutate", gp.mutUniform, expr=toolbox.create_tree_mut, pset=self.pset)
 
         toolbox.decorate("mate", gp.staticLimit(key=operator.attrgetter("height"),
@@ -165,7 +164,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         verbose = kwargs.pop("verbose", 0)
 
         self.start_time = time.time()
-        population = self.toolbox.population(n=self.population_size)
+        population = self._initialize(learning_problem.pos)
         self._goal_found, self._result_population = self.algorithm.evolve(self.toolbox,
                                                                           population,
                                                                           self.num_generations,
@@ -173,6 +172,14 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                                                                           verbose=verbose)
 
         return self.terminate()
+
+    def _initialize(self, pos: Set[OWLNamedIndividual]):
+        population = None
+        if isinstance(self.init_method, EARandomWalkInitialization):
+            population = self.toolbox.population(population_size=self.population_size, pos=list(pos), kb=self.kb)
+        else:
+            population = self.toolbox.population(population_size=self.population_size)
+        return population
 
     def best_hypotheses(self, n=5, key='fitness'):
         assert self._result_population is not None
@@ -199,35 +206,3 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
     def clean(self):
         self._result_population = None
         super().clean()
-
-
-class PrimitiveFactory:
-
-    __slots__ = 'knowledge_base'
-
-    def __init__(self, knowledge_base: KnowledgeBase):
-        self.knowledge_base = knowledge_base
-
-    def create_union(self):
-
-        def union(A: OWLClassExpression, B: OWLClassExpression) -> OWLClassExpression:
-            return self.knowledge_base.union([A, B])
-
-        return union
-
-    def create_intersection(self):
-
-        def intersection(A: OWLClassExpression, B: OWLClassExpression) -> OWLClassExpression:
-            return self.knowledge_base.intersection([A, B])
-
-        return intersection
-
-    def create_existential_universal(self, property_: OWLObjectPropertyExpression):
-
-        def existential_restriction(filler: OWLClassExpression) -> OWLClassExpression:
-            return self.knowledge_base.existential_restriction(filler, property_)
-
-        def universal_restriction(filler: OWLClassExpression) -> OWLClassExpression:
-            return self.knowledge_base.universal_restriction(filler, property_)
-
-        return existential_restriction, universal_restriction
