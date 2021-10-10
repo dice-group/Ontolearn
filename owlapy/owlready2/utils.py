@@ -106,6 +106,11 @@ class ToOwlready2:
         return prop.min(ce.get_cardinality(), self.map_concept(ce.get_filler()))
 
     @map_concept.register
+    def _(self, ce: OWLObjectHasValue) -> owlready2.class_construct.Restriction:
+        prop = self._to_owlready2_property(ce.get_property())
+        return prop.value(self._world[ce.get_filler().get_iri().as_str()])
+
+    @map_concept.register
     def _(self, ce: OWLDataSomeValuesFrom) -> owlready2.class_construct.Restriction:
         prop = self._to_owlready2_property(ce.get_property())
         return prop.some(self._map_datarange(ce.get_filler()))

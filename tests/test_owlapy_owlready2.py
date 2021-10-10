@@ -9,7 +9,7 @@ from owlapy.model import OWLObjectProperty, OWLNamedIndividual, OWLThing, OWLCla
     OWLDataComplementOf, OWLDataHasValue, OWLDataIntersectionOf, OWLDataProperty, OWLDataSomeValuesFrom, \
     OWLDataUnionOf, OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLDataOneOf, \
     OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataMinCardinality, OWLObjectExactCardinality, \
-    OWLObjectMaxCardinality, OWLObjectMinCardinality
+    OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectHasValue
 
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
@@ -135,6 +135,10 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         owlready_ce = onto._onto.hasChild.exactly(3, owlready2.owl.Thing)
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
+        ce = OWLObjectHasValue(has_child, OWLNamedIndividual(IRI.create(NS, 'markus')))
+        owlready_ce = onto._onto.hasChild.value(onto._onto.markus)
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
     def test_mapping_data_properties(self):
         NS = "http://dl-learner.org/mutagenesis#"
         mgr = OWLOntologyManager_Owlready2()
@@ -203,7 +207,6 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
 
         from_owlready = owlapy.owlready2.utils.FromOwlready2()
 
-        import owlready2
         ce = male | female
         owl_ce = OWLObjectUnionOf((OWLClass(IRI.create(NS, 'male')), OWLClass(IRI.create(NS, 'female'))))
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
@@ -230,6 +233,10 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
 
         ce = onto._onto.hasChild.exactly(3, owlready2.owl.Thing)
         owl_ce = OWLObjectExactCardinality(3, OWLObjectProperty(IRI(NS, 'hasChild')), OWLThing)
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = has_child.value(onto._onto.markus)
+        owl_ce = OWLObjectHasValue(OWLObjectProperty(IRI(NS, 'hasChild')), OWLNamedIndividual(IRI.create(NS, 'markus')))
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
     def test_mapping_rev_data_properties(self):
