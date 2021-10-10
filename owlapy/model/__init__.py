@@ -1548,6 +1548,9 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
         # documented in parent
         return self
 
+    def to_python(self) -> Union[bool, float, int]:
+        return self._v
+
     @abstractmethod
     def get_datatype(self) -> OWLDatatype:
         """Gets the OWLDatatype which types this literal.
