@@ -7,7 +7,9 @@ import owlapy.owlready2.utils
 from owlapy.model import OWLObjectProperty, OWLNamedIndividual, OWLThing, OWLClass, OWLObjectUnionOf, \
     OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectComplementOf, IRI, OWLDataAllValuesFrom, \
     OWLDataComplementOf, OWLDataHasValue, OWLDataIntersectionOf, OWLDataProperty, OWLDataSomeValuesFrom, \
-    OWLDataUnionOf, OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLDataOneOf
+    OWLDataUnionOf, OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLDataOneOf, \
+    OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataMinCardinality, OWLObjectExactCardinality, \
+    OWLObjectMaxCardinality, OWLObjectMinCardinality
 
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
@@ -121,6 +123,18 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         owlready_ce = owlready2.Not(onto._onto.male)
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
+        ce = OWLObjectMinCardinality(2, has_child, male)
+        owlready_ce = onto._onto.hasChild.min(2, onto._onto.male)
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        ce = OWLObjectMaxCardinality(5, has_child, female)
+        owlready_ce = onto._onto.hasChild.max(5, onto._onto.female)
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        ce = OWLObjectExactCardinality(3, has_child, OWLThing)
+        owlready_ce = onto._onto.hasChild.exactly(3, owlready2.owl.Thing)
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
     def test_mapping_data_properties(self):
         NS = "http://dl-learner.org/mutagenesis#"
         mgr = OWLOntologyManager_Owlready2()
@@ -166,6 +180,18 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
             owlready2.And([owlready2.ConstrainedDatatype(float, max_inclusive=1.2), bool]))
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
+        ce = OWLDataMinCardinality(2, act, res)
+        owlready_ce = onto._onto.act.min(2, owlready2.ConstrainedDatatype(float, max_inclusive=1.2))
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        ce = OWLDataMaxCardinality(4, charge, DoubleOWLDatatype)
+        owlready_ce = onto._onto.charge.max(4, float)
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        ce = OWLDataExactCardinality(3, charge, OWLDataComplementOf(IntegerOWLDatatype))
+        owlready_ce = onto._onto.charge.exactly(3, owlready2.Not(int))
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
     def test_mapping_rev(self):
         NS = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
@@ -192,6 +218,18 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
 
         ce = owlready2.Not(male)
         owl_ce = OWLObjectComplementOf(OWLClass(IRI(NS, 'male')))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = onto._onto.hasChild.min(2, onto._onto.male)
+        owl_ce = OWLObjectMinCardinality(2, OWLObjectProperty(IRI(NS, 'hasChild')), OWLClass(IRI(NS, 'male')))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = onto._onto.hasChild.max(5, onto._onto.female)
+        owl_ce = OWLObjectMaxCardinality(5, OWLObjectProperty(IRI(NS, 'hasChild')), OWLClass(IRI(NS, 'female')))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = onto._onto.hasChild.exactly(3, owlready2.owl.Thing)
+        owl_ce = OWLObjectExactCardinality(3, OWLObjectProperty(IRI(NS, 'hasChild')), OWLThing)
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
     def test_mapping_rev_data_properties(self):
@@ -234,6 +272,18 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
 
         ce = onto._onto.act.value(19.5)
         owl_ce = OWLDataHasValue(OWLDataProperty(IRI(NS, 'act')), OWLLiteral(19.5))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = onto._onto.act.min(2, owlready2.ConstrainedDatatype(int, max_inclusive=2))
+        owl_ce = OWLDataMinCardinality(2, OWLDataProperty(IRI(NS, 'act')), res)
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = onto._onto.charge.max(5, int)
+        owl_ce = OWLDataMaxCardinality(5, OWLDataProperty(IRI(NS, 'charge')), IntegerOWLDatatype)
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = onto._onto.charge.exactly(3, owlready2.Not(float))
+        owl_ce = OWLDataExactCardinality(3, OWLDataProperty(IRI(NS, 'charge')), OWLDataComplementOf(DoubleOWLDatatype))
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
 

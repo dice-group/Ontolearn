@@ -91,22 +91,49 @@ class ToOwlready2:
         return prop.only(self.map_concept(ce.get_filler()))
 
     @map_concept.register
+    def _(self, ce: OWLObjectExactCardinality) -> owlready2.class_construct.Restriction:
+        prop = self._to_owlready2_property(ce.get_property())
+        return prop.exactly(ce.get_cardinality(), self.map_concept(ce.get_filler()))
+
+    @map_concept.register
+    def _(self, ce: OWLObjectMaxCardinality) -> owlready2.class_construct.Restriction:
+        prop = self._to_owlready2_property(ce.get_property())
+        return prop.max(ce.get_cardinality(), self.map_concept(ce.get_filler()))
+
+    @map_concept.register
+    def _(self, ce: OWLObjectMinCardinality) -> owlready2.class_construct.Restriction:
+        prop = self._to_owlready2_property(ce.get_property())
+        return prop.min(ce.get_cardinality(), self.map_concept(ce.get_filler()))
+
+    @map_concept.register
     def _(self, ce: OWLDataSomeValuesFrom) -> owlready2.class_construct.Restriction:
         prop = self._to_owlready2_property(ce.get_property())
-        new_filler = self._map_datarange(ce.get_filler())
-        return prop.some(new_filler)
+        return prop.some(self._map_datarange(ce.get_filler()))
 
     @map_concept.register
     def _(self, ce: OWLDataAllValuesFrom) -> owlready2.class_construct.Restriction:
         prop = self._to_owlready2_property(ce.get_property())
-        new_filler = self._map_datarange(ce.get_filler())
-        return prop.only(new_filler)
+        return prop.only(self._map_datarange(ce.get_filler()))
+
+    @map_concept.register
+    def _(self, ce: OWLDataExactCardinality) -> owlready2.class_construct.Restriction:
+        prop = self._to_owlready2_property(ce.get_property())
+        return prop.exactly(ce.get_cardinality(), self._map_datarange(ce.get_filler()))
+
+    @map_concept.register
+    def _(self, ce: OWLDataMaxCardinality) -> owlready2.class_construct.Restriction:
+        prop = self._to_owlready2_property(ce.get_property())
+        return prop.max(ce.get_cardinality(), self._map_datarange(ce.get_filler()))
+
+    @map_concept.register
+    def _(self, ce: OWLDataMinCardinality) -> owlready2.class_construct.Restriction:
+        prop = self._to_owlready2_property(ce.get_property())
+        return prop.min(ce.get_cardinality(), self._map_datarange(ce.get_filler()))
 
     @map_concept.register
     def _(self, ce: OWLDataHasValue) -> owlready2.class_construct.Restriction:
         prop = self._to_owlready2_property(ce.get_property())
-        value = ce.get_filler().to_python()
-        return prop.value(value)
+        return prop.value(ce.get_filler().to_python())
 
     @singledispatchmethod
     def _map_datarange(self, p: OWLDataRange) -> Union[owlready2.ClassConstruct, Type]:
