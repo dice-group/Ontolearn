@@ -1,8 +1,14 @@
 import unittest
+from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
+    OWLDatatypeMinMaxExclusiveRestriction, OWLDatatypeMinMaxInclusiveRestriction
 
+import owlready2
 import owlapy.owlready2.utils
 from owlapy.model import OWLObjectProperty, OWLNamedIndividual, OWLThing, OWLClass, OWLObjectUnionOf, \
-    OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectComplementOf, IRI
+    OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectComplementOf, IRI, OWLDataAllValuesFrom, \
+    OWLDataComplementOf, OWLDataHasValue, OWLDataIntersectionOf, OWLDataProperty, OWLDataSomeValuesFrom, \
+    OWLDataUnionOf, OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLDataOneOf
+
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 
@@ -104,7 +110,6 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
         ce = OWLObjectSomeValuesFrom(has_child, OWLThing)
-        import owlready2
         owlready_ce = onto._onto.hasChild.some(owlready2.owl.Thing)
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
@@ -114,6 +119,51 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
 
         ce = male.get_object_complement_of()
         owlready_ce = owlready2.Not(onto._onto.male)
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+    def test_mapping_data_properties(self):
+        NS = "http://dl-learner.org/mutagenesis#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://KGs/Mutagenesis/mutagenesis.owl"))
+
+        act = OWLDataProperty(IRI(NS, 'act'))
+        charge = OWLDataProperty(IRI(NS, 'charge'))
+
+        to_owlready = owlapy.owlready2.utils.ToOwlready2(world=onto._world)
+
+        # owlready2 defines no equal or hash method for ConstrainedDatatype, just using the __dict__ attribute
+        # should be sufficient for the purpose of these tests
+        def constraint_datatype_eq(self, other):
+            return isinstance(other, owlready2.ConstrainedDatatype) and self.__dict__ == other.__dict__
+        setattr(owlready2.ConstrainedDatatype, '__eq__', constraint_datatype_eq)
+        setattr(owlready2.ConstrainedDatatype, '__hash__', lambda self: hash(frozenset(self.__dict__.items())))
+
+        ce = OWLDataSomeValuesFrom(act, DoubleOWLDatatype)
+        owlready_ce = onto._onto.act.some(float)
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        res = OWLDatatypeMinInclusiveRestriction(20)
+        ce = OWLDataAllValuesFrom(charge, OWLDataComplementOf(res))
+        owlready_ce = onto._onto.charge.only(owlready2.Not(owlready2.ConstrainedDatatype(int, min_inclusive=20)))
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        res_both = OWLDatatypeMinMaxExclusiveRestriction(0.5, 1)
+        ce = OWLDataAllValuesFrom(charge, OWLDataUnionOf([res, res_both]))
+        owlready_ce = onto._onto.charge.only(
+            owlready2.Or([owlready2.ConstrainedDatatype(int, min_inclusive=20),
+                          owlready2.ConstrainedDatatype(float, min_exclusive=0.5, max_exclusive=1.0)]))
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        res = OWLDatatypeMaxInclusiveRestriction(1.2)
+        oneof = OWLDataOneOf([OWLLiteral(2.3), OWLLiteral(5.9), OWLLiteral(7.2)])
+        ce = OWLDataAllValuesFrom(charge, OWLDataIntersectionOf([res, oneof]))
+        owlready_ce = onto._onto.charge.only(owlready2.ConstrainedDatatype(float, max_inclusive=1.2) &
+                                             owlready2.OneOf([2.3, 5.9, 7.2]))
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        ce = OWLDataSomeValuesFrom(charge, OWLDataIntersectionOf([res, BooleanOWLDatatype]))
+        owlready_ce = onto._onto.charge.some(
+            owlready2.And([owlready2.ConstrainedDatatype(float, max_inclusive=1.2), bool]))
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
     def test_mapping_rev(self):
@@ -142,6 +192,48 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
 
         ce = owlready2.Not(male)
         owl_ce = OWLObjectComplementOf(OWLClass(IRI(NS, 'male')))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+    def test_mapping_rev_data_properties(self):
+        NS = "http://dl-learner.org/mutagenesis#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://KGs/Mutagenesis/mutagenesis.owl"))
+
+        act = onto._onto.act
+        charge = onto._onto.charge
+
+        from_owlready = owlapy.owlready2.utils.FromOwlready2()
+
+        ce = act.some(float)
+        owl_ce = OWLDataSomeValuesFrom(OWLDataProperty(IRI(NS, 'act')), DoubleOWLDatatype)
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = charge.only(owlready2.Not(owlready2.ConstrainedDatatype(int, max_inclusive=2)))
+        res = OWLDatatypeMaxInclusiveRestriction(2)
+        owl_ce = OWLDataAllValuesFrom(OWLDataProperty(IRI(NS, 'charge')), OWLDataComplementOf(res))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = charge.some(owlready2.Not(owlready2.ConstrainedDatatype(int, max_inclusive=2)) |
+                         owlready2.ConstrainedDatatype(float, min_inclusive=2.1, max_inclusive=2.2))
+        res = OWLDatatypeMaxInclusiveRestriction(2)
+        res2 = OWLDatatypeMinMaxInclusiveRestriction(2.1, 2.2)
+        owl_ce = OWLDataSomeValuesFrom(OWLDataProperty(IRI(NS, 'charge')),
+                                       OWLDataUnionOf([OWLDataComplementOf(res), res2]))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = act.only(owlready2.Not(owlready2.ConstrainedDatatype(int, max_inclusive=2)) & float)
+        owl_ce = OWLDataAllValuesFrom(OWLDataProperty(IRI(NS, 'act')),
+                                      OWLDataIntersectionOf([OWLDataComplementOf(res), DoubleOWLDatatype]))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = act.some(owlready2.Not(owlready2.OneOf([1, 2, 3])) & int)
+        values = OWLDataOneOf([OWLLiteral(1), OWLLiteral(2), OWLLiteral(3)])
+        owl_ce = OWLDataSomeValuesFrom(OWLDataProperty(IRI(NS, 'act')),
+                                       OWLDataIntersectionOf([OWLDataComplementOf(values), IntegerOWLDatatype]))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = onto._onto.act.value(19.5)
+        owl_ce = OWLDataHasValue(OWLDataProperty(IRI(NS, 'act')), OWLLiteral(19.5))
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
 
