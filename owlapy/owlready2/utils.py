@@ -113,27 +113,27 @@ class ToOwlready2:
     @map_concept.register
     def _(self, ce: OWLDataSomeValuesFrom) -> owlready2.class_construct.Restriction:
         prop = self._to_owlready2_property(ce.get_property())
-        return prop.some(self._map_datarange(ce.get_filler()))
+        return prop.some(self.map_datarange(ce.get_filler()))
 
     @map_concept.register
     def _(self, ce: OWLDataAllValuesFrom) -> owlready2.class_construct.Restriction:
         prop = self._to_owlready2_property(ce.get_property())
-        return prop.only(self._map_datarange(ce.get_filler()))
+        return prop.only(self.map_datarange(ce.get_filler()))
 
     @map_concept.register
     def _(self, ce: OWLDataExactCardinality) -> owlready2.class_construct.Restriction:
         prop = self._to_owlready2_property(ce.get_property())
-        return prop.exactly(ce.get_cardinality(), self._map_datarange(ce.get_filler()))
+        return prop.exactly(ce.get_cardinality(), self.map_datarange(ce.get_filler()))
 
     @map_concept.register
     def _(self, ce: OWLDataMaxCardinality) -> owlready2.class_construct.Restriction:
         prop = self._to_owlready2_property(ce.get_property())
-        return prop.max(ce.get_cardinality(), self._map_datarange(ce.get_filler()))
+        return prop.max(ce.get_cardinality(), self.map_datarange(ce.get_filler()))
 
     @map_concept.register
     def _(self, ce: OWLDataMinCardinality) -> owlready2.class_construct.Restriction:
         prop = self._to_owlready2_property(ce.get_property())
-        return prop.min(ce.get_cardinality(), self._map_datarange(ce.get_filler()))
+        return prop.min(ce.get_cardinality(), self.map_datarange(ce.get_filler()))
 
     @map_concept.register
     def _(self, ce: OWLDataHasValue) -> owlready2.class_construct.Restriction:
@@ -141,26 +141,26 @@ class ToOwlready2:
         return prop.value(ce.get_filler().to_python())
 
     @singledispatchmethod
-    def _map_datarange(self, p: OWLDataRange) -> Union[owlready2.ClassConstruct, Type]:
+    def map_datarange(self, p: OWLDataRange) -> Union[owlready2.ClassConstruct, Type]:
         raise NotImplementedError
 
-    @_map_datarange.register
+    @map_datarange.register
     def _(self, p: OWLDataComplementOf) -> owlready2.class_construct.Not:
-        return owlready2.Not(self._map_datarange(p.get_data_range()))
+        return owlready2.Not(self.map_datarange(p.get_data_range()))
 
-    @_map_datarange.register
+    @map_datarange.register
     def _(self, p: OWLDataUnionOf) -> owlready2.class_construct.Or:
-        return owlready2.Or(map(self._map_datarange, p.operands()))
+        return owlready2.Or(map(self.map_datarange, p.operands()))
 
-    @_map_datarange.register
+    @map_datarange.register
     def _(self, p: OWLDataIntersectionOf) -> owlready2.class_construct.And:
-        return owlready2.And(map(self._map_datarange, p.operands()))
+        return owlready2.And(map(self.map_datarange, p.operands()))
 
-    @_map_datarange.register
+    @map_datarange.register
     def _(self, p: OWLDataOneOf) -> owlready2.class_construct.OneOf:
         return owlready2.OneOf([lit.to_python() for lit in p.operands()])
 
-    @_map_datarange.register
+    @map_datarange.register
     def _(self, p: OWLDatatypeRestriction) -> owlready2.class_construct.ConstrainedDatatype:
         args = dict()
         for facet_res in p.get_facet_restrictions():
@@ -170,9 +170,9 @@ class ToOwlready2:
             if facet.owlready2_key not in args or op(value, args[facet.owlready2_key]):
                 args[facet.owlready2_key] = value
 
-        return owlready2.ConstrainedDatatype(self._map_datarange(p.get_datatype()), **args)
+        return owlready2.ConstrainedDatatype(self.map_datarange(p.get_datatype()), **args)
 
-    @_map_datarange.register
+    @map_datarange.register
     def _(self, type_: OWLDatatype) -> type:
         if type_ == BooleanOWLDatatype:
             return bool
@@ -261,7 +261,7 @@ class FromOwlready2:
         if c.type == owlready2.VALUE:
             return OWLDataHasValue(p, OWLLiteral(c.value))
         else:
-            f = self._map_datarange(c.value)
+            f = self.map_datarange(c.value)
             if c.type == owlready2.SOME:
                 return OWLDataSomeValuesFrom(p, f)
             elif c.type == owlready2.ONLY:
@@ -276,26 +276,26 @@ class FromOwlready2:
                 raise NotImplementedError
 
     @singledispatchmethod
-    def _map_datarange(self, p: owlready2.ClassConstruct) -> OWLDataRange:
+    def map_datarange(self, p: owlready2.ClassConstruct) -> OWLDataRange:
         raise NotImplementedError
 
-    @_map_datarange.register
+    @map_datarange.register
     def _(self, p: owlready2.Not) -> OWLDataComplementOf:
-        return OWLDataComplementOf(self._map_datarange(p.Class))
+        return OWLDataComplementOf(self.map_datarange(p.Class))
 
-    @_map_datarange.register
+    @map_datarange.register
     def _(self, p: owlready2.Or) -> OWLDataUnionOf:
-        return OWLDataUnionOf(map(self._map_datarange, p.Classes))
+        return OWLDataUnionOf(map(self.map_datarange, p.Classes))
 
-    @_map_datarange.register
+    @map_datarange.register
     def _(self, p: owlready2.And) -> OWLDataIntersectionOf:
-        return OWLDataIntersectionOf(map(self._map_datarange, p.Classes))
+        return OWLDataIntersectionOf(map(self.map_datarange, p.Classes))
 
-    @_map_datarange.register
+    @map_datarange.register
     def _(self, p: owlready2.OneOf) -> OWLDataOneOf:
         return OWLDataOneOf([OWLLiteral(i) for i in p.instances])
 
-    @_map_datarange.register
+    @map_datarange.register
     def _(self, p: owlready2.ConstrainedDatatype) -> OWLDatatypeRestriction:
         restrictions = []
         for f in [OWLFacet.MIN_EXCLUSIVE, OWLFacet.MIN_INCLUSIVE, OWLFacet.MAX_EXCLUSIVE, OWLFacet.MAX_INCLUSIVE]:
@@ -303,9 +303,9 @@ class FromOwlready2:
             if value is not None:
                 restrictions.append(OWLFacetRestriction(f, OWLLiteral(value)))
 
-        return OWLDatatypeRestriction(self._map_datarange(p.base_datatype), restrictions)
+        return OWLDatatypeRestriction(self.map_datarange(p.base_datatype), restrictions)
 
-    @_map_datarange.register
+    @map_datarange.register
     def _(self, type_: type) -> OWLDatatype:
         if type_ == bool:
             return BooleanOWLDatatype
