@@ -298,10 +298,10 @@ class FromOwlready2:
     @map_datarange.register
     def _(self, p: owlready2.ConstrainedDatatype) -> OWLDatatypeRestriction:
         restrictions = []
-        for f in [OWLFacet.MIN_EXCLUSIVE, OWLFacet.MIN_INCLUSIVE, OWLFacet.MAX_EXCLUSIVE, OWLFacet.MAX_INCLUSIVE]:
-            value = getattr(p, f.owlready2_key, None)
+        for facet in OWLFacet:
+            value = getattr(p, facet.owlready2_key, None)
             if value is not None:
-                restrictions.append(OWLFacetRestriction(f, OWLLiteral(value)))
+                restrictions.append(OWLFacetRestriction(facet, OWLLiteral(value)))
 
         return OWLDatatypeRestriction(self.map_datarange(p.base_datatype), restrictions)
 
