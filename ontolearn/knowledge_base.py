@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Iterable, Optional, Callable, overload, Union
+from typing import Dict, Iterable, Optional, Callable, overload, Union, Set, AbstractSet
 
 from .abstracts import AbstractKnowledgeBase
 from .concept_generator import ConceptGenerator
@@ -7,8 +7,11 @@ from .core.owl.utils import OWLClassExpressionLengthMetric
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLNamedIndividual, \
     OWLObjectProperty, OWLClass, OWLDataProperty, IRI
 from owlapy.render import DLSyntaxObjectRenderer
-from owlapy.util import NamedFixedSet, popcount, iter_count, LRUCache, \
+from owlapy.util import NamedFixedSet, popcount, iter_count, _Default_NamedFixedSet, NamedFixedSet_FrozenSet, LRUCache, \
     BitSet
+
+from owlapy.fast_instance_checker import _Enc_T, _Con_T
+
 
 Factory = Callable
 
@@ -59,8 +62,8 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
     _length_metric: OWLClassExpressionLengthMetric
 
-    _ind_enc: NamedFixedSet[OWLNamedIndividual]
-    _ind_cache: LRUCache[OWLClassExpression, int]  # class expression => individuals
+    _ind_enc: NamedFixedSet[_Enc_T, _Con_T, OWLNamedIndividual]
+    _ind_cache: LRUCache[OWLClassExpression, _Enc_T]  # class expression => individuals
 
     path: str
     use_individuals_cache: bool
@@ -144,7 +147,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         if isinstance(self._reasoner, OWLReasoner_FastInstanceChecker):
             self._ind_enc = self._reasoner._ind_enc  # performance hack
         else:
-            self._ind_enc = NamedFixedSet(OWLNamedIndividual, individuals)
+            self._ind_enc = _Default_NamedFixedSet(OWLNamedIndividual, individuals)
 
         self.use_individuals_cache = individuals_cache_size > 0
         if self.use_individuals_cache:
@@ -270,7 +273,8 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
     def _maybe_cache_individuals_count(self, ce: OWLClassExpression) -> int:
         if self.use_individuals_cache:
             self._cache_individuals(ce)
-            return popcount(self._ind_cache[ce])
+            r = self._ind_cache[ce]
+            return self._ind_enc.len(r)
         else:
             return iter_count(self._reasoner.instances(ce))
 
@@ -312,17 +316,19 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         if isinstance(arg, OWLClassExpression):
             if self.use_individuals_cache:
                 self._cache_individuals(arg)
-                return BitSet(self._ind_cache[arg])
+                r = self._ind_cache[arg]
+                return self._ind_enc.as_set(r)
             else:
                 return self.individuals_set(self.individuals(arg))
         else:
             if self._ind_enc:
-                return BitSet(self._ind_enc(arg))
+                r = self._ind_enc(arg)
+                return self._ind_enc.as_set(r)
             else:
                 return frozenset(arg)
 
     def all_individuals_set(self):
         if self._ind_enc:
-            return BitSet((1 << len(self._ind_enc)) - 1)
+            return self._ind_enc.all_items_as_set()
         else:
             return frozenset(self._ontology.individuals_in_signature())

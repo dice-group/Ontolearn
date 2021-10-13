@@ -5,7 +5,7 @@ from typing import Dict, Iterable, Tuple, overload, TypeVar, Generic, Type, cast
 
 from owlapy.model import OWLClass, OWLReasoner, OWLObjectProperty, OWLDataProperty, OWLTopObjectProperty, \
     OWLBottomObjectProperty, OWLTopDataProperty, OWLBottomDataProperty, OWLThing, OWLNothing, HasIRI
-from owlapy.util import NamedFixedSet, iter_bits
+from owlapy.util import NamedFixedSet, iter_bits, NamedFixedSet_BitSet
 
 _S = TypeVar('_S', bound=HasIRI)  #:
 _U = TypeVar('_U', bound='AbstractHierarchy')  #:
@@ -22,7 +22,7 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
                 '_leaf_set', '_root_set', \
         # '_eq_set'
 
-    _ent_enc: NamedFixedSet[_S]
+    _ent_enc: NamedFixedSet_BitSet[_S]
     _parents_map: Dict[int, int]  # Entity => parent entities
     _parents_map_trans: Dict[int, int]  # Entity => parent entities
     _children_map: Dict[int, int]  # Entity => child entities
@@ -107,7 +107,7 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
         # self._eq_set = dict()
 
         ent_to_sub_entities = dict(hierarchy_down)
-        enc = self._ent_enc = NamedFixedSet(self._Type, ent_to_sub_entities.keys())
+        enc = self._ent_enc = NamedFixedSet_BitSet(self._Type, ent_to_sub_entities.keys())
 
         for ent, sub_it in ent_to_sub_entities.items():
             ent_enc = enc(ent)

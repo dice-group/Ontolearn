@@ -1,5 +1,7 @@
+from abc import abstractmethod
 from functools import singledispatchmethod, total_ordering
-from typing import Iterable, overload, TypeVar, Generic, Type, Tuple, Dict, List, cast, Optional
+from typing import Iterable, overload, TypeVar, Generic, Type, Tuple, Dict, List, cast, Optional, AbstractSet, ClassVar, \
+    Final, FrozenSet
 
 from owlapy.model import OWLObject, HasIndex, HasIRI, OWLClassExpression, OWLClass, OWLObjectIntersectionOf, \
     OWLObjectUnionOf, OWLObjectComplementOf, OWLNothing, OWLThing, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
@@ -12,6 +14,8 @@ from owlapy.model import OWLObject, HasIndex, HasIRI, OWLClassExpression, OWLCla
 _HasIRI = TypeVar('_HasIRI', bound=HasIRI)  #:
 _HasIndex = TypeVar('_HasIndex', bound=HasIndex)  #:
 _O = TypeVar('_O')  #:
+_Enc = TypeVar('_Enc')
+_Con = TypeVar('_Con')
 _K = TypeVar('_K')
 _V = TypeVar('_V')
 
@@ -484,10 +488,100 @@ class IRIFixedSet:
         return item in self._idx_iri
 
 
-class NamedFixedSet(Generic[_HasIRI]):
+class NamedFixedSet(Generic[_Enc, _Con, _HasIRI]):
+    """Fixed set of objects that implement HasIRI
+    """
+    __slots__ = ()
+
+    _Encoding_Type: ClassVar[Type[_Enc]]
+    _Construction_Type: ClassVar[Type[_Con]]
+
+    _Type: Type[_HasIRI]
+
+    @abstractmethod
+    def __init__(self, factory: Type[_HasIRI], member_set: Iterable[_HasIRI]):
+        """Create fixed set of same-class objects
+
+        Args:
+            factory: Type class to reconstruct an object
+            member_set: members of the fixed set
+        """
+        pass
+
+    @abstractmethod
+    def __call__(self, arg, *, ignore_missing=False):
+        """Encode or decode an object
+
+        Args:
+            arg: object or iterable of objects to encode
+            ignore_missing: if missing(unrepresentable) objects should be silently ignored
+                always True on decoding
+
+        Returns:
+            encoded or decoded representation of object(s)
+        """
+        pass
+
+    @abstractmethod
+    def items(self) -> Iterable[Tuple[_Enc, _HasIRI]]:
+        """Return key-value pairs of Encoding => _HasIRI"""
+        pass
+
+    @abstractmethod
+    def __len__(self) -> int:
+        """The number of members in the underlying set"""
+        pass
+
+    @abstractmethod
+    def __contains__(self, item: _HasIRI) -> bool:
+        pass
+
+    @abstractmethod
+    def len(self, encoded: _Enc) -> int:
+        """The item count of an encoded value"""
+        pass
+
+    @abstractmethod
+    def as_set(self, encoded: _Enc):
+        """Returns a set-like representation of the encoding"""
+        pass
+
+    def all_items_as_set(self):
+        return self.as_set(self.all_items())
+
+    @abstractmethod
+    def all_items(self) -> _Enc:
+        """Returns the encoding representing all members of the underlying set"""
+        pass
+
+    @abstractmethod
+    def for_construction(self) -> _Con:
+        """Returns an object suitable for update operations with encoded representations"""
+        pass
+
+    @abstractmethod
+    def from_construction(self, construction_encoded: _Con) -> _Enc:
+        """Create an encoded representation from a construction encoding"""
+        pass
+
+    @abstractmethod
+    def empty(self) -> _Enc:
+        """The empty encoding"""
+        pass
+
+    @abstractmethod
+    def difference(self, enc_set_a: _Enc, enc_set_b: _Enc) -> _Enc:
+        """Return the difference of two encoded representations"""
+        pass
+
+
+class NamedFixedSet_BitSet(NamedFixedSet[int, int, _HasIRI], Generic[_HasIRI]):
     """Fixed set of objects that implement HasIRI
     """
     __slots__ = '_iri_set', '_Type'
+
+    _Encoding_Type: Final[Type] = int
+    _Construction_Type: Final[Type] = int
 
     _iri_set: IRIFixedSet
     _Type: Type[_HasIRI]
@@ -526,11 +620,11 @@ class NamedFixedSet(Generic[_HasIRI]):
             encoded or decoded representation of object(s)
         """
         if isinstance(arg, int):
-            return map(self._Type, self._iri_set(arg))
+            return map(self._Type, self._iri_set._decode(arg))
         else:
             try:
                 if isinstance(arg, self._Type):
-                    return self._iri_set(arg.get_iri(), ignore_missing=ignore_missing)
+                    return self._iri_set._encode(arg.get_iri(), ignore_missing=ignore_missing)
                 else:
                     return self._iri_set(map(self._Type.get_iri, arg), ignore_missing=ignore_missing)
             except KeyError as ke:
@@ -547,6 +641,115 @@ class NamedFixedSet(Generic[_HasIRI]):
 
     def __contains__(self, item: _HasIRI) -> bool:
         return isinstance(item, self._Type) and item.get_iri() in self._iri_set
+
+    def len(self, encoded: int) -> int:
+        return popcount(encoded)
+
+    def as_set(self, encoded: int) -> BitSet:
+        return BitSet(encoded)
+
+    def all_items(self) -> int:
+        return (1 << len(self._iri_set)) - 1
+
+    def for_construction(self) -> int:
+        return 0
+
+    def from_construction(self, construction_encoded: int) -> int:
+        return construction_encoded
+
+    def empty(self) -> int:
+        return 0
+
+    def difference(self, enc_set_a: int, enc_set_b: int) -> int:
+        return enc_set_a & ~enc_set_b
+
+
+class NamedFixedSet_FrozenSet(NamedFixedSet[AbstractSet, set, _HasIRI], Generic[_HasIRI]):
+    """Fixed set of objects that implement HasIRI
+    """
+    __slots__ = '_member_set', '_Type'
+
+    _Encoding_Type: Final[Type] = frozenset
+    _Construction_Type: Final[Type] = set
+
+    _Type: Type[_HasIRI]
+    _member_set: FrozenSet[_HasIRI]
+
+    def __init__(self, factory: Type[_HasIRI], member_set: Iterable[_HasIRI]):
+        """Create fixed set of same-class objects
+
+        Args:
+            factory: Type class to reconstruct an object
+            member_set: members of the fixed set
+        """
+        self._Type = factory
+        self._member_set = frozenset(member_set)
+
+    @overload
+    def __call__(self, arg: Iterable[_HasIRI], *, ignore_missing=False) -> AbstractSet:
+        ...
+
+    @overload
+    def __call__(self, arg: _HasIRI, *, ignore_missing=False) -> AbstractSet:
+        ...
+
+    @overload
+    def __call__(self, arg: AbstractSet, /) -> Iterable[_HasIRI]:
+        ...
+
+    def __call__(self, arg, *, ignore_missing=False):
+        """Encode or decode an object
+
+        Args:
+            arg: object or iterable of objects to encode
+            ignore_missing: if missing(unrepresentable) objects should be silently ignored
+                always True on decoding
+
+        Returns:
+            encoded or decoded representation of object(s)
+        """
+        if isinstance(arg, frozenset):
+            return arg
+        else:
+            if isinstance(arg, self._Type):
+                return frozenset({arg})
+            else:
+                return frozenset(arg)
+
+    def items(self) -> Iterable[Tuple[AbstractSet, _HasIRI]]:
+        """Return key-value pairs of Encoding => _HasIRI"""
+        for m in self._member_set:
+            yield frozenset({m}), m
+
+    def __len__(self) -> int:
+        return len(self._member_set)
+
+    def __contains__(self, item: _HasIRI) -> bool:
+        return item in self._member_set
+
+    def len(self, encoded: AbstractSet) -> int:
+        return len(encoded)
+
+    def as_set(self, encoded: AbstractSet) -> AbstractSet:
+        return encoded
+
+    def all_items(self) -> AbstractSet:
+        return self._member_set
+
+    def for_construction(self) -> set:
+        return set()
+
+    def from_construction(self, construction_encoded: set) -> AbstractSet:
+        return frozenset(construction_encoded)
+
+    def empty(self) -> AbstractSet:
+        return frozenset()
+
+    def difference(self, enc_set_a: frozenset, enc_set_b: AbstractSet) -> AbstractSet:
+        return enc_set_a.difference(enc_set_b)
+
+
+_Default_NamedFixedSet = NamedFixedSet_FrozenSet
 
 
 def popcount(v: int) -> int:
