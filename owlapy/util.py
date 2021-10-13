@@ -318,9 +318,8 @@ class IRIFixedSet:
             return r
 
     def _decode(self, v: int) -> Iterable[IRI]:
-        i: int = 0
-        for i in iter_bits(v):
-            yield self._idx_iri[i.bit_length() - 1]
+        for i in iter_bit_pos(v):
+            yield self._idx_iri[i]
 
     def _encode(self, i: IRI, ignore_missing: bool) -> int:
         if i in self._iri_idx:
@@ -425,6 +424,21 @@ def iter_bits(v: int) -> Iterable[int]:
         b = 1 << v.bit_length() - 1
         yield b
         v -= b
+
+
+def iter_bit_pos(v: int) -> Iterable[int]:
+    """Iterate over individual bit positions in a number
+
+    Args:
+          v: input number
+
+    Returns:
+        current bit index
+    """
+    while v:
+        b = v.bit_length() - 1
+        yield b
+        v -= 1 << b
 
 
 def iter_count(i: Iterable) -> int:
