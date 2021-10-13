@@ -4,11 +4,11 @@ from typing import Dict, Iterable, Optional, Callable, overload, Union
 from .abstracts import AbstractKnowledgeBase
 from .concept_generator import ConceptGenerator
 from .core.owl.utils import OWLClassExpressionLengthMetric
-from .core.utils import BitSet
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLNamedIndividual, \
     OWLObjectProperty, OWLClass, OWLDataProperty, IRI
 from owlapy.render import DLSyntaxObjectRenderer
-from owlapy.util import NamedFixedSet, popcount, iter_count, LRUCache
+from owlapy.util import NamedFixedSet, popcount, iter_count, LRUCache, \
+    BitSet
 
 Factory = Callable
 
