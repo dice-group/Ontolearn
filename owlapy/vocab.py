@@ -1,6 +1,6 @@
 from abc import ABCMeta
 from enum import Enum, EnumMeta
-from typing import Final, Callable
+from typing import Final, Callable, TypeVar
 from operator import lt, le, gt, ge
 
 from owlapy import namespaces
@@ -66,13 +66,16 @@ class XSDVocabulary(_Vocabulary, Enum, metaclass=_meta_Enum):
     DURATION: Final = "duration"  #:
 
 
+_X = TypeVar('_X')
+
+
 class OWLFacet(_Vocabulary, Enum, metaclass=_meta_Enum):
     def __new__(cls, remainder: str, *args):
         obj = object.__new__(cls)
         obj._value_ = f"{namespaces.XSD.prefix}:{remainder}"
         return obj
 
-    def __init__(self, remainder: str, symbolic_form: str, operator: Callable):
+    def __init__(self, remainder: str, symbolic_form: str, operator: Callable[[_X, _X], bool]):
         super().__init__(namespaces.XSD, remainder)
         self._symbolic_form = symbolic_form
         self._operator = operator
