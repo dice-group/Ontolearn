@@ -21,8 +21,11 @@ logger = logging.getLogger(__name__)
 class OWLReasoner_FastInstanceChecker(OWLReasoner):
     """Tries to check instances fast (but maybe incomplete)"""
     __slots__ = '_ontology', '_base_reasoner', \
-                '_ind_enc', '_cls_to_ind', '_obj_prop', '_obj_prop_inv', '_data_prop', '_objectsomevalues_cache', \
-                '_negation_default', '_datasomevalues_cache', '_objectcardinality_cache'
+                '_ind_enc', '_cls_to_ind', \
+                '_objectsomevalues_cache', '_datasomevalues_cache', '_objectcardinality_cache', \
+                '_obj_prop', '_obj_prop_inv', '_data_prop', \
+                '_negation_default', \
+                '__warned'
 
     _ontology: OWLOntology
     _base_reasoner: OWLReasoner
@@ -45,6 +48,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
         self._ontology = ontology
         self._base_reasoner = base_reasoner
         self._negation_default = negation_default
+        self.__warned = 0
         self._init()
 
     def _init(self, osv_cache_size=128):
@@ -93,7 +97,9 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
 
     def instances(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLNamedIndividual]:
         if direct:
-            warning("direct not implemented")
+            if not self.__warned & 2:
+                logger.warning("direct not implemented")
+                self.__warned |= 2
         temp = self._find_instances(ce)
         yield from self._ind_enc(temp)
 
@@ -244,7 +250,9 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
             return all ^ complement_ind_enc
         else:
             # TODO! XXX
-            logger.warning("Object Complement Of not implemented at %s", ce)
+            if not self.__warned & 1:
+                logger.warning("Object Complement Of not implemented at %s", ce)
+                self.__warned |= 1
             return 0
             # if self.complement_as_negation:
             #     ...
