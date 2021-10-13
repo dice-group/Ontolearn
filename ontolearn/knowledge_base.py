@@ -8,8 +8,7 @@ from .core.utils import BitSet
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLNamedIndividual, \
     OWLObjectProperty, OWLClass, OWLDataProperty, IRI
 from owlapy.render import DLSyntaxObjectRenderer
-from owlapy.util import NamedFixedSet, popcount, iter_count
-from .utils import LRUCache
+from owlapy.util import NamedFixedSet, popcount, iter_count, LRUCache
 
 Factory = Callable
 

@@ -6,7 +6,6 @@ from logging import warning
 from types import MappingProxyType
 from typing import Callable, Iterable, Dict, Mapping, Set
 
-from ontolearn.utils import LRUCache
 from owlapy.model import OWLObjectOneOf, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
     OWLObjectProperty, OWLDataProperty, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
     OWLObjectPropertyExpression, OWLObjectComplementOf, OWLObjectAllValuesFrom, IRI, OWLObjectInverseOf, \
@@ -14,8 +13,7 @@ from owlapy.model import OWLObjectOneOf, OWLOntology, OWLNamedIndividual, OWLCla
     OWLDataComplementOf, OWLDataAllValuesFrom, OWLDatatype, OWLDataHasValue, OWLDataOneOf, OWLReasoner, \
     OWLDataIntersectionOf, OWLDataUnionOf, OWLObjectCardinalityRestriction, OWLObjectMinCardinality, \
     OWLObjectMaxCardinality, OWLObjectExactCardinality, OWLObjectHasValue
-from owlapy.util import NamedFixedSet
-
+from owlapy.util import NamedFixedSet, LRUCache
 
 logger = logging.getLogger(__name__)
 
