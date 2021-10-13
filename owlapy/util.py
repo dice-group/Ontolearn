@@ -422,9 +422,9 @@ def iter_bits(v: int) -> Iterable[int]:
         numbers with only one bit set
     """
     while v:
-        b = v & (~v + 1)
+        b = 1 << v.bit_length() - 1
         yield b
-        v ^= b
+        v -= b
 
 
 def iter_count(i: Iterable) -> int:
