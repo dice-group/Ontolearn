@@ -84,14 +84,14 @@ verify_file() {
 }
 
 if [[ "$#" -eq 0 ]]; then
-    echo "syntax: ./verify_big.sh -A|<filename...>"
+    echo "syntax: ./big_gitext/verify_big.sh -A|<filename...>"
     exit 1
 fi
 
 if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
     cat <<EOT
 Usage:
-  ./verify_big.sh -A|<filename...>
+  ./big_gitext/verify_big.sh -A|<filename...>
 
 Description:
   Quickly verify if the given files are stored on an external server
@@ -106,7 +106,7 @@ Arguments:
 
 
 Example:
-  ./verify_big.sh model.pt
+  ./big_gitext/verify_big.sh model.pt
 
 EOT
     exit
