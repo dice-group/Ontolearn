@@ -184,7 +184,7 @@ fi
 if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
     cat <<EOT
 Usage:
-  ./check_big.sh [-s] -A|<filename...>
+  ./big_gitext/check_big.sh [-s] -A|<filename...>
 
 Description:
   Check files that should not be stored in Git directly. Uses .link
@@ -206,8 +206,8 @@ Short summary legend:
   M             differs from .link file
 
 Example:
-  ./check_big.sh -s
-  ./check_big.sh model.pt
+  ./big_gitext/check_big.sh -s
+  ./big_gitext/check_big.sh model.pt
 
 EOT
     exit

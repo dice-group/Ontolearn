@@ -134,14 +134,14 @@ download_file() {
 }
 
 if [[ "$#" -eq 0 ]]; then
-    echo "syntax: ./download_big.sh -A|<filename...>"
+    echo "syntax: ./big_gitext/download_big.sh -A|<filename...>"
     exit 1
 fi
 
 if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
     cat <<EOT
 Usage:
-  ./download_big.sh -A|<filename...>
+  ./big_gitext/download_big.sh -A|<filename...>
 
 Description:
   Download files from an external server that were not stored in Git
@@ -155,7 +155,7 @@ Arguments:
   filename(s)   Download the specified files only
 
 Example:
-  ./download_big.sh model.pt
+  ./big_gitext/download_big.sh model.pt
 
 EOT
     exit

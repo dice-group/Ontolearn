@@ -32,5 +32,5 @@ jobs:
         path: .tox
     - name: Test with tox
       run: |
-        ./download_big.sh KGs/Mutagenesis/mutagenesis.owl
+        ./big_gitext/download_big.sh KGs/Mutagenesis/mutagenesis.owl
         tox -o
