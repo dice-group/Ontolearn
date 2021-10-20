@@ -1,11 +1,10 @@
 import operator
 from abc import ABCMeta, abstractmethod
 from functools import reduce
-from typing import Dict, Iterable, Tuple, overload, TypeVar, Generic, Type, cast, Optional
+from typing import Dict, Iterable, Tuple, overload, TypeVar, Generic, Type, cast, Optional, FrozenSet, Set
 
 from owlapy.model import OWLClass, OWLReasoner, OWLObjectProperty, OWLDataProperty, OWLTopObjectProperty, \
     OWLBottomObjectProperty, OWLTopDataProperty, OWLBottomDataProperty, OWLThing, OWLNothing, HasIRI
-from owlapy.util import NamedFixedSet, iter_bits, NamedFixedSet_BitSet
 
 _S = TypeVar('_S', bound=HasIRI)  #:
 _U = TypeVar('_U', bound='AbstractHierarchy')  #:
@@ -18,18 +17,18 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
         hierarchy_down: a downwards hierarchy given as a mapping of Entities to sub-entities
         reasoner: alternatively, a reasoner whose root_ontology is queried for entities
         """
-    __slots__ = '_Type', '_ent_enc', '_parents_map', '_parents_map_trans', '_children_map', '_children_map_trans', \
+    __slots__ = '_Type', '_ent_set', '_parents_map', '_parents_map_trans', '_children_map', '_children_map_trans', \
                 '_leaf_set', '_root_set', \
         # '_eq_set'
 
-    _ent_enc: NamedFixedSet_BitSet[_S]
-    _parents_map: Dict[int, int]  # Entity => parent entities
-    _parents_map_trans: Dict[int, int]  # Entity => parent entities
-    _children_map: Dict[int, int]  # Entity => child entities
-    _children_map_trans: Dict[int, int]  # Entity => child entities
-    # _eq_set: Dict[int, int]  # Entity => equivalent entities  # TODO
-    _root_set: int  # root entities
-    _leaf_set: int  # leaf entities
+    _ent_set: FrozenSet[_S]
+    _parents_map: Dict[_S, Set[_S]]  # Entity => parent entities
+    _parents_map_trans: Dict[_S, Set[_S]]  # Entity => parent entities
+    _children_map: Dict[_S, Set[_S]]  # Entity => child entities
+    _children_map_trans: Dict[_S, Set[_S]]  # Entity => child entities
+    # _eq_set: Dict[_S, Set[_S]]  # Entity => equivalent entities  # TODO
+    _root_set: Set[_S]  # root entities
+    _leaf_set: Set[_S]  # leaf entities
 
     @overload
     def __init__(self, factory: Type[_S], hierarchy_down: Iterable[Tuple[_S, Iterable[_S]]]):
@@ -107,18 +106,17 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
         # self._eq_set = dict()
 
         ent_to_sub_entities = dict(hierarchy_down)
-        enc = self._ent_enc = NamedFixedSet_BitSet(self._Type, ent_to_sub_entities.keys())
+        self._ent_set = frozenset(ent_to_sub_entities.keys())
 
         for ent, sub_it in ent_to_sub_entities.items():
-            ent_enc = enc(ent)
-            self._children_map_trans[ent_enc] = enc(sub_it)
-            self._parents_map_trans[ent_enc] = 0  # create empty parent entry for all classes
+            self._children_map_trans[ent] = set(sub_it)
+            self._parents_map_trans[ent] = set()  # create empty parent entry for all classes
 
         del ent_to_sub_entities  # exhausted
 
         # calculate transitive children
-        for ent_enc in self._children_map_trans:
-            _children_transitive(self._children_map_trans, ent_enc=ent_enc, seen_set=0)
+        for ent in self._children_map_trans:
+            _children_transitive(self._children_map_trans, ent=ent, seen_set=set())
 
         # TODO handling of eq_sets
         # sccs = list(_strongly_connected_components(self._children_map_trans))
@@ -133,9 +131,9 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
         #     self._parents_map_trans[scc] = 0
 
         # fill transitive parents
-        for ent_enc, sub_entities_enc in self._children_map_trans.items():
-            for sub_enc in iter_bits(sub_entities_enc):
-                self._parents_map_trans[sub_enc] |= ent_enc
+        for ent, sub_entities in self._children_map_trans.items():
+            for sub in sub_entities:
+                self._parents_map_trans[sub] |= {ent}
 
         self._children_map, self._leaf_set = _reduce_transitive(self._children_map_trans, self._parents_map_trans)
         self._parents_map, self._root_set = _reduce_transitive(self._parents_map_trans, self._children_map_trans)
@@ -160,9 +158,9 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
             yield from {}
         else:
             if not direct:
-                yield from self._ent_enc(self._parents_map_trans[self._ent_enc(entity)])
+                yield from self._parents_map_trans[entity]
             else:
-                yield from self._ent_enc(self._parents_map[self._ent_enc(entity)])
+                yield from self._parents_map[entity]
 
     def is_parent_of(self, a: _S, b: _S) -> bool:
         """if A is a parent of B.
@@ -173,7 +171,7 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
             return True
         if a == type(self).get_top_entity():
             return True
-        if self._ent_enc(a) & self._parents_map_trans[self._ent_enc(b)]:
+        if {a} & self._parents_map_trans[b]:
             return True
         return False
 
@@ -186,7 +184,7 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
             return True
         if a == type(self).get_bottom_entity():
             return True
-        if self._ent_enc(a) & self._children_map_trans[self._ent_enc(b)]:
+        if {a} & self._children_map_trans[b]:
             return True
         return False
 
@@ -210,9 +208,9 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
             yield from {}
         else:
             if not direct:
-                yield from self._ent_enc(self._children_map_trans[self._ent_enc(entity)])
+                yield from self._children_map_trans[entity]
             else:
-                yield from self._ent_enc(self._children_map[self._ent_enc(entity)])
+                yield from self._children_map[entity]
 
     def siblings(self, entity: _S) -> Iterable[_S]:
         seen_set = {entity}
@@ -223,26 +221,25 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
                     seen_set.add(sibling)
 
     def items(self) -> Iterable[_S]:
-        for _, i in self._ent_enc.items():
-            yield i
+        yield from self._ent_set
 
     def roots(self, of: Optional[_S] = None) -> Iterable[_S]:
         if of is not None and of != type(self).get_bottom_entity():
-            yield from self._ent_enc(self._root_set & self._parents_map_trans[self._ent_enc(of)])
+            yield from self._root_set & self._parents_map_trans[of]
         else:
-            yield from self._ent_enc(self._root_set)
+            yield from self._root_set
 
     def leaves(self, of: Optional[_S] = None) -> Iterable[_S]:
         if of is not None and of != type(self).get_top_entity():
-            yield from self._ent_enc(self._leaf_set & self._children_map_trans[self._ent_enc(of)])
+            yield from self._leaf_set & self._children_map_trans[of]
         else:
-            yield from self._ent_enc(self._leaf_set)
+            yield from self._leaf_set
 
     def __contains__(self, item: _S) -> bool:
-        return item in self._ent_enc
+        return item in self._ent_set
 
     def __len__(self):
-        return len(self._ent_enc)
+        return len(self._ent_set)
 
 
 class ClassHierarchy(AbstractHierarchy[OWLClass]):
@@ -376,7 +373,7 @@ class DatatypePropertyHierarchy(AbstractHierarchy[OWLDataProperty]):
         super().__init__(OWLDataProperty, arg)
 
 
-def _children_transitive(hier_trans: Dict[int, int], ent_enc: int, seen_set: int):
+def _children_transitive(hier_trans: Dict[_S, Set[_S]], ent: _S, seen_set: Set[_S]):
     """add transitive links to map_trans
 
     Note:
@@ -384,18 +381,18 @@ def _children_transitive(hier_trans: Dict[int, int], ent_enc: int, seen_set: int
 
     Args:
         hier_trans: map to which transitive links are added
-        ent_enc: encoded class in map_trans for which to add transitive sub-classes
+        ent: class in map_trans for which to add transitive sub-classes
 
     """
-    sub_classes_enc = hier_trans[ent_enc]
-    for sub_enc in iter_bits(sub_classes_enc):
-        if not sub_enc & seen_set:
-            _children_transitive(hier_trans, sub_enc, seen_set | ent_enc)
-            seen_set = seen_set | sub_enc | hier_trans[sub_enc]
-            hier_trans[ent_enc] |= hier_trans[sub_enc]
+    sub_classes_ent = frozenset(hier_trans[ent])
+    for sub_ent in sub_classes_ent:
+        if not {sub_ent} & seen_set:
+            _children_transitive(hier_trans, sub_ent, seen_set | {ent})
+            seen_set = seen_set | {sub_ent} | hier_trans[sub_ent]
+            hier_trans[ent] |= hier_trans[sub_ent]
 
 
-def _reduce_transitive(hier: Dict[int, int], hier_inverse: Dict[int, int]) -> Tuple[Dict[int, int], int]:
+def _reduce_transitive(hier: Dict[_S, Set[_S]], hier_inverse: Dict[_S, Set[_S]]) -> Tuple[Dict[_S, Set[_S]], FrozenSet[_S]]:
     """Remove all transitive links
 
     Takes a downward hierarchy and an upward hierarchy with transitive links, and removes all links that can be
@@ -410,20 +407,20 @@ def _reduce_transitive(hier: Dict[int, int], hier_inverse: Dict[int, int]) -> Tu
         set of classes without sub-classes
 
     """
-    result_hier: Dict[int, int] = dict()
-    leaf_set = 0
-    for enc, set_enc in hier.items():
-        direct_set = 0
-        for item_enc in iter_bits(set_enc):
-            if not hier_inverse[item_enc] & (set_enc ^ item_enc):
-                direct_set |= item_enc
-        result_hier[enc] = direct_set
+    result_hier: Dict[_S, Set[_S]] = dict()
+    leaf_set = set()
+    for ent, set_ent in hier.items():
+        direct_set = set()
+        for item_ent in set_ent:
+            if not hier_inverse[item_ent] & (set_ent ^ {item_ent}):
+                direct_set |= {item_ent}
+        result_hier[ent] = direct_set
         if not direct_set:
-            leaf_set |= enc
-    return result_hier, leaf_set
+            leaf_set |= {ent}
+    return result_hier, frozenset(leaf_set)
 
 
-def _strongly_connected_components(graph: Dict[int, int]) -> Iterable[int]:
+def _strongly_connected_components(graph: Dict[_S, Set[_S]]) -> Iterable[FrozenSet[_S]]:
     """Strongly connected component algorithm
 
     Args:
@@ -436,7 +433,7 @@ def _strongly_connected_components(graph: Dict[int, int]) -> Iterable[int]:
     Source: https://github.com/alviano/python/blob/master/rewrite_aggregates/scc.py
     Licence: GPL-3.0
     """
-    identified = 0
+    identified = set()
     stack = []
     index = {}
     boundaries = []
@@ -444,13 +441,13 @@ def _strongly_connected_components(graph: Dict[int, int]) -> Iterable[int]:
     def dfs(v):
         nonlocal identified
         index[v] = len(stack)
-        stack.append(v)
+        stack.append({v})
         boundaries.append(index[v])
 
-        for w in iter_bits(graph[v]):
+        for w in graph[v]:
             if w not in index:
                 yield from dfs(w)
-            elif not w & identified:
+            elif not {w} & identified:
                 while index[w] < boundaries[-1]:
                     boundaries.pop()
 
@@ -459,7 +456,7 @@ def _strongly_connected_components(graph: Dict[int, int]) -> Iterable[int]:
             scc = reduce(operator.or_, stack[index[v]:])
             del stack[index[v]:]
             identified |= scc
-            yield scc
+            yield frozenset(scc)
 
     for v in graph:
         if v not in index:
