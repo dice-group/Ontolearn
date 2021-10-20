@@ -60,7 +60,10 @@ class XSDVocabulary(_Vocabulary, Enum, metaclass=_meta_Enum):
     DOUBLE: Final = "double"  #:
     FLOAT: Final = "float"  #:
     BOOLEAN: Final = "boolean"  #:
+    DATE: Final = "date"  #:
+    DATE_TIME: Final = "dateTime"  #:
     DATE_TIME_STAMP: Final = "dateTimeStamp"  #:
+    DURATION: Final = "duration"  #:
 
 
 class OWLFacet(_Vocabulary, Enum, metaclass=_meta_Enum):
