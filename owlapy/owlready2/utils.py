@@ -5,7 +5,8 @@ import owlready2
 
 from owlapy.model import OWLClassExpression, OWLPropertyExpression, OWLObjectProperty, OWLClass, \
     OWLObjectComplementOf, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
-    OWLObjectPropertyExpression, OWLObject, OWLOntology, OWLAnnotationProperty, IRI, OWLObjectInverseOf
+    OWLObjectPropertyExpression, OWLObject, OWLOntology, OWLAnnotationProperty, IRI, OWLObjectInverseOf, \
+    OWLObjectHasValue, OWLObjectOneOf, OWLNamedIndividual, OWLIndividual
 
 
 class ToOwlready2:
@@ -38,7 +39,7 @@ class ToOwlready2:
     @singledispatchmethod
     def map_concept(self, o: OWLClassExpression) \
             -> Union[owlready2.ClassConstruct, owlready2.ThingClass]:
-        raise NotImplementedError
+        raise NotImplementedError(o)
 
     @singledispatchmethod
     def _to_owlready2_property(self, p: OWLPropertyExpression) -> owlready2.Property:
@@ -52,6 +53,14 @@ class ToOwlready2:
     @_to_owlready2_property.register
     def _(self, p: OWLObjectProperty) -> owlready2.prop.ObjectPropertyClass:
         return self._world[p.get_iri().as_str()]
+
+    @singledispatchmethod
+    def _to_owlready2_individual(self, i: OWLIndividual) -> owlready2.Thing:
+        raise NotImplementedError
+
+    @_to_owlready2_individual.register
+    def _(self, i:OWLNamedIndividual):
+        return self._world[i.get_iri().as_str()]
 
     @map_concept.register
     def _(self, c: OWLClass) -> owlready2.ThingClass:
@@ -78,6 +87,14 @@ class ToOwlready2:
     def _(self, ce: OWLObjectAllValuesFrom) -> owlready2.class_construct.Restriction:
         prop = self._to_owlready2_property(ce.get_property())
         return prop.only(self.map_concept(ce.get_filler()))
+
+    @map_concept.register
+    def _(self, ce: OWLObjectHasValue):
+        return self.map_concept(ce.as_some_values_from())
+
+    @map_concept.register
+    def _(self, ce: OWLObjectOneOf):
+        return owlready2.OneOf(list(map(self._to_owlready2_individual, ce.individuals())))
 
 
 class FromOwlready2:

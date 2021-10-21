@@ -11,7 +11,7 @@ from owlapy import namespaces
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
     OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, \
     OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype, \
-    IRI, OWLObjectInverseOf \
+    IRI, OWLObjectInverseOf, OWLLiteral \
     # OWLObjectSomeValuesFrom, OWLProperty, \
 from owlapy.owlready2.utils import ToOwlready2
 
@@ -237,7 +237,7 @@ class OWLReasoner_Owlready2(OWLReasoner):
         i: owlready2.Thing = self._world[ind.get_iri().as_str()]
         p: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
         for val in p._get_values_for_individual(i):
-            yield val
+            yield OWLLiteral(val)
 
     def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
             -> Iterable[OWLNamedIndividual]:
