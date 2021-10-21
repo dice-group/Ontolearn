@@ -3,7 +3,7 @@ import operator
 from functools import singledispatchmethod, reduce
 from itertools import repeat
 from types import MappingProxyType, FunctionType
-from typing import Callable, Iterable, Dict, Mapping, Set, Type, TypeVar, Union, Optional
+from typing import Callable, Iterable, Dict, Mapping, Set, Type, TypeVar, Union, Optional, FrozenSet
 
 from owlapy.model import OWLObjectOneOf, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
     OWLObjectProperty, OWLDataProperty, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
@@ -12,20 +12,17 @@ from owlapy.model import OWLObjectOneOf, OWLOntology, OWLNamedIndividual, OWLCla
     OWLDataComplementOf, OWLDataAllValuesFrom, OWLDatatype, OWLDataHasValue, OWLDataOneOf, OWLReasoner, \
     OWLDataIntersectionOf, OWLDataUnionOf, OWLObjectCardinalityRestriction, OWLObjectMinCardinality, \
     OWLObjectMaxCardinality, OWLObjectExactCardinality, OWLObjectHasValue, OWLPropertyExpression, OWLFacetRestriction
-from owlapy.util import NamedFixedSet, _Default_NamedFixedSet, NamedFixedSet_FrozenSet, LRUCache, popcount
+from owlapy.util import LRUCache
 
 logger = logging.getLogger(__name__)
 
 _P = TypeVar('_P', bound=OWLPropertyExpression)
 
-_Enc_T = _Default_NamedFixedSet._Encoding_Type
-_Con_T = _Default_NamedFixedSet._Construction_Type
-
 
 class OWLReasoner_FastInstanceChecker(OWLReasoner):
     """Tries to check instances fast (but maybe incomplete)"""
     __slots__ = '_ontology', '_base_reasoner', \
-                '_ind_enc', '_cls_to_ind', \
+                '_ind_set', '_cls_to_ind', \
                 '_has_prop', \
                 '_objectsomevalues_cache', '_datasomevalues_cache', '_objectcardinality_cache', \
                 '_property_cache', \
@@ -35,15 +32,21 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
 
     _ontology: OWLOntology
     _base_reasoner: OWLReasoner
-    _cls_to_ind: Dict[OWLClass, _Enc_T]  # Class => individuals
-    _has_prop: Mapping[Type[_P], LRUCache[_P, _Enc_T]]  # Type => Property => individuals
-    _ind_enc: NamedFixedSet[_Enc_T, _Con_T, OWLNamedIndividual]
-    _objectsomevalues_cache: LRUCache[OWLClassExpression, _Enc_T]  # ObjectSomeValuesFrom => individuals
-    _datasomevalues_cache: LRUCache[OWLClassExpression, _Enc_T]  # DataSomeValuesFrom => individuals
-    _objectcardinality_cache: LRUCache[OWLClassExpression, _Enc_T]  # ObjectCardinalityRestriction => individuals
-    _obj_prop: Dict[OWLObjectProperty, Mapping[_Enc_T, _Enc_T]]  # ObjectProperty => { individual => individuals }
-    _obj_prop_inv: Dict[OWLObjectProperty, Mapping[_Enc_T, _Enc_T]]  # ObjectProperty => { individual => individuals }
-    _data_prop: Dict[OWLDataProperty, Mapping[_Enc_T, Set[OWLLiteral]]]  # DataProperty => { individual => literals }
+    _cls_to_ind: Dict[OWLClass, FrozenSet[OWLNamedIndividual]]  # Class => individuals
+    _has_prop: Mapping[Type[_P], LRUCache[_P, FrozenSet[OWLNamedIndividual]]]  # Type => Property => individuals
+    _ind_set: FrozenSet[OWLNamedIndividual]
+    _objectsomevalues_cache: LRUCache[
+        OWLClassExpression, FrozenSet[OWLNamedIndividual]]  # ObjectSomeValuesFrom => individuals
+    _datasomevalues_cache: LRUCache[
+        OWLClassExpression, FrozenSet[OWLNamedIndividual]]  # DataSomeValuesFrom => individuals
+    _objectcardinality_cache: LRUCache[
+        OWLClassExpression, FrozenSet[OWLNamedIndividual]]  # ObjectCardinalityRestriction => individuals
+    _obj_prop: Dict[OWLObjectProperty, Mapping[
+        OWLNamedIndividual, Set[OWLNamedIndividual]]]  # ObjectProperty => { individual => individuals }
+    _obj_prop_inv: Dict[OWLObjectProperty, Mapping[
+        OWLNamedIndividual, Set[OWLNamedIndividual]]]  # ObjectProperty => { individual => individuals }
+    _data_prop: Dict[
+        OWLDataProperty, Mapping[OWLNamedIndividual, Set[OWLLiteral]]]  # DataProperty => { individual => literals }
     _property_cache: bool
     _negation_default: bool
 
@@ -67,13 +70,8 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
 
     def _init(self, cache_size=128):
         self._cls_to_ind = dict()
-        self._has_prop = MappingProxyType({
-            OWLDataProperty: LRUCache(maxsize=cache_size),
-            OWLObjectProperty: LRUCache(maxsize=cache_size),
-            OWLObjectInverseOf: LRUCache(maxsize=cache_size),
-        })
         individuals = self._ontology.individuals_in_signature()
-        self._ind_enc = _Default_NamedFixedSet(OWLNamedIndividual, individuals)
+        self._ind_set = frozenset(individuals)
         self._objectsomevalues_cache = LRUCache(maxsize=cache_size)
         self._datasomevalues_cache = LRUCache(maxsize=cache_size)
         self._objectcardinality_cache = LRUCache(maxsize=cache_size)
@@ -81,6 +79,12 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
             self._obj_prop = dict()
             self._obj_prop_inv = dict()
             self._data_prop = dict()
+        else:
+            self._has_prop = MappingProxyType({
+                OWLDataProperty: LRUCache(maxsize=cache_size),
+                OWLObjectProperty: LRUCache(maxsize=cache_size),
+                OWLObjectInverseOf: LRUCache(maxsize=cache_size),
+            })
 
     def reset(self):
         """The reset method shall reset any cached state"""
@@ -105,11 +109,10 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
             -> Iterable[OWLNamedIndividual]:
         if self._property_cache:
             self._lazy_cache_obj_prop(pe)
-            ind_enc = self._ind_enc(ind)
             if isinstance(pe, OWLObjectProperty):
-                yield from self._ind_enc(self._obj_prop[pe][ind_enc])
+                yield from self._obj_prop[pe][ind]
             elif isinstance(pe, OWLObjectInverseOf):
-                yield from self._ind_enc(self._obj_prop_inv[pe.get_named_property()][ind_enc])
+                yield from self._obj_prop_inv[pe.get_named_property()][ind]
             else:
                 raise NotImplementedError
         else:
@@ -124,7 +127,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
                 logger.warning("direct not implemented")
                 self.__warned |= 2
         temp = self._find_instances(ce)
-        yield from self._ind_enc(temp)
+        yield from temp
 
     def sub_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
         yield from self._base_reasoner.sub_classes(ce, direct=direct)
@@ -159,7 +162,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
             raise NotImplementedError
 
         # Dict with Individual => Set[Individual]
-        opc: Dict[_Enc_T, _Con_T] = dict()
+        opc: Dict[OWLNamedIndividual, Set[OWLNamedIndividual]] = dict()
 
         # shortcut for owlready2
         from owlapy.owlready2 import OWLOntology_Owlready2
@@ -175,23 +178,23 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
                     s_x = l_x
                     o_x = r_x
                 if isinstance(s_x, owlready2.Thing) and isinstance(o_x, owlready2.Thing):
-                    s_enc = self._ind_enc(OWLNamedIndividual(IRI.create(s_x.iri)))
-                    o_enc = self._ind_enc(OWLNamedIndividual(IRI.create(o_x.iri)))
-                    if s_enc not in opc:
-                        opc[s_enc] = self._ind_enc.for_construction()
-                    opc[s_enc] |= o_enc
+                    s = OWLNamedIndividual(IRI.create(s_x.iri))
+                    o = OWLNamedIndividual(IRI.create(o_x.iri))
+                    if s not in opc:
+                        opc[s] = set()
+                    opc[s] |= {o}
         else:
-            for s_enc, s in self._ind_enc.items():
-                individuals = self._ind_enc(self._base_reasoner.object_property_values(s, pe))
+            for s in self._ind_set:
+                individuals = set(self._base_reasoner.object_property_values(s, pe))
                 if individuals:
-                    opc[s_enc] = individuals
+                    opc[s] = individuals
 
         if inverse:
             self._obj_prop_inv[pe.get_named_property()] = MappingProxyType(opc)
         else:
             self._obj_prop[pe] = MappingProxyType(opc)
 
-    def _some_values_subject_index(self, pe: OWLPropertyExpression) -> _Enc_T:
+    def _some_values_subject_index(self, pe: OWLPropertyExpression) -> FrozenSet[OWLNamedIndividual]:
         if isinstance(pe, OWLDataProperty):
             typ = OWLDataProperty
         elif isinstance(pe, OWLObjectProperty):
@@ -202,7 +205,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
             raise NotImplementedError
 
         if pe not in self._has_prop[typ]:
-            subs_enc = self._ind_enc.for_construction()
+            subs = set()
 
             # shortcut for owlready2
             from owlapy.owlready2 import OWLOntology_Owlready2
@@ -223,28 +226,28 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
                     else:
                         l_x = s_x
                     if isinstance(l_x, owlready2.Thing):
-                        subs_enc |= self._ind_enc(OWLNamedIndividual(IRI.create(l_x.iri)))
+                        subs |= {OWLNamedIndividual(IRI.create(l_x.iri))}
             else:
                 if isinstance(pe, OWLDataProperty):
                     func = self._base_reasoner.data_property_values
                 else:
                     func = self._base_reasoner.object_property_values
 
-                for s_enc, s in self._ind_enc.items():
+                for s in self._ind_set:
                     try:
                         next(iter(func(s, pe)))
-                        subs_enc |= s_enc
+                        subs |= {s}
                     except StopIteration:
                         pass
 
-            self._has_prop[typ][pe] = self._ind_enc.from_construction(subs_enc)
+            self._has_prop[typ][pe] = frozenset(subs)
 
         return self._has_prop[typ][pe]
 
-    def _find_some_values(self, pe: OWLObjectPropertyExpression, filler_inds: _Enc_T,
-                          min_count: int = 1, max_count: Optional[int] = None) -> _Enc_T:
+    def _find_some_values(self, pe: OWLObjectPropertyExpression, filler_inds: Set[OWLNamedIndividual],
+                          min_count: int = 1, max_count: Optional[int] = None) -> FrozenSet[OWLNamedIndividual]:
         """Get all individuals that have one of filler_inds as their object property value"""
-        ret = self._ind_enc.for_construction()
+        ret = set()
 
         if self._property_cache:
             self._lazy_cache_obj_prop(pe)
@@ -257,30 +260,29 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
                 raise ValueError
 
             exists_p = min_count == 1 and max_count is None
-            count_fun = self._ind_enc.len
 
-            for s_enc, o_set_enc in ops.items():
+            for s, o_set in ops.items():
                 if exists_p:
-                    if o_set_enc & filler_inds:
-                        ret |= s_enc
+                    if o_set & filler_inds:
+                        ret |= {s}
                 else:
-                    count = count_fun(o_set_enc & filler_inds)
+                    count = len(o_set & filler_inds)
                     if count >= min_count and (max_count is None or count <= max_count):
-                        ret |= s_enc
+                        ret |= {s}
         else:
-            subs_enc = self._some_values_subject_index(pe)
+            subs = self._some_values_subject_index(pe)
 
-            for s in self._ind_enc(subs_enc):
+            for s in subs:
                 count = 0
                 for o in self._base_reasoner.object_property_values(s, pe):
-                    if self._ind_enc(o) & filler_inds:
+                    if {o} & filler_inds:
                         count = count + 1
                         if max_count is None and count >= min_count:
                             break
                 if count >= min_count and (max_count is None or count <= max_count):
-                    ret |= self._ind_enc(s)
+                    ret |= {s}
 
-        return self._ind_enc.from_construction(ret)
+        return frozenset(ret)
 
     def _lazy_cache_data_prop(self, pe: OWLDataPropertyExpression) -> None:
         """Get all individuals and values involved in this data property and put them in a Dict"""
@@ -288,7 +290,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
         if pe in self._data_prop:
             return
 
-        opc: Dict[_Enc_T, Set[OWLLiteral]] = dict()
+        opc: Dict[OWLNamedIndividual, Set[OWLLiteral]] = dict()
 
         # shortcut for owlready2
         from owlapy.owlready2 import OWLOntology_Owlready2
@@ -299,38 +301,38 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
             for s_x, o_x in p_x.get_relations():
                 if isinstance(s_x, owlready2.Thing):
                     o_literal = OWLLiteral(o_x)
-                    s_enc = self._ind_enc(OWLNamedIndividual(IRI.create(s_x.iri)))
-                    if s_enc not in opc:
-                        opc[s_enc] = set()
-                    opc[s_enc].add(o_literal)
+                    s = OWLNamedIndividual(IRI.create(s_x.iri))
+                    if s not in opc:
+                        opc[s] = set()
+                    opc[s].add(o_literal)
         else:
-            for s_enc, s in self._ind_enc.items():
+            for s in self._ind_set:
                 values = set(self._base_reasoner.data_property_values(s, pe))
                 if len(values) > 0:
-                    opc[s_enc] = values
+                    opc[s] = values
 
         self._data_prop[pe] = MappingProxyType(opc)
 
     # single dispatch is still not implemented in mypy, see https://github.com/python/mypy/issues/2904
     @singledispatchmethod
-    def _find_instances(self, ce: OWLClassExpression) -> _Enc_T:
+    def _find_instances(self, ce: OWLClassExpression) -> FrozenSet[OWLNamedIndividual]:
         raise NotImplementedError(ce)
 
     @_find_instances.register
-    def _(self, c: OWLClass) -> _Enc_T:
+    def _(self, c: OWLClass) -> FrozenSet[OWLNamedIndividual]:
         self._lazy_cache_class(c)
         return self._cls_to_ind[c]
 
     @_find_instances.register
-    def _(self, ce: OWLObjectUnionOf):
+    def _(self, ce: OWLObjectUnionOf) -> FrozenSet[OWLNamedIndividual]:
         return reduce(operator.or_, map(self._find_instances, ce.operands()))
 
     @_find_instances.register
-    def _(self, ce: OWLObjectIntersectionOf):
+    def _(self, ce: OWLObjectIntersectionOf) -> FrozenSet[OWLNamedIndividual]:
         return reduce(operator.and_, map(self._find_instances, ce.operands()))
 
     @_find_instances.register
-    def _(self, ce: OWLObjectSomeValuesFrom):
+    def _(self, ce: OWLObjectSomeValuesFrom) -> FrozenSet[OWLNamedIndividual]:
         if ce in self._objectsomevalues_cache:
             return self._objectsomevalues_cache[ce]
 
@@ -339,32 +341,32 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
         if not self._property_cache and ce.get_filler().is_owl_thing():
             return self._some_values_subject_index(p)
 
-        filler_ind_enc = self._find_instances(ce.get_filler())
+        filler_ind = self._find_instances(ce.get_filler())
 
-        ind_enc = self._find_some_values(p, filler_ind_enc)
+        ind = self._find_some_values(p, filler_ind)
 
-        self._objectsomevalues_cache[ce] = ind_enc
-        return ind_enc
+        self._objectsomevalues_cache[ce] = ind
+        return ind
 
     @_find_instances.register
-    def _(self, ce: OWLObjectComplementOf):
+    def _(self, ce: OWLObjectComplementOf) -> FrozenSet[OWLNamedIndividual]:
         if self._negation_default:
-            all_ = self._ind_enc.all_items()
-            complement_ind_enc = self._find_instances(ce.get_operand())
-            return all_ ^ complement_ind_enc
+            all_ = self._ind_set
+            complement_ind = self._find_instances(ce.get_operand())
+            return all_ ^ complement_ind
         else:
             # TODO! XXX
             if not self.__warned & 1:
                 logger.warning("Object Complement Of not implemented at %s", ce)
                 self.__warned |= 1
-            return self._ind_enc.empty()
+            return frozenset()
             # if self.complement_as_negation:
             #     ...
             # else:
             #     self._lazy_cache_negation
 
     @_find_instances.register
-    def _(self, ce: OWLObjectAllValuesFrom):
+    def _(self, ce: OWLObjectAllValuesFrom) -> FrozenSet[OWLNamedIndividual]:
         return self._find_instances(
             OWLObjectSomeValuesFrom(
                 property=ce.get_property(),
@@ -372,27 +374,27 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
             ).get_object_complement_of())
 
     @_find_instances.register
-    def _(self, ce: OWLObjectOneOf):
-        return self._ind_enc(ce.individuals())
+    def _(self, ce: OWLObjectOneOf) -> FrozenSet[OWLNamedIndividual]:
+        return frozenset(ce.individuals())
 
     @_find_instances.register
-    def _(self, ce: OWLObjectHasValue):
+    def _(self, ce: OWLObjectHasValue) -> FrozenSet[OWLNamedIndividual]:
         return self._find_instances(ce.as_some_values_from())
 
     @_find_instances.register
-    def _(self, ce: OWLObjectMinCardinality):
+    def _(self, ce: OWLObjectMinCardinality) -> FrozenSet[OWLNamedIndividual]:
         return self._get_instances_object_card_restriction(ce, operator.ge)
 
     @_find_instances.register
-    def _(self, ce: OWLObjectMaxCardinality):
-        all_ = self._ind_enc.all_items()
-        min_ind_enc = self._find_instances(OWLObjectMinCardinality(cardinality=ce.get_cardinality() + 1,
-                                                                   property=ce.get_property(),
-                                                                   filler=ce.get_filler()))
-        return all_ ^ min_ind_enc
+    def _(self, ce: OWLObjectMaxCardinality) -> FrozenSet[OWLNamedIndividual]:
+        all_ = self._ind_set
+        min_ind = self._find_instances(OWLObjectMinCardinality(cardinality=ce.get_cardinality() + 1,
+                                                               property=ce.get_property(),
+                                                               filler=ce.get_filler()))
+        return all_ ^ min_ind
 
     @_find_instances.register
-    def _(self, ce: OWLObjectExactCardinality):
+    def _(self, ce: OWLObjectExactCardinality) -> FrozenSet[OWLNamedIndividual]:
         return self._get_instances_object_card_restriction(ce, operator.eq)
 
     def _get_instances_object_card_restriction(self, ce: OWLObjectCardinalityRestriction,
@@ -417,15 +419,15 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
         assert min_count >= 0
         assert max_count is None or max_count >= 0
 
-        filler_ind_enc = self._find_instances(ce.get_filler())
+        filler_ind = self._find_instances(ce.get_filler())
 
-        ind_enc = self._find_some_values(p, filler_ind_enc, min_count=min_count, max_count=max_count)
+        ind = self._find_some_values(p, filler_ind, min_count=min_count, max_count=max_count)
 
-        self._objectcardinality_cache[ce] = ind_enc
-        return ind_enc
+        self._objectcardinality_cache[ce] = ind
+        return ind
 
     @_find_instances.register
-    def _(self, ce: OWLDataSomeValuesFrom):
+    def _(self, ce: OWLDataSomeValuesFrom) -> FrozenSet[OWLNamedIndividual]:
         if ce in self._datasomevalues_cache:
             return self._datasomevalues_cache[ce]
 
@@ -434,7 +436,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
         assert isinstance(pe, OWLDataProperty)
         #
 
-        ind_enc = self._ind_enc.for_construction()
+        ind = set()
 
         property_cache = self._property_cache
 
@@ -442,47 +444,47 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
             self._lazy_cache_data_prop(pe)
             dps = self._data_prop[pe]
         else:
-            subs_enc = self._some_values_subject_index(pe)
+            subs = self._some_values_subject_index(pe)
 
         if isinstance(filler, OWLDatatype):
             if property_cache:
                 # TODO: Currently we just assume that the values are of the given type (also
                 # done in DLLearner)
                 for s in dps.keys():
-                    ind_enc |= s
+                    ind |= {s}
             else:
-                for s in self._ind_enc(subs_enc):
-                    for l in self._base_reasoner.data_property_values(s, pe):
-                        if l.get_datatype() == filler:
-                            ind_enc |= self._ind_enc(s)
+                for s in subs:
+                    for lit in self._base_reasoner.data_property_values(s, pe):
+                        if lit.get_datatype() == filler:
+                            ind |= {s}
                             break
         elif isinstance(filler, OWLDataOneOf):
             values = set(filler.values())
             if property_cache:
-                for s_enc, literals in dps.items():
+                for s, literals in dps.items():
                     if literals & values:
-                        ind_enc |= s_enc
+                        ind |= {s}
             else:
-                for s in self._ind_enc(subs_enc):
-                    for l in self._base_reasoner.data_property_values(s, pe):
-                        if l in values:
-                            ind_enc |= self._ind_enc(s)
+                for s in subs:
+                    for lit in self._base_reasoner.data_property_values(s, pe):
+                        if lit in values:
+                            ind |= {s}
                             break
         elif isinstance(filler, OWLDataComplementOf):
-            temp_enc = self._find_instances(
+            temp = self._find_instances(
                 OWLDataSomeValuesFrom(property=pe, filler=filler.get_data_range()))
             if property_cache:
-                subs_enc = self._ind_enc.for_construction()
+                subs = set()
                 for s in dps.keys():
-                    subs_enc |= s
+                    subs |= {s}
 
-            ind_enc = self._ind_enc.difference(subs_enc, temp_enc)
+            ind = subs.difference(temp)
         elif isinstance(filler, OWLDataUnionOf):
             operands = [OWLDataSomeValuesFrom(pe, op) for op in filler.operands()]
-            ind_enc = reduce(operator.or_, map(self._find_instances, operands))
+            ind = reduce(operator.or_, map(self._find_instances, operands))
         elif isinstance(filler, OWLDataIntersectionOf):
             operands = [OWLDataSomeValuesFrom(pe, op) for op in filler.operands()]
-            ind_enc = reduce(operator.and_, map(self._find_instances, operands))
+            ind = reduce(operator.and_, map(self._find_instances, operands))
         elif isinstance(filler, OWLDatatypeRestriction):
             def res_to_callable(res: OWLFacetRestriction):
                 op = res.get_facet().operator
@@ -502,26 +504,26 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
                        all(map(apply, facet_restrictions, repeat(lit)))
 
             if property_cache:
-                for s_enc, literals in dps.items():
-                    for l in literals:
-                        if include(l):
-                            ind_enc |= s_enc
+                for s, literals in dps.items():
+                    for lit in literals:
+                        if include(lit):
+                            ind |= {s}
                             break
             else:
-                for s in self._ind_enc(subs_enc):
-                    for l in self._base_reasoner.data_property_values(s, pe):
-                        if include(l):
-                            ind_enc |= self._ind_enc(s)
+                for s in subs:
+                    for lit in self._base_reasoner.data_property_values(s, pe):
+                        if include(lit):
+                            ind |= {s}
                             break
         else:
             raise ValueError
 
-        r = self._ind_enc.from_construction(ind_enc)
+        r = frozenset(ind)
         self._datasomevalues_cache[ce] = r
         return r
 
     @_find_instances.register
-    def _(self, ce: OWLDataAllValuesFrom):
+    def _(self, ce: OWLDataAllValuesFrom) -> FrozenSet[OWLNamedIndividual]:
         filler = ce.get_filler()
         if isinstance(filler, OWLDataComplementOf):
             filler = filler.get_data_range()
@@ -534,11 +536,11 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
             ).get_object_complement_of())
 
     @_find_instances.register
-    def _(self, ce: OWLDataHasValue):
+    def _(self, ce: OWLDataHasValue) -> FrozenSet[OWLNamedIndividual]:
         return self._find_instances(ce.as_some_values_from())
 
     def _lazy_cache_class(self, c: OWLClass) -> None:
         if c in self._cls_to_ind:
             return
         temp = self._base_reasoner.instances(c)
-        self._cls_to_ind[c] = self._ind_enc(temp)
+        self._cls_to_ind[c] = frozenset(temp)
