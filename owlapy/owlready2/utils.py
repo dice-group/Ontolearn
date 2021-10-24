@@ -1,16 +1,16 @@
 from functools import singledispatchmethod
-from typing import Type, Union
+from typing import Union
 
 import owlready2
 
-from owlapy.model import OWLDataOneOf, OWLObjectMinCardinality, OWLPropertyExpression, OWLObjectProperty, OWLClass, \
+from owlapy.model import OWLDataOneOf, OWLObjectMinCardinality, OWLObjectOneOf, OWLPropertyExpression, \
     OWLObjectComplementOf, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectPropertyExpression, OWLObject, OWLOntology, OWLAnnotationProperty, IRI, OWLObjectInverseOf, \
     DoubleOWLDatatype, IntegerOWLDatatype, OWLClassExpression, OWLDataAllValuesFrom, OWLDataComplementOf, \
     OWLDataIntersectionOf, OWLDataProperty, OWLDataRange, OWLDataSomeValuesFrom, OWLDataUnionOf, OWLDatatype, \
     BooleanOWLDatatype, OWLDataHasValue, OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataMinCardinality, \
     OWLDataPropertyExpression, OWLDatatypeRestriction, OWLFacetRestriction, OWLLiteral, OWLObjectHasValue, \
-    OWLNamedIndividual, OWLObjectExactCardinality, OWLObjectMaxCardinality \
+    OWLNamedIndividual, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectProperty, OWLClass
 
 from owlapy.vocab import OWLFacet
 
@@ -91,6 +91,10 @@ class ToOwlready2:
         return prop.only(self.map_concept(ce.get_filler()))
 
     @map_concept.register
+    def _(self, ce: OWLObjectOneOf) -> owlready2.class_construct.OneOf:
+        return owlready2.OneOf([self._world[ind.get_iri().as_str()] for ind in ce.individuals()])
+
+    @map_concept.register
     def _(self, ce: OWLObjectExactCardinality) -> owlready2.class_construct.Restriction:
         prop = self._to_owlready2_property(ce.get_property())
         return prop.exactly(ce.get_cardinality(), self.map_concept(ce.get_filler()))
@@ -141,7 +145,7 @@ class ToOwlready2:
         return prop.value(ce.get_filler().to_python())
 
     @singledispatchmethod
-    def map_datarange(self, p: OWLDataRange) -> Union[owlready2.ClassConstruct, Type]:
+    def map_datarange(self, p: OWLDataRange) -> Union[owlready2.ClassConstruct, type]:
         raise NotImplementedError
 
     @map_datarange.register
@@ -162,15 +166,12 @@ class ToOwlready2:
 
     @map_datarange.register
     def _(self, p: OWLDatatypeRestriction) -> owlready2.class_construct.ConstrainedDatatype:
-        args = dict()
+        facet_args = dict()
         for facet_res in p.get_facet_restrictions():
             facet = facet_res.get_facet()
-            op = facet.operator
             value = facet_res.get_facet_value().to_python()
-            if facet.owlready2_key not in args or op(value, args[facet.owlready2_key]):
-                args[facet.owlready2_key] = value
-
-        return owlready2.ConstrainedDatatype(self.map_datarange(p.get_datatype()), **args)
+            facet_args[facet.owlready2_key] = value
+        return owlready2.ConstrainedDatatype(self.map_datarange(p.get_datatype()), **facet_args)
 
     @map_datarange.register
     def _(self, type_: OWLDatatype) -> type:
@@ -222,6 +223,10 @@ class FromOwlready2:
     @map_concept.register
     def _(self, c: owlready2.Or) -> OWLObjectUnionOf:
         return OWLObjectUnionOf(map(self.map_concept, c.Classes))
+
+    @map_concept.register
+    def _(self, c: owlready2.OneOf) -> OWLObjectOneOf:
+        return OWLObjectOneOf([OWLNamedIndividual(IRI.create(ind.iri)) for ind in c.instances])
 
     @map_concept.register
     def _(self, c: owlready2.Restriction) -> OWLPropertyExpression:

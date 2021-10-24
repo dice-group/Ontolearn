@@ -9,7 +9,8 @@ from owlapy.model import OWLObjectProperty, OWLNamedIndividual, OWLThing, OWLCla
     OWLDataComplementOf, OWLDataHasValue, OWLDataIntersectionOf, OWLDataProperty, OWLDataSomeValuesFrom, \
     OWLDataUnionOf, OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLDataOneOf, \
     OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataMinCardinality, OWLObjectExactCardinality, \
-    OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectHasValue
+    OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectHasValue, OWLObjectAllValuesFrom, \
+    OWLObjectOneOf
 
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
@@ -115,12 +116,17 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         owlready_ce = onto._onto.hasChild.some(owlready2.owl.Thing)
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
-        ce = OWLObjectSomeValuesFrom(has_child, male)
-        owlready_ce = onto._onto.hasChild.some(onto._onto.male)
+        ce = OWLObjectAllValuesFrom(has_child, male)
+        owlready_ce = onto._onto.hasChild.only(onto._onto.male)
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
         ce = male.get_object_complement_of()
         owlready_ce = owlready2.Not(onto._onto.male)
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        ce = OWLObjectOneOf([OWLNamedIndividual(IRI.create(NS, 'martin')),
+                             OWLNamedIndividual(IRI.create(NS, 'michelle'))])
+        owlready_ce = owlready2.OneOf([onto._onto.martin, onto._onto.michelle])
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
         ce = OWLObjectMinCardinality(2, has_child, male)
@@ -211,16 +217,25 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         owl_ce = OWLObjectUnionOf((OWLClass(IRI.create(NS, 'male')), OWLClass(IRI.create(NS, 'female'))))
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
+        ce = male & female
+        owl_ce = OWLObjectIntersectionOf((OWLClass(IRI.create(NS, 'male')), OWLClass(IRI.create(NS, 'female'))))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
         ce = has_child.some(owlready2.owl.Thing)
         owl_ce = OWLObjectSomeValuesFrom(OWLObjectProperty(IRI(NS, 'hasChild')), OWLThing)
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
-        ce = has_child.some(male)
-        owl_ce = OWLObjectSomeValuesFrom(OWLObjectProperty(IRI(NS, 'hasChild')), OWLClass(IRI.create(NS, 'male')))
+        ce = has_child.only(male)
+        owl_ce = OWLObjectAllValuesFrom(OWLObjectProperty(IRI(NS, 'hasChild')), OWLClass(IRI.create(NS, 'male')))
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
         ce = owlready2.Not(male)
         owl_ce = OWLObjectComplementOf(OWLClass(IRI(NS, 'male')))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = owlready2.OneOf([onto._onto.markus, onto._onto.anna])
+        owl_ce = OWLObjectOneOf([OWLNamedIndividual(IRI.create(NS, 'markus')),
+                                 OWLNamedIndividual(IRI.create(NS, 'anna'))])
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
         ce = onto._onto.hasChild.min(2, onto._onto.male)
