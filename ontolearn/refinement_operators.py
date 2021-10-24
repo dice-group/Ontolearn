@@ -1,13 +1,13 @@
 import copy
 from itertools import chain, tee
 import random
-from typing import Set, Optional, Iterable, List, Type, Final, Generator
+from typing import Dict, Set, Optional, Iterable, List, Type, Final, Generator
 
 from .abstracts import BaseRefinement
 from .knowledge_base import KnowledgeBase
-from owlapy.model import OWLObjectMinCardinality, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
+from owlapy.model import OWLObjectProperty, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectIntersectionOf, OWLClassExpression, OWLNothing, OWLThing, OWLNaryBooleanClassExpression, \
-    OWLObjectUnionOf, OWLClass, OWLObjectComplementOf, OWLObjectMaxCardinality
+    OWLObjectUnionOf, OWLClass, OWLObjectComplementOf, OWLObjectMaxCardinality, OWLObjectMinCardinality
 from .search import Node, OENode
 
 
@@ -195,7 +195,8 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
     """
      A top down/downward refinement operator refinement operator in ALC.
     """
-    __slots__ = 'max_child_length', 'use_negation', 'use_all_constructor', 'use_inverse', 'use_card_restriction'
+    __slots__ = 'max_child_length', 'use_negation', 'use_all_constructor', 'use_inverse', 'use_card_restriction', \
+                'max_nr_fillers', 'card_limit'
 
     _Node: Final = OENode
 
@@ -204,6 +205,8 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
     use_negation: bool
     use_all_constructor: bool
     use_card_restriction: bool
+    card_limit: int
+    max_nr_fillers: Optional[Dict[OWLObjectProperty, int]]
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
@@ -211,7 +214,8 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
                  use_negation: bool = True,
                  use_all_constructor: bool = True,
                  use_inverse: bool = True,
-                 use_card_restriction: bool = False):
+                 use_card_restriction: bool = True,
+                 card_limit: int = 10):
         # self.topRefinementsCumulative = dict()
         # self.topRefinementsLength = 0
         # self.combos = dict()
@@ -222,7 +226,18 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         self.use_all_constructor = use_all_constructor
         self.use_inverse = use_inverse
         self.use_card_restriction = use_card_restriction
+        self.card_limit = card_limit
         super().__init__(knowledge_base)
+
+        self.__setup()
+
+    def __setup(self):
+        if self.use_card_restriction:
+            # TODO: Calculate card limit like in DL-Learner
+            self.max_nr_fillers = {}
+            for prop in self.kb.ontology().object_properties_in_signature():
+                self.max_nr_fillers[prop] = self.card_limit
+                self.max_nr_fillers[prop.get_inverse_property()] = self.card_limit
 
     def _operands_len(self, _Type: Type[OWLNaryBooleanClassExpression],
                       ops: List[OWLClassExpression]) -> int:
@@ -302,6 +317,13 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
             # yield self.kb.intersection((ce, ce))
             # yield self.kb.union((ce, ce))
+        if self.use_card_restriction and max_length >= 4 and (self.max_child_length >= self.len(ce) + 3):
+            card_res = []
+            for prop in self.kb.most_general_object_properties(domain=ce):
+                max_ = self.max_nr_fillers[prop]
+                if max_ > 1 or (self.use_negation and max_ > 0):
+                    card_res.append(self.kb.max_cardinality_restriction(self.kb.thing, prop, max_-1))
+            iter_container.append(card_res)
 
         # a, b = tee(chain.from_iterable(iter_container))
         refs = []
@@ -373,6 +395,12 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         if self.use_all_constructor:
             yield self.kb.universal_restriction(ce.get_filler(), ce.get_property())
 
+        # rule 3: EXISTS r.D => >= 2 r.D
+        length = self.len(ce)
+        if self.use_card_restriction and length < max_length and \
+                length < self.max_child_length and self.max_nr_fillers[ce.get_property()] > 1:
+            yield self.kb.min_cardinality_restriction(ce.get_filler(), ce.get_property(), 2)
+
     def refine_object_all_values_from(self, ce: OWLObjectAllValuesFrom, max_length: int,
                                       current_domain: Optional[OWLClassExpression] = None):
         """
@@ -397,18 +425,17 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         """
         """
         assert isinstance(ce, OWLObjectMinCardinality)
-        assert isinstance(ce.get_filler(), OWLClassExpression)
         assert ce.get_cardinality() >= 0
 
         # rule 1: >= x r.D =>  >= x r.E
         for i in self.refine(ce.get_filler(), max_length=max_length - 3,
                              current_domain=current_domain):
             if i is not None:
-                yield self.kb.min_cardinality_restriction(ce.get_cardinality(), i, ce.get_property())
+                yield self.kb.min_cardinality_restriction(i, ce.get_property(), ce.get_cardinality())
 
         # rule 2: >= x r.D =>  >= x+1 r.D
         if ce.get_cardinality() < self.max_nr_fillers[ce.get_property()]:
-            yield self.kb.min_cardinality_restriction(ce.get_cardinality() + 1, ce.get_filler(), ce.get_property())
+            yield self.kb.min_cardinality_restriction(ce.get_filler(), ce.get_property(), ce.get_cardinality() + 1)
 
     def refine_object_max_card_restriction(self, ce: OWLObjectMaxCardinality, max_length: int,
                                            current_domain: Optional[OWLClassExpression] = None) \
@@ -416,7 +443,6 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         """
         """
         assert isinstance(ce, OWLObjectMaxCardinality)
-        assert isinstance(ce.get_filler(), OWLClassExpression)
         assert ce.get_cardinality() >= 0
 
         # rule 1: <= x r.D =>  <= x r.E
@@ -424,11 +450,11 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
             for i in self.refine(ce.get_filler(), max_length=max_length - 3,
                                  current_domain=current_domain):
                 if i is not None:
-                    yield self.kb.max_cardinality_restriction(ce.get_cardinality(), i, ce.get_property())
+                    yield self.kb.max_cardinality_restriction(i, ce.get_property(), ce.get_cardinality())
 
         # rule 2: <= x r.D =>  <= x-1 r.D
-        if (self.use_negation and ce.get_cardinality() > 1) or (self.use_negation and ce.get_cardinality() > 2):
-            yield self.kb.max_cardinality_restriction(ce.get_cardinality() - 1, ce.get_filler(), ce.get_property())
+        if ce.get_cardinality() > 2 or (self.use_negation and ce.get_cardinality() > 1):
+            yield self.kb.max_cardinality_restriction(ce.get_filler(), ce.get_property(), ce.get_cardinality() - 1)
 
     def refine_object_union_of(self, ce: OWLObjectUnionOf, max_length: int,
                                current_domain: Optional[OWLClassExpression]):

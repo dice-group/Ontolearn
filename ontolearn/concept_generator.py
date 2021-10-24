@@ -154,47 +154,61 @@ class ConceptGenerator:
             self._op_ranges[prop] = frozenset(self._reasoner.object_property_ranges(prop))
         return self._op_ranges[prop]
 
+    def most_general_object_properties(self, *, domain: OWLClassExpression, inverse: bool = False) \
+            -> Iterable[OWLObjectProperty]:
+        """Find most general object properties that are applicable to a domain
+
+        Args:
+            domain: domain for which to search properties
+
+        Returns:
+            most general object properties for the given domain
+        """
+        assert isinstance(domain, OWLClass)  # for now, only named classes supported
+
+        func = self._object_property_range if inverse else self._object_property_domain
+
+        for prop in self._object_property_hierarchy.most_general_roles():
+            if domain.is_owl_thing() or domain in func(prop):
+                yield prop
+
     def most_general_existential_restrictions(self, *,
                                               domain: OWLClassExpression, filler: Optional[OWLClassExpression] = None) \
             -> Iterable[OWLObjectSomeValuesFrom]:
-        """Find most general restrictions that are applicable to a domain
+        """Find most general existential restrictions that are applicable to a domain
 
         Args:
             domain: domain for which to search properties
             filler: optional filler to put in the restriction (not normally used)
 
         Returns:
-            existential restrictions
+            most general existential restrictions for the given domain
         """
         if filler is None:
             filler = self.thing
-        assert isinstance(domain, OWLClass)  # for now, only named classes supported
         assert isinstance(filler, OWLClassExpression)
 
-        for prop in self._object_property_hierarchy.most_general_roles():
-            if domain.is_owl_thing() or domain in self._object_property_domain(prop):
-                yield OWLObjectSomeValuesFrom(property=prop, filler=filler)
+        for prop in self.most_general_object_properties(domain=domain):
+            yield OWLObjectSomeValuesFrom(property=prop, filler=filler)
 
     def most_general_universal_restrictions(self, *,
                                             domain: OWLClassExpression, filler: Optional[OWLClassExpression] = None) \
             -> Iterable[OWLObjectAllValuesFrom]:
-        """Find most general restrictions that are applicable to a domain
+        """Find most general universal restrictions that are applicable to a domain
 
         Args:
             domain: domain for which to search properties
             filler: optional filler to put in the restriction (not normally used)
 
         Returns:
-            universal restrictions
+            most general universal restrictions for the given domain
         """
         if filler is None:
             filler = self.thing
-        assert isinstance(domain, OWLClass)  # for now, only named classes supported
         assert isinstance(filler, OWLClassExpression)
 
-        for prop in self._object_property_hierarchy.most_general_roles():
-            if domain.is_owl_thing() or domain in self._object_property_domain(prop):
-                yield OWLObjectAllValuesFrom(property=prop, filler=filler)
+        for prop in self.most_general_object_properties(domain=domain):
+            yield OWLObjectAllValuesFrom(property=prop, filler=filler)
 
     def most_general_existential_restrictions_inverse(self, *,
                                                       domain: OWLClassExpression,
@@ -207,38 +221,34 @@ class ConceptGenerator:
             filler: optional filler to put in the restriction (not normally used)
 
         Returns:
-            existential restrictions over inverse property
+            most general existential restrictions over inverse property
         """
         if filler is None:
             filler = self.thing
-        assert isinstance(domain, OWLClass)  # for now, only named classes supported
         assert isinstance(filler, OWLClassExpression)
 
-        for prop in self._object_property_hierarchy.most_general_roles():
-            if domain.is_owl_thing() or domain in self._object_property_range(prop):
-                yield OWLObjectSomeValuesFrom(property=prop.get_inverse_property(), filler=filler)
+        for prop in self.most_general_object_properties(domain=domain, inverse=True):
+            yield OWLObjectSomeValuesFrom(property=prop.get_inverse_property(), filler=filler)
 
     def most_general_universal_restrictions_inverse(self, *,
                                                     domain: OWLClassExpression,
                                                     filler: Optional[OWLClassExpression] = None) \
             -> Iterable[OWLObjectAllValuesFrom]:
-        """Find most general universal inverse restrictions that are applicable to a domain
+        """Find most general inverse universal restrictions that are applicable to a domain
 
         Args:
             domain: domain for which to search properties
             filler: optional filler to put in the restriction (not normally used)
 
         Returns:
-            universal restrictions over inverse property
+            most general universal restrictions over inverse property
         """
         if filler is None:
             filler = self.thing
-        assert isinstance(domain, OWLClass)  # for now, only named classes supported
         assert isinstance(filler, OWLClassExpression)
 
-        for prop in self._object_property_hierarchy.most_general_roles():
-            if domain.is_owl_thing() or domain in self._object_property_range(prop):
-                yield OWLObjectAllValuesFrom(property=prop.get_inverse_property(), filler=filler)
+        for prop in self.most_general_object_properties(domain=domain, inverse=True):
+            yield OWLObjectAllValuesFrom(property=prop.get_inverse_property(), filler=filler)
 
     # noinspection PyMethodMayBeStatic
     def intersection(self, ops: Iterable[OWLClassExpression]) -> OWLObjectIntersectionOf:
