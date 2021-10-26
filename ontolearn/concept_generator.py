@@ -2,17 +2,17 @@ from typing import Iterable, Optional, AbstractSet, Dict, Generator
 
 from ontolearn.core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from ontolearn.utils import parametrized_performance_debugger
-from owlapy.model import OWLObjectHasValue, OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectSomeValuesFrom, \
+from owlapy.model import OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectPropertyExpression, OWLThing, \
     OWLNothing, OWLReasoner, OWLObjectProperty, OWLClass, OWLClassExpression, OWLObjectComplementOf, \
     OWLObjectExactCardinality, OWLDataAllValuesFrom, OWLDataPropertyExpression, OWLDataRange, OWLDataSomeValuesFrom, \
-    OWLDataHasValue, OWLIndividual, OWLLiteral
+    OWLDataHasValue, OWLIndividual, OWLLiteral, OWLDataProperty, OWLObjectHasValue
 
 
 class ConceptGenerator:
     """A class that can generate some sorts of OWL Class Expressions"""
     __slots__ = '_class_hierarchy', '_object_property_hierarchy', '_data_property_hierarchy', '_reasoner', \
-                '_op_domains', '_op_ranges'
+                '_op_domains', '_op_ranges', '_dp_domains'
 
     _class_hierarchy: ClassHierarchy
     _object_property_hierarchy: ObjectPropertyHierarchy
@@ -53,6 +53,7 @@ class ConceptGenerator:
 
         self._op_domains = dict()
         self._op_ranges = dict()
+        self._dp_domains = dict()
 
     def get_leaf_concepts(self, concept: OWLClass):
         """Get leaf classes
@@ -154,12 +155,26 @@ class ConceptGenerator:
             self._op_ranges[prop] = frozenset(self._reasoner.object_property_ranges(prop))
         return self._op_ranges[prop]
 
+    def _data_property_domain(self, prop: OWLObjectProperty):
+        """Get the domain of a property
+
+        Args:
+            prop: data property
+
+        Returns:
+            domain of the property
+        """
+        if prop not in self._dp_domains:
+            self._dp_domains[prop] = frozenset(self._reasoner.data_property_domains(prop))
+        return self._dp_domains[prop]
+
     def most_general_object_properties(self, *, domain: OWLClassExpression, inverse: bool = False) \
             -> Iterable[OWLObjectProperty]:
         """Find most general object properties that are applicable to a domain
 
         Args:
             domain: domain for which to search properties
+            inverse: whether to consider the inverse direction
 
         Returns:
             most general object properties for the given domain
@@ -170,6 +185,21 @@ class ConceptGenerator:
 
         for prop in self._object_property_hierarchy.most_general_roles():
             if domain.is_owl_thing() or domain in func(prop):
+                yield prop
+
+    def most_general_data_properties(self, *, domain: OWLClassExpression) -> Iterable[OWLDataProperty]:
+        """Find most general data properties that are applicable to a domain
+
+        Args:
+            domain: domain for which to search properties
+
+        Returns:
+            most general data properties for the given domain
+        """
+        assert isinstance(domain, OWLClass)  # for now, only named classes supported
+
+        for prop in self._data_property_hierarchy.most_general_roles():
+            if domain.is_owl_thing() or domain in self._data_property_domain(prop):
                 yield prop
 
     def most_general_existential_restrictions(self, *,

@@ -8,7 +8,7 @@ many help texts copied from OWL API
 
 from abc import ABCMeta, abstractmethod
 from functools import total_ordering
-from typing import Generic, Iterable, Sequence, TypeVar, Union, Final, Optional, Protocol, ClassVar, List
+from typing import Generic, Iterable, Sequence, Set, TypeVar, Union, Final, Optional, Protocol, ClassVar, List
 
 from owlapy.vocab import OWLRDFVocabulary, XSDVocabulary, OWLFacet
 from owlapy._utils import MOVE
@@ -1176,6 +1176,20 @@ class OWLReasoner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def data_property_ranges(self, pe: OWLDataProperty, direct: bool = False) -> Iterable['OWLDatatype']:
+        """Gets the data types that are the direct or indirect ranges of this property with respect to the imports
+        closure of the root ontology.
+
+        Args:
+            pe: The property expression whose ranges are to be retrieved.
+            direct: Specifies if the direct ranges should be retrieved (True), or if all ranges should be retrieved
+                (False).
+
+        Returns:
+        """
+        pass
+
+    @abstractmethod
     def object_property_domains(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
         """Gets the named classes that are the direct or indirect domains of this property with respect to the imports
         closure of the root ontology.
@@ -2297,3 +2311,5 @@ DoubleOWLDatatype: Final = OWLDatatype(XSDVocabulary.DOUBLE)  #: An object repre
 IntegerOWLDatatype: Final = OWLDatatype(XSDVocabulary.INTEGER)  #: An object representing an integer datatype.
 BooleanOWLDatatype: Final = OWLDatatype(XSDVocabulary.BOOLEAN)  #: An object representing the boolean datatype.
 TopDatatype: Final = OWLDatatype(OWLRDFVocabulary.RDFS_LITERAL)  #: The OWL Datatype corresponding to the top data type
+
+NUMERIC_DATATYPES: Set[OWLDatatype] = {DoubleOWLDatatype, IntegerOWLDatatype}

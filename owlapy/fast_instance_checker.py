@@ -67,6 +67,9 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
     def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClass]:
         yield from self._base_reasoner.data_property_domains(pe, direct=direct)
 
+    def data_property_ranges(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLDatatype]:
+        yield from self._base_reasoner.data_property_ranges(pe, direct=direct)
+
     def object_property_domains(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
         yield from self._base_reasoner.object_property_domains(pe, direct=direct)
 

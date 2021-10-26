@@ -9,8 +9,7 @@ from owlapy import namespaces
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
     OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, \
     OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype, \
-    IRI, OWLObjectInverseOf \
-    # OWLObjectSomeValuesFrom, OWLProperty, \
+    IRI, OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, OWLDatatype
 from owlapy.owlready2.utils import ToOwlready2
 
 
@@ -187,6 +186,20 @@ class OWLReasoner_Owlready2(OWLReasoner):
         pe_x: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
         for dom in pe_x.domain:
             yield OWLClass(IRI.create(dom.iri))
+
+    def data_property_ranges(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLDatatype]:
+        if direct:
+            warning("direct not implemented")
+        pe_x: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
+        for rng in pe_x.range:
+            if rng == int:
+                yield IntegerOWLDatatype
+            elif rng == float:
+                yield DoubleOWLDatatype
+            elif rng == bool:
+                yield BooleanOWLDatatype
+            else:
+                raise NotImplementedError
 
     def object_property_domains(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
         if direct:

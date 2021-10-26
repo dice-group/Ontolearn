@@ -2,6 +2,7 @@ import copy
 from itertools import chain, tee
 import random
 from typing import Dict, Set, Optional, Iterable, List, Type, Final, Generator
+from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction
 
 from owlapy.vocab import OWLFacet
 
@@ -10,7 +11,8 @@ from .knowledge_base import KnowledgeBase
 from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectIntersectionOf, OWLClassExpression, OWLNothing, OWLThing, OWLNaryBooleanClassExpression, \
     OWLObjectUnionOf, OWLClass, OWLObjectComplementOf, OWLObjectMaxCardinality, OWLObjectMinCardinality, \
-    OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLFacetRestriction, OWLDataPropertyExpression, OWLLiteral
+    OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLFacetRestriction, OWLDataPropertyExpression, OWLLiteral, \
+    NUMERIC_DATATYPES
 from .search import Node, OENode
 
 
@@ -199,7 +201,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
      A top down/downward refinement operator refinement operator in ALC.
     """
     __slots__ = 'max_child_length', 'use_negation', 'use_all_constructor', 'use_inverse', 'use_card_restrictions', \
-                'max_nr_fillers', 'card_limit', 'use_data_properties', 'max_nr_splits'
+                'max_nr_fillers', 'card_limit', 'use_numeric_datatypes', 'max_nr_splits', 'numeric_dp_splits'
 
     _Node: Final = OENode
 
@@ -208,12 +210,12 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
     use_negation: bool
     use_all_constructor: bool
     use_card_restrictions: bool
-    use_data_properties: bool
+    use_numeric_datatypes: bool
     card_limit: int
     max_nr_splits: int
 
     max_nr_fillers: Dict[OWLObjectPropertyExpression, int]
-    dp_splits: Dict[OWLDataPropertyExpression, List[OWLLiteral]]
+    numeric_dp_splits: Dict[OWLDataPropertyExpression, List[OWLLiteral]]
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
@@ -222,7 +224,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
                  use_all_constructor: bool = True,
                  use_inverse: bool = True,
                  use_card_restrictions: bool = True,
-                 use_data_properties: bool = True,
+                 use_numeric_datatypes: bool = True,
                  max_nr_splits: int = 12,
                  card_limit: int = 10):
         # self.topRefinementsCumulative = dict()
@@ -235,7 +237,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         self.use_all_constructor = use_all_constructor
         self.use_inverse = use_inverse
         self.use_card_restrictions = use_card_restrictions
-        self.use_data_properties = use_data_properties
+        self.use_numeric_datatypes = use_numeric_datatypes
         self.card_limit = card_limit
         self.max_nr_splits = max_nr_splits
         super().__init__(knowledge_base)
@@ -251,10 +253,11 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
                 self.max_nr_fillers[prop.get_inverse_property()] = self.card_limit
 
         # TODO: Add ValueSplitter classes to calculate the splits (started on EvoLearner branch)
-        if self.use_data_properties:
-            # TODO: Check datatype
+        if self.use_numeric_datatypes:
+            self.numeric_dp_splits = {}
             for prop in self.kb.ontology().data_properties_in_signature():
-                self.dp_splits[prop] = [0]
+                if set(self.kb.reasoner().data_property_ranges(prop)) & NUMERIC_DATATYPES:
+                    self.numeric_dp_splits[prop] = [OWLLiteral(0)]
 
     def _operands_len(self, _Type: Type[OWLNaryBooleanClassExpression],
                       ops: List[OWLClassExpression]) -> int:
@@ -331,6 +334,19 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
                 if self.use_all_constructor:
                     iter_container.append(self.kb.most_general_universal_restrictions_inverse(domain=ce))
                     # yield from self.kb.most_general_universal_restrictions_inverse(domain=ce)
+            if self.use_numeric_datatypes:
+                numeric_res = []
+                for num_dp in self.kb.most_general_data_properties(domain=ce):
+                    if num_dp in self.numeric_dp_splits:
+                        splits = self.numeric_dp_splits[num_dp]
+                        if len(splits) > 0:
+                            numeric_res.append(self.kb.data_existential_restriction(
+                                filler=OWLDatatypeMinInclusiveRestriction(splits[0]),
+                                property=num_dp))
+                            numeric_res.append(self.kb.data_existential_restriction(
+                                filler=OWLDatatypeMaxInclusiveRestriction(splits[-1]),
+                                property=num_dp))
+                iter_container.append(numeric_res)
 
             # yield self.kb.intersection((ce, ce))
             # yield self.kb.union((ce, ce))
@@ -524,16 +540,11 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
                     #    continue
                     yield intersection
 
-    def refine_data_some_values_from(self, ce: OWLDataSomeValuesFrom, max_length: int,
-                                     current_domain: Optional[OWLClassExpression] = None) \
-            -> Iterable[OWLClassExpression]:
-        """
-        """
+    def refine_data_some_values_from(self, ce: OWLDataSomeValuesFrom) -> Iterable[OWLClassExpression]:
         assert isinstance(ce, OWLDataSomeValuesFrom)
 
         datarange = ce.get_filler()
-        # TODO: Best way to check datatype
-        if isinstance(datarange, OWLDatatypeRestriction):  # and datarange.get_datatype() in restriction_datatypes:
+        if isinstance(datarange, OWLDatatypeRestriction) and datarange.get_datatype() in NUMERIC_DATATYPES:
             new_facet_res: List[OWLFacetRestriction] = []
             splits = self.dp_splits[ce.get_property()]
             for facet_res in datarange.get_facet_restrictions():
@@ -582,7 +593,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         elif isinstance(ce, OWLObjectIntersectionOf):
             yield from self.refine_object_intersection_of(ce, max_length, current_domain)
         elif isinstance(ce, OWLDataSomeValuesFrom):
-            yield from self.refine_data_some_values_from(ce, max_length, current_domain)
+            yield from self.refine_data_some_values_from(ce)
         else:
             raise ValueError
 
