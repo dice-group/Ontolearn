@@ -1937,7 +1937,7 @@ class OWLDataMinCardinality(OWLDataCardinalityRestriction):
         super().__init__(cardinality, property, filler)
 
 
-class OWLDataOneOf(OWLDataRange):
+class OWLDataOneOf(OWLDataRange, HasOperands[OWLLiteral]):
     """Represents DataOneOf in the OWL 2 Specification."""
     type_index: Final = 4003
 

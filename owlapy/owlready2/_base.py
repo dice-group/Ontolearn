@@ -199,7 +199,7 @@ class OWLReasoner_Owlready2(OWLReasoner):
             elif rng == bool:
                 yield BooleanOWLDatatype
             else:
-                raise NotImplementedError
+                pass  # XXX TODO
 
     def object_property_domains(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
         if direct:
