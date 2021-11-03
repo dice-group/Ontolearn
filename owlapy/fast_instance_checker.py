@@ -35,18 +35,18 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
     _cls_to_ind: Dict[OWLClass, FrozenSet[OWLNamedIndividual]]  # Class => individuals
     _has_prop: Mapping[Type[_P], LRUCache[_P, FrozenSet[OWLNamedIndividual]]]  # Type => Property => individuals
     _ind_set: FrozenSet[OWLNamedIndividual]
-    _objectsomevalues_cache: LRUCache[
-        OWLClassExpression, FrozenSet[OWLNamedIndividual]]  # ObjectSomeValuesFrom => individuals
-    _datasomevalues_cache: LRUCache[
-        OWLClassExpression, FrozenSet[OWLNamedIndividual]]  # DataSomeValuesFrom => individuals
-    _objectcardinality_cache: LRUCache[
-        OWLClassExpression, FrozenSet[OWLNamedIndividual]]  # ObjectCardinalityRestriction => individuals
-    _obj_prop: Dict[OWLObjectProperty, Mapping[
-        OWLNamedIndividual, Set[OWLNamedIndividual]]]  # ObjectProperty => { individual => individuals }
-    _obj_prop_inv: Dict[OWLObjectProperty, Mapping[
-        OWLNamedIndividual, Set[OWLNamedIndividual]]]  # ObjectProperty => { individual => individuals }
-    _data_prop: Dict[
-        OWLDataProperty, Mapping[OWLNamedIndividual, Set[OWLLiteral]]]  # DataProperty => { individual => literals }
+    # ObjectSomeValuesFrom => individuals
+    _objectsomevalues_cache: LRUCache[OWLClassExpression, FrozenSet[OWLNamedIndividual]]
+    # DataSomeValuesFrom => individuals
+    _datasomevalues_cache: LRUCache[OWLClassExpression, FrozenSet[OWLNamedIndividual]]
+    # ObjectCardinalityRestriction => individuals
+    _objectcardinality_cache: LRUCache[OWLClassExpression, FrozenSet[OWLNamedIndividual]]
+    # ObjectProperty => { individual => individuals }
+    _obj_prop: Dict[OWLObjectProperty, Mapping[OWLNamedIndividual, Set[OWLNamedIndividual]]]
+    # ObjectProperty => { individual => individuals }
+    _obj_prop_inv: Dict[OWLObjectProperty, Mapping[OWLNamedIndividual, Set[OWLNamedIndividual]]]
+    # DataProperty => { individual => literals }
+    _data_prop: Dict[OWLDataProperty, Mapping[OWLNamedIndividual, Set[OWLLiteral]]]
     _property_cache: bool
     _negation_default: bool
 
@@ -383,7 +383,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
 
     @_find_instances.register
     def _(self, ce: OWLObjectMinCardinality) -> FrozenSet[OWLNamedIndividual]:
-        return self._get_instances_object_card_restriction(ce, operator.ge)
+        return self._get_instances_object_card_restriction(ce)
 
     @_find_instances.register
     def _(self, ce: OWLObjectMaxCardinality) -> FrozenSet[OWLNamedIndividual]:
@@ -395,10 +395,9 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
 
     @_find_instances.register
     def _(self, ce: OWLObjectExactCardinality) -> FrozenSet[OWLNamedIndividual]:
-        return self._get_instances_object_card_restriction(ce, operator.eq)
+        return self._get_instances_object_card_restriction(ce)
 
-    def _get_instances_object_card_restriction(self, ce: OWLObjectCardinalityRestriction,
-                                               operator_: Callable):
+    def _get_instances_object_card_restriction(self, ce: OWLObjectCardinalityRestriction):
         if ce in self._objectcardinality_cache:
             return self._objectcardinality_cache[ce]
 
@@ -436,8 +435,6 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
         assert isinstance(pe, OWLDataProperty)
         #
 
-        ind = set()
-
         property_cache = self._property_cache
 
         if property_cache:
@@ -446,10 +443,11 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
         else:
             subs = self._some_values_subject_index(pe)
 
+        ind = set()
+
         if isinstance(filler, OWLDatatype):
             if property_cache:
-                # TODO: Currently we just assume that the values are of the given type (also
-                # done in DLLearner)
+                # TODO: Currently we just assume that the values are of the given type (also done in DLLearner)
                 for s in dps.keys():
                     ind |= {s}
             else:
@@ -490,8 +488,8 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
                 op = res.get_facet().operator
                 v = res.get_facet_value()
 
-                def inner(lit: OWLLiteral):
-                    return op(lit, v)
+                def inner(lv: OWLLiteral):
+                    return op(lv, v)
 
                 return inner
 
@@ -499,9 +497,9 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
 
             facet_restrictions = tuple(map(res_to_callable, filler.get_facet_restrictions()))
 
-            def include(lit: OWLLiteral):
-                return lit.get_datatype() == filler.get_datatype() and \
-                       all(map(apply, facet_restrictions, repeat(lit)))
+            def include(lv: OWLLiteral):
+                return lv.get_datatype() == filler.get_datatype() and \
+                       all(map(apply, facet_restrictions, repeat(lv)))
 
             if property_cache:
                 for s, literals in dps.items():
