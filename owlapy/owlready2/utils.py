@@ -1,16 +1,20 @@
+from datetime import date, datetime
 from functools import singledispatchmethod
 from typing import Union
 
 import owlready2
+from pandas import Timedelta
 
-from owlapy.model import OWLDataOneOf, OWLIndividual, OWLObjectMinCardinality, OWLObjectOneOf, OWLPropertyExpression, \
+from owlapy.model import OWLObjectMinCardinality, OWLObjectOneOf, OWLObjectRestriction, OWLPropertyExpression, \
     OWLObjectComplementOf, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectPropertyExpression, OWLObject, OWLOntology, OWLAnnotationProperty, IRI, OWLObjectInverseOf, \
     DoubleOWLDatatype, IntegerOWLDatatype, OWLClassExpression, OWLDataAllValuesFrom, OWLDataComplementOf, \
     OWLDataIntersectionOf, OWLDataProperty, OWLDataRange, OWLDataSomeValuesFrom, OWLDataUnionOf, OWLDatatype, \
     BooleanOWLDatatype, OWLDataHasValue, OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataMinCardinality, \
     OWLDataPropertyExpression, OWLDatatypeRestriction, OWLFacetRestriction, OWLLiteral, OWLObjectHasValue, \
-    OWLNamedIndividual, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectProperty, OWLClass
+    OWLNamedIndividual, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectProperty, OWLClass, \
+    DateOWLDatatype, DateTimeOWLDatatype, DurationOWLDatatype, OWLRestriction, OWLDataOneOf, OWLDataRestriction, \
+    OWLIndividual
 
 from owlapy.vocab import OWLFacet
 
@@ -49,7 +53,7 @@ class ToOwlready2:
 
     @singledispatchmethod
     def _to_owlready2_property(self, p: OWLPropertyExpression) -> owlready2.Property:
-        raise NotImplementedError
+        raise NotImplementedError(p)
 
     @_to_owlready2_property.register
     def _(self, p: OWLObjectInverseOf):
@@ -119,7 +123,8 @@ class ToOwlready2:
 
     @map_concept.register
     def _(self, ce: OWLObjectHasValue) -> owlready2.class_construct.Restriction:
-        return self.map_concept(ce.as_some_values_from())
+        prop = self._to_owlready2_property(ce.get_property())
+        return prop.value(self._to_owlready2_individual(ce.get_filler()))
 
     @map_concept.register
     def _(self, ce: OWLDataSomeValuesFrom) -> owlready2.class_construct.Restriction:
@@ -153,7 +158,7 @@ class ToOwlready2:
 
     @singledispatchmethod
     def map_datarange(self, p: OWLDataRange) -> Union[owlready2.ClassConstruct, type]:
-        raise NotImplementedError
+        raise NotImplementedError(p)
 
     @map_datarange.register
     def _(self, p: OWLDataComplementOf) -> owlready2.class_construct.Not:
@@ -188,8 +193,14 @@ class ToOwlready2:
             return float
         elif type_ == IntegerOWLDatatype:
             return int
+        elif type_ == DateOWLDatatype:
+            return date
+        elif type_ == DateTimeOWLDatatype:
+            return datetime
+        elif type_ == DurationOWLDatatype:
+            return Timedelta
         else:
-            raise ValueError
+            raise ValueError(type_)
 
 
 class FromOwlready2:
@@ -197,11 +208,11 @@ class FromOwlready2:
 
     @singledispatchmethod
     def map_concept(self, c: Union[owlready2.ClassConstruct, owlready2.ThingClass]) -> OWLClassExpression:
-        raise NotImplementedError
+        raise NotImplementedError(c)
 
     @singledispatchmethod
     def _from_owlready2_property(self, c: Union[owlready2.PropertyClass, owlready2.Inverse]) -> OWLPropertyExpression:
-        raise NotImplementedError
+        raise NotImplementedError(c)
 
     @_from_owlready2_property.register
     def _(self, p: owlready2.ObjectPropertyClass) -> OWLObjectProperty:
@@ -236,15 +247,15 @@ class FromOwlready2:
         return OWLObjectOneOf([OWLNamedIndividual(IRI.create(ind.iri)) for ind in c.instances])
 
     @map_concept.register
-    def _(self, c: owlready2.Restriction) -> OWLPropertyExpression:
+    def _(self, c: owlready2.Restriction) -> OWLRestriction:
         if isinstance(c.property, owlready2.ObjectPropertyClass):
             return self._to_object_property(c)
         elif isinstance(c.property, owlready2.DataPropertyClass):
             return self._to_data_property(c)
         else:
-            raise NotImplementedError
+            raise NotImplementedError(c)
 
-    def _to_object_property(self, c: owlready2.Restriction) -> OWLObjectPropertyExpression:
+    def _to_object_property(self, c: owlready2.Restriction) -> OWLObjectRestriction:
         p = self._from_owlready2_property(c.property)
         assert isinstance(p, OWLObjectPropertyExpression)
 
@@ -264,9 +275,9 @@ class FromOwlready2:
             elif c.type == owlready2.MAX:
                 return OWLObjectMaxCardinality(c.cardinality, p, f)
             else:
-                raise NotImplementedError
+                raise NotImplementedError(c)
 
-    def _to_data_property(self, c: owlready2.Restriction) -> OWLDataPropertyExpression:
+    def _to_data_property(self, c: owlready2.Restriction) -> OWLDataRestriction:
         p = self._from_owlready2_property(c.property)
         assert isinstance(p, OWLDataPropertyExpression)
 
@@ -285,11 +296,11 @@ class FromOwlready2:
             elif c.type == owlready2.MAX:
                 return OWLDataMaxCardinality(c.cardinality, p, f)
             else:
-                raise NotImplementedError
+                raise NotImplementedError(c)
 
     @singledispatchmethod
     def map_datarange(self, p: owlready2.ClassConstruct) -> OWLDataRange:
-        raise NotImplementedError
+        raise NotImplementedError(p)
 
     @map_datarange.register
     def _(self, p: owlready2.Not) -> OWLDataComplementOf:
@@ -314,7 +325,6 @@ class FromOwlready2:
             value = getattr(p, facet.owlready2_key, None)
             if value is not None:
                 restrictions.append(OWLFacetRestriction(facet, OWLLiteral(value)))
-
         return OWLDatatypeRestriction(self.map_datarange(p.base_datatype), restrictions)
 
     @map_datarange.register
@@ -325,5 +335,11 @@ class FromOwlready2:
             return DoubleOWLDatatype
         elif type_ == int:
             return IntegerOWLDatatype
+        elif type_ == date:
+            return DateOWLDatatype
+        elif type_ == datetime:
+            return DateTimeOWLDatatype
+        elif type_ == Timedelta:
+            return DurationOWLDatatype
         else:
-            raise ValueError
+            raise ValueError(type_)

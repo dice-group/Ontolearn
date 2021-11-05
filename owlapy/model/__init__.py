@@ -1596,7 +1596,7 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
         # documented in parent
         return self
 
-    def to_python(self) -> Union[bool, float, int]:
+    def to_python(self) -> Literals:
         return self._v
 
     @abstractmethod

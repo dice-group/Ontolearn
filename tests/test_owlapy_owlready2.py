@@ -1,4 +1,7 @@
+from datetime import date, datetime
 import unittest
+
+from pandas import Timedelta
 from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
     OWLDatatypeMinMaxExclusiveRestriction, OWLDatatypeMinMaxInclusiveRestriction
 
@@ -10,7 +13,7 @@ from owlapy.model import OWLObjectProperty, OWLNamedIndividual, OWLThing, OWLCla
     OWLDataUnionOf, OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLDataOneOf, \
     OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataMinCardinality, OWLObjectExactCardinality, \
     OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectHasValue, OWLObjectAllValuesFrom, \
-    OWLObjectOneOf
+    OWLObjectOneOf, DateOWLDatatype, DateTimeOWLDatatype, DurationOWLDatatype
 
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
@@ -162,8 +165,8 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         setattr(owlready2.ConstrainedDatatype, '__eq__', constraint_datatype_eq)
         setattr(owlready2.ConstrainedDatatype, '__hash__', lambda self: hash(frozenset(self.__dict__.items())))
 
-        ce = OWLDataSomeValuesFrom(act, DoubleOWLDatatype)
-        owlready_ce = onto._onto.act.some(float)
+        ce = OWLDataSomeValuesFrom(act, DateOWLDatatype)
+        owlready_ce = onto._onto.act.some(date)
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
         res = OWLDatatypeMinInclusiveRestriction(20)
@@ -194,8 +197,8 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         owlready_ce = onto._onto.act.min(2, owlready2.ConstrainedDatatype(float, max_inclusive=1.2))
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
-        ce = OWLDataMaxCardinality(4, charge, DoubleOWLDatatype)
-        owlready_ce = onto._onto.charge.max(4, float)
+        ce = OWLDataMaxCardinality(4, charge, DurationOWLDatatype)
+        owlready_ce = onto._onto.charge.max(4, Timedelta)
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
         ce = OWLDataExactCardinality(3, charge, OWLDataComplementOf(IntegerOWLDatatype))
@@ -281,15 +284,15 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
                                        OWLDataUnionOf([OWLDataComplementOf(res), res2]))
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
-        ce = act.only(owlready2.Not(owlready2.ConstrainedDatatype(int, max_inclusive=2)) & float)
+        ce = act.only(owlready2.Not(owlready2.ConstrainedDatatype(int, max_inclusive=2)) & datetime)
         owl_ce = OWLDataAllValuesFrom(OWLDataProperty(IRI(NS, 'act')),
-                                      OWLDataIntersectionOf([OWLDataComplementOf(res), DoubleOWLDatatype]))
+                                      OWLDataIntersectionOf([OWLDataComplementOf(res), DateTimeOWLDatatype]))
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
-        ce = act.some(owlready2.Not(owlready2.OneOf([1, 2, 3])) & int)
+        ce = act.some(owlready2.Not(owlready2.OneOf([1, 2, 3])) & Timedelta)
         values = OWLDataOneOf([OWLLiteral(1), OWLLiteral(2), OWLLiteral(3)])
         owl_ce = OWLDataSomeValuesFrom(OWLDataProperty(IRI(NS, 'act')),
-                                       OWLDataIntersectionOf([OWLDataComplementOf(values), IntegerOWLDatatype]))
+                                       OWLDataIntersectionOf([OWLDataComplementOf(values), DurationOWLDatatype]))
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
         ce = onto._onto.act.value(19.5)
@@ -300,8 +303,8 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         owl_ce = OWLDataMinCardinality(2, OWLDataProperty(IRI(NS, 'act')), res)
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
-        ce = onto._onto.charge.max(5, int)
-        owl_ce = OWLDataMaxCardinality(5, OWLDataProperty(IRI(NS, 'charge')), IntegerOWLDatatype)
+        ce = onto._onto.charge.max(5, date)
+        owl_ce = OWLDataMaxCardinality(5, OWLDataProperty(IRI(NS, 'charge')), DateOWLDatatype)
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
         ce = onto._onto.charge.exactly(3, owlready2.Not(float))
