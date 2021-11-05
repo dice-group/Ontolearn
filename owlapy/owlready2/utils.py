@@ -3,7 +3,7 @@ from typing import Union
 
 import owlready2
 
-from owlapy.model import OWLDataOneOf, OWLObjectMinCardinality, OWLObjectOneOf, OWLPropertyExpression, \
+from owlapy.model import OWLDataOneOf, OWLIndividual, OWLObjectMinCardinality, OWLObjectOneOf, OWLPropertyExpression, \
     OWLObjectComplementOf, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectPropertyExpression, OWLObject, OWLOntology, OWLAnnotationProperty, IRI, OWLObjectInverseOf, \
     DoubleOWLDatatype, IntegerOWLDatatype, OWLClassExpression, OWLDataAllValuesFrom, OWLDataComplementOf, \
@@ -45,7 +45,7 @@ class ToOwlready2:
     @singledispatchmethod
     def map_concept(self, o: OWLClassExpression) \
             -> Union[owlready2.ClassConstruct, owlready2.ThingClass]:
-        raise NotImplementedError
+        raise NotImplementedError(o)
 
     @singledispatchmethod
     def _to_owlready2_property(self, p: OWLPropertyExpression) -> owlready2.Property:
@@ -63,6 +63,14 @@ class ToOwlready2:
     @_to_owlready2_property.register
     def _(self, p: OWLDataProperty) -> owlready2.prop.DataPropertyClass:
         return self._world[p.get_iri().as_str()]
+
+    @singledispatchmethod
+    def _to_owlready2_individual(self, i: OWLIndividual) -> owlready2.Thing:
+        raise NotImplementedError(i)
+
+    @_to_owlready2_individual.register
+    def _(self, i: OWLNamedIndividual):
+        return self._world[i.get_iri().as_str()]
 
     @map_concept.register
     def _(self, c: OWLClass) -> owlready2.ThingClass:
@@ -92,7 +100,7 @@ class ToOwlready2:
 
     @map_concept.register
     def _(self, ce: OWLObjectOneOf) -> owlready2.class_construct.OneOf:
-        return owlready2.OneOf([self._world[ind.get_iri().as_str()] for ind in ce.individuals()])
+        return owlready2.OneOf(list(map(self._to_owlready2_individual, ce.individuals())))
 
     @map_concept.register
     def _(self, ce: OWLObjectExactCardinality) -> owlready2.class_construct.Restriction:
@@ -111,8 +119,7 @@ class ToOwlready2:
 
     @map_concept.register
     def _(self, ce: OWLObjectHasValue) -> owlready2.class_construct.Restriction:
-        prop = self._to_owlready2_property(ce.get_property())
-        return prop.value(self._world[ce.get_filler().get_iri().as_str()])
+        return self.map_concept(ce.as_some_values_from())
 
     @map_concept.register
     def _(self, ce: OWLDataSomeValuesFrom) -> owlready2.class_construct.Restriction:

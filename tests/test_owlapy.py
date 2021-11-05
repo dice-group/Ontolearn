@@ -3,7 +3,6 @@ import unittest
 from owlapy import namespaces
 from owlapy.namespaces import Namespaces
 from owlapy.model import OWLClass, OWLObjectUnionOf, IRI
-from owlapy.util import IRIFixedSet
 
 base = Namespaces("ex", "http://example.org/")
 
@@ -33,14 +32,14 @@ class Owlapy_Test(unittest.TestCase):
         self.assertSequenceEqual(list(c3.operands()), [c1, c2])
 
     def test_iri_fixed_set(self):
-        fs = IRIFixedSet({IRI.create(base, "C1"), IRI.create(base, "C2")})
+        fs = frozenset({IRI.create(base, "C1"), IRI.create(base, "C2")})
         self.assertIn(IRI.create(base, "C1"), fs)
         self.assertNotIn(IRI.create(base, "C3"), fs)
-        self.assertNotEqual(fs(IRI.create(base, "C2")), fs(IRI.create(base, "C1")))
-        self.assertEqual(fs(IRI.create(base, "C1")), fs(IRI.create(base, "C1")))
-        self.assertEqual(fs(IRI.create(base, "C3"), ignore_missing=True), 0)
-        self.assertEqual(fs(set()), 0)
-        self.assertSequenceEqual(list(fs(fs(IRI.create(base, "C1")))), [IRI.create(base, "C1")])
+        self.assertNotEqual(fs & {IRI.create(base, "C2")}, fs & {IRI.create(base, "C1")})
+        self.assertEqual(fs & {IRI.create(base, "C1")}, fs & {IRI.create(base, "C1")})
+        self.assertEqual(fs & {IRI.create(base, "C3")}, frozenset())
+        self.assertEqual(set(), frozenset())
+        self.assertSequenceEqual(list([IRI.create(base, "C1")]), [IRI.create(base, "C1")])
 
 
 if __name__ == '__main__':

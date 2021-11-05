@@ -69,7 +69,7 @@ class PosNegLPStandard(AbstractLearningProblem):
         try:
             assert len(kb_pos) == len(self.pos)
         except AssertionError:
-            print(self.poss)
+            print(self.pos)
             print(kb_pos)
             print(kb_all)
             print('Assertion error. Exiting.')

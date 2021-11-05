@@ -124,14 +124,14 @@ upload_file() {
 }
 
 if [[ "$#" -eq 0 ]]; then
-    echo "syntax: ./upload_big.sh -A|<filename...>"
+    echo "syntax: ./big_gitext/upload_big.sh -A|<filename...>"
     exit 1
 fi
 
 if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
     cat <<EOT
 Usage:
-  ./upload_big.sh -A|<filename...>
+  ./big_gitext/upload_big.sh -A|<filename...>
 
 Description:
   Upload files to an external server that should not be stored in Git
@@ -145,7 +145,7 @@ Arguments:
   filename(s)   Upload these files and create .link files
 
 Example:
-  ./upload_big.sh model.pt
+  ./big_gitext/upload_big.sh model.pt
 
 EOT
     exit
