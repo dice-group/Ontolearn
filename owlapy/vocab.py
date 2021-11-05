@@ -75,10 +75,9 @@ class OWLFacet(_Vocabulary, Enum, metaclass=_meta_Enum):
         obj._value_ = f"{namespaces.XSD.prefix}:{remainder}"
         return obj
 
-    def __init__(self, remainder: str, symbolic_form: str, owlready2_key: str, operator: Callable[[_X, _X], bool]):
+    def __init__(self, remainder: str, symbolic_form: str, operator: Callable[[_X, _X], bool]):
         super().__init__(namespaces.XSD, remainder)
         self._symbolic_form = symbolic_form
-        self._owlready2_key = owlready2_key
         self._operator = operator
 
     @property
@@ -86,14 +85,10 @@ class OWLFacet(_Vocabulary, Enum, metaclass=_meta_Enum):
         return self._symbolic_form
 
     @property
-    def owlready2_key(self):
-        return self._owlready2_key
-
-    @property
     def operator(self):
         return self._operator
 
-    MIN_INCLUSIVE: Final = ("minInclusive", "≥", "min_inclusive", ge)  #:
-    MIN_EXCLUSIVE: Final = ("minExclusive", ">", "min_exclusive", gt)  #:
-    MAX_INCLUSIVE: Final = ("maxInclusive", "≤", "max_inclusive", le)  #:
-    MAX_EXCLUSIVE: Final = ("maxExclusive", "<", "max_exclusive", lt)  #:
+    MIN_INCLUSIVE: Final = ("minInclusive", "≥", ge)  #:
+    MIN_EXCLUSIVE: Final = ("minExclusive", ">", gt)  #:
+    MAX_INCLUSIVE: Final = ("maxInclusive", "≤", le)  #:
+    MAX_EXCLUSIVE: Final = ("maxExclusive", "<", lt)  #:

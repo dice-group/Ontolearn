@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from functools import singledispatchmethod
+from types import MappingProxyType
 from typing import Union
 
 import owlready2
@@ -17,6 +18,14 @@ from owlapy.model import OWLObjectMinCardinality, OWLObjectOneOf, OWLObjectRestr
     OWLIndividual
 
 from owlapy.vocab import OWLFacet
+
+
+OWLREADY2_FACET_KEYS = MappingProxyType({
+    OWLFacet.MIN_INCLUSIVE: "min_inclusive",
+    OWLFacet.MIN_EXCLUSIVE: "min_exclusive",
+    OWLFacet.MAX_INCLUSIVE: "max_inclusive",
+    OWLFacet.MAX_EXCLUSIVE: "max_exclusive"
+})
 
 
 class ToOwlready2:
@@ -180,9 +189,9 @@ class ToOwlready2:
     def _(self, p: OWLDatatypeRestriction) -> owlready2.class_construct.ConstrainedDatatype:
         facet_args = dict()
         for facet_res in p.get_facet_restrictions():
-            facet = facet_res.get_facet()
             value = facet_res.get_facet_value().to_python()
-            facet_args[facet.owlready2_key] = value
+            facet_key = OWLREADY2_FACET_KEYS[facet_res.get_facet()]
+            facet_args[facet_key] = value
         return owlready2.ConstrainedDatatype(self.map_datarange(p.get_datatype()), **facet_args)
 
     @map_datarange.register
@@ -322,7 +331,7 @@ class FromOwlready2:
     def _(self, p: owlready2.ConstrainedDatatype) -> OWLDatatypeRestriction:
         restrictions = []
         for facet in OWLFacet:
-            value = getattr(p, facet.owlready2_key, None)
+            value = getattr(p, OWLREADY2_FACET_KEYS[facet], None)
             if value is not None:
                 restrictions.append(OWLFacetRestriction(facet, OWLLiteral(value)))
         return OWLDatatypeRestriction(self.map_datarange(p.base_datatype), restrictions)
