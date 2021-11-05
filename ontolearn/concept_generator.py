@@ -1,4 +1,4 @@
-from typing import Iterable, Optional, AbstractSet, Dict, Generator
+from typing import Iterable, List, Optional, AbstractSet, Dict, Generator
 
 from ontolearn.core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from ontolearn.utils import parametrized_performance_debugger
@@ -20,6 +20,7 @@ class ConceptGenerator:
     _reasoner: OWLReasoner
     _op_domains: Dict[OWLObjectProperty, AbstractSet[OWLClass]]
     _op_ranges: Dict[OWLObjectProperty, AbstractSet[OWLClass]]
+    _dp_domains: Dict[OWLDataProperty, AbstractSet[OWLClass]]
 
     def __init__(self, reasoner: OWLReasoner,
                  class_hierarchy: Optional[ClassHierarchy] = None,
@@ -85,7 +86,7 @@ class ConceptGenerator:
 
     @staticmethod
     def intersect_from_iterables(a_operands: Iterable[OWLClassExpression], b_operands: Iterable[OWLClassExpression]) -> \
-            Iterable[OWLObjectComplementOf]:
+            Iterable[OWLObjectIntersectionOf]:
         """ Create an intersection of each class expression in a_operands with each class expression in b_operands"""
         assert isinstance(a_operands, Generator) is False and isinstance(b_operands, Generator) is False
         seen = set()
@@ -155,7 +156,7 @@ class ConceptGenerator:
             self._op_ranges[prop] = frozenset(self._reasoner.object_property_ranges(prop))
         return self._op_ranges[prop]
 
-    def _data_property_domain(self, prop: OWLObjectProperty):
+    def _data_property_domain(self, prop: OWLDataProperty):
         """Get the domain of a property
 
         Args:
@@ -292,7 +293,7 @@ class ConceptGenerator:
         """
         # TODO CD: I would rather prefer def intersection(self, a: OWLClassExpression, b: OWLClassExpression)
         # TODO: This is more advantages as one does not need to create a tuple of a list before intersection two expressions.
-        operands = []
+        operands: List[OWLClassExpression] = []
         for c in ops:
             if isinstance(c, OWLObjectIntersectionOf):
                 operands.extend(c.operands())
@@ -312,7 +313,7 @@ class ConceptGenerator:
         Returns:
             union with all operands (unions are merged)
         """
-        operands = []
+        operands: List[OWLClassExpression] = []
         for c in ops:
             if isinstance(c, OWLObjectUnionOf):
                 operands.extend(c.operands())

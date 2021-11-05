@@ -1,10 +1,11 @@
+from collections import defaultdict
 import logging
 import operator
 from functools import singledispatchmethod, reduce
 from itertools import repeat
 from logging import warning
 from types import MappingProxyType
-from typing import Callable, Iterable, Dict, Mapping, Set
+from typing import Callable, DefaultDict, Iterable, Dict, Mapping, Set
 
 from ontolearn.utils import LRUCache
 from owlapy.model import OWLObjectOneOf, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
@@ -79,8 +80,11 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
     def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
         yield from self._base_reasoner.equivalent_classes(ce)
 
-    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable:
+    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
         yield from self._base_reasoner.data_property_values(ind, pe)
+
+    def all_data_property_values(self, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
+        yield from self._base_reasoner.all_data_property_values(pe)
 
     def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
             -> Iterable[OWLNamedIndividual]:
@@ -135,7 +139,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
             raise NotImplementedError
 
         # Dict with Individual => Set[Individual]
-        opc: Dict[int, int] = dict()
+        opc: DefaultDict[int, int] = defaultdict(int)
 
         # shortcut for owlready2
         from owlapy.owlready2 import OWLOntology_Owlready2

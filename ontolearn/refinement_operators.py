@@ -2,17 +2,17 @@ import copy
 from itertools import chain, repeat, tee
 import random
 from typing import Dict, Set, Optional, Iterable, List, Type, Final, Generator
+from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter
 from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction
-
 from owlapy.vocab import OWLFacet
 
 from .abstracts import BaseRefinement
 from .knowledge_base import KnowledgeBase
-from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
+from owlapy.model import OWLDataPropertyExpression, OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectIntersectionOf, OWLClassExpression, OWLNothing, OWLThing, OWLNaryBooleanClassExpression, \
     OWLObjectUnionOf, OWLClass, OWLObjectComplementOf, OWLObjectMaxCardinality, OWLObjectMinCardinality, \
-    OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLFacetRestriction, OWLLiteral, OWLObjectInverseOf, \
-    BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLDataHasValue, OWLDataProperty
+    OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLLiteral, OWLObjectInverseOf, OWLDataProperty, \
+    BooleanOWLDatatype, OWLDataHasValue, NUMERIC_DATATYPES
 from .search import Node, OENode
 
 
@@ -202,11 +202,12 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
     """
     __slots__ = 'max_child_length', 'use_negation', 'use_all_constructor', 'use_inverse', 'use_card_restrictions', \
                 'max_nr_fillers', 'card_limit', 'use_numeric_datatypes', 'use_boolean_datatype', 'max_nr_splits', \
-                'dp_splits'
+                'dp_splits', 'value_splitter'
 
     _Node: Final = OENode
 
     kb: KnowledgeBase
+    value_splitter: Optional[AbstractValueSplitter]
     max_child_length: int
     use_negation: bool
     use_all_constructor: bool
@@ -217,10 +218,11 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
     max_nr_splits: int
 
     max_nr_fillers: Dict[OWLObjectPropertyExpression, int]
-    dp_splits: Dict[OWLDataProperty, List[OWLLiteral]]
+    dp_splits: Dict[OWLDataPropertyExpression, List[OWLLiteral]]
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
+                 value_splitter: Optional[AbstractValueSplitter] = None,
                  max_child_length: int = 10,
                  use_negation: bool = True,
                  use_all_constructor: bool = True,
@@ -235,6 +237,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         # self.combos = dict()
         # self.topRefinements = dict()
         # self.topARefinements = dict()
+        self.value_splitter = value_splitter
         self.max_child_length = max_child_length
         self.use_negation = use_negation
         self.use_all_constructor = use_all_constructor
@@ -249,6 +252,9 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         self.__setup()
 
     def __setup(self):
+        if self.value_splitter is None:
+            self.value_splitter = BinningValueSplitter(self.max_nr_splits)
+
         if self.use_card_restrictions:
             obj_properties = list(self.kb.ontology().object_properties_in_signature())
             if self.use_inverse:
@@ -259,16 +265,13 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
                     number_obj = len(list(self.kb.reasoner().object_property_values(ind, prop)))
                     self.max_nr_fillers[prop] = max(self.max_nr_fillers[prop], number_obj)
 
-        # TODO: Add ValueSplitter classes to calculate the splits (started on EvoLearner branch)
+        props = []
         if self.use_numeric_datatypes:
-            self.dp_splits = {}
-            for prop in self.kb.ontology().data_properties_in_signature():
-                ranges = set(self.kb.reasoner().data_property_ranges(prop))
-                # Set some static splits for now
-                if DoubleOWLDatatype in ranges:
-                    self.dp_splits[prop] = [OWLLiteral(-1.0), OWLLiteral(0.0), OWLLiteral(1.0)]
-                elif IntegerOWLDatatype in ranges:
-                    self.dp_splits[prop] = [OWLLiteral(-1), OWLLiteral(0), OWLLiteral(1)]
+            props.extend([prop for prop in self.kb.ontology().data_properties_in_signature()
+                          if NUMERIC_DATATYPES & set(self.kb.reasoner().data_property_ranges(prop))])
+        if len(props) > 0:
+            self.dp_splits = self.value_splitter.compute_splits_properties(self.kb)
+            print(self.dp_splits)
 
     def _operands_len(self, _Type: Type[OWLNaryBooleanClassExpression],
                       ops: List[OWLClassExpression]) -> int:
@@ -562,29 +565,28 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
         datarange = ce.get_filler()
         if isinstance(datarange, OWLDatatypeRestriction) and ce.get_property() in self.dp_splits:
-            new_facet_res: List[OWLFacetRestriction] = []
             splits = self.dp_splits[ce.get_property()]
-            for facet_res in datarange.get_facet_restrictions():
+            if len(splits) > 0 and len(datarange.get_facet_restrictions()) > 0:
+                facet_res = datarange.get_facet_restrictions()[0]
                 val = facet_res.get_facet_value()
-                index = splits.index(val)
+                idx = splits.index(val)
 
                 if facet_res.get_facet() == OWLFacet.MIN_INCLUSIVE:
-                    new_index = index + 1
-                    if new_index < len(splits):
-                        new_facet_res.append(OWLFacetRestriction(OWLFacet.MIN_INCLUSIVE, splits[new_index]))
+                    new_idx = idx + 1
+                    if new_idx < len(splits):
+                        yield self.kb.data_existential_restriction(OWLDatatypeMinInclusiveRestriction(splits[new_idx]),
+                                                                   ce.get_property())
                 elif facet_res.get_facet() == OWLFacet.MAX_INCLUSIVE:
-                    new_index = index - 1
-                    if new_index >= 0:
-                        new_facet_res.append(OWLFacetRestriction(OWLFacet.MAX_INCLUSIVE, splits[new_index]))
-            if len(new_facet_res) > 0:
-                new_res = OWLDatatypeRestriction(datarange.get_datatype(), new_facet_res)
-                yield self.kb.data_existential_restriction(new_res, ce.get_property())
+                    new_idx = idx - 1
+                    if new_idx >= 0:
+                        yield self.kb.data_existential_restriction(OWLDatatypeMaxInclusiveRestriction(splits[new_idx]),
+                                                                   ce.get_property())
 
     def refine_data_has_value(self, ce: OWLDataHasValue) -> Iterable[OWLDataHasValue]:
         assert isinstance(ce, OWLDataHasValue)
 
         for more_special_dp in self.kb.data_property_hierarchy().more_special_roles(ce.get_property()):
-            yield self.kb.data_has_value_restriction(more_special_dp, ce.get_filler())
+            yield self.kb.data_has_value_restriction(ce.get_filler(), more_special_dp)
 
     def refine(self, ce: OWLClassExpression, max_length: int, current_domain: OWLClassExpression) \
             -> Iterable[OWLClassExpression]:

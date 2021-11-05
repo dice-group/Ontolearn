@@ -6,7 +6,7 @@ from typing import Iterable, Set, Final, cast
 import owlready2
 
 from owlapy import namespaces
-from owlapy.model import OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
+from owlapy.model import OWLLiteral, OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
     OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, \
     OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype, \
     IRI, OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, OWLDatatype
@@ -232,11 +232,16 @@ class OWLReasoner_Owlready2(OWLReasoner):
         else:
             raise NotImplementedError("equivalent_classes for complex class expressions not implemented", ce)
 
-    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable:
+    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
         i: owlready2.Thing = self._world[ind.get_iri().as_str()]
         p: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
         for val in p._get_values_for_individual(i):
-            yield val
+            yield OWLLiteral(val)
+
+    def all_data_property_values(self, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
+        p: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
+        for _, val in p.get_relations():
+            yield OWLLiteral(val)
 
     def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
             -> Iterable[OWLNamedIndividual]:

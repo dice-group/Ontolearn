@@ -1257,6 +1257,19 @@ class OWLReasoner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def all_data_property_values(self, pe: OWLDataProperty) -> Iterable['OWLLiteral']:
+        """Gets all values for the given data property expression that appear in the knowledge base.
+
+        Args:
+            pe: The data property expression whose values are to be retrieved
+
+        Returns:
+            A set of OWLLiterals containing literals such that for each literal l in the set, the set of reasoner
+            axioms entails DataPropertyAssertion(pe ind l) for any ind.
+        """
+        pass
+
+    @abstractmethod
     def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
             -> Iterable[OWLNamedIndividual]:
         """Gets the object property values for the specified individual and object property expression.
@@ -1561,6 +1574,9 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
     def as_literal(self) -> 'OWLLiteral':
         # documented in parent
         return self
+
+    def to_python(self) -> Union[bool, float, int]:
+        return self._v
 
     @abstractmethod
     def get_datatype(self) -> OWLDatatype:
