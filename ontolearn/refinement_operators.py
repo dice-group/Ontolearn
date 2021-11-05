@@ -1,5 +1,5 @@
 import copy
-from itertools import chain, tee
+from itertools import chain, repeat, tee
 import random
 from typing import Dict, Set, Optional, Iterable, List, Type, Final, Generator
 from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction
@@ -11,8 +11,8 @@ from .knowledge_base import KnowledgeBase
 from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectIntersectionOf, OWLClassExpression, OWLNothing, OWLThing, OWLNaryBooleanClassExpression, \
     OWLObjectUnionOf, OWLClass, OWLObjectComplementOf, OWLObjectMaxCardinality, OWLObjectMinCardinality, \
-    OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLFacetRestriction, OWLDataPropertyExpression, OWLLiteral, \
-    BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLDataHasValue
+    OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLFacetRestriction, OWLLiteral, OWLObjectInverseOf, \
+    BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLDataHasValue, OWLDataProperty
 from .search import Node, OENode
 
 
@@ -217,18 +217,18 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
     max_nr_splits: int
 
     max_nr_fillers: Dict[OWLObjectPropertyExpression, int]
-    dp_splits: Dict[OWLDataPropertyExpression, List[OWLLiteral]]
+    dp_splits: Dict[OWLDataProperty, List[OWLLiteral]]
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
-                 max_child_length=10,
+                 max_child_length: int = 10,
                  use_negation: bool = True,
                  use_all_constructor: bool = True,
                  use_inverse: bool = True,
                  use_card_restrictions: bool = True,
                  use_numeric_datatypes: bool = True,
                  use_boolean_datatype: bool = True,
-                 max_nr_splits: int = 12,
+                 max_nr_splits: int = 5,
                  card_limit: int = 10):
         # self.topRefinementsCumulative = dict()
         # self.topRefinementsLength = 0
@@ -250,12 +250,14 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
     def __setup(self):
         if self.use_card_restrictions:
-            # TODO: Calculate card limit like in DL-Learner
-            self.max_nr_fillers = {}
-            for prop in self.kb.ontology().object_properties_in_signature():
-                self.max_nr_fillers[prop] = self.card_limit
-                if self.use_inverse:
-                    self.max_nr_fillers[prop.get_inverse_property()] = self.card_limit
+            obj_properties = list(self.kb.ontology().object_properties_in_signature())
+            if self.use_inverse:
+                obj_properties.extend(list(map(OWLObjectInverseOf, obj_properties)))
+            self.max_nr_fillers = dict(zip(obj_properties, repeat(self.card_limit)))
+            for prop in self.max_nr_fillers:
+                for ind in self.kb.ontology().individuals_in_signature():
+                    number_obj = len(list(self.kb.reasoner().object_property_values(ind, prop)))
+                    self.max_nr_fillers[prop] = max(self.max_nr_fillers[prop], number_obj)
 
         # TODO: Add ValueSplitter classes to calculate the splits (started on EvoLearner branch)
         if self.use_numeric_datatypes:
