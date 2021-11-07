@@ -4,6 +4,8 @@ from logging import warning
 from typing import Iterable, Set, Final, cast
 
 import owlready2
+from pandas import Timedelta
+from owlready2 import declare_datatype
 
 from owlapy import namespaces
 from owlapy.model import OWLLiteral, OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
@@ -11,6 +13,18 @@ from owlapy.model import OWLLiteral, OWLOntologyManager, OWLOntology, OWLClass, 
     OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype, \
     IRI, OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, OWLDatatype
 from owlapy.owlready2.utils import ToOwlready2
+
+
+def _parse_duration_datatype(literal: str):
+    return Timedelta(literal)
+
+
+def _unparse_duration_datatype(literal: Timedelta):
+    return literal.isoformat()
+
+
+declare_datatype(Timedelta, "http://www.w3.org/2001/XMLSchema#duration",
+                 _parse_duration_datatype, _unparse_duration_datatype)
 
 
 class BaseReasoner_Owlready2(Enum):

@@ -26,6 +26,8 @@ class Celoe_Test(unittest.TestCase):
         exp_qualities = {'Aunt': .80392, 'Brother': 1.0,
                          'Cousin': .68063, 'Granddaughter': 1.0,
                          'Uncle': .88372, 'Grandgrandfather': 0.94444}
+        tested = dict()
+        found_qualities = dict()
         for str_target_concept, examples in settings['problems'].items():
             typed_pos = set(map(OWLNamedIndividual, map(IRI.create, set(examples['positive_examples']))))
             typed_neg = set(map(OWLNamedIndividual, map(IRI.create, set(examples['negative_examples']))))
@@ -42,15 +44,20 @@ class Celoe_Test(unittest.TestCase):
                         'http://www.benchmark.org/family#Grandparent'})))
 
             target_kb = kb.ignore_and_copy(ignored_classes=concepts_to_ignore)
-            model = CELOE(knowledge_base=target_kb)
+            model = CELOE(knowledge_base=target_kb, max_runtime=60, max_num_of_concepts_tested=3000)
 
             returned_val = model.fit(learning_problem=lp)
             self.assertEqual(returned_val, model, "fit should return its self")
             hypotheses = list(model.best_hypotheses(n=3))
+            tested[str_target_concept] = model.number_of_tested_concepts
+            found_qualities[str_target_concept] = hypotheses[0].quality
             self.assertGreaterEqual(hypotheses[0].quality, exp_qualities[str_target_concept],
                                     "we only ever improve the quality")
             self.assertGreaterEqual(hypotheses[0].quality, hypotheses[1].quality, "the hypotheses are quality ordered")
             self.assertGreaterEqual(hypotheses[1].quality, hypotheses[2].quality)
+        print(exp_qualities)
+        print(tested)
+        print(found_qualities)
 
     def test_celoe_father(self):
         kb = KnowledgeBase(path=PATH_DATA_FATHER)
