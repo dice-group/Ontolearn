@@ -392,7 +392,8 @@ def _children_transitive(hier_trans: Dict[_S, Set[_S]], ent: _S, seen_set: Set[_
             hier_trans[ent] |= hier_trans[sub_ent]
 
 
-def _reduce_transitive(hier: Dict[_S, Set[_S]], hier_inverse: Dict[_S, Set[_S]]) -> Tuple[Dict[_S, Set[_S]], FrozenSet[_S]]:
+def _reduce_transitive(hier: Dict[_S, Set[_S]], hier_inverse: Dict[_S, Set[_S]]) \
+        -> Tuple[Dict[_S, Set[_S]], FrozenSet[_S]]:
     """Remove all transitive links
 
     Takes a downward hierarchy and an upward hierarchy with transitive links, and removes all links that can be
