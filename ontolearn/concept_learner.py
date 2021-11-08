@@ -466,7 +466,6 @@ class Drill(AbstractDrill, BaseConceptLearner):
         self.emb_neg = self.emb_neg.view(1, 1, self.emb_neg.shape[0])
         # Sanity checking
         if torch.isnan(self.emb_pos).any() or torch.isinf(self.emb_pos).any():
-            print(string_balanced_pos)
             raise ValueError('invalid value detected in E+,\n{0}'.format(self.emb_pos))
         if torch.isnan(self.emb_neg).any() or torch.isinf(self.emb_neg).any():
             raise ValueError('invalid value detected in E-,\n{0}'.format(self.emb_neg))
@@ -592,7 +591,6 @@ class Drill(AbstractDrill, BaseConceptLearner):
         self.emb_neg = self.emb_neg.view(1, 1, self.emb_neg.shape[0])
         # Sanity checking
         if torch.isnan(self.emb_pos).any() or torch.isinf(self.emb_pos).any():
-            print(string_balanced_pos)
             raise ValueError('invalid value detected in E+,\n{0}'.format(self.emb_pos))
         if torch.isnan(self.emb_neg).any() or torch.isinf(self.emb_neg).any():
             raise ValueError('invalid value detected in E-,\n{0}'.format(self.emb_neg))
@@ -874,7 +872,9 @@ class Drill(AbstractDrill, BaseConceptLearner):
                     print((1, self.sample_size, self.instance_embeddings.shape[1]))
                     raise
         elif self.representation_mode == 'sampling':
-            if node.embeddings is None:
+            raise NotImplementedError('Sampling technique for state representation is not implemented.')
+            """
+                        if node.embeddings is None:
                 str_idx = [get_full_iri(i).replace('\n', '') for i in node.concept.instances]
                 if len(str_idx) >= self.sample_size:
                     sampled_str_idx = random.sample(str_idx, self.sample_size)
@@ -886,7 +886,6 @@ class Drill(AbstractDrill, BaseConceptLearner):
                 emb = emb.view(1, self.sample_size, self.instance_embeddings.shape[1])
                 node.embeddings = emb
             else:
-                """ Embeddings already assigned."""
                 try:
                     assert node.embeddings.shape == (1, self.sample_size, self.instance_embeddings.shape[1])
                 except AssertionError:
@@ -895,6 +894,7 @@ class Drill(AbstractDrill, BaseConceptLearner):
                     print(node.embeddings.shape)
                     print((1, self.sample_size, self.instance_embeddings.shape[1]))
                     raise ValueError
+            """
         else:
             raise ValueError
 
