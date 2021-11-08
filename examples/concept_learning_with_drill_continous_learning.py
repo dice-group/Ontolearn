@@ -50,6 +50,11 @@ if __name__ == '__main__':
     parser.add_argument("--num_episode", type=int, default=2)
     parser.add_argument("--verbose", type=int, default=10)
     parser.add_argument('--num_workers', type=int, default=32, help='Number of cpus used during batching')
-    parser.add_argument('--pretrained_drill_sample_path', type=str, default='../pre_trained_agents/DrillHeuristic_sampling/DrillHeuristic_sampling.pth', help='Provide a path of .pth file')
-    parser.add_argument('--pretrained_drill_avg_path', type=str, default='../pre_trained_agents/DrillHeuristic_averaging/DrillHeuristic_averaging.pth', help='Provide a path of .pth file')
+    parser.add_argument('--pretrained_drill_sample_path',
+                        type=str, default='../pre_trained_agents/DrillHeuristic_sampling/DrillHeuristic_sampling.pth',
+                        help='Provide a path of .pth file')
+    parser.add_argument('--pretrained_drill_avg_path',
+                        type=str,
+                        default='../pre_trained_agents/DrillHeuristic_averaging/DrillHeuristic_averaging.pth',
+                        help='Provide a path of .pth file')
     start(parser.parse_args())
