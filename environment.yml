@@ -28,6 +28,8 @@ dependencies:
   # PIP
   - pip=21.0.1
   - pip:
+    # testing
+    - tox-run-before==0.1
     # docs
     - sphinxext-autox==0.0.2
     - sphinx-theme==1.0
