@@ -3,7 +3,7 @@ name: Test
 on: [push]
 
 env:
-  tox_dep: 'tox=3.23.1'
+  tox_dep: 'tox=3.24.3'
   conda_dep: '$(conda -V|tr " " "=")'
 
 jobs:
@@ -32,5 +32,4 @@ jobs:
         path: .tox
     - name: Test with tox
       run: |
-        ./big_gitext/download_big.sh KGs/Mutagenesis/mutagenesis.owl
         tox -o

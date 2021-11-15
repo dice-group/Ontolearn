@@ -1,7 +1,6 @@
 """ Test DRILL"""
-import json
-import random
-import pandas as pd
+#import random
+#import pandas as pd
 
 # @TODO, write such tests for Drill after, experiments are completed.
 """

@@ -4,7 +4,6 @@ from typing import List, Dict
 from .utils import create_experiment_folder
 import re
 import time
-import logging
 
 class DLLearnerBinder:
     """
@@ -12,9 +11,13 @@ class DLLearnerBinder:
     """
 
     def __init__(self, binary_path=None, model=None, kb_path=None, max_runtime=3):
-        assert binary_path
-        assert model
-        assert kb_path
+        try:
+            assert binary_path
+            assert model
+            assert kb_path
+        except AssertionError:
+            print(f'binary_path:{binary_path}, model:{model} kb_path{kb_path} can not be None')
+            raise
         self.binary_path = binary_path
         self.kb_path = kb_path
         self.name = model
@@ -57,7 +60,6 @@ class DLLearnerBinder:
         Text.append("\n")
 
         Text.append("// knowledge source definition")
-
         Text.append(
             "ks.fileName = \"" + self.kb_path + '\"')
         Text.append("\n")
@@ -110,9 +112,12 @@ class DLLearnerBinder:
         @param max_runtime:
         @return: self.
         """
-        assert len(pos) > 0
-        assert len(neg) > 0
-
+        try:
+            assert len(pos) > 0
+            assert len(neg) > 0
+        except AssertionError:
+            print(f'Positive and Negative Examples can not be 0 length:|Pos|={len(pos)},|Neg|{len(neg)}')
+            raise
         if max_runtime:
             self.max_runtime = max_runtime
         pathToConfig = self.write_dl_learner_config(pos=pos, neg=neg)

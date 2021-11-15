@@ -119,6 +119,10 @@ else
     files=("$@")
 fi
 
+# check if the server is reachable
+echo -n "Testing connection to $HTTP ..."
+curl -f -s -S -I -o /dev/null "$HTTP" && echo "ok" || exit $?
+
 ret=0
 for file in "${files[@]}"; do
     verify_file "$file" || ret=$(( ret + $? ))

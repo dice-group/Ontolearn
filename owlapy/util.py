@@ -1,13 +1,11 @@
-from abc import abstractmethod
 from functools import singledispatchmethod, total_ordering
-from typing import Iterable, overload, TypeVar, Generic, Type, Tuple, Dict, List, cast, Optional, AbstractSet, ClassVar, \
-    Final, FrozenSet
+from typing import Iterable, TypeVar, Generic, Tuple, List, cast, Optional, ClassVar
 
 from owlapy.model import OWLObject, HasIndex, HasIRI, OWLClassExpression, OWLClass, OWLObjectIntersectionOf, \
     OWLObjectUnionOf, OWLObjectComplementOf, OWLNothing, OWLRestriction, OWLThing, OWLObjectSomeValuesFrom, \
     OWLObjectHasValue, OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality, OWLObjectHasSelf, \
     OWLObjectOneOf, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataExactCardinality, OWLDataHasValue, \
-    OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLObjectAllValuesFrom, HasFiller, HasCardinality, HasOperands, IRI, \
+    OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLObjectAllValuesFrom, HasFiller, HasCardinality, HasOperands, \
     OWLObjectInverseOf, OWLDatatypeRestriction, OWLDataComplementOf, OWLDatatype, OWLDataUnionOf, \
     OWLDataIntersectionOf, OWLDataOneOf, OWLFacetRestriction, OWLLiteral
 
