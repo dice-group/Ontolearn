@@ -20,7 +20,8 @@ kb = KnowledgeBase(path=settings['data_path'][3:])
 
 def test_celoe_refinement_operator():
     r = DLSyntaxObjectRenderer()
-    rho = ModifiedCELOERefinement(kb)
+    kb_dp = KnowledgeBase(path='KGs/Mutagenesis/mutagenesis.owl')
+    rho = ModifiedCELOERefinement(kb_dp)
     for _ in enumerate(rho.refine(kb.thing, max_length=10, current_domain=kb.thing)):
         print(r.render(_[1]))
         pass
