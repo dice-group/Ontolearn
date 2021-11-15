@@ -1,4 +1,4 @@
-from typing import Iterable, List, Optional, AbstractSet, Dict, Generator
+from typing import FrozenSet, Iterable, List, Optional, Dict, Generator, Set
 
 from ontolearn.core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from ontolearn.utils import parametrized_performance_debugger
@@ -6,21 +6,23 @@ from owlapy.model import OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLOb
     OWLObjectAllValuesFrom, OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectPropertyExpression, OWLThing, \
     OWLNothing, OWLReasoner, OWLObjectProperty, OWLClass, OWLClassExpression, OWLObjectComplementOf, \
     OWLObjectExactCardinality, OWLDataAllValuesFrom, OWLDataPropertyExpression, OWLDataRange, OWLDataSomeValuesFrom, \
-    OWLDataHasValue, OWLIndividual, OWLLiteral, OWLDataProperty, OWLObjectHasValue
+    OWLDataHasValue, OWLIndividual, OWLLiteral, OWLDataProperty, OWLObjectHasValue, NUMERIC_DATATYPES, TIME_DATATYPES, \
+    BooleanOWLDatatype, OWLDatatype, OWLNamedIndividual
 
 
 class ConceptGenerator:
     """A class that can generate some sorts of OWL Class Expressions"""
     __slots__ = '_class_hierarchy', '_object_property_hierarchy', '_data_property_hierarchy', '_reasoner', \
-                '_op_domains', '_op_ranges', '_dp_domains'
+                '_op_domains', '_op_ranges', '_dp_domains', '_dp_ranges'
 
     _class_hierarchy: ClassHierarchy
     _object_property_hierarchy: ObjectPropertyHierarchy
     _data_property_hierarchy: DatatypePropertyHierarchy
     _reasoner: OWLReasoner
-    _op_domains: Dict[OWLObjectProperty, AbstractSet[OWLClass]]
-    _op_ranges: Dict[OWLObjectProperty, AbstractSet[OWLClass]]
-    _dp_domains: Dict[OWLDataProperty, AbstractSet[OWLClass]]
+    _op_domains: Dict[OWLObjectProperty, FrozenSet[OWLClass]]
+    _op_ranges: Dict[OWLObjectProperty, FrozenSet[OWLClass]]
+    _dp_domains: Dict[OWLDataProperty, FrozenSet[OWLClass]]
+    _dp_ranges: Dict[OWLDataProperty, FrozenSet[OWLDatatype]]
 
     def __init__(self, reasoner: OWLReasoner,
                  class_hierarchy: Optional[ClassHierarchy] = None,
@@ -55,6 +57,7 @@ class ConceptGenerator:
         self._op_domains = dict()
         self._op_ranges = dict()
         self._dp_domains = dict()
+        self._dp_ranges = dict()
 
     def get_leaf_concepts(self, concept: OWLClass):
         """Get leaf classes
@@ -85,8 +88,8 @@ class ConceptGenerator:
             yield self.negation(item)
 
     @staticmethod
-    def intersect_from_iterables(a_operands: Iterable[OWLClassExpression], b_operands: Iterable[OWLClassExpression]) -> \
-            Iterable[OWLObjectIntersectionOf]:
+    def intersect_from_iterables(a_operands: Iterable[OWLClassExpression], b_operands: Iterable[OWLClassExpression]) \
+            -> Iterable[OWLObjectIntersectionOf]:
         """ Create an intersection of each class expression in a_operands with each class expression in b_operands"""
         assert isinstance(a_operands, Generator) is False and isinstance(b_operands, Generator) is False
         seen = set()
@@ -130,44 +133,57 @@ class ConceptGenerator:
         assert isinstance(concept, OWLClass)
         yield from self._class_hierarchy.sub_classes(concept, direct=True)
 
-    def _object_property_domain(self, prop: OWLObjectProperty):
-        """Get the domain of a property
+    def get_object_property_domains(self, prop: OWLObjectProperty) -> FrozenSet[OWLClass]:
+        """Get the domains of an object property
 
         Args:
             prop: object property
 
         Returns:
-            domain of the property
+            domains of the property
         """
         if prop not in self._op_domains:
             self._op_domains[prop] = frozenset(self._reasoner.object_property_domains(prop))
         return self._op_domains[prop]
 
-    def _object_property_range(self, prop: OWLObjectProperty):
-        """Get the range of a property
+    def get_object_property_ranges(self, prop: OWLObjectProperty) -> FrozenSet[OWLClass]:
+        """Get the ranges of an object property
 
         Args:
             prop: object property
 
         Returns:
-            range of the property
+            ranges of the property
         """
         if prop not in self._op_ranges:
             self._op_ranges[prop] = frozenset(self._reasoner.object_property_ranges(prop))
         return self._op_ranges[prop]
 
-    def _data_property_domain(self, prop: OWLDataProperty):
-        """Get the domain of a property
+    def get_data_property_domains(self, prop: OWLDataProperty) -> FrozenSet[OWLClass]:
+        """Get the domains of a data property
 
         Args:
             prop: data property
 
         Returns:
-            domain of the property
+            domains of the property
         """
         if prop not in self._dp_domains:
             self._dp_domains[prop] = frozenset(self._reasoner.data_property_domains(prop))
         return self._dp_domains[prop]
+
+    def get_data_property_ranges(self, prop: OWLDataProperty) -> FrozenSet[OWLDatatype]:
+        """Get the ranges of a data property
+
+        Args:
+            prop: data property
+
+        Returns:
+            ranges of the property
+        """
+        if prop not in self._dp_ranges:
+            self._dp_ranges[prop] = frozenset(self._reasoner.data_property_ranges(prop))
+        return self._dp_ranges[prop]
 
     def most_general_object_properties(self, *, domain: OWLClassExpression, inverse: bool = False) \
             -> Iterable[OWLObjectProperty]:
@@ -182,10 +198,27 @@ class ConceptGenerator:
         """
         assert isinstance(domain, OWLClass)  # for now, only named classes supported
 
-        func = self._object_property_range if inverse else self._object_property_domain
+        func = self.get_object_property_ranges if inverse else self.get_object_property_domains
 
         for prop in self._object_property_hierarchy.most_general_roles():
             if domain.is_owl_thing() or domain in func(prop):
+                yield prop
+
+    def _data_properties_for_domain(self, domain: OWLClassExpression, data_properties: Iterable[OWLDataProperty]) \
+            -> Iterable[OWLDataProperty]:
+        """Find the data properties that are applicable to a domain
+
+        Args:
+            domain: domain for which to search properties
+            data_properties: list of data properties
+
+        Returns:
+            data properties applicaple for the given domain
+        """
+        assert isinstance(domain, OWLClass)  # for now, only named classes supported
+
+        for prop in data_properties:
+            if domain.is_owl_thing() or domain in self.get_data_property_domains(prop):
                 yield prop
 
     def most_general_data_properties(self, *, domain: OWLClassExpression) -> Iterable[OWLDataProperty]:
@@ -197,11 +230,40 @@ class ConceptGenerator:
         Returns:
             most general data properties for the given domain
         """
-        assert isinstance(domain, OWLClass)  # for now, only named classes supported
+        yield from self._data_properties_for_domain(domain, self.get_data_properties())
 
-        for prop in self._data_property_hierarchy.most_general_roles():
-            if domain.is_owl_thing() or domain in self._data_property_domain(prop):
-                yield prop
+    def most_general_boolean_data_properties(self, *, domain: OWLClassExpression) -> Iterable[OWLDataProperty]:
+        """Find most general boolean data properties that are applicable to a domain
+
+        Args:
+            domain: domain for which to search properties
+
+        Returns:
+            most general boolean data properties for the given domain
+        """
+        yield from self._data_properties_for_domain(domain, self.get_boolean_data_properties())
+
+    def most_general_numeric_data_properties(self, *, domain: OWLClassExpression) -> Iterable[OWLDataProperty]:
+        """Find most general numeric data properties that are applicable to a domain
+
+        Args:
+            domain: domain for which to search properties
+
+        Returns:
+            most general numeric data properties for the given domain
+        """
+        yield from self._data_properties_for_domain(domain, self.get_numeric_data_properties())
+
+    def most_general_time_data_properties(self, *, domain: OWLClassExpression) -> Iterable[OWLDataProperty]:
+        """Find most general time data properties that are applicable to a domain
+
+        Args:
+            domain: domain for which to search properties
+
+        Returns:
+            most general time data properties for the given domain
+        """
+        yield from self._data_properties_for_domain(domain, self.get_time_data_properties())
 
     def most_general_existential_restrictions(self, *,
                                               domain: OWLClassExpression, filler: Optional[OWLClassExpression] = None) \
@@ -358,6 +420,101 @@ class ConceptGenerator:
         """
         assert isinstance(concept, OWLClass)
         yield from self._class_hierarchy.sub_classes(concept, direct=False)
+
+    def get_concepts(self) -> Iterable[OWLClass]:
+        """Get all concepts of this concept generator
+
+        Returns:
+            concepts
+        """
+        yield from self._class_hierarchy.items()
+
+    def get_object_properties(self) -> Iterable[OWLObjectProperty]:
+        """Get all object properties of this concept generator
+
+        Returns:
+            object properties
+        """
+        yield from self._object_property_hierarchy.items()
+
+    def get_data_properties(self, ranges: Set[OWLDatatype] = None) -> Iterable[OWLDataProperty]:
+        """Get all data properties of this concept generator for the given ranges
+
+        Args:
+           ranges: ranges for which to extract the data properties
+
+        Returns:
+            data properties for the given range
+        """
+        if ranges is not None:
+            for dp in self._data_property_hierarchy.items():
+                if self.get_data_property_ranges(dp) & ranges:
+                    yield dp
+        else:
+            yield from self._data_property_hierarchy.items()
+
+    def get_boolean_data_properties(self) -> Iterable[OWLDataProperty]:
+        """Get all boolean data properties of this concept generator
+
+        Returns:
+            boolean data properties
+        """
+        yield from self.get_data_properties({BooleanOWLDatatype})
+
+    def get_numeric_data_properties(self) -> Iterable[OWLDataProperty]:
+        """Get all numeric data properties of this concept generator
+
+        Returns:
+            numeric data properties
+        """
+        yield from self.get_data_properties(NUMERIC_DATATYPES)
+
+    def get_time_data_properties(self) -> Iterable[OWLDataProperty]:
+        """Get all time data properties of this concept generator
+
+        Returns:
+            time data properties
+        """
+        yield from self.get_data_properties(TIME_DATATYPES)
+
+    def get_types(self, ind: OWLNamedIndividual, direct: bool = False) -> Iterable[OWLClass]:
+        """Get the named classes which are (direct) types of the specified individual
+
+        Args:
+            ind: individual
+            direct: whether to consider direct types
+
+        Returns:
+            types of the given individual
+        """
+        kb_types = set(self.get_concepts())
+        yield from (ind_type for ind_type in self._reasoner.types(ind, direct) if ind_type in kb_types)
+
+    def get_object_property_values(self, ind: OWLNamedIndividual, property_: OWLObjectPropertyExpression) \
+            -> Iterable[OWLNamedIndividual]:
+        """Get the object property values for the given individual and property
+
+        Args:
+            ind: individual
+            property: object property
+
+        Returns:
+            individuals
+        """
+        yield from self._reasoner.object_property_values(ind, property_)
+
+    def get_data_property_values(self, ind: OWLNamedIndividual, property_: OWLDataPropertyExpression) \
+            -> Iterable[OWLLiteral]:
+        """Get the data property values for the given individual and property
+
+        Args:
+            ind: individual
+            property: data property
+
+        Returns:
+            literals
+        """
+        yield from self._reasoner.data_property_values(ind, property_)
 
     # noinspection PyMethodMayBeStatic
     def existential_restriction(self, filler: OWLClassExpression, property: OWLObjectPropertyExpression) \
