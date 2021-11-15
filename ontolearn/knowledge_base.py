@@ -316,6 +316,8 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
                 return r
             else:
                 return frozenset(self.individuals(arg))
+        elif isinstance(arg, OWLNamedIndividual):
+            return frozenset({arg})
         else:
             return frozenset(arg)
 
