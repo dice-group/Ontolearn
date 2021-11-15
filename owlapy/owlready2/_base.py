@@ -1,4 +1,5 @@
 import types
+from datetime import date, datetime
 from enum import Enum, auto
 from logging import warning
 from typing import Iterable, Set, Final, cast
@@ -11,7 +12,9 @@ from owlapy import namespaces
 from owlapy.model import OWLLiteral, OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
     OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, \
     OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype, \
-    IRI, OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, OWLDatatype
+    OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, OWLDatatype, DateOWLDatatype, DateTimeOWLDatatype, \
+    DurationOWLDatatype, IRI
+
 from owlapy.owlready2.utils import ToOwlready2
 
 
@@ -212,6 +215,12 @@ class OWLReasoner_Owlready2(OWLReasoner):
                 yield DoubleOWLDatatype
             elif rng == bool:
                 yield BooleanOWLDatatype
+            elif rng == date:
+                yield DateOWLDatatype
+            elif rng == datetime:
+                yield DateTimeOWLDatatype
+            elif rng == Timedelta:
+                yield DurationOWLDatatype
             else:
                 pass  # XXX TODO
 

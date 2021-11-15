@@ -2497,3 +2497,4 @@ DurationOWLDatatype: Final = OWLDatatype(XSDVocabulary.DURATION)  #: An object r
 TopDatatype: Final = OWLDatatype(OWLRDFVocabulary.RDFS_LITERAL)  #: The OWL Datatype corresponding to the top data type
 
 NUMERIC_DATATYPES: Set[OWLDatatype] = {DoubleOWLDatatype, IntegerOWLDatatype}
+TIME_DATATYPES: Final[Set[OWLDatatype]] = {DateOWLDatatype, DateTimeOWLDatatype, DurationOWLDatatype}
