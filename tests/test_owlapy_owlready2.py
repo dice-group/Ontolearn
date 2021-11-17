@@ -1,8 +1,20 @@
+from datetime import date, datetime
 import unittest
 
+from pandas import Timedelta
+from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
+    OWLDatatypeMinMaxExclusiveRestriction, OWLDatatypeMinMaxInclusiveRestriction
+
+import owlready2
 import owlapy.owlready2.utils
 from owlapy.model import OWLObjectProperty, OWLNamedIndividual, OWLThing, OWLClass, OWLObjectUnionOf, \
-    OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectComplementOf, IRI
+    OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectComplementOf, IRI, OWLDataAllValuesFrom, \
+    OWLDataComplementOf, OWLDataHasValue, OWLDataIntersectionOf, OWLDataProperty, OWLDataSomeValuesFrom, \
+    OWLDataUnionOf, OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLDataOneOf, \
+    OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataMinCardinality, OWLObjectExactCardinality, \
+    OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectHasValue, OWLObjectAllValuesFrom, \
+    OWLObjectOneOf, DateOWLDatatype, DateTimeOWLDatatype, DurationOWLDatatype
+
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 
@@ -104,16 +116,93 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
         ce = OWLObjectSomeValuesFrom(has_child, OWLThing)
-        import owlready2
         owlready_ce = onto._onto.hasChild.some(owlready2.owl.Thing)
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
-        ce = OWLObjectSomeValuesFrom(has_child, male)
-        owlready_ce = onto._onto.hasChild.some(onto._onto.male)
+        ce = OWLObjectAllValuesFrom(has_child, male)
+        owlready_ce = onto._onto.hasChild.only(onto._onto.male)
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
         ce = male.get_object_complement_of()
         owlready_ce = owlready2.Not(onto._onto.male)
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        ce = OWLObjectOneOf([OWLNamedIndividual(IRI.create(NS, 'martin')),
+                             OWLNamedIndividual(IRI.create(NS, 'michelle'))])
+        owlready_ce = owlready2.OneOf([onto._onto.martin, onto._onto.michelle])
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        ce = OWLObjectMinCardinality(2, has_child, male)
+        owlready_ce = onto._onto.hasChild.min(2, onto._onto.male)
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        ce = OWLObjectMaxCardinality(5, has_child, female)
+        owlready_ce = onto._onto.hasChild.max(5, onto._onto.female)
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        ce = OWLObjectExactCardinality(3, has_child, OWLThing)
+        owlready_ce = onto._onto.hasChild.exactly(3, owlready2.owl.Thing)
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        ce = OWLObjectHasValue(has_child, OWLNamedIndividual(IRI.create(NS, 'markus')))
+        owlready_ce = onto._onto.hasChild.value(onto._onto.markus)
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+    def test_mapping_data_properties(self):
+        NS = "http://dl-learner.org/mutagenesis#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://KGs/Mutagenesis/mutagenesis.owl"))
+
+        act = OWLDataProperty(IRI(NS, 'act'))
+        charge = OWLDataProperty(IRI(NS, 'charge'))
+
+        to_owlready = owlapy.owlready2.utils.ToOwlready2(world=onto._world)
+
+        # owlready2 defines no equal or hash method for ConstrainedDatatype, just using the __dict__ attribute
+        # should be sufficient for the purpose of these tests
+        def constraint_datatype_eq(self, other):
+            return isinstance(other, owlready2.ConstrainedDatatype) and self.__dict__ == other.__dict__
+        setattr(owlready2.ConstrainedDatatype, '__eq__', constraint_datatype_eq)
+        setattr(owlready2.ConstrainedDatatype, '__hash__', lambda self: hash(frozenset(self.__dict__.items())))
+
+        ce = OWLDataSomeValuesFrom(act, DateOWLDatatype)
+        owlready_ce = onto._onto.act.some(date)
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        res = OWLDatatypeMinInclusiveRestriction(20)
+        ce = OWLDataAllValuesFrom(charge, OWLDataComplementOf(res))
+        owlready_ce = onto._onto.charge.only(owlready2.Not(owlready2.ConstrainedDatatype(int, min_inclusive=20)))
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        res_both = OWLDatatypeMinMaxExclusiveRestriction(0.5, 1)
+        ce = OWLDataAllValuesFrom(charge, OWLDataUnionOf([res, res_both]))
+        owlready_ce = onto._onto.charge.only(
+            owlready2.Or([owlready2.ConstrainedDatatype(int, min_inclusive=20),
+                          owlready2.ConstrainedDatatype(float, min_exclusive=0.5, max_exclusive=1.0)]))
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        res = OWLDatatypeMaxInclusiveRestriction(1.2)
+        oneof = OWLDataOneOf([OWLLiteral(2.3), OWLLiteral(5.9), OWLLiteral(7.2)])
+        ce = OWLDataAllValuesFrom(charge, OWLDataIntersectionOf([res, oneof]))
+        owlready_ce = onto._onto.charge.only(owlready2.ConstrainedDatatype(float, max_inclusive=1.2) &
+                                             owlready2.OneOf([2.3, 5.9, 7.2]))
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        ce = OWLDataSomeValuesFrom(charge, OWLDataIntersectionOf([res, BooleanOWLDatatype]))
+        owlready_ce = onto._onto.charge.some(
+            owlready2.And([owlready2.ConstrainedDatatype(float, max_inclusive=1.2), bool]))
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        ce = OWLDataMinCardinality(2, act, res)
+        owlready_ce = onto._onto.act.min(2, owlready2.ConstrainedDatatype(float, max_inclusive=1.2))
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        ce = OWLDataMaxCardinality(4, charge, DurationOWLDatatype)
+        owlready_ce = onto._onto.charge.max(4, Timedelta)
+        self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
+
+        ce = OWLDataExactCardinality(3, charge, OWLDataComplementOf(IntegerOWLDatatype))
+        owlready_ce = onto._onto.charge.exactly(3, owlready2.Not(int))
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
     def test_mapping_rev(self):
@@ -127,21 +216,99 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
 
         from_owlready = owlapy.owlready2.utils.FromOwlready2()
 
-        import owlready2
         ce = male | female
         owl_ce = OWLObjectUnionOf((OWLClass(IRI.create(NS, 'male')), OWLClass(IRI.create(NS, 'female'))))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = male & female
+        owl_ce = OWLObjectIntersectionOf((OWLClass(IRI.create(NS, 'male')), OWLClass(IRI.create(NS, 'female'))))
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
         ce = has_child.some(owlready2.owl.Thing)
         owl_ce = OWLObjectSomeValuesFrom(OWLObjectProperty(IRI(NS, 'hasChild')), OWLThing)
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
-        ce = has_child.some(male)
-        owl_ce = OWLObjectSomeValuesFrom(OWLObjectProperty(IRI(NS, 'hasChild')), OWLClass(IRI.create(NS, 'male')))
+        ce = has_child.only(male)
+        owl_ce = OWLObjectAllValuesFrom(OWLObjectProperty(IRI(NS, 'hasChild')), OWLClass(IRI.create(NS, 'male')))
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
         ce = owlready2.Not(male)
         owl_ce = OWLObjectComplementOf(OWLClass(IRI(NS, 'male')))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = owlready2.OneOf([onto._onto.markus, onto._onto.anna])
+        owl_ce = OWLObjectOneOf([OWLNamedIndividual(IRI.create(NS, 'markus')),
+                                 OWLNamedIndividual(IRI.create(NS, 'anna'))])
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = onto._onto.hasChild.min(2, onto._onto.male)
+        owl_ce = OWLObjectMinCardinality(2, OWLObjectProperty(IRI(NS, 'hasChild')), OWLClass(IRI(NS, 'male')))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = onto._onto.hasChild.max(5, onto._onto.female)
+        owl_ce = OWLObjectMaxCardinality(5, OWLObjectProperty(IRI(NS, 'hasChild')), OWLClass(IRI(NS, 'female')))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = onto._onto.hasChild.exactly(3, owlready2.owl.Thing)
+        owl_ce = OWLObjectExactCardinality(3, OWLObjectProperty(IRI(NS, 'hasChild')), OWLThing)
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = has_child.value(onto._onto.markus)
+        owl_ce = OWLObjectHasValue(OWLObjectProperty(IRI(NS, 'hasChild')), OWLNamedIndividual(IRI.create(NS, 'markus')))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+    def test_mapping_rev_data_properties(self):
+        NS = "http://dl-learner.org/mutagenesis#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://KGs/Mutagenesis/mutagenesis.owl"))
+
+        act = onto._onto.act
+        charge = onto._onto.charge
+
+        from_owlready = owlapy.owlready2.utils.FromOwlready2()
+
+        ce = act.some(float)
+        owl_ce = OWLDataSomeValuesFrom(OWLDataProperty(IRI(NS, 'act')), DoubleOWLDatatype)
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = charge.only(owlready2.Not(owlready2.ConstrainedDatatype(int, max_inclusive=2)))
+        res = OWLDatatypeMaxInclusiveRestriction(2)
+        owl_ce = OWLDataAllValuesFrom(OWLDataProperty(IRI(NS, 'charge')), OWLDataComplementOf(res))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = charge.some(owlready2.Not(owlready2.ConstrainedDatatype(int, max_inclusive=2)) |
+                         owlready2.ConstrainedDatatype(float, min_inclusive=2.1, max_inclusive=2.2))
+        res = OWLDatatypeMaxInclusiveRestriction(2)
+        res2 = OWLDatatypeMinMaxInclusiveRestriction(2.1, 2.2)
+        owl_ce = OWLDataSomeValuesFrom(OWLDataProperty(IRI(NS, 'charge')),
+                                       OWLDataUnionOf([OWLDataComplementOf(res), res2]))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = act.only(owlready2.Not(owlready2.ConstrainedDatatype(int, max_inclusive=2)) & datetime)
+        owl_ce = OWLDataAllValuesFrom(OWLDataProperty(IRI(NS, 'act')),
+                                      OWLDataIntersectionOf([OWLDataComplementOf(res), DateTimeOWLDatatype]))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = act.some(owlready2.Not(owlready2.OneOf([1, 2, 3])) & Timedelta)
+        values = OWLDataOneOf([OWLLiteral(1), OWLLiteral(2), OWLLiteral(3)])
+        owl_ce = OWLDataSomeValuesFrom(OWLDataProperty(IRI(NS, 'act')),
+                                       OWLDataIntersectionOf([OWLDataComplementOf(values), DurationOWLDatatype]))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = onto._onto.act.value(19.5)
+        owl_ce = OWLDataHasValue(OWLDataProperty(IRI(NS, 'act')), OWLLiteral(19.5))
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = onto._onto.act.min(2, owlready2.ConstrainedDatatype(int, max_inclusive=2))
+        owl_ce = OWLDataMinCardinality(2, OWLDataProperty(IRI(NS, 'act')), res)
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = onto._onto.charge.max(5, date)
+        owl_ce = OWLDataMaxCardinality(5, OWLDataProperty(IRI(NS, 'charge')), DateOWLDatatype)
+        self.assertEqual(owl_ce, from_owlready.map_concept(ce))
+
+        ce = onto._onto.charge.exactly(3, owlready2.Not(float))
+        owl_ce = OWLDataExactCardinality(3, OWLDataProperty(IRI(NS, 'charge')), OWLDataComplementOf(DoubleOWLDatatype))
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
 

@@ -2,7 +2,7 @@ from typing import Final
 
 import numpy as np
 
-from .abstracts import AbstractScorer, AbstractHeuristic, AbstractOEHeuristicNode, EncodedLearningProblem
+from .abstracts import AbstractHeuristic, AbstractOEHeuristicNode, EncodedLearningProblem
 from .learning_problem import EncodedPosNegUndLP, EncodedPosNegLPStandard
 from .metrics import Accuracy
 from .search import LBLNode, RL_State

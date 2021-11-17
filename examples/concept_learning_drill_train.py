@@ -6,20 +6,17 @@ Drill with training.
 Author: Caglar Demir
 """
 from argparse import ArgumentParser
-
 from ontolearn import KnowledgeBase
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.learning_problem_generator import LearningProblemGenerator
 from ontolearn.concept_learner import Drill
 from ontolearn.metrics import F1
 from ontolearn.heuristics import Reward
-
-from owlapy.model import OWLClass, IRI
-
 from owlapy.model import OWLOntology, OWLReasoner
-
 from ontolearn.utils import setup_logging
+
 setup_logging()
+
 def ClosedWorld_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
     from owlapy.owlready2 import OWLOntology_Owlready2
     from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses

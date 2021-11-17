@@ -3,14 +3,10 @@ import os
 import pickle
 import random
 import time
-from typing import Type, Callable, Set, TypeVar
-
-import matplotlib.pyplot as plt
-import pandas as pd
-from owlapy.model import OWLNamedIndividual, IRI, OWLClass, HasIRI
-from sklearn.manifold import TSNE
+from typing import Callable, Set, TypeVar
 
 from ontolearn.utils.log_config import setup_logging  # noqa: F401
+from owlapy.model import OWLNamedIndividual, IRI, OWLClass, HasIRI
 
 Factory = Callable
 
@@ -79,6 +75,8 @@ def deserializer(*, path: str, serialized_name: str):
 
 
 def apply_TSNE_on_df(df) -> None:
+    from sklearn.manifold import TSNE
+    from matplotlib import pyplot as plt
     low_emb = TSNE(n_components=2).fit_transform(df)
     plt.scatter(low_emb[:, 0], low_emb[:, 1])
     plt.title('Instance Representatons via TSNE')
@@ -112,6 +110,7 @@ def read_csv(path):
     @param path:
     @return:
     """
+    import pandas as pd
     assertion_path_isfile(path)
     df = pd.read_csv(path, index_col=0)
     assert (df.all()).all()  # all columns and all rows are not none.

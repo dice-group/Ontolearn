@@ -1,7 +1,7 @@
 import logging
 import time
 from abc import ABCMeta, abstractmethod
-from typing import List, Set, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, cast, Callable, Type
+from typing import List, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, cast, Callable, Type
 
 import numpy as np
 import pandas as pd
@@ -280,8 +280,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             for ith_ind in range(len(individuals)):
                 ind = individuals[ith_ind]
 
-                kb_test = self.kb.individuals_set(ind)
-                if kb_test in kb_individuals:
+                if ind in kb_individuals:
                     labels[ith_ind][jth_hypo] = 1
         return labels
 

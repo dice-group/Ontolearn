@@ -109,14 +109,14 @@ class LearningProblemGenerator:
         assert len(string_balanced_pos) >= self.min_num_instances, f"String Representation " \
                                                                    f"of all positive individuals should be greater " \
                                                                    f"than min_num_instances: " \
-                                                                   f"|string_all_pos|={string_balanced_pos}" \
-                                                                   f"and |min_num_instances| = {len(min_num_instances)}"
+                                                                   f"|string_all_pos|={len(string_balanced_pos)}" \
+                                                                   f"and |min_num_instances| = {self.min_num_instances}"
 
         assert len(string_balanced_neg) >= self.min_num_instances, f"String Representation " \
                                                                    f"of all positive individuals should be greater " \
                                                                    f"than min_num_instances: " \
-                                                                   f"|string_balanced_neg|={string_balanced_neg}" \
-                                                                   f"and |min_num_instances| = {len(string_balanced_neg)}"
+                                                                   f"|string_balanced_neg|={len(string_balanced_neg)}" \
+                                                                   f"and |min_num_instances| = {self.min_num_instances}"
 
         return {'string_balanced_pos': string_balanced_pos, 'string_balanced_neg': string_balanced_neg}
 

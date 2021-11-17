@@ -16,29 +16,22 @@ This script performs the following computations
     4.2. Best hypothesis/predictions of models given E^+ and E^- are obtained.
     4.3. F1-score, Accuracy, Runtimes and Number description tested information stored and serialized.
 """
+from ontolearn.utils import setup_logging
 from argparse import ArgumentParser
-
 from ontolearn import KnowledgeBase
 from ontolearn.refinement_operators import LengthBasedRefinement
-from ontolearn.learning_problem_generator import LearningProblemGenerator
 from ontolearn.concept_learner import Drill
 from ontolearn.metrics import F1
-from ontolearn.heuristics import Reward
 from ontolearn.experiments import Experiments
-from owlapy.model import OWLClass, IRI
-
 from owlapy.model import OWLOntology, OWLReasoner
-from ontolearn.binders import DLLearnerBinder
-import pandas as pd
 from argparse import ArgumentParser
 import os
 import json
 import time
 
-full_computation_time = time.time()
-from ontolearn.utils import setup_logging
-
 setup_logging()
+full_computation_time = time.time()
+
 
 
 def sanity_checking_args(args):

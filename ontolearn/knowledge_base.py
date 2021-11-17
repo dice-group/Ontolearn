@@ -1,24 +1,23 @@
 import logging
-from typing import Dict, Iterable, Optional, Callable, overload, Union
+from typing import Iterable, Optional, Callable, overload, Union, FrozenSet
 
-from .abstracts import AbstractKnowledgeBase
-from .concept_generator import ConceptGenerator
-from .core.owl.utils import OWLClassExpressionLengthMetric
-from .core.utils import BitSet
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLNamedIndividual, \
     OWLObjectProperty, OWLClass, OWLDataProperty, IRI
 from owlapy.render import DLSyntaxObjectRenderer
-from owlapy.util import NamedFixedSet, popcount, iter_count
+from owlapy.util import iter_count, LRUCache
+from .abstracts import AbstractKnowledgeBase
+from .concept_generator import ConceptGenerator
+from .core.owl.utils import OWLClassExpressionLengthMetric
 
 Factory = Callable
 
 logger = logging.getLogger(__name__)
 
 
-def _Default_OntologyManagerFactory() -> OWLOntologyManager:
+def _Default_OntologyManagerFactory(world_store=None) -> OWLOntologyManager:
     from owlapy.owlready2 import OWLOntologyManager_Owlready2
 
-    return OWLOntologyManager_Owlready2()
+    return OWLOntologyManager_Owlready2(world_store=world_store)
 
 
 def _Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
@@ -48,9 +47,10 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         reasoner: reasoner over the ontology
         length_metric_factory: see `length_metric`
         length_metric: length metric that is used in calculation of class expresion lengths
+        individuals_cache_size: how many individuals of class expressions to cache
     """
     __slots__ = '_manager', '_ontology', '_reasoner', '_length_metric', \
-                '_ind_enc', '_ind_cache', 'path', 'use_individuals_cache'
+                '_ind_set', '_ind_cache', 'path', 'use_individuals_cache'
 
     _manager: OWLOntologyManager
     _ontology: OWLOntology
@@ -58,8 +58,8 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
     _length_metric: OWLClassExpressionLengthMetric
 
-    _ind_enc: NamedFixedSet[OWLNamedIndividual]
-    _ind_cache: Dict[OWLClassExpression, int]  # class expression => individuals
+    _ind_set: FrozenSet[OWLNamedIndividual]
+    _ind_cache: LRUCache[OWLClassExpression, FrozenSet[OWLNamedIndividual]]  # class expression => individuals
 
     path: str
     use_individuals_cache: bool
@@ -71,7 +71,8 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
                  reasoner_factory: Factory[[OWLOntology], OWLReasoner] = _Default_ReasonerFactory,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
                  length_metric_factory: Optional[Factory[[], OWLClassExpressionLengthMetric]] = None,
-                 use_individuals_cache: bool = True):
+                 individuals_cache_size=128,
+                 backend_store: bool = False):
         ...
 
     @overload
@@ -80,7 +81,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
                  reasoner: OWLReasoner,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
                  length_metric_factory: Optional[Factory[[], OWLClassExpressionLengthMetric]] = None,
-                 use_individuals_cache: bool = True):
+                 individuals_cache_size=128):
         ...
 
     def __init__(self, *,
@@ -94,7 +95,8 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
                  reasoner: Optional[OWLReasoner] = None,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
 
-                 use_individuals_cache: bool = True):
+                 individuals_cache_size=128,
+                 backend_store: bool = False):
         AbstractKnowledgeBase.__init__(self)
         self.path = path
         if ontology is not None:
@@ -103,13 +105,21 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         elif ontologymanager_factory is not None:
             self._manager = ontologymanager_factory()
         else:  # default to Owlready2 implementation
-            self._manager = _Default_OntologyManagerFactory()
+            if path is not None and backend_store:
+                self._manager = _Default_OntologyManagerFactory(world_store=path + ".or2")
+            else:
+                self._manager = _Default_OntologyManagerFactory()
             # raise TypeError("neither ontology nor manager factory given")
 
         if ontology is None:
             if path is None:
                 raise TypeError("path missing")
             self._ontology = self._manager.load_ontology(IRI.create('file://' + self.path))
+
+            from owlapy.owlready2 import OWLOntologyManager_Owlready2
+            if isinstance(self._manager, OWLOntologyManager_Owlready2) and backend_store:
+                self._manager.save_world()
+                logger.debug("Synced world to backend store")
 
         if reasoner is not None:
             self._reasoner = reasoner
@@ -128,16 +138,16 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
         ConceptGenerator.__init__(self, reasoner=self._reasoner)
 
-        individuals = self._ontology.individuals_in_signature()
         from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
         if isinstance(self._reasoner, OWLReasoner_FastInstanceChecker):
-            self._ind_enc = self._reasoner._ind_enc  # performance hack
+            self._ind_set = self._reasoner._ind_set  # performance hack
         else:
-            self._ind_enc = NamedFixedSet(OWLNamedIndividual, individuals)
+            individuals = self._ontology.individuals_in_signature()
+            self._ind_set = frozenset(individuals)
 
-        self.use_individuals_cache = use_individuals_cache
-        if use_individuals_cache:
-            self._ind_cache = dict()
+        self.use_individuals_cache = individuals_cache_size > 0
+        if self.use_individuals_cache:
+            self._ind_cache = LRUCache(maxsize=individuals_cache_size)
 
         self.describe()
 
@@ -177,12 +187,12 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         new._ontology = self._ontology
         new._reasoner = self._reasoner
         new._length_metric = self._length_metric
-        new._ind_enc = self._ind_enc
+        new._ind_set = self._ind_set
         new.path = self.path
         new.use_individuals_cache = self.use_individuals_cache
 
         if self.use_individuals_cache:
-            new._ind_cache = self._ind_cache.copy()
+            new._ind_cache = LRUCache(maxsize=self._ind_cache.maxsize)
 
         if ignored_classes is not None:
             owl_concepts_to_ignore = set()
@@ -235,7 +245,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         """
         ConceptGenerator.clean(self)
         if self.use_individuals_cache:
-            self._ind_cache.clear()
+            self._ind_cache.cache_clear()
 
     def _cache_individuals(self, ce: OWLClassExpression) -> None:
         if not self.use_individuals_cache:
@@ -247,19 +257,20 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
             self._ind_cache[ce] = self._reasoner._find_instances(ce)  # performance hack
         else:
             temp = self._reasoner.instances(ce)
-            self._ind_cache[ce] = self._ind_enc(temp)
+            self._ind_cache[ce] = frozenset(temp)
 
     def _maybe_cache_individuals(self, ce: OWLClassExpression) -> Iterable[OWLNamedIndividual]:
         if self.use_individuals_cache:
             self._cache_individuals(ce)
-            yield from self._ind_enc(self._ind_cache[ce])
+            yield from self._ind_cache[ce]
         else:
             yield from self._reasoner.instances(ce)
 
     def _maybe_cache_individuals_count(self, ce: OWLClassExpression) -> int:
         if self.use_individuals_cache:
             self._cache_individuals(ce)
-            return popcount(self._ind_cache[ce])
+            r = self._ind_cache[ce]
+            return len(r)
         else:
             return iter_count(self._reasoner.instances(ce))
 
@@ -273,7 +284,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
             individuals belonging to the given class
         """
         if concept is None or concept.is_owl_thing():
-            for _, i in self._ind_enc.items():
+            for i in self._ind_set:
                 yield i
         else:
             yield from self._maybe_cache_individuals(concept)
@@ -281,7 +292,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
     def individuals_count(self, concept: Optional[OWLClassExpression] = None) -> int:
         """Number of individuals"""
         if concept is None or concept.is_owl_thing():
-            return len(self._ind_enc)
+            return len(self._ind_set)
         else:
             return self._maybe_cache_individuals_count(concept)
 
@@ -301,17 +312,17 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         if isinstance(arg, OWLClassExpression):
             if self.use_individuals_cache:
                 self._cache_individuals(arg)
-                return BitSet(self._ind_cache[arg])
+                r = self._ind_cache[arg]
+                return r
             else:
-                return self.individuals_set(self.individuals(arg))
+                return frozenset(self.individuals(arg))
+        elif isinstance(arg, OWLNamedIndividual):
+            return frozenset({arg})
         else:
-            if self._ind_enc:
-                return BitSet(self._ind_enc(arg))
-            else:
-                return frozenset(arg)
+            return frozenset(arg)
 
     def all_individuals_set(self):
-        if self._ind_enc:
-            return BitSet((1 << len(self._ind_enc)) - 1)
+        if self._ind_set is not None:
+            return self._ind_set
         else:
             return frozenset(self._ontology.individuals_in_signature())
