@@ -38,8 +38,8 @@ def run(data_file, pos_file, neg_file):
     for h in alg.best_hypotheses(3):
         individuals_set = kb.individuals_set(h.concept)
         print(f'{i}: {render.render(h.concept)} ('
-              f'pred. acc.: {pred_acc.score(individuals_set, lp)[1]}, '
-              f'F-Measure: {f1.score(individuals_set, lp)[1]}'
+              f'pred. acc.: {pred_acc.score(individuals_set, lp.encode_kb(kb))[1]}, '
+              f'F-Measure: {f1.score(individuals_set, lp.encode_kb(kb))[1]}'
               f') [Node '
               f'quality: {h.quality}, h-exp: {h.h_exp}, RC: {h.refinement_count}'
               f']')
