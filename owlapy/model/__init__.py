@@ -190,6 +190,13 @@ class OWLNamedObject(OWLObject, HasIRI, metaclass=ABCMeta):
 class OWLEntity(OWLNamedObject, metaclass=ABCMeta):
     """Represents Entities in the OWL 2 Specification."""
     __slots__ = ()
+
+    def to_string_id(self) -> str:
+        return self.get_iri().as_str()
+
+    def is_anonymous(self) -> bool:
+        return False
+
     pass
 
 
@@ -976,6 +983,9 @@ class OWLOntologyID:
                 return self._version_iri
         return self._ontology_iri
 
+    def is_anonymous(self) -> bool:
+        return self._ontology_iri is None
+
     def __repr__(self):
         return f"OWLOntologyID({repr(self._ontology_iri)}, {repr(self._version_iri)})"
 
@@ -1047,6 +1057,9 @@ class OWLOntology(OWLObject, metaclass=ABCMeta):
             The OWLOntologyID
         """
         pass
+
+    def is_anonymous(self) -> bool:
+        return self.get_ontology_id().is_anonymous()
 
 
 # noinspection PyUnresolvedReferences
