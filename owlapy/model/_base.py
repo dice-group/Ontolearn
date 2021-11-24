@@ -22,6 +22,10 @@ class OWLObject(metaclass=ABCMeta):
     def __repr__(self):
         pass
 
+    # default
+    def is_anonymous(self) -> bool:
+        return True
+
 
 class OWLAnnotationObject(OWLObject, metaclass=ABCMeta):
     """A marker interface for the values (objects) of annotations."""
