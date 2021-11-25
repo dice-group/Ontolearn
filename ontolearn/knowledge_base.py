@@ -5,7 +5,7 @@ from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassE
     OWLObjectProperty, OWLClass, OWLDataProperty, IRI
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.util import iter_count, LRUCache
-from .abstracts import AbstractKnowledgeBase
+from .abstracts import AbstractKnowledgeBase, AbstractScorer, EncodedLearningProblem
 from .concept_generator import ConceptGenerator
 from .core.owl.utils import OWLClassExpressionLengthMetric
 
@@ -34,6 +34,11 @@ def _Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
 
 def _Default_ClassExpressionLengthMetricFactory() -> OWLClassExpressionLengthMetric:
     return OWLClassExpressionLengthMetric.get_default()
+
+
+class EvaluatedConcept:
+    __slots__ = 'q', 'inds', 'ic'
+    pass
 
 
 class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
@@ -335,3 +340,11 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
         return f'KnowledgeBase(path={repr(self.path)} <{class_count} classes, {properties_count} properties, ' \
                f'{individuals_count} individuals)'
+
+    def evaluate_concept(self, concept: OWLClassExpression, quality_func: AbstractScorer,
+                         encoded_learning_problem: EncodedLearningProblem) -> EvaluatedConcept:
+        e = EvaluatedConcept()
+        e.inds = self.individuals_set(concept)
+        e.ic = len(e.inds)
+        _, e.q = quality_func.score(e.inds, encoded_learning_problem)
+        return e

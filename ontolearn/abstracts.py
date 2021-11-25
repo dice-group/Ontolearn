@@ -53,13 +53,13 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
         Returns:
             True if the quality function was applied successfully
         """
-        assert isinstance(learning_problem,
-                          EncodedLearningProblem), f'Expected EncodedLearningProblem but got {type(learning_problem)}'
-        assert isinstance(node,
-                          AbstractNode), f'Expected AbstractNode but got {type(node)}'
+        assert isinstance(learning_problem, EncodedLearningProblem), \
+            f'Expected EncodedLearningProblem but got {type(learning_problem)}'
+        assert isinstance(node, AbstractNode), \
+            f'Expected AbstractNode but got {type(node)}'
         from ontolearn.search import _NodeQuality
-        assert isinstance(node,
-                          _NodeQuality), f'Expected _NodeQuality but got {type(_NodeQuality)}'
+        assert isinstance(node, _NodeQuality), \
+            f'Expected _NodeQuality but got {type(_NodeQuality)}'
 
         ret, q = self.score(instances, learning_problem)
         if q is not None:

@@ -237,15 +237,17 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
             self._seen_norm_concepts.add(norm_concept)
 
         self.search_tree[ref.concept] = TreeNode(ref, tree_parent, is_root=ref.is_root)
-        ref_individuals = self.kb.individuals_set(ref.concept)
-        ref.individuals_count = len(ref_individuals)
-        self.quality_func.apply(ref, ref_individuals, self._learning_problem)  # AccuracyOrTooWeak(n)
+        e = self.kb.evaluate_concept(ref.concept, self.quality_func, self._learning_problem)
+        # ref_individuals = self.kb.individuals_set(ref.concept)
+        # ref.individuals_count = len(ref_individuals)
+        # self.quality_func.apply(ref, ref_individuals, self._learning_problem)  # AccuracyOrTooWeak(n)
+        ref.quality = e.q
         self._number_of_tested_concepts += 1
         if ref.quality == 0:  # > too weak
             return False
         assert 0 <= ref.quality <= 1.0
         # TODO: expression rewriting
-        self.heuristic_func.apply(ref, ref_individuals, self._learning_problem)
+        self.heuristic_func.apply(ref, e.inds, self._learning_problem)
         if not norm_seen and self.best_descriptions.maybe_add(ref):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("Better description found: %s", ref)
