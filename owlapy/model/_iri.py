@@ -62,7 +62,8 @@ class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
 
     @overload
     @staticmethod
-    def create(namespace: Namespaces, remainder: str) -> 'IRI': ...
+    def create(namespace: Namespaces, remainder: str) -> 'IRI':
+        ...
 
     @overload
     @staticmethod
@@ -136,8 +137,8 @@ class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
         Returns:
             True if the IRI is in the reserved vocabulary, otherwise False.
         """
-        return self._namespace == namespaces.OWL or self._namespace == namespaces.RDF \
-               or self._namespace == namespaces.RDFS or self._namespace == namespaces.XSD
+        return (self._namespace == namespaces.OWL or self._namespace == namespaces.RDF
+                or self._namespace == namespaces.RDFS or self._namespace == namespaces.XSD)
 
     def as_iri(self) -> 'IRI':
         # documented in parent

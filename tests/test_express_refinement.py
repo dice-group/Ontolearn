@@ -1,7 +1,6 @@
 import json
 import unittest
 
-from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.model_adapter import ModelAdapter
 from ontolearn.refinement_operators import ExpressRefinement
 from ontolearn.utils import setup_logging
