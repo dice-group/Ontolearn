@@ -1,5 +1,5 @@
 from functools import singledispatchmethod, total_ordering
-from typing import Iterable, TypeVar, Generic, Tuple, List, cast, Optional, ClassVar
+from typing import Iterable, TypeVar, Generic, Tuple, cast, Optional
 
 from owlapy.model import OWLObject, HasIndex, HasIRI, OWLClassExpression, OWLClass, OWLObjectIntersectionOf, \
     OWLObjectUnionOf, OWLObjectComplementOf, OWLNothing, OWLRestriction, OWLThing, OWLObjectSomeValuesFrom, \
@@ -351,7 +351,7 @@ class LRUCache(Generic[_K, _V]):
                 # still adjusting the links.
                 self.root = oldroot[LRUCache.NEXT]
                 oldkey = self.root[LRUCache.KEY]
-                _oldresult = self.root[LRUCache.RESULT]
+                _oldresult = self.root[LRUCache.RESULT]  # noqa: F841
                 self.root[LRUCache.KEY] = self.root[LRUCache.RESULT] = None
                 # Now update the cache dictionary.
                 del self.cache[oldkey]

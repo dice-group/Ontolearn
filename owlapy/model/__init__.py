@@ -929,7 +929,6 @@ class OWLNamedIndividual(OWLIndividual, OWLEntity):
         return self._iri
 
 
-
 _M = TypeVar('_M', bound='OWLOntologyManager')  #:
 
 
@@ -1005,7 +1004,6 @@ class OWLAxiom(OWLObject, metaclass=ABCMeta):
     __slots__ = ()
     # TODO: XXX
     pass
-
 
 
 class OWLDatatype(OWLEntity, OWLDataRange):
@@ -2208,6 +2206,7 @@ class AddImport(OWLOntologyChange):
 class OWLOntologyManager(metaclass=ABCMeta):
     """An OWLOntologyManager manages a set of ontologies. It is the main point for creating, loading and accessing
     ontologies."""
+
     @abstractmethod
     def create_ontology(self, iri: IRI) -> OWLOntology:
         """Creates a new (empty) ontology that that has the specified ontology IRI (and no version IRI).

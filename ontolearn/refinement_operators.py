@@ -45,16 +45,18 @@ class LengthBasedRefinement(BaseRefinement):
         iterable_container.append(self.kb.negation_from_iterables((i for i in all_subs)))
         """ (3) Add Nothing """
         iterable_container.append([self.kb.nothing])
-        """ (4) Get all most general restrictions and store them forall r. T, \exist r. T """
+        """ (4) Get all most general restrictions and store them forall r. T, \\exist r. T """
         iterable_container.append(self.kb.most_general_universal_restrictions(domain=self.kb.thing, filler=None))
         iterable_container.append(self.kb.most_general_existential_restrictions(domain=self.kb.thing, filler=None))
-        """ (5) Generate all refinements of given concept that have length less or equal to the maximum refinement length constraint """
+        """ (5) Generate all refinements of given concept that have length less or equal to the maximum refinement
+         length constraint """
         yield from self.apply_union_and_intersection_from_iterable(iterable_container)
 
     def apply_union_and_intersection_from_iterable(self, cont: Iterable[Generator]) -> Iterable:
         """ Create Union and Intersection OWL Class Expressions
         1. Create OWLObjectIntersectionOf via logical conjunction of cartesian product of input owl class expressions
-        2. Create OWLObjectUnionOf class expression via logical disjunction pf cartesian product of input owl class expressions
+        2. Create OWLObjectUnionOf class expression via logical disjunction pf cartesian product of input owl class
+         expressions
         Repeat 1 and 2 until all concepts having max_len_refinement_top reached.
         """
         cumulative_refinements = dict()
@@ -75,7 +77,8 @@ class LengthBasedRefinement(BaseRefinement):
         for i in lengths:  # type: int
             """ 3.1 Return all class expressions having the length i """
             yield from cumulative_refinements[i]
-            """ 3.2 Create intersection and union of class expressions having the length i with class expressions in cumulative_refinements """
+            """ 3.2 Create intersection and union of class expressions having the length i with class expressions in
+             cumulative_refinements """
             for j in lengths:
                 """ 3.3 Ignore if we have already createdValid intersection and union """
                 if (i, j) in seen or (j, i) in seen:
@@ -89,7 +92,7 @@ class LengthBasedRefinement(BaseRefinement):
                 if len_ <= self.max_len_refinement_top:
                     """ 3.4 Intersect concepts having length i with concepts having length j"""
                     intersect_of_concepts = self.kb.intersect_from_iterables(cumulative_refinements[i],
-                                                                         cumulative_refinements[j])
+                                                                             cumulative_refinements[j])
                     """ 3.4 Union concepts having length i with concepts having length j"""
                     union_of_concepts = self.kb.union_from_iterables(cumulative_refinements[i],
                                                                      cumulative_refinements[j])
@@ -148,7 +151,7 @@ class LengthBasedRefinement(BaseRefinement):
         # rule 2: \forall r.D = > \forall r.D AND T
         yield self.kb.intersection((class_expression, self.kb.thing))
 
-    def refine_object_union_of(self, class_expression: OWLObjectUnionOf)-> Iterable[OWLClassExpression]:
+    def refine_object_union_of(self, class_expression: OWLObjectUnionOf) -> Iterable[OWLClassExpression]:
         """
         Refine C =A AND B
         """
@@ -161,7 +164,7 @@ class LengthBasedRefinement(BaseRefinement):
                     yield class_expression
                 yield self.kb.union((class_expression, ref_concept_A))
 
-    def refine_object_intersection_of(self, class_expression: OWLClassExpression)-> Iterable[OWLClassExpression]:
+    def refine_object_intersection_of(self, class_expression: OWLClassExpression) -> Iterable[OWLClassExpression]:
         """
         Refine C =A AND B
         """
@@ -199,7 +202,7 @@ class LengthBasedRefinement(BaseRefinement):
 
 class ModifiedCELOERefinement(BaseRefinement[OENode]):
     """
-     A top down/downward refinement operator refinement operator in ALC.
+     A top down/downward refinement operator refinement operator in SHIQ(D).
     """
     __slots__ = 'max_child_length', 'use_negation', 'use_all_constructor', 'use_inverse', 'use_card_restrictions', \
                 'max_nr_fillers', 'card_limit', 'use_numeric_datatypes', 'use_boolean_datatype', 'dp_splits', \
@@ -811,7 +814,7 @@ class ExpressRefinement(BaseRefinement[Node]):
                             union = self.kb.union([sub, other_ref])
                             yield union
                             any_refinement = True
-                        elif not other_ref in iter_container_sub:
+                        elif other_ref not in iter_container_sub:
                             union = self.kb.union([sub, other_ref])
                             union = self.kb.intersection([concept, union])
                             if self.len(union) <= self.max_child_length:

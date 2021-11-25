@@ -353,8 +353,8 @@ class ConceptGenerator:
         Returns:
             intersection with all operands (intersections are merged)
         """
-        # TODO CD: I would rather prefer def intersection(self, a: OWLClassExpression, b: OWLClassExpression)
-        # TODO: This is more advantages as one does not need to create a tuple of a list before intersection two expressions.
+        # TODO CD: I would rather prefer def intersection(self, a: OWLClassExpression, b: OWLClassExpression). This is
+        # TODO CD: more advantages as one does not need to create a tuple of a list before intersection two expressions.
         operands: List[OWLClassExpression] = []
         for c in ops:
             if isinstance(c, OWLObjectIntersectionOf):

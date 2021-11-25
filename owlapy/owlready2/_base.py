@@ -13,7 +13,7 @@ from pandas import Timedelta
 from owlapy import namespaces
 from owlapy.ext import OWLReasonerEx
 from owlapy.model import OWLLiteral, OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
-    OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, \
+    OWLNamedIndividual, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, \
     OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype, \
     OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, DateOWLDatatype, DateTimeOWLDatatype, \
     DurationOWLDatatype, IRI, OWLDataPropertyRangeAxiom
@@ -233,7 +233,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             if isinstance(dom, owlready2.ThingClass):
                 yield OWLClass(IRI.create(dom.iri))
             else:
-                pass # XXX TODO
+                pass  # XXX TODO
 
     def object_property_ranges(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
         if direct:
@@ -243,7 +243,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             if isinstance(rng, owlready2.ThingClass):
                 yield OWLClass(IRI.create(rng.iri))
             else:
-                pass # XXX TODO
+                pass  # XXX TODO
 
     def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
         """Return the named classes that are directly equivalent to the class expression"""
