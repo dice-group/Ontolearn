@@ -2,12 +2,13 @@ from collections import Counter
 from functools import singledispatchmethod
 from typing import Iterable, Generic, TypeVar, Callable, List
 
-from owlapy.model import OWLDataProperty, OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
+from owlapy.model import OWLDataRange, OWLLiteral, OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, \
     OWLObjectCardinalityRestriction, OWLObjectHasSelf, OWLObjectHasValue, OWLObjectOneOf, OWLNamedIndividual, \
     OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLClassExpression, OWLThing, \
     OWLDataSomeValuesFrom, OWLDataOneOf, OWLDatatypeRestriction, OWLDataComplementOf, OWLDataAllValuesFrom, \
-    OWLDataCardinalityRestriction, OWLDatatype, OWLDataHasValue, OWLDataUnionOf, OWLDataIntersectionOf \
+    OWLDataCardinalityRestriction, OWLDatatype, OWLDataHasValue, OWLDataUnionOf, OWLDataIntersectionOf, \
+    OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataProperty
 
 from owlapy.util import OrderedOWLObject, iter_count
 from sortedcontainers import SortedSet
@@ -332,7 +333,7 @@ class ConceptOperandSorter:
     # single dispatch is still not implemented in mypy, see https://github.com/python/mypy/issues/2904
     @singledispatchmethod
     def sort(self, o: _O) -> _O:
-        raise NotImplementedError
+        raise NotImplementedError(o)
 
     @sort.register
     def _(self, o: OWLClass) -> OWLClass:
@@ -343,7 +344,15 @@ class ConceptOperandSorter:
         return p
 
     @sort.register
+    def _(self, p: OWLDataProperty) -> OWLDataProperty:
+        return p
+
+    @sort.register
     def _(self, i: OWLNamedIndividual) -> OWLNamedIndividual:
+        return i
+
+    @sort.register
+    def _(self, i: OWLLiteral) -> OWLLiteral:
         return i
 
     @sort.register
@@ -418,14 +427,101 @@ class ConceptOperandSorter:
         return r
 
     @sort.register
-    def _(self, r: OWLObjectHasValue):
+    def _(self, r: OWLObjectHasValue) -> OWLObjectHasValue:
         return r
 
     @sort.register
-    def _(self, r: OWLObjectOneOf):
+    def _(self, r: OWLObjectOneOf) -> OWLObjectOneOf:
         t = OWLObjectOneOf(_sort_by_ordered_owl_object(r.individuals()))
         if t == r:
             return r
+        else:
+            return t
+
+    @sort.register
+    def _(self, e: OWLDataSomeValuesFrom) -> OWLDataSomeValuesFrom:
+        t = OWLDataSomeValuesFrom(property=e.get_property(), filler=self.sort(e.get_filler()))
+        if t == e:
+            return e
+        else:
+            return t
+
+    @sort.register
+    def _(self, e: OWLDataAllValuesFrom) -> OWLDataAllValuesFrom:
+        t = OWLDataAllValuesFrom(property=e.get_property(), filler=self.sort(e.get_filler()))
+        if t == e:
+            return e
+        else:
+            return t
+
+    @sort.register
+    def _(self, c: OWLDataUnionOf) -> OWLDataUnionOf:
+        t = OWLDataUnionOf(_sort_by_ordered_owl_object(c.operands()))
+        if t == c:
+            return c
+        else:
+            return t
+
+    @sort.register
+    def _(self, c: OWLDataIntersectionOf) -> OWLDataIntersectionOf:
+        t = OWLDataIntersectionOf(_sort_by_ordered_owl_object(c.operands()))
+        if t == c:
+            return c
+        else:
+            return t
+
+    @sort.register
+    def _(self, n: OWLDataComplementOf) -> OWLDataComplementOf:
+        return n
+
+    @sort.register
+    def _(self, n: OWLDatatypeRestriction) -> OWLDatatypeRestriction:
+        t = OWLDatatypeRestriction(n.get_datatype(), _sort_by_ordered_owl_object(n.get_facet_restrictions()))
+        if t == n:
+            return n
+        else:
+            return t
+
+    @sort.register
+    def _(self, d: OWLDatatype) -> OWLDatatype:
+        return d
+
+    @sort.register
+    def _(self, r: OWLDataMinCardinality) -> OWLDataMinCardinality:
+        t = OWLDataMinCardinality(cardinality=r.get_cardinality(), property=r.get_property(),
+                                  filler=self.sort(r.get_filler()))
+        if t == r:
+            return r
+        else:
+            return t
+
+    @sort.register
+    def _(self, r: OWLDataExactCardinality) -> OWLDataExactCardinality:
+        t = OWLDataExactCardinality(cardinality=r.get_cardinality(), property=r.get_property(),
+                                    filler=self.sort(r.get_filler()))
+        if t == r:
+            return r
+        else:
+            return t
+
+    @sort.register
+    def _(self, r: OWLDataMaxCardinality) -> OWLDataMaxCardinality:
+        t = OWLDataMaxCardinality(cardinality=r.get_cardinality(), property=r.get_property(),
+                                  filler=self.sort(r.get_filler()))
+        if t == r:
+            return r
+        else:
+            return t
+
+    @sort.register
+    def _(self, r: OWLDataHasValue) -> OWLDataHasValue:
+        return r
+
+    @sort.register
+    def _(self, n: OWLDataOneOf) -> OWLDataOneOf:
+        t = OWLDataOneOf(_sort_by_ordered_owl_object(n.values()))
+        if t == n:
+            return n
         else:
             return t
 
@@ -437,7 +533,7 @@ class OperandSetTransform:
     # single dispatch is still not implemented in mypy, see https://github.com/python/mypy/issues/2904
     @singledispatchmethod
     def _simplify(self, o: _O) -> _O:
-        raise NotImplementedError
+        raise NotImplementedError(o)
 
     @_simplify.register
     def _(self, o: OWLClass) -> OWLClass:
@@ -448,7 +544,15 @@ class OperandSetTransform:
         return p
 
     @_simplify.register
+    def _(self, p: OWLDataProperty) -> OWLDataProperty:
+        return p
+
+    @_simplify.register
     def _(self, i: OWLNamedIndividual) -> OWLNamedIndividual:
+        return i
+
+    @_simplify.register
+    def _(self, i: OWLLiteral) -> OWLLiteral:
         return i
 
     @_simplify.register
@@ -506,9 +610,62 @@ class OperandSetTransform:
         return r
 
     @_simplify.register
-    def _(self, r: OWLObjectHasValue):
+    def _(self, r: OWLObjectHasValue) -> OWLObjectHasValue:
         return r
 
     @_simplify.register
-    def _(self, r: OWLObjectOneOf):
+    def _(self, r: OWLObjectOneOf) -> OWLObjectOneOf:
         return OWLObjectOneOf(_sort_by_ordered_owl_object(set(r.individuals())))
+
+    @_simplify.register
+    def _(self, e: OWLDataSomeValuesFrom) -> OWLDataSomeValuesFrom:
+        return OWLDataSomeValuesFrom(property=e.get_property(), filler=self._simplify(e.get_filler()))
+
+    @_simplify.register
+    def _(self, e: OWLDataAllValuesFrom) -> OWLDataAllValuesFrom:
+        return OWLDataAllValuesFrom(property=e.get_property(), filler=self._simplify(e.get_filler()))
+
+    @_simplify.register
+    def _(self, c: OWLDataUnionOf) -> OWLDataRange:
+        s = set(map(self._simplify, set(c.operands())))
+        if len(s) == 1:
+            return s.pop()
+        return OWLDataUnionOf(_sort_by_ordered_owl_object(s))
+
+    @_simplify.register
+    def _(self, c: OWLDataIntersectionOf) -> OWLDataRange:
+        s = set(map(self._simplify, set(c.operands())))
+        if len(s) == 1:
+            return s.pop()
+        return OWLDataIntersectionOf(_sort_by_ordered_owl_object(s))
+
+    @_simplify.register
+    def _(self, n: OWLDatatypeRestriction) -> OWLDatatypeRestriction:
+        return n
+
+    @_simplify.register
+    def _(self, n: OWLDataComplementOf) -> OWLDataComplementOf:
+        return n
+
+    @_simplify.register
+    def _(self, r: OWLDataMinCardinality) -> OWLDataMinCardinality:
+        return OWLDataMinCardinality(cardinality=r.get_cardinality(), property=r.get_property(),
+                                     filler=self._simplify(r.get_filler()))
+
+    @_simplify.register
+    def _(self, r: OWLDataExactCardinality) -> OWLDataExactCardinality:
+        return OWLDataExactCardinality(cardinality=r.get_cardinality(), property=r.get_property(),
+                                       filler=self._simplify(r.get_filler()))
+
+    @_simplify.register
+    def _(self, r: OWLDataMaxCardinality) -> OWLDataMaxCardinality:
+        return OWLDataMaxCardinality(cardinality=r.get_cardinality(), property=r.get_property(),
+                                     filler=self._simplify(r.get_filler()))
+
+    @_simplify.register
+    def _(self, r: OWLDataHasValue) -> OWLDataHasValue:
+        return r
+
+    @_simplify.register
+    def _(self, r: OWLDataOneOf) -> OWLDataOneOf:
+        return OWLDataOneOf(_sort_by_ordered_owl_object(set(r.values())))

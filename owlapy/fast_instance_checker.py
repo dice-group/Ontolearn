@@ -1,10 +1,12 @@
+from collections import defaultdict
 import logging
 import operator
 from functools import singledispatchmethod, reduce
 from itertools import repeat
 from types import MappingProxyType, FunctionType
-from typing import Callable, Iterable, Dict, Mapping, Set, Type, TypeVar, Union, Optional, FrozenSet
+from typing import DefaultDict, Iterable, Dict, Mapping, Set, Type, TypeVar, Union, Optional, FrozenSet
 
+from owlapy.ext import OWLReasonerEx
 from owlapy.model import OWLObjectOneOf, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
     OWLObjectProperty, OWLDataProperty, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
     OWLObjectPropertyExpression, OWLObjectComplementOf, OWLObjectAllValuesFrom, IRI, OWLObjectInverseOf, \
@@ -19,7 +21,7 @@ logger = logging.getLogger(__name__)
 _P = TypeVar('_P', bound=OWLPropertyExpression)
 
 
-class OWLReasoner_FastInstanceChecker(OWLReasoner):
+class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
     """Tries to check instances fast (but maybe incomplete)"""
     __slots__ = '_ontology', '_base_reasoner', \
                 '_ind_set', '_cls_to_ind', \
@@ -93,6 +95,9 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
     def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClass]:
         yield from self._base_reasoner.data_property_domains(pe, direct=direct)
 
+    def data_property_ranges(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLDatatype]:
+        yield from self._base_reasoner.data_property_ranges(pe, direct=direct)
+
     def object_property_domains(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
         yield from self._base_reasoner.object_property_domains(pe, direct=direct)
 
@@ -102,8 +107,11 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
     def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
         yield from self._base_reasoner.equivalent_classes(ce)
 
-    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable:
+    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
         yield from self._base_reasoner.data_property_values(ind, pe)
+
+    def all_data_property_values(self, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
+        yield from self._base_reasoner.all_data_property_values(pe)
 
     def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
             -> Iterable[OWLNamedIndividual]:
@@ -162,7 +170,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasoner):
             raise NotImplementedError
 
         # Dict with Individual => Set[Individual]
-        opc: Dict[OWLNamedIndividual, Set[OWLNamedIndividual]] = dict()
+        opc: DefaultDict[OWLNamedIndividual, Set[OWLNamedIndividual]] = defaultdict(set)
 
         # shortcut for owlready2
         from owlapy.owlready2 import OWLOntology_Owlready2
