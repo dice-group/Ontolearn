@@ -17,6 +17,7 @@ from ontolearn.utils import setup_logging
 
 setup_logging()
 
+
 def ClosedWorld_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
     from owlapy.owlready2 import OWLOntology_Owlready2
     from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses

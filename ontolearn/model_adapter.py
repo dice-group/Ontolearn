@@ -1,9 +1,9 @@
 import inspect
 import logging
-from typing import Iterable, TypeVar
+from typing import TypeVar
 
 from ontolearn.abstracts import AbstractHeuristic, AbstractScorer, BaseRefinement, AbstractKnowledgeBase, \
-    AbstractLearningProblem, AbstractNode
+    AbstractNode
 from ontolearn.base_concept_learner import BaseConceptLearner
 
 logger = logging.getLogger(__name__)

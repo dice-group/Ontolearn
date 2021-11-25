@@ -1,10 +1,12 @@
-from typing import List, Tuple, Set, Dict, Any, Iterable
-from owlapy.model import OWLClass, OWLNamedIndividual, IRI, OWLClassExpression
-import numpy as np
 import json
-from sklearn.model_selection import KFold
 import time
 from random import shuffle
+from typing import List, Tuple, Set, Dict, Any, Iterable
+
+import numpy as np
+from sklearn.model_selection import KFold
+
+from owlapy.model import OWLNamedIndividual, IRI
 
 
 class Experiments:
@@ -34,7 +36,8 @@ class Experiments:
             report = dict()
             target_class_expression, typed_positive, typed_negative = lp
             report.update(pred)
-            report['Positives'], report['Negatives'] = [owl_indv.get_iri().as_str() for owl_indv in typed_positive], [owl_indv.get_iri().as_str() for owl_indv in typed_negative]
+            report['Positives'], report['Negatives'] = [owl_indv.get_iri().as_str() for owl_indv in typed_positive], \
+                                                       [owl_indv.get_iri().as_str() for owl_indv in typed_negative]
             store_json[th] = report
         print('##################')
         """ (2) Serialize classification report """
@@ -49,15 +52,18 @@ class Experiments:
         # Extract Infos
         f1, acc, num_concept_tested, runtime = array_res[:, 0], array_res[:, 1], array_res[:, 2], array_res[:, 3]
         del array_res
-        report_str = '{}\t F-measure:(avg.{:.2f} | std.{:.2f})\tAccuracy:(avg.{:.2f} | std.{:.2f})\t' \
-            '\tNumClassTested:(avg.{:.2f} | std.{:.2f})\tRuntime:(avg.{:.2f} | std.{:.2f})'.format(model.name,
-                                                                                                   f1.mean(), f1.std(),
-                                                                                                   acc.mean(),
-                                                                                                   acc.std(),
-                                                                                                   num_concept_tested.mean(),
-                                                                                                   num_concept_tested.std(),
-                                                                                                   runtime.mean(),
-                                                                                                   runtime.std())
+        report_str = '{}\t' \
+                     ' F-measure:(avg.{:.2f} | std.{:.2f})\t' \
+                     'Accuracy:(avg.{:.2f} | std.{:.2f})\t\t' \
+                     'NumClassTested:(avg.{:.2f} | std.{:.2f})\t' \
+                     'Runtime:(avg.{:.2f} | std.{:.2f})'.format(model.name,
+                                                                f1.mean(), f1.std(),
+                                                                acc.mean(),
+                                                                acc.std(),
+                                                                num_concept_tested.mean(),
+                                                                num_concept_tested.std(),
+                                                                runtime.mean(),
+                                                                runtime.std())
         return report_str, {'F-measure': f1, 'Accuracy': acc, 'NumClassTested': num_concept_tested, 'Runtime': runtime}
 
     def start_KFold(self, k=None, dataset: List[Tuple[str, Set, Set]] = None, models: Iterable = None):
@@ -121,7 +127,8 @@ class Experiments:
         """ (1) Predict OWL Class Expression """
         for m in models:
             print(
-                f'{m.name} starts on {len(dataset)} number of problems. Max Runtime per problem is set to {self.max_test_time_per_concept} seconds.')
+                f'{m.name} starts on {len(dataset)} number of problems. '
+                f'Max Runtime per problem is set to {self.max_test_time_per_concept} seconds.')
             test_report: List[dict] = m.fit_from_iterable(dataset, max_runtime=self.max_test_time_per_concept)
             str_report, dict_report = self.store_report(m, dataset, test_report)
             results.setdefault(m.name, []).append((counter, dict_report))
@@ -140,4 +147,8 @@ class Experiments:
             runtime_mean, runtime_std = r[:, 3].mean(), r[:, 3].std()
 
             print(
-                f'{learner_name}\t F-measure:(avg. {f1_mean:.2f} | std. {f1_std:.2f})\tAccuracy:(avg. {acc_mean:.2f} | std. {acc_std:.2f})\t\tNumClassTested:(avg. {num_concept_tested_mean:.2f} | std. {num_concept_tested_std:.2f})\t\tRuntime:(avg.{runtime_mean:.2f} | std.{runtime_std:.2f})')
+                f'{learner_name}\t'
+                f' F-measure:(avg. {f1_mean:.2f} | std. {f1_std:.2f})\t'
+                f'Accuracy:(avg. {acc_mean:.2f} | std. {acc_std:.2f})\t\t'
+                f'NumClassTested:(avg. {num_concept_tested_mean:.2f} | std. {num_concept_tested_std:.2f})\t\t'
+                f'Runtime:(avg.{runtime_mean:.2f} | std.{runtime_std:.2f})')

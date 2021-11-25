@@ -117,6 +117,7 @@ class OCELHeuristic(AbstractHeuristic):
         heuristic_val += accuracy + self.gainBonusFactor * accuracy_gain - node.h_exp * self.expansionPenaltyFactor
         node.heuristic = round(heuristic_val, 5)
 
+
 class Reward:
     def __init__(self, reward_of_goal=5.0, beta=.04, alpha=.5):
         self.name = 'DRILL_Reward'

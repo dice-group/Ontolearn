@@ -1,5 +1,5 @@
 """ Test the base module"""
-import os
+# import os
 
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.utils import setup_logging
