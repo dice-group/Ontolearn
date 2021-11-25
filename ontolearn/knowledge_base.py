@@ -229,7 +229,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
         return new
 
-    def cl(self, ce: OWLClassExpression) -> int:
+    def concept_len(self, ce: OWLClassExpression) -> int:
         """Calculate the length of a concept
 
         Args:
