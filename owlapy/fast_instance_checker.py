@@ -6,6 +6,7 @@ from itertools import repeat
 from types import MappingProxyType, FunctionType
 from typing import DefaultDict, Iterable, Dict, Mapping, Set, Type, TypeVar, Union, Optional, FrozenSet
 
+from owlapy.ext import OWLReasonerEx
 from owlapy.model import OWLObjectOneOf, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
     OWLObjectProperty, OWLDataProperty, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
     OWLObjectPropertyExpression, OWLObjectComplementOf, OWLObjectAllValuesFrom, IRI, OWLObjectInverseOf, \
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 _P = TypeVar('_P', bound=OWLPropertyExpression)
 
 
-class OWLReasoner_FastInstanceChecker(OWLReasoner):
+class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
     """Tries to check instances fast (but maybe incomplete)"""
     __slots__ = '_ontology', '_base_reasoner', \
                 '_ind_set', '_cls_to_ind', \
