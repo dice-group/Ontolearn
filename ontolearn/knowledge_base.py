@@ -229,7 +229,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
         return new
 
-    def cl(self, ce: OWLClassExpression) -> int:
+    def concept_len(self, ce: OWLClassExpression) -> int:
         """Calculate the length of a concept
 
         Args:
@@ -326,3 +326,12 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
             return self._ind_set
         else:
             return frozenset(self._ontology.individuals_in_signature())
+
+    def __repr__(self):
+        properties_count = iter_count(self.ontology().object_properties_in_signature()) + iter_count(
+            self.ontology().data_properties_in_signature())
+        class_count = iter_count(self.ontology().classes_in_signature())
+        individuals_count = self.individuals_count()
+
+        return f'KnowledgeBase(path={repr(self.path)} <{class_count} classes, {properties_count} properties, ' \
+               f'{individuals_count} individuals)'

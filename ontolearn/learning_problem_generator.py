@@ -355,7 +355,7 @@ class LearningProblemGenerator:
             return self.max_length >= len(x.length) >= self.min_length
 
         rl_state = RL_State(self.kb.thing, parent_node=None, is_root=True)
-        rl_state.length = self.kb.cl(self.kb.thing)
+        rl_state.length = self.kb.concept_len(self.kb.thing)
         rl_state.instances = set(self.kb.individuals(rl_state.concept))
 
         refinements_rl = self.apply_rho_on_rl_state(rl_state)
@@ -467,6 +467,6 @@ class LearningProblemGenerator:
     def apply_rho_on_rl_state(self, rl_state):
         for i in self.rho.refine(rl_state.concept):
             next_rl_state = RL_State(i, parent_node=rl_state)
-            next_rl_state.length = self.kb.cl(next_rl_state.concept)
+            next_rl_state.length = self.kb.concept_len(next_rl_state.concept)
             next_rl_state.instances = set(self.kb.individuals(next_rl_state.concept))
             yield next_rl_state

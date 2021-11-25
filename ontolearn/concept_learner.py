@@ -114,7 +114,7 @@ class CELOE(BaseConceptLearner[OENode]):
         yield from islice(self.best_descriptions, n)
 
     def make_node(self, c: OWLClassExpression, parent_node: Optional[OENode] = None, is_root: bool = False) -> OENode:
-        r = OENode(c, self.kb.cl(c), parent_node=parent_node, is_root=is_root)
+        r = OENode(c, self.kb.concept_len(c), parent_node=parent_node, is_root=is_root)
         return r
 
     @contextmanager
@@ -610,7 +610,7 @@ class Drill(AbstractDrill, BaseConceptLearner):
         rl_state = RL_State(c, parent_node=parent_node, is_root=is_root)
         # Assign Embeddings to it. Later, assign_embeddings can be also done in RL_STATE
         self.assign_embeddings(rl_state)
-        rl_state.length = self.kb.cl(c)
+        rl_state.length = self.kb.concept_len(c)
         return rl_state
 
     def compute_quality_of_class_expression(self, state: RL_State) -> None:
@@ -643,13 +643,13 @@ class Drill(AbstractDrill, BaseConceptLearner):
         sequence_of_states = []
         while len(sequence_of_goal_path) > 0:
             self.assign_embeddings(current_state)
-            current_state.length = self.kb.cl(current_state.concept)
+            current_state.length = self.kb.concept_len(current_state.concept)
             if current_state.quality is None:
                 self.compute_quality_of_class_expression(current_state)
 
             next_state = sequence_of_goal_path.pop(0)
             self.assign_embeddings(next_state)
-            next_state.length = self.kb.cl(next_state.concept)
+            next_state.length = self.kb.concept_len(next_state.concept)
             if next_state.quality is None:
                 self.compute_quality_of_class_expression(next_state)
             sequence_of_states.append((current_state, next_state))
