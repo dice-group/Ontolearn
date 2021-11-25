@@ -260,7 +260,8 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         """
         pass
 
-    def assign_labels_to_individuals(self, *, individuals: List[OWLNamedIndividual], hypotheses: List[_N]) -> np.ndarray:
+    def assign_labels_to_individuals(self, *, individuals: List[OWLNamedIndividual], hypotheses: List[_N]) \
+            -> np.ndarray:
         """
         Use each given search tree node as a hypothesis, and use it as a binary function to assign 1 or 0 to each
         individual.

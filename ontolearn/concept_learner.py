@@ -86,7 +86,8 @@ class CELOE(BaseConceptLearner[OENode]):
 
         self.max_he = 0
         self.min_he = 1
-        # TODO: CD: This could be defined in BaseConceptLearner as it is used in all classes that inherits from BaseConceptLearner
+        # TODO: CD: This could be defined in BaseConceptLearner as it is used in all classes that inherits from
+        # TODO: CD: BaseConceptLearner
         self._learning_problem = None
         self._max_runtime = None
 
@@ -212,7 +213,8 @@ class CELOE(BaseConceptLearner[OENode]):
     def _add_node(self, ref: OENode, tree_parent: Optional[TreeNode[OENode]]):
         # TODO:CD: Why have this constraint ?
         #  We should not ignore a concept due to this constraint.
-        #  It might be the case that new path to ref.concept is a better path. Hence, we should update its parent depending on the new heuristic value.
+        #  It might be the case that new path to ref.concept is a better path. Hence, we should update its parent
+        #  depending on the new heuristic value.
         #  Solution: If concept exists we should compare its first heuristic value  with the new one
         if ref.concept in self.search_tree:
             # ignoring refinement, it has been refined from another parent
@@ -584,7 +586,8 @@ class Drill(AbstractDrill, BaseConceptLearner):
         self.emb_neg = torch.tensor(
             self.instance_embeddings.loc[[owl_indv.get_iri().as_str() for owl_indv in neg_uri]].values,
             dtype=torch.float32)
-        """ (3) Take the mean of positive and negative examples and reshape it into (1,1,embedding_dim) for mini batching """
+        """ (3) Take the mean of positive and negative examples and reshape it into (1,1,embedding_dim) for mini
+         batching """
         self.emb_pos = torch.mean(self.emb_pos, dim=0)
         self.emb_pos = self.emb_pos.view(1, 1, self.emb_pos.shape[0])
         self.emb_neg = torch.mean(self.emb_neg, dim=0)
@@ -690,11 +693,11 @@ class Drill(AbstractDrill, BaseConceptLearner):
 
             if th % log_every_n_episodes == 0:
                 if self.verbose >= 1:
-                    logger.info(
-                        '{0}.th iter. SumOfRewards: {1:.2f}\tEpsilon:{2:.2f}\t|ReplayMem.|:{3}'.format(th, sum(rewards),
-                                                                                                       self.epsilon,
-                                                                                                       len(
-                                                                                                           self.experiences)))
+                    logger.info('{0}.th iter. SumOfRewards: {1:.2f}\t'
+                                'Epsilon:{2:.2f}\t'
+                                '|ReplayMem.|:{3}'.format(th, sum(rewards),
+                                                          self.epsilon,
+                                                          len(self.experiences)))
             """(3.2) Form experiences"""
             self.form_experiences(sequence_of_states, rewards)
             sum_of_rewards_per_actions.append(sum(rewards))
@@ -844,7 +847,8 @@ class Drill(AbstractDrill, BaseConceptLearner):
             # (2) if input node has not seen before, assign embeddings.
             if rl_state.embeddings is None:
                 assert isinstance(rl_state.concept, OWLClassExpression)
-                # (3) Retrieval instances via our retrieval function (R(C)). Be aware Open World and Closed World Assumption
+                # (3) Retrieval instances via our retrieval function (R(C)). Be aware Open World and Closed World
+                # Assumption
                 rl_state.instances = set(self.kb.individuals(rl_state.concept))
                 # (4) Retrieval instances in terms of bitset.
                 rl_state.instances_bitset = self.kb.individuals_set(rl_state.concept)

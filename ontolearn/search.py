@@ -11,7 +11,7 @@ from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.util import as_index, OrderedOWLObject
 from superprop import super_prop
 from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree, \
-    AbstractConceptNode, AbstractLearningProblem, EncodedLearningProblem, DRILLAbstractTree
+    AbstractConceptNode, EncodedLearningProblem, DRILLAbstractTree
 
 _N = TypeVar('_N')  #:
 
@@ -242,11 +242,11 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
         ))
 
 
-class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode,_NodeParentRef['RL_State']):
+class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodeParentRef['RL_State']):
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
     __slots__ = '_concept', '_quality', '_heuristic', \
                 'embeddings', 'individuals', \
-                'instances_bitset', 'length', 'instances', 'parent_node', 'is_root','_parent_ref','__weakref__'
+                'instances_bitset', 'length', 'instances', 'parent_node', 'is_root', '_parent_ref', '__weakref__'
 
     def __init__(self, concept: OWLClassExpression, parent_node: Optional['RL_State'] = None, is_root: bool = False,
                  embeddings=None, instances=None, instances_set=None, length=None):
@@ -485,8 +485,8 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
         self.items_in_queue.put((-node.heuristic, HeuristicOrderedNode(node)))  # gets the smallest one.
         self.nodes[node.concept] = node
 
-    def add_node(self, *, node: LBLNode, parent_node: LBLNode, kb_learning_problem: EncodedLearningProblem) -> Optional[
-        bool]:
+    def add_node(self, *, node: LBLNode, parent_node: LBLNode, kb_learning_problem: EncodedLearningProblem) \
+            -> Optional[bool]:
         """
         Add a node into the search tree after calculating heuristic value given its parent.
 

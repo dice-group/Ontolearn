@@ -11,6 +11,7 @@ from ontolearn.rl import DrillAverage, DrillSample
 from ontolearn.utils import sanity_checking_args
 from argparse import ArgumentParser
 
+
 def start(args):
     sanity_checking_args(args)
     kb = KnowledgeBase(args.path_knowledge_base)
