@@ -8,7 +8,7 @@ many help texts copied from OWL API
 
 from abc import ABCMeta, abstractmethod
 from functools import total_ordering
-from typing import Generic, Iterable, Sequence, TypeVar, Union, Final, Optional, Protocol, ClassVar, List
+from typing import Generic, Iterable, Sequence, Set, TypeVar, Union, Final, Optional, Protocol, ClassVar, List
 from pandas import Timedelta
 from datetime import datetime, date
 
@@ -190,6 +190,13 @@ class OWLNamedObject(OWLObject, HasIRI, metaclass=ABCMeta):
 class OWLEntity(OWLNamedObject, metaclass=ABCMeta):
     """Represents Entities in the OWL 2 Specification."""
     __slots__ = ()
+
+    def to_string_id(self) -> str:
+        return self.get_iri().as_str()
+
+    def is_anonymous(self) -> bool:
+        return False
+
     pass
 
 
@@ -976,6 +983,9 @@ class OWLOntologyID:
                 return self._version_iri
         return self._ontology_iri
 
+    def is_anonymous(self) -> bool:
+        return self._ontology_iri is None
+
     def __repr__(self):
         return f"OWLOntologyID({repr(self._ontology_iri)}, {repr(self._version_iri)})"
 
@@ -983,90 +993,6 @@ class OWLOntologyID:
         if type(other) is type(self):
             return self._ontology_iri == other._ontology_iri and self._version_iri == other._version_iri
         return NotImplemented
-
-
-class OWLOntology(OWLObject, metaclass=ABCMeta):
-    """Represents an OWL 2 Ontology  in the OWL 2 specification.
-
-    An OWLOntology consists of a possibly empty set of OWLAxioms and a possibly empty set of OWLAnnotations.
-    An ontology can have an ontology IRI which can be used to identify the ontology. If it has an ontology IRI then
-    it may also have an ontology version IRI. Since OWL 2, an ontology need not have an ontology IRI. (See the OWL 2
-    Structural Specification)
-
-    An ontology cannot be modified directly. Changes must be applied via its OWLOntologyManager.
-    """
-    __slots__ = ()
-    type_index: Final = 1
-
-    @abstractmethod
-    def classes_in_signature(self) -> Iterable[OWLClass]:
-        """Gets the classes in the signature of this object.
-
-        Returns:
-            Classes in the signature of this object
-        """
-        pass
-
-    @abstractmethod
-    def data_properties_in_signature(self) -> Iterable[OWLDataProperty]:
-        """Get the data properties that are in the signature of this object.
-
-        Returns:
-            Data properties that are in the signature of this object
-        """
-        pass
-
-    @abstractmethod
-    def object_properties_in_signature(self) -> Iterable[OWLObjectProperty]:
-        """A convenience method that obtains the object properties that are in the signature of this object.
-
-        Returns:
-            Object properties that are in the signature of this object
-        """
-        pass
-
-    @abstractmethod
-    def individuals_in_signature(self) -> Iterable[OWLNamedIndividual]:
-        """A convenience method that obtains the individuals that are in the signature of this object.
-
-        Returns:
-            Individuals that are in the signature of this object.
-        """
-        pass
-
-    @abstractmethod
-    def get_owl_ontology_manager(self) -> _M:
-        """Gets the manager that manages this ontology"""
-        pass
-
-    @abstractmethod
-    def get_ontology_id(self) -> OWLOntologyID:
-        """Gets the OWLOntologyID belonging to this object.
-
-        Returns:
-            The OWLOntologyID
-        """
-        pass
-
-
-# noinspection PyUnresolvedReferences
-# noinspection PyDunderSlots
-class OWLOntologyChange(metaclass=ABCMeta):
-    __slots__ = ()
-
-    _ont: OWLOntology
-
-    @abstractmethod
-    def __init__(self, ontology: OWLOntology):
-        self._ont = ontology
-
-    def get_ontology(self) -> OWLOntology:
-        """Gets the ontology that the change is/was applied to.
-
-        Returns:
-            The ontology that the change is applicable to
-        """
-        return self._ont
 
 
 class OWLAxiom(OWLObject, metaclass=ABCMeta):
@@ -1078,305 +1004,6 @@ class OWLAxiom(OWLObject, metaclass=ABCMeta):
     __slots__ = ()
     # TODO: XXX
     pass
-
-
-class OWLOntologyManager(metaclass=ABCMeta):
-    """An OWLOntologyManager manages a set of ontologies. It is the main point for creating, loading and accessing
-    ontologies."""
-    @abstractmethod
-    def create_ontology(self, iri: IRI) -> OWLOntology:
-        """Creates a new (empty) ontology that that has the specified ontology IRI (and no version IRI).
-
-        Args:
-            iri: The IRI of the ontology to be created.
-
-        Returns:
-            The newly created ontology, or if an ontology with the specified IRI already exists then this existing
-            ontology will be returned.
-        """
-        pass
-
-    @abstractmethod
-    def load_ontology(self, iri: IRI) -> OWLOntology:
-        """Loads an ontology that is assumed to have the specified ontology IRI as its IRI or version IRI. The ontology
-        IRI will be mapped to an ontology document IRI.
-
-        Args:
-            iri: The IRI that identifies the ontology. It is expected that the ontology will also have this IRI
-                (although the OWL API should tolerated situations where this is not the case).
-
-        Returns:
-            The OWLOntology representation of the ontology that was loaded.
-        """
-        pass
-
-    @abstractmethod
-    def apply_change(self, change: OWLOntologyChange):
-        """A convenience method that applies just one change to an ontology. When this method is used through an
-        OWLOntologyManager implementation, the instance used should be the one that the ontology returns through the
-        get_owl_ontology_manager() call.
-
-        Args:
-            change: The change to be applied
-
-        Raises:
-            ChangeApplied.UNSUCCESSFULLY: if the change was not applied successfully.
-        """
-        pass
-
-    @abstractmethod
-    def add_axiom(self, ontology: OWLOntology, axiom: OWLAxiom):
-        """A convenience method that adds a single axiom to an ontology. The appropriate AddAxiom change object is
-        automatically generated.
-
-        Args:
-            ontology: The ontology to add the axiom to.
-            axiom: The axiom to be added
-
-        Raises:
-            ChangeApplied.UNSUCCESSFULLY: if the axiom could not be added.
-        """
-        pass
-
-    @abstractmethod
-    def save_ontology(self, ontology: OWLOntology, document_iri: IRI):
-        """Saves the specified ontology, using the specified document IRI to determine where/how the ontology should be
-        saved.
-
-        Args:
-            ontology: The ontology to be saved.
-            document_iri: The document IRI where the ontology should be saved to
-        """
-        pass
-
-
-class OWLReasoner(metaclass=ABCMeta):
-    """An OWLReasoner reasons over a set of axioms (the set of reasoner axioms) that is based on the imports closure of
-    a particular ontology - the "root" ontology."""
-    __slots__ = ()
-
-    @abstractmethod
-    def __init__(self, ontology: OWLOntology):
-        pass
-
-    @abstractmethod
-    def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClass]:
-        """Gets the named classes that are the direct or indirect domains of this property with respect to the imports
-        closure of the root ontology.
-
-        Args:
-            pe: The property expression whose domains are to be retrieved.
-            direct: Specifies if the direct domains should be retrieved (True), or if all domains should be retrieved
-                (False).
-
-        Returns:
-            :Let N = equivalent_classes(DataSomeValuesFrom(pe rdfs:Literal)). If direct is True: then if N is not
-            empty then the return value is N, else the return value is the result of
-            super_classes(DataSomeValuesFrom(pe rdfs:Literal), true). If direct is False: then the result of
-            super_classes(DataSomeValuesFrom(pe rdfs:Literal), false) together with N if N is non-empty.
-            (Note, rdfs:Literal is the top datatype).
-        """
-        pass
-
-    @abstractmethod
-    def object_property_domains(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
-        """Gets the named classes that are the direct or indirect domains of this property with respect to the imports
-        closure of the root ontology.
-
-        Args:
-            pe: The property expression whose domains are to be retrieved.
-            direct: Specifies if the direct domains should be retrieved (True), or if all domains should be retrieved
-                (False).
-
-        Returns:
-            :Let N = equivalent_classes(ObjectSomeValuesFrom(pe owl:Thing)). If direct is True: then if N is not empty
-            then the return value is N, else the return value is the result of
-            super_classes(ObjectSomeValuesFrom(pe owl:Thing), true). If direct is False: then the result of
-            super_classes(ObjectSomeValuesFrom(pe owl:Thing), false) together with N if N is non-empty.
-        """
-        pass
-
-    @abstractmethod
-    def object_property_ranges(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
-        """Gets the named classes that are the direct or indirect ranges of this property with respect to the imports
-        closure of the root ontology.
-
-        Args:
-            pe: The property expression whose ranges are to be retrieved.
-            direct: Specifies if the direct ranges should be retrieved (True), or if all ranges should be retrieved
-                (False).
-
-        Returns:
-            :Let N = equivalent_classes(ObjectSomeValuesFrom(ObjectInverseOf(pe) owl:Thing)). If direct is True: then
-            if N is not empty then the return value is N, else the return value is the result of
-            super_classes(ObjectSomeValuesFrom(ObjectInverseOf(pe) owl:Thing), true). If direct is False: then
-            the result of super_classes(ObjectSomeValuesFrom(ObjectInverseOf(pe) owl:Thing), false) together with N
-            if N is non-empty.
-        """
-        pass
-
-    @abstractmethod
-    def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
-        """Gets the named classes that are equivalent to the specified class expression with respect to the set of
-        reasoner axioms.
-
-        Args:
-            ce: The class expression whose equivalent classes are to be retrieved.
-
-        Returns:
-            All named class C where the root ontology imports closure entails EquivalentClasses(ce C). If ce is not a
-            class name (i.e. it is an anonymous class expression) and there are no such classes C then there will be
-            no result. If ce is unsatisfiable with respect to the set of reasoner axioms then  owl:Nothing, i.e. the
-            bottom node, will be returned.
-        """
-        pass
-
-    @abstractmethod
-    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable['OWLLiteral']:
-        """Gets the data property values for the specified individual and data property expression.
-
-        Args:
-            ind: The individual that is the subject of the data property values
-            pe: The data property expression whose values are to be retrieved for the specified individual
-
-        Returns:
-            A set of OWLLiterals containing literals such that for each literal l in the set, the set of reasoner
-            axioms entails DataPropertyAssertion(pe ind l).
-        """
-        pass
-
-    @abstractmethod
-    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
-            -> Iterable[OWLNamedIndividual]:
-        """Gets the object property values for the specified individual and object property expression.
-
-        Args:
-            ind: The individual that is the subject of the object property values
-            pe: The object property expression whose values are to be retrieved for the specified individual
-
-        Returns:
-            The named individuals such that for each individual j, the set of reasoner axioms entails
-            ObjectPropertyAssertion(pe ind j).
-        """
-        pass
-
-    @abstractmethod
-    def flush(self) -> None:
-        """Flushes any changes stored in the buffer, which causes the reasoner to take into consideration the changes
-        the current root ontology specified by the changes"""
-        pass
-
-    @abstractmethod
-    def instances(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLNamedIndividual]:
-        """Gets the individuals which are instances of the specified class expression.
-
-        Args:
-            ce: The class expression whose instances are to be retrieved.
-            direct: Specifies if the direct instances should be retrieved (True), or if all instances should be
-                retrieved (False).
-
-        Returns:
-            If direct is True, each named individual j where the set of reasoner axioms entails
-            DirectClassAssertion(ce, j). If direct is False, each named individual j where the set of reasoner axioms
-            entails ClassAssertion(ce, j). If ce is unsatisfiable with respect to the set of reasoner axioms then
-            nothing returned.
-        """
-        pass
-
-    @abstractmethod
-    def sub_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
-        """Gets the set of named classes that are the strict (potentially direct) subclasses of the specified class
-        expression with respect to the reasoner axioms.
-
-        Args:
-            ce: The class expression whose strict (direct) subclasses are to be retrieved.
-            direct: Specifies if the direct subclasses should be retrieved (True) or if the all subclasses
-                (descendant) classes should be retrieved (False).
-
-        Returns:
-            If direct is True, each class C where reasoner axioms entails DirectSubClassOf(C, ce). If direct is False,
-            each class C where reasoner axioms entails StrictSubClassOf(C, ce). If ce is equivalent to owl:Nothing then
-            nothing will be returned.
-        """
-        pass
-
-    @abstractmethod
-    def sub_data_properties(self, dp: OWLDataProperty, direct: bool = False) -> Iterable[OWLDataProperty]:
-        """Gets the set of named data properties that are the strict (potentially direct) subproperties of the
-        specified data property expression with respect to the imports closure of the root ontology.
-
-        Args:
-            dp: The data property whose strict (direct) subproperties are to be retrieved.
-            direct: Specifies if the direct subproperties should be retrieved (True) or if the all subproperties
-                (descendants) should be retrieved (False).
-
-        Returns:
-            If direct is True, each property P where the set of reasoner axioms entails DirectSubDataPropertyOf(P, pe).
-            If direct is False, each property P where the set of reasoner axioms entails
-            StrictSubDataPropertyOf(P, pe). If pe is equivalent to owl:bottomDataProperty then nothing will be
-            returned.
-        """
-        pass
-
-    @abstractmethod
-    def sub_object_properties(self, op: OWLObjectPropertyExpression, direct: bool = False) \
-            -> Iterable[OWLObjectPropertyExpression]:
-        """Gets the stream of simplified object property expressions that are the strict (potentially direct)
-        subproperties of the specified object property expression with respect to the imports closure of the root
-        ontology.
-
-        Args:
-            op: The object property expression whose strict (direct) subproperties are to be retrieved.
-            direct: Specifies if the direct subproperties should be retrieved (True) or if the all subproperties
-                (descendants) should be retrieved (False).
-
-        Returns:
-            If direct is True, simplified object property expressions, such that for each simplified object property
-            expression, P, the set of reasoner axioms entails DirectSubObjectPropertyOf(P, pe).
-            If direct is False, simplified object property expressions, such that for each simplified object property
-            expression, P, the set of reasoner axioms entails StrictSubObjectPropertyOf(P, pe).
-            If pe is equivalent to owl:bottomObjectProperty then nothing will be returned.
-        """
-        pass
-
-    @abstractmethod
-    def types(self, ind: OWLNamedIndividual, direct: bool = False) -> Iterable[OWLClass]:
-        """Gets the named classes which are (potentially direct) types of the specified named individual.
-
-        Args:
-            ind: The individual whose types are to be retrieved.
-            direct: Specifies if the direct types should be retrieved (True), or if all types should be retrieved
-                (False).
-
-        Returns:
-            If direct is True, each named class C where the set of reasoner axioms entails
-            DirectClassAssertion(C, ind). If direct is False, each named class C where the set of reasoner axioms
-            entails ClassAssertion(C, ind).
-        """
-        pass
-
-    @abstractmethod
-    def get_root_ontology(self) -> OWLOntology:
-        """Gets the "root" ontology that is loaded into this reasoner. The reasoner takes into account the axioms in
-        this ontology and its imports closure."""
-        pass
-
-    @abstractmethod
-    def super_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
-        """Gets the stream of named classes that are the strict (potentially direct) super classes of the specified
-        class expression with respect to the imports closure of the root ontology.
-
-        Args:
-            ce: The class expression whose strict (direct) super classes are to be retrieved.
-            direct: Specifies if the direct super classes should be retrieved (True) or if the all super classes
-                (ancestors) classes should be retrieved (False).
-
-        Returns:
-            If direct is True, each class C where the set of reasoner axioms entails DirectSubClassOf(ce, C).
-            If direct is False, each class C where  set of reasoner axioms entails StrictSubClassOf(ce, C).
-            If ce is equivalent to owl:Thing then nothing will be returned.
-        """
-        pass
 
 
 class OWLDatatype(OWLEntity, OWLDataRange):
@@ -2091,7 +1718,7 @@ class OWLDataMinCardinality(OWLDataCardinalityRestriction):
         super().__init__(cardinality, property, filler)
 
 
-class OWLDataOneOf(OWLDataRange):
+class OWLDataOneOf(OWLDataRange, HasOperands[OWLLiteral]):
     """Represents DataOneOf in the OWL 2 Specification."""
     type_index: Final = 4003
 
@@ -2234,28 +1861,6 @@ class OWLImportsDeclaration(HasIRI):
             can be deployed at a resolvable URL.
         """
         return self._iri
-
-
-class AddImport(OWLOntologyChange):
-    """Represents an ontology change where an import statement is added to an ontology."""
-    __slots__ = '_ont', '_declaration'
-
-    def __init__(self, ontology: OWLOntology, import_declaration: OWLImportsDeclaration):
-        """
-        Args:
-            ontology: the ontology to which the change is to be applied
-            import_declaration: the import declaration
-        """
-        super().__init__(ontology)
-        self._declaration = import_declaration
-
-    def get_import_declaration(self) -> OWLImportsDeclaration:
-        """Gets the import declaration that the change pertains to.
-
-        Returns:
-            The import declaration
-        """
-        return self._declaration
 
 
 class OWLLogicalAxiom(OWLAxiom, metaclass=ABCMeta):
@@ -2448,6 +2053,456 @@ class OWLAnnotationAssertionAxiom(OWLAnnotationAxiom):
         return f'OWLAnnotationAssertionAxiom({self._subject}, {self._annotation})'
 
 
+class OWLDataPropertyRangeAxiom(OWLLogicalAxiom):
+    __slots__ = '_property', '_range', '_annotations'
+    _property: OWLDataPropertyExpression
+    _range: OWLDataRange
+    _annotations: Optional[List[OWLAnnotation]]
+
+    def __init__(self, property: OWLDataPropertyExpression, range: OWLDataRange,
+                 annotations: Optional[Iterable[OWLAnnotation]] = None):
+        self._property = property
+        self._range = range
+        if annotations is not None:
+            self._annotations = list(annotations)
+
+    def get_range(self) -> OWLDataRange:
+        return self._range
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._property == other._property and self._range == other._range \
+                   and self._annotations == other._annotation
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._property, self._range, self._annotations))
+
+    def __repr__(self):
+        return f'OWLDataPropertyRangeAxiom({self._property}, {self._range}, {self._annotations})'
+
+
+class OWLOntology(OWLObject, metaclass=ABCMeta):
+    """Represents an OWL 2 Ontology  in the OWL 2 specification.
+
+    An OWLOntology consists of a possibly empty set of OWLAxioms and a possibly empty set of OWLAnnotations.
+    An ontology can have an ontology IRI which can be used to identify the ontology. If it has an ontology IRI then
+    it may also have an ontology version IRI. Since OWL 2, an ontology need not have an ontology IRI. (See the OWL 2
+    Structural Specification)
+
+    An ontology cannot be modified directly. Changes must be applied via its OWLOntologyManager.
+    """
+    __slots__ = ()
+    type_index: Final = 1
+
+    @abstractmethod
+    def classes_in_signature(self) -> Iterable[OWLClass]:
+        """Gets the classes in the signature of this object.
+
+        Returns:
+            Classes in the signature of this object
+        """
+        pass
+
+    @abstractmethod
+    def data_properties_in_signature(self) -> Iterable[OWLDataProperty]:
+        """Get the data properties that are in the signature of this object.
+
+        Returns:
+            Data properties that are in the signature of this object
+        """
+        pass
+
+    @abstractmethod
+    def object_properties_in_signature(self) -> Iterable[OWLObjectProperty]:
+        """A convenience method that obtains the object properties that are in the signature of this object.
+
+        Returns:
+            Object properties that are in the signature of this object
+        """
+        pass
+
+    @abstractmethod
+    def individuals_in_signature(self) -> Iterable[OWLNamedIndividual]:
+        """A convenience method that obtains the individuals that are in the signature of this object.
+
+        Returns:
+            Individuals that are in the signature of this object.
+        """
+        pass
+
+    @abstractmethod
+    def data_property_range_axioms(self, property: OWLDataProperty) -> Iterable[OWLDataPropertyRangeAxiom]:
+        """Gets the OWLDataPropertyRangeAxiom objects where the property is equal to the specified property.
+
+        Args:
+            property: The property which is equal to the property of the retrieved axioms.
+
+        Returns:
+            the axioms matching the search.
+        """
+        pass
+
+    @abstractmethod
+    def get_owl_ontology_manager(self) -> _M:
+        """Gets the manager that manages this ontology"""
+        pass
+
+    @abstractmethod
+    def get_ontology_id(self) -> OWLOntologyID:
+        """Gets the OWLOntologyID belonging to this object.
+
+        Returns:
+            The OWLOntologyID
+        """
+        pass
+
+    def is_anonymous(self) -> bool:
+        return self.get_ontology_id().is_anonymous()
+
+
+# noinspection PyUnresolvedReferences
+# noinspection PyDunderSlots
+class OWLOntologyChange(metaclass=ABCMeta):
+    __slots__ = ()
+
+    _ont: OWLOntology
+
+    @abstractmethod
+    def __init__(self, ontology: OWLOntology):
+        self._ont = ontology
+
+    def get_ontology(self) -> OWLOntology:
+        """Gets the ontology that the change is/was applied to.
+
+        Returns:
+            The ontology that the change is applicable to
+        """
+        return self._ont
+
+
+class AddImport(OWLOntologyChange):
+    """Represents an ontology change where an import statement is added to an ontology."""
+    __slots__ = '_ont', '_declaration'
+
+    def __init__(self, ontology: OWLOntology, import_declaration: OWLImportsDeclaration):
+        """
+        Args:
+            ontology: the ontology to which the change is to be applied
+            import_declaration: the import declaration
+        """
+        super().__init__(ontology)
+        self._declaration = import_declaration
+
+    def get_import_declaration(self) -> OWLImportsDeclaration:
+        """Gets the import declaration that the change pertains to.
+
+        Returns:
+            The import declaration
+        """
+        return self._declaration
+
+
+class OWLOntologyManager(metaclass=ABCMeta):
+    """An OWLOntologyManager manages a set of ontologies. It is the main point for creating, loading and accessing
+    ontologies."""
+
+    @abstractmethod
+    def create_ontology(self, iri: IRI) -> OWLOntology:
+        """Creates a new (empty) ontology that that has the specified ontology IRI (and no version IRI).
+
+        Args:
+            iri: The IRI of the ontology to be created.
+
+        Returns:
+            The newly created ontology, or if an ontology with the specified IRI already exists then this existing
+            ontology will be returned.
+        """
+        pass
+
+    @abstractmethod
+    def load_ontology(self, iri: IRI) -> OWLOntology:
+        """Loads an ontology that is assumed to have the specified ontology IRI as its IRI or version IRI. The ontology
+        IRI will be mapped to an ontology document IRI.
+
+        Args:
+            iri: The IRI that identifies the ontology. It is expected that the ontology will also have this IRI
+                (although the OWL API should tolerated situations where this is not the case).
+
+        Returns:
+            The OWLOntology representation of the ontology that was loaded.
+        """
+        pass
+
+    @abstractmethod
+    def apply_change(self, change: OWLOntologyChange):
+        """A convenience method that applies just one change to an ontology. When this method is used through an
+        OWLOntologyManager implementation, the instance used should be the one that the ontology returns through the
+        get_owl_ontology_manager() call.
+
+        Args:
+            change: The change to be applied
+
+        Raises:
+            ChangeApplied.UNSUCCESSFULLY: if the change was not applied successfully.
+        """
+        pass
+
+    @abstractmethod
+    def add_axiom(self, ontology: OWLOntology, axiom: OWLAxiom):
+        """A convenience method that adds a single axiom to an ontology. The appropriate AddAxiom change object is
+        automatically generated.
+
+        Args:
+            ontology: The ontology to add the axiom to.
+            axiom: The axiom to be added
+
+        Raises:
+            ChangeApplied.UNSUCCESSFULLY: if the axiom could not be added.
+        """
+        pass
+
+    @abstractmethod
+    def save_ontology(self, ontology: OWLOntology, document_iri: IRI):
+        """Saves the specified ontology, using the specified document IRI to determine where/how the ontology should be
+        saved.
+
+        Args:
+            ontology: The ontology to be saved.
+            document_iri: The document IRI where the ontology should be saved to
+        """
+        pass
+
+
+class OWLReasoner(metaclass=ABCMeta):
+    """An OWLReasoner reasons over a set of axioms (the set of reasoner axioms) that is based on the imports closure of
+    a particular ontology - the "root" ontology."""
+    __slots__ = ()
+
+    @abstractmethod
+    def __init__(self, ontology: OWLOntology):
+        pass
+
+    @abstractmethod
+    def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClass]:
+        """Gets the named classes that are the direct or indirect domains of this property with respect to the imports
+        closure of the root ontology.
+
+        Args:
+            pe: The property expression whose domains are to be retrieved.
+            direct: Specifies if the direct domains should be retrieved (True), or if all domains should be retrieved
+                (False).
+
+        Returns:
+            :Let N = equivalent_classes(DataSomeValuesFrom(pe rdfs:Literal)). If direct is True: then if N is not
+            empty then the return value is N, else the return value is the result of
+            super_classes(DataSomeValuesFrom(pe rdfs:Literal), true). If direct is False: then the result of
+            super_classes(DataSomeValuesFrom(pe rdfs:Literal), false) together with N if N is non-empty.
+            (Note, rdfs:Literal is the top datatype).
+        """
+        pass
+
+    @abstractmethod
+    def object_property_domains(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
+        """Gets the named classes that are the direct or indirect domains of this property with respect to the imports
+        closure of the root ontology.
+
+        Args:
+            pe: The property expression whose domains are to be retrieved.
+            direct: Specifies if the direct domains should be retrieved (True), or if all domains should be retrieved
+                (False).
+
+        Returns:
+            :Let N = equivalent_classes(ObjectSomeValuesFrom(pe owl:Thing)). If direct is True: then if N is not empty
+            then the return value is N, else the return value is the result of
+            super_classes(ObjectSomeValuesFrom(pe owl:Thing), true). If direct is False: then the result of
+            super_classes(ObjectSomeValuesFrom(pe owl:Thing), false) together with N if N is non-empty.
+        """
+        pass
+
+    @abstractmethod
+    def object_property_ranges(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
+        """Gets the named classes that are the direct or indirect ranges of this property with respect to the imports
+        closure of the root ontology.
+
+        Args:
+            pe: The property expression whose ranges are to be retrieved.
+            direct: Specifies if the direct ranges should be retrieved (True), or if all ranges should be retrieved
+                (False).
+
+        Returns:
+            :Let N = equivalent_classes(ObjectSomeValuesFrom(ObjectInverseOf(pe) owl:Thing)). If direct is True: then
+            if N is not empty then the return value is N, else the return value is the result of
+            super_classes(ObjectSomeValuesFrom(ObjectInverseOf(pe) owl:Thing), true). If direct is False: then
+            the result of super_classes(ObjectSomeValuesFrom(ObjectInverseOf(pe) owl:Thing), false) together with N
+            if N is non-empty.
+        """
+        pass
+
+    @abstractmethod
+    def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
+        """Gets the named classes that are equivalent to the specified class expression with respect to the set of
+        reasoner axioms.
+
+        Args:
+            ce: The class expression whose equivalent classes are to be retrieved.
+
+        Returns:
+            All named class C where the root ontology imports closure entails EquivalentClasses(ce C). If ce is not a
+            class name (i.e. it is an anonymous class expression) and there are no such classes C then there will be
+            no result. If ce is unsatisfiable with respect to the set of reasoner axioms then  owl:Nothing, i.e. the
+            bottom node, will be returned.
+        """
+        pass
+
+    @abstractmethod
+    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable['OWLLiteral']:
+        """Gets the data property values for the specified individual and data property expression.
+
+        Args:
+            ind: The individual that is the subject of the data property values
+            pe: The data property expression whose values are to be retrieved for the specified individual
+
+        Returns:
+            A set of OWLLiterals containing literals such that for each literal l in the set, the set of reasoner
+            axioms entails DataPropertyAssertion(pe ind l).
+        """
+        pass
+
+    @abstractmethod
+    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
+            -> Iterable[OWLNamedIndividual]:
+        """Gets the object property values for the specified individual and object property expression.
+
+        Args:
+            ind: The individual that is the subject of the object property values
+            pe: The object property expression whose values are to be retrieved for the specified individual
+
+        Returns:
+            The named individuals such that for each individual j, the set of reasoner axioms entails
+            ObjectPropertyAssertion(pe ind j).
+        """
+        pass
+
+    @abstractmethod
+    def flush(self) -> None:
+        """Flushes any changes stored in the buffer, which causes the reasoner to take into consideration the changes
+        the current root ontology specified by the changes"""
+        pass
+
+    @abstractmethod
+    def instances(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLNamedIndividual]:
+        """Gets the individuals which are instances of the specified class expression.
+
+        Args:
+            ce: The class expression whose instances are to be retrieved.
+            direct: Specifies if the direct instances should be retrieved (True), or if all instances should be
+                retrieved (False).
+
+        Returns:
+            If direct is True, each named individual j where the set of reasoner axioms entails
+            DirectClassAssertion(ce, j). If direct is False, each named individual j where the set of reasoner axioms
+            entails ClassAssertion(ce, j). If ce is unsatisfiable with respect to the set of reasoner axioms then
+            nothing returned.
+        """
+        pass
+
+    @abstractmethod
+    def sub_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
+        """Gets the set of named classes that are the strict (potentially direct) subclasses of the specified class
+        expression with respect to the reasoner axioms.
+
+        Args:
+            ce: The class expression whose strict (direct) subclasses are to be retrieved.
+            direct: Specifies if the direct subclasses should be retrieved (True) or if the all subclasses
+                (descendant) classes should be retrieved (False).
+
+        Returns:
+            If direct is True, each class C where reasoner axioms entails DirectSubClassOf(C, ce). If direct is False,
+            each class C where reasoner axioms entails StrictSubClassOf(C, ce). If ce is equivalent to owl:Nothing then
+            nothing will be returned.
+        """
+        pass
+
+    @abstractmethod
+    def sub_data_properties(self, dp: OWLDataProperty, direct: bool = False) -> Iterable[OWLDataProperty]:
+        """Gets the set of named data properties that are the strict (potentially direct) subproperties of the
+        specified data property expression with respect to the imports closure of the root ontology.
+
+        Args:
+            dp: The data property whose strict (direct) subproperties are to be retrieved.
+            direct: Specifies if the direct subproperties should be retrieved (True) or if the all subproperties
+                (descendants) should be retrieved (False).
+
+        Returns:
+            If direct is True, each property P where the set of reasoner axioms entails DirectSubDataPropertyOf(P, pe).
+            If direct is False, each property P where the set of reasoner axioms entails
+            StrictSubDataPropertyOf(P, pe). If pe is equivalent to owl:bottomDataProperty then nothing will be
+            returned.
+        """
+        pass
+
+    @abstractmethod
+    def sub_object_properties(self, op: OWLObjectPropertyExpression, direct: bool = False) \
+            -> Iterable[OWLObjectPropertyExpression]:
+        """Gets the stream of simplified object property expressions that are the strict (potentially direct)
+        subproperties of the specified object property expression with respect to the imports closure of the root
+        ontology.
+
+        Args:
+            op: The object property expression whose strict (direct) subproperties are to be retrieved.
+            direct: Specifies if the direct subproperties should be retrieved (True) or if the all subproperties
+                (descendants) should be retrieved (False).
+
+        Returns:
+            If direct is True, simplified object property expressions, such that for each simplified object property
+            expression, P, the set of reasoner axioms entails DirectSubObjectPropertyOf(P, pe).
+            If direct is False, simplified object property expressions, such that for each simplified object property
+            expression, P, the set of reasoner axioms entails StrictSubObjectPropertyOf(P, pe).
+            If pe is equivalent to owl:bottomObjectProperty then nothing will be returned.
+        """
+        pass
+
+    @abstractmethod
+    def types(self, ind: OWLNamedIndividual, direct: bool = False) -> Iterable[OWLClass]:
+        """Gets the named classes which are (potentially direct) types of the specified named individual.
+
+        Args:
+            ind: The individual whose types are to be retrieved.
+            direct: Specifies if the direct types should be retrieved (True), or if all types should be retrieved
+                (False).
+
+        Returns:
+            If direct is True, each named class C where the set of reasoner axioms entails
+            DirectClassAssertion(C, ind). If direct is False, each named class C where the set of reasoner axioms
+            entails ClassAssertion(C, ind).
+        """
+        pass
+
+    @abstractmethod
+    def get_root_ontology(self) -> OWLOntology:
+        """Gets the "root" ontology that is loaded into this reasoner. The reasoner takes into account the axioms in
+        this ontology and its imports closure."""
+        pass
+
+    @abstractmethod
+    def super_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
+        """Gets the stream of named classes that are the strict (potentially direct) super classes of the specified
+        class expression with respect to the imports closure of the root ontology.
+
+        Args:
+            ce: The class expression whose strict (direct) super classes are to be retrieved.
+            direct: Specifies if the direct super classes should be retrieved (True) or if the all super classes
+                (ancestors) classes should be retrieved (False).
+
+        Returns:
+            If direct is True, each class C where the set of reasoner axioms entails DirectSubClassOf(ce, C).
+            If direct is False, each class C where  set of reasoner axioms entails StrictSubClassOf(ce, C).
+            If ce is equivalent to owl:Thing then nothing will be returned.
+        """
+        pass
+
+
 """Important constant objects section"""
 
 OWLThing: Final = OWLClass(OWLRDFVocabulary.OWL_THING.get_iri())  #: : :The OWL Class corresponding to owl:Thing
@@ -2468,3 +2523,6 @@ DateOWLDatatype: Final = OWLDatatype(XSDVocabulary.DATE)  #: An object represent
 DateTimeOWLDatatype: Final = OWLDatatype(XSDVocabulary.DATE_TIME)  #: An object representing the dateTime datatype.
 DurationOWLDatatype: Final = OWLDatatype(XSDVocabulary.DURATION)  #: An object representing the duration datatype.
 TopDatatype: Final = OWLDatatype(OWLRDFVocabulary.RDFS_LITERAL)  #: The OWL Datatype corresponding to the top data type
+
+NUMERIC_DATATYPES: Set[OWLDatatype] = {DoubleOWLDatatype, IntegerOWLDatatype}
+TIME_DATATYPES: Final[Set[OWLDatatype]] = {DateOWLDatatype, DateTimeOWLDatatype, DurationOWLDatatype}

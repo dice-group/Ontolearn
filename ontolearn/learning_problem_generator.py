@@ -1,20 +1,16 @@
 import sys
 import time
-from queue import PriorityQueue
-from typing import Literal, Optional, Iterable, Callable, Set, Tuple, Dict, List, Final, Generator
+from typing import Literal, Iterable, Set, Tuple, Dict, List, Final, Generator
 
 import numpy as np
 
 from owlapy.model import OWLClassExpression, OWLOntologyManager, OWLOntology, AddImport, OWLImportsDeclaration, \
     OWLClass, OWLEquivalentClassesAxiom, IRI, OWLNamedIndividual, OWLAnnotationAssertionAxiom, OWLAnnotation, \
     OWLAnnotationProperty, OWLLiteral
-
-from .abstracts import BaseRefinement
 from .knowledge_base import KnowledgeBase
 from .refinement_operators import LengthBasedRefinement
-from .search import Node, LengthOrderedNode, RL_State, _NodeIndividuals
+from .search import Node, RL_State
 from .utils import balanced_sets
-from collections import deque
 
 SearchAlgos = Literal['dfs', 'strict-dfs']
 
@@ -122,8 +118,8 @@ class LearningProblemGenerator:
 
     def get_balanced_n_samples_per_examples(self, *, n=5, min_num_problems=None, max_length=None, min_length=None,
                                             num_diff_runs=None, min_num_instances=None,
-                                            search_algo='strict-dfs') -> Iterable[
-        Tuple[RL_State, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]]:
+                                            search_algo='strict-dfs') \
+            -> Iterable[Tuple[RL_State, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]]:
         """
         1. We generate min_num_problems number of concepts
         2. For each concept, we generate n number of positive and negative examples
@@ -159,21 +155,23 @@ class LearningProblemGenerator:
                                                      min_num_instances=min_num_instances, search_algo=search_algo):
             class_expression_sanity_checking(valid_rl_state)
             for d in self.balanced_n_sampled_lp(n, valid_rl_state.instances):
-                assert len(d['string_balanced_pos']) == len(d[
-                                                                'string_balanced_neg']), f' Lengths of examples must match. |E^+|={len(d["string_balanced_pos"])} |E^-|={len(d["string_balanced_neg"])}'
+                assert len(d['string_balanced_pos']) == len(d['string_balanced_neg']), \
+                    f' Lengths of examples must match. ' \
+                    f'|E^+|={len(d["string_balanced_pos"])} |E^-|={len(d["string_balanced_neg"])}'
                 res.append((valid_rl_state, d['string_balanced_pos'], d['string_balanced_neg']))
 
             if len(res) > min_num_problems:
                 break
 
-        assert len(
-            res) > 0, f'No examples *** {len(res)} ***are created. Please update the configurations for learning problem generator****'
+        assert len(res) > 0, \
+            f'No examples *** {len(res)} ***are created. ' \
+            f'Please update the configurations for learning problem generator****'
 
         stats = np.array([[x.length, len(x.instances)] for (x, _, __) in res])
         print(f'\nNumber of generated concepts:{len(res)}')
         print(f'Number of generated learning problems via sampling: {len(res)}')
-        print(
-            f'Average length of generated concepts:{stats[:, 0].mean():.3f}\nAverage number of individuals belong to a generated example:{stats[:, 1].mean():.3f}\n')
+        print(f'Average length of generated concepts:{stats[:, 0].mean():.3f}\n'
+              f'Average number of individuals belong to a generated example:{stats[:, 1].mean():.3f}\n')
 
         return res
 
@@ -223,8 +221,8 @@ class LearningProblemGenerator:
 
         output_sanity_check(res)
         stats = np.array([[x.length, len(x.instances)] for x in gen_examples])
-        print(
-            f'Average length of generated examples {stats[:, 0].mean():.3f}\nAverage number of individuals belong to a generated example {stats[:, 1].mean():.3f}')
+        print(f'Average length of generated examples {stats[:, 0].mean():.3f}\n'
+              f'Average number of individuals belong to a generated example {stats[:, 1].mean():.3f}')
         return res
 
     def get_examples(self, *, num_problems=None, max_length=None, min_length=None,
@@ -357,7 +355,7 @@ class LearningProblemGenerator:
             return self.max_length >= len(x.length) >= self.min_length
 
         rl_state = RL_State(self.kb.thing, parent_node=None, is_root=True)
-        rl_state.length = self.kb.cl(self.kb.thing)
+        rl_state.length = self.kb.concept_len(self.kb.thing)
         rl_state.instances = set(self.kb.individuals(rl_state.concept))
 
         refinements_rl = self.apply_rho_on_rl_state(rl_state)
@@ -469,6 +467,6 @@ class LearningProblemGenerator:
     def apply_rho_on_rl_state(self, rl_state):
         for i in self.rho.refine(rl_state.concept):
             next_rl_state = RL_State(i, parent_node=rl_state)
-            next_rl_state.length = self.kb.cl(next_rl_state.concept)
+            next_rl_state.length = self.kb.concept_len(next_rl_state.concept)
             next_rl_state.instances = set(self.kb.individuals(next_rl_state.concept))
             yield next_rl_state

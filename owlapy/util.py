@@ -1,13 +1,13 @@
 from functools import singledispatchmethod, total_ordering
-from typing import Iterable, TypeVar, Generic, Tuple, List, cast, Optional, ClassVar
+from typing import Iterable, TypeVar, Generic, Tuple, cast, Optional
 
 from owlapy.model import OWLObject, HasIndex, HasIRI, OWLClassExpression, OWLClass, OWLObjectIntersectionOf, \
-    OWLObjectUnionOf, OWLObjectComplementOf, OWLNothing, OWLThing, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
+    OWLObjectUnionOf, OWLObjectComplementOf, OWLNothing, OWLRestriction, OWLThing, OWLObjectSomeValuesFrom, \
     OWLObjectHasValue, OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality, OWLObjectHasSelf, \
     OWLObjectOneOf, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataExactCardinality, OWLDataHasValue, \
-    OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLObjectRestriction, HasFiller, HasCardinality, HasOperands, \
+    OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLObjectAllValuesFrom, HasFiller, HasCardinality, HasOperands, \
     OWLObjectInverseOf, OWLDatatypeRestriction, OWLDataComplementOf, OWLDatatype, OWLDataUnionOf, \
-    OWLDataIntersectionOf, OWLDataOneOf
+    OWLDataIntersectionOf, OWLDataOneOf, OWLFacetRestriction, OWLLiteral
 
 _HasIRI = TypeVar('_HasIRI', bound=HasIRI)  #:
 _HasIndex = TypeVar('_HasIndex', bound=HasIndex)  #:
@@ -44,7 +44,7 @@ class OrderedOWLObject:
         if self._chain is None:
             c = [self.o.type_index]
 
-            if isinstance(self.o, OWLObjectRestriction):
+            if isinstance(self.o, OWLRestriction):
                 c.append(OrderedOWLObject(as_index(self.o.get_property())))
             if isinstance(self.o, OWLObjectInverseOf):
                 c.append(self.o.get_named_property().get_iri().as_str())
@@ -56,6 +56,15 @@ class OrderedOWLObject:
                 c.append(tuple(map(OrderedOWLObject, self.o.operands())))
             if isinstance(self.o, HasIRI):
                 c.append(self.o.get_iri().as_str())
+            if isinstance(self.o, OWLDataComplementOf):
+                c.append(OrderedOWLObject(self.o.get_data_range()))
+            if isinstance(self.o, OWLDatatypeRestriction):
+                c.append((OrderedOWLObject(self.o.get_datatype()),
+                          tuple(map(OrderedOWLObject, self.o.get_facet_restrictions()))))
+            if isinstance(self.o, OWLFacetRestriction):
+                c.append((self.o.get_facet().get_iri().as_str(), self.o.get_facet_value().get_literal()))
+            if isinstance(self.o, OWLLiteral):
+                c.append(self.o.get_literal())
             if len(c) == 1:
                 raise NotImplementedError(type(self.o))
 
@@ -342,7 +351,7 @@ class LRUCache(Generic[_K, _V]):
                 # still adjusting the links.
                 self.root = oldroot[LRUCache.NEXT]
                 oldkey = self.root[LRUCache.KEY]
-                _oldresult = self.root[LRUCache.RESULT]
+                _oldresult = self.root[LRUCache.RESULT]  # noqa: F841
                 self.root[LRUCache.KEY] = self.root[LRUCache.RESULT] = None
                 # Now update the cache dictionary.
                 del self.cache[oldkey]

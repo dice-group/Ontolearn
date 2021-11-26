@@ -13,6 +13,7 @@ from owlapy.render import DLSyntaxObjectRenderer
 setup_logging("logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
+PATH_MUTAGENESIS = 'KGs/Mutagenesis/mutagenesis.owl'
 PATH_DATA_FATHER = 'KGs/father.owl'
 
 with open('examples/synthetic_problems.json') as json_file:
@@ -58,6 +59,26 @@ class Celoe_Test(unittest.TestCase):
         print(exp_qualities)
         print(tested)
         print(found_qualities)
+
+    def test_celoe_mutagenesis(self):
+        kb = KnowledgeBase(path=PATH_MUTAGENESIS)
+
+        namespace_ = 'http://dl-learner.org/mutagenesis#'
+        pos_inds = ['d190', 'd191', 'd194', 'd197', 'e1', 'e2', 'e27', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6']
+        pos = {OWLNamedIndividual(IRI.create(namespace_, ind)) for ind in pos_inds}
+        neg_inds = ['d189', 'd192', 'd193', 'd195', 'd196', 'e10', 'e11', 'e12', 'e13', 'e14', 'e15', 'e16',
+                    'e17', 'e18', 'e19', 'e20', 'e21', 'e22', 'e23', 'e24', 'e25', 'e26', 'e3', 'e4', 'e5',
+                    'e6', 'e7', 'e8', 'e9']
+        neg = {OWLNamedIndividual(IRI.create(namespace_, ind)) for ind in neg_inds}
+
+        lp = PosNegLPStandard(pos=pos, neg=neg)
+        model = CELOE(knowledge_base=kb, max_runtime=60, max_num_of_concepts_tested=3000)
+        returned_model = model.fit(learning_problem=lp)
+        best_pred = next(returned_model.best_hypotheses(n=1))
+        self.assertGreaterEqual(best_pred.quality, 0.96)
+
+        r = DLSyntaxObjectRenderer()
+        self.assertEqual(r.render(best_pred.concept), '∃ act.xsd:double[≥ 0.325]')
 
     def test_celoe_father(self):
         kb = KnowledgeBase(path=PATH_DATA_FATHER)

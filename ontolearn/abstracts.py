@@ -151,7 +151,7 @@ class BaseRefinement(Generic[_N], metaclass=ABCMeta):
         Returns:
             length of concept according to some metric configured in the knowledge base
         """
-        return self.kb.cl(concept)
+        return self.kb.concept_len(concept)
 
 
 class AbstractNode(metaclass=ABCMeta):
