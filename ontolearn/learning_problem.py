@@ -47,41 +47,45 @@ class PosNegLPStandard(AbstractLearningProblem):
             self.all = frozenset(all_instances)
 
     def encode_kb(self, knowledge_base: KnowledgeBase) -> EncodedPosNegLPStandard:
-        assert len(knowledge_base.class_hierarchy()) > 0
-
-        if self.all is None:
-            kb_all = knowledge_base.all_individuals_set()
+        from ontolearn.tentris import TentrisKnowledgeBase
+        if isinstance(knowledge_base, TentrisKnowledgeBase):
+            return knowledge_base.encode_learning_problem(self)
         else:
-            kb_all = knowledge_base.individuals_set(self.all)
+            assert len(knowledge_base.class_hierarchy()) > 0
 
-        assert 0 < len(self.pos) < len(kb_all) and len(kb_all) > len(self.neg)
-        if logger.isEnabledFor(logging.INFO):
-            r = DLSyntaxObjectRenderer()
-            logger.info('E^+:[ {0} ]'.format(', '.join(map(r.render, self.pos))))
-            logger.info('E^-:[ {0} ]'.format(', '.join(map(r.render, self.neg))))
+            if self.all is None:
+                kb_all = knowledge_base.all_individuals_set()
+            else:
+                kb_all = knowledge_base.individuals_set(self.all)
 
-        kb_pos = knowledge_base.individuals_set(self.pos)
-        if len(self.neg) == 0:  # if negatives are not provided, randomly sample.
-            kb_neg = type(kb_all)(random.sample(list(kb_all), len(kb_pos)))
-        else:
-            kb_neg = knowledge_base.individuals_set(self.neg)
+            assert 0 < len(self.pos) < len(kb_all) and len(kb_all) > len(self.neg)
+            if logger.isEnabledFor(logging.INFO):
+                r = DLSyntaxObjectRenderer()
+                logger.info('E^+:[ {0} ]'.format(', '.join(map(r.render, self.pos))))
+                logger.info('E^-:[ {0} ]'.format(', '.join(map(r.render, self.neg))))
 
-        try:
-            assert len(kb_pos) == len(self.pos)
-        except AssertionError:
-            print(self.pos)
-            print(kb_pos)
-            print(kb_all)
-            print('Assertion error. Exiting.')
-            raise
-        if self.neg:
-            assert len(kb_neg) == len(self.neg)
+            kb_pos = knowledge_base.individuals_set(self.pos)
+            if len(self.neg) == 0:  # if negatives are not provided, randomly sample.
+                kb_neg = type(kb_all)(random.sample(list(kb_all), len(kb_pos)))
+            else:
+                kb_neg = knowledge_base.individuals_set(self.neg)
 
-        return EncodedPosNegLPStandard(
-            kb_pos=kb_pos,
-            kb_neg=kb_neg,
-            kb_all=kb_all,
-            kb_diff=kb_all.difference(kb_pos.union(kb_neg)))
+            try:
+                assert len(kb_pos) == len(self.pos)
+            except AssertionError:
+                print(self.pos)
+                print(kb_pos)
+                print(kb_all)
+                print('Assertion error. Exiting.')
+                raise
+            if self.neg:
+                assert len(kb_neg) == len(self.neg)
+
+            return EncodedPosNegLPStandard(
+                kb_pos=kb_pos,
+                kb_neg=kb_neg,
+                kb_all=kb_all,
+                kb_diff=kb_all.difference(kb_pos.union(kb_neg)))
 
 
 class EncodedPosNegUndLP(EncodedLearningProblem):

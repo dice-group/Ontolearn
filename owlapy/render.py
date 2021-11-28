@@ -244,17 +244,20 @@ _MAN_SYNTAX = types.SimpleNamespace(
 
 class ManchesterOWLSyntaxOWLObjectRenderer(OWLObjectRenderer):
     """Manchester Syntax renderer for OWL Objects"""
-    __slots__ = '_sfp'
+    __slots__ = '_sfp', '_no_render_thing'
 
     _sfp: Callable[[OWLEntity], str]
 
-    def __init__(self, short_form_provider: Callable[[OWLEntity], str] = _simple_short_form_provider):
+    def __init__(self, short_form_provider: Callable[[OWLEntity], str] = _simple_short_form_provider,
+                 no_render_thing=False):
         """Create a new Manchester Syntax renderer
 
         Args:
             short_form_provider: custom short form provider
+            no_render_thing: disable manchester rendering for Thing and Nothing
         """
         self._sfp = short_form_provider
+        self._no_render_thing = no_render_thing
 
     def set_short_form_provider(self, short_form_provider: Callable[[OWLEntity], str]) -> None:
         self._sfp = short_form_provider
@@ -266,12 +269,12 @@ class ManchesterOWLSyntaxOWLObjectRenderer(OWLObjectRenderer):
 
     @render.register
     def _(self, o: OWLClass) -> str:
-        if o.is_owl_nothing():
-            return _MAN_SYNTAX.BOTTOM
-        elif o.is_owl_thing():
-            return _MAN_SYNTAX.TOP
-        else:
-            return self._sfp(o)
+        if not self._no_render_thing:
+            if o.is_owl_nothing():
+                return _MAN_SYNTAX.BOTTOM
+            if o.is_owl_thing():
+                return _MAN_SYNTAX.TOP
+        return self._sfp(o)
 
     @render.register
     def _(self, p: OWLPropertyExpression) -> str:
