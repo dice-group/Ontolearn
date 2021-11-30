@@ -2422,8 +2422,8 @@ class OWLReasoner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClass]:
-        """Gets the named classes that are the direct or indirect domains of this property with respect to the imports
+    def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
+        """Gets the class expressions that are the direct or indirect domains of this property with respect to the imports
         closure of the root ontology.
 
         Args:
@@ -2441,8 +2441,8 @@ class OWLReasoner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def object_property_domains(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
-        """Gets the named classes that are the direct or indirect domains of this property with respect to the imports
+    def object_property_domains(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
+        """Gets the class expressions that are the direct or indirect domains of this property with respect to the imports
         closure of the root ontology.
 
         Args:
@@ -2459,8 +2459,8 @@ class OWLReasoner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def object_property_ranges(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
-        """Gets the named classes that are the direct or indirect ranges of this property with respect to the imports
+    def object_property_ranges(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
+        """Gets the class expressions that are the direct or indirect ranges of this property with respect to the imports
         closure of the root ontology.
 
         Args:
