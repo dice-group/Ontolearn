@@ -92,7 +92,8 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
 
         self.max_he = 0
         self.min_he = 1
-        # TODO: CD: This could be defined in BaseConceptLearner as it is used in all classes that inherits from BaseConceptLearner
+        # TODO: CD: This could be defined in BaseConceptLearner as it is used in all classes that inherits from
+        # TODO: CD: BaseConceptLearner
         self._learning_problem = None
         self._max_runtime = None
 
@@ -119,7 +120,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
         yield from islice(self.best_descriptions, n)
 
     def make_node(self, c: OWLClassExpression, parent_node: Optional[OENode] = None, is_root: bool = False) -> OENode:
-        r = OENode(c, self.kb.cl(c), parent_node=parent_node, is_root=is_root)
+        r = OENode(c, self.kb.concept_len(c), parent_node=parent_node, is_root=is_root)
         return r
 
     @contextmanager
@@ -218,7 +219,8 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
     def _add_node(self, ref: OENode, tree_parent: Optional[TreeNode[OENode]]):
         # TODO:CD: Why have this constraint ?
         #  We should not ignore a concept due to this constraint.
-        #  It might be the case that new path to ref.concept is a better path. Hence, we should update its parent depending on the new heuristic value.
+        #  It might be the case that new path to ref.concept is a better path. Hence, we should update its parent
+        #  depending on the new heuristic value.
         #  Solution: If concept exists we should compare its first heuristic value  with the new one
         if ref.concept in self.search_tree:
             # ignoring refinement, it has been refined from another parent
@@ -472,7 +474,6 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
         self.emb_neg = self.emb_neg.view(1, 1, self.emb_neg.shape[0])
         # Sanity checking
         if torch.isnan(self.emb_pos).any() or torch.isinf(self.emb_pos).any():
-            print(string_balanced_pos)
             raise ValueError('invalid value detected in E+,\n{0}'.format(self.emb_pos))
         if torch.isnan(self.emb_neg).any() or torch.isinf(self.emb_neg).any():
             raise ValueError('invalid value detected in E-,\n{0}'.format(self.emb_neg))
@@ -591,14 +592,14 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
         self.emb_neg = torch.tensor(
             self.instance_embeddings.loc[[owl_indv.get_iri().as_str() for owl_indv in neg_uri]].values,
             dtype=torch.float32)
-        """ (3) Take the mean of positive and negative examples and reshape it into (1,1,embedding_dim) for mini batching """
+        """ (3) Take the mean of positive and negative examples and reshape it into (1,1,embedding_dim) for mini
+         batching """
         self.emb_pos = torch.mean(self.emb_pos, dim=0)
         self.emb_pos = self.emb_pos.view(1, 1, self.emb_pos.shape[0])
         self.emb_neg = torch.mean(self.emb_neg, dim=0)
         self.emb_neg = self.emb_neg.view(1, 1, self.emb_neg.shape[0])
         # Sanity checking
         if torch.isnan(self.emb_pos).any() or torch.isinf(self.emb_pos).any():
-            print(string_balanced_pos)
             raise ValueError('invalid value detected in E+,\n{0}'.format(self.emb_pos))
         if torch.isnan(self.emb_neg).any() or torch.isinf(self.emb_neg).any():
             raise ValueError('invalid value detected in E-,\n{0}'.format(self.emb_neg))
@@ -615,7 +616,7 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
         rl_state = RL_State(c, parent_node=parent_node, is_root=is_root)
         # Assign Embeddings to it. Later, assign_embeddings can be also done in RL_STATE
         self.assign_embeddings(rl_state)
-        rl_state.length = self.kb.cl(c)
+        rl_state.length = self.kb.concept_len(c)
         return rl_state
 
     def compute_quality_of_class_expression(self, state: RL_State) -> None:
@@ -648,13 +649,13 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
         sequence_of_states = []
         while len(sequence_of_goal_path) > 0:
             self.assign_embeddings(current_state)
-            current_state.length = self.kb.cl(current_state.concept)
+            current_state.length = self.kb.concept_len(current_state.concept)
             if current_state.quality is None:
                 self.compute_quality_of_class_expression(current_state)
 
             next_state = sequence_of_goal_path.pop(0)
             self.assign_embeddings(next_state)
-            next_state.length = self.kb.cl(next_state.concept)
+            next_state.length = self.kb.concept_len(next_state.concept)
             if next_state.quality is None:
                 self.compute_quality_of_class_expression(next_state)
             sequence_of_states.append((current_state, next_state))
@@ -698,11 +699,11 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
 
             if th % log_every_n_episodes == 0:
                 if self.verbose >= 1:
-                    logger.info(
-                        '{0}.th iter. SumOfRewards: {1:.2f}\tEpsilon:{2:.2f}\t|ReplayMem.|:{3}'.format(th, sum(rewards),
-                                                                                                       self.epsilon,
-                                                                                                       len(
-                                                                                                           self.experiences)))
+                    logger.info('{0}.th iter. SumOfRewards: {1:.2f}\t'
+                                'Epsilon:{2:.2f}\t'
+                                '|ReplayMem.|:{3}'.format(th, sum(rewards),
+                                                          self.epsilon,
+                                                          len(self.experiences)))
             """(3.2) Form experiences"""
             self.form_experiences(sequence_of_states, rewards)
             sum_of_rewards_per_actions.append(sum(rewards))
@@ -852,7 +853,8 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
             # (2) if input node has not seen before, assign embeddings.
             if rl_state.embeddings is None:
                 assert isinstance(rl_state.concept, OWLClassExpression)
-                # (3) Retrieval instances via our retrieval function (R(C)). Be aware Open World and Closed World Assumption
+                # (3) Retrieval instances via our retrieval function (R(C)). Be aware Open World and Closed World
+                # Assumption
                 rl_state.instances = set(self.kb.individuals(rl_state.concept))
                 # (4) Retrieval instances in terms of bitset.
                 rl_state.instances_bitset = self.kb.individuals_set(rl_state.concept)
@@ -880,7 +882,9 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
                     print((1, self.sample_size, self.instance_embeddings.shape[1]))
                     raise
         elif self.representation_mode == 'sampling':
-            if node.embeddings is None:
+            raise NotImplementedError('Sampling technique for state representation is not implemented.')
+            """
+                        if node.embeddings is None:
                 str_idx = [get_full_iri(i).replace('\n', '') for i in node.concept.instances]
                 if len(str_idx) >= self.sample_size:
                     sampled_str_idx = random.sample(str_idx, self.sample_size)
@@ -892,7 +896,6 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
                 emb = emb.view(1, self.sample_size, self.instance_embeddings.shape[1])
                 node.embeddings = emb
             else:
-                """ Embeddings already assigned."""
                 try:
                     assert node.embeddings.shape == (1, self.sample_size, self.instance_embeddings.shape[1])
                 except AssertionError:
@@ -901,6 +904,7 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
                     print(node.embeddings.shape)
                     print((1, self.sample_size, self.instance_embeddings.shape[1]))
                     raise ValueError
+            """
         else:
             raise ValueError
 

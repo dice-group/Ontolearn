@@ -1,15 +1,13 @@
 import logging
-from typing import Dict, Iterable, Optional, Callable, overload, Union
+from typing import Iterable, Optional, Callable, overload, Union, FrozenSet
 
-from .abstracts import AbstractKnowledgeBase
-from .concept_generator import ConceptGenerator
-from .core.owl.utils import OWLClassExpressionLengthMetric
-from .core.utils import BitSet
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLNamedIndividual, \
     OWLObjectProperty, OWLClass, OWLDataProperty, IRI
 from owlapy.render import DLSyntaxObjectRenderer
-from owlapy.util import NamedFixedSet, popcount, iter_count
-from .utils import LRUCache
+from owlapy.util import iter_count, LRUCache
+from .abstracts import AbstractKnowledgeBase
+from .concept_generator import ConceptGenerator
+from .core.owl.utils import OWLClassExpressionLengthMetric
 
 Factory = Callable
 
@@ -52,7 +50,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         individuals_cache_size: how many individuals of class expressions to cache
     """
     __slots__ = '_manager', '_ontology', '_reasoner', '_length_metric', \
-                '_ind_enc', '_ind_cache', 'path', 'use_individuals_cache'
+                '_ind_set', '_ind_cache', 'path', 'use_individuals_cache'
 
     _manager: OWLOntologyManager
     _ontology: OWLOntology
@@ -60,8 +58,8 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
     _length_metric: OWLClassExpressionLengthMetric
 
-    _ind_enc: NamedFixedSet[OWLNamedIndividual]
-    _ind_cache: LRUCache[OWLClassExpression, int]  # class expression => individuals
+    _ind_set: FrozenSet[OWLNamedIndividual]
+    _ind_cache: LRUCache[OWLClassExpression, FrozenSet[OWLNamedIndividual]]  # class expression => individuals
 
     path: str
     use_individuals_cache: bool
@@ -140,12 +138,12 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
         ConceptGenerator.__init__(self, reasoner=self._reasoner)
 
-        individuals = self._ontology.individuals_in_signature()
         from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
         if isinstance(self._reasoner, OWLReasoner_FastInstanceChecker):
-            self._ind_enc = self._reasoner._ind_enc  # performance hack
+            self._ind_set = self._reasoner._ind_set  # performance hack
         else:
-            self._ind_enc = NamedFixedSet(OWLNamedIndividual, individuals)
+            individuals = self._ontology.individuals_in_signature()
+            self._ind_set = frozenset(individuals)
 
         self.use_individuals_cache = individuals_cache_size > 0
         if self.use_individuals_cache:
@@ -189,7 +187,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         new._ontology = self._ontology
         new._reasoner = self._reasoner
         new._length_metric = self._length_metric
-        new._ind_enc = self._ind_enc
+        new._ind_set = self._ind_set
         new.path = self.path
         new.use_individuals_cache = self.use_individuals_cache
 
@@ -231,7 +229,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
         return new
 
-    def cl(self, ce: OWLClassExpression) -> int:
+    def concept_len(self, ce: OWLClassExpression) -> int:
         """Calculate the length of a concept
 
         Args:
@@ -259,19 +257,20 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
             self._ind_cache[ce] = self._reasoner._find_instances(ce)  # performance hack
         else:
             temp = self._reasoner.instances(ce)
-            self._ind_cache[ce] = self._ind_enc(temp)
+            self._ind_cache[ce] = frozenset(temp)
 
     def _maybe_cache_individuals(self, ce: OWLClassExpression) -> Iterable[OWLNamedIndividual]:
         if self.use_individuals_cache:
             self._cache_individuals(ce)
-            yield from self._ind_enc(self._ind_cache[ce])
+            yield from self._ind_cache[ce]
         else:
             yield from self._reasoner.instances(ce)
 
     def _maybe_cache_individuals_count(self, ce: OWLClassExpression) -> int:
         if self.use_individuals_cache:
             self._cache_individuals(ce)
-            return popcount(self._ind_cache[ce])
+            r = self._ind_cache[ce]
+            return len(r)
         else:
             return iter_count(self._reasoner.instances(ce))
 
@@ -285,7 +284,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
             individuals belonging to the given class
         """
         if concept is None or concept.is_owl_thing():
-            for _, i in self._ind_enc.items():
+            for i in self._ind_set:
                 yield i
         else:
             yield from self._maybe_cache_individuals(concept)
@@ -293,7 +292,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
     def individuals_count(self, concept: Optional[OWLClassExpression] = None) -> int:
         """Number of individuals"""
         if concept is None or concept.is_owl_thing():
-            return len(self._ind_enc)
+            return len(self._ind_set)
         else:
             return self._maybe_cache_individuals_count(concept)
 
@@ -313,17 +312,26 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         if isinstance(arg, OWLClassExpression):
             if self.use_individuals_cache:
                 self._cache_individuals(arg)
-                return BitSet(self._ind_cache[arg])
+                r = self._ind_cache[arg]
+                return r
             else:
-                return self.individuals_set(self.individuals(arg))
+                return frozenset(self.individuals(arg))
+        elif isinstance(arg, OWLNamedIndividual):
+            return frozenset({arg})
         else:
-            if self._ind_enc:
-                return BitSet(self._ind_enc(arg))
-            else:
-                return frozenset(arg)
+            return frozenset(arg)
 
     def all_individuals_set(self):
-        if self._ind_enc:
-            return BitSet((1 << len(self._ind_enc)) - 1)
+        if self._ind_set is not None:
+            return self._ind_set
         else:
             return frozenset(self._ontology.individuals_in_signature())
+
+    def __repr__(self):
+        properties_count = iter_count(self.ontology().object_properties_in_signature()) + iter_count(
+            self.ontology().data_properties_in_signature())
+        class_count = iter_count(self.ontology().classes_in_signature())
+        individuals_count = self.individuals_count()
+
+        return f'KnowledgeBase(path={repr(self.path)} <{class_count} classes, {properties_count} properties, ' \
+               f'{individuals_count} individuals)'

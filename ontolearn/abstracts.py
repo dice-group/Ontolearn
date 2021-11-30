@@ -1,18 +1,12 @@
 import logging
-import random
-from abc import ABCMeta, abstractmethod, ABC
-from typing import Set, List, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional, Generator, SupportsFloat
-
-import numpy as np
-import torch
+from abc import ABCMeta, abstractmethod
+from typing import Set, List, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional
 
 from owlapy.model import OWLClassExpression, OWLOntology
 from owlapy.util import iter_count
 from .data_struct import Experience
-from .data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
-from .owlready2.utils import get_full_iri
 from .utils import read_csv
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
 
 _N = TypeVar('_N')  #:
 
@@ -180,7 +174,7 @@ class BaseRefinement(Generic[_N], metaclass=ABCMeta):
         Returns:
             length of concept according to some metric configured in the knowledge base
         """
-        return self.kb.cl(concept)
+        return self.kb.concept_len(concept)
 
 
 class AbstractNode(metaclass=ABCMeta):

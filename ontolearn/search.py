@@ -11,7 +11,7 @@ from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.util import as_index, OrderedOWLObject
 from superprop import super_prop
 from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree, \
-    AbstractConceptNode, AbstractLearningProblem, EncodedLearningProblem, DRILLAbstractTree
+    AbstractConceptNode, EncodedLearningProblem, DRILLAbstractTree
 
 _N = TypeVar('_N')  #:
 
@@ -526,8 +526,8 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
         self.items_in_queue.put((-node.heuristic, HeuristicOrderedNode(node)))  # gets the smallest one.
         self.nodes[node.concept] = node
 
-    def add_node(self, *, node: LBLNode, parent_node: LBLNode, kb_learning_problem: EncodedLearningProblem) -> Optional[
-        bool]:
+    def add_node(self, *, node: LBLNode, parent_node: LBLNode, kb_learning_problem: EncodedLearningProblem) \
+            -> Optional[bool]:
         """
         Add a node into the search tree after calculating heuristic value given its parent.
 

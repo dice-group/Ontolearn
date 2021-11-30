@@ -1,10 +1,9 @@
 """ Test DRILL"""
-import json
-import random
-import pandas as pd
-
 # @TODO, write such tests for Drill after, experiments are completed.
 """
+#import random
+#import pandas as pd
+
 from ontolearn import KnowledgeBase
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.rl import DrillAverage

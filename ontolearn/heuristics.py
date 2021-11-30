@@ -2,7 +2,7 @@ from typing import Final
 
 import numpy as np
 
-from .abstracts import AbstractScorer, AbstractHeuristic, AbstractOEHeuristicNode, EncodedLearningProblem
+from .abstracts import AbstractHeuristic, AbstractOEHeuristicNode, EncodedLearningProblem
 from .learning_problem import EncodedPosNegUndLP, EncodedPosNegLPStandard
 from .metrics import Accuracy
 from .search import LBLNode, RL_State
@@ -116,6 +116,7 @@ class OCELHeuristic(AbstractHeuristic):
 
         heuristic_val += accuracy + self.gainBonusFactor * accuracy_gain - node.h_exp * self.expansionPenaltyFactor
         node.heuristic = round(heuristic_val, 5)
+
 
 class Reward:
     def __init__(self, reward_of_goal=5.0, beta=.04, alpha=.5):

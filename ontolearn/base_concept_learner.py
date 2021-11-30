@@ -1,7 +1,7 @@
 import logging
 import time
 from abc import ABCMeta, abstractmethod
-from typing import List, Set, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, cast, Callable, Type
+from typing import List, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, cast, Callable, Type
 
 import numpy as np
 import pandas as pd
@@ -182,7 +182,19 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         """
         pass
 
-    def assign_labels_to_individuals(self, *, individuals: List[OWLNamedIndividual], hypotheses: List[_N]) -> np.ndarray:
+    @abstractmethod
+    def show_search_tree(self, heading_step: str, top_n: int = 10) -> None:
+        """A debugging function to print out the current search tree and the current n best found hypotheses to
+        standard output
+
+        Args:
+            heading_step: a message to display at the beginning of the output
+            top_n: the number of currently best hypotheses to print out
+        """
+        pass
+
+    def assign_labels_to_individuals(self, *, individuals: List[OWLNamedIndividual], hypotheses: List[_N]) \
+            -> np.ndarray:
         """
         Use each given search tree node as a hypothesis, and use it as a binary function to assign 1 or 0 to each
         individual.
@@ -202,8 +214,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             for ith_ind in range(len(individuals)):
                 ind = individuals[ith_ind]
 
-                kb_test = self.kb.individuals_set(ind)
-                if kb_test in kb_individuals:
+                if ind in kb_individuals:
                     labels[ith_ind][jth_hypo] = 1
         return labels
 
@@ -298,7 +309,7 @@ class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
     Base class for refinement based Concept Learning approaches
 
     """
-    __slots__ = 'operator', 'heuristic_func', 'max_child_length', 'start_class', 'iter_bound' 
+    __slots__ = 'operator', 'heuristic_func', 'max_child_length', 'start_class', 'iter_bound'
 
     operator: BaseRefinement
     heuristic_func: AbstractHeuristic

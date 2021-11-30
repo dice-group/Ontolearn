@@ -1,17 +1,48 @@
+import logging
 import types
+from datetime import date, datetime
 from enum import Enum, auto
 from logging import warning
+from types import MappingProxyType
 from typing import Iterable, Set, Final, cast
 
 import owlready2
+from owlready2 import declare_datatype
+from pandas import Timedelta
 
 from owlapy import namespaces
-from owlapy.model import OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
-    OWLNamedIndividual, OWLReasoner, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, \
+from owlapy.ext import OWLReasonerEx
+from owlapy.model import OWLLiteral, OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
+    OWLNamedIndividual, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, \
     OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype, \
-    IRI, OWLObjectInverseOf \
-    # OWLObjectSomeValuesFrom, OWLProperty, \
+    OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, DateOWLDatatype, DateTimeOWLDatatype, \
+    DurationOWLDatatype, IRI, OWLDataPropertyRangeAxiom
 from owlapy.owlready2.utils import ToOwlready2
+
+logger = logging.getLogger(__name__)
+
+_Datatype_map: Final = MappingProxyType({
+    int: IntegerOWLDatatype,
+    float: DoubleOWLDatatype,
+    bool: BooleanOWLDatatype,
+    date: DateOWLDatatype,
+    datetime: DateTimeOWLDatatype,
+    Timedelta: DurationOWLDatatype,
+})
+
+_VERSION_IRI: Final = IRI.create(namespaces.OWL, "versionIRI")
+
+
+def _parse_duration_datatype(literal: str):
+    return Timedelta(literal)
+
+
+def _unparse_duration_datatype(literal: Timedelta):
+    return literal.isoformat()
+
+
+declare_datatype(Timedelta, IRI.create(namespaces.XSD, "duration").as_str(),
+                 _parse_duration_datatype, _unparse_duration_datatype)
 
 
 class BaseReasoner_Owlready2(Enum):
@@ -107,9 +138,6 @@ class OWLOntologyManager_Owlready2(OWLOntologyManager):
         self._world.save()
 
 
-_VERSION_IRI: Final = IRI.create(namespaces.OWL, "versionIRI")
-
-
 class OWLOntology_Owlready2(OWLOntology):
     __slots__ = '_manager', '_world', '_onto'
 
@@ -157,6 +185,15 @@ class OWLOntology_Owlready2(OWLOntology):
         return OWLOntologyID(IRI.create(onto_iri) if onto_iri is not None else None,
                              IRI.create(version_iri) if version_iri is not None else None)
 
+    def data_property_range_axioms(self, property: OWLDataProperty) -> Iterable[OWLDataPropertyRangeAxiom]:
+        p_x: owlready2.DataPropertyClass = self._world[property.get_iri().as_str()]
+        for rng in p_x.range:
+            if rng in _Datatype_map:
+                yield OWLDataPropertyRangeAxiom(property, _Datatype_map[rng])
+            else:
+                logger.warning("Datatype %s not implemented at %s", rng, property)
+                pass  # XXX TODO
+
     def __eq__(self, other):
         if type(other) == type(self):
             return self._onto.loaded == other._onto.loaded and self._onto.base_iri == other._onto.base_iri
@@ -169,7 +206,7 @@ class OWLOntology_Owlready2(OWLOntology):
         return f'OWLOntology_Owlready2({IRI.create(self._onto.base_iri)}, {self._onto.loaded})'
 
 
-class OWLReasoner_Owlready2(OWLReasoner):
+class OWLReasoner_Owlready2(OWLReasonerEx):
     __slots__ = '_ontology', '_world'
 
     _ontology: OWLOntology_Owlready2
@@ -196,7 +233,7 @@ class OWLReasoner_Owlready2(OWLReasoner):
             if isinstance(dom, owlready2.ThingClass):
                 yield OWLClass(IRI.create(dom.iri))
             else:
-                pass # XXX TODO
+                pass  # XXX TODO
 
     def object_property_ranges(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
         if direct:
@@ -206,7 +243,7 @@ class OWLReasoner_Owlready2(OWLReasoner):
             if isinstance(rng, owlready2.ThingClass):
                 yield OWLClass(IRI.create(rng.iri))
             else:
-                pass # XXX TODO
+                pass  # XXX TODO
 
     def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
         """Return the named classes that are directly equivalent to the class expression"""
@@ -219,11 +256,16 @@ class OWLReasoner_Owlready2(OWLReasoner):
         else:
             raise NotImplementedError("equivalent_classes for complex class expressions not implemented", ce)
 
-    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable:
+    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
         i: owlready2.Thing = self._world[ind.get_iri().as_str()]
         p: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
         for val in p._get_values_for_individual(i):
-            yield val
+            yield OWLLiteral(val)
+
+    def all_data_property_values(self, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
+        p: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
+        for _, val in p.get_relations():
+            yield OWLLiteral(val)
 
     def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
             -> Iterable[OWLNamedIndividual]:

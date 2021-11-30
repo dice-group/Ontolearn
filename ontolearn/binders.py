@@ -4,7 +4,7 @@ from typing import List, Dict
 from .utils import create_experiment_folder
 import re
 import time
-import logging
+
 
 class DLLearnerBinder:
     """
@@ -12,9 +12,13 @@ class DLLearnerBinder:
     """
 
     def __init__(self, binary_path=None, model=None, kb_path=None, max_runtime=3):
-        assert binary_path
-        assert model
-        assert kb_path
+        try:
+            assert binary_path
+            assert model
+            assert kb_path
+        except AssertionError:
+            print(f'binary_path:{binary_path}, model:{model} kb_path{kb_path} can not be None')
+            raise
         self.binary_path = binary_path
         self.kb_path = kb_path
         self.name = model
@@ -57,7 +61,6 @@ class DLLearnerBinder:
         Text.append("\n")
 
         Text.append("// knowledge source definition")
-
         Text.append(
             "ks.fileName = \"" + self.kb_path + '\"')
         Text.append("\n")
@@ -94,7 +97,7 @@ class DLLearnerBinder:
         Text.append("alg.maxExecutionTimeInSeconds = " + str(self.max_runtime))
         Text.append("\n")
 
-        pathToConfig = self.storage_path + '/' + self.name + '_' + datetime.now().strftime("%Y%m%d_%H%M%S_%f")+ '.conf'
+        pathToConfig = self.storage_path + '/' + self.name + '_' + datetime.now().strftime("%Y%m%d_%H%M%S_%f") + '.conf'
 
         with open(pathToConfig, "wb") as wb:
             for i in Text:
@@ -110,9 +113,12 @@ class DLLearnerBinder:
         @param max_runtime:
         @return: self.
         """
-        assert len(pos) > 0
-        assert len(neg) > 0
-
+        try:
+            assert len(pos) > 0
+            assert len(neg) > 0
+        except AssertionError:
+            print(f'Positive and Negative Examples can not be 0 length:|Pos|={len(pos)},|Neg|{len(neg)}')
+            raise
         if max_runtime:
             self.max_runtime = max_runtime
         pathToConfig = self.write_dl_learner_config(pos=pos, neg=neg)
@@ -147,7 +153,8 @@ class DLLearnerBinder:
 
         # DL-learner does not provide a unified output :(
         # ELTL  => No info pertaining to the number of concept tested, number of retrieval etc.
-        # CELOE => Algorithm terminated successfully (time: 245ms, 188 descriptions tested, 69 nodes in the search tree).
+        # CELOE => Algorithm terminated successfully (time: 245ms, 188 descriptions tested, 69 nodes in the search
+        #          tree).
         # OCEL  => Algorithm stopped (4505 descriptions tested).
 
         time.time()
@@ -251,7 +258,8 @@ class DLLearnerBinder:
             f_measure = re.findall(r'\d+\.?\d+', f_measure_info[0])[0]
 
             if search_info is not None:
-                # search_info is expected to be " Algorithm terminated successfully (time: 252ms, 188 descriptions tested, 69 nodes in the search tree)."
+                # search_info is expected to be " Algorithm terminated successfully (time: 252ms, 188 descriptions
+                # tested, 69 nodes in the search tree)."
                 _ = re.findall(r'\d+ descriptions tested', search_info)
                 if len(_) == 0:
                     assert self.name == 'eltl'
