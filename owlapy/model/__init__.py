@@ -21,6 +21,8 @@ MOVE(OWLObject, OWLAnnotationObject, OWLAnnotationSubject, OWLAnnotationValue, H
 
 _T = TypeVar('_T')  #:
 _C = TypeVar('_C', bound='OWLObject')  #:
+_P = TypeVar('_P', bound='OWLPropertyExpression')  #:
+_R = TypeVar('_R', bound='OWLPropertyRange')  #:
 Literals = Union['OWLLiteral', int, float, bool, Timedelta, datetime, date]  #:
 
 
@@ -1001,9 +1003,23 @@ class OWLAxiom(OWLObject, metaclass=ABCMeta):
     An OWL ontology contains a set of axioms. These axioms can be annotation axioms, declaration axioms, imports axioms
     or logical axioms
     """
-    __slots__ = ()
+    __slots__ = '_annotations'
+
+    _annotations: Optional[List['OWLAnnotation']]
+
+    def __init__(self, annotations: Optional[Iterable['OWLAnnotation']] = None):
+        if annotations is not None:
+            self._annotations = list(annotations)
+
+    def annotations(self) -> Optional[List['OWLAnnotation']]:
+        return self._annotations
+
+    def is_annotated(self) -> bool:
+        return self._annotations is not None and len(self._annotations) > 0
+
+    def is_logical_axiom(self) -> bool:
+        return False
     # TODO: XXX
-    pass
 
 
 class OWLDatatype(OWLEntity, OWLDataRange):
@@ -1868,7 +1884,20 @@ class OWLLogicalAxiom(OWLAxiom, metaclass=ABCMeta):
     (including imports declarations) and annotation axioms.
     """
     __slots__ = ()
-    pass
+
+    def __init__(self, annotations: Optional[Iterable['OWLAnnotation']] = None):
+        super().__init__(annotations=annotations)
+
+    def is_logical_axiom(self) -> bool:
+        return True
+
+
+class OWLPropertyAxiom(OWLLogicalAxiom, metaclass=ABCMeta):
+    """The base interface for property axioms."""
+    __slots__ = ()
+
+    def __init__(self, annotations: Optional[Iterable['OWLAnnotation']] = None):
+        super().__init__(annotations=annotations)
 
 
 class OWLClassAxiom(OWLLogicalAxiom, metaclass=ABCMeta):
@@ -2053,20 +2082,57 @@ class OWLAnnotationAssertionAxiom(OWLAnnotationAxiom):
         return f'OWLAnnotationAssertionAxiom({self._subject}, {self._annotation})'
 
 
-class OWLDataPropertyRangeAxiom(OWLLogicalAxiom):
-    __slots__ = '_property', '_range', '_annotations'
-    _property: OWLDataPropertyExpression
-    _range: OWLDataRange
-    _annotations: Optional[List[OWLAnnotation]]
+class OWLUnaryPropertyAxiom(Generic[_P], OWLPropertyAxiom, metaclass=ABCMeta):
+    __slots__ = '_property'
 
-    def __init__(self, property: OWLDataPropertyExpression, range: OWLDataRange,
+    _property: _P
+
+    def __init__(self, property_: _P, annotations: Optional[Iterable[OWLAnnotation]] = None):
+        self._property = property_
+        super().__init__(annotations=annotations)
+
+    def get_property(self) -> _P:
+        return self._property
+
+
+class OWLPropertyDomainAxiom(Generic[_P], OWLUnaryPropertyAxiom[_P], metaclass=ABCMeta):
+    """Represents ObjectPropertyDomain axioms in the OWL 2 specification."""
+    __slots__ = '_domain'
+
+    _domain: OWLClassExpression
+
+    def __init__(self, property_: _P, domain: OWLClassExpression,
                  annotations: Optional[Iterable[OWLAnnotation]] = None):
-        self._property = property
-        self._range = range
-        if annotations is not None:
-            self._annotations = list(annotations)
+        self._domain = domain
+        super().__init__(property_=property_, annotations=annotations)
 
-    def get_range(self) -> OWLDataRange:
+    def get_domain(self) -> OWLClassExpression:
+        return self._domain
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._property == other._property and self._domain == other._domain \
+                   and self._annotations == other._annotation
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._property, self._domain, self._annotations))
+
+    def __repr__(self):
+        return f"{type(self).__name__}({repr(self._property)},{repr(self._domain)},{repr(self._annotations)})"
+
+
+class OWLPropertyRangeAxiom(Generic[_P, _R], OWLUnaryPropertyAxiom[_P], metaclass=ABCMeta):
+    """Represents ObjectPropertyRange axioms in the OWL 2 specification."""
+    __slots__ = '_range'
+
+    _range: _R
+
+    def __init__(self, property_: _P, range_: _R, annotations: Optional[Iterable[OWLAnnotation]] = None):
+        self._range = range_
+        super().__init__(property_=property_, annotations=annotations)
+
+    def get_range(self) -> _R:
         return self._range
 
     def __eq__(self, other):
@@ -2079,7 +2145,43 @@ class OWLDataPropertyRangeAxiom(OWLLogicalAxiom):
         return hash((self._property, self._range, self._annotations))
 
     def __repr__(self):
-        return f'OWLDataPropertyRangeAxiom({self._property}, {self._range}, {self._annotations})'
+        return f"{type(self).__name__}({repr(self._property)},{repr(self._range)},{repr(self._annotations)})"
+
+
+class OWLObjectPropertyDomainAxiom(OWLPropertyDomainAxiom[OWLObjectPropertyExpression]):
+    """ Represents a ObjectPropertyDomain axiom in the OWL 2 Specification."""
+    __slots__ = ()
+
+    def __init__(self, property_: OWLObjectPropertyExpression, domain: OWLClassExpression,
+                 annotations: Optional[Iterable[OWLAnnotation]] = None):
+        super().__init__(property_=property_, domain=domain, annotations=annotations)
+
+
+class OWLDataPropertyDomainAxiom(OWLPropertyDomainAxiom[OWLDataPropertyExpression]):
+    """ Represents a DataPropertyDomain axiom in the OWL 2 Specification."""
+    __slots__ = ()
+
+    def __init__(self, property_: OWLDataPropertyExpression, domain: OWLClassExpression,
+                 annotations: Optional[Iterable[OWLAnnotation]] = None):
+        super().__init__(property_=property_, domain=domain, annotations=annotations)
+
+
+class OWLObjectPropertyRangeAxiom(OWLPropertyRangeAxiom[OWLObjectPropertyExpression, OWLClassExpression]):
+    """ Represents a ObjectPropertyRange axiom in the OWL 2 Specification."""
+    __slots__ = ()
+
+    def __init__(self, property_: OWLObjectPropertyExpression, range_: OWLClassExpression,
+                 annotations: Optional[Iterable[OWLAnnotation]] = None):
+        super().__init__(property_=property_, range_=range_, annotations=annotations)
+
+
+class OWLDataPropertyRangeAxiom(OWLPropertyRangeAxiom[OWLDataPropertyExpression, OWLDataRange]):
+    """ Represents a DataPropertyRange axiom in the OWL 2 Specification."""
+    __slots__ = ()
+
+    def __init__(self, property_: OWLDataPropertyExpression, range_: OWLDataRange,
+                 annotations: Optional[Iterable[OWLAnnotation]] = None):
+        super().__init__(property_=property_, range_=range_, annotations=annotations)
 
 
 class OWLOntology(OWLObject, metaclass=ABCMeta):
@@ -2132,8 +2234,44 @@ class OWLOntology(OWLObject, metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def data_property_domain_axioms(self, property: OWLDataProperty) -> Iterable[OWLDataPropertyDomainAxiom]:
+        """Gets the OWLDataPropertyDomainAxiom objects where the property is equal to the specified property.
+
+        Args:
+            property: The property which is equal to the property of the retrieved axioms.
+
+        Returns:
+            the axioms matching the search.
+        """
+        pass
+
+    @abstractmethod
     def data_property_range_axioms(self, property: OWLDataProperty) -> Iterable[OWLDataPropertyRangeAxiom]:
         """Gets the OWLDataPropertyRangeAxiom objects where the property is equal to the specified property.
+
+        Args:
+            property: The property which is equal to the property of the retrieved axioms.
+
+        Returns:
+            the axioms matching the search.
+        """
+        pass
+
+    @abstractmethod
+    def object_property_domain_axioms(self, property: OWLObjectProperty) -> Iterable[OWLObjectPropertyDomainAxiom]:
+        """Gets the OWLObjectPropertyDomainAxiom objects where the property is equal to the specified property.
+
+        Args:
+            property: The property which is equal to the property of the retrieved axioms.
+
+        Returns:
+            the axioms matching the search.
+        """
+        pass
+
+    @abstractmethod
+    def object_property_range_axioms(self, property: OWLObjectProperty) -> Iterable[OWLObjectPropertyRangeAxiom]:
+        """Gets the OWLObjectPropertyRangeAxiom objects where the property is equal to the specified property.
 
         Args:
             property: The property which is equal to the property of the retrieved axioms.
@@ -2524,5 +2662,5 @@ DateTimeOWLDatatype: Final = OWLDatatype(XSDVocabulary.DATE_TIME)  #: An object 
 DurationOWLDatatype: Final = OWLDatatype(XSDVocabulary.DURATION)  #: An object representing the duration datatype.
 TopDatatype: Final = OWLDatatype(OWLRDFVocabulary.RDFS_LITERAL)  #: The OWL Datatype corresponding to the top data type
 
-NUMERIC_DATATYPES: Set[OWLDatatype] = {DoubleOWLDatatype, IntegerOWLDatatype}
+NUMERIC_DATATYPES: Final[Set[OWLDatatype]] = {DoubleOWLDatatype, IntegerOWLDatatype}
 TIME_DATATYPES: Final[Set[OWLDatatype]] = {DateOWLDatatype, DateTimeOWLDatatype, DurationOWLDatatype}
