@@ -15,8 +15,8 @@ from ontolearn.metrics import F1, Precision, Accuracy, Recall
 from ontolearn.utils import oplogging
 from owlapy.ext import OWLReasonerEx
 from owlapy.model import OWLClassExpression, OWLEntity, OWLOntology, OWLClass, OWLNamedIndividual, \
-    OWLObjectPropertyExpression, OWLDataProperty, OWLObjectProperty, OWLOntologyID, _M, OWLDataPropertyRangeAxiom, IRI, \
-    OWLThing
+    OWLObjectPropertyExpression, OWLDataProperty, OWLObjectProperty, OWLOntologyID, _M, OWLDataPropertyRangeAxiom, \
+    IRI, OWLThing, OWLLiteral
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer
 from owlapy.util import LRUCache
@@ -32,7 +32,6 @@ _Metric_map = MappingProxyType({
     # : specificity,
     # : sensitivity,
 })
-
 
 _debug_render = DLSyntaxObjectRenderer().render
 
@@ -123,7 +122,7 @@ class TentrisReasoner(OWLReasonerEx):
     def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
         raise NotImplementedError
 
-    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable['OWLLiteral']:
+    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
         raise NotImplementedError
 
     def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
@@ -136,7 +135,7 @@ class TentrisReasoner(OWLReasonerEx):
     def instances(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLNamedIndividual]:
         logger.warning("Instances(%s) method used", _debug_render(ce))
         res = httpx.get(self._ontology._endpoint_url + '/instances',
-                       params={'class_expression': _tentris_render(ce)})
+                        params={'class_expression': _tentris_render(ce)})
         for i in res.json()['instances']:
             yield OWLNamedIndividual(IRI.create(i))
 
