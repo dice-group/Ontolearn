@@ -182,17 +182,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         """
         pass
 
-    @abstractmethod
-    def show_search_tree(self, heading_step: str, top_n: int = 10) -> None:
-        """A debugging function to print out the current search tree and the current n best found hypotheses to
-        standard output
-
-        Args:
-            heading_step: a message to display at the beginning of the output
-            top_n: the number of currently best hypotheses to print out
-        """
-        pass
-
     def assign_labels_to_individuals(self, *, individuals: List[OWLNamedIndividual], hypotheses: List[_N]) \
             -> np.ndarray:
         """

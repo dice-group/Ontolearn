@@ -90,7 +90,7 @@ class ConceptGeneratorTest(unittest.TestCase):
         self.assertEqual(true_classes, classes)
 
         classes = set(self.generator.get_types(self.bond5225))
-        true_classes = {self.bond, self.bond1}
+        true_classes = {self.bond, self.bond1, OWLThing}
         self.assertEqual(true_classes, classes)
 
     def test_property_retrieval(self):
@@ -162,7 +162,7 @@ class ConceptGeneratorTest(unittest.TestCase):
         self.assertFalse(classes)
 
         classes = set(self.generator.get_types(self.bond5225))
-        true_classes = {self.bond}
+        true_classes = {self.bond, OWLThing}
         self.assertEqual(true_classes, classes)
 
         # properties
