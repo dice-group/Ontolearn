@@ -135,7 +135,7 @@ class TentrisReasoner(OWLReasonerEx):
 
     def instances(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLNamedIndividual]:
         logger.warning("Instances(%s) method used", _debug_render(ce))
-        res= httpx.get(self._ontology._endpoint_url + '/instances',
+        res = httpx.get(self._ontology._endpoint_url + '/instances',
                        params={'class_expression': _tentris_render(ce)})
         for i in res.json()['instances']:
             yield OWLNamedIndividual(IRI.create(i))
@@ -174,9 +174,11 @@ class EvaluatedConceptTentris(EvaluatedConcept):
 
 
 class TentrisKnowledgeBase(KnowledgeBase):
-    __slots__ = 'endpoint_url'
+    __slots__ = 'endpoint_url', 'endpoint_timeout'
 
     _ontology: TentrisOntology
+    endpoint_url: str
+    endpoint_timeout: float
 
     def __init__(self, path: str, *,
                  length_metric_factory: Optional[Factory[[], OWLClassExpressionLengthMetric]] = None,
@@ -186,6 +188,7 @@ class TentrisKnowledgeBase(KnowledgeBase):
         AbstractKnowledgeBase.__init__(self)
         self.path = path
         self.endpoint_url = 'http://localhost:8131'
+        self.endpoint_timeout = 15.0
 
         self._ontology = TentrisOntology(self.path, self.endpoint_url)
         self._reasoner = TentrisReasoner(self._ontology)
@@ -231,11 +234,17 @@ class TentrisKnowledgeBase(KnowledgeBase):
             metric_kv = dict()
         else:
             metric_kv = {'metric': metric}
-        res = httpx.get(self.endpoint_url + '/class_expression_quality',
-                        params={
-                            **metric_kv,
-                            'class_expression': ce,
-                            'learning_problem_id': str(encoded_learning_problem.id)
-                        })
+        try:
+            res = httpx.get(self.endpoint_url + '/class_expression_quality',
+                            params={
+                                **metric_kv,
+                                'class_expression': ce,
+                                'learning_problem_id': str(encoded_learning_problem.id)
+                            },
+                            timeout=self.endpoint_timeout)
+        except httpx.ReadTimeout:
+            logger.error("Could not resolve << %s >> using Tentris@%s", ce, encoded_learning_problem.id)
+            e.q = 0
+            return e
         e.q = float(res.text)
         return e

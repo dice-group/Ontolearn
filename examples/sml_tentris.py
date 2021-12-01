@@ -18,6 +18,7 @@ def run(data_file, pos_file, neg_file):
     lp = PosNegLPStandard(pos, neg)
 
     op = ModifiedCELOERefinement(kb,
+                                 use_negation=False,
                                  use_inverse=False,
                                  use_card_restrictions=False,
                                  use_numeric_datatypes=False,
@@ -28,7 +29,8 @@ def run(data_file, pos_file, neg_file):
     f1 = F1()
     alg = CELOE(kb,
                 refinement_operator=op,
-                max_runtime=600,
+                max_runtime=3600,
+                iter_bound=1_000_000,
                 max_num_of_concepts_tested=1_000_000)
     alg.fit(lp)
     # render = ManchesterOWLSyntaxOWLObjectRenderer()
@@ -44,6 +46,7 @@ def run(data_file, pos_file, neg_file):
               f'quality: {h.quality}, h-exp: {h.h_exp}, RC: {h.refinement_count}'
               f']')
         i += 1
+    print(f'#tested concepts: {alg.number_of_tested_concepts}')
 
 
 def main():
@@ -55,7 +58,7 @@ def main():
     assert os.path.isfile(pos_file), "Need path to SML-Bench learning problem"
     assert os.path.isfile(data_file), "Knowledge base not found, skipping"
 
-    setup_logging("logging.conf")
+    setup_logging("logging_tentris.conf")
 
     run(data_file, pos_file, neg_file)
 
