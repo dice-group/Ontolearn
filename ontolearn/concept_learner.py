@@ -1151,7 +1151,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
     __slots__ = 'fitness_func', 'init_method', 'algorithm', 'value_splitter', 'tournament_size',  \
                 'population_size', 'num_generations', 'height_limit', 'use_data_properties', 'pset', 'toolbox', \
                 '_learning_problem', '_result_population', 'mut_uniform_gen', '_dp_to_prim_type', '_dp_splits', \
-                '_split_properties', '_cache', 'use_card_restrictions', 'card_limit'
+                '_split_properties', '_cache', 'use_card_restrictions', 'card_limit', 'use_inverse'
 
     name = 'evolearner'
 
@@ -1162,6 +1162,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
     value_splitter: AbstractValueSplitter
     use_data_properties: bool
     use_card_restrictions: bool
+    use_inverse: bool
     tournament_size: int
     card_limit: int
     population_size: int
@@ -1189,6 +1190,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                  max_runtime: Optional[int] = None,
                  use_data_properties: bool = True,
                  use_card_restrictions: bool = True,
+                 use_inverse: bool = True,
                  tournament_size: int = 7,
                  card_limit: int = 5,
                  population_size: int = 800,
@@ -1210,6 +1212,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         self.value_splitter = value_splitter
         self.use_data_properties = use_data_properties
         self.use_card_restrictions = use_card_restrictions
+        self.use_inverse = use_inverse
         self.tournament_size = tournament_size
         self.card_limit = card_limit
         self.population_size = population_size
@@ -1264,6 +1267,13 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             pset.addPrimitive(universal, [OWLClassExpression], OWLClassExpression,
                               name=OperatorVocabulary.UNIVERSAL + name)
 
+            if self.use_inverse:
+                existential, universal = factory.create_existential_universal(op.get_inverse_property())
+                pset.addPrimitive(existential, [OWLClassExpression], OWLClassExpression,
+                                  name=OperatorVocabulary.INVERSE + OperatorVocabulary.EXISTENTIAL + name)
+                pset.addPrimitive(universal, [OWLClassExpression], OWLClassExpression,
+                                  name=OperatorVocabulary.INVERSE + OperatorVocabulary.UNIVERSAL + name)
+
         if self.use_data_properties:
             class Bool(object):
                 pass
@@ -1287,11 +1297,15 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                 self._dp_to_prim_type[split_dp] = type_
                 self._split_properties.append(split_dp)
 
-                min_inc, max_inc = factory.create_data_some_values(split_dp)
+                min_inc, max_inc, min_exc, max_exc = factory.create_data_some_values(split_dp)
                 pset.addPrimitive(min_inc, [type_], OWLClassExpression,
                                   name=OperatorVocabulary.DATA_MIN_INCLUSIVE + name)
                 pset.addPrimitive(max_inc, [type_], OWLClassExpression,
                                   name=OperatorVocabulary.DATA_MAX_INCLUSIVE + name)
+                pset.addPrimitive(min_exc, [type_], OWLClassExpression,
+                                  name=OperatorVocabulary.DATA_MIN_EXCLUSIVE + name)
+                pset.addPrimitive(max_exc, [type_], OWLClassExpression,
+                                  name=OperatorVocabulary.DATA_MAX_EXCLUSIVE + name)
 
         if self.use_card_restrictions:
             for i in range(1, self.card_limit+1):

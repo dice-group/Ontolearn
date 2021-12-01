@@ -9,7 +9,8 @@ from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, O
 from ontolearn.knowledge_base import KnowledgeBase
 import re
 
-from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction
+from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
+    OWLDatatypeMaxExclusiveRestriction, OWLDatatypeMaxInclusiveRestriction
 
 
 class PrimitiveFactory:
@@ -62,7 +63,8 @@ class PrimitiveFactory:
         return min_cardinality, max_cardinality, exact_cardinality
 
     def create_data_some_values(self, property_: OWLDataPropertyExpression) \
-            -> Tuple[Callable[[OWLLiteral], OWLDataSomeValuesFrom], Callable[[OWLLiteral], OWLDataSomeValuesFrom]]:
+            -> Tuple[Callable[[OWLLiteral], OWLDataSomeValuesFrom], Callable[[OWLLiteral], OWLDataSomeValuesFrom],
+                     Callable[[OWLLiteral], OWLDataSomeValuesFrom], Callable[[OWLLiteral], OWLDataSomeValuesFrom]]:
 
         def data_some_min_inclusive(value: OWLLiteral) -> OWLDataSomeValuesFrom:
             filler = OWLDatatypeMinInclusiveRestriction(value)
@@ -72,7 +74,15 @@ class PrimitiveFactory:
             filler = OWLDatatypeMaxInclusiveRestriction(value)
             return self.knowledge_base.data_existential_restriction(filler, property_)
 
-        return data_some_min_inclusive, data_some_max_inclusive
+        def data_some_min_exclusive(value: OWLLiteral) -> OWLDataSomeValuesFrom:
+            filler = OWLDatatypeMinExclusiveRestriction(value)
+            return self.knowledge_base.data_existential_restriction(filler, property_)
+
+        def data_some_max_exclusive(value: OWLLiteral) -> OWLDataSomeValuesFrom:
+            filler = OWLDatatypeMaxExclusiveRestriction(value)
+            return self.knowledge_base.data_existential_restriction(filler, property_)
+
+        return data_some_min_inclusive, data_some_max_inclusive, data_some_min_exclusive, data_some_max_exclusive
 
     def create_data_has_value(self, property_: OWLDataPropertyExpression) -> Callable[[OWLLiteral], OWLDataHasValue]:
 
@@ -88,11 +98,14 @@ class OperatorVocabulary(str, Enum):
     NEGATION: Final = "negation"  #:
     EXISTENTIAL: Final = "exists"  #:
     UNIVERSAL: Final = "forall"  #:
+    INVERSE: Final = "inverse"  #:
     CARD_MIN: Final = "cardMin"  #:
     CARD_MAX: Final = "cardMax"  #:
     CARD_EXACT: Final = "cardExact"  #:
     DATA_MIN_INCLUSIVE: Final = "dataMinInc"  #:
     DATA_MAX_INCLUSIVE: Final = "dataMaxInc"  #:
+    DATA_MIN_EXCLUSIVE: Final = "dataMinExc"  #:
+    DATA_MAX_EXCLUSIVE: Final = "dataMaxExc"  #:
     DATA_HAS_VALUE: Final = "dataHasValue"  #:
 
 
