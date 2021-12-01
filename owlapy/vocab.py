@@ -60,6 +60,7 @@ class XSDVocabulary(_Vocabulary, Enum, metaclass=_meta_Enum):
     DOUBLE: Final = "double"  #:
     FLOAT: Final = "float"  #:
     BOOLEAN: Final = "boolean"  #:
+    STRING: Final = "string"  #:
     DATE: Final = "date"  #:
     DATE_TIME: Final = "dateTime"  #:
     DATE_TIME_STAMP: Final = "dateTimeStamp"  #:

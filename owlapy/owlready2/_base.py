@@ -16,7 +16,7 @@ from owlapy.model import OWLLiteral, OWLOntologyManager, OWLOntology, OWLClass, 
     OWLNamedIndividual, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, \
     OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype, \
     OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, DateOWLDatatype, DateTimeOWLDatatype, \
-    DurationOWLDatatype, IRI, OWLDataPropertyRangeAxiom
+    DurationOWLDatatype, IRI, OWLDataPropertyRangeAxiom, StringOWLDatatype
 from owlapy.owlready2.utils import ToOwlready2
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,7 @@ _Datatype_map: Final = MappingProxyType({
     int: IntegerOWLDatatype,
     float: DoubleOWLDatatype,
     bool: BooleanOWLDatatype,
+    str: StringOWLDatatype,
     date: DateOWLDatatype,
     datetime: DateTimeOWLDatatype,
     Timedelta: DurationOWLDatatype,

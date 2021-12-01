@@ -21,7 +21,7 @@ MOVE(OWLObject, OWLAnnotationObject, OWLAnnotationSubject, OWLAnnotationValue, H
 
 _T = TypeVar('_T')  #:
 _C = TypeVar('_C', bound='OWLObject')  #:
-Literals = Union['OWLLiteral', int, float, bool, Timedelta, datetime, date]  #:
+Literals = Union['OWLLiteral', int, float, bool, Timedelta, datetime, date, str]  #:
 
 
 class HasIndex(Protocol):
@@ -777,7 +777,7 @@ class OWLObjectExactCardinality(OWLObjectCardinalityRestriction):
         Returns:
             The semantically equivalent but structurally simpler form (= 1 R C) = >= 1 R C and <= 1 R C
         """
-        args = self.get_property(), self.get_cardinality(), self.get_filler()
+        args = self.get_cardinality(), self.get_property(), self.get_filler()
         return OWLObjectIntersectionOf((OWLObjectMinCardinality(*args), OWLObjectMaxCardinality(*args)))
 
 
@@ -1119,6 +1119,8 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
             return super().__new__(_OWLLiteralImplInteger)
         elif isinstance(value, float):
             return super().__new__(_OWLLiteralImplDouble)
+        elif isinstance(value, str):
+            return super().__new__(_OWLLiteralImplString)
         elif isinstance(value, date):
             return super().__new__(_OWLLiteralImplDate)
         elif isinstance(value, datetime):
@@ -1126,7 +1128,7 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
         elif isinstance(value, Timedelta):
             return super().__new__(_OWLLiteralImplDuration)
         # TODO XXX
-        raise NotImplementedError
+        raise NotImplementedError(value)
 
     def get_literal(self) -> str:
         """Gets the lexical value of this literal. Note that the language tag is not included.
@@ -1172,6 +1174,19 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
 
         Returns:
             An integer value that is represented by this literal.
+        """
+        raise ValueError
+
+    def is_string(self) -> bool:
+        """Whether this literal is typed as string"""
+        return False
+
+    def parse_string(self) -> str:
+        """Parses the lexical value of this literal into a string. The lexical value of this literal should be in the
+        lexical space of the string datatype ("http://www.w3.org/2001/XMLSchema#string").
+
+        Returns:
+            A string value that is represented by this literal.
         """
         raise ValueError
 
@@ -1345,6 +1360,45 @@ class _OWLLiteralImplBoolean(OWLLiteral):
     def get_datatype(self) -> OWLDatatype:
         # documented in parent
         return BooleanOWLDatatype
+
+
+@total_ordering
+class _OWLLiteralImplString(OWLLiteral):
+    __slots__ = '_v'
+
+    _v: str
+
+    def __init__(self, value):
+        assert isinstance(value, str)
+        self._v = value
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._v == other._v
+        return NotImplemented
+
+    def __lt__(self, other):
+        if type(other) is type(self):
+            return self._v < other._v
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self._v)
+
+    def __repr__(self):
+        return f'OWLLiteral({self._v})'
+
+    def is_string(self) -> bool:
+        return True
+
+    def parse_string(self) -> str:
+        # documented in parent
+        return self._v
+
+    # noinspection PyMethodMayBeStatic
+    def get_datatype(self) -> OWLDatatype:
+        # documented in parent
+        return StringOWLDatatype
 
 
 @total_ordering
@@ -1631,7 +1685,7 @@ class OWLDataExactCardinality(OWLDataCardinalityRestriction):
         Returns:
             The semantically equivalent but structurally simpler form (= 1 R D) = >= 1 R D and <= 1 R D
         """
-        args = self.get_property(), self.get_cardinality(), self.get_filler()
+        args = self.get_cardinality(), self.get_property(), self.get_filler()
         return OWLObjectIntersectionOf((OWLDataMinCardinality(*args), OWLDataMaxCardinality(*args)))
 
 
@@ -2519,6 +2573,7 @@ OWLBottomDataProperty: Final = OWLDataProperty(OWLRDFVocabulary.OWL_BOTTOM_DATA_
 DoubleOWLDatatype: Final = OWLDatatype(XSDVocabulary.DOUBLE)  #: An object representing a double datatype.
 IntegerOWLDatatype: Final = OWLDatatype(XSDVocabulary.INTEGER)  #: An object representing an integer datatype.
 BooleanOWLDatatype: Final = OWLDatatype(XSDVocabulary.BOOLEAN)  #: An object representing the boolean datatype.
+StringOWLDatatype: Final = OWLDatatype(XSDVocabulary.STRING)  #: An object representing the string datatype.
 DateOWLDatatype: Final = OWLDatatype(XSDVocabulary.DATE)  #: An object representing the date datatype.
 DateTimeOWLDatatype: Final = OWLDatatype(XSDVocabulary.DATE_TIME)  #: An object representing the dateTime datatype.
 DurationOWLDatatype: Final = OWLDatatype(XSDVocabulary.DURATION)  #: An object representing the duration datatype.
