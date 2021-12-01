@@ -4,8 +4,8 @@ import random
 import time
 from collections import deque
 from contextlib import contextmanager
-from itertools import islice
-from typing import Callable, Dict, Set, List, Tuple, Iterable, Optional, Generator, SupportsFloat
+from itertools import islice, chain
+from typing import Any, Callable, Dict, FrozenSet, Set, List, Tuple, Iterable, Optional, Generator, SupportsFloat
 
 import numpy as np
 import torch
@@ -15,22 +15,25 @@ from torch.nn.init import xavier_normal_
 from deap import gp, tools, base, creator
 
 from ontolearn import KnowledgeBase
-from ontolearn.abstracts import AbstractDrill, AbstractFitness, AbstractScorer, AbstractNode, BaseRefinement, AbstractHeuristic
+from ontolearn.abstracts import AbstractDrill, AbstractFitness, AbstractScorer, AbstractNode, BaseRefinement, \
+    AbstractHeuristic
 from ontolearn.base_concept_learner import BaseConceptLearner, RefinementBasedConceptLearner
 from ontolearn.core.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter, OperandSetTransform
 from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
 from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
 from ontolearn.ea_initialization import AbstractEAInitialization, EARandomInitialization, EARandomWalkInitialization
-from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, escape
+from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVocabulary, escape, ind_to_string, \
+    owlliteral_to_primitive_string
 from ontolearn.fitness_functions import LinearPressureFitness
 from ontolearn.heuristics import OCELHeuristic
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from ontolearn.metrics import Accuracy, F1
 from ontolearn.refinement_operators import LengthBasedRefinement
-from ontolearn.search import DRILLSearchTreePriorityQueue, EvoLearnerNode, HeuristicOrderedNode, OENode, TreeNode, LengthOrderedNode, \
-    QualityOrderedNode, RL_State
+from ontolearn.search import EvoLearnerNode, HeuristicOrderedNode, OENode, TreeNode, LengthOrderedNode, \
+    QualityOrderedNode, RL_State, DRILLSearchTreePriorityQueue
 from ontolearn.utils import oplogging, create_experiment_folder
-from owlapy.model import OWLClass, OWLClassExpression, OWLNamedIndividual
+from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter, EntropyValueSplitter
+from owlapy.model import OWLClass, OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.util import OrderedOWLObject
 from sortedcontainers import SortedSet
@@ -1145,9 +1148,10 @@ class CustomConceptLearner(CELOE):
 
 class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
-    __slots__ = 'fitness_func', 'init_method', 'algorithm', 'expressivity', 'tournament_size',  \
-                'population_size', 'num_generations', 'height_limit', 'pset', 'toolbox', \
-                '_learning_problem', '_result_population', 'mut_uniform_gen'
+    __slots__ = 'fitness_func', 'init_method', 'algorithm', 'value_splitter', 'tournament_size',  \
+                'population_size', 'num_generations', 'height_limit', 'use_data_properties', 'pset', 'toolbox', \
+                '_learning_problem', '_result_population', 'mut_uniform_gen', '_dp_to_prim_type', '_dp_splits', \
+                '_split_properties', '_cache'
 
     name = 'evolearner'
 
@@ -1155,7 +1159,8 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
     init_method: AbstractEAInitialization
     algorithm: AbstractEvolutionaryAlgorithm
     mut_uniform_gen: AbstractEAInitialization
-    expressivity: str
+    value_splitter: AbstractValueSplitter
+    use_data_properties: bool
     tournament_size: int
     population_size: int
     num_generations: int
@@ -1165,6 +1170,10 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
     toolbox: base.Toolbox
     _learning_problem: EncodedPosNegLPStandard
     _result_population: Optional[List['creator.Individual']]
+    _dp_to_prim_type: Dict[OWLDataProperty, Any]
+    _dp_splits: Dict[OWLDataProperty, List[OWLLiteral]]
+    _split_properties: List[OWLDataProperty]
+    _cache: Dict[str, Tuple[float, float]]
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
@@ -1173,9 +1182,10 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                  init_method: Optional[AbstractEAInitialization] = None,
                  algorithm: Optional[AbstractEvolutionaryAlgorithm] = None,
                  mut_uniform_gen: Optional[AbstractEAInitialization] = None,
+                 value_splitter: Optional[AbstractValueSplitter] = None,
                  terminate_on_goal: Optional[bool] = None,
                  max_runtime: Optional[int] = None,
-                 expressivity: str = 'ALC',
+                 use_data_properties: bool = True,
                  tournament_size: int = 7,
                  population_size: int = 800,
                  num_generations: int = 200,
@@ -1193,13 +1203,12 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         self.init_method = init_method
         self.algorithm = algorithm
         self.mut_uniform_gen = mut_uniform_gen
-        self.expressivity = expressivity
+        self.value_splitter = value_splitter
+        self.use_data_properties = use_data_properties
         self.tournament_size = tournament_size
         self.population_size = population_size
         self.num_generations = num_generations
         self.height_limit = height_limit
-
-        self._result_population = None
 
         self.__setup()
 
@@ -1216,11 +1225,19 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         if self.mut_uniform_gen is None:
             self.mut_uniform_gen = EARandomInitialization(min_height=1, max_height=3)
 
+        if self.value_splitter is None:
+            self.value_splitter = EntropyValueSplitter()
+
+        self._result_population = None
+        self._dp_to_prim_type = dict()
+        self._dp_splits = dict()
+        self._cache = dict()
+        self._split_properties = []
+
         self.pset = self.__build_primitive_set()
         self.toolbox = self.__build_toolbox()
 
     def __build_primitive_set(self) -> gp.PrimitiveSetTyped:
-        ontology = self.kb.ontology()
         factory = PrimitiveFactory(self.kb)
         union = factory.create_union()
         intersection = factory.create_intersection()
@@ -1233,17 +1250,48 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         pset.addPrimitive(intersection, [OWLClassExpression, OWLClassExpression], OWLClassExpression,
                           name=OperatorVocabulary.INTERSECTION)
 
-        for property_ in ontology.object_properties_in_signature():
-            name = escape(property_.get_iri().get_remainder())
-            existential, universal = factory.create_existential_universal(property_)
+        for op in self.kb.get_object_properties():
+            name = escape(op.get_iri().get_remainder())
+            existential, universal = factory.create_existential_universal(op)
             pset.addPrimitive(existential, [OWLClassExpression], OWLClassExpression,
                               name=OperatorVocabulary.EXISTENTIAL + name)
             pset.addPrimitive(universal, [OWLClassExpression], OWLClassExpression,
                               name=OperatorVocabulary.UNIVERSAL + name)
 
-        for class_ in ontology.classes_in_signature():
+        if self.use_data_properties:
+            class Bool(object):
+                pass
+            false_ = OWLLiteral(False)
+            true_ = OWLLiteral(True)
+            pset.addTerminal(false_, Bool, name=owlliteral_to_primitive_string(false_))
+            pset.addTerminal(true_, Bool, name=owlliteral_to_primitive_string(true_))
+
+            for bool_dp in self.kb.get_boolean_data_properties():
+                name = escape(bool_dp.get_iri().get_remainder())
+                self._dp_to_prim_type[bool_dp] = Bool
+
+                data_has_value = factory.create_data_has_value(bool_dp)
+                pset.addPrimitive(data_has_value, [Bool], OWLClassExpression,
+                                  name=OperatorVocabulary.DATA_HAS_VALUE + name)
+
+            for split_dp in chain(self.kb.get_time_data_properties(), self.kb.get_numeric_data_properties()):
+                name = escape(split_dp.get_iri().get_remainder())
+                type_ = type(name, (object,), {})
+
+                self._dp_to_prim_type[split_dp] = type_
+                self._split_properties.append(split_dp)
+
+                min_inc, max_inc = factory.create_data_some_values(split_dp)
+                pset.addPrimitive(min_inc, [type_], OWLClassExpression,
+                                  name=OperatorVocabulary.DATA_MIN_INCLUSIVE + name)
+                pset.addPrimitive(max_inc, [type_], OWLClassExpression,
+                                  name=OperatorVocabulary.DATA_MAX_INCLUSIVE + name)
+
+        for class_ in self.kb.get_concepts():
             pset.addTerminal(class_, OWLClass, name=escape(class_.get_iri().get_remainder()))
 
+        pset.addTerminal(self.kb.thing, OWLClass, name=escape(self.kb.thing.get_iri().get_remainder()))
+        pset.addTerminal(self.kb.nothing, OWLClass, name=escape(self.kb.nothing.get_iri().get_remainder()))
         return pset
 
     def __build_toolbox(self) -> base.Toolbox:
@@ -1252,19 +1300,22 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         creator.create("Individual", gp.PrimitiveTree, fitness=creator.Fitness, quality=creator.Quality)
 
         toolbox = base.Toolbox()
-        toolbox.register("population", self.init_method.get_population, creator.Individual, self.pset)
-        toolbox.register("compile", gp.compile, pset=self.pset)
+        toolbox.register(ToolboxVocabulary.INIT_POPULATION, self.init_method.get_population,
+                         creator.Individual, self.pset)
+        toolbox.register(ToolboxVocabulary.COMPILE, gp.compile, pset=self.pset)
 
-        toolbox.register("apply_fitness", self._fitness_func)
-        toolbox.register("select", tools.selTournament, tournsize=self.tournament_size)
-        toolbox.register("mate", gp.cxOnePoint)
+        toolbox.register(ToolboxVocabulary.FITNESS_FUNCTION, self._fitness_func)
+        toolbox.register(ToolboxVocabulary.SELECTION, tools.selTournament, tournsize=self.tournament_size)
+        toolbox.register(ToolboxVocabulary.CROSSOVER, gp.cxOnePoint)
         toolbox.register("create_tree_mut", self.mut_uniform_gen.get_expression)
-        toolbox.register("mutate", gp.mutUniform, expr=toolbox.create_tree_mut, pset=self.pset)
+        toolbox.register(ToolboxVocabulary.MUTATION, gp.mutUniform, expr=toolbox.create_tree_mut, pset=self.pset)
 
-        toolbox.decorate("mate", gp.staticLimit(key=operator.attrgetter("height"),
-                                                max_value=self.height_limit))
-        toolbox.decorate("mutate", gp.staticLimit(key=operator.attrgetter("height"),
-                                                  max_value=self.height_limit))
+        toolbox.decorate(ToolboxVocabulary.CROSSOVER,
+                         gp.staticLimit(key=operator.attrgetter(ToolboxVocabulary.HEIGHT_KEY),
+                                        max_value=self.height_limit))
+        toolbox.decorate(ToolboxVocabulary.MUTATION,
+                         gp.staticLimit(key=operator.attrgetter(ToolboxVocabulary.HEIGHT_KEY),
+                                        max_value=self.height_limit))
 
         toolbox.register("get_top_hypotheses", self._get_top_hypotheses)
         toolbox.register("terminate_on_goal", lambda: self.terminate_on_goal)
@@ -1273,13 +1324,25 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
         return toolbox
 
+    def __set_splitting_values(self):
+        for p in self._dp_splits:
+            del self.pset.terminals[self._dp_to_prim_type[p]]
+            if len(self._dp_splits[p]) == 0:
+                if p in self.kb.get_numeric_data_properties():
+                    self.pset.addTerminal(OWLLiteral(0), self._dp_to_prim_type[p],
+                                          name=owlliteral_to_primitive_string(OWLLiteral(0), p))
+                else:
+                    pass  # TODO:
+            for split in self._dp_splits[p]:
+                self.pset.addTerminal(split, self._dp_to_prim_type[p], name=owlliteral_to_primitive_string(split, p))
+
     def register_op(self, alias: str, function: Callable, *args, **kargs):
         self.toolbox.register(alias, function, *args, **kargs)
-        if alias == 'mate' or alias == 'mutate':
-            self.toolbox.decorate(alias, gp.staticLimit(key=operator.attrgetter("height"),
+        if alias == ToolboxVocabulary.CROSSOVER or alias == ToolboxVocabulary.MUTATION:
+            self.toolbox.decorate(alias, gp.staticLimit(key=operator.attrgetter(ToolboxVocabulary.HEIGHT_KEY),
                                                         max_value=self.height_limit))
 
-    def fit(self, *args, **kwargs):
+    def fit(self, *args, **kwargs) -> 'EvoLearner':
         """
         Find hypotheses that explain pos and neg.
         """
@@ -1289,45 +1352,69 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
         verbose = kwargs.pop("verbose", 0)
 
+        population = self._initialize(learning_problem.pos, learning_problem.neg)
         self.start_time = time.time()
-        population = self._initialize(learning_problem.pos)
         self._goal_found, self._result_population = self.algorithm.evolve(self.toolbox,
                                                                           population,
                                                                           self.num_generations,
                                                                           self.start_time,
                                                                           verbose=verbose)
-
         return self.terminate()
 
-    def _initialize(self, pos: Set[OWLNamedIndividual]):
+    def _initialize(self, pos: FrozenSet[OWLNamedIndividual], neg: FrozenSet[OWLNamedIndividual]) \
+            -> List['creator.Individual']:
+        if self.use_data_properties:
+            if isinstance(self.value_splitter, BinningValueSplitter):
+                self._dp_splits = self.value_splitter.compute_splits_properties(self.kb.reasoner(),
+                                                                                self._split_properties)
+            elif isinstance(self.value_splitter, EntropyValueSplitter):
+                entropy_splits = self.value_splitter.compute_splits_properties(self.kb.reasoner(),
+                                                                               self._split_properties,
+                                                                               pos, neg)
+                no_splits = [prop for prop in entropy_splits if len(entropy_splits[prop]) == 0]
+                binning_splits = BinningValueSplitter().compute_splits_properties(self.kb.reasoner(), no_splits)
+                self._dp_splits = {**entropy_splits, **binning_splits}
+            else:
+                raise ValueError(self.value_splitter)
+            self.__set_splitting_values()
+
         population = None
         if isinstance(self.init_method, EARandomWalkInitialization):
-            population = self.toolbox.population(population_size=self.population_size, pos=list(pos), kb=self.kb)
+            population = self.toolbox.population(population_size=self.population_size, pos=list(pos)[:50],
+                                                 kb=self.kb, dp_to_prim_type=self._dp_to_prim_type,
+                                                 dp_splits=self._dp_splits)
         else:
             population = self.toolbox.population(population_size=self.population_size)
         return population
 
-    def best_hypotheses(self, n=5, key='fitness'):
+    def best_hypotheses(self, n: int = 5, key: str = 'fitness') -> Iterable[EvoLearnerNode]:
         assert self._result_population is not None
         assert len(self._result_population) > 0
-
         yield from self._get_top_hypotheses(self._result_population, n, key)
 
-    def _get_top_hypotheses(self, population, n: int = 5, key: str = 'fitness'):
+    def _get_top_hypotheses(self, population: List['creator.Individual'], n: int = 5, key: str = 'fitness') \
+            -> Iterable[EvoLearnerNode]:
         best_inds = tools.selBest(population, k=n, fit_attr=key)
         best_concepts = [gp.compile(ind, self.pset) for ind in best_inds]
 
         for con, ind in zip(best_concepts, best_inds):
             individuals_count = len(self.kb.individuals_set(con))
-            yield EvoLearnerNode(con, self.kb.cl(con), individuals_count, ind.quality.values[0],
+            yield EvoLearnerNode(con, self.kb.concept_len(con), individuals_count, ind.quality.values[0],
                                  len(ind), ind.height)
 
-    def _fitness_func(self, individual):
-        concept = gp.compile(individual, self.pset)
-        instances = self.kb.individuals_set(concept)
-        quality = self.quality_func.score(instances, self._learning_problem)
-        individual.quality.values = (quality[1],)
-        self.fitness_func.apply(individual)
+    def _fitness_func(self, individual: 'creator.Individual'):
+        ind_str = ind_to_string(individual)
+        # experimental
+        if ind_str in self._cache:
+            individual.quality.values = (self._cache[ind_str][0],)
+            individual.fitness.values = (self._cache[ind_str][1],)
+        else:
+            concept = gp.compile(individual, self.pset)
+            instances = self.kb.individuals_set(concept)
+            quality = self.quality_func.score(instances, self._learning_problem)
+            individual.quality.values = (quality[1],)
+            self.fitness_func.apply(individual)
+            self._cache[ind_str] = (quality[1], individual.fitness.values[0])
 
     def clean(self):
         self._result_population = None

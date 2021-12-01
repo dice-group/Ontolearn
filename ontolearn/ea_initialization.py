@@ -1,12 +1,25 @@
-import itertools
-from ontolearn.ea_utils import OperatorVocabulary, escape
+from dataclasses import dataclass
+from functools import lru_cache
+from enum import Enum, auto
+from itertools import chain, cycle
+from ontolearn.ea_utils import OperatorVocabulary, escape, owlliteral_to_primitive_string
 from ontolearn.knowledge_base import KnowledgeBase
-from owlapy.model import OWLClass, OWLClassExpression, OWLNamedIndividual, OWLObjectProperty
+from owlapy.model import OWLClass, OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual, \
+    OWLObjectProperty
 import random
 from abc import ABCMeta, abstractmethod
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, Final, List, Set, Union
 from deap.gp import Primitive, PrimitiveSetTyped, Terminal
 from deap import creator
+
+
+Tree = List[Union[Primitive, Terminal]]
+
+
+class RandomInitMethod(Enum):
+    GROW: Final = auto()  #:
+    FULL: Final = auto()  #:
+    RAMPED_HALF_HALF: Final = auto()  #:
 
 
 class AbstractEAInitialization(metaclass=ABCMeta):
@@ -26,7 +39,7 @@ class AbstractEAInitialization(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_expression(self, pset: PrimitiveSetTyped) -> List[Union[Primitive, Terminal]]:
+    def get_expression(self, pset: PrimitiveSetTyped) -> Tree:
         pass
 
 
@@ -38,14 +51,15 @@ class EARandomInitialization(AbstractEAInitialization):
 
     min_height: int
     max_height: int
-    method: str
+    method: RandomInitMethod
 
-    def __init__(self, min_height: int = 3, max_height: int = 6, method: str = "rhh"):
+    def __init__(self, min_height: int = 3, max_height: int = 6,
+                 method: RandomInitMethod = RandomInitMethod.RAMPED_HALF_HALF):
         """
         Args:
             min_height: minimum height of trees
             max_height: maximum height of trees
-            method: initialization method possible values: rhh, grow, full
+            method: random initialization method possible values: rhh, grow, full
         """
         self.min_height = min_height
         self.max_height = max_height
@@ -56,13 +70,14 @@ class EARandomInitialization(AbstractEAInitialization):
                        population_size: int = 0) -> List['creator.Individual']:
         return [container(self.get_expression(pset)) for _ in range(population_size)]
 
-    def get_expression(self, pset: PrimitiveSetTyped, type_: type = None) -> List[Union[Primitive, Terminal]]:
+    def get_expression(self, pset: PrimitiveSetTyped, type_: type = None) -> Tree:
         if type_ is None:
             type_ = pset.ret
 
-        use_grow = (self.method == 'grow' or (self.method == 'rhh' and random.random() < 0.5))
+        use_grow = (self.method == RandomInitMethod.GROW or
+                    (self.method == RandomInitMethod.RAMPED_HALF_HALF and random.random() < 0.5))
 
-        expr: List[Union[Primitive, Terminal]] = []
+        expr: Tree = []
         height = random.randint(self.min_height, self.max_height)
         self._build_tree(expr, pset, height, 0, type_, use_grow)
         return expr
@@ -91,156 +106,244 @@ class EARandomInitialization(AbstractEAInitialization):
                     self._build_tree(tree, pset, height, current_height+1, arg_type, use_grow)
 
 
+Property = Union[OWLObjectProperty, OWLDataProperty]
+Object = Union[OWLNamedIndividual, OWLLiteral]
+
+
+@dataclass(frozen=True)
+class PropObjPair:
+    property_: Property
+    object_: Object
+
+
 class EARandomWalkInitialization(AbstractEAInitialization):
     """Random walk initialization for description logic learning.
 
     """
-    __slots__ = 'max_r', 'jump_pr', 'type_counts'
+    __slots__ = 'max_t', 'jump_pr', 'type_counts', 'dp_to_prim_type', 'dp_splits', 'kb'
 
     connection_pr: float = 0.5
+    _cache_size: int = 2048
 
-    max_r: int
+    max_t: int
     jump_pr: float
 
-    def __init__(self, max_r: int = 2, jump_pr: float = 0.5):
+    type_counts: Dict[OWLClass, int]
+    dp_to_prim_type: Dict[OWLDataProperty, Any]
+    dp_splits: Dict[OWLDataProperty, List[OWLLiteral]]
+    kb: KnowledgeBase
+
+    def __init__(self, max_t: int = 2, jump_pr: float = 0.5):
         """
         Args:
-            max_r: number of paths
+            max_t: number of paths
             jump_pr: probability to explore paths of length 2
         """
-        self.max_r = max_r
+        self.max_t = max_t
         self.jump_pr = jump_pr
+
+        self.type_counts = dict()
+        self.dp_to_prim_type = dict()
+        self.dp_splits = dict()
 
     def get_population(self, container: Callable,
                        pset: PrimitiveSetTyped,
                        population_size: int = 0,
                        pos: List[OWLNamedIndividual] = None,
+                       dp_to_prim_type: Dict[OWLDataProperty, Any] = None,
+                       dp_splits: Dict[OWLDataProperty, List[OWLLiteral]] = None,
                        kb: KnowledgeBase = None) -> List['creator.Individual']:
         assert pos is not None
         assert kb is not None
-        self.type_counts = self._compute_type_counts(pos, kb)
+        assert dp_to_prim_type is not None
+        assert dp_splits is not None
+
+        self.dp_to_prim_type = dp_to_prim_type
+        self.dp_splits = dp_splits
+        self.kb = kb
+        self.type_counts = self._compute_type_counts(pos)
 
         count = 0
         population = []
-        for ind in itertools.cycle(pos):
-            population.append(container(self.get_expression(pset, ind, kb)))
+        for ind in cycle(pos):
+            population.append(container(self.get_expression(pset, ind)))
             count += 1
             if count == population_size:
                 break
 
         return population
 
-    def get_expression(self, pset: PrimitiveSetTyped,
-                       ind: OWLNamedIndividual = None,
-                       kb: KnowledgeBase = None) -> List[Union[Primitive, Terminal]]:
+    def get_expression(self, pset: PrimitiveSetTyped, ind: OWLNamedIndividual = None) -> Tree:
         assert ind is not None
-        assert kb is not None
-        type_ = self._select_type(ind, kb)
-        paths = self._select_paths(list(kb.reasoner().object_properties(ind)), ind, kb)
+        type_ = self._select_type(ind)
+        pairs = self._select_pairs(self._get_properties(ind), ind)
 
-        expr: List[Union[Primitive, Terminal]] = []
-        if len(paths) > 0:
+        expr: Tree = []
+        if len(pairs) > 0:
             self._add_intersection_or_union(expr, pset)
         self._add_object_terminal(expr, pset, type_)
 
-        for idx, path in enumerate(paths):
-            if idx != len(paths) - 1:
+        for idx, pair in enumerate(pairs):
+            if idx != len(pairs) - 1:
                 self._add_intersection_or_union(expr, pset)
 
-            if isinstance(path[0], OWLObjectProperty):
-                self._build_object_property(expr, ind, path, pset, kb)
+            if isinstance(pair.property_, OWLObjectProperty):
+                self._build_object_property(expr, ind, pair, pset)
+            elif isinstance(pair.property_, OWLDataProperty):
+                if pair.property_ in self.kb.get_boolean_data_properties():
+                    self._build_bool_property(expr, pair, pset)
+                elif pair.property_ in chain(self.kb.get_time_data_properties(), self.kb.get_numeric_data_properties()):
+                    self._build_split_property(expr, pair, pset)
+                else:
+                    raise NotImplementedError(pair.property_)
 
         return expr
 
-    def _compute_type_counts(self, pos: List[OWLNamedIndividual], kb: KnowledgeBase) -> Dict[OWLClass, int]:
-        types = itertools.chain.from_iterable({kb.reasoner().types(ind, direct=True) for ind in pos})
+    def _compute_type_counts(self, pos: List[OWLNamedIndividual]) -> Dict[OWLClass, int]:
+        types = chain.from_iterable((self._get_types(ind, direct=True) for ind in pos))
         type_counts = dict.fromkeys(types, 0)
 
         for ind in pos:
-            common_types = type_counts.keys() & set(kb.reasoner().types(ind))
+            common_types = type_counts.keys() & self._get_types(ind)
             for t in common_types:
                 type_counts[t] += 1
 
         return type_counts
 
-    def _select_type(self, ind: OWLNamedIndividual, kb: KnowledgeBase) -> OWLClass:
-        types_ind = list(self.type_counts.keys() & set(kb.reasoner().types(ind)))
+    def _select_type(self, ind: OWLNamedIndividual) -> OWLClass:
+        types_ind = list(self.type_counts.keys() & self._get_types(ind))
         weights = [self.type_counts[t] for t in types_ind]
         return random.choices(types_ind, weights=weights)[0]
 
-    def _select_paths(self, properties: List[OWLObjectProperty], ind: OWLNamedIndividual,
-                      kb: KnowledgeBase) -> List[Tuple[OWLObjectProperty, OWLNamedIndividual]]:
-        ind_neighbours = dict()
-        for p in properties:
-            if isinstance(p, OWLObjectProperty):
-                ind_neighbours[p] = list(kb.reasoner().object_property_values(ind, p))
+    @lru_cache(maxsize=_cache_size)
+    def _get_types(self, ind: OWLNamedIndividual, direct: bool = False) -> Set[OWLClass]:
+        return set(self.kb.get_types(ind, direct))
 
-        paths = []
-        if len(properties) < self.max_r:
-            paths = [(p, random.choice(ind_neighbours[p])) for p in properties]
+    @lru_cache(maxsize=_cache_size)
+    def _get_properties(self, ind: OWLNamedIndividual) -> List[Property]:
+        properties: List[Property] = list(self.kb.get_object_properties_for_ind(ind))
+        for p in self.kb.get_data_properties_for_ind(ind):
+            if p in self.dp_to_prim_type:
+                properties.append(p)
+        return properties
+
+    def _select_pairs(self, properties: List[Property], ind: OWLNamedIndividual) -> List[PropObjPair]:
+        ind_nbrs: Dict[Property, List[Object]] = dict()
+        ind_nbrs = {p: self._get_property_values(ind, p) for p in properties}
+
+        pairs = []
+        if len(properties) < self.max_t:
+            pairs = [PropObjPair(p, random.choice(ind_nbrs[p])) for p in properties]
         else:
-            temp_props = random.sample(properties, k=self.max_r)
-            paths = [(p, random.choice(ind_neighbours[p])) for p in temp_props]
+            temp_props = random.sample(properties, k=self.max_t)
+            pairs = [PropObjPair(p, random.choice(ind_nbrs[p])) for p in temp_props]
 
-        # If not enough paths selected, also taking duplicate properties to different objects
-        temp_paths = []
-        if len(paths) < self.max_r:
-            temp_paths = [(p, o) for p in properties for o in ind_neighbours[p] if (p, o) not in paths]
+        # If not enough pairs selected, also taking duplicate properties to different objects
+        temp_pairs = []
+        if len(pairs) < self.max_t:
+            temp_pairs = [PropObjPair(p, o) for p in properties for o in ind_nbrs[p] if PropObjPair(p, o) not in pairs]
 
-            remaining_paths = self.max_r - len(paths)
-            if len(temp_paths) > remaining_paths:
-                paths += random.sample(temp_paths, k=remaining_paths)
+            remaining_pairs = self.max_t - len(pairs)
+            if len(temp_pairs) > remaining_pairs:
+                pairs += random.sample(temp_pairs, k=remaining_pairs)
             else:
-                paths += temp_paths
+                pairs += temp_pairs
 
-        return paths
+        return pairs
 
-    def _build_object_property(self, expr: List[Union[Primitive, Terminal]], ind: OWLNamedIndividual,
-                               path: Tuple[OWLObjectProperty, OWLNamedIndividual], pset: PrimitiveSetTyped,
-                               kb: KnowledgeBase):
-        self._add_primitive(expr, pset, path[0])
+    def _build_object_property(self, expr: Tree, ind: OWLNamedIndividual, pair: PropObjPair, pset: PrimitiveSetTyped):
+        assert isinstance(pair.property_, OWLObjectProperty)
+        self._add_primitive(expr, pset, pair.property_, OperatorVocabulary.EXISTENTIAL)
 
-        second_ind = path[1]
-        properties = list(kb.reasoner().object_properties(second_ind))
+        second_ind = pair.object_
+        assert isinstance(second_ind, OWLNamedIndividual)
+
+        properties = self._get_properties(second_ind)
 
         # Select next path while prohibiting a loop back to the first individual
-        next_path = None
-        while next_path is None and len(properties) > 1:
+        next_pair = None
+        while next_pair is None and len(properties) > 1:
             temp_prop = random.choice(properties)
-            inds = list(kb.reasoner().object_property_values(second_ind, temp_prop))
-            try:
-                inds.remove(ind)
-            except ValueError:
-                pass
+            objs = self._get_property_values(second_ind, temp_prop)
 
-            if len(inds) > 0:
-                next_path = (temp_prop, random.choice(inds))
+            if isinstance(temp_prop, OWLObjectProperty):
+                try:
+                    objs.remove(ind)
+                except ValueError:
+                    pass
+
+            if len(objs) > 0:
+                next_pair = PropObjPair(temp_prop, random.choice(objs))
 
             properties.remove(temp_prop)
 
-        if next_path is not None and random.random() < self.jump_pr:
-            self._add_primitive(expr, pset, next_path[0])
-            type_ = random.choice(list(kb.reasoner().types(next_path[1], direct=True)))
-            self._add_object_terminal(expr, pset, type_)
+        if next_pair is not None and random.random() < self.jump_pr:
+            if isinstance(next_pair.property_, OWLObjectProperty):
+                self._add_primitive(expr, pset, next_pair.property_, OperatorVocabulary.EXISTENTIAL)
+                assert isinstance(next_pair.object_, OWLNamedIndividual)
+                type_ = random.choice(list(self._get_types(next_pair.object_, direct=True)))
+                self._add_object_terminal(expr, pset, type_)
+            elif isinstance(next_pair.property_, OWLDataProperty):
+                if next_pair.property_ in self.kb.get_boolean_data_properties():
+                    self._build_bool_property(expr, next_pair, pset)
+                elif next_pair.property_ in chain(self.kb.get_time_data_properties(),
+                                                  self.kb.get_numeric_data_properties()):
+                    self._build_split_property(expr, next_pair, pset)
+            else:
+                raise NotImplementedError(next_pair.property_)
+
         else:
-            type_ = random.choice(list(kb.reasoner().types(second_ind, direct=True)))
+            type_ = random.choice(list(self._get_types(second_ind, direct=True)))
             self._add_object_terminal(expr, pset, type_)
 
-    def _add_intersection_or_union(self, expr: List[Union[Primitive, Terminal]], pset: PrimitiveSetTyped):
+    def _build_bool_property(self, expr: Tree, pair: PropObjPair, pset: PrimitiveSetTyped):
+        assert isinstance(pair.property_, OWLDataProperty)
+        assert isinstance(pair.object_, OWLLiteral)
+
+        self._add_primitive(expr, pset, pair.property_, OperatorVocabulary.DATA_HAS_VALUE)
+        self._add_data_terminal(expr, pset, pair.property_, pair.object_)
+
+    def _build_split_property(self, expr: Tree, pair: PropObjPair, pset: PrimitiveSetTyped):
+        assert isinstance(pair.property_, OWLDataProperty)
+        assert isinstance(pair.object_, OWLLiteral)
+
+        splits = self.dp_splits[pair.property_]
+        nearest_value = min(splits, key=lambda k: abs(k.to_python()-pair.object_.to_python())) if len(splits) > 0 else 0
+        vocab = OperatorVocabulary.DATA_MIN_INCLUSIVE \
+            if nearest_value.to_python() <= pair.object_.to_python() else OperatorVocabulary.DATA_MAX_INCLUSIVE
+
+        self._add_primitive(expr, pset, pair.property_, vocab)
+        self._add_data_terminal(expr, pset, pair.property_, nearest_value)
+
+    @lru_cache(maxsize=_cache_size)
+    def _get_property_values(self, ind: OWLNamedIndividual, property_: Property) -> List[Object]:
+        if isinstance(property_, OWLObjectProperty):
+            return list(self.kb.get_object_property_values(ind, property_))
+        elif isinstance(property_, OWLDataProperty):
+            return list(self.kb.get_data_property_values(ind, property_))
+        else:
+            raise NotImplementedError(property_)
+
+    def _add_intersection_or_union(self, expr: Tree, pset: PrimitiveSetTyped):
         if random.random() <= EARandomWalkInitialization.connection_pr:
             expr.append(pset.primitives[OWLClassExpression][2])
         else:
             expr.append(pset.primitives[OWLClassExpression][1])
 
-    def _add_object_terminal(self, expr: List[Union[Primitive, Terminal]], pset: PrimitiveSetTyped, type_: OWLClass):
+    def _add_object_terminal(self, expr: Tree, pset: PrimitiveSetTyped, type_: OWLClass):
         for t in pset.terminals[OWLClass]:
             if t.name == escape(type_.get_iri().get_remainder()):
                 expr.append(t)
-                break
+                return
 
-    def _add_primitive(self, expr: List[Union[Primitive, Terminal]], pset: PrimitiveSetTyped,
-                       property_: OWLObjectProperty):
+    def _add_data_terminal(self, expr: Tree, pset: PrimitiveSetTyped, property_: OWLDataProperty, object_: OWLLiteral):
+        for t in pset.terminals[self.dp_to_prim_type[property_]]:
+            if t.name == owlliteral_to_primitive_string(object_, property_):
+                expr.append(t)
+                return
+
+    def _add_primitive(self, expr: Tree, pset: PrimitiveSetTyped, property_: Property, vocab: OperatorVocabulary):
         for p in pset.primitives[OWLClassExpression]:
-            if p.name == OperatorVocabulary.EXISTENTIAL + escape(property_.get_iri().get_remainder()):
+            if p.name == vocab + escape(property_.get_iri().get_remainder()):
                 expr.append(p)
-                break
+                return

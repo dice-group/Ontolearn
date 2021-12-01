@@ -91,7 +91,7 @@ class EASimple(BaseEvolutionaryAlgorithm):
 
     def __init__(self,
                  crossover_pr: float = 0.9,
-                 mutation_pr: float = 0.1,
+                 mutation_pr: float = 0.3,
                  elitism: bool = False,
                  elite_size: float = 0.1):
 
