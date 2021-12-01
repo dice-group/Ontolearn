@@ -1151,7 +1151,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
     __slots__ = 'fitness_func', 'init_method', 'algorithm', 'value_splitter', 'tournament_size',  \
                 'population_size', 'num_generations', 'height_limit', 'use_data_properties', 'pset', 'toolbox', \
                 '_learning_problem', '_result_population', 'mut_uniform_gen', '_dp_to_prim_type', '_dp_splits', \
-                '_split_properties', '_cache'
+                '_split_properties', '_cache', 'use_card_restrictions', 'card_limit'
 
     name = 'evolearner'
 
@@ -1161,7 +1161,9 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
     mut_uniform_gen: AbstractEAInitialization
     value_splitter: AbstractValueSplitter
     use_data_properties: bool
+    use_card_restrictions: bool
     tournament_size: int
+    card_limit: int
     population_size: int
     num_generations: int
     height_limit: int
@@ -1186,7 +1188,9 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                  terminate_on_goal: Optional[bool] = None,
                  max_runtime: Optional[int] = None,
                  use_data_properties: bool = True,
+                 use_card_restrictions: bool = True,
                  tournament_size: int = 7,
+                 card_limit: int = 5,
                  population_size: int = 800,
                  num_generations: int = 200,
                  height_limit: int = 17):
@@ -1205,7 +1209,9 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         self.mut_uniform_gen = mut_uniform_gen
         self.value_splitter = value_splitter
         self.use_data_properties = use_data_properties
+        self.use_card_restrictions = use_card_restrictions
         self.tournament_size = tournament_size
+        self.card_limit = card_limit
         self.population_size = population_size
         self.num_generations = num_generations
         self.height_limit = height_limit
@@ -1286,6 +1292,19 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                                   name=OperatorVocabulary.DATA_MIN_INCLUSIVE + name)
                 pset.addPrimitive(max_inc, [type_], OWLClassExpression,
                                   name=OperatorVocabulary.DATA_MAX_INCLUSIVE + name)
+
+        if self.use_card_restrictions:
+            for i in range(1, self.card_limit+1):
+                pset.addTerminal(i, int)
+            for op in self.kb.get_object_properties():
+                name = escape(op.get_iri().get_remainder())
+                card_min, card_max, card_exact = factory.create_card_restrictions(op)
+                pset.addPrimitive(card_min, [int, OWLClassExpression], OWLClassExpression,
+                                  name=OperatorVocabulary.CARD_MIN + name)
+                pset.addPrimitive(card_max, [int, OWLClassExpression], OWLClassExpression,
+                                  name=OperatorVocabulary.CARD_MAX + name)
+                pset.addPrimitive(card_exact, [int, OWLClassExpression], OWLClassExpression,
+                                  name=OperatorVocabulary.CARD_EXACT + name)
 
         for class_ in self.kb.get_concepts():
             pset.addTerminal(class_, OWLClass, name=escape(class_.get_iri().get_remainder()))

@@ -4,7 +4,8 @@ from typing import Callable, Final, List, Optional, Tuple, Union
 from deap import creator
 from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
     OWLClassExpression, OWLDataHasValue, OWLDataPropertyExpression, OWLDataSomeValuesFrom, OWLLiteral, \
-    OWLObjectAllValuesFrom, OWLObjectIntersectionOf, NUMERIC_DATATYPES, OWLDataProperty, OWLObjectProperty
+    OWLObjectAllValuesFrom, OWLObjectIntersectionOf, NUMERIC_DATATYPES, OWLDataProperty, OWLObjectProperty, \
+    OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectMinCardinality
 from ontolearn.knowledge_base import KnowledgeBase
 import re
 
@@ -44,6 +45,22 @@ class PrimitiveFactory:
 
         return existential_restriction, universal_restriction
 
+    def create_card_restrictions(self, property_: OWLObjectPropertyExpression) \
+        -> Tuple[Callable[[int, OWLClassExpression], OWLObjectMinCardinality],
+                 Callable[[int, OWLClassExpression], OWLObjectMaxCardinality],
+                 Callable[[int, OWLClassExpression], OWLObjectExactCardinality]]:
+
+        def min_cardinality(card: int, filler: OWLClassExpression) -> OWLObjectMinCardinality:
+            return self.knowledge_base.min_cardinality_restriction(filler, property_, card)
+
+        def max_cardinality(card: int, filler: OWLClassExpression) -> OWLObjectMaxCardinality:
+            return self.knowledge_base.max_cardinality_restriction(filler, property_, card)
+
+        def exact_cardinality(card: int, filler: OWLClassExpression) -> OWLObjectExactCardinality:
+            return self.knowledge_base.exact_cardinality_restriction(filler, property_, card)
+
+        return min_cardinality, max_cardinality, exact_cardinality
+
     def create_data_some_values(self, property_: OWLDataPropertyExpression) \
             -> Tuple[Callable[[OWLLiteral], OWLDataSomeValuesFrom], Callable[[OWLLiteral], OWLDataSomeValuesFrom]]:
 
@@ -71,6 +88,9 @@ class OperatorVocabulary(str, Enum):
     NEGATION: Final = "negation"  #:
     EXISTENTIAL: Final = "exists"  #:
     UNIVERSAL: Final = "forall"  #:
+    CARD_MIN: Final = "cardMin"  #:
+    CARD_MAX: Final = "cardMax"  #:
+    CARD_EXACT: Final = "cardExact"  #:
     DATA_MIN_INCLUSIVE: Final = "dataMinInc"  #:
     DATA_MAX_INCLUSIVE: Final = "dataMaxInc"  #:
     DATA_HAS_VALUE: Final = "dataHasValue"  #:

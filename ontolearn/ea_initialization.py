@@ -133,7 +133,7 @@ class EARandomWalkInitialization(AbstractEAInitialization):
     dp_splits: Dict[OWLDataProperty, List[OWLLiteral]]
     kb: KnowledgeBase
 
-    def __init__(self, max_t: int = 2, jump_pr: float = 0.5):
+    def __init__(self, max_t: int = 3, jump_pr: float = 0.5):
         """
         Args:
             max_t: number of paths
