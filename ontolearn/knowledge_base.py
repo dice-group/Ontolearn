@@ -393,3 +393,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         e.ic = len(e.inds)
         _, e.q = quality_func.score(e.inds, encoded_learning_problem)
         return e
+
+    async def evaluate_concept_async(self, concept: OWLClassExpression, quality_func: AbstractScorer,
+                                     encoded_learning_problem: EncodedLearningProblem) -> EvaluatedConcept:
+        raise NotImplementedError
