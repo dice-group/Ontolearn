@@ -17,7 +17,7 @@ from owlapy.model import OWLObjectPropertyRangeAxiom, OWLOntologyManager, OWLDat
     OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype, \
     OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, DateOWLDatatype, DateTimeOWLDatatype, OWLClass, \
     DurationOWLDatatype, StringOWLDatatype, IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLLiteral, \
-    OWLObjectPropertyDomainAxiom
+    OWLObjectPropertyDomainAxiom, OWLSubClassOfAxiom
 from owlapy.owlready2.utils import FromOwlready2, ToOwlready2
 
 logger = logging.getLogger(__name__)
@@ -96,6 +96,21 @@ class OWLOntologyManager_Owlready2(OWLOntologyManager):
                 w_x.namespace = ont_x.get_namespace(cls_a.get_iri().get_namespace())
                 w_x.is_a.remove(thing_x)
                 w_x.equivalent_to.append(conv.map_concept(cls_b))
+        elif isinstance(axiom, OWLSubClassOfAxiom):
+            sub_class = axiom.get_sub_class()
+            super_class = axiom.get_super_class()
+            with ont_x:
+                assert isinstance(sub_class, OWLClass), f'Owlready2 only supports named classes ({sub_class})'
+                sub_class_x = self._world[sub_class.to_string_id()]
+                if sub_class_x is None:
+                    thing_x: owlready2.entity.ThingClass = conv.map_concept(OWLThing)
+                    sub_class_x: owlready2.entity.ThingClass = cast(thing_x,
+                                                                    types.new_class(
+                                                                        name=sub_class.get_iri().get_remainder(),
+                                                                        bases=(thing_x,)))
+                    sub_class_x.namespace = ont_x.get_namespace(sub_class.get_iri().get_namespace())
+                    sub_class_x.is_a.remove(thing_x)
+                sub_class_x.is_a.append(conv.map_concept(super_class))
         elif isinstance(axiom, OWLAnnotationAssertionAxiom):
             prop_x = conv.map_object(axiom.get_property())
             if prop_x is None:
