@@ -1,6 +1,6 @@
 from typing import Final
 from ontolearn.abstracts import AbstractFitness
-from deap import creator
+from ontolearn.ea_utils import Tree
 
 
 class LinearPressureFitness(AbstractFitness):
@@ -14,7 +14,7 @@ class LinearPressureFitness(AbstractFitness):
         self.gain = gain
         self.penalty = penalty
 
-    def apply(self, individual: 'creator.Individual'):
+    def apply(self, individual: Tree):
         quality = individual.quality.values[0]
         fitness = self.gain*quality - self.penalty*len(individual)
         individual.fitness.values = (round(fitness, 5),)

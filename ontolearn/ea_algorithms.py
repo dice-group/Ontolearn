@@ -2,11 +2,12 @@ from abc import ABCMeta, abstractmethod
 from typing import ClassVar, Final, List, Optional, Tuple
 from deap.algorithms import varAnd
 from deap.base import Toolbox
-from deap import creator
 from heapq import nlargest
 import time
 import logging
 import itertools
+
+from ontolearn.ea_utils import Tree
 
 logger = logging.getLogger(__name__)
 
@@ -27,13 +28,13 @@ class AbstractEvolutionaryAlgorithm(metaclass=ABCMeta):
     @abstractmethod
     def evolve(self,
                toolbox: Toolbox,
-               population: List['creator.Individual'],
+               population: List[Tree],
                num_generations: int,
                start_time: float,
-               verbose: bool = False) -> Tuple[bool, List['creator.Individual']]:
+               verbose: bool = False) -> Tuple[bool, List[Tree]]:
         pass
 
-    def _log_generation_info(self, toolbox: Toolbox, gen: int, population: List['creator.Individual']):
+    def _log_generation_info(self, toolbox: Toolbox, gen: int, population: List[Tree]):
         logger.info(f'Generation: {gen}')
         for node in toolbox.get_top_hypotheses(population):
             logger.info(node)
@@ -49,10 +50,10 @@ class BaseEvolutionaryAlgorithm(AbstractEvolutionaryAlgorithm):
 
     def evolve(self,
                toolbox: Toolbox,
-               population: List['creator.Individual'],
+               population: List[Tree],
                num_generations: int,
                start_time: float,
-               verbose: int = 0) -> Tuple[bool, List['creator.Individual']]:
+               verbose: int = 0) -> Tuple[bool, List[Tree]]:
 
         for ind in population:
             toolbox.apply_fitness(ind)
@@ -73,9 +74,7 @@ class BaseEvolutionaryAlgorithm(AbstractEvolutionaryAlgorithm):
         return goal_found, population
 
     @abstractmethod
-    def generation(self, toolbox: Toolbox,
-                   population: List['creator.Individual'],
-                   num_selections: int = 0) -> Tuple[bool, List['creator.Individual']]:
+    def generation(self, toolbox: Toolbox, population: List[Tree], num_selections: int = 0) -> Tuple[bool, List[Tree]]:
         pass
 
 
@@ -100,9 +99,7 @@ class EASimple(BaseEvolutionaryAlgorithm):
         self.elitism = elitism
         self.elite_size = elite_size
 
-    def generation(self, toolbox: Toolbox,
-                   population: List['creator.Individual'],
-                   num_selections: int = 0) -> Tuple[bool, List['creator.Individual']]:
+    def generation(self, toolbox: Toolbox, population: List[Tree], num_selections: int = 0) -> Tuple[bool, List[Tree]]:
         elite = []
         goal_found = False
 
@@ -134,9 +131,7 @@ class RegularizedEvolution(BaseEvolutionaryAlgorithm):
     def __init__(self):
         pass
 
-    def generation(self, toolbox: Toolbox,
-                   population: List['creator.Individual'],
-                   num_selections: int = 0) -> Tuple[bool, List['creator.Individual']]:
+    def generation(self, toolbox: Toolbox, population: List[Tree], num_selections: int = 0) -> Tuple[bool, List[Tree]]:
         # TODO: use queue, since normal list has O(n) for pop
 
         parent = toolbox.select(population, 1)[0]
@@ -177,10 +172,10 @@ class MultiPopulation(AbstractEvolutionaryAlgorithm):
 
     def evolve(self,
                toolbox: Toolbox,
-               population: List['creator.Individual'],
+               population: List[Tree],
                num_generations: int,
                start_time: float,
-               verbose: int = 0) -> Tuple[bool, List['creator.Individual']]:
+               verbose: int = 0) -> Tuple[bool, List[Tree]]:
 
         assert len(population) % self.num_populations == 0
         population_size = len(population) // self.num_populations
@@ -235,7 +230,7 @@ class MultiPopulation(AbstractEvolutionaryAlgorithm):
 
         return self._finalize(goal_found, populations, toolbox)
 
-    def _log_generation_info(self, toolbox: Toolbox, gen: int, population: List['creator.Individual'], idx: int = 0):
+    def _log_generation_info(self, toolbox: Toolbox, gen: int, population: List[Tree], idx: int = 0):
         logger.info(f'Population {idx}:')
         logger.info(f'Generation: {gen}')
         for node in toolbox.get_top_hypotheses(population):

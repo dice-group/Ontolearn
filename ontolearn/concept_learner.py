@@ -22,7 +22,7 @@ from ontolearn.core.owl.utils import EvaluatedDescriptionSet, ConceptOperandSort
 from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
 from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
 from ontolearn.ea_initialization import AbstractEAInitialization, EARandomInitialization, EARandomWalkInitialization
-from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVocabulary, escape, ind_to_string, \
+from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVocabulary, Tree, escape, ind_to_string, \
     owlliteral_to_primitive_string
 from ontolearn.fitness_functions import LinearPressureFitness
 from ontolearn.heuristics import OCELHeuristic
@@ -1172,7 +1172,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
     pset: gp.PrimitiveSetTyped
     toolbox: base.Toolbox
     _learning_problem: EncodedPosNegLPStandard
-    _result_population: Optional[List['creator.Individual']]
+    _result_population: Optional[List[Tree]]
     _dp_to_prim_type: Dict[OWLDataProperty, Any]
     _dp_splits: Dict[OWLDataProperty, List[OWLLiteral]]
     _split_properties: List[OWLDataProperty]
@@ -1394,8 +1394,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                                                                           verbose=verbose)
         return self.terminate()
 
-    def _initialize(self, pos: FrozenSet[OWLNamedIndividual], neg: FrozenSet[OWLNamedIndividual]) \
-            -> List['creator.Individual']:
+    def _initialize(self, pos: FrozenSet[OWLNamedIndividual], neg: FrozenSet[OWLNamedIndividual]) -> List[Tree]:
         if self.use_data_properties:
             if isinstance(self.value_splitter, BinningValueSplitter):
                 self._dp_splits = self.value_splitter.compute_splits_properties(self.kb.reasoner(),
@@ -1425,7 +1424,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         assert len(self._result_population) > 0
         yield from self._get_top_hypotheses(self._result_population, n, key)
 
-    def _get_top_hypotheses(self, population: List['creator.Individual'], n: int = 5, key: str = 'fitness') \
+    def _get_top_hypotheses(self, population: List[Tree], n: int = 5, key: str = 'fitness') \
             -> Iterable[EvoLearnerNode]:
         best_inds = tools.selBest(population, k=n, fit_attr=key)
         best_concepts = [gp.compile(ind, self.pset) for ind in best_inds]
@@ -1435,7 +1434,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             yield EvoLearnerNode(con, self.kb.concept_len(con), individuals_count, ind.quality.values[0],
                                  len(ind), ind.height)
 
-    def _fitness_func(self, individual: 'creator.Individual'):
+    def _fitness_func(self, individual: Tree):
         ind_str = ind_to_string(individual)
         # experimental
         if ind_str in self._cache:

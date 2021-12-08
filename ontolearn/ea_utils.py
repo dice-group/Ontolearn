@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Callable, Final, List, Optional, Tuple, Union
 
-from deap import creator
+from deap.gp import Primitive, Terminal
 from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
     OWLClassExpression, OWLDataHasValue, OWLDataPropertyExpression, OWLDataSomeValuesFrom, OWLLiteral, \
     OWLObjectAllValuesFrom, OWLObjectIntersectionOf, NUMERIC_DATATYPES, OWLDataProperty, OWLObjectProperty, \
@@ -11,6 +11,9 @@ import re
 
 from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
     OWLDatatypeMaxExclusiveRestriction, OWLDatatypeMaxInclusiveRestriction
+
+
+Tree = List[Union[Primitive, Terminal]]
 
 
 class PrimitiveFactory:
@@ -124,7 +127,7 @@ def escape(name: str) -> str:
     return re.sub(r'[\W+]', '', name)
 
 
-def ind_to_string(ind: List['creator.Individual']) -> str:
+def ind_to_string(ind: List[Tree]) -> str:
     return ''.join([prim.name for prim in ind])
 
 

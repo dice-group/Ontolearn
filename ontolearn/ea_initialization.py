@@ -2,18 +2,14 @@ from dataclasses import dataclass
 from functools import lru_cache
 from enum import Enum, auto
 from itertools import chain, cycle
-from ontolearn.ea_utils import OperatorVocabulary, escape, owlliteral_to_primitive_string
+from ontolearn.ea_utils import OperatorVocabulary, Tree, escape, owlliteral_to_primitive_string
 from ontolearn.knowledge_base import KnowledgeBase
 from owlapy.model import OWLClass, OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual, \
     OWLObjectProperty
 import random
 from abc import ABCMeta, abstractmethod
 from typing import Any, Callable, Dict, Final, List, Set, Union
-from deap.gp import Primitive, PrimitiveSetTyped, Terminal
-from deap import creator
-
-
-Tree = List[Union[Primitive, Terminal]]
+from deap.gp import Primitive, PrimitiveSetTyped
 
 
 class RandomInitMethod(Enum):
@@ -33,9 +29,7 @@ class AbstractEAInitialization(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_population(self, container: Callable,
-                       pset: PrimitiveSetTyped,
-                       population_size: int = 0) -> List['creator.Individual']:
+    def get_population(self, container: Callable, pset: PrimitiveSetTyped, population_size: int = 0) -> List[Tree]:
         pass
 
     @abstractmethod
@@ -65,9 +59,7 @@ class EARandomInitialization(AbstractEAInitialization):
         self.max_height = max_height
         self.method = method
 
-    def get_population(self, container: Callable,
-                       pset: PrimitiveSetTyped,
-                       population_size: int = 0) -> List['creator.Individual']:
+    def get_population(self, container: Callable, pset: PrimitiveSetTyped, population_size: int = 0) -> List[Tree]:
         return [container(self.get_expression(pset)) for _ in range(population_size)]
 
     def get_expression(self, pset: PrimitiveSetTyped, type_: type = None) -> Tree:
@@ -152,7 +144,7 @@ class EARandomWalkInitialization(AbstractEAInitialization):
                        pos: List[OWLNamedIndividual] = None,
                        dp_to_prim_type: Dict[OWLDataProperty, Any] = None,
                        dp_splits: Dict[OWLDataProperty, List[OWLLiteral]] = None,
-                       kb: KnowledgeBase = None) -> List['creator.Individual']:
+                       kb: KnowledgeBase = None) -> List[Tree]:
         assert pos is not None
         assert kb is not None
         assert dp_to_prim_type is not None
