@@ -10,7 +10,7 @@ from abc import ABCMeta, abstractmethod
 from functools import total_ordering
 from typing import Generic, Iterable, Sequence, Set, TypeVar, Union, Final, Optional, Protocol, ClassVar, List
 from pandas import Timedelta
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 from owlapy.vocab import OWLRDFVocabulary, XSDVocabulary, OWLFacet
 from owlapy._utils import MOVE
@@ -1123,12 +1123,28 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
 
     type_index: Final = 4008
 
-    def __new__(cls, value):
+    def __new__(cls, value, type_: Optional[OWLDatatype] = None):
         """Convenience method that obtains a literal
 
         Args:
             value: The value of the literal
+            type_: the datatype of the literal
         """
+        if type_ is not None:
+            if type_ == BooleanOWLDatatype:
+                return super().__new__(_OWLLiteralImplBoolean)
+            elif type_ == IntegerOWLDatatype:
+                return super().__new__(_OWLLiteralImplInteger)
+            elif type_ == DoubleOWLDatatype:
+                return super().__new__(_OWLLiteralImplDouble)
+            elif type_ == DateOWLDatatype:
+                return super().__new__(_OWLLiteralImplDate)
+            elif type_ == DateTimeOWLDatatype:
+                return super().__new__(_OWLLiteralImplDateTime)
+            elif type_ == DurationOWLDatatype:
+                return super().__new__(_OWLLiteralImplDuration)
+            else:
+                return super().__new__(_OWLLiteralImpl)
         if isinstance(value, bool):
             return super().__new__(_OWLLiteralImplBoolean)
         elif isinstance(value, int):
@@ -1273,8 +1289,10 @@ class _OWLLiteralImplDouble(OWLLiteral):
 
     _v: float
 
-    def __init__(self, value):
-        assert isinstance(value, float)
+    def __init__(self, value, type_=None):
+        assert type_ is None or type_ == DoubleOWLDatatype
+        if not isinstance(value, float):
+            value = float(value)
         self._v = value
 
     def __eq__(self, other):
@@ -1312,8 +1330,10 @@ class _OWLLiteralImplInteger(OWLLiteral):
 
     _v: int
 
-    def __init__(self, value):
-        assert isinstance(value, int)
+    def __init__(self, value, type_=None):
+        assert type_ is None or type_ == IntegerOWLDatatype
+        if not isinstance(value, int):
+            value = int(value)
         self._v = value
 
     def __eq__(self, other):
@@ -1350,8 +1370,11 @@ class _OWLLiteralImplBoolean(OWLLiteral):
 
     _v: bool
 
-    def __init__(self, value):
-        assert isinstance(value, bool)
+    def __init__(self, value, type_=None):
+        assert type_ is None or type_ == BooleanOWLDatatype
+        if not isinstance(value, bool):
+            from distutils.util import strtobool
+            value = bool(strtobool(value))
         self._v = value
 
     def __eq__(self, other):
@@ -1423,8 +1446,10 @@ class _OWLLiteralImplDate(OWLLiteral):
 
     _v: date
 
-    def __init__(self, value):
-        assert isinstance(value, date)
+    def __init__(self, value, type_=None):
+        assert type_ is None or type_ == DateOWLDatatype
+        if not isinstance(value, date):
+            value = date.fromisoformat(value)
         self._v = value
 
     def __eq__(self, other):
@@ -1462,8 +1487,10 @@ class _OWLLiteralImplDateTime(OWLLiteral):
 
     _v: datetime
 
-    def __init__(self, value):
-        assert isinstance(value, datetime)
+    def __init__(self, value, type_=None):
+        assert type_ is None or type_ == DateTimeOWLDatatype
+        if not isinstance(value, datetime):
+            value = datetime.fromisoformat(value)
         self._v = value
 
     def __eq__(self, other):
@@ -1501,8 +1528,10 @@ class _OWLLiteralImplDuration(OWLLiteral):
 
     _v: Timedelta
 
-    def __init__(self, value):
-        assert isinstance(value, Timedelta)
+    def __init__(self, value, type_=None):
+        assert type_ is None or type_ == DurationOWLDatatype
+        if not isinstance(value, Timedelta):
+            value = Timedelta(value)
         self._v = value
 
     def __eq__(self, other):
@@ -1532,6 +1561,29 @@ class _OWLLiteralImplDuration(OWLLiteral):
     def get_datatype(self) -> OWLDatatype:
         # documented in parent
         return DurationOWLDatatype
+
+
+class _OWLLiteralImpl(OWLLiteral):
+    __slots__ = '_v', '_datatype'
+
+    def __init__(self, v, type_: OWLDatatype):
+        assert isinstance(type_, OWLDatatype)
+        self._v = v
+        self._datatype = type_
+
+    def get_datatype(self) -> OWLDatatype:
+        return self._datatype
+
+    def __eq__(self, other):
+        if type(other) is type(self) and other.get_datatype() == self.get_datatype():
+            return self._v == other._v
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._v, self._datatype))
+
+    def __repr__(self):
+        return f'OWLLiteral({repr(self._v)}, {self._datatype})'
 
 
 class OWLQuantifiedDataRestriction(OWLQuantifiedRestriction[OWLDataRange],
@@ -2715,7 +2767,8 @@ StringOWLDatatype: Final = OWLDatatype(XSDVocabulary.STRING)  #: An object repre
 DateOWLDatatype: Final = OWLDatatype(XSDVocabulary.DATE)  #: An object representing the date datatype.
 DateTimeOWLDatatype: Final = OWLDatatype(XSDVocabulary.DATE_TIME)  #: An object representing the dateTime datatype.
 DurationOWLDatatype: Final = OWLDatatype(XSDVocabulary.DURATION)  #: An object representing the duration datatype.
-TopDatatype: Final = OWLDatatype(OWLRDFVocabulary.RDFS_LITERAL)  #: The OWL Datatype corresponding to the top data type
+#: The OWL Datatype corresponding to the top data type
+TopOWLDatatype: Final = OWLDatatype(OWLRDFVocabulary.RDFS_LITERAL)
 
 NUMERIC_DATATYPES: Final[Set[OWLDatatype]] = {DoubleOWLDatatype, IntegerOWLDatatype}
 TIME_DATATYPES: Final[Set[OWLDatatype]] = {DateOWLDatatype, DateTimeOWLDatatype, DurationOWLDatatype}

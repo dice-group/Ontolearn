@@ -28,13 +28,41 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
         """Create a new quality function"""
         pass
 
-    @abstractmethod
-    def score(self, instances, learning_problem: EncodedLearningProblem) -> Tuple[bool, Optional[float]]:
+    def score_elp(self, instances, learning_problem: EncodedLearningProblem) -> Tuple[bool, Optional[float]]:
         """Quality score for a set of instances with regard to the learning problem
 
         Args:
             instances (set): instances to calculate a quality score for
             learning_problem: underlying learning problem to compare the quality to
+
+        Returns:
+             Tuple, first position indicating if the function could be applied, second position the quality value
+                in the range 0.0--1.0
+        """
+        if len(instances) == 0:
+            return False, 0
+
+        from ontolearn.learning_problem import EncodedPosNegLPStandard
+        if isinstance(learning_problem, EncodedPosNegLPStandard):
+            tp = len(learning_problem.kb_pos.intersection(instances))
+            tn = len(learning_problem.kb_neg.difference(instances))
+
+            fp = len(learning_problem.kb_neg.intersection(instances))
+            fn = len(learning_problem.kb_pos.difference(instances))
+
+            return self.score2(tp=tp, tn=tn, fp=fp, fn=fn)
+        else:
+            raise NotImplementedError(learning_problem)
+
+    @abstractmethod
+    def score2(self, tp: int, fn: int, fp: int, tn: int) -> Tuple[bool, Optional[float]]:
+        """Quality score for a coverage count
+
+        Args:
+            tp: true positive count
+            fn: false negative count
+            fp: false positive count
+            tn: true negative count
 
         Returns:
              Tuple, first position indicating if the function could be applied, second position the quality value
@@ -61,7 +89,7 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
         assert isinstance(node, _NodeQuality), \
             f'Expected _NodeQuality but got {type(_NodeQuality)}'
 
-        ret, q = self.score(instances, learning_problem)
+        ret, q = self.score_elp(instances, learning_problem)
         if q is not None:
             node.quality = q
         return ret

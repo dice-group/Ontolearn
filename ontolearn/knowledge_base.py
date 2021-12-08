@@ -391,7 +391,7 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         e = EvaluatedConcept()
         e.inds = self.individuals_set(concept)
         e.ic = len(e.inds)
-        _, e.q = quality_func.score(e.inds, encoded_learning_problem)
+        _, e.q = quality_func.score_elp(e.inds, encoded_learning_problem)
         return e
 
     async def evaluate_concept_async(self, concept: OWLClassExpression, quality_func: AbstractScorer,

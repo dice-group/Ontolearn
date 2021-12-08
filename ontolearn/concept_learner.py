@@ -669,8 +669,8 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
             rn = time.time() - start_time
             h: RL_State = self.best_hypotheses()[0]
             # TODO:CD: We need to remove this first returned boolean for the sake of readability.
-            _, f_measure = F1().score(instances=h.instances_bitset, learning_problem=self._learning_problem)
-            _, accuracy = Accuracy().score(instances=h.instances_bitset, learning_problem=self._learning_problem)
+            _, f_measure = F1().score_elp(instances=h.instances_bitset, learning_problem=self._learning_problem)
+            _, accuracy = Accuracy().score_elp(instances=h.instances_bitset, learning_problem=self._learning_problem)
 
             report = {'Target': str(target_ce),
                       'Prediction': renderer.render(h.concept),
