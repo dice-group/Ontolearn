@@ -7,7 +7,7 @@ dependencies:
   - matplotlib=3.3.4
   - pandas=1.2.3
   - pytorch=1.8.0
-  - rdflib=6.0.0
+  - rdflib=6.0.2
   - scikit-learn=0.24.1
   - sortedcontainers=2.4.0
   - owlready2=0.34
