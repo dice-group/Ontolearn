@@ -2,7 +2,7 @@ import logging
 import types
 from datetime import date, datetime
 from enum import Enum, auto
-from logging import warning
+from itertools import chain
 from types import MappingProxyType
 from typing import Iterable, Set, Final, cast
 
@@ -12,12 +12,13 @@ from pandas import Timedelta
 
 from owlapy import namespaces
 from owlapy.ext import OWLReasonerEx
-from owlapy.model import OWLLiteral, OWLOntologyManager, OWLOntology, OWLClass, OWLDataProperty, OWLObjectProperty, \
-    OWLNamedIndividual, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, \
+from owlapy.model import OWLObjectPropertyRangeAxiom, OWLOntologyManager, OWLDataProperty, OWLObjectProperty, \
+    OWLNamedIndividual, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, OWLOntology, \
     OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype, \
-    OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, DateOWLDatatype, DateTimeOWLDatatype, \
-    DurationOWLDatatype, IRI, OWLDataPropertyRangeAxiom, StringOWLDatatype
-from owlapy.owlready2.utils import ToOwlready2
+    OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, DateOWLDatatype, DateTimeOWLDatatype, OWLClass, \
+    DurationOWLDatatype, StringOWLDatatype, IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLLiteral, \
+    OWLObjectPropertyDomainAxiom
+from owlapy.owlready2.utils import FromOwlready2, ToOwlready2
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,9 @@ _Datatype_map: Final = MappingProxyType({
     datetime: DateTimeOWLDatatype,
     Timedelta: DurationOWLDatatype,
 })
+
+_parse_concept_to_owlapy = FromOwlready2().map_concept
+_parse_datarange_to_owlapy = FromOwlready2().map_datarange
 
 _VERSION_IRI: Final = IRI.create(namespaces.OWL, "versionIRI")
 
@@ -186,14 +190,60 @@ class OWLOntology_Owlready2(OWLOntology):
         return OWLOntologyID(IRI.create(onto_iri) if onto_iri is not None else None,
                              IRI.create(version_iri) if version_iri is not None else None)
 
-    def data_property_range_axioms(self, property: OWLDataProperty) -> Iterable[OWLDataPropertyRangeAxiom]:
-        p_x: owlready2.DataPropertyClass = self._world[property.get_iri().as_str()]
-        for rng in p_x.range:
-            if rng in _Datatype_map:
-                yield OWLDataPropertyRangeAxiom(property, _Datatype_map[rng])
-            else:
-                logger.warning("Datatype %s not implemented at %s", rng, property)
-                pass  # XXX TODO
+    def data_property_domain_axioms(self, pe: OWLDataProperty) -> Iterable[OWLDataPropertyDomainAxiom]:
+        p_x: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
+        domains = set(p_x.domains_indirect())
+        if len(domains) == 0:
+            yield OWLDataPropertyDomainAxiom(pe, OWLThing)
+        else:
+            for dom in domains:
+                if isinstance(dom, owlready2.ThingClass) or isinstance(dom, owlready2.ClassConstruct):
+                    yield OWLDataPropertyDomainAxiom(pe, _parse_concept_to_owlapy(dom))
+                else:
+                    logger.warning("Construct %s not implemented at %s", dom, pe)
+                    pass  # XXX TODO
+
+    def data_property_range_axioms(self, pe: OWLDataProperty) -> Iterable[OWLDataPropertyRangeAxiom]:
+        p_x: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
+        ranges = set(chain.from_iterable(super_prop.range for super_prop in p_x.ancestors()))
+        if len(ranges) == 0:
+            pass
+            # TODO
+        else:
+            for rng in ranges:
+                if rng in _Datatype_map:
+                    yield OWLDataPropertyRangeAxiom(pe, _Datatype_map[rng])
+                elif isinstance(rng, owlready2.ClassConstruct):
+                    yield OWLDataPropertyRangeAxiom(pe, _parse_datarange_to_owlapy(rng))
+                else:
+                    logger.warning("Datatype %s not implemented at %s", rng, pe)
+                    pass  # XXX TODO
+
+    def object_property_domain_axioms(self, pe: OWLObjectProperty) -> Iterable[OWLObjectPropertyDomainAxiom]:
+        p_x: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
+        domains = set(p_x.domains_indirect())
+        if len(domains) == 0:
+            yield OWLObjectPropertyDomainAxiom(pe, OWLThing)
+        else:
+            for dom in domains:
+                if isinstance(dom, owlready2.ThingClass) or isinstance(dom, owlready2.ClassConstruct):
+                    yield OWLObjectPropertyDomainAxiom(pe, _parse_concept_to_owlapy(dom))
+                else:
+                    logger.warning("Construct %s not implemented at %s", dom, pe)
+                    pass  # XXX TODO
+
+    def object_property_range_axioms(self, pe: OWLObjectProperty) -> Iterable[OWLObjectPropertyRangeAxiom]:
+        p_x: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
+        ranges = set(chain.from_iterable(super_prop.range for super_prop in p_x.ancestors()))
+        if len(ranges) == 0:
+            yield OWLObjectPropertyRangeAxiom(pe, OWLThing)
+        else:
+            for rng in ranges:
+                if isinstance(rng, owlready2.ThingClass) or isinstance(rng, owlready2.ClassConstruct):
+                    yield OWLObjectPropertyRangeAxiom(pe, _parse_concept_to_owlapy(rng))
+                else:
+                    logger.warning("Construct %s not implemented at %s", rng, pe)
+                    pass  # XXX TODO
 
     def __eq__(self, other):
         if type(other) == type(self):
@@ -219,32 +269,23 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         self._ontology = ontology
         self._world = ontology._world
 
-    def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClass]:
-        if direct:
-            warning("direct not implemented")
-        pe_x: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
-        for dom in pe_x.domain:
-            yield OWLClass(IRI.create(dom.iri))
+    def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
+        for ax in self.get_root_ontology().data_property_domain_axioms(pe):
+            yield ax.get_domain()
+            if not direct:
+                yield from self.super_classes(ax.get_domain())
 
-    def object_property_domains(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
-        if direct:
-            warning("direct not implemented")
-        pe_x: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
-        for dom in pe_x.domain:
-            if isinstance(dom, owlready2.ThingClass):
-                yield OWLClass(IRI.create(dom.iri))
-            else:
-                pass  # XXX TODO
+    def object_property_domains(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
+        for ax in self.get_root_ontology().object_property_domain_axioms(pe):
+            yield ax.get_domain()
+            if not direct:
+                yield from self.super_classes(ax.get_domain())
 
-    def object_property_ranges(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
-        if direct:
-            warning("direct not implemented")
-        pe_x: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
-        for rng in pe_x.range:
-            if isinstance(rng, owlready2.ThingClass):
-                yield OWLClass(IRI.create(rng.iri))
-            else:
-                pass  # XXX TODO
+    def object_property_ranges(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
+        for ax in self.get_root_ontology().object_property_range_axioms(pe):
+            yield ax.get_range()
+            if not direct:
+                yield from self.super_classes(ax.get_range())
 
     def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
         """Return the named classes that are directly equivalent to the class expression"""

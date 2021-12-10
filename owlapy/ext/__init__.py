@@ -1,8 +1,11 @@
+import logging
 from abc import ABCMeta
-from logging import warning
 from typing import Iterable
 
 from owlapy.model import OWLNamedIndividual, OWLObjectProperty, OWLReasoner, OWLDataProperty, OWLDataRange, OWLLiteral
+
+
+logger = logging.getLogger(__name__)
 
 
 class OWLReasonerEx(OWLReasoner, metaclass=ABCMeta):
@@ -12,7 +15,7 @@ class OWLReasonerEx(OWLReasoner, metaclass=ABCMeta):
 
     # default
     def data_property_ranges(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLDataRange]:
-        """Gets the data types that are the direct or indirect ranges of this property with respect to the imports
+        """Gets the data ranges that are the direct or indirect ranges of this property with respect to the imports
         closure of the root ontology.
 
         Args:
@@ -22,10 +25,11 @@ class OWLReasonerEx(OWLReasoner, metaclass=ABCMeta):
 
         Returns:
         """
-        if direct:
-            warning("direct not implemented")
         for ax in self.get_root_ontology().data_property_range_axioms(pe):
             yield ax.get_range()
+            if not direct:
+                logger.warning("indirect not implemented")
+                # TODO:
 
     # default
     def all_data_property_values(self, pe: OWLDataProperty) -> Iterable[OWLLiteral]:

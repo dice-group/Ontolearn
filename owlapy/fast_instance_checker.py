@@ -7,7 +7,7 @@ from types import MappingProxyType, FunctionType
 from typing import DefaultDict, Iterable, Dict, Mapping, Set, Type, TypeVar, Union, Optional, FrozenSet
 
 from owlapy.ext import OWLReasonerEx
-from owlapy.model import OWLObjectOneOf, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
+from owlapy.model import OWLDataRange, OWLObjectOneOf, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
     OWLObjectProperty, OWLDataProperty, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
     OWLObjectPropertyExpression, OWLObjectComplementOf, OWLObjectAllValuesFrom, IRI, OWLObjectInverseOf, \
     OWLDataSomeValuesFrom, OWLDataPropertyExpression, OWLDatatypeRestriction, OWLLiteral, \
@@ -92,16 +92,16 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
         """The reset method shall reset any cached state"""
         self._init()
 
-    def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClass]:
+    def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
         yield from self._base_reasoner.data_property_domains(pe, direct=direct)
 
-    def data_property_ranges(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLDatatype]:
+    def data_property_ranges(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLDataRange]:
         yield from self._base_reasoner.data_property_ranges(pe, direct=direct)
 
-    def object_property_domains(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
+    def object_property_domains(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
         yield from self._base_reasoner.object_property_domains(pe, direct=direct)
 
-    def object_property_ranges(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClass]:
+    def object_property_ranges(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
         yield from self._base_reasoner.object_property_ranges(pe, direct=direct)
 
     def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:

@@ -19,10 +19,10 @@ class ConceptGenerator:
     _object_property_hierarchy: ObjectPropertyHierarchy
     _data_property_hierarchy: DatatypePropertyHierarchy
     _reasoner: OWLReasoner
-    _op_domains: Dict[OWLObjectProperty, FrozenSet[OWLClass]]
-    _op_ranges: Dict[OWLObjectProperty, FrozenSet[OWLClass]]
-    _dp_domains: Dict[OWLDataProperty, FrozenSet[OWLClass]]
-    _dp_ranges: Dict[OWLDataProperty, FrozenSet[OWLDatatype]]
+    _op_domains: Dict[OWLObjectProperty, OWLClassExpression]
+    _op_ranges: Dict[OWLObjectProperty, OWLClassExpression]
+    _dp_domains: Dict[OWLDataProperty, OWLClassExpression]
+    _dp_ranges: Dict[OWLDataProperty, FrozenSet[OWLDataRange]]
 
     def __init__(self, reasoner: OWLReasoner,
                  class_hierarchy: Optional[ClassHierarchy] = None,
@@ -133,7 +133,7 @@ class ConceptGenerator:
         assert isinstance(concept, OWLClass)
         yield from self._class_hierarchy.sub_classes(concept, direct=True)
 
-    def get_object_property_domains(self, prop: OWLObjectProperty) -> FrozenSet[OWLClass]:
+    def get_object_property_domains(self, prop: OWLObjectProperty) -> OWLClassExpression:
         """Get the domains of an object property
 
         Args:
@@ -143,10 +143,11 @@ class ConceptGenerator:
             domains of the property
         """
         if prop not in self._op_domains:
-            self._op_domains[prop] = frozenset(self._reasoner.object_property_domains(prop))
+            domains = list(self._reasoner.object_property_domains(prop, direct=True))
+            self._op_domains[prop] = self.intersection(domains) if len(domains) > 1 else domains[0]
         return self._op_domains[prop]
 
-    def get_object_property_ranges(self, prop: OWLObjectProperty) -> FrozenSet[OWLClass]:
+    def get_object_property_ranges(self, prop: OWLObjectProperty) -> OWLClassExpression:
         """Get the ranges of an object property
 
         Args:
@@ -156,10 +157,11 @@ class ConceptGenerator:
             ranges of the property
         """
         if prop not in self._op_ranges:
-            self._op_ranges[prop] = frozenset(self._reasoner.object_property_ranges(prop))
+            ranges = list(self._reasoner.object_property_ranges(prop, direct=True))
+            self._op_ranges[prop] = self.intersection(ranges) if len(ranges) > 1 else ranges[0]
         return self._op_ranges[prop]
 
-    def get_data_property_domains(self, prop: OWLDataProperty) -> FrozenSet[OWLClass]:
+    def get_data_property_domains(self, prop: OWLDataProperty) -> OWLClassExpression:
         """Get the domains of a data property
 
         Args:
@@ -169,10 +171,11 @@ class ConceptGenerator:
             domains of the property
         """
         if prop not in self._dp_domains:
-            self._dp_domains[prop] = frozenset(self._reasoner.data_property_domains(prop))
+            domains = list(self._reasoner.data_property_domains(prop, direct=True))
+            self._dp_domains[prop] = self.intersection(domains) if len(domains) > 1 else domains[0]
         return self._dp_domains[prop]
 
-    def get_data_property_ranges(self, prop: OWLDataProperty) -> FrozenSet[OWLDatatype]:
+    def get_data_property_ranges(self, prop: OWLDataProperty) -> FrozenSet[OWLDataRange]:
         """Get the ranges of a data property
 
         Args:
@@ -182,7 +185,7 @@ class ConceptGenerator:
             ranges of the property
         """
         if prop not in self._dp_ranges:
-            self._dp_ranges[prop] = frozenset(self._reasoner.data_property_ranges(prop))
+            self._dp_ranges[prop] = frozenset(self._reasoner.data_property_ranges(prop, direct=True))
         return self._dp_ranges[prop]
 
     def most_general_object_properties(self, *, domain: OWLClassExpression, inverse: bool = False) \
@@ -196,12 +199,13 @@ class ConceptGenerator:
         Returns:
             most general object properties for the given domain
         """
-        assert isinstance(domain, OWLClass)  # for now, only named classes supported
+        assert isinstance(domain, OWLClassExpression)
 
         func = self.get_object_property_ranges if inverse else self.get_object_property_domains
 
         for prop in self._object_property_hierarchy.most_general_roles():
-            if domain.is_owl_thing() or domain in func(prop):
+            # Probably need to do this with instance checks
+            if domain.is_owl_thing() or domain == func(prop):
                 yield prop
 
     def _data_properties_for_domain(self, domain: OWLClassExpression, data_properties: Iterable[OWLDataProperty]) \
@@ -215,10 +219,11 @@ class ConceptGenerator:
         Returns:
             data properties applicaple for the given domain
         """
-        assert isinstance(domain, OWLClass)  # for now, only named classes supported
+        assert isinstance(domain, OWLClassExpression)
 
         for prop in data_properties:
-            if domain.is_owl_thing() or domain in self.get_data_property_domains(prop):
+            # Probably need to do this with instance checks
+            if domain.is_owl_thing() or domain == self.get_data_property_domains(prop):
                 yield prop
 
     def most_general_data_properties(self, *, domain: OWLClassExpression) -> Iterable[OWLDataProperty]:
