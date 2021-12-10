@@ -1137,6 +1137,8 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
                 return super().__new__(_OWLLiteralImplInteger)
             elif type_ == DoubleOWLDatatype:
                 return super().__new__(_OWLLiteralImplDouble)
+            elif type_ == StringOWLDatatype:
+                return super().__new__(_OWLLiteralImplString)
             elif type_ == DateOWLDatatype:
                 return super().__new__(_OWLLiteralImplDate)
             elif type_ == DateTimeOWLDatatype:
@@ -1407,8 +1409,10 @@ class _OWLLiteralImplString(OWLLiteral):
 
     _v: str
 
-    def __init__(self, value):
-        assert isinstance(value, str)
+    def __init__(self, value, type_=None):
+        assert type_ is None or type_ == StringOWLDatatype
+        if not isinstance(value, str):
+            value = str(value)
         self._v = value
 
     def __eq__(self, other):
