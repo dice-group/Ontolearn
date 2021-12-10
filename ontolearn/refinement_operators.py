@@ -421,6 +421,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
                 if (max_length >= length) and (self.max_child_length >= length + 1):
                     if not i.is_owl_thing() and not j.is_owl_thing():
+                        # TODO: remove individuals_set calls
                         if i_inds is None:
                             i_inds = self.kb.individuals_set(i)
                         j_inds = self.kb.individuals_set(j)

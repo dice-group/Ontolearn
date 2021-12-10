@@ -26,6 +26,7 @@ from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVoca
     owlliteral_to_primitive_string
 from ontolearn.fitness_functions import LinearPressureFitness
 from ontolearn.heuristics import OCELHeuristic
+from ontolearn.knowledge_base import EvaluatedConcept
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from ontolearn.metrics import Accuracy, F1
 from ontolearn.refinement_operators import LengthBasedRefinement
@@ -215,6 +216,77 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
 
         return self.terminate()
 
+    async def fit_async(self, *args, **kwargs):
+        """
+        Find hypotheses that explain pos and neg.
+        """
+        self.clean()
+        max_runtime = kwargs.pop("max_runtime", None)
+        learning_problem = self.construct_learning_problem(PosNegLPStandard, args, kwargs)
+
+        assert not self.search_tree
+        self._learning_problem = learning_problem.encode_kb(self.kb)
+
+        if max_runtime is not None:
+            self._max_runtime = max_runtime
+        else:
+            self._max_runtime = self.max_runtime
+
+        root = self.make_node(_concept_operand_sorter.sort(self.start_class), is_root=True)
+        self._add_node(root, None)
+        assert len(self.heuristic_queue) == 1
+        # TODO:CD:suggest to add another assert,e.g. assert #. of instance in root > 1
+
+        self.start_time = time.time()
+        for j in range(1, self.iter_bound):
+            most_promising = self.next_node_to_expand(j)
+            tree_parent = self.tree_node(most_promising)
+            minimum_length = most_promising.h_exp
+            if logger.isEnabledFor(oplogging.TRACE):
+                logger.debug("now refining %s", most_promising)
+            evaluated_refs = []
+            for ref in self.downward_refinement(most_promising):
+                # we ignore all refinements with lower length
+                # (this also avoids duplicate node children)
+                # TODO: ignore too high depth
+                if ref.len < minimum_length:
+                    # ignoring refinement, it does not satisfy minimum_length condition
+                    continue
+                if ref.concept in self.search_tree:
+                    # ignoring refinement, it has been refined from another parent
+                    continue
+
+                evaluated_refs.append(self._eval_node_async(ref))
+
+            import asyncio
+            for task in asyncio.as_completed(evaluated_refs):
+                ref, eval_ = await task
+            # for task in await asyncio.gather(*evaluated_refs):
+            #     ref, eval_ = task
+
+                # note: tree_parent has to be equal to node_tree_parent(ref.parent_node)!
+                added = self._add_node_evald(ref, eval_, tree_parent)
+
+                goal_found = added and ref.quality == 1.0
+
+                if goal_found and self.terminate_on_goal:
+                    return self.terminate()
+
+            if self.calculate_min_max:
+                # This is purely a statistical function, it does not influence CELOE
+                self.update_min_max_horiz_exp(most_promising)
+
+            if time.time() - self.start_time > self._max_runtime:
+                return self.terminate()
+
+            if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
+                return self.terminate()
+
+            if logger.isEnabledFor(oplogging.TRACE) and j % 100 == 0:
+                self._log_current_best(j)
+
+        return self.terminate()
+
     def tree_node(self, node: OENode) -> TreeNode[OENode]:
         tree_parent = self.search_tree[node.concept]
         return tree_parent
@@ -237,15 +309,48 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
             self._seen_norm_concepts.add(norm_concept)
 
         self.search_tree[ref.concept] = TreeNode(ref, tree_parent, is_root=ref.is_root)
-        ref_individuals = self.kb.individuals_set(ref.concept)
-        ref.individuals_count = len(ref_individuals)
-        self.quality_func.apply(ref, ref_individuals, self._learning_problem)  # AccuracyOrTooWeak(n)
+        e = self.kb.evaluate_concept(ref.concept, self.quality_func, self._learning_problem)
+
+        ref.quality = e.q
         self._number_of_tested_concepts += 1
         if ref.quality == 0:  # > too weak
             return False
         assert 0 <= ref.quality <= 1.0
         # TODO: expression rewriting
-        self.heuristic_func.apply(ref, ref_individuals, self._learning_problem)
+        self.heuristic_func.apply(ref, e.inds, self._learning_problem)
+        if not norm_seen and self.best_descriptions.maybe_add(ref):
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Better description found: %s", ref)
+        self.heuristic_queue.add(ref)
+        # TODO: implement noise
+        return True
+
+    async def _eval_node_async(self, ref: OENode):
+        # TODO:CD: Why have this constraint ?
+        #  We should not ignore a concept due to this constraint.
+        #  It might be the case that new path to ref.concept is a better path. Hence, we should update its parent
+        #  depending on the new heuristic value.
+        #  Solution: If concept exists we should compare its first heuristic value  with the new one
+        res = await self.kb.evaluate_concept_async(ref.concept, self.quality_func, self._learning_problem)
+        return ref, res
+
+    def _add_node_evald(self, ref: OENode, eval_: EvaluatedConcept, tree_parent: Optional[TreeNode[OENode]]):
+        norm_concept = OperandSetTransform().simplify(ref.concept)
+        if norm_concept in self._seen_norm_concepts:
+            norm_seen = True
+        else:
+            norm_seen = False
+            self._seen_norm_concepts.add(norm_concept)
+
+        self.search_tree[ref.concept] = TreeNode(ref, tree_parent, is_root=ref.is_root)
+
+        ref.quality = eval_.q
+        self._number_of_tested_concepts += 1
+        if ref.quality == 0:  # > too weak
+            return False
+        assert 0 <= ref.quality <= 1.0
+        # TODO: expression rewriting
+        self.heuristic_func.apply(ref, eval_.inds, self._learning_problem)
         if not norm_seen and self.best_descriptions.maybe_add(ref):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("Better description found: %s", ref)
@@ -363,6 +468,7 @@ class OCEL(CELOE):
 
 
 class Drill(AbstractDrill, RefinementBasedConceptLearner):
+    kb: KnowledgeBase
 
     def __init__(self, knowledge_base,
                  path_of_embeddings: str, refinement_operator: LengthBasedRefinement, quality_func: AbstractScorer,
@@ -562,10 +668,10 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
             start_time = time.time()
             self.fit(pos=p, neg=n, max_runtime=max_runtime)
             rn = time.time() - start_time
-            h: RL_State = self.best_hypotheses()[0]
+            h: RL_State = next(iter(self.best_hypotheses()))
             # TODO:CD: We need to remove this first returned boolean for the sake of readability.
-            _, f_measure = F1().score(instances=h.instances_bitset, learning_problem=self._learning_problem)
-            _, accuracy = Accuracy().score(instances=h.instances_bitset, learning_problem=self._learning_problem)
+            _, f_measure = F1().score_elp(instances=h.instances_bitset, learning_problem=self._learning_problem)
+            _, accuracy = Accuracy().score_elp(instances=h.instances_bitset, learning_problem=self._learning_problem)
 
             report = {'Target': str(target_ce),
                       'Prediction': renderer.render(h.concept),
@@ -1155,6 +1261,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
     name = 'evolearner'
 
+    kb: KnowledgeBase
     fitness_func: AbstractFitness
     init_method: AbstractEAInitialization
     algorithm: AbstractEvolutionaryAlgorithm
@@ -1442,11 +1549,10 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             individual.fitness.values = (self._cache[ind_str][1],)
         else:
             concept = gp.compile(individual, self.pset)
-            instances = self.kb.individuals_set(concept)
-            quality = self.quality_func.score(instances, self._learning_problem)
-            individual.quality.values = (quality[1],)
+            e = self.kb.evaluate_concept(concept, self.quality_func, self._learning_problem)
+            individual.quality.values = (e.q,)
             self.fitness_func.apply(individual)
-            self._cache[ind_str] = (quality[1], individual.fitness.values[0])
+            self._cache[ind_str] = (e.q, individual.fitness.values[0])
 
     def clean(self):
         self._result_population = None

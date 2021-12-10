@@ -23,6 +23,9 @@ class _Vocabulary(HasIRI):
     def get_iri(self) -> IRI:
         return self._iri
 
+    def as_str(self) -> str:
+        return self._iri.as_str()
+
     def __repr__(self):
         return f"<<{self._namespace.prefix}:{self._remainder}>>"
 
@@ -39,6 +42,8 @@ class OWLRDFVocabulary(_Vocabulary, Enum, metaclass=_meta_Enum):
         return obj
     OWL_THING = (namespaces.OWL, "Thing")  #:
     OWL_NOTHING = (namespaces.OWL, "Nothing")  #:
+    OWL_CLASS = (namespaces.OWL, "Class")  #:
+    OWL_NAMED_INDIVIDUAL = (namespaces.OWL, "NamedIndividual")  #:
     OWL_TOP_OBJECT_PROPERTY = (namespaces.OWL, "topObjectProperty")  #:
     OWL_BOTTOM_OBJECT_PROPERTY = (namespaces.OWL, "bottomObjectProperty")  #:
     OWL_TOP_DATA_PROPERTY = (namespaces.OWL, "topDataProperty")  #:
