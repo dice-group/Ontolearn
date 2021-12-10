@@ -2,7 +2,7 @@ import logging
 from abc import ABCMeta
 from typing import Iterable
 
-from owlapy.model import OWLReasoner, OWLDataProperty, OWLDataRange, OWLLiteral
+from owlapy.model import OWLNamedIndividual, OWLObjectProperty, OWLReasoner, OWLDataProperty, OWLDataRange, OWLLiteral
 
 
 logger = logging.getLogger(__name__)
@@ -46,3 +46,41 @@ class OWLReasonerEx(OWLReasoner, metaclass=ABCMeta):
         for ind in onto.individuals_in_signature():
             for lit in self.data_property_values(ind, pe):
                 yield lit
+
+    # default
+    def ind_data_properties(self, ind: OWLNamedIndividual) -> Iterable[OWLDataProperty]:
+        """Gets all data properties for the given individual that appear in the knowledge base.
+
+        Args:
+            ind: The named individual whose data properties are to be retrieved
+
+        Returns:
+            All data properties pe where the set of reasoner axioms entails DataPropertyAssertion(pe ind l)
+            for atleast one l.
+        """
+        onto = self.get_root_ontology()
+        for dp in onto.data_properties_in_signature():
+            try:
+                next(iter(self.data_property_values(ind, dp)))
+                yield dp
+            except StopIteration:
+                pass
+
+    # default
+    def ind_object_properties(self, ind: OWLNamedIndividual) -> Iterable[OWLObjectProperty]:
+        """Gets all object properties for the given individual that appear in the knowledge base.
+
+        Args:
+            ind: The named individual whose object properties are to be retrieved
+
+        Returns:
+            All data properties pe where the set of reasoner axioms entails ObjectPropertyAssertion(pe ind ind2)
+            for atleast one ind2.
+        """
+        onto = self.get_root_ontology()
+        for op in onto.object_properties_in_signature():
+            try:
+                next(iter(self.object_property_values(ind, op)))
+                yield op
+            except StopIteration:
+                pass

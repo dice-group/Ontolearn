@@ -22,7 +22,7 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
     """
     __slots__ = ()
 
-    name: ClassVar
+    name: ClassVar[str]
 
     def __init__(self, *args, **kwargs):
         """Create a new quality function"""
@@ -86,6 +86,29 @@ class AbstractHeuristic(Generic[_N], metaclass=ABCMeta):
             node: node to set the heuristic on
             instances (set, optional): set of instances covered by this node
             learning_problem: underlying learning problem to compare the heuristic to
+        """
+        pass
+
+
+class AbstractFitness(metaclass=ABCMeta):
+    """Abstract base class for fitness functions.
+
+    Fitness functions guide the evolutionary process."""
+    __slots__ = ()
+
+    name: ClassVar[str]
+
+    @abstractmethod
+    def __init__(self):
+        """Create a new fitness function"""
+        pass
+
+    @abstractmethod
+    def apply(self, individual):
+        """Apply the fitness function on an individual and set its fitness attribute to the calculated value
+
+        Args:
+            individual: individual to set the fitness on
         """
         pass
 

@@ -15,7 +15,7 @@ from owlapy.model import OWLObjectMinCardinality, OWLObjectOneOf, OWLObjectRestr
     OWLDataPropertyExpression, OWLDatatypeRestriction, OWLFacetRestriction, OWLLiteral, OWLObjectHasValue, \
     OWLNamedIndividual, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectProperty, OWLClass, \
     DateOWLDatatype, DateTimeOWLDatatype, DurationOWLDatatype, OWLRestriction, OWLDataOneOf, OWLDataRestriction, \
-    OWLIndividual
+    OWLIndividual, StringOWLDatatype
 
 from owlapy.vocab import OWLFacet
 
@@ -202,6 +202,8 @@ class ToOwlready2:
             return float
         elif type_ == IntegerOWLDatatype:
             return int
+        elif type_ == StringOWLDatatype:
+            return str
         elif type_ == DateOWLDatatype:
             return date
         elif type_ == DateTimeOWLDatatype:
@@ -344,6 +346,8 @@ class FromOwlready2:
             return DoubleOWLDatatype
         elif type_ == int:
             return IntegerOWLDatatype
+        elif type_ == str:
+            return StringOWLDatatype
         elif type_ == date:
             return DateOWLDatatype
         elif type_ == datetime:

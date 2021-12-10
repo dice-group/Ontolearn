@@ -492,8 +492,34 @@ class ConceptGenerator:
         Returns:
             types of the given individual
         """
-        kb_types = set(self.get_concepts())
-        yield from (ind_type for ind_type in self._reasoner.types(ind, direct) if ind_type in kb_types)
+        all_types = set(self.get_concepts())
+        for type_ in self._reasoner.types(ind, direct):
+            if type_ in all_types or type_ == OWLThing:
+                yield type_
+
+    def get_object_properties_for_ind(self, ind: OWLNamedIndividual) -> Iterable[OWLObjectProperty]:
+        """Get the object properties for the given individual
+
+        Args:
+            ind: individual
+
+        Returns:
+            object properties
+        """
+        properties = set(self.get_object_properties())
+        yield from (pe for pe in self._reasoner.ind_object_properties(ind) if pe in properties)
+
+    def get_data_properties_for_ind(self, ind: OWLNamedIndividual) -> Iterable[OWLDataProperty]:
+        """Get the data properties for the given individual
+
+        Args:
+            ind: individual
+
+        Returns:
+            data properties
+        """
+        properties = set(self.get_data_properties())
+        yield from (pe for pe in self._reasoner.ind_data_properties(ind) if pe in properties)
 
     def get_object_property_values(self, ind: OWLNamedIndividual, property_: OWLObjectPropertyExpression) \
             -> Iterable[OWLNamedIndividual]:
