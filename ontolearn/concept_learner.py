@@ -468,6 +468,7 @@ class OCEL(CELOE):
 
 
 class Drill(AbstractDrill, RefinementBasedConceptLearner):
+    kb: KnowledgeBase
 
     def __init__(self, knowledge_base,
                  path_of_embeddings: str, refinement_operator: LengthBasedRefinement, quality_func: AbstractScorer,
@@ -667,7 +668,7 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
             start_time = time.time()
             self.fit(pos=p, neg=n, max_runtime=max_runtime)
             rn = time.time() - start_time
-            h: RL_State = self.best_hypotheses()[0]
+            h: RL_State = next(iter(self.best_hypotheses()))
             # TODO:CD: We need to remove this first returned boolean for the sake of readability.
             _, f_measure = F1().score_elp(instances=h.instances_bitset, learning_problem=self._learning_problem)
             _, accuracy = Accuracy().score_elp(instances=h.instances_bitset, learning_problem=self._learning_problem)
@@ -1260,6 +1261,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
     name = 'evolearner'
 
+    kb: KnowledgeBase
     fitness_func: AbstractFitness
     init_method: AbstractEAInitialization
     algorithm: AbstractEvolutionaryAlgorithm
@@ -1547,11 +1549,10 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             individual.fitness.values = (self._cache[ind_str][1],)
         else:
             concept = gp.compile(individual, self.pset)
-            instances = self.kb.individuals_set(concept)
-            quality = self.quality_func.score(instances, self._learning_problem)
-            individual.quality.values = (quality[1],)
+            e = self.kb.evaluate_concept(concept, self.quality_func, self._learning_problem)
+            individual.quality.values = (e.q,)
             self.fitness_func.apply(individual)
-            self._cache[ind_str] = (quality[1], individual.fitness.values[0])
+            self._cache[ind_str] = (e.q, individual.fitness.values[0])
 
     def clean(self):
         self._result_population = None

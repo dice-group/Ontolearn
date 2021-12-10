@@ -318,6 +318,18 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
         """
         pass
 
+    @abstractmethod
+    def concept_len(self, ce: OWLClassExpression) -> int:
+        """Calculate the length of a concept
+
+        Args:
+            ce: concept
+
+        Returns:
+            length of the concept
+        """
+        pass
+
 
 class AbstractLearningProblem(metaclass=ABCMeta):
     """Abstract learning problem"""
