@@ -108,10 +108,10 @@ class OCELHeuristic(AbstractHeuristic):
 
         heuristic_val = 0
         accuracy_gain = 0
-        _, accuracy = self.accuracy_method.score(instances, learning_problem)
+        _, accuracy = self.accuracy_method.score_elp(instances, learning_problem)
 
         if node.parent_node is not None:
-            _, parent_accuracy = self.accuracy_method.score(node.parent_node.individuals, learning_problem)
+            _, parent_accuracy = self.accuracy_method.score_elp(node.parent_node.individuals, learning_problem)
             accuracy_gain = accuracy - parent_accuracy
 
         heuristic_val += accuracy + self.gainBonusFactor * accuracy_gain - node.h_exp * self.expansionPenaltyFactor

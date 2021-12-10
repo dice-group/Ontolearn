@@ -90,7 +90,7 @@ class ConceptGeneratorTest(unittest.TestCase):
         self.assertEqual(true_classes, classes)
 
         classes = set(self.generator.get_types(self.bond5225))
-        true_classes = {self.bond, self.bond1}
+        true_classes = {self.bond, self.bond1, OWLThing}
         self.assertEqual(true_classes, classes)
 
     def test_property_retrieval(self):
@@ -162,7 +162,7 @@ class ConceptGeneratorTest(unittest.TestCase):
         self.assertFalse(classes)
 
         classes = set(self.generator.get_types(self.bond5225))
-        true_classes = {self.bond}
+        true_classes = {self.bond, OWLThing}
         self.assertEqual(true_classes, classes)
 
         # properties
@@ -184,15 +184,16 @@ class ConceptGeneratorTest(unittest.TestCase):
 
     def test_domain_range_retrieval(self):
         # object properties
-        self.assertEqual({self.compound}, self.generator.get_object_property_domains(self.has_atom))
-        self.assertEqual({self.bond}, self.generator.get_object_property_domains(self.in_bond))
+        self.assertEqual(self.compound, self.generator.get_object_property_domains(self.has_atom))
+        self.assertEqual(self.bond, self.generator.get_object_property_domains(self.in_bond))
 
-        self.assertEqual({self.ring_structure}, self.generator.get_object_property_ranges(self.in_structure))
-        self.assertEqual({self.atom}, self.generator.get_object_property_ranges(self.in_bond))
+        self.assertEqual(self.ring_structure, self.generator.get_object_property_ranges(self.in_structure))
+        self.assertEqual(OWLThing, self.generator.get_object_property_domains(self.in_structure))
+        self.assertEqual(self.atom, self.generator.get_object_property_ranges(self.in_bond))
 
         # data properties
-        self.assertEqual({self.atom}, self.generator.get_data_property_domains(self.charge))
-        self.assertEqual({self.compound}, self.generator.get_data_property_domains(self.act))
+        self.assertEqual(self.atom, self.generator.get_data_property_domains(self.charge))
+        self.assertEqual(self.compound, self.generator.get_data_property_domains(self.act))
 
         self.assertEqual({DoubleOWLDatatype}, self.generator.get_data_property_ranges(self.charge))
         self.assertEqual({BooleanOWLDatatype}, self.generator.get_data_property_ranges(self.has_fife_examples))

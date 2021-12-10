@@ -242,6 +242,47 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
         ))
 
 
+class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, AbstractNode, AbstractConceptNode):
+    __slots__ = '_concept', '_len', '_individuals_count', '_quality', '_tree_length', '_tree_depth'
+
+    _tree_length: int
+    _tree_depth: int
+
+    def __init__(self,
+                 concept: OWLClassExpression,
+                 length: int,
+                 individuals_count: int,
+                 quality: float,
+                 tree_length: int,
+                 tree_depth: int):
+        _NodeConcept.__init__(self, concept)
+        _NodeLen.__init__(self, length)
+        _NodeIndividualsCount.__init__(self, individuals_count)
+        _NodeQuality.__init__(self, quality)
+        AbstractNode.__init__(self)
+        self._tree_length = tree_length
+        self._tree_depth = tree_depth
+
+    @property
+    def tree_length(self):
+        return self._tree_length
+
+    @property
+    def tree_depth(self):
+        return self._tree_depth
+
+    def __str__(self):
+        return "\t".join((
+            AbstractNode.__str__(self),
+            _NodeConcept.__str__(self),
+            _NodeQuality.__str__(self),
+            f'Length:{self._len}',
+            f'Tree Length:{self._tree_length}',
+            f'Tree Depth:{self._tree_depth}',
+            _NodeIndividualsCount.__str__(self),
+        ))
+
+
 class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodeParentRef['RL_State']):
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
     __slots__ = '_concept', '_quality', '_heuristic', \

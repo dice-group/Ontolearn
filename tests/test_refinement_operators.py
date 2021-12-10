@@ -85,8 +85,8 @@ class ModifiedCELOERefinementTest(unittest.TestCase):
                           OWLObjectAllValuesFrom(self.in_bond, self.kb.thing),
                           OWLObjectSomeValuesFrom(self.has_bond.get_inverse_property(), self.kb.thing),
                           OWLObjectAllValuesFrom(self.has_bond.get_inverse_property(), self.kb.thing)}
-        bond_false_refs = {OWLObjectSomeValuesFrom(self.has_bond, self.kb.thing),
-                           OWLObjectAllValuesFrom(self.has_bond, self.kb.thing)}
+        bond_false_refs = {OWLObjectSomeValuesFrom(self.has_bond, self.bond),
+                           OWLObjectAllValuesFrom(self.has_bond, self.bond)}
 
         rho = ModifiedCELOERefinement(self.kb, use_negation=True, use_all_constructor=True, use_inverse=True)
         thing_refs = set(rho.refine(self.kb.thing, max_length=3, current_domain=self.kb.thing))
@@ -134,8 +134,8 @@ class ModifiedCELOERefinementTest(unittest.TestCase):
         true_charge = {OWLDataSomeValuesFrom(self.charge, OWLDatatypeMinInclusiveRestriction(1)),
                        OWLDataSomeValuesFrom(self.charge, OWLDatatypeMaxInclusiveRestriction(9))}
         thing_refs = set(rho.refine(self.kb.thing, max_length=3, current_domain=self.kb.thing))
-        compound_refs = set(rho.refine(self.compound, max_length=3, current_domain=self.kb.thing))
-        bond_refs = set(rho.refine(self.bond, max_length=3, current_domain=self.kb.thing))
+        compound_refs = set(rho.refine(self.compound, max_length=3, current_domain=self.compound))
+        bond_refs = set(rho.refine(self.bond, max_length=3, current_domain=self.bond))
         self.assertLessEqual(true_act, thing_refs)
         self.assertLessEqual(true_act, compound_refs)
         self.assertFalse(true_act & bond_refs)

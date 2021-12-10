@@ -1,13 +1,16 @@
 import logging
+import random
+from functools import singledispatchmethod
 from typing import Iterable, Optional, Callable, overload, Union, FrozenSet
 
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLNamedIndividual, \
     OWLObjectProperty, OWLClass, OWLDataProperty, IRI
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.util import iter_count, LRUCache
-from .abstracts import AbstractKnowledgeBase
+from .abstracts import AbstractKnowledgeBase, AbstractScorer, EncodedLearningProblem, AbstractLearningProblem
 from .concept_generator import ConceptGenerator
 from .core.owl.utils import OWLClassExpressionLengthMetric
+from .learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 
 Factory = Callable
 
@@ -34,6 +37,11 @@ def _Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
 
 def _Default_ClassExpressionLengthMetricFactory() -> OWLClassExpressionLengthMetric:
     return OWLClassExpressionLengthMetric.get_default()
+
+
+class EvaluatedConcept:
+    __slots__ = 'q', 'inds', 'ic'
+    pass
 
 
 class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
@@ -335,3 +343,57 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
         return f'KnowledgeBase(path={repr(self.path)} <{class_count} classes, {properties_count} properties, ' \
                f'{individuals_count} individuals)'
+
+    @singledispatchmethod
+    def encode_learning_problem(self, lp: AbstractLearningProblem):
+        raise NotImplementedError(lp)
+
+    @encode_learning_problem.register
+    def _(self, lp: PosNegLPStandard):
+        assert len(self.class_hierarchy()) > 0
+
+        if lp.all is None:
+            kb_all = self.all_individuals_set()
+        else:
+            kb_all = self.individuals_set(lp.all)
+
+        assert 0 < len(lp.pos) < len(kb_all) and len(kb_all) > len(lp.neg)
+        if logger.isEnabledFor(logging.INFO):
+            r = DLSyntaxObjectRenderer()
+            logger.info('E^+:[ {0} ]'.format(', '.join(map(r.render, lp.pos))))
+            logger.info('E^-:[ {0} ]'.format(', '.join(map(r.render, lp.neg))))
+
+        kb_pos = self.individuals_set(lp.pos)
+        if len(lp.neg) == 0:  # if negatives are not provided, randomly sample.
+            kb_neg = type(kb_all)(random.sample(list(kb_all), len(kb_pos)))
+        else:
+            kb_neg = self.individuals_set(lp.neg)
+
+        try:
+            assert len(kb_pos) == len(lp.pos)
+        except AssertionError:
+            print(lp.pos)
+            print(kb_pos)
+            print(kb_all)
+            print('Assertion error. Exiting.')
+            raise
+        if lp.neg:
+            assert len(kb_neg) == len(lp.neg)
+
+        return EncodedPosNegLPStandard(
+            kb_pos=kb_pos,
+            kb_neg=kb_neg,
+            kb_all=kb_all,
+            kb_diff=kb_all.difference(kb_pos.union(kb_neg)))
+
+    def evaluate_concept(self, concept: OWLClassExpression, quality_func: AbstractScorer,
+                         encoded_learning_problem: EncodedLearningProblem) -> EvaluatedConcept:
+        e = EvaluatedConcept()
+        e.inds = self.individuals_set(concept)
+        e.ic = len(e.inds)
+        _, e.q = quality_func.score_elp(e.inds, encoded_learning_problem)
+        return e
+
+    async def evaluate_concept_async(self, concept: OWLClassExpression, quality_func: AbstractScorer,
+                                     encoded_learning_problem: EncodedLearningProblem) -> EvaluatedConcept:
+        raise NotImplementedError
