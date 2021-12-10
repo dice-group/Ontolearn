@@ -2071,6 +2071,38 @@ class OWLEquivalentClassesAxiom(OWLNaryClassAxiom):
         super().__init__([cls_a, cls_b])
 
 
+class OWLSubClassOfAxiom(OWLClassAxiom):
+    """Represents an SubClassOf axiom in the OWL 2 Specification."""
+    __slots__ = '_sub_class', '_super_class'
+
+    def __init__(self, sub_class: OWLClassExpression, super_class: OWLClassExpression):
+        """Get an equivalent classes axiom with specified operands and no annotations
+
+        Args:
+            sub_class: the sub class
+            super_class: the super class
+        """
+        self._sub_class = sub_class
+        self._super_class = super_class
+
+    def get_sub_class(self) -> OWLClassExpression:
+        return self._sub_class
+
+    def get_super_class(self) -> OWLClassExpression:
+        return self._super_class
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._super_class == other._super_class and self._sub_class == other._sub_class
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._super_class, self._sub_class))
+
+    def __repr__(self):
+        return f'OWLSubClassOfAxiom(sub_class={self._sub_class},super_class={self._super_class})'
+
+
 class OWLAnnotationAxiom(OWLAxiom, metaclass=ABCMeta):
     """A super interface for annotation axioms."""
     __slots__ = ()
