@@ -6,7 +6,8 @@ from typing import Optional, Iterable
 import httpx as httpx
 
 from ontolearn import KnowledgeBase
-from ontolearn.abstracts import AbstractScorer, AbstractLearningProblem, AbstractKnowledgeBase
+from ontolearn.abstracts import AbstractScorer, AbstractLearningProblem, AbstractKnowledgeBase, \
+    EncodedPosNegLPStandardKind
 from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric
 from ontolearn.knowledge_base import EvaluatedConcept, Factory, _Default_ClassExpressionLengthMetricFactory
@@ -16,7 +17,7 @@ from ontolearn.utils import oplogging
 from owlapy.ext import OWLReasonerEx
 from owlapy.model import OWLClassExpression, OWLEntity, OWLOntology, OWLClass, OWLNamedIndividual, \
     OWLObjectPropertyExpression, OWLDataProperty, OWLObjectProperty, OWLOntologyID, _M, OWLDataPropertyRangeAxiom, \
-    IRI, OWLThing, OWLLiteral
+    IRI, OWLThing, OWLLiteral, OWLObjectPropertyRangeAxiom, OWLObjectPropertyDomainAxiom, OWLDataPropertyDomainAxiom
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer
 from owlapy.util import LRUCache
@@ -43,7 +44,7 @@ def _full_iri_renderer(e: OWLEntity) -> str:
 _tentris_render = ManchesterOWLSyntaxOWLObjectRenderer(_full_iri_renderer, no_render_thing=True).render
 
 
-class EncodedPosNegLPStandardTentris:
+class EncodedPosNegLPStandardTentris(EncodedPosNegLPStandardKind):
     __slots__ = 'id'
 
     def __init__(self, id):
@@ -83,6 +84,18 @@ class TentrisOntology(OWLOntology):
 
     def data_property_range_axioms(self, property: OWLDataProperty) -> Iterable[OWLDataPropertyRangeAxiom]:
         raise NotImplementedError
+
+    def data_property_domain_axioms(self, property: OWLDataProperty) -> Iterable[OWLDataPropertyDomainAxiom]:
+        logger.debug("Calling data_property_domain_axioms from backing onto")
+        yield from self._backing_onto.data_property_domain_axioms(property)
+
+    def object_property_domain_axioms(self, property: OWLObjectProperty) -> Iterable[OWLObjectPropertyDomainAxiom]:
+        logger.debug("Calling object_property_domain_axioms from backing onto")
+        yield from self._backing_onto.object_property_domain_axioms(property)
+
+    def object_property_range_axioms(self, property: OWLObjectProperty) -> Iterable[OWLObjectPropertyRangeAxiom]:
+        logger.debug("Calling object_property_range_axioms from backing onto")
+        yield from self._backing_onto.object_property_range_axioms(property)
 
     def get_owl_ontology_manager(self) -> _M:
         raise NotImplementedError
