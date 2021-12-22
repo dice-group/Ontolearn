@@ -37,7 +37,7 @@ def run(data_file, pos_file, neg_file):
     i = 1
     for h in alg.best_hypotheses(3):
         pred_acc_score = kb.evaluate_concept(h.concept, pred_acc, lp.encode_kb(kb)).q
-        f1_score = kb.evaluate_concept(h.concept, pred_acc, lp.encode_kb(kb)).q
+        f1_score = kb.evaluate_concept(h.concept, f1, lp.encode_kb(kb)).q
         print(f'{i}: {render.render(h.concept)} ('
               f'pred. acc.: {pred_acc_score}, '
               f'F-Measure: {f1_score}'
