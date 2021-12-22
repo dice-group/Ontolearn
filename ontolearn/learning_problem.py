@@ -3,13 +3,13 @@ from typing import Set, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ontolearn import KnowledgeBase
-from ontolearn.abstracts import AbstractLearningProblem, EncodedLearningProblem
+from ontolearn.abstracts import AbstractLearningProblem, EncodedLearningProblem, EncodedPosNegLPStandardKind
 from owlapy.model import OWLNamedIndividual
 
 logger = logging.getLogger(__name__)
 
 
-class EncodedPosNegLPStandard(EncodedLearningProblem):
+class EncodedPosNegLPStandard(EncodedPosNegLPStandardKind):
     __slots__ = 'kb_pos', 'kb_neg', 'kb_diff', 'kb_all'
 
     kb_pos: set

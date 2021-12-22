@@ -1,6 +1,6 @@
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Set, List, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional
+from typing import Set, List, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional, Protocol
 
 from owlapy.model import OWLClassExpression, OWLOntology
 from owlapy.util import iter_count
@@ -13,6 +13,10 @@ _N = TypeVar('_N')  #:
 
 class EncodedLearningProblem(metaclass=ABCMeta):
     """Encoded Abstract learning problem for use in Scorers"""
+    __slots__ = ()
+
+
+class EncodedPosNegLPStandardKind(EncodedLearningProblem, metaclass=ABCMeta):
     __slots__ = ()
 
 
