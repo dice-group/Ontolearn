@@ -16,7 +16,7 @@ from deap import gp, tools, base, creator
 
 from ontolearn import KnowledgeBase
 from ontolearn.abstracts import AbstractDrill, AbstractFitness, AbstractScorer, AbstractNode, BaseRefinement, \
-    AbstractHeuristic
+    AbstractHeuristic, EncodedPosNegLPStandardKind
 from ontolearn.base_concept_learner import BaseConceptLearner, RefinementBasedConceptLearner
 from ontolearn.core.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter, OperandSetTransform
 from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
@@ -63,7 +63,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
     seen_norm_concepts: Set[OWLClassExpression]
     heuristic_queue: 'SortedSet[OENode]'
     best_descriptions: EvaluatedDescriptionSet[OENode, QualityOrderedNode]
-    _learning_problem: Optional[EncodedPosNegLPStandard]
+    _learning_problem: Optional[EncodedPosNegLPStandardKind]
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
@@ -287,7 +287,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
 
         return self.terminate()
 
-    def encoded_learning_problem(self) -> Optional[EncodedPosNegLPStandard]:
+    def encoded_learning_problem(self) -> Optional[EncodedPosNegLPStandardKind]:
         """Fetch the most recently used learning problem from the fit method"""
         return self._learning_problem
 
