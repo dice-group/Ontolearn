@@ -287,6 +287,10 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
 
         return self.terminate()
 
+    def encoded_learning_problem(self) -> Optional[EncodedPosNegLPStandard]:
+        """Fetch the most recently used learning problem from the fit method"""
+        return self._learning_problem
+
     def tree_node(self, node: OENode) -> TreeNode[OENode]:
         tree_parent = self.search_tree[node.concept]
         return tree_parent
