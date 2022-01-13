@@ -237,7 +237,7 @@ _MAN_SYNTAX = types.SimpleNamespace(
     OR="or",
     INVERSE="inverse",
     COMMA=",",
-    SELF="self",
+    SELF="Self",
     VALUE="value",
 )
 
@@ -306,7 +306,7 @@ class ManchesterOWLSyntaxOWLObjectRenderer(OWLObjectRenderer):
 
     @render.register
     def _(self, p: OWLObjectInverseOf) -> str:
-        return "%s(%s)" % (self.render(p.get_named_property()), _MAN_SYNTAX.INVERSE)
+        return "%s %s" % (_MAN_SYNTAX.INVERSE, self.render(p.get_named_property()))
 
     @render.register
     def _(self, r: OWLObjectMinCardinality) -> str:
@@ -325,7 +325,7 @@ class ManchesterOWLSyntaxOWLObjectRenderer(OWLObjectRenderer):
 
     @render.register
     def _(self, r: OWLObjectHasSelf) -> str:
-        return "%s %s %s" % (self.render(r.get_property()), _MAN_SYNTAX.EXISTS, _MAN_SYNTAX.SELF)
+        return "%s %s" % (self.render(r.get_property()), _MAN_SYNTAX.SELF)
 
     @render.register
     def _(self, r: OWLObjectHasValue):
