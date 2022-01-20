@@ -132,11 +132,11 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         if logger.isEnabledFor(logging.INFO):
             logger.info('Elapsed runtime: {0} seconds'.format(round(time.time() - self.start_time, 4)))
-            logger.info('Number of concepts tested:{0}'.format(self.number_of_tested_concepts))
+            logger.info('Number of concepts tested: {0}'.format(self.number_of_tested_concepts))
             if self._goal_found:
-                t = 'A goal concept found:{0}'
+                t = 'A goal concept found: {0}'
             else:
-                t = 'Current best concept:{0}'
+                t = 'Current best concept: {0}'
             logger.info(t.format(list(self.best_hypotheses(n=1))[0]))
 
         return self

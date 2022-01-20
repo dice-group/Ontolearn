@@ -1558,6 +1558,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             individual.quality.values = (e.q,)
             self.fitness_func.apply(individual)
             self._cache[ind_str] = (e.q, individual.fitness.values[0])
+            self._number_of_tested_concepts += 1
 
     def clean(self):
         self._result_population = None
