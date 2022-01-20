@@ -5,7 +5,7 @@ from itertools import chain, cycle
 from ontolearn.ea_utils import OperatorVocabulary, Tree, escape, owlliteral_to_primitive_string
 from ontolearn.knowledge_base import KnowledgeBase
 from owlapy.model import OWLClass, OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual, \
-    OWLObjectProperty
+    OWLObjectProperty, OWLThing
 import random
 from abc import ABCMeta, abstractmethod
 from typing import Any, Callable, Dict, Final, List, Set, Union
@@ -125,7 +125,7 @@ class EARandomWalkInitialization(AbstractEAInitialization):
     dp_splits: Dict[OWLDataProperty, List[OWLLiteral]]
     kb: KnowledgeBase
 
-    def __init__(self, max_t: int = 3, jump_pr: float = 0.5):
+    def __init__(self, max_t: int = 2, jump_pr: float = 0.5):
         """
         Args:
             max_t: number of paths
@@ -209,7 +209,8 @@ class EARandomWalkInitialization(AbstractEAInitialization):
 
     @lru_cache(maxsize=_cache_size)
     def _get_types(self, ind: OWLNamedIndividual, direct: bool = False) -> Set[OWLClass]:
-        return set(self.kb.get_types(ind, direct))
+        inds = set(self.kb.get_types(ind, direct))
+        return inds if inds else {OWLThing}
 
     @lru_cache(maxsize=_cache_size)
     def _get_properties(self, ind: OWLNamedIndividual) -> List[Property]:
@@ -273,7 +274,7 @@ class EARandomWalkInitialization(AbstractEAInitialization):
             if isinstance(next_pair.property_, OWLObjectProperty):
                 self._add_primitive(expr, pset, next_pair.property_, OperatorVocabulary.EXISTENTIAL)
                 assert isinstance(next_pair.object_, OWLNamedIndividual)
-                type_ = random.choice(list(self._get_types(next_pair.object_, direct=True)))
+                type_ = random.choice(list(self._get_types(next_pair.object_)))
                 self._add_object_terminal(expr, pset, type_)
             elif isinstance(next_pair.property_, OWLDataProperty):
                 if next_pair.property_ in self.kb.get_boolean_data_properties():
@@ -285,7 +286,7 @@ class EARandomWalkInitialization(AbstractEAInitialization):
                 raise NotImplementedError(next_pair.property_)
 
         else:
-            type_ = random.choice(list(self._get_types(second_ind, direct=True)))
+            type_ = random.choice(list(self._get_types(second_ind)))
             self._add_object_terminal(expr, pset, type_)
 
     def _build_bool_property(self, expr: Tree, pair: PropObjPair, pset: PrimitiveSetTyped):
@@ -323,7 +324,7 @@ class EARandomWalkInitialization(AbstractEAInitialization):
             expr.append(pset.primitives[OWLClassExpression][1])
 
     def _add_object_terminal(self, expr: Tree, pset: PrimitiveSetTyped, type_: OWLClass):
-        for t in pset.terminals[OWLClass]:
+        for t in pset.terminals[OWLClassExpression]:
             if t.name == escape(type_.get_iri().get_remainder()):
                 expr.append(t)
                 return
