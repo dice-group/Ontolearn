@@ -75,7 +75,7 @@ MANCHESTER_GRAMMAR = Grammar(r"""
                        ~"(Z|([+-](([0-1][0-9])|(2[0-3])):[0-5][0-9](:[0-5][0-9](\\.[0-9]{6})?)?))?"
     duration_literal = ~"P([0-9]+W)?([0-9]+D)?(T([0-9]+H)?([0-9]+M)?([0-9]+(\\.[0-9]{6})?S)?)?"
     sign = ("+"/"-")?
-    non_negative_integer = ~"[1-9]*[0-9]"
+    non_negative_integer = ~"0|([1-9][0-9]*)"
 
     # IRIs / Characters
     class_iri = iri / never_match
@@ -103,7 +103,7 @@ MANCHESTER_GRAMMAR = Grammar(r"""
     maybe_ws = ~"[\u0020\u000D\u0009\u000A]*"
 
     # hacky workaround: can be added to a pass through production rule that is semantically important
-    # so nodes are not consolidated which makes the parsing cleaner
+    # so nodes are not combined which makes the parsing cleaner
     never_match = !"a" "a"
     """)
 
@@ -183,8 +183,8 @@ class ManchesterSyntaxParser(NodeVisitor):
         if self.grammar is None:
             self.grammar = MANCHESTER_GRAMMAR
 
-    def parse_expression(self, expression):
-        tree = self.grammar.parse(expression.strip())
+    def parse_expression(self, expression_str):
+        tree = self.grammar.parse(expression_str.strip())
         return self.visit(tree)
 
     @_transform_children
@@ -312,10 +312,11 @@ class ManchesterSyntaxParser(NodeVisitor):
         return OWLLiteral(value[1:-1], datatype)
 
     def visit_string_literal_language(self, node, children):
-        raise NotImplementedError(f"Language tags not supported in owlapy yet: {_node_text(node)}")
+        raise NotImplementedError(f"Language tags and plain literals not supported in owlapy yet: {_node_text(node)}")
 
     def visit_string_literal_no_language(self, node, children):
-        raise NotImplementedError(f"Plain literals not supported in owlapy yet: {children[0]}")
+        value = children[0]
+        return OWLLiteral(value[1:-1], StringOWLDatatype)
 
     def visit_quoted_string(self, node, children):
         return _node_text(node)
