@@ -16,8 +16,8 @@ conda activate temp
 conda env update --name temp
 python -c 'from setuptools import setup; setup()' develop
 python -c "import ontolearn"
-python -m pytest tests # Test
-tox  # to test
+python -m pytest tests # Partial test with pytest
+tox  # full test with tox
 ```
 
 ### Installation via pip
@@ -67,7 +67,7 @@ command to download them from our data server.
 
 ```shell
 ./big_gitext/download_big.sh examples/pre_trained_agents.zip.link
-./big_gitext/download_big.sh -A  # to download them all
+./big_gitext/download_big.sh -A  # to download them all into examples folder
 ```
 
 To update or upload resource files, follow the instructions
