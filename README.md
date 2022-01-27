@@ -16,6 +16,7 @@ conda activate temp
 conda env update --name temp
 python -c 'from setuptools import setup; setup()' develop
 python -c "import ontolearn"
+python -m pytest tests # Test
 tox  # to test
 ```
 

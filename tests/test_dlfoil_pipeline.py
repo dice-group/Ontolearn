@@ -10,7 +10,7 @@ from ontolearn.heuristics import DLFOILHeuristic
 from ontolearn.metrics import F1
 from ontolearn.utils import setup_logging
 
-setup_logging("logging_test.conf")
+setup_logging("ontolearn/logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 with open('examples/synthetic_problems.json') as json_file:
