@@ -118,7 +118,8 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     # General
     parser.add_argument("--path_knowledge_base", type=str, default='../KGs/Biopax/biopax.owl')
-    parser.add_argument("--path_knowledge_base_embeddings", type=str,default='embeddings/ConEx_Biopax/ConEx_entity_embeddings.csv')
+    parser.add_argument("--path_knowledge_base_embeddings", type=str,
+                        default='embeddings/ConEx_Biopax/ConEx_entity_embeddings.csv')
     # The next two params shows the flexibility of our framework as agents can be continuously trained
     parser.add_argument('--pretrained_drill_avg_path', type=str,
                         default='pre_trained_agents/Biopax/DrillHeuristic_averaging/DrillHeuristic_averaging.pth',
