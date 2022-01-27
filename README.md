@@ -25,38 +25,6 @@ tox  # to test
 ```shell
 pip install ontolearn  # see https://pypi.org/project/ontolearn/
 ```
-
-### Download external files (.link files)
-
-Some resources like pre-calculated embeddings or `pre_trained_agents`
-are not included in the Git repository directly. Use the following
-command to download them from our data server.
-
-```shell
-./big_gitext/download_big.sh pre_trained_agents.zip.link
-./big_gitext/download_big.sh -A  # to download them all
-```
-
-To update or upload resource files, follow the instructions
-[here](https://github.com/dice-group/Ontolearn-internal/wiki/Upload-big-data-to-hobbitdata)
-and use the following command.
-
-```shell
-./big_gitext/upload_big.sh pre_trained_agents.zip
-```
-
-### Building (sdist and bdist_wheel)
-
-```shell
-tox -e build
-```
-
-#### Building the docs
-
-```shell
-tox -e docs
-```
-
 ## Usage
 See the [manual](https://ontolearn-docs-dice-group.netlify.app/),
 tests and examples folder for details.
@@ -91,6 +59,38 @@ dlsr = DLSyntaxObjectRenderer()
 for desc in model.best_hypotheses(1):
     print('The result:', dlsr.render(desc.concept), 'has quality', desc.quality)
 ```
+### Download external files (.link files)
+
+Some resources like pre-calculated embeddings or `pre_trained_agents`
+are not included in the Git repository directly. Use the following
+command to download them from our data server.
+
+```shell
+./big_gitext/download_big.sh examples/pre_trained_agents.zip.link
+./big_gitext/download_big.sh -A  # to download them all
+```
+
+To update or upload resource files, follow the instructions
+[here](https://github.com/dice-group/Ontolearn-internal/wiki/Upload-big-data-to-hobbitdata)
+and use the following command.
+
+```shell
+./big_gitext/upload_big.sh pre_trained_agents.zip
+```
+
+### Building (sdist and bdist_wheel)
+
+```shell
+tox -e build
+```
+
+#### Building the docs
+
+```shell
+tox -e docs
+```
+
+
 
 
 ## Contribution
