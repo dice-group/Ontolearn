@@ -35,7 +35,7 @@ from ontolearn.model_adapter import ModelAdapter
 from owlapy.model import OWLNamedIndividual, IRI
 from owlapy.namespaces import Namespaces
 from owlapy.render import DLSyntaxObjectRenderer
-from experiments_standard import ClosedWorld_ReasonerFactory
+from examples.experiments_standard import ClosedWorld_ReasonerFactory
 
 NS = Namespaces('ex', 'http://example.com/father#')
 
