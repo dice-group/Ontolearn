@@ -5,7 +5,7 @@ from ontolearn.utils import setup_logging
 from owlapy.model import OWLClass, IRI
 from owlapy.owlready2 import OWLReasoner_Owlready2
 
-setup_logging("logging_test.conf")
+setup_logging("ontolearn/logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 with open('examples/synthetic_problems.json') as json_file:

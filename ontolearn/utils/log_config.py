@@ -29,7 +29,7 @@ def _log_file(fn):
 log_dirs = []
 
 
-def setup_logging(config_file="logging.conf"):
+def setup_logging(config_file="ontolearn/logging.conf"):
     logging.x = SimpleNamespace(log_file=_log_file)
     logging.TRACE = oplogging.TRACE
 

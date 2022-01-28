@@ -18,7 +18,7 @@ from ontolearn.refinement_operators import CustomRefinementOperator, ModifiedCEL
     ExpressRefinement
 
 
-setup_logging("logging_test.conf")
+setup_logging("ontolearn/logging_test.conf")
 
 
 class ModifiedCELOERefinementTest(unittest.TestCase):

@@ -461,7 +461,8 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
             if i is not None:
                 yield self.kb.existential_restriction(i, ce.get_property())
 
-        for more_special_op in self.kb.object_property_hierarchy().more_special_roles(ce.get_property().get_named_property()):
+        for more_special_op in self.kb.object_property_hierarchy(). \
+                more_special_roles(ce.get_property().get_named_property()):
             yield self.kb.existential_restriction(ce.get_filler(), more_special_op)
 
         if self.use_all_constructor:
@@ -485,7 +486,8 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
             # if not concept.get_filler().is_owl_nothing() and concept.get_filler().isatomic and (len(refs) == 0):
             #    # TODO find a way to include nothing concept
             #    refs.update(self.kb.universal_restriction(i, concept.get_property()))
-            for more_special_op in self.kb.object_property_hierarchy().more_special_roles(ce.get_property().get_named_property()):
+            for more_special_op in self.kb.object_property_hierarchy().\
+                    more_special_roles(ce.get_property().get_named_property()):
                 yield self.kb.universal_restriction(ce.get_filler(), more_special_op)
         else:
             yield from {}

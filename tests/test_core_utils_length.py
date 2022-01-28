@@ -9,7 +9,7 @@ from owlapy.model import OWLDataUnionOf, OWLLiteral, OWLObjectProperty, OWLObjec
     OWLDataAllValuesFrom, OWLDataComplementOf, OWLDataExactCardinality, OWLDataHasValue, OWLDataIntersectionOf, \
     OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataOneOf, OWLDataProperty, OWLDataSomeValuesFrom
 
-setup_logging("logging_test.conf")
+setup_logging("ontolearn/logging_test.conf")
 
 
 class Core_OWLClassExpressionLengthMetric_Test(unittest.TestCase):
