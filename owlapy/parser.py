@@ -49,7 +49,7 @@ MANCHESTER_GRAMMAR = Grammar(r"""
     facet_restrictions = facet_restriction (maybe_ws "," maybe_ws facet_restriction)*
     facet_restriction = facet must_ws literal
     facet = "length" / "minLength" / "maxLength" / "pattern" / "langRange"
-            / "totalDigits" / "fractionDigits" / "≤" / "≥" / "<" / ">"
+            / "totalDigits" / "fractionDigits" / "<=" / ">=" / "<" / ">"
     datatype_iri = ("<http://www.w3.org/2001/XMLSchema#" datatype ">") / ("xsd:"? datatype)
     datatype = "double" / "integer" / "boolean" / "string" / "dateTime" / "date" / "duration"
 

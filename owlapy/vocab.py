@@ -103,9 +103,9 @@ class OWLFacet(_Vocabulary, Enum, metaclass=_meta_Enum):
         except StopIteration:
             raise ValueError(f"No facet with symbolic form {name} exists.")
 
-    MIN_INCLUSIVE: Final = ("minInclusive", "≥", ge)  #:
+    MIN_INCLUSIVE: Final = ("minInclusive", ">=", ge)  #:
     MIN_EXCLUSIVE: Final = ("minExclusive", ">", gt)  #:
-    MAX_INCLUSIVE: Final = ("maxInclusive", "≤", le)  #:
+    MAX_INCLUSIVE: Final = ("maxInclusive", "<=", le)  #:
     MAX_EXCLUSIVE: Final = ("maxExclusive", "<", lt)  #:
     LENGTH: Final = ("length", "length", lambda a, b: len(a) == b.parse_integer())  #:
     MIN_LENGTH: Final = ("minLength", "minLength", lambda a, b: len(a) >= b.parse_integer())  #:

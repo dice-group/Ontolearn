@@ -78,7 +78,7 @@ class Celoe_Test(unittest.TestCase):
         self.assertGreaterEqual(best_pred.quality, 0.96)
 
         r = DLSyntaxObjectRenderer()
-        self.assertEqual(r.render(best_pred.concept), '∃ act.xsd:double[≥ 0.325]')
+        self.assertEqual(r.render(best_pred.concept), '∃ act.xsd:double[>= 0.325]')
 
     def test_celoe_father(self):
         kb = KnowledgeBase(path=PATH_DATA_FATHER)
