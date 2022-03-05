@@ -2660,15 +2660,21 @@ class OWLOntologyManager(metaclass=ABCMeta):
 
     @abstractmethod
     def add_axiom(self, ontology: OWLOntology, axiom: OWLAxiom):
-        """A convenience method that adds a single axiom to an ontology. The appropriate AddAxiom change object is
-        automatically generated.
+        """A convenience method that adds a single axiom to an ontology.
 
         Args:
             ontology: The ontology to add the axiom to.
             axiom: The axiom to be added
+        """
+        pass
 
-        Raises:
-            ChangeApplied.UNSUCCESSFULLY: if the axiom could not be added.
+    @abstractmethod
+    def remove_axiom(self, ontology: OWLOntology, axiom: OWLAxiom):
+        """A convenience method that removes a single axiom from an ontology.
+
+        Args:
+            ontology: The ontology to remove the axiom from.
+            axiom: The axiom to be removed
         """
         pass
 
