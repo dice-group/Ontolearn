@@ -1,19 +1,22 @@
 from types import MappingProxyType
-from typing import Final
+from typing import Final, List, Optional, Union
 from parsimonious.grammar import Grammar
 from parsimonious.grammar import NodeVisitor
 from parsimonious.nodes import Node
+from owlapy.io import OWLObjectParser
 from owlapy.model import OWLObjectHasSelf, OWLObjectIntersectionOf, OWLObjectMinCardinality, OWLObjectOneOf, \
-    OWLObjectProperty, OWLObjectSomeValuesFrom, OWLObjectUnionOf, OWLObjectAllValuesFrom, OWLClass, IRI, \
+    OWLObjectProperty, OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectUnionOf, OWLClass, IRI, \
     OWLClassExpression, OWLDataProperty, OWLNamedIndividual, OWLObjectComplementOf, OWLObjectExactCardinality, \
-    OWLObjectHasValue, StringOWLDatatype, OWLDataAllValuesFrom, OWLDataComplementOf, BooleanOWLDatatype, \
+    OWLObjectHasValue, OWLQuantifiedDataRestriction, OWLQuantifiedObjectRestriction, StringOWLDatatype,  \
     DateOWLDatatype, DateTimeOWLDatatype, DoubleOWLDatatype, DurationOWLDatatype, IntegerOWLDatatype, \
     OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLFacetRestriction, OWLDataExactCardinality, \
     OWLDataMaxCardinality, OWLObjectMaxCardinality, OWLDataIntersectionOf, OWLDataMinCardinality, OWLDataHasValue, \
-    OWLLiteral, OWLDataRange, OWLDataUnionOf, OWLDataOneOf
+    OWLLiteral, OWLDataRange, OWLDataUnionOf, OWLDataOneOf, OWLDatatype, OWLObjectCardinalityRestriction, \
+    OWLDataCardinalityRestriction, OWLObjectAllValuesFrom, OWLDataAllValuesFrom, OWLDataComplementOf, BooleanOWLDatatype
+from owlapy.namespaces import Namespaces
 
 from owlapy.render import _MAN_SYNTAX
-from owlapy.vocab import OWLFacet
+from owlapy.vocab import OWLFacet, OWLRDFVocabulary
 
 
 MANCHESTER_GRAMMAR = Grammar(r"""
@@ -59,7 +62,7 @@ MANCHESTER_GRAMMAR = Grammar(r"""
               boolean_literal
     typed_literal = quoted_string "^^" datatype_iri
     string_literal_language = quoted_string language_tag
-    string_literal_no_language = quoted_string / never_match
+    string_literal_no_language = quoted_string / no_match
     quoted_string = ~"\"([^\"\\\\]|\\\\[\"\\\\])*\""
     language_tag = "@" ~"[a-zA-Z]+" ("-" ~"[a-zA-Z0-9]+")*
     float_literal = sign (float_with_integer_part / float_no_integer_part) ("f"/"F")
@@ -78,14 +81,14 @@ MANCHESTER_GRAMMAR = Grammar(r"""
     non_negative_integer = ~"0|([1-9][0-9]*)"
 
     # IRIs / Characters
-    class_iri = iri / never_match
-    individual_iri = iri / never_match
-    object_property_iri = iri / never_match
-    data_property_iri = iri / never_match
+    class_iri = iri / no_match
+    individual_iri = iri / no_match
+    object_property_iri = iri / no_match
+    data_property_iri = iri / no_match
     iri = full_iri / abbreviated_iri / simple_iri
-    full_iri = iri_ref / never_match
-    abbreviated_iri = pname_ln / never_match
-    simple_iri = pn_local / never_match
+    full_iri = iri_ref / no_match
+    abbreviated_iri = pname_ln / no_match
+    simple_iri = pn_local / no_match
 
     iri_ref = "<" ~"[^<>\"{}|^`\\\\\u0000-\u0020]*" ">"
     pname_ln = pname_ns pn_local
@@ -104,7 +107,7 @@ MANCHESTER_GRAMMAR = Grammar(r"""
 
     # hacky workaround: can be added to a pass through production rule that is semantically important
     # so nodes are not combined which makes the parsing cleaner
-    never_match = !"a" "a"
+    no_match = ~"(?!a)a"
     """)
 
 
@@ -114,17 +117,12 @@ def _transform_children(nary_visit_function):
             *_, first_operand, operands, _, _ = visited_children
         else:
             first_operand, operands = visited_children
-        if isinstance(operands, Node):
-            children = first_operand
-        else:
-            children = [first_operand]
-            for node in operands:
-                children.append(node[-1])
+        children = first_operand if isinstance(operands, Node) else [first_operand] + [node[-1] for node in operands]
         return nary_visit_function(self, node, children)
     return transform
 
 
-def _node_text(node):
+def _node_text(node) -> str:
     return node.text.strip()
 
 
@@ -172,34 +170,53 @@ _FACET_TO_LITERAL_DATATYPE: Final = MappingProxyType({
 })
 
 
-class ManchesterSyntaxParser(NodeVisitor):
+# workaround to support multiple inheritance with different metaclasses
+class ManchesterOWLSyntaxParserMeta(type(NodeVisitor), type(OWLObjectParser)):
+    pass
+
+
+class ManchesterOWLSyntaxParser(NodeVisitor, OWLObjectParser, metaclass=ManchesterOWLSyntaxParserMeta):
+    """Manchester Syntax parser to parse strings to OWLClassExpressions
+       Following: https://www.w3.org/TR/owl2-manchester-syntax"""
 
     slots = 'ns', 'grammar'
 
-    def __init__(self, ns=None, grammar=None):
-        self.ns = ns
+    ns: Optional[Union[str, Namespaces]]
+
+    def __init__(self, namespace: Optional[Union[str, Namespaces]] = None, grammar=None):
+        """Create a new Manchester Syntax parser. Names (entities) can be given as full IRIs enclosed in < and >
+           or as simple strings, in that case the namespace attribute of the parser has to be set to resolve them.
+           See https://www.w3.org/TR/owl2-manchester-syntax/#IRIs.2C_Integers.2C_Literals.2C_and_Entities
+           for more information.
+           Prefixes are currently not supported, except for datatypes.
+
+        Args:
+            namespace: Namespace to resolve names that were given without one
+            grammar: grammar
+        """
+        self.ns = namespace
         self.grammar = grammar
 
         if self.grammar is None:
             self.grammar = MANCHESTER_GRAMMAR
 
-    def parse_expression(self, expression_str):
+    def parse_expression(self, expression_str: str) -> OWLClassExpression:
         tree = self.grammar.parse(expression_str.strip())
         return self.visit(tree)
 
     @_transform_children
-    def visit_union(self, node, children):
+    def visit_union(self, node, children) -> OWLClassExpression:
         return children if isinstance(children, OWLClassExpression) else OWLObjectUnionOf(children)
 
     @_transform_children
-    def visit_intersection(self, node, children):
+    def visit_intersection(self, node, children) -> OWLClassExpression:
         return children if isinstance(children, OWLClassExpression) else OWLObjectIntersectionOf(children)
 
-    def visit_primary(self, node, children):
+    def visit_primary(self, node, children) -> OWLClassExpression:
         match_not, expr = children
         return OWLObjectComplementOf(expr[0]) if isinstance(match_not, list) else expr[0]
 
-    def visit_some_only_res(self, node, children):
+    def visit_some_only_res(self, node, children) -> OWLQuantifiedObjectRestriction:
         property_, _, type_, _, filler = children
         type_ = _node_text(*type_)
         if type_ == _MAN_SYNTAX.EXISTS:
@@ -207,7 +224,7 @@ class ManchesterSyntaxParser(NodeVisitor):
         else:
             return OWLObjectAllValuesFrom(property_, filler)
 
-    def visit_cardinality_res(self, node, children):
+    def visit_cardinality_res(self, node, children) -> OWLObjectCardinalityRestriction:
         property_, _, type_, _, cardinality, _, filler = children
         type_ = _node_text(*type_)
         if type_ == _MAN_SYNTAX.MIN:
@@ -217,30 +234,30 @@ class ManchesterSyntaxParser(NodeVisitor):
         else:
             return OWLObjectExactCardinality(cardinality, property_, filler)
 
-    def visit_value_res(self, node, children):
+    def visit_value_res(self, node, children) -> OWLObjectHasValue:
         property_, *_, individual = children
         return OWLObjectHasValue(property_, individual)
 
-    def visit_has_self(self, node, children):
+    def visit_has_self(self, node, children) -> OWLObjectHasSelf:
         property_, *_ = children
         return OWLObjectHasSelf(property_)
 
-    def visit_object_property(self, node, children):
+    def visit_object_property(self, node, children) -> OWLObjectPropertyExpression:
         inverse, property_ = children
         return property_.get_inverse_property() if isinstance(inverse, list) else property_
 
-    def visit_class_expression(self, node, children):
+    def visit_class_expression(self, node, children) -> OWLClassExpression:
         return children[0]
 
     @_transform_children
-    def visit_individual_list(self, node, children):
+    def visit_individual_list(self, node, children) -> OWLObjectOneOf:
         return OWLObjectOneOf(children)
 
-    def visit_data_primary(self, node, children):
+    def visit_data_primary(self, node, children) -> OWLDataRange:
         match_not, expr = children
         return OWLDataComplementOf(expr[0]) if isinstance(match_not, list) else expr[0]
 
-    def visit_data_some_only_res(self, node, children):
+    def visit_data_some_only_res(self, node, children) -> OWLQuantifiedDataRestriction:
         property_, _, type_, _, filler = children
         type_ = _node_text(*type_)
         if type_ == _MAN_SYNTAX.EXISTS:
@@ -248,7 +265,7 @@ class ManchesterSyntaxParser(NodeVisitor):
         else:
             return OWLDataAllValuesFrom(property_, filler)
 
-    def visit_data_cardinality_res(self, node, children):
+    def visit_data_cardinality_res(self, node, children) -> OWLDataCardinalityRestriction:
         property_, _, type_, _, cardinality, _, filler = children
         type_ = _node_text(*type_)
         if type_ == _MAN_SYNTAX.MIN:
@@ -258,36 +275,36 @@ class ManchesterSyntaxParser(NodeVisitor):
         else:
             return OWLDataExactCardinality(cardinality, property_, filler)
 
-    def visit_data_value_res(self, node, children):
+    def visit_data_value_res(self, node, children) -> OWLDataHasValue:
         property_, *_, literal = children
         return OWLDataHasValue(property_, literal)
 
     @_transform_children
-    def visit_data_union(self, node, children):
+    def visit_data_union(self, node, children) -> OWLDataRange:
         return children if isinstance(children, OWLDataRange) else OWLDataUnionOf(children)
 
     @_transform_children
-    def visit_data_intersection(self, node, children):
+    def visit_data_intersection(self, node, children) -> OWLDataRange:
         return children if isinstance(children, OWLDataRange) else OWLDataIntersectionOf(children)
 
     @_transform_children
-    def visit_literal_list(self, node, children):
-        return OWLDataOneOf(children) if isinstance(children, list) else OWLDataOneOf(children)
+    def visit_literal_list(self, node, children) -> OWLDataOneOf:
+        return OWLDataOneOf(children)
 
-    def visit_data_parentheses(self, node, children):
+    def visit_data_parentheses(self, node, children) -> OWLDataRange:
         *_, expr, _, _ = children
         return expr
 
-    def visit_datatype_restriction(self, node, children):
+    def visit_datatype_restriction(self, node, children) -> OWLDatatypeRestriction:
         datatype, *_, facet_restrictions, _, _ = children
         if isinstance(facet_restrictions, OWLFacetRestriction):
             facet_restrictions = facet_restrictions,
-        not_valid_literals = {}
+        not_valid_literals = []
         if datatype != StringOWLDatatype:
-            not_valid_literals = {res.get_facet_value() for res in facet_restrictions
-                                  if res.get_facet_value().get_datatype() != datatype}
-        not_valid_facets = {res.get_facet() for res in facet_restrictions
-                            if res.get_facet() not in _DATATYPE_TO_FACETS[datatype]}
+            not_valid_literals = [res.get_facet_value() for res in facet_restrictions
+                                  if res.get_facet_value().get_datatype() != datatype]
+        not_valid_facets = [res.get_facet() for res in facet_restrictions
+                            if res.get_facet() not in _DATATYPE_TO_FACETS[datatype]]
 
         if not_valid_literals or not_valid_facets:
             raise ValueError(f"Literals: {not_valid_literals} and Facets: {not_valid_facets}"
@@ -295,83 +312,83 @@ class ManchesterSyntaxParser(NodeVisitor):
         return OWLDatatypeRestriction(datatype, facet_restrictions)
 
     @_transform_children
-    def visit_facet_restrictions(self, node, children):
+    def visit_facet_restrictions(self, node, children) -> List[OWLFacetRestriction]:
         return children
 
-    def visit_facet_restriction(self, node, children):
+    def visit_facet_restriction(self, node, children) -> OWLFacetRestriction:
         facet, _, literal = children
         if literal.get_datatype() not in _FACET_TO_LITERAL_DATATYPE[facet]:
             raise ValueError(f"Literal: {literal} not valid for facet: {facet}")
         return OWLFacetRestriction(facet, literal)
 
-    def visit_literal(self, node, children):
+    def visit_literal(self, node, children) -> OWLLiteral:
         return children[0]
 
-    def visit_typed_literal(self, node, children):
+    def visit_typed_literal(self, node, children) -> OWLLiteral:
         value, _, datatype = children
         return OWLLiteral(value[1:-1], datatype)
 
     def visit_string_literal_language(self, node, children):
         raise NotImplementedError(f"Language tags and plain literals not supported in owlapy yet: {_node_text(node)}")
 
-    def visit_string_literal_no_language(self, node, children):
+    def visit_string_literal_no_language(self, node, children) -> OWLLiteral:
         value = children[0]
         return OWLLiteral(value[1:-1], StringOWLDatatype)
 
-    def visit_quoted_string(self, node, children):
+    def visit_quoted_string(self, node, children) -> str:
         return _node_text(node)
 
-    def visit_float_literal(self, node, children):
+    def visit_float_literal(self, node, children) -> OWLLiteral:
         return OWLLiteral(_node_text(node)[:-1], DoubleOWLDatatype)
 
-    def visit_decimal_literal(self, node, children):
+    def visit_decimal_literal(self, node, children) -> OWLLiteral:
         # TODO: Just use float for now, decimal not supported in owlapy yet
         # owlready2 also just parses decimals to floats
         return OWLLiteral(_node_text(node), DoubleOWLDatatype)
 
-    def visit_integer_literal(self, node, children):
+    def visit_integer_literal(self, node, children) -> OWLLiteral:
         return OWLLiteral(_node_text(node), IntegerOWLDatatype)
 
-    def visit_boolean_literal(self, node, children):
+    def visit_boolean_literal(self, node, children) -> OWLLiteral:
         return OWLLiteral(_node_text(node), BooleanOWLDatatype)
 
-    def visit_datetime_literal(self, node, children):
+    def visit_datetime_literal(self, node, children) -> OWLLiteral:
         return OWLLiteral(_node_text(node), DateTimeOWLDatatype)
 
-    def visit_duration_literal(self, node, children):
+    def visit_duration_literal(self, node, children) -> OWLLiteral:
         return OWLLiteral(_node_text(node), DurationOWLDatatype)
 
-    def visit_date_literal(self, node, children):
+    def visit_date_literal(self, node, children) -> OWLLiteral:
         return OWLLiteral(_node_text(node), DateOWLDatatype)
 
-    def visit_non_negative_integer(self, node, children):
+    def visit_non_negative_integer(self, node, children) -> int:
         return int(_node_text(node))
 
-    def visit_datatype_iri(self, node, children):
+    def visit_datatype_iri(self, node, children) -> str:
         return children[0][1]
 
-    def visit_datatype(self, node, children):
+    def visit_datatype(self, node, children) -> OWLDatatype:
         return _STRING_TO_DATATYPE[_node_text(node)]
 
-    def visit_facet(self, node, children):
+    def visit_facet(self, node, children) -> OWLFacet:
         return OWLFacet.from_str(_node_text(node))
 
-    def visit_class_iri(self, node, children):
+    def visit_class_iri(self, node, children) -> OWLClass:
         return OWLClass(children[0])
 
-    def visit_individual_iri(self, node, children):
+    def visit_individual_iri(self, node, children) -> OWLNamedIndividual:
         return OWLNamedIndividual(children[0])
 
-    def visit_object_property_iri(self, node, children):
+    def visit_object_property_iri(self, node, children) -> OWLObjectProperty:
         return OWLObjectProperty(children[0])
 
-    def visit_data_property_iri(self, node, children):
+    def visit_data_property_iri(self, node, children) -> OWLDataProperty:
         return OWLDataProperty(children[0])
 
-    def visit_iri(self, node, children):
+    def visit_iri(self, node, children) -> IRI:
         return children[0]
 
-    def visit_full_iri(self, node, children):
+    def visit_full_iri(self, node, children) -> IRI:
         try:
             iri = _node_text(node)[1:-1]
             return IRI.create(iri)
@@ -382,13 +399,19 @@ class ManchesterSyntaxParser(NodeVisitor):
         # TODO: Add support for prefixes
         raise NotImplementedError(f"Parsing of prefixes is not supported yet: {_node_text(node)}")
 
-    def visit_simple_iri(self, node, children):
-        if self.ns is None:
-            raise RuntimeError("If entities are specified without a full iri, "
-                               "the namespace attribute of the parser has to be set.")
-        return IRI(self.ns, _node_text(node))
+    def visit_simple_iri(self, node, children) -> IRI:
+        simple_iri = _node_text(node)
+        if simple_iri == "Thing":
+            return OWLRDFVocabulary.OWL_THING.get_iri()
+        elif simple_iri == "Nothing":
+            return OWLRDFVocabulary.OWL_NOTHING.get_iri()
+        elif self.ns is not None:
+            return IRI(self.ns, simple_iri)
+        else:
+            raise ValueError(f"If entities are specified without a full iri ({simple_iri}), "
+                             "the namespace attribute of the parser has to be set.")
 
-    def visit_parentheses(self, node, children):
+    def visit_parentheses(self, node, children) -> OWLClassExpression:
         *_, expr, _, _ = children
         return expr
 

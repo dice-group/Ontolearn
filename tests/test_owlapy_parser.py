@@ -12,15 +12,15 @@ from owlapy.model import OWLDataHasValue, OWLObjectMinCardinality, OWLObjectSome
 
 from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, OWLDatatypeMinMaxExclusiveRestriction, \
     OWLDatatypeMaxExclusiveRestriction
-from owlapy.parser import ManchesterSyntaxParser
+from owlapy.parser import ManchesterOWLSyntaxParser
 from owlapy.vocab import OWLFacet
 
 
-class ManchesterSyntaxParserTest(unittest.TestCase):
+class ManchesterOWLSyntaxParserTest(unittest.TestCase):
 
     def setUp(self):
         self.namespace = "http://dl-learner.org/mutagenesis#"
-        self.parser = ManchesterSyntaxParser(self.namespace)
+        self.parser = ManchesterOWLSyntaxParser(self.namespace)
 
         # Classes
         self.atom = OWLClass(IRI(self.namespace, 'Atom'))

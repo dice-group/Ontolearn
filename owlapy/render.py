@@ -14,6 +14,7 @@ from owlapy.model import OWLLiteral, OWLNaryDataRange, OWLObject, OWLClass, OWLO
     OWLFacetRestriction, OWLDatatypeRestriction, OWLDatatype, OWLDataAllValuesFrom, OWLDataComplementOf, \
     OWLDataUnionOf, OWLDataIntersectionOf, OWLDataHasValue, OWLDataOneOf, OWLDataMaxCardinality, \
     OWLDataMinCardinality, OWLDataExactCardinality
+from owlapy.vocab import OWLFacet
 
 
 _DL_SYNTAX = types.SimpleNamespace(
@@ -24,10 +25,10 @@ _DL_SYNTAX = types.SimpleNamespace(
     EXISTS="∃",
     FORALL="∀",
     IN="∈",
-    MIN=">=",
+    MIN="≥",
     EQUAL="=",
     NOT_EQUAL="≠",
-    MAX="<=",
+    MAX="≤",
     INVERSE="⁻",
     AND="⊓",
     TOP="⊤",
@@ -153,7 +154,12 @@ class DLSyntaxObjectRenderer(OWLObjectRenderer):
 
     @render.register
     def _(self, r: OWLFacetRestriction) -> str:
-        return "%s %s" % (r.get_facet().symbolic_form, r.get_facet_value().get_literal())
+        symbolic_form = r.get_facet().symbolic_form
+        if r.get_facet() == OWLFacet.MIN_INCLUSIVE:
+            symbolic_form = _DL_SYNTAX.MIN
+        elif r.get_facet() == OWLFacet.MAX_INCLUSIVE:
+            symbolic_form = _DL_SYNTAX.MAX
+        return "%s %s" % (symbolic_form, r.get_facet_value().get_literal())
 
     @render.register
     def _(self, r: OWLDatatypeRestriction) -> str:

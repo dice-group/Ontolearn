@@ -53,7 +53,7 @@ class Owlapy_DLRenderer_Test(unittest.TestCase):
         mincard = OWLObjectMinCardinality(cardinality=2, property=has_child, filler=OWLThing)
         r = renderer.render(mincard)
         print(r)
-        self.assertEqual(r, ">= 2 hasChild.⊤")
+        self.assertEqual(r, "≥ 2 hasChild.⊤")
 
         d = OWLDataSomeValuesFrom(property=has_age,
                                   filler=OWLDataComplementOf(DoubleOWLDatatype))
@@ -66,7 +66,7 @@ class Owlapy_DLRenderer_Test(unittest.TestCase):
         dr = OWLDataAllValuesFrom(property=has_age, filler=OWLDataUnionOf([datatype_restriction, IntegerOWLDatatype]))
         r = renderer.render(dr)
         print(r)
-        self.assertEqual(r, "∀ hasAge.(xsd:integer[>= 40 , <= 80] ⊔ xsd:integer)")
+        self.assertEqual(r, "∀ hasAge.(xsd:integer[≥ 40 , ≤ 80] ⊔ xsd:integer)")
 
         dr = OWLDataSomeValuesFrom(property=has_age,
                                    filler=OWLDataIntersectionOf([OWLDataOneOf([OWLLiteral(32.5), OWLLiteral(4.5)]),
@@ -88,12 +88,12 @@ class Owlapy_DLRenderer_Test(unittest.TestCase):
         maxcard = OWLDataMaxCardinality(cardinality=4, property=has_age, filler=DoubleOWLDatatype)
         r = renderer.render(maxcard)
         print(r)
-        self.assertEqual(r, "<= 4 hasAge.xsd:double")
+        self.assertEqual(r, "≤ 4 hasAge.xsd:double")
 
         mincard = OWLDataMinCardinality(cardinality=7, property=has_age, filler=BooleanOWLDatatype)
         r = renderer.render(mincard)
         print(r)
-        self.assertEqual(r, ">= 7 hasAge.xsd:boolean")
+        self.assertEqual(r, "≥ 7 hasAge.xsd:boolean")
 
 
 class Owlapy_ManchesterRenderer_Test(unittest.TestCase):
