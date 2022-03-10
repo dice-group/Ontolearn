@@ -152,7 +152,7 @@ class Owlapy_ManchesterRenderer_Test(unittest.TestCase):
         dr = OWLDataAllValuesFrom(property=has_age, filler=OWLDataUnionOf([datatype_restriction, IntegerOWLDatatype]))
         r = renderer.render(dr)
         print(r)
-        self.assertEqual(r, "hasAge only (xsd:integer[≥ 40 , ≤ 80] or xsd:integer)")
+        self.assertEqual(r, "hasAge only (xsd:integer[>= 40 , <= 80] or xsd:integer)")
 
         dr = OWLDataSomeValuesFrom(property=has_age,
                                    filler=OWLDataIntersectionOf([OWLDataOneOf([OWLLiteral(32.5), OWLLiteral(4.5)]),

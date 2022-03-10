@@ -14,6 +14,7 @@ from owlapy.model import OWLLiteral, OWLNaryDataRange, OWLObject, OWLClass, OWLO
     OWLFacetRestriction, OWLDatatypeRestriction, OWLDatatype, OWLDataAllValuesFrom, OWLDataComplementOf, \
     OWLDataUnionOf, OWLDataIntersectionOf, OWLDataHasValue, OWLDataOneOf, OWLDataMaxCardinality, \
     OWLDataMinCardinality, OWLDataExactCardinality
+from owlapy.vocab import OWLFacet
 
 
 _DL_SYNTAX = types.SimpleNamespace(
@@ -153,7 +154,12 @@ class DLSyntaxObjectRenderer(OWLObjectRenderer):
 
     @render.register
     def _(self, r: OWLFacetRestriction) -> str:
-        return "%s %s" % (r.get_facet().symbolic_form, r.get_facet_value().get_literal())
+        symbolic_form = r.get_facet().symbolic_form
+        if r.get_facet() == OWLFacet.MIN_INCLUSIVE:
+            symbolic_form = _DL_SYNTAX.MIN
+        elif r.get_facet() == OWLFacet.MAX_INCLUSIVE:
+            symbolic_form = _DL_SYNTAX.MAX
+        return "%s %s" % (symbolic_form, r.get_facet_value().get_literal())
 
     @render.register
     def _(self, r: OWLDatatypeRestriction) -> str:
@@ -237,7 +243,7 @@ _MAN_SYNTAX = types.SimpleNamespace(
     OR="or",
     INVERSE="inverse",
     COMMA=",",
-    SELF="self",
+    SELF="Self",
     VALUE="value",
 )
 
@@ -306,7 +312,7 @@ class ManchesterOWLSyntaxOWLObjectRenderer(OWLObjectRenderer):
 
     @render.register
     def _(self, p: OWLObjectInverseOf) -> str:
-        return "%s(%s)" % (self.render(p.get_named_property()), _MAN_SYNTAX.INVERSE)
+        return "%s %s" % (_MAN_SYNTAX.INVERSE, self.render(p.get_named_property()))
 
     @render.register
     def _(self, r: OWLObjectMinCardinality) -> str:
@@ -325,7 +331,7 @@ class ManchesterOWLSyntaxOWLObjectRenderer(OWLObjectRenderer):
 
     @render.register
     def _(self, r: OWLObjectHasSelf) -> str:
-        return "%s %s %s" % (self.render(r.get_property()), _MAN_SYNTAX.EXISTS, _MAN_SYNTAX.SELF)
+        return "%s %s" % (self.render(r.get_property()), _MAN_SYNTAX.SELF)
 
     @render.register
     def _(self, r: OWLObjectHasValue):

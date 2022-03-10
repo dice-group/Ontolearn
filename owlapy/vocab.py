@@ -2,6 +2,7 @@ from abc import ABCMeta
 from enum import Enum, EnumMeta
 from typing import Final, Callable, TypeVar
 from operator import lt, le, gt, ge
+from re import match
 
 from owlapy import namespaces
 from owlapy.model._iri import HasIRI, IRI
@@ -75,6 +76,7 @@ class XSDVocabulary(_Vocabulary, Enum, metaclass=_meta_Enum):
 _X = TypeVar('_X')
 
 
+# TODO: Add langRange facet
 class OWLFacet(_Vocabulary, Enum, metaclass=_meta_Enum):
     def __new__(cls, remainder: str, *args):
         obj = object.__new__(cls)
@@ -94,7 +96,22 @@ class OWLFacet(_Vocabulary, Enum, metaclass=_meta_Enum):
     def operator(self):
         return self._operator
 
-    MIN_INCLUSIVE: Final = ("minInclusive", "≥", ge)  #:
+    @staticmethod
+    def from_str(name: str) -> 'OWLFacet':
+        try:
+            return next(facet for facet in OWLFacet if name == facet.symbolic_form)
+        except StopIteration:
+            raise ValueError(f"No facet with symbolic form {name} exists.")
+
+    MIN_INCLUSIVE: Final = ("minInclusive", ">=", ge)  #:
     MIN_EXCLUSIVE: Final = ("minExclusive", ">", gt)  #:
-    MAX_INCLUSIVE: Final = ("maxInclusive", "≤", le)  #:
+    MAX_INCLUSIVE: Final = ("maxInclusive", "<=", le)  #:
     MAX_EXCLUSIVE: Final = ("maxExclusive", "<", lt)  #:
+    LENGTH: Final = ("length", "length", lambda a, b: len(a) == b.parse_integer())  #:
+    MIN_LENGTH: Final = ("minLength", "minLength", lambda a, b: len(a) >= b.parse_integer())  #:
+    MAX_LENGTH: Final = ("maxLength", "maxLength", lambda a, b: len(a) <= b.parse_integer())  #:
+    PATTERN: Final = ("pattern", "pattern", lambda a, b: bool(match(b.parse_string() + "$", a.get_literal())))
+    TOTAL_DIGITS: Final = ("totalDigits", "totalDigits",
+                           lambda a, b: sum(1 for c in a.get_literal() if c.isdigit()) <= b.parse_integer())
+    FRACTION_DIGITS: Final = ("fractionDigits", "fractionDigits",
+                              lambda a, b: a.get_literal()[::-1].find('.') <= b.parse_integer())
