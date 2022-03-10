@@ -1,19 +1,18 @@
 import logging
 from functools import singledispatchmethod
-from types import MappingProxyType
-from typing import Optional, Iterable, Coroutine, Union, FrozenSet, Any
+from typing import Optional, Iterable, FrozenSet
 
 import httpx as httpx
 from httpx import AsyncClient
 
 from ontolearn import KnowledgeBase
 from ontolearn.abstracts import AbstractScorer, AbstractLearningProblem, AbstractKnowledgeBase, \
-    EncodedPosNegLPStandardKind, EncodedLearningProblem
+    EncodedPosNegLPStandardKind
 from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric
 from ontolearn.knowledge_base import EvaluatedConcept, Factory, _Default_ClassExpressionLengthMetricFactory
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
-from ontolearn.metrics import F1, Precision, Accuracy, Recall
+from ontolearn.metrics import Recall
 from ontolearn.utils import oplogging
 from owlapy.ext import OWLReasonerEx
 from owlapy.model import OWLClassExpression, OWLEntity, OWLOntology, OWLClass, OWLNamedIndividual, \

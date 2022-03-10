@@ -10,7 +10,7 @@ from ontolearn.utils import setup_logging
 from owlapy.model import OWLNamedIndividual, OWLClass, IRI
 from owlapy.render import DLSyntaxObjectRenderer
 
-setup_logging("logging_test.conf")
+setup_logging("ontolearn/logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 PATH_MUTAGENESIS = 'KGs/Mutagenesis/mutagenesis.owl'
