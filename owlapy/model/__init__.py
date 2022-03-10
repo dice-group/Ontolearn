@@ -8,6 +8,7 @@ many help texts copied from OWL API
 
 from abc import ABCMeta, abstractmethod
 from functools import total_ordering
+from itertools import combinations
 from typing import Generic, Iterable, Sequence, Set, TypeVar, Union, Final, Optional, Protocol, ClassVar, List
 from pandas import Timedelta
 from datetime import datetime, date
@@ -2011,6 +2012,102 @@ class OWLClassAxiom(OWLLogicalAxiom, metaclass=ABCMeta):
         super().__init__(annotations=annotations)
 
 
+class OWLDeclarationAxiom(OWLAxiom):
+    '''Represents a Declaration axiom in the OWL 2 Specification. A declaration axiom declares an entity in an ontology.
+       It doesn't affect the logical meaning of the ontology.'''
+    __slots__ = '_entity'
+
+    _entity: OWLEntity
+
+    def __init__(self, entity: OWLEntity, annotations: Optional[Iterable['OWLAnnotation']] = None):
+        self._entity = entity
+        super().__init__(annotations=annotations)
+
+    def get_entity(self) -> OWLEntity:
+        return self._entity
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._entity == other._entity and self._annotations == other._annotations
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._entity, self._annotations))
+
+    def __repr__(self):
+        return f'OWLDeclarationAxiom(entity={self._entity},annotations={self._annotations})'
+
+
+class OWLDatatypeDefinitionAxiom(OWLLogicalAxiom):
+    '''Represents a DatatypeDefinition axiom in the OWL 2 Specification.'''
+    __slots__ = '_datatype', '_datarange'
+
+    _datatype: OWLDatatype
+    _datarange: OWLDataRange
+
+    def __init__(self, datatype: OWLDatatype, datarange: OWLDataRange,
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        self._datatype = datatype
+        self._datarange = datarange
+        super().__init__(annotations=annotations)
+
+    def get_datatype(self) -> OWLDatatype:
+        return self._datatype
+
+    def get_datarange(self) -> OWLDataRange:
+        return self._datarange
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._datatype == other._datatype and self._datarange == other._datarange \
+                   and self._annotations == other._annotations
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._datatype, self._datarange, self._annotations))
+
+    def __repr__(self):
+        return f'OWLDatatypeDefinitionAxiom(datatype={self._datatype},datarange={self._datarange},' \
+               f'annotations={self._annotations})'
+
+
+class OWLHasKeyAxiom(OWLLogicalAxiom, HasOperands[OWLPropertyExpression]):
+    '''Represents a HasKey axiom in the OWL 2 Specification.'''
+    __slots__ = '_class_expression', '_property_expressions'
+
+    _class_expression: OWLClassExpression
+    _property_expressions: List[OWLPropertyExpression]
+
+    def __init__(self, class_expression: OWLClassExpression, property_expressions: List[OWLPropertyExpression],
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        self._class_expression = class_expression
+        self._property_expressions = property_expressions
+        super().__init__(annotations=annotations)
+
+    def get_class_expression(self) -> OWLClassExpression:
+        return self._class_expression
+
+    def get_property_expressions(self) -> List[OWLPropertyExpression]:
+        return self._property_expressions
+
+    def operands(self) -> Iterable[OWLPropertyExpression]:
+        yield from self._property_expressions
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._class_expression == other._class_expression \
+                   and self._property_expressions == other._property_expressions \
+                   and self._annotations == other._annotations
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._class_expression, self._property_expressions, self._annotations))
+
+    def __repr__(self):
+        return f'OWLHasKeyAxiom(class_expression={self._class_expression},' \
+               f'property_expressions={self._property_expressions},annotations={self._annotations})'
+
+
 class OWLNaryAxiom(Generic[_C], OWLAxiom, metaclass=ABCMeta):
     """Represents an axiom that contains two or more operands that could also be represented with multiple pairwise
     axioms.
@@ -2019,13 +2116,16 @@ class OWLNaryAxiom(Generic[_C], OWLAxiom, metaclass=ABCMeta):
         _C: class of contained objects
     """
     __slots__ = ()
-    pass
+
+    @abstractmethod
+    def as_pairwise_axioms(self) -> Iterable['OWLNaryAxiom[_C]']:
+        pass
 
 
 # noinspection PyUnresolvedReferences
 # noinspection PyDunderSlots
 class OWLNaryClassAxiom(OWLClassAxiom, OWLNaryAxiom[OWLClassExpression], metaclass=ABCMeta):
-    __slots__ = ()
+    __slots__ = '_class_expressions'
 
     _class_expressions: List[OWLClassExpression]
 
@@ -2043,13 +2143,19 @@ class OWLNaryClassAxiom(OWLClassAxiom, OWLNaryAxiom[OWLClassExpression], metacla
         """
         yield from self._class_expressions
 
+    def as_pairwise_axioms(self) -> Iterable['OWLNaryClassAxiom']:
+        if len(self._class_expressions) < 3:
+            yield self
+        else:
+            yield from map(type(self), combinations(self._class_expressions, 2))
+
     def __eq__(self, other):
         if type(other) is type(self):
             return self._class_expressions == other._class_expressions and self._annotations == other._annotations
         return NotImplemented
 
     def __hash__(self):
-        return hash(self._class_expressions, self._annotations)
+        return hash((self._class_expressions, self._annotations))
 
     def __repr__(self):
         return f'{type(self).__name__}({self._class_expressions},{self._annotations})'
@@ -2057,7 +2163,7 @@ class OWLNaryClassAxiom(OWLClassAxiom, OWLNaryAxiom[OWLClassExpression], metacla
 
 class OWLEquivalentClassesAxiom(OWLNaryClassAxiom):
     """Represents an EquivalentClasses axiom in the OWL 2 Specification."""
-    __slots__ = '_class_expressions'
+    __slots__ = ()
 
     def __init__(self, cls_a: OWLClassExpression, cls_b: OWLClassExpression,
                  annotations: Optional[Iterable['OWLAnnotation']] = None):
@@ -2069,6 +2175,156 @@ class OWLEquivalentClassesAxiom(OWLNaryClassAxiom):
             annotations: annotations
         """
         super().__init__([cls_a, cls_b], annotations=annotations)
+
+
+class OWLDisjointClassesAxiom(OWLNaryClassAxiom):
+    """Represents a DisjointClasses axiom in the OWL 2 Specification."""
+    __slots__ = ()
+
+    def __init__(self, class_expressions: List[OWLClassExpression],
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        super().__init__(class_expressions=class_expressions, annotations=annotations)
+
+
+class OWLNaryIndividualAxiom(OWLIndividualAxiom, OWLNaryAxiom[OWLIndividual], metaclass=ABCMeta):
+    __slots__ = '_individuals'
+
+    _individuals: List[OWLIndividual]
+
+    @abstractmethod
+    def __init__(self, individuals: List[OWLIndividual],
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        self._individuals = [*individuals]
+        super().__init__(annotations=annotations)
+
+    def individuals(self) -> Iterable[OWLIndividual]:
+        yield from self._individuals
+
+    def as_pairwise_axioms(self) -> Iterable['OWLNaryIndividualAxiom']:
+        if len(self._individuals) < 3:
+            yield self
+        else:
+            yield from map(type(self), combinations(self._individuals, 2))
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._individuals == other._individuals and self._annotations == other._annotations
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._individuals, self._annotations))
+
+    def __repr__(self):
+        return f'{type(self).__name__}({self._individuals},{self._annotations})'
+
+
+class OWLDifferentIndividualsAxiom(OWLNaryIndividualAxiom):
+    """Represents a DifferentIndividuals axiom in the OWL 2 Specification."""
+    __slots__ = ()
+
+    def __init__(self, individuals: List[OWLIndividual],
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        super().__init__(individuals=individuals, annotations=annotations)
+
+
+class OWLSameIndividualAxiom(OWLNaryIndividualAxiom):
+    """Represents a SameIndividual axiom in the OWL 2 Specification."""
+    __slots__ = ()
+
+    def __init__(self, individuals: List[OWLIndividual],
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        super().__init__(individuals=individuals, annotations=annotations)
+
+
+class OWLNaryPropertyAxiom(Generic[_P], OWLPropertyAxiom, OWLNaryAxiom[_P], metaclass=ABCMeta):
+    __slots__ = '_properties'
+
+    _properties: List[_P]
+
+    @abstractmethod
+    def __init__(self, properties: List[_P], annotations: Optional[Iterable['OWLAnnotation']] = None):
+        self._properties = [*properties]
+        super().__init__(annotations=annotations)
+
+    def properties(self) -> Iterable[_P]:
+        yield from self._properties
+
+    def as_pairwise_axioms(self) -> Iterable['OWLNaryPropertyAxiom']:
+        if len(self._properties) < 3:
+            yield self
+        else:
+            yield from map(type(self), combinations(self._properties, 2))
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._properties == other._properties and self._annotations == other._annotations
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._properties, self._annotations))
+
+    def __repr__(self):
+        return f'{type(self).__name__}({self._properties},{self._annotations})'
+
+
+class OWLEquivalentObjectPropertiesAxiom(OWLNaryPropertyAxiom[OWLObjectPropertyExpression], OWLObjectPropertyAxiom):
+    """Represents EquivalentObjectProperties axioms in the OWL 2 Specification."""
+    __slots__ = ()
+
+    def __init__(self, properties: List[OWLObjectPropertyExpression],
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        super().__init__(properties=properties, annotations=annotations)
+
+
+class OWLDisjointObjectPropertiesAxiom(OWLNaryPropertyAxiom[OWLObjectPropertyExpression], OWLObjectPropertyAxiom):
+    """Represents DisjointObjectProperties axioms in the OWL 2 Specification."""
+    __slots__ = ()
+
+    def __init__(self, properties: List[OWLObjectPropertyExpression],
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        super().__init__(properties=properties, annotations=annotations)
+
+
+class OWLInverseObjectPropertiesAxiom(OWLNaryPropertyAxiom[OWLObjectPropertyExpression], OWLObjectPropertyAxiom):
+    """Represents InverseObjectProperties axioms in the OWL 2 Specification."""
+    __slots__ = '_first', '_second'
+
+    _first: OWLObjectPropertyExpression
+    _second: OWLObjectPropertyExpression
+
+    def __init__(self, first: OWLObjectPropertyExpression, second: OWLObjectPropertyExpression,
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        self._first = first
+        self._second = second
+        super().__init__(properties=[first, second], annotations=annotations)
+
+    def get_first_property(self) -> OWLObjectPropertyExpression:
+        return self._first
+
+    def get_second_property(self) -> OWLObjectPropertyExpression:
+        return self._second
+
+    def __repr__(self):
+        return f'OWLInverseObjectPropertiesAxiom(first={self._first},second={self._second},' \
+               f'annotations={self._annotations})'
+
+
+class OWLEquivalentDataPropertiesAxiom(OWLNaryPropertyAxiom[OWLDataPropertyExpression], OWLDataPropertyAxiom):
+    """Represents EquivalentDataProperties axioms in the OWL 2 Specification."""
+    __slots__ = ()
+
+    def __init__(self, properties: List[OWLDataPropertyExpression],
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        super().__init__(properties=properties, annotations=annotations)
+
+
+class OWLDisjointDataPropertiesAxiom(OWLNaryPropertyAxiom[OWLDataPropertyExpression], OWLDataPropertyAxiom):
+    """Represents DisjointDataProperties axioms in the OWL 2 Specification."""
+    __slots__ = ()
+
+    def __init__(self, properties: List[OWLDataPropertyExpression],
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        super().__init__(properties=properties, annotations=annotations)
 
 
 class OWLSubClassOfAxiom(OWLClassAxiom):
@@ -2108,6 +2364,45 @@ class OWLSubClassOfAxiom(OWLClassAxiom):
 
     def __repr__(self):
         return f'OWLSubClassOfAxiom(sub_class={self._sub_class},super_class={self._super_class},' \
+               f'annotations={self._annotations})'
+
+
+class OWLDisjointUnionAxiom(OWLClassAxiom):
+    '''Represents a DisjointUnion axiom in the OWL 2 Specification.'''
+    __slots__ = '_cls', '_class_expressions'
+
+    _cls: OWLClass
+    _class_expressions: List[OWLClassExpression]
+
+    def __init__(self, cls_: OWLClass, class_expressions: List[OWLClassExpression],
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        self._cls = cls_
+        self._class_expressions = class_expressions
+        super().__init__(annotations=annotations)
+
+    def get_owl_class(self) -> OWLClass:
+        return self._cls
+
+    def get_class_expressions(self) -> Iterable[OWLClassExpression]:
+        yield from self._class_expressions
+
+    def get_owl_equivalent_classes_axiom(self) -> OWLEquivalentClassesAxiom:
+        return OWLEquivalentClassesAxiom(self._cls, OWLObjectUnionOf(self._class_expressions))
+
+    def get_owl_disjoint_classes_axiom(self) -> OWLDisjointClassesAxiom:
+        return OWLDisjointClassesAxiom(self._class_expressions)
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._cls == other._cls and self._class_expressions == other._class_expressions \
+                   and self._annotations == other._annotations
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._cls, self._class_expressions, self._annotations))
+
+    def __repr__(self):
+        return f'OWLDisjointUnionAxiom(class={self._cls},class_expressions={self._class_expressions},' \
                f'annotations={self._annotations})'
 
 
@@ -2280,14 +2575,165 @@ class OWLAnnotationAssertionAxiom(OWLAnnotationAxiom):
         return f'OWLAnnotationAssertionAxiom({self._subject}, {self._annotation})'
 
 
+class OWLSubAnnotationPropertyOfAxiom(OWLAnnotationAxiom):
+    '''Represents an SubAnnotationPropertyOf axiom in the OWL 2 specification'''
+    __slots__ = '_sub_property', '_super_property'
+
+    _sub_property: OWLAnnotationProperty
+    _super_property: OWLAnnotationProperty
+
+    def __init__(self, sub_property: OWLAnnotationProperty, super_property: OWLAnnotationProperty,
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        self._sub_property = sub_property
+        self._super_property = super_property
+        super().__init__(annotations=annotations)
+
+    def get_sub_property(self) -> OWLAnnotationProperty:
+        return self._sub_property
+
+    def get_super_property(self) -> OWLAnnotationProperty:
+        return self._super_property
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._sub_property == other._sub_property and self._super_property == other._super_property \
+                   and self._annotations == other._annotations
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._sub_property, self._super_property, self._annotations))
+
+    def __repr__(self):
+        return f'OWLSubAnnotationPropertyOfAxiom(sub_property={self._sub_property},' \
+               f'super_property={self._super_property},annotations={self._annotations})'
+
+
+class OWLAnnotationPropertyDomainAxiom(OWLAnnotationAxiom):
+    '''Represents an AnnotationPropertyDomain axiom in the OWL 2 specification'''
+    __slots__ = '_property', '_domain'
+
+    _property: OWLAnnotationProperty
+    _domain: IRI
+
+    def __init__(self, property_: OWLAnnotationProperty, domain: IRI,
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        self._property = property_
+        self._domain = domain
+        super().__init__(annotations=annotations)
+
+    def get_property(self) -> OWLAnnotationProperty:
+        return self._property
+
+    def get_domain(self) -> IRI:
+        return self._domain
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._property == other._property and self._domain == other._domain \
+                   and self._annotations == other._annotations
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._property, self._domain, self._annotations))
+
+    def __repr__(self):
+        return f'OWLAnnotationPropertyDomainAxiom({repr(self._property)},{repr(self._domain)},' \
+               f'{repr(self._annotations)})'
+
+
+class OWLAnnotationPropertyRangeAxiom(OWLAnnotationAxiom):
+    '''Represents an AnnotationPropertyRange axiom in the OWL 2 specification'''
+    __slots__ = '_property', '_range'
+
+    _property: OWLAnnotationProperty
+    _range: IRI
+
+    def __init__(self, property_: OWLAnnotationProperty, range_: IRI,
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        self._property = property_
+        self._range = range_
+        super().__init__(annotations=annotations)
+
+    def get_property(self) -> OWLAnnotationProperty:
+        return self._property
+
+    def get_range(self) -> IRI:
+        return self._range
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._property == other._property and self._range == other._range \
+                   and self._annotations == other._annotations
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._property, self._range, self._annotations))
+
+    def __repr__(self):
+        return f'OWLAnnotationPropertyRangeAxiom({repr(self._property)},{repr(self._range)},' \
+               f'{repr(self._annotations)})'
+
+
+class OWLSubPropertyAxiom(Generic[_P], OWLPropertyAxiom):
+    __slots__ = '_sub_property', '_super_property'
+
+    _sub_property: _P
+    _super_property: _P
+
+    @abstractmethod
+    def __init__(self, sub_property: _P, super_property: _P,
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        self._sub_property = sub_property
+        self._super_property = super_property
+        super().__init__(annotations=annotations)
+
+    def get_sub_property(self) -> _P:
+        return self._sub_property
+
+    def get_super_property(self) -> _P:
+        return self._super_property
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self._sub_property == other._sub_property and self._super_property == other._super_property \
+                   and self._annotations == other._annotations
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self._sub_property, self._super_property, self._annotations))
+
+    def __repr__(self):
+        return f'{type(self).__name__}(sub_property={self._sub_property},super_property={self._super_property},' \
+               f'annotations={self._annotations})'
+
+
+class OWLSubObjectPropertyOfAxiom(OWLSubPropertyAxiom[OWLObjectPropertyExpression], OWLObjectPropertyAxiom):
+    '''Represents a SubObjectPropertyOf axiom in the OWL 2 specification'''
+    __slots__ = ()
+
+    def __init__(self, sub_property: OWLObjectPropertyExpression, super_property: OWLObjectPropertyExpression,
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        super().__init__(sub_property=sub_property, super_property=super_property, annotations=annotations)
+
+
+class OWLSubDataPropertyOfAxiom(OWLSubPropertyAxiom[OWLDataPropertyExpression], OWLDataPropertyAxiom):
+    '''Represents a SubDataPropertyOf axiom in the OWL 2 specification'''
+    __slots__ = ()
+
+    def __init__(self, sub_property: OWLDataPropertyExpression, super_property: OWLDataPropertyExpression,
+                 annotations: Optional[Iterable['OWLAnnotation']] = None):
+        super().__init__(sub_property=sub_property, super_property=super_property, annotations=annotations)
+
+
 class OWLPropertyAssertionAxiom(Generic[_P, _C], OWLIndividualAxiom, metaclass=ABCMeta):
-    '''Represents a PropertyAssertion in the OWL 2 specification'''
+    '''Represents a PropertyAssertion axiom in the OWL 2 specification'''
     __slots__ = '_subject', '_property', '_object'
 
     _subject: OWLIndividual
     _property: _P
     _object: _C
 
+    @abstractmethod
     def __init__(self, subject: OWLIndividual, property_: _P, object_: _C,
                  annotations: Optional[Iterable['OWLAnnotation']] = None):
         """Get a PropertyAssertion axiom for the specified subject, property, object
@@ -2328,7 +2774,7 @@ class OWLPropertyAssertionAxiom(Generic[_P, _C], OWLIndividualAxiom, metaclass=A
 
 
 class OWLObjectPropertyAssertionAxiom(OWLPropertyAssertionAxiom[OWLObjectPropertyExpression, OWLIndividual]):
-    '''Represents an ObjectPropertyAssertion in the OWL 2 specification'''
+    '''Represents an ObjectPropertyAssertion axiom in the OWL 2 specification'''
     __slots__ = ()
 
     def __init__(self, subject: OWLIndividual, property_: OWLObjectPropertyExpression, object_: OWLIndividual,
@@ -2337,7 +2783,7 @@ class OWLObjectPropertyAssertionAxiom(OWLPropertyAssertionAxiom[OWLObjectPropert
 
 
 class OWLNegativeObjectPropertyAssertionAxiom(OWLPropertyAssertionAxiom[OWLObjectPropertyExpression, OWLIndividual]):
-    '''Represents a NegativeObjectPropertyAssertion in the OWL 2 specification'''
+    '''Represents a NegativeObjectPropertyAssertion axiom in the OWL 2 specification'''
     __slots__ = ()
 
     def __init__(self, subject: OWLIndividual, property_: OWLObjectPropertyExpression, object_: OWLIndividual,
@@ -2346,7 +2792,7 @@ class OWLNegativeObjectPropertyAssertionAxiom(OWLPropertyAssertionAxiom[OWLObjec
 
 
 class OWLDataPropertyAssertionAxiom(OWLPropertyAssertionAxiom[OWLDataPropertyExpression, OWLLiteral]):
-    '''Represents an DataPropertyAssertion in the OWL 2 specification'''
+    '''Represents an DataPropertyAssertion axiom in the OWL 2 specification'''
     __slots__ = ()
 
     def __init__(self, subject: OWLIndividual, property_: OWLDataPropertyExpression, object_: OWLLiteral,
@@ -2355,7 +2801,7 @@ class OWLDataPropertyAssertionAxiom(OWLPropertyAssertionAxiom[OWLDataPropertyExp
 
 
 class OWLNegativeDataPropertyAssertionAxiom(OWLPropertyAssertionAxiom[OWLDataPropertyExpression, OWLLiteral]):
-    '''Represents an NegativeDataPropertyAssertion in the OWL 2 specification'''
+    '''Represents an NegativeDataPropertyAssertion axiom in the OWL 2 specification'''
     __slots__ = ()
 
     def __init__(self, subject: OWLIndividual, property_: OWLDataPropertyExpression, object_: OWLLiteral,
@@ -2380,6 +2826,7 @@ class OWLObjectPropertyCharacteristicAxiom(OWLUnaryPropertyAxiom[OWLObjectProper
                                            OWLObjectPropertyAxiom, metaclass=ABCMeta):
     __slots__ = ()
 
+    @abstractmethod
     def __init__(self, property_: OWLObjectPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
         super().__init__(property_=property_, annotations=annotations)
 
@@ -2399,41 +2846,63 @@ class OWLFunctionalObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
     '''Represents FunctionalObjectProperty axioms in the OWL 2 specification.'''
     __slots__ = ()
 
+    def __init__(self, property_: OWLObjectPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
+        super().__init__(property_=property_, annotations=annotations)
+
 
 class OWLAsymmetricObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
     '''Represents AsymmetricObjectProperty axioms in the OWL 2 specification.'''
     __slots__ = ()
+
+    def __init__(self, property_: OWLObjectPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
+        super().__init__(property_=property_, annotations=annotations)
 
 
 class OWLInverseFunctionalObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
     '''Represents InverseFunctionalObjectProperty axioms in the OWL 2 specification.'''
     __slots__ = ()
 
+    def __init__(self, property_: OWLObjectPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
+        super().__init__(property_=property_, annotations=annotations)
+
 
 class OWLIrreflexiveObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
     '''Represents IrreflexiveObjectProperty axioms in the OWL 2 specification.'''
     __slots__ = ()
+
+    def __init__(self, property_: OWLObjectPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
+        super().__init__(property_=property_, annotations=annotations)
 
 
 class OWLReflexiveObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
     '''Represents ReflexiveObjectProperty axioms in the OWL 2 specification.'''
     __slots__ = ()
 
+    def __init__(self, property_: OWLObjectPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
+        super().__init__(property_=property_, annotations=annotations)
+
 
 class OWLSymmetricObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
     '''Represents SymmetricObjectProperty axioms in the OWL 2 specification.'''
     __slots__ = ()
+
+    def __init__(self, property_: OWLObjectPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
+        super().__init__(property_=property_, annotations=annotations)
 
 
 class OWLTransitiveObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
     '''Represents TransitiveObjectProperty axioms in the OWL 2 specification.'''
     __slots__ = ()
 
+    def __init__(self, property_: OWLObjectPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
+        super().__init__(property_=property_, annotations=annotations)
+
 
 class OWLDataPropertyCharacteristicAxiom(OWLUnaryPropertyAxiom[OWLDataPropertyExpression],
                                          OWLDataPropertyAxiom, metaclass=ABCMeta):
     __slots__ = ()
 
+    @abstractmethod
     def __init__(self, property_: OWLDataPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
         super().__init__(property_=property_, annotations=annotations)
 
@@ -2453,6 +2922,9 @@ class OWLFunctionalDataPropertyAxiom(OWLDataPropertyCharacteristicAxiom):
     '''Represents FunctionalDataProperty axioms in the OWL 2 specification.'''
     __slots__ = ()
 
+    def __init__(self, property_: OWLDataPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
+        super().__init__(property_=property_, annotations=annotations)
+
 
 class OWLPropertyDomainAxiom(Generic[_P], OWLUnaryPropertyAxiom[_P], metaclass=ABCMeta):
     """Represents ObjectPropertyDomain axioms in the OWL 2 specification."""
@@ -2460,6 +2932,7 @@ class OWLPropertyDomainAxiom(Generic[_P], OWLUnaryPropertyAxiom[_P], metaclass=A
 
     _domain: OWLClassExpression
 
+    @abstractmethod
     def __init__(self, property_: _P, domain: OWLClassExpression,
                  annotations: Optional[Iterable[OWLAnnotation]] = None):
         self._domain = domain
@@ -2487,6 +2960,7 @@ class OWLPropertyRangeAxiom(Generic[_P, _R], OWLUnaryPropertyAxiom[_P], metaclas
 
     _range: _R
 
+    @abstractmethod
     def __init__(self, property_: _P, range_: _R, annotations: Optional[Iterable[OWLAnnotation]] = None):
         self._range = range_
         super().__init__(property_=property_, annotations=annotations)
