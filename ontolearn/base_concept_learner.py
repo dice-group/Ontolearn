@@ -251,7 +251,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         if rdf_format != 'rdfxml':
             raise NotImplementedError
 
-        from ontolearn import KnowledgeBase
+        from ontolearn.knowledge_base import KnowledgeBase
         assert isinstance(self.kb, KnowledgeBase)
 
         best = list(self.best_hypotheses(n))

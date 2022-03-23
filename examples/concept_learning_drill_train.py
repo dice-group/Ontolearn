@@ -6,7 +6,7 @@ Drill with training.
 Author: Caglar Demir
 """
 from argparse import ArgumentParser
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.learning_problem_generator import LearningProblemGenerator
 from ontolearn.concept_learner import Drill

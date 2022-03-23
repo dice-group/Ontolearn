@@ -2,7 +2,7 @@
 ```python
 from owlapy.namespaces import Namespaces
 from owlapy.model import OWLNamedIndividual, IRI
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 
 NS = Namespaces('ex', 'http://example.com/father#')

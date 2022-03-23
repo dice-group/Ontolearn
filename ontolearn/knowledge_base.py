@@ -72,7 +72,11 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
     path: str
     use_individuals_cache: bool
-
+    # TODO:CD: __init__ is overcrowded. This bit can/should be simplied to few lines
+    # TODO:CD: Namings are not self-explonatory: User does not need to know
+    #  1. factory programming pattern
+    #  2. Manager Classes etc
+    # (1) and (2) inadvertedly increases cognitive load
     @overload
     def __init__(self, *,
                  path: str,
