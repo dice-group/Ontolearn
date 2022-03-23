@@ -319,16 +319,5 @@ class ExpressRefinementTest(unittest.TestCase):
             pass
 
 
-@mark.xfail
-class CustomRefinementTest(unittest.TestCase):
-
-    def test_custom_refinement_operator(self):
-        r = DLSyntaxObjectRenderer()
-        rho = CustomRefinementOperator(kb)
-        for _ in enumerate(rho.refine(kb.thing)):
-            print(r.render(_[1]))
-            pass
-
-
 if __name__ == '__main__':
     unittest.main()
