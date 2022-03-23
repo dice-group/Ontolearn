@@ -23,7 +23,7 @@ tox  # full test with tox
 ### Installation via pip
 
 ```shell
-pip install ontolearn  # see https://pypi.org/project/ontolearn/
+pip install ontolearn  # currently it is only a place holder https://pypi.org/project/ontolearn/
 ```
 ## Usage
 See the [manual](https://ontolearn-docs-dice-group.netlify.app/),

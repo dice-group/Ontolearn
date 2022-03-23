@@ -357,7 +357,7 @@ class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
 
         if self.operator is None:
             from ontolearn.refinement_operators import ModifiedCELOERefinement
-            from ontolearn import KnowledgeBase
+            from ontolearn.knowledge_base import KnowledgeBase
             assert isinstance(self.kb, KnowledgeBase)
             self.operator = ModifiedCELOERefinement(self.kb, max_child_length=self.max_child_length)
 

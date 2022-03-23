@@ -16,7 +16,8 @@ Factory = Callable
 
 logger = logging.getLogger(__name__)
 
-
+# TODO: To many non pythonic functions
+# TODO: Almost no documentation
 def _Default_OntologyManagerFactory(world_store=None) -> OWLOntologyManager:
     from owlapy.owlready2 import OWLOntologyManager_Owlready2
 

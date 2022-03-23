@@ -6,7 +6,7 @@ import unittest
 
 import json
 
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.core.owl.utils import ConceptOperandSorter
 from ontolearn.utils import setup_logging
 from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction

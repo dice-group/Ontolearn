@@ -3,7 +3,7 @@ import json
 
 from pytest import mark
 
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import OCEL
 from ontolearn.utils import setup_logging
 
