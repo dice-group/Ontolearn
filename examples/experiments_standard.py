@@ -21,7 +21,7 @@ import os
 import time
 from argparse import ArgumentParser
 
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import Drill
 from ontolearn.experiments import Experiments
 from ontolearn.metrics import F1

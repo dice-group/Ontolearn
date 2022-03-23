@@ -60,7 +60,7 @@ learning algorithm. Creation is done like follows:
 
 <!--pytest-codeblocks:cont-->
 ```python
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 
 kb = KnowledgeBase(ontology=onto, reasoner=fast_instance_checker)
 ```

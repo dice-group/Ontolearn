@@ -2,7 +2,7 @@ import json
 import os
 import random
 
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE
 from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric  # noqa: F401
 from ontolearn.heuristics import CELOEHeuristic

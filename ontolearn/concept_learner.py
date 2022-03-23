@@ -14,7 +14,7 @@ from torch.functional import F
 from torch.nn.init import xavier_normal_
 from deap import gp, tools, base, creator
 
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.abstracts import AbstractDrill, AbstractFitness, AbstractScorer, AbstractNode, BaseRefinement, \
     AbstractHeuristic, EncodedPosNegLPStandardKind
 from ontolearn.base_concept_learner import BaseConceptLearner, RefinementBasedConceptLearner

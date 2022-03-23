@@ -9,5 +9,11 @@ Author:
 """
 __version__ = '0.6.0.dev'
 
-from .knowledge_base import KnowledgeBase
-__all__ = 'KnowledgeBase',
+# TODO: Importing decision required rethinking
+# from .knowledge_base import KnowledgeBase
+# from .abstracts import BaseRefinement, AbstractDrill
+# from .base_concept_learner import BaseConceptLearner
+# from .metrics import *
+# from .search import *
+
+__all__ = ['knowledge_base', 'abstracts', 'base_concept_learner', 'metrics', 'search']

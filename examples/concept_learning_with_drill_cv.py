@@ -5,7 +5,7 @@ Drill -- Deep Reinforcement Learning for Refinement Operators in ALC
 Drill with k-fold cross validation.
 Author: Caglar Demir
 """
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.experiments import Experiments
 from ontolearn.learning_problem_generator import LearningProblemGenerator
 from ontolearn.rl import DrillAverage, DrillSample

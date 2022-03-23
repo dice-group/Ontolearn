@@ -6,7 +6,7 @@ import unittest
 
 import json
 
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.core.owl.utils import ConceptOperandSorter
 from ontolearn.utils import setup_logging
 from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction
@@ -314,17 +314,6 @@ class ExpressRefinementTest(unittest.TestCase):
     def test_express_refinement_operator(self):
         r = DLSyntaxObjectRenderer()
         rho = ExpressRefinement(kb)
-        for _ in enumerate(rho.refine(kb.thing)):
-            print(r.render(_[1]))
-            pass
-
-
-@mark.xfail
-class CustomRefinementTest(unittest.TestCase):
-
-    def test_custom_refinement_operator(self):
-        r = DLSyntaxObjectRenderer()
-        rho = CustomRefinementOperator(kb)
         for _ in enumerate(rho.refine(kb.thing)):
             print(r.render(_[1]))
             pass

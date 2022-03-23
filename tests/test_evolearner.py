@@ -4,7 +4,7 @@ import unittest
 from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.model import OWLNamedIndividual, IRI
 
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import EvoLearner
 from ontolearn.utils import setup_logging
 

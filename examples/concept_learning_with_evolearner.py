@@ -1,7 +1,7 @@
 import json
 import os
 
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import EvoLearner
 from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.model import OWLClass, OWLNamedIndividual, IRI
