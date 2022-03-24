@@ -1,24 +1,23 @@
 import logging
-import types
 from datetime import date, datetime
 from enum import Enum, auto
 from itertools import chain
 from types import MappingProxyType
-from typing import Iterable, Set, Final, cast
+from typing import Iterable, Set, Final
 
 import owlready2
 from owlready2 import declare_datatype
 from pandas import Timedelta
 
+from owlapy.owlready2 import axioms
 from owlapy import namespaces
 from owlapy.ext import OWLReasonerEx
 from owlapy.model import OWLObjectPropertyRangeAxiom, OWLOntologyManager, OWLDataProperty, OWLObjectProperty, \
     OWLNamedIndividual, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, OWLOntology, \
-    OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype, \
+    OWLOntologyChange, AddImport, OWLThing, DoubleOWLDatatype, OWLObjectPropertyDomainAxiom, OWLLiteral, \
     OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, DateOWLDatatype, DateTimeOWLDatatype, OWLClass, \
-    DurationOWLDatatype, StringOWLDatatype, IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLLiteral, \
-    OWLObjectPropertyDomainAxiom, OWLSubClassOfAxiom, OWLClassAssertionAxiom, OWLObjectPropertyAssertionAxiom
-from owlapy.owlready2.utils import FromOwlready2, ToOwlready2
+    DurationOWLDatatype, StringOWLDatatype, IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom
+from owlapy.owlready2.utils import FromOwlready2
 
 logger = logging.getLogger(__name__)
 
@@ -82,147 +81,11 @@ class OWLOntologyManager_Owlready2(OWLOntologyManager):
             # TODO XXX
             raise NotImplementedError
 
-    # TODO: Refactor this method, use dispatch? Also lots of duplicated code.
-    # TODO: Compare behavior to owlapi and adjust if necessary.
     def add_axiom(self, ontology: OWLOntology, axiom: OWLAxiom):
-        conv = ToOwlready2(self._world)
-        ont_x: owlready2.namespace.Ontology = conv.map_object(ontology)
+        axioms._add_axiom(axiom, ontology, self._world)
 
-        if isinstance(axiom, OWLClassAssertionAxiom):
-            individual = axiom.get_individual()
-            cls_ = axiom.get_class_expression()
-            with ont_x:
-                assert isinstance(cls_, OWLClass), f'Owlready2 only supports named classes ({cls_})'
-                cls_x: owlready2.entity.ThingClass = self._world[cls_.to_string_id()]
-                if cls_x is None:
-                    raise ValueError(f"Class {cls_} does not exist in ontology {ontology.get_ontology_id()}.")
-                ind_x: owlready2.individual.Thing = self._world[individual.to_string_id()]
-                if ind_x is None:
-                    _ = cls_x(individual.get_iri().get_remainder())
-                else:
-                    ind_x.is_a.append(cls_x)
-        elif isinstance(axiom, OWLObjectPropertyAssertionAxiom):
-            subject = axiom.get_subject()
-            property_ = axiom.get_property()
-            object_ = axiom.get_object()
-            thing_x: owlready2.entity.ThingClass = conv.map_concept(OWLThing)
-            with ont_x:
-                subject_x = self._world[subject.to_string_id()] or thing_x(subject.get_iri().get_remainder())
-                object_x = self._world[object_.to_string_id()] or thing_x(object_.get_iri().get_remainder())
-                property_x = self._world[property_.to_string_id()]
-                if property_x is None:
-                    raise ValueError(f"Property {property_} does not exist in ontology {ontology.get_ontology_id()}.")
-                property_x[subject_x].append(object_x)
-        elif isinstance(axiom, OWLEquivalentClassesAxiom):
-            cls_a, cls_b = axiom.class_expressions()
-            thing_x: owlready2.entity.ThingClass = conv.map_concept(OWLThing)
-            with ont_x:
-                assert isinstance(cls_a, OWLClass), f'{cls_a} is no named class'
-                w_x: owlready2.entity.ThingClass = cast(thing_x,
-                                                        types.new_class(name=cls_a.get_iri().get_remainder(),
-                                                                        bases=(thing_x,)))
-                w_x.namespace = ont_x.get_namespace(cls_a.get_iri().get_namespace())
-                w_x.is_a.remove(thing_x)
-                w_x.equivalent_to.append(conv.map_concept(cls_b))
-        elif isinstance(axiom, OWLSubClassOfAxiom):
-            sub_class = axiom.get_sub_class()
-            super_class = axiom.get_super_class()
-            with ont_x:
-                assert isinstance(sub_class, OWLClass), f'Owlready2 only supports named classes ({sub_class})'
-                sub_class_x: owlready2.entity.ThingClass = self._world[sub_class.to_string_id()]
-                if sub_class_x is None:
-                    thing_x: owlready2.entity.ThingClass = conv.map_concept(OWLThing)
-                    sub_class_x: owlready2.entity.ThingClass = cast(thing_x,
-                                                                    types.new_class(
-                                                                        name=sub_class.get_iri().get_remainder(),
-                                                                        bases=(thing_x,)))
-                    sub_class_x.namespace = ont_x.get_namespace(sub_class.get_iri().get_namespace())
-                    sub_class_x.is_a.remove(thing_x)
-                sub_class_x.is_a.append(conv.map_concept(super_class))
-        elif isinstance(axiom, OWLAnnotationAssertionAxiom):
-            prop_x = conv.map_object(axiom.get_property())
-            if prop_x is None:
-                with ont_x:
-                    prop_x: owlready2.annotation.AnnotationPropertyClass = cast(
-                        owlready2.AnnotationProperty,
-                        types.new_class(
-                            name=axiom.get_property().get_iri().get_remainder(),
-                            bases=(owlready2.AnnotationProperty,)))
-                    prop_x.namespace = ont_x.get_namespace(axiom.get_property().get_iri().get_namespace())
-            sub_x = self._world[axiom.get_subject().as_iri().as_str()]
-            assert sub_x is not None, f'{axiom.get_subject} not found in {ontology}'
-            if axiom.get_value().is_literal():
-                literal = axiom.get_value().as_literal()
-                if literal.is_double():
-                    v = literal.parse_double()
-                elif literal.is_integer():
-                    v = literal.parse_integer()
-                elif literal.is_boolean():
-                    v = literal.parse_boolean()
-                else:
-                    # TODO XXX
-                    raise NotImplementedError
-                setattr(sub_x, prop_x.python_name, v)
-            else:
-                o_x = self._world[axiom.get_value().as_iri().as_str()]
-                assert o_x is not None, f'{axiom.get_value()} not found in {ontology}'
-                setattr(sub_x, prop_x.python_name, o_x)
-        else:
-            # TODO XXX
-            raise NotImplementedError(axiom)
-
-    # TODO: Refactor this method, use dispatch? Also lots of duplicated code.
-    # TODO: Compare behavior to owlapi and adjust if necessary.
     def remove_axiom(self, ontology: OWLOntology, axiom: OWLAxiom):
-        conv = ToOwlready2(self._world)
-        ont_x: owlready2.namespace.Ontology = conv.map_object(ontology)
-
-        if isinstance(axiom, OWLClassAssertionAxiom):
-            ind = axiom.get_individual()
-            cls_ = axiom.get_class_expression()
-            with ont_x:
-                assert isinstance(cls_, OWLClass), f'Owlready2 only supports named classes ({cls_})'
-                cls_x: owlready2.entity.ThingClass = self._world[cls_.to_string_id()]
-                ind_x: owlready2.individual.Thing = self._world[ind.to_string_id()]
-                if cls_x is None:
-                    raise ValueError(f"Class {cls_} does not exist in ontology {ontology.get_ontology_id()}.")
-                elif ind_x is None:
-                    raise ValueError(f"Individual {ind} does not exist in ontology {ontology.get_ontology_id()}.")
-                elif cls_x in ind_x.is_a:
-                    ind_x.is_a.remove(cls_x)
-        elif isinstance(axiom, OWLObjectPropertyAssertionAxiom):
-            subject = axiom.get_subject()
-            property_ = axiom.get_property()
-            object_ = axiom.get_object()
-            with ont_x:
-                subject_x = self._world[subject.to_string_id()]
-                property_x = self._world[property_.to_string_id()]
-                object_x = self._world[object_.to_string_id()]
-                if subject_x is None:
-                    raise ValueError(f"Individual {subject} does not exist in ontology {ontology.get_ontology_id()}.")
-                elif property_x is None:
-                    raise ValueError(f"Property {property_} does not exist in ontology {ontology.get_ontology_id()}.")
-                elif object_x is None:
-                    raise ValueError(f"Individual {object_} does not exist in ontology {ontology.get_ontology_id()}.")
-                elif object_x in property_x[subject_x]:
-                    property_x[subject_x].remove(object_x)
-        elif isinstance(axiom, OWLSubClassOfAxiom):
-            sub_class = axiom.get_sub_class()
-            super_class = axiom.get_super_class()
-            with ont_x:
-                assert isinstance(sub_class, OWLClass), f'Owlready2 only supports named classes ({sub_class})'
-                assert isinstance(super_class, OWLClass), f'Owlready2 only supports named classes ({super_class})'
-                sub_class_x: owlready2.entity.ThingClass = self._world[sub_class.to_string_id()]
-                super_class_x: owlready2.entity.ThingClass = self._world[super_class.to_string_id()]
-                if sub_class_x is None:
-                    raise ValueError(f"Class {sub_class} does not exist in ontology {ontology.get_ontology_id()}")
-                elif super_class_x is None:
-                    raise ValueError(f"Class {super_class} does not exist in ontology {ontology.get_ontology_id()}")
-                elif super_class_x in sub_class_x.is_a:
-                    sub_class_x.is_a.remove(super_class_x)
-        else:
-            # TODO XXX
-            raise NotImplementedError(axiom)
+        axioms._remove_axiom(axiom, ontology, self._world)
 
     def save_ontology(self, ontology: OWLOntology, document_iri: IRI):
         ont_x: owlready2.namespace.Ontology = self._world.get_ontology(
