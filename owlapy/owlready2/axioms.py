@@ -10,7 +10,7 @@ from owlapy.model import OWLProperty, OWLQuantifiedDataRestriction, OWLQuantifie
     OWLAnnotationProperty, OWLDataHasValue, OWLDataProperty, OWLDeclarationAxiom, OWLIndividual, \
     OWLNamedIndividual, OWLNaryBooleanClassExpression, OWLObjectComplementOf, OWLObjectHasValue, \
     OWLObjectInverseOf, OWLObjectOneOf, OWLObjectProperty, OWLObjectPropertyAssertionAxiom,  OWLAxiom, \
-    OWLSubClassOfAxiom, OWLThing, OWLOntology
+    OWLSubClassOfAxiom, OWLThing, OWLOntology, OWLDataPropertyAssertionAxiom
 from owlapy.owlready2.utils import ToOwlready2
 
 
@@ -83,6 +83,21 @@ def _(axiom: OWLObjectPropertyAssertionAxiom, ontology: OWLOntology, world: owlr
 
 
 @_add_axiom.register
+def _(axiom: OWLDataPropertyAssertionAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
+    conv = ToOwlready2(world)
+    ont_x: owlready2.namespace.Ontology = conv.map_object(ontology)
+
+    subject = axiom.get_subject()
+    property_ = axiom.get_property()
+    _add_axiom(OWLDeclarationAxiom(subject), ontology, world)
+    _add_axiom(OWLDeclarationAxiom(property_), ontology, world)
+    with ont_x:
+        subject_x = conv._to_owlready2_individual(subject)
+        property_x = conv._to_owlready2_property(property_)
+        property_x[subject_x].append(axiom.get_object().to_python())
+
+
+@_add_axiom.register
 def _(axiom: OWLSubClassOfAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
     conv = ToOwlready2(world)
     ont_x: owlready2.namespace.Ontology = conv.map_object(ontology)
@@ -151,7 +166,8 @@ def _remove_axiom(axiom: OWLAxiom, ontology: OWLOntology, world: owlready2.names
     raise NotImplementedError(f'Axiom type {axiom} is not implemented yet.')
 
 
-def remove_axiom(axiom: OWLDeclarationAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
+@_remove_axiom.register
+def _(axiom: OWLDeclarationAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
     conv = ToOwlready2(world)
     ont_x: owlready2.namespace.Ontology = conv.map_object(ontology)
     with ont_x:
@@ -184,6 +200,19 @@ def _(axiom: OWLObjectPropertyAssertionAxiom, ontology: OWLOntology, world: owlr
         object_x = conv._to_owlready2_individual(axiom.get_object())
         if all([subject_x, property_x, object_x]) and object_x in property_x[subject_x]:
             property_x[subject_x].remove(object_x)
+
+
+@_remove_axiom.register
+def _(axiom: OWLDataPropertyAssertionAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
+    conv = ToOwlready2(world)
+    ont_x: owlready2.namespace.Ontology = conv.map_object(ontology)
+
+    with ont_x:
+        subject_x = conv._to_owlready2_individual(axiom.get_subject())
+        property_x = conv._to_owlready2_property(axiom.get_property())
+        object_ = axiom.get_object().to_python()
+        if subject_x is not None and property_x is not None and object_ in property_x[subject_x]:
+            property_x[subject_x].remove(object_)
 
 
 @_remove_axiom.register
