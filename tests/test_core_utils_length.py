@@ -9,7 +9,7 @@ from owlapy.model import OWLDataUnionOf, OWLLiteral, OWLObjectProperty, OWLObjec
     OWLDataAllValuesFrom, OWLDataComplementOf, OWLDataExactCardinality, OWLDataHasValue, OWLDataIntersectionOf, \
     OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataOneOf, OWLDataProperty, OWLDataSomeValuesFrom
 
-setup_logging("logging_test.conf")
+setup_logging("ontolearn/logging_test.conf")
 
 
 class Core_OWLClassExpressionLengthMetric_Test(unittest.TestCase):
@@ -55,7 +55,7 @@ class Core_OWLClassExpressionLengthMetric_Test(unittest.TestCase):
 
         ce = OWLObjectMinCardinality(cardinality=2, property=has_child, filler=OWLThing)
         le = cl.length(ce)
-        # ≥ 2 hasChild.⊤
+        # >= 2 hasChild.⊤
         self.assertEqual(le, 4)
 
         ce = OWLDataSomeValuesFrom(property=has_age,
@@ -68,7 +68,7 @@ class Core_OWLClassExpressionLengthMetric_Test(unittest.TestCase):
 
         ce = OWLDataSomeValuesFrom(property=has_age, filler=OWLDataUnionOf([datatype_restriction, IntegerOWLDatatype]))
         le = cl.length(ce)
-        # ∃ hasAge.(xsd:integer[≥ 40 , ≤ 80] ⊔ xsd:integer)
+        # ∃ hasAge.(xsd:integer[>= 40 ,<= 80] ⊔ xsd:integer)
         self.assertEqual(le, 6)
 
         ce = OWLDataAllValuesFrom(property=has_age,

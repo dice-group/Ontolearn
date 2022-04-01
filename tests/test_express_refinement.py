@@ -6,7 +6,7 @@ from ontolearn.refinement_operators import ExpressRefinement
 from ontolearn.utils import setup_logging
 from owlapy.model import OWLClass, OWLNamedIndividual, IRI
 
-setup_logging("logging_test.conf")
+setup_logging("ontolearn/logging_test.conf")
 
 NS = 'http://www.benchmark.org/family#'
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'

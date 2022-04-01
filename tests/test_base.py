@@ -4,7 +4,7 @@
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.utils import setup_logging
 
-setup_logging("logging_test.conf")
+setup_logging("ontolearn/logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 PATH_FATHER = 'KGs/father.owl'

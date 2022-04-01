@@ -14,9 +14,9 @@ from torch.functional import F
 from torch.nn.init import xavier_normal_
 from deap import gp, tools, base, creator
 
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.abstracts import AbstractDrill, AbstractFitness, AbstractScorer, AbstractNode, BaseRefinement, \
-    AbstractHeuristic
+    AbstractHeuristic, EncodedPosNegLPStandardKind
 from ontolearn.base_concept_learner import BaseConceptLearner, RefinementBasedConceptLearner
 from ontolearn.core.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter, OperandSetTransform
 from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
@@ -34,7 +34,7 @@ from ontolearn.search import EvoLearnerNode, HeuristicOrderedNode, OENode, TreeN
     QualityOrderedNode, RL_State, DRILLSearchTreePriorityQueue
 from ontolearn.utils import oplogging, create_experiment_folder
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter, EntropyValueSplitter
-from owlapy.model import OWLClass, OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual
+from owlapy.model import OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.util import OrderedOWLObject
 from sortedcontainers import SortedSet
@@ -63,7 +63,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
     seen_norm_concepts: Set[OWLClassExpression]
     heuristic_queue: 'SortedSet[OENode]'
     best_descriptions: EvaluatedDescriptionSet[OENode, QualityOrderedNode]
-    _learning_problem: Optional[EncodedPosNegLPStandard]
+    _learning_problem: Optional[EncodedPosNegLPStandardKind]
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
@@ -286,6 +286,10 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
                 self._log_current_best(j)
 
         return self.terminate()
+
+    def encoded_learning_problem(self) -> Optional[EncodedPosNegLPStandardKind]:
+        """Fetch the most recently used learning problem from the fit method"""
+        return self._learning_problem
 
     def tree_node(self, node: OENode) -> TreeNode[OENode]:
         tree_parent = self.search_tree[node.concept]
@@ -1297,9 +1301,9 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                  max_runtime: Optional[int] = None,
                  use_data_properties: bool = True,
                  use_card_restrictions: bool = True,
-                 use_inverse: bool = True,
+                 use_inverse: bool = False,
                  tournament_size: int = 7,
-                 card_limit: int = 5,
+                 card_limit: int = 10,
                  population_size: int = 800,
                  num_generations: int = 200,
                  height_limit: int = 17):
@@ -1404,34 +1408,34 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                 self._dp_to_prim_type[split_dp] = type_
                 self._split_properties.append(split_dp)
 
-                min_inc, max_inc, min_exc, max_exc = factory.create_data_some_values(split_dp)
+                min_inc, max_inc, _, _ = factory.create_data_some_values(split_dp)
                 pset.addPrimitive(min_inc, [type_], OWLClassExpression,
                                   name=OperatorVocabulary.DATA_MIN_INCLUSIVE + name)
                 pset.addPrimitive(max_inc, [type_], OWLClassExpression,
                                   name=OperatorVocabulary.DATA_MAX_INCLUSIVE + name)
-                pset.addPrimitive(min_exc, [type_], OWLClassExpression,
-                                  name=OperatorVocabulary.DATA_MIN_EXCLUSIVE + name)
-                pset.addPrimitive(max_exc, [type_], OWLClassExpression,
-                                  name=OperatorVocabulary.DATA_MAX_EXCLUSIVE + name)
+                # pset.addPrimitive(min_exc, [type_], OWLClassExpression,
+                #                  name=OperatorVocabulary.DATA_MIN_EXCLUSIVE + name)
+                # pset.addPrimitive(max_exc, [type_], OWLClassExpression,
+                #                  name=OperatorVocabulary.DATA_MAX_EXCLUSIVE + name)
 
         if self.use_card_restrictions:
             for i in range(1, self.card_limit+1):
                 pset.addTerminal(i, int)
             for op in self.kb.get_object_properties():
                 name = escape(op.get_iri().get_remainder())
-                card_min, card_max, card_exact = factory.create_card_restrictions(op)
+                card_min, card_max, _ = factory.create_card_restrictions(op)
                 pset.addPrimitive(card_min, [int, OWLClassExpression], OWLClassExpression,
                                   name=OperatorVocabulary.CARD_MIN + name)
                 pset.addPrimitive(card_max, [int, OWLClassExpression], OWLClassExpression,
                                   name=OperatorVocabulary.CARD_MAX + name)
-                pset.addPrimitive(card_exact, [int, OWLClassExpression], OWLClassExpression,
-                                  name=OperatorVocabulary.CARD_EXACT + name)
+                # pset.addPrimitive(card_exact, [int, OWLClassExpression], OWLClassExpression,
+                #                  name=OperatorVocabulary.CARD_EXACT + name)
 
         for class_ in self.kb.get_concepts():
-            pset.addTerminal(class_, OWLClass, name=escape(class_.get_iri().get_remainder()))
+            pset.addTerminal(class_, OWLClassExpression, name=escape(class_.get_iri().get_remainder()))
 
-        pset.addTerminal(self.kb.thing, OWLClass, name=escape(self.kb.thing.get_iri().get_remainder()))
-        pset.addTerminal(self.kb.nothing, OWLClass, name=escape(self.kb.nothing.get_iri().get_remainder()))
+        pset.addTerminal(self.kb.thing, OWLClassExpression, name=escape(self.kb.thing.get_iri().get_remainder()))
+        pset.addTerminal(self.kb.nothing, OWLClassExpression, name=escape(self.kb.nothing.get_iri().get_remainder()))
         return pset
 
     def __build_toolbox(self) -> base.Toolbox:
@@ -1511,7 +1515,8 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                                                                                self._split_properties,
                                                                                pos, neg)
                 no_splits = [prop for prop in entropy_splits if len(entropy_splits[prop]) == 0]
-                binning_splits = BinningValueSplitter().compute_splits_properties(self.kb.reasoner(), no_splits)
+                temp_splitter = BinningValueSplitter(max_nr_splits=10)
+                binning_splits = temp_splitter.compute_splits_properties(self.kb.reasoner(), no_splits)
                 self._dp_splits = {**entropy_splits, **binning_splits}
             else:
                 raise ValueError(self.value_splitter)
@@ -1519,7 +1524,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
         population = None
         if isinstance(self.init_method, EARandomWalkInitialization):
-            population = self.toolbox.population(population_size=self.population_size, pos=list(pos)[:50],
+            population = self.toolbox.population(population_size=self.population_size, pos=list(pos),
                                                  kb=self.kb, dp_to_prim_type=self._dp_to_prim_type,
                                                  dp_splits=self._dp_splits)
         else:
@@ -1553,6 +1558,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             individual.quality.values = (e.q,)
             self.fitness_func.apply(individual)
             self._cache[ind_str] = (e.q, individual.fitness.values[0])
+            self._number_of_tested_concepts += 1
 
     def clean(self):
         self._result_population = None

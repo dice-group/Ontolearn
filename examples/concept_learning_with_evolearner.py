@@ -1,12 +1,9 @@
 import json
 import os
-import random
 
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import EvoLearner
 from ontolearn.learning_problem import PosNegLPStandard
-from ontolearn.metrics import Accuracy
-from ontolearn.fitness_functions import LinearPressureFitness
 from owlapy.model import OWLClass, OWLNamedIndividual, IRI
 from ontolearn.utils import setup_logging
 
@@ -22,7 +19,6 @@ with open('synthetic_problems.json') as json_file:
 
 kb = KnowledgeBase(path=settings['data_path'])
 
-#random.seed(20)
 
 # noinspection DuplicatedCode
 for str_target_concept, examples in settings['problems'].items():
@@ -58,14 +54,8 @@ for str_target_concept, examples in settings['problems'].items():
     typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
     lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
 
-    qual = Accuracy()
-    fitness = LinearPressureFitness(gain=2048, penalty=1)
-
-    model = EvoLearner(knowledge_base=target_kb,
-                       max_runtime=600,
-                       quality_func=qual,
-                       fitness_func=fitness)
-    model.fit(lp, verbose=True)
+    model = EvoLearner(knowledge_base=target_kb, max_runtime=600)
+    model.fit(lp, verbose=False)
 
     model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
     # Get Top n hypotheses
@@ -75,4 +65,3 @@ for str_target_concept, examples in settings['problems'].items():
                                 hypotheses=hypotheses)
     # print(predictions)
     [print(_) for _ in hypotheses]
-    # exit(1)

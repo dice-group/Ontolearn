@@ -74,9 +74,9 @@ def create_flask_app():
                 drill.save_best_hypothesis(no_of_hypotheses, tmp.name)
             except Exception as ex:
                 print(ex)
-            hypotheses_ser = io.open(tmp.name+'.owl', mode="r", encoding="utf-8").read()
+            hypotheses_ser = io.open(tmp.name + '.owl', mode="r", encoding="utf-8").read()
             from pathlib import Path
-            Path(tmp.name+'.owl').unlink(True)
+            Path(tmp.name + '.owl').unlink(True)
             return Response(hypotheses_ser, mimetype="application/rdf+xml")
         finally:
             ready = True
@@ -117,8 +117,14 @@ args = None
 if __name__ == '__main__':
     parser = ArgumentParser()
     # General
-    parser.add_argument("--path_knowledge_base", type=str)
-    parser.add_argument("--path_knowledge_base_embeddings", type=str)
+    parser.add_argument("--path_knowledge_base", type=str, default='../KGs/Biopax/biopax.owl')
+    parser.add_argument("--path_knowledge_base_embeddings", type=str,
+                        default='embeddings/ConEx_Biopax/ConEx_entity_embeddings.csv')
+    # The next two params shows the flexibility of our framework as agents can be continuously trained
+    parser.add_argument('--pretrained_drill_avg_path', type=str,
+                        default='pre_trained_agents/Biopax/DrillHeuristic_averaging/DrillHeuristic_averaging.pth',
+                        help='Provide a path of .pth file')
+
     parser.add_argument('--num_workers', type=int, default=1, help='Number of cpus used during batching')
     parser.add_argument("--verbose", type=int, default=0, help='Higher integer reflects more info during computation')
 
@@ -142,9 +148,6 @@ if __name__ == '__main__':
     parser.add_argument("--num_episodes_per_replay", type=int, default=10, help='Number of episodes per repay')
     parser.add_argument('--num_of_sequential_actions', type=int, default=3, help='Length of the trajectory.')
 
-    # The next two params shows the flexibility of our framework as agents can be continuously trained
-    parser.add_argument('--pretrained_drill_avg_path', type=str,
-                        default='', help='Provide a path of .pth file')
     # NN related
     parser.add_argument("--batch_size", type=int, default=512)
     parser.add_argument("--learning_rate", type=int, default=.01)

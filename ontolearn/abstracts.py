@@ -1,6 +1,6 @@
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Set, List, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional
+from typing import Set, List, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional, Protocol
 
 from owlapy.model import OWLClassExpression, OWLOntology
 from owlapy.util import iter_count
@@ -9,13 +9,20 @@ from .utils import read_csv
 from collections import OrderedDict
 
 _N = TypeVar('_N')  #:
+_KB = TypeVar('_KB', bound='AbstractKnowledgeBase')  #:
 
+logger = logging.getLogger(__name__)
+
+# @TODO:CD: Each Class definiton in abstract.py should share a prefix, e.g., BaseX or AbstractX.
 
 class EncodedLearningProblem(metaclass=ABCMeta):
     """Encoded Abstract learning problem for use in Scorers"""
     __slots__ = ()
 
+class EncodedPosNegLPStandardKind(EncodedLearningProblem, metaclass=ABCMeta):
+    __slots__ = ()
 
+# @TODO: Why we need Generic[_N] and if we need it why we di not use it in all other abstract classes?
 class AbstractScorer(Generic[_N], metaclass=ABCMeta):
     """
     An abstract class for quality functions.
@@ -28,7 +35,7 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
         """Create a new quality function"""
         pass
 
-    def score_elp(self, instances, learning_problem: EncodedLearningProblem) -> Tuple[bool, Optional[float]]:
+    def score_elp(self, instances:set, learning_problem: EncodedLearningProblem) -> Tuple[bool, Optional[float]]:
         """Quality score for a set of instances with regard to the learning problem
 
         Args:
@@ -70,6 +77,7 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
         """
         pass
 
+    # @TODO:CD: Why there is '..' in AbstractNode
     def apply(self, node: 'AbstractNode', instances, learning_problem: EncodedLearningProblem) -> bool:
         """Apply the quality function to a search tree node after calculating the quality score on the given instances
 
@@ -94,7 +102,6 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
             node.quality = q
         return ret
 
-
 class AbstractHeuristic(Generic[_N], metaclass=ABCMeta):
     """Abstract base class for heuristic functions.
 
@@ -117,7 +124,6 @@ class AbstractHeuristic(Generic[_N], metaclass=ABCMeta):
         """
         pass
 
-
 class AbstractFitness(metaclass=ABCMeta):
     """Abstract base class for fitness functions.
 
@@ -139,11 +145,6 @@ class AbstractFitness(metaclass=ABCMeta):
             individual: individual to set the fitness on
         """
         pass
-
-
-_KB = TypeVar('_KB', bound='AbstractKnowledgeBase')  #:
-
-logger = logging.getLogger(__name__)
 
 
 class BaseRefinement(Generic[_N], metaclass=ABCMeta):

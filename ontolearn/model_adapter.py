@@ -7,7 +7,7 @@ from ontolearn.abstracts import AbstractHeuristic, AbstractScorer, BaseRefinemen
 from ontolearn.base_concept_learner import BaseConceptLearner
 
 logger = logging.getLogger(__name__)
-
+# TODO:CD: Move all imports to the top of the file
 
 def _get_matching_opts(_Type, optargs, kwargs, *, prefix=None):
     """find the keys in kwargs that are parameters of _Type
@@ -66,7 +66,7 @@ def ModelAdapter(*args, **kwargs):  # noqa: C901
     else:
         kb_type = kwargs.pop("knowledge_base_type", None)
         if kb_type is None:
-            from ontolearn import KnowledgeBase
+            from ontolearn.knowledge_base import KnowledgeBase
             kb_type = KnowledgeBase
         else:
             kb_type = kb_type
@@ -80,7 +80,7 @@ def ModelAdapter(*args, **kwargs):  # noqa: C901
         assert isinstance(kb, AbstractKnowledgeBase)
 
     if "ignore" in kwargs:
-        from ontolearn import KnowledgeBase
+        from ontolearn.knowledge_base import KnowledgeBase
         assert isinstance(kb, KnowledgeBase)
         target_kb = kb.ignore_and_copy(ignored_classes=kwargs.pop("ignore"))
     else:

@@ -8,7 +8,7 @@ from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 
 _T = TypeVar('_T')  #:
 
-setup_logging("logging_test.conf")
+setup_logging("ontolearn/logging_test.conf")
 
 
 class Owl_Core_PropertyHierarchy_Test(unittest.TestCase):

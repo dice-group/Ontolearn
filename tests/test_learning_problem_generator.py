@@ -1,10 +1,10 @@
 import unittest
 
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem_generator import LearningProblemGenerator
 from ontolearn.utils import setup_logging
 
-setup_logging("logging_test.conf")
+setup_logging("ontolearn/logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 kb = KnowledgeBase(path=PATH_FAMILY)

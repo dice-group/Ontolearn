@@ -16,6 +16,12 @@ We have good experience with it and make use of conda in the
 
 To download the Ontolearn source code, you will also need to have a
 copy of the [Git](https://git-scm.com/) version control system.
+If you haven't, you might also need to install java and curl:
+```shell
+sudo apt install openjdk-11-jdk
+sudo apt install curl
+```
+
 
 Once you have `conda` and `git` installed, the following commands
 should be typed in your shell in order to download the Ontolearn

@@ -44,8 +44,8 @@ async def run_async(data_file, endpoint_url, pos_file, neg_file):
     for h in alg.best_hypotheses(3):
         # individuals_set = kb.individuals_set(h.concept)
         print(f'{i}: {render.render(h.concept)} ('
-              f'pred. acc.: {kb.evaluate_concept(h.concept, pred_acc, alg._learning_problem).q}, '
-              f'F-Measure: {kb.evaluate_concept(h.concept, f1, alg._learning_problem).q}'
+              f'pred. acc.: {kb.evaluate_concept(h.concept, pred_acc, alg.encoded_learning_problem()).q}, '
+              f'F-Measure: {kb.evaluate_concept(h.concept, f1, alg.encoded_learning_problem()).q}'
               f') [Node '
               f'quality: {h.quality}, h-exp: {h.h_exp}, RC: {h.refinement_count}'
               f']')

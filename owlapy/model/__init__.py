@@ -10,7 +10,7 @@ from abc import ABCMeta, abstractmethod
 from functools import total_ordering
 from typing import Generic, Iterable, Sequence, Set, TypeVar, Union, Final, Optional, Protocol, ClassVar, List
 from pandas import Timedelta
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 
 from owlapy.vocab import OWLRDFVocabulary, XSDVocabulary, OWLFacet
 from owlapy._utils import MOVE
@@ -1155,10 +1155,10 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
             return super().__new__(_OWLLiteralImplDouble)
         elif isinstance(value, str):
             return super().__new__(_OWLLiteralImplString)
-        elif isinstance(value, date):
-            return super().__new__(_OWLLiteralImplDate)
         elif isinstance(value, datetime):
             return super().__new__(_OWLLiteralImplDateTime)
+        elif isinstance(value, date):
+            return super().__new__(_OWLLiteralImplDate)
         elif isinstance(value, Timedelta):
             return super().__new__(_OWLLiteralImplDuration)
         # TODO XXX
@@ -1425,6 +1425,9 @@ class _OWLLiteralImplString(OWLLiteral):
             return self._v < other._v
         return NotImplemented
 
+    def __len__(self):
+        return len(self._v)
+
     def __hash__(self):
         return hash(self._v)
 
@@ -1494,6 +1497,7 @@ class _OWLLiteralImplDateTime(OWLLiteral):
     def __init__(self, value, type_=None):
         assert type_ is None or type_ == DateTimeOWLDatatype
         if not isinstance(value, datetime):
+            value = value.replace("Z", "+00:00") if isinstance(value, str) and value[-1] == "Z" else value
             value = datetime.fromisoformat(value)
         self._v = value
 
@@ -1537,6 +1541,9 @@ class _OWLLiteralImplDuration(OWLLiteral):
         if not isinstance(value, Timedelta):
             value = Timedelta(value)
         self._v = value
+
+    def get_literal(self) -> str:
+        return self._v.isoformat()
 
     def __eq__(self, other):
         if type(other) is type(self):

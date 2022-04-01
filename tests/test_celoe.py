@@ -2,7 +2,7 @@
 import json
 import unittest
 
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.model_adapter import ModelAdapter
@@ -10,7 +10,7 @@ from ontolearn.utils import setup_logging
 from owlapy.model import OWLNamedIndividual, OWLClass, IRI
 from owlapy.render import DLSyntaxObjectRenderer
 
-setup_logging("logging_test.conf")
+setup_logging("ontolearn/logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 PATH_MUTAGENESIS = 'KGs/Mutagenesis/mutagenesis.owl'

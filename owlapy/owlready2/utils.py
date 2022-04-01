@@ -24,7 +24,13 @@ OWLREADY2_FACET_KEYS = MappingProxyType({
     OWLFacet.MIN_INCLUSIVE: "min_inclusive",
     OWLFacet.MIN_EXCLUSIVE: "min_exclusive",
     OWLFacet.MAX_INCLUSIVE: "max_inclusive",
-    OWLFacet.MAX_EXCLUSIVE: "max_exclusive"
+    OWLFacet.MAX_EXCLUSIVE: "max_exclusive",
+    OWLFacet.LENGTH: "length",
+    OWLFacet.MIN_LENGTH: "min_length",
+    OWLFacet.MAX_LENGTH: "max_length",
+    OWLFacet.PATTERN: "pattern",
+    OWLFacet.TOTAL_DIGITS: "total_digits",
+    OWLFacet.FRACTION_DIGITS: "fraction_digits"
 })
 
 
