@@ -1,5 +1,5 @@
 from functools import singledispatch
-from itertools import islice
+from itertools import islice, combinations
 import types
 from typing import cast
 
@@ -35,6 +35,7 @@ def _(axiom: OWLDeclarationAxiom, ontology: OWLOntology, world: owlready2.namesp
     entity = axiom.get_entity()
     with ont_x:
         entity_x = world[entity.to_string_id()]
+        # Entity already exists
         if entity_x is not None:
             return
 
@@ -125,6 +126,7 @@ def _(axiom: OWLSubClassOfAxiom, ontology: OWLOntology, world: owlready2.namespa
         sub_class_x.is_a.append(super_class_x)
 
 
+# TODO: Update EquivalentClasses to not only consider 2 classes
 @_add_axiom.register
 def _(axiom: OWLEquivalentClassesAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
     conv = ToOwlready2(world)
@@ -354,7 +356,9 @@ def _(axiom: OWLClassAssertionAxiom, ontology: OWLOntology, world: owlready2.nam
     with ont_x:
         cls_x = conv.map_concept(axiom.get_class_expression())
         ind_x = conv._to_owlready2_individual(axiom.get_individual())
-        if cls_x is not None and ind_x is not None and cls_x in ind_x.is_a:
+        if cls_x is None or ind_x is None:
+            return
+        if cls_x in ind_x.is_a:
             ind_x.is_a.remove(cls_x)
         elif isinstance(axiom.get_class_expression(), OWLClass):
             ont_x._del_obj_triple_spo(ind_x.storid, owlready2.rdf_type, cls_x.storid)
@@ -390,14 +394,223 @@ def _(axiom: OWLDataPropertyAssertionAxiom, ontology: OWLOntology, world: owlrea
 def _(axiom: OWLSubClassOfAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
     conv = ToOwlready2(world)
     ont_x: owlready2.namespace.Ontology = conv.map_object(ontology)
+    sub_class = axiom.get_sub_class()
+    assert isinstance(sub_class, OWLClass), f'Owlready2 only supports named classes as sub class ({sub_class}).'
 
     with ont_x:
-        sub_class_x = conv.map_concept(axiom.get_sub_class())
+        sub_class_x = conv.map_concept(sub_class)
         super_class_x = conv.map_concept(axiom.get_super_class())
-        if sub_class_x is not None and super_class_x is not None and super_class_x in sub_class_x.is_a:
+        if sub_class_x is None or super_class_x is None:
+            return
+        if super_class_x in sub_class_x.is_a:
             sub_class_x.is_a.remove(super_class_x)
         elif isinstance(axiom.get_sub_class(), OWLClass) and isinstance(axiom.get_super_class(), OWLClass):
             ont_x._del_obj_triple_spo(sub_class_x.storid, owlready2.rdfs_subclassof, super_class_x.storid)
+
+
+@_remove_axiom.register
+def _(axiom: OWLEquivalentClassesAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
+    conv = ToOwlready2(world)
+    ont_x = conv.map_object(ontology)
+
+    cls_a, cls_b = axiom.class_expressions()
+    assert isinstance(cls_a, OWLClass), f'{cls_a} is no named class'
+    with ont_x:
+        a_x = conv.map_concept(cls_a)
+        b_x = conv.map_concept(cls_b)
+        if a_x is not None and b_x is not None and b_x in a_x.equivalent_to:
+            a_x.equivalent_to.remove(b_x)
+
+
+@_remove_axiom.register
+def _(axiom: OWLDisjointClassesAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
+    conv = ToOwlready2(world)
+    ont_x: owlready2.Ontology = conv.map_object(ontology)
+
+    with ont_x:
+        class_expressions_x = set(map(conv.map_concept, axiom.class_expressions()))
+        if len(class_expressions_x) < 2 or not all(class_expressions_x):
+            return
+        for disjoints_x in ont_x.disjoint_classes():
+            if set(disjoints_x.entities) == class_expressions_x:
+                del disjoints_x.entities[:-1]
+                break
+
+
+@_remove_axiom.register
+def _(axiom: OWLDisjointUnionAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
+    conv = ToOwlready2(world)
+    ont_x: owlready2.Ontology = conv.map_object(ontology)
+    assert isinstance(axiom.get_owl_class(), OWLClass), f'({axiom.get_owl_class()}) is not a named class.'
+
+    with ont_x:
+        cls_x = conv.map_concept(axiom.get_owl_class())
+        union_expressions_x = set(map(conv.map_concept, axiom.get_class_expressions()))
+        if cls_x is not None and all(union_expressions_x):
+            for union_x in cls_x.disjoint_unions:
+                if union_expressions_x == set(union_x):
+                    cls_x.disjoint_unions.remove(union_x)
+                    break
+
+
+@_remove_axiom.register
+def _(axiom: OWLAnnotationAssertionAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
+    conv = ToOwlready2(world)
+    ont_x: owlready2.Ontology = conv.map_object(ontology)
+
+    sub_x = world[axiom.get_subject().as_iri().as_str()]
+    if sub_x is None:
+        return
+    name = axiom.get_property().get_iri().get_remainder()
+    with ont_x:
+        if axiom.get_value().is_literal():
+            o_x = axiom.get_value().as_literal().to_python()
+        else:
+            o_x = world[axiom.get_value().as_iri().as_str()]
+
+        value = getattr(sub_x, name, None)
+        if value is not None and o_x in value:
+            value.remove(o_x)
+
+
+@_remove_axiom.register
+def _(axiom: OWLNaryIndividualAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
+    conv = ToOwlready2(world)
+    ont_x: owlready2.Ontology = conv.map_object(ontology)
+
+    with ont_x:
+        individuals_x = set(map(conv._to_owlready2_individual, axiom.individuals()))
+        if len(individuals_x) < 2 or not all(individuals_x):
+            return
+        if isinstance(axiom, OWLSameIndividualAxiom):
+            if set(individuals_x[1:-1]) <= set(individuals_x[0].INDIRECT_equivalent_to):
+                for individual_1_x, individual_2_x in combinations(individuals_x, 2):
+                    if individual_1_x in individual_2_x.equivalent_to:
+                        individual_2_x.equivalent_to.remove(individual_1_x)
+                    if individual_2_x in individual_1_x.equivalent_to:
+                        individual_1_x.equivalent_to.remove(individual_2_x)
+        elif isinstance(axiom, OWLDifferentIndividualsAxiom):
+            for different_x in ont_x.different_individuals():
+                if set(different_x.entities) == individuals_x:
+                    del different_x.entities[:-1]
+                    break
+        else:
+            raise ValueError(f'OWLNaryIndividualAxiom ({axiom}) is not defined.')
+
+
+@_remove_axiom.register
+def _(axiom: OWLSubPropertyAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
+    conv = ToOwlready2(world)
+    ont_x: owlready2.namespace.Ontology = conv.map_object(ontology)
+
+    with ont_x:
+        sub_property_x = conv._to_owlready2_property(axiom.get_sub_property())
+        super_property_x = conv._to_owlready2_property(axiom.get_super_property())
+        if sub_property_x is None or super_property_x is None:
+            return
+        if super_property_x in sub_property_x.is_a:
+            sub_property_x.is_a.remove(super_property_x)
+        else:
+            ont_x._del_obj_triple_spo(sub_property_x.storid, owlready2.rdfs_subpropertyof, super_property_x.storid)
+
+
+@_remove_axiom.register
+def _(axiom: OWLPropertyDomainAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
+    conv = ToOwlready2(world)
+    ont_x: owlready2.Ontology = conv.map_object(ontology)
+
+    with ont_x:
+        property_x = conv._to_owlready2_property(axiom.get_property())
+        domain_x = conv.map_concept(axiom.get_domain())
+        if domain_x is not None and property_x is not None and domain_x in property_x.domain:
+            property_x.domain.remove(domain_x)
+
+
+@_remove_axiom.register
+def _(axiom: OWLPropertyRangeAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
+    conv = ToOwlready2(world)
+    ont_x: owlready2.Ontology = conv.map_object(ontology)
+
+    with ont_x:
+        property_x = conv._to_owlready2_property(axiom.get_property())
+        range_x = conv.map_concept(axiom.get_range()) \
+            if isinstance(axiom, OWLObjectPropertyRangeAxiom) else conv.map_datarange(axiom.get_range())
+        if range_x is not None and property_x is not None and range_x in property_x.range:
+            property_x.range.remove(range_x)
+
+
+@_remove_axiom.register
+def _(axiom: OWLNaryPropertyAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
+    conv = ToOwlready2(world)
+    ont_x: owlready2.Ontology = conv.map_object(ontology)
+
+    with ont_x:
+        properties_x = list(map(conv._to_owlready2_property, axiom.properties()))
+        if len(properties_x) < 2 or not all(properties_x):
+            return
+        if isinstance(axiom, (OWLEquivalentObjectPropertiesAxiom, OWLEquivalentDataPropertiesAxiom,)):
+            if set(properties_x[1:-1]) <= set(properties_x[0].INDIRECT_equivalent_to):
+                for property_1_x, property_2_x in combinations(properties_x, 2):
+                    if property_1_x in property_2_x.equivalent_to:
+                        property_2_x.equivalent_to.remove(property_1_x)
+                    if property_2_x in property_1_x.equivalent_to:
+                        property_1_x.equivalent_to.remove(property_2_x)
+        elif isinstance(axiom, (OWLDisjointObjectPropertiesAxiom, OWLDisjointDataPropertiesAxiom,)):
+            properties_x = set(properties_x)
+            for disjoints_x in ont_x.disjoint_properties():
+                if set(disjoints_x.entities) == properties_x:
+                    del disjoints_x.entities[:-1]
+                    break
+        elif isinstance(axiom, OWLInverseObjectPropertiesAxiom):
+            if len(properties_x) != 2:
+                return
+            first = properties_x[0]
+            second = properties_x[1]
+            if first.inverse_property == second and second.inverse_property == first:
+                first.inverse_property = None
+        else:
+            raise ValueError(f'OWLNaryPropertyAxiom ({axiom}) is not defined.')
+
+
+@_remove_axiom.register
+def _(axiom: OWLObjectPropertyCharacteristicAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
+    conv = ToOwlready2(world)
+    ont_x: owlready2.Ontology = conv.map_object(ontology)
+
+    with ont_x:
+        property_x = conv._to_owlready2_property(axiom.get_property())
+        if property_x is None:
+            return
+
+        if isinstance(axiom, OWLFunctionalObjectPropertyAxiom) and owlready2.FunctionalProperty in property_x.is_a:
+            property_x.is_a.remove(owlready2.FunctionalProperty)
+        elif isinstance(axiom, OWLAsymmetricObjectPropertyAxiom) and owlready2.AsymmetricProperty in property_x.is_a:
+            property_x.is_a.remove(owlready2.AsymmetricProperty)
+        elif isinstance(axiom, OWLInverseFunctionalObjectPropertyAxiom) \
+                and owlready2.InverseFunctionalProperty in property_x.is_a:
+            property_x.is_a.remove(owlready2.InverseFunctionalProperty)
+        elif isinstance(axiom, OWLIrreflexiveObjectPropertyAxiom) and owlready2.IrreflexiveProperty in property_x.is_a:
+            property_x.is_a.remove(owlready2.IrreflexiveProperty)
+        elif isinstance(axiom, OWLReflexiveObjectPropertyAxiom) and owlready2.ReflexiveProperty in property_x.is_a:
+            property_x.is_a.remove(owlready2.ReflexiveProperty)
+        elif isinstance(axiom, OWLSymmetricObjectPropertyAxiom) and owlready2.SymmetricProperty in property_x.is_a:
+            property_x.is_a.remove(owlready2.SymmetricProperty)
+        elif isinstance(axiom, OWLTransitiveObjectPropertyAxiom) and owlready2.TransitiveProperty in property_x.is_a:
+            property_x.is_a.remove(owlready2.TransitiveProperty)
+        else:
+            raise ValueError(f'OWLObjectPropertyCharacteristicAxiom ({axiom}) is not defined.')
+
+
+@_remove_axiom.register
+def _(axiom: OWLDataPropertyCharacteristicAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
+    conv = ToOwlready2(world)
+    ont_x: owlready2.Ontology = conv.map_object(ontology)
+
+    with ont_x:
+        property_x = conv._to_owlready2_property(axiom.get_property())
+        if property_x is not None and isinstance(axiom, OWLFunctionalDataPropertyAxiom) \
+                and owlready2.FunctionalProperty in property_x.is_a:
+            property_x.is_a.remove(owlready2.FunctionalProperty)
 
 
 # Creates all entities (individuals, classes, properties) that appear in the given (complex) class expressions
