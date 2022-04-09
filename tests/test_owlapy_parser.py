@@ -2,13 +2,13 @@ import unittest
 from datetime import date, datetime, timedelta, timezone
 
 from pandas import Timedelta
-from owlapy.model import OWLDataHasValue, OWLObjectMinCardinality, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
+from owlapy.model import OWLObjectInverseOf, OWLObjectMinCardinality, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
     DoubleOWLDatatype, IntegerOWLDatatype, OWLClass, IRI, OWLDataAllValuesFrom, OWLDataIntersectionOf, \
     OWLDataOneOf, OWLDataProperty, OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLFacetRestriction, \
     OWLLiteral, OWLNamedIndividual, OWLObjectAllValuesFrom, OWLObjectComplementOf, OWLObjectExactCardinality, \
     OWLObjectHasSelf, OWLObjectHasValue, OWLObjectIntersectionOf, OWLObjectMaxCardinality, OWLObjectOneOf, \
     OWLObjectProperty, OWLDataComplementOf, OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataUnionOf, \
-    OWLDataMinCardinality
+    OWLDataMinCardinality, OWLDataHasValue
 
 from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, OWLDatatypeMinMaxExclusiveRestriction, \
     OWLDatatypeMaxExclusiveRestriction
@@ -91,6 +91,10 @@ class ManchesterOWLSyntaxParserTest(unittest.TestCase):
 
         p = self.parser.parse_expression('inBond Self')
         c = OWLObjectHasSelf(self.in_bond)
+        self.assertEqual(p, c)
+
+        p = self.parser.parse_expression('inverse inBond some Atom')
+        c = OWLObjectSomeValuesFrom(OWLObjectInverseOf(self.in_bond), self.atom)
         self.assertEqual(p, c)
 
         p = self.parser.parse_expression('hasBond only {d91_32, d91_17, bond5225}')
@@ -338,6 +342,10 @@ class DLSyntaxParserTest(unittest.TestCase):
 
         p = self.parser.parse_expression('∃ inBond.Self')
         c = OWLObjectHasSelf(self.in_bond)
+        self.assertEqual(p, c)
+
+        p = self.parser.parse_expression('∃ inBond⁻.Atom')
+        c = OWLObjectSomeValuesFrom(OWLObjectInverseOf(self.in_bond), self.atom)
         self.assertEqual(p, c)
 
         p = self.parser.parse_expression('∀ hasBond.{d91_32 ⊔ d91_17 ⊔ bond5225}')
