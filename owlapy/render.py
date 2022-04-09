@@ -38,7 +38,7 @@ _DL_SYNTAX = types.SimpleNamespace(
     WEDGE="⋀",
     IMPLIES="←",
     COMMA=",",
-    SELF="self",
+    SELF="Self",
 )
 
 
