@@ -7,14 +7,18 @@ from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDataty
 
 import owlready2
 import owlapy.owlready2.utils
-from owlapy.model import OWLObjectPropertyAssertionAxiom, OWLSubClassOfAxiom, OWLClass, OWLObjectUnionOf, \
+from owlapy.model import OWLObjectPropertyRangeAxiom, OWLSameIndividualAxiom, OWLSubClassOfAxiom, OWLClass, \
     OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectComplementOf, IRI, OWLDataAllValuesFrom, \
     OWLDataComplementOf, OWLDataHasValue, OWLDataIntersectionOf, OWLDataProperty, OWLDataSomeValuesFrom, \
     OWLDataUnionOf, OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLDataOneOf, \
     OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataMinCardinality, OWLObjectExactCardinality, \
     OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectHasValue, OWLObjectAllValuesFrom, \
     OWLObjectOneOf, DateOWLDatatype, DateTimeOWLDatatype, DurationOWLDatatype, OWLClassAssertionAxiom, \
-    OWLDataPropertyAssertionAxiom, OWLObjectProperty, OWLNamedIndividual, OWLEquivalentClassesAxiom, OWLThing
+    OWLNamedIndividual, OWLEquivalentClassesAxiom, OWLSubObjectPropertyOfAxiom, OWLThing, \
+    OWLDifferentIndividualsAxiom, OWLDisjointClassesAxiom, OWLDisjointDataPropertiesAxiom, OWLObjectUnionOf, \
+    OWLDisjointObjectPropertiesAxiom, OWLEquivalentDataPropertiesAxiom, OWLEquivalentObjectPropertiesAxiom, \
+    OWLDataPropertyAssertionAxiom, OWLObjectProperty, OWLDataPropertyDomainAxiom, OWLDataPropertyRangeAxiom, \
+    OWLObjectPropertyAssertionAxiom, OWLObjectPropertyDomainAxiom
 
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
@@ -93,7 +97,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         no_kids = frozenset(reasoner.object_property_values(heinz, has_child))
         self.assertEqual(frozenset(), no_kids)
 
-    def test_add_axiom(self):
+    def test_add_remove_axiom(self):
         ns = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
         onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
@@ -103,27 +107,42 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         michelle = OWLNamedIndividual(IRI.create(ns, 'michelle'))
         anna = OWLNamedIndividual(IRI.create(ns, 'anna'))
         marius = OWLNamedIndividual(IRI.create(ns, 'marius'))
+        person1 = OWLNamedIndividual(IRI.create(ns, 'person1'))
+
         has_child = OWLObjectProperty(IRI.create(ns, 'hasChild'))
         has_sibling = OWLObjectProperty(IRI.create(ns, 'has_sibling'))
         age = OWLDataProperty(IRI.create(ns, 'age'))
+        test1 = OWLDataProperty(IRI.create(ns, 'test1'))
+
         male = OWLClass(IRI(ns, 'male'))
         brother = OWLClass(IRI(ns, 'brother'))
         sister = OWLClass(IRI(ns, 'sister'))
+        person = OWLClass(IRI(ns, 'person'))
+        person_sibling = OWLClass(IRI(ns, 'PersonWithASibling'))
 
         self.assertNotIn(sister, list(onto.classes_in_signature()))
         mgr.add_axiom(onto, OWLClassAssertionAxiom(anna, sister))
         self.assertIn(sister, list(onto.classes_in_signature()))
         self.assertIn(anna, list(reasoner.instances(sister)))
         self.assertIn(sister, list(reasoner.types(anna)))
+        mgr.remove_axiom(onto, OWLClassAssertionAxiom(anna, sister))
+        self.assertNotIn(anna, list(reasoner.instances(sister)))
+        self.assertNotIn(sister, list(reasoner.types(anna)))
 
         self.assertNotIn(michelle, list(reasoner.instances(sister)))
         mgr.add_axiom(onto, OWLClassAssertionAxiom(michelle, sister))
         self.assertIn(michelle, list(reasoner.instances(sister)))
         self.assertIn(sister, list(reasoner.types(michelle)))
+        mgr.remove_axiom(onto, OWLClassAssertionAxiom(michelle, sister))
+        self.assertNotIn(michelle, list(reasoner.instances(sister)))
+        self.assertNotIn(sister, list(reasoner.types(michelle)))
 
         self.assertFalse(list(reasoner.object_property_values(michelle, has_child)))
         mgr.add_axiom(onto, OWLObjectPropertyAssertionAxiom(michelle, has_child, anna))
         self.assertIn(anna, list(reasoner.object_property_values(michelle, has_child)))
+        mgr.remove_axiom(onto, OWLObjectPropertyAssertionAxiom(michelle, has_child, anna))
+        self.assertNotIn(anna, list(reasoner.object_property_values(michelle, has_child)))
+        mgr.remove_axiom(onto, OWLObjectPropertyAssertionAxiom(michelle, has_child, anna))
 
         self.assertNotIn(has_sibling, list(onto.object_properties_in_signature()))
         self.assertNotIn(marius, list(onto.individuals_in_signature()))
@@ -131,65 +150,127 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         self.assertIn(has_sibling, list(onto.object_properties_in_signature()))
         self.assertIn(marius, list(onto.individuals_in_signature()))
         self.assertIn(michelle, list(reasoner.object_property_values(marius, has_sibling)))
+        mgr.remove_axiom(onto, OWLObjectPropertyAssertionAxiom(marius, has_sibling, michelle))
+        self.assertNotIn(michelle, list(reasoner.object_property_values(marius, has_sibling)))
 
         self.assertNotIn(age, list(onto.data_properties_in_signature()))
         mgr.add_axiom(onto, OWLDataPropertyAssertionAxiom(markus, age, OWLLiteral(30)))
         self.assertIn(age, list(onto.data_properties_in_signature()))
         self.assertIn(OWLLiteral(30), list(reasoner.data_property_values(markus, age)))
+        mgr.remove_axiom(onto, OWLDataPropertyAssertionAxiom(markus, age, OWLLiteral(30)))
+        self.assertNotIn(OWLLiteral(30), list(reasoner.data_property_values(markus, age)))
 
         self.assertNotIn(OWLLiteral(31), list(reasoner.data_property_values(anna, age)))
         mgr.add_axiom(onto, OWLDataPropertyAssertionAxiom(anna, age, OWLLiteral(31)))
         self.assertIn(OWLLiteral(31), list(reasoner.data_property_values(anna, age)))
+        mgr.remove_axiom(onto, OWLDataPropertyAssertionAxiom(anna, age, OWLLiteral(31)))
+        self.assertNotIn(OWLLiteral(31), list(reasoner.data_property_values(anna, age)))
 
         self.assertNotIn(brother, list(onto.classes_in_signature()))
         mgr.add_axiom(onto, OWLSubClassOfAxiom(brother, male))
         self.assertIn(brother, list(reasoner.sub_classes(male)))
         self.assertIn(male, list(reasoner.super_classes(brother)))
+        mgr.remove_axiom(onto, OWLSubClassOfAxiom(brother, male))
+        self.assertNotIn(brother, list(reasoner.sub_classes(male)))
+        self.assertNotIn(male, list(reasoner.super_classes(brother)))
+
+        self.assertNotIn(has_sibling, list(reasoner.sub_object_properties(has_child)))
+        mgr.add_axiom(onto, OWLSubObjectPropertyOfAxiom(has_sibling, has_child))
+        self.assertIn(has_sibling, list(reasoner.sub_object_properties(has_child)))
+        mgr.remove_axiom(onto, OWLSubObjectPropertyOfAxiom(has_sibling, has_child))
+        self.assertNotIn(has_sibling, list(reasoner.sub_object_properties(has_child)))
+
+        self.assertNotIn(OWLObjectUnionOf([person, person_sibling]),
+                         list(reasoner.object_property_domains(has_sibling)))
+        mgr.add_axiom(onto, OWLObjectPropertyDomainAxiom(has_sibling, OWLObjectUnionOf([person, person_sibling])))
+        self.assertIn(OWLObjectUnionOf([person, person_sibling]),
+                      list(reasoner.object_property_domains(has_sibling, direct=True)))
+        mgr.remove_axiom(onto, OWLObjectPropertyDomainAxiom(has_sibling, OWLObjectUnionOf([person, person_sibling])))
+        self.assertNotIn(OWLObjectUnionOf([person, person_sibling]),
+                         list(reasoner.object_property_domains(has_sibling, direct=True)))
+
+        self.assertNotIn(sister, list(reasoner.object_property_ranges(has_sibling)))
+        mgr.add_axiom(onto, OWLObjectPropertyRangeAxiom(has_sibling, sister))
+        self.assertIn(sister, list(reasoner.object_property_ranges(has_sibling)))
+        mgr.remove_axiom(onto, OWLObjectPropertyRangeAxiom(has_sibling, sister))
+        self.assertNotIn(sister, list(reasoner.object_property_ranges(has_sibling)))
+
+        self.assertNotIn(person, list(reasoner.data_property_domains(age)))
+        mgr.add_axiom(onto, OWLDataPropertyDomainAxiom(age, person))
+        self.assertIn(person, list(reasoner.data_property_domains(age)))
+        mgr.remove_axiom(onto, OWLDataPropertyDomainAxiom(age, person))
+        self.assertNotIn(person, list(reasoner.data_property_domains(age)))
+
+        self.assertFalse(list(reasoner.data_property_ranges(age)))
+        mgr.add_axiom(onto, OWLDataPropertyRangeAxiom(age, OWLDataUnionOf([IntegerOWLDatatype, DateOWLDatatype])))
+        self.assertIn(OWLDataUnionOf([IntegerOWLDatatype, DateOWLDatatype]), list(reasoner.data_property_ranges(age)))
+        mgr.remove_axiom(onto, OWLDataPropertyRangeAxiom(age, OWLDataUnionOf([IntegerOWLDatatype, DateOWLDatatype])))
+        self.assertNotIn(OWLDataUnionOf([IntegerOWLDatatype, DateOWLDatatype]),
+                         list(reasoner.data_property_ranges(age)))
 
         self.assertFalse(list(reasoner.equivalent_classes(brother)))
         mgr.add_axiom(onto, OWLEquivalentClassesAxiom(brother, male))
         self.assertIn(male, list(reasoner.equivalent_classes(brother)))
+        mgr.remove_axiom(onto, OWLEquivalentClassesAxiom(brother, male))
+        self.assertNotIn(male, list(reasoner.equivalent_classes(brother)))
 
-    def test_remove_axiom(self):
-        ns = "http://example.com/father#"
-        mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
-        reasoner = OWLReasoner_Owlready2(onto)
+        self.assertFalse(list(reasoner.equivalent_object_properties(has_child)))
+        mgr.add_axiom(onto, OWLEquivalentObjectPropertiesAxiom([has_child, has_sibling]))
+        self.assertIn(has_sibling, list(reasoner.equivalent_object_properties(has_child)))
+        mgr.remove_axiom(onto, OWLEquivalentObjectPropertiesAxiom([has_child, has_sibling]))
+        self.assertNotIn(has_sibling, list(reasoner.equivalent_object_properties(has_child)))
 
-        markus = OWLNamedIndividual(IRI.create(ns, 'markus'))
-        michelle = OWLNamedIndividual(IRI.create(ns, 'michelle'))
-        anna = OWLNamedIndividual(IRI.create(ns, 'anna'))
-        has_child = OWLObjectProperty(IRI.create(ns, 'hasChild'))
-        age = OWLDataProperty(IRI.create(ns, 'age'))
-        person = OWLClass(IRI(ns, 'person'))
-        female = OWLClass(IRI(ns, 'female'))
-        sister = OWLClass(IRI(ns, 'sister'))
+        self.assertFalse(list(reasoner.equivalent_data_properties(age)))
+        mgr.add_axiom(onto, OWLEquivalentDataPropertiesAxiom([age, test1]))
+        self.assertIn(test1, list(reasoner.equivalent_data_properties(age)))
+        mgr.remove_axiom(onto, OWLEquivalentDataPropertiesAxiom([age, test1]))
+        self.assertNotIn(test1, list(reasoner.equivalent_data_properties(age)))
 
-        self.assertIn(female, list(reasoner.types(michelle)))
-        mgr.remove_axiom(onto, OWLClassAssertionAxiom(michelle, female))
-        self.assertNotIn(female, list(reasoner.types(michelle)))
+        self.assertFalse(list(reasoner.same_individuals(markus)))
+        mgr.add_axiom(onto, OWLSameIndividualAxiom([markus, anna, person1]))
+        self.assertEqual(set([anna, person1]), set(reasoner.same_individuals(markus)))
+        mgr.remove_axiom(onto, OWLSameIndividualAxiom([markus, anna, person1]))
+        self.assertFalse(set(reasoner.same_individuals(markus)))
 
-        mgr.remove_axiom(onto, OWLClassAssertionAxiom(michelle, sister))
-        self.assertNotIn(sister, list(reasoner.types(michelle)))
+        self.assertFalse(list(reasoner.disjoint_classes(brother)))
+        self.assertFalse(list(reasoner.disjoint_classes(sister)))
+        mgr.add_axiom(onto, OWLDisjointClassesAxiom([brother, male]))
+        mgr.add_axiom(onto, OWLDisjointClassesAxiom([brother, sister, person]))
+        self.assertEqual(set([male, sister, person]), set(reasoner.disjoint_classes(brother)))
+        self.assertEqual(set([brother, person]), set(reasoner.disjoint_classes(sister)))
+        mgr.remove_axiom(onto, OWLDisjointClassesAxiom([brother, male]))
+        mgr.remove_axiom(onto, OWLDisjointClassesAxiom([brother, sister, person]))
+        self.assertFalse(set(reasoner.disjoint_classes(brother)))
+        self.assertFalse(set(reasoner.disjoint_classes(sister)))
 
-        self.assertIn(anna, list(reasoner.object_property_values(markus, has_child)))
-        mgr.remove_axiom(onto, OWLObjectPropertyAssertionAxiom(markus, has_child, anna))
-        self.assertNotIn(anna, list(reasoner.object_property_values(markus, has_child)))
+        self.assertFalse(list(reasoner.disjoint_object_properties(has_sibling)))
+        self.assertFalse(list(reasoner.disjoint_object_properties(has_child)))
+        mgr.add_axiom(onto, OWLDisjointObjectPropertiesAxiom([has_child, has_sibling]))
+        self.assertIn(has_sibling, set(reasoner.disjoint_object_properties(has_child)))
+        self.assertIn(has_child, set(reasoner.disjoint_object_properties(has_sibling)))
+        mgr.remove_axiom(onto, OWLDisjointObjectPropertiesAxiom([has_child, has_sibling]))
+        self.assertNotIn(has_sibling, set(reasoner.disjoint_object_properties(has_child)))
+        self.assertNotIn(has_child, set(reasoner.disjoint_object_properties(has_sibling)))
 
-        self.assertNotIn(michelle, list(reasoner.object_property_values(markus, has_child)))
-        mgr.remove_axiom(onto, OWLObjectPropertyAssertionAxiom(markus, has_child, michelle))
+        self.assertFalse(list(reasoner.disjoint_data_properties(age)))
+        self.assertFalse(list(reasoner.disjoint_data_properties(test1)))
+        mgr.add_axiom(onto, OWLDisjointDataPropertiesAxiom([age, test1]))
+        self.assertIn(test1, set(reasoner.disjoint_data_properties(age)))
+        self.assertIn(age, set(reasoner.disjoint_data_properties(test1)))
+        mgr.remove_axiom(onto, OWLDisjointDataPropertiesAxiom([age, test1]))
+        self.assertNotIn(test1, set(reasoner.disjoint_data_properties(age)))
+        self.assertNotIn(age, set(reasoner.disjoint_data_properties(test1)))
 
-        self.assertNotIn(age, list(onto.data_properties_in_signature()))
-        mgr.add_axiom(onto, OWLDataPropertyAssertionAxiom(markus, age, OWLLiteral(30)))
-        self.assertIn(OWLLiteral(30), list(reasoner.data_property_values(markus, age)))
-        mgr.remove_axiom(onto, OWLDataPropertyAssertionAxiom(markus, age, OWLLiteral(30)))
-        self.assertNotIn(OWLLiteral(30), list(reasoner.data_property_values(markus, age)))
-
-        self.assertIn(female, list(reasoner.sub_classes(person)))
-        self.assertIn(person, list(reasoner.super_classes(female)))
-        mgr.remove_axiom(onto, OWLSubClassOfAxiom(female, person))
-        self.assertNotIn(female, list(reasoner.sub_classes(person)))
-        self.assertNotIn(person, list(reasoner.super_classes(female)))
+        self.assertFalse(list(reasoner.different_individuals(markus)))
+        self.assertFalse(list(reasoner.different_individuals(michelle)))
+        mgr.add_axiom(onto, OWLDifferentIndividualsAxiom([markus, michelle]))
+        mgr.add_axiom(onto, OWLDifferentIndividualsAxiom([markus, anna, marius]))
+        self.assertEqual(set([michelle, anna, marius]), set(reasoner.different_individuals(markus)))
+        self.assertEqual(set([markus]), set(reasoner.different_individuals(michelle)))
+        mgr.remove_axiom(onto, OWLDifferentIndividualsAxiom([markus, michelle]))
+        mgr.remove_axiom(onto, OWLDifferentIndividualsAxiom([markus, anna, marius]))
+        self.assertFalse(set(reasoner.different_individuals(markus)))
+        self.assertFalse(set(reasoner.different_individuals(michelle)))
 
     def test_mapping(self):
         ns = "http://example.com/father#"
