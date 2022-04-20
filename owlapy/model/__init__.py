@@ -3325,10 +3325,80 @@ class OWLReasoner(metaclass=ABCMeta):
             ce: The class expression whose equivalent classes are to be retrieved.
 
         Returns:
-            All named class C where the root ontology imports closure entails EquivalentClasses(ce C). If ce is not a
+            All named classes C where the root ontology imports closure entails EquivalentClasses(ce C). If ce is not a
             class name (i.e. it is an anonymous class expression) and there are no such classes C then there will be
             no result. If ce is unsatisfiable with respect to the set of reasoner axioms then  owl:Nothing, i.e. the
             bottom node, will be returned.
+        """
+        pass
+
+    @abstractmethod
+    def disjoint_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
+        """Gets the named classes that are disjoint with specified class expression with respect to the set of
+        reasoner axioms.
+
+        Args:
+            ce: The class expression whose disjoint classes are to be retrieved.
+
+        Returns:
+            All named classes D where the set of reasoner axioms entails EquivalentClasses(D ObjectComplementOf(ce))
+            or StrictSubClassOf(D ObjectComplementOf(ce)).
+        """
+        pass
+
+    @abstractmethod
+    def different_individuals(self, ind: OWLNamedIndividual) -> Iterable[OWLNamedIndividual]:
+        """Gets the individuals that are different from the specified individual with respect to the set of
+        reasoner axioms.
+
+        Args:
+            ind: The individual whose different individuals are to be retrieved.
+
+        Returns:
+            All individuals x where the set of reasoner axioms entails DifferentIndividuals(ind x).
+        """
+        pass
+
+    @abstractmethod
+    def same_individuals(self, ind: OWLNamedIndividual) -> Iterable[OWLNamedIndividual]:
+        """Gets the individuals that are the same as the specified individual with respect to the set of
+        reasoner axioms.
+
+        Args:
+            ind: The individual whose same individuals are to be retrieved.
+
+        Returns:
+            All individuals x where the root ontology imports closure entails SameIndividual(ind x).
+        """
+        pass
+
+    @abstractmethod
+    def equivalent_object_properties(self, op: OWLObjectPropertyExpression) -> Iterable[OWLObjectPropertyExpression]:
+        """Gets the simplified object properties that are equivalent to the specified object property with respect
+        to the set of reasoner axioms.
+
+        Args:
+            op: The object property whose equivalent object properties are to be retrieved.
+
+        Returns:
+            All simplified object properties e where the root ontology imports closure entails
+            EquivalentObjectProperties(op e). If op is unsatisfiable with respect to the set of reasoner axioms
+            then owl:bottomDataProperty will be returned.
+        """
+        pass
+
+    @abstractmethod
+    def equivalent_data_properties(self, dp: OWLDataProperty) -> Iterable[OWLDataProperty]:
+        """Gets the data properties that are equivalent to the specified data property with respect to the set of
+        reasoner axioms.
+
+        Args:
+            dp: The data property whose equivalent data properties are to be retrieved.
+
+        Returns:
+            All data properties e where the root ontology imports closure entails EquivalentDataProperties(dp e).
+            If dp is unsatisfiable with respect to the set of reasoner axioms then owl:bottomDataProperty will
+            be returned.
         """
         pass
 
@@ -3398,6 +3468,36 @@ class OWLReasoner(metaclass=ABCMeta):
             If direct is True, each class C where reasoner axioms entails DirectSubClassOf(C, ce). If direct is False,
             each class C where reasoner axioms entails StrictSubClassOf(C, ce). If ce is equivalent to owl:Nothing then
             nothing will be returned.
+        """
+        pass
+
+    @abstractmethod
+    def disjoint_object_properties(self, op: OWLObjectPropertyExpression) -> Iterable[OWLObjectPropertyExpression]:
+        """Gets the simplified object properties that are disjoint with the specified object property with respect
+        to the set of reasoner axioms.
+
+        Args:
+            op: The object property whose disjoint object properties are to be retrieved.
+
+        Returns:
+            All simplified object properties e where the root ontology imports closure entails
+            EquivalentObjectProperties(e ObjectPropertyComplementOf(op)) or
+            StrictSubObjectPropertyOf(e ObjectPropertyComplementOf(op)).
+        """
+        pass
+
+    @abstractmethod
+    def disjoint_data_properties(self, dp: OWLDataProperty) -> Iterable[OWLDataProperty]:
+        """Gets the data properties that are disjoint with the specified data property with respect
+        to the set of reasoner axioms.
+
+        Args:
+            dp: The data property whose disjoint data properties are to be retrieved.
+
+        Returns:
+            All data properties e where the root ontology imports closure entails
+            EquivalentDataProperties(e DataPropertyComplementOf(dp)) or
+            StrictSubDataPropertyOf(e DataPropertyComplementOf(dp)).
         """
         pass
 

@@ -256,6 +256,27 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         else:
             raise NotImplementedError("equivalent_classes for complex class expressions not implemented", ce)
 
+    def disjoint_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
+        if isinstance(ce, OWLClass):
+            c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
+            for c in chain.from_iterable(map(lambda d: d.entities, c_x.disjoints())):
+                if isinstance(c, owlready2.ThingClass) and c != c_x:
+                    yield OWLClass(IRI.create(c.iri))
+                # Anonymous classes are ignored
+        else:
+            raise NotImplementedError("disjoint_classes for complex class expressions not implemented", ce)
+
+    def different_individuals(self, ind: OWLNamedIndividual) -> Iterable[OWLNamedIndividual]:
+        i: owlready2.Thing = self._world[ind.get_iri().as_str()]
+        yield from (OWLNamedIndividual(IRI.create(d_i.iri))
+                    for d_i in chain.from_iterable(map(lambda x: x.entities, i.differents()))
+                    if isinstance(d_i, owlready2.Thing) and i != d_i)
+
+    def same_individuals(self, ind: OWLNamedIndividual) -> Iterable[OWLNamedIndividual]:
+        i: owlready2.Thing = self._world[ind.get_iri().as_str()]
+        yield from (OWLNamedIndividual(IRI.create(d_i.iri)) for d_i in i.equivalent_to
+                    if isinstance(d_i, owlready2.Thing))
+
     def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
         i: owlready2.Thing = self._world[ind.get_iri().as_str()]
         p: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
@@ -355,6 +376,38 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                         yield OWLClass(IRI.create(sc.iri))
         else:
             raise NotImplementedError("super classes for complex class expressions not implemented", ce)
+
+    def equivalent_object_properties(self, op: OWLObjectPropertyExpression) -> Iterable[OWLObjectPropertyExpression]:
+        if isinstance(op, OWLObjectProperty):
+            p_x: owlready2.ObjectPropertyClass = self._world[op.get_iri().as_str()]
+            yield from (OWLObjectProperty(IRI.create(ep_x.iri)) for ep_x in p_x.equivalent_to
+                        if isinstance(ep_x, owlready2.ObjectPropertyClass))
+        else:
+            raise NotImplementedError("equivalent properties of inverse properties not yet implemented", op)
+
+    def equivalent_data_properties(self, dp: OWLDataProperty) -> Iterable[OWLDataProperty]:
+        p_x: owlready2.DataPropertyClass = self._world[dp.get_iri().as_str()]
+        yield from (OWLDataProperty(IRI.create(ep_x.iri)) for ep_x in p_x.equivalent_to
+                    if isinstance(ep_x, owlready2.DataPropertyClass))
+
+    def disjoint_object_properties(self, op: OWLObjectPropertyExpression) -> Iterable[OWLObjectPropertyExpression]:
+        if isinstance(op, OWLObjectProperty):
+            p_x: owlready2.ObjectPropertyClass = self._world[op.get_iri().as_str()]
+            ont_x: owlready2.Ontology = self.get_root_ontology()._onto
+            for disjoint in ont_x.disjoint_properties():
+                if p_x in disjoint.entities:
+                    yield from (OWLObjectProperty(IRI.create(o_p.iri)) for o_p in disjoint.entities
+                                if isinstance(o_p, owlready2.ObjectPropertyClass) and o_p != p_x)
+        else:
+            raise NotImplementedError("disjoint object properties of inverse properties not yet implemented", op)
+
+    def disjoint_data_properties(self, dp: OWLDataProperty) -> Iterable[OWLDataProperty]:
+        p_x: owlready2.DataPropertyClass = self._world[dp.get_iri().as_str()]
+        ont_x: owlready2.Ontology = self.get_root_ontology()._onto
+        for disjoint in ont_x.disjoint_properties():
+            if p_x in disjoint.entities:
+                yield from (OWLDataProperty(IRI.create(o_p.iri)) for o_p in disjoint.entities
+                            if isinstance(o_p, owlready2.DataPropertyClass) and o_p != p_x)
 
     def _sub_data_properties_recursive(self, dp: OWLDataProperty, seen_set: Set) -> Iterable[OWLDataProperty]:
         p_x: owlready2.DataPropertyClass = self._world[dp.get_iri().as_str()]
