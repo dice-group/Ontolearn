@@ -107,6 +107,15 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
     def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
         yield from self._base_reasoner.equivalent_classes(ce)
 
+    def disjoint_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
+        yield from self._base_reasoner.disjoint_classes(ce)
+
+    def different_individuals(self, ce: OWLNamedIndividual) -> Iterable[OWLNamedIndividual]:
+        yield from self._base_reasoner.different_individuals(ce)
+
+    def same_individuals(self, ce: OWLNamedIndividual) -> Iterable[OWLNamedIndividual]:
+        yield from self._base_reasoner.same_individuals(ce)
+
     def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
         yield from self._base_reasoner.data_property_values(ind, pe)
 
@@ -145,6 +154,18 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
 
     def types(self, ind: OWLNamedIndividual, direct: bool = False) -> Iterable[OWLClass]:
         yield from self._base_reasoner.types(ind, direct=direct)
+
+    def equivalent_object_properties(self, dp: OWLObjectPropertyExpression) -> Iterable[OWLObjectPropertyExpression]:
+        yield from self._base_reasoner.equivalent_object_properties(dp)
+
+    def equivalent_data_properties(self, dp: OWLDataProperty) -> Iterable[OWLDataProperty]:
+        yield from self._base_reasoner.equivalent_data_properties(dp)
+
+    def disjoint_object_properties(self, dp: OWLObjectPropertyExpression) -> Iterable[OWLObjectPropertyExpression]:
+        yield from self._base_reasoner.disjoint_object_properties(dp)
+
+    def disjoint_data_properties(self, dp: OWLDataProperty) -> Iterable[OWLDataProperty]:
+        yield from self._base_reasoner.disjoint_data_properties(dp)
 
     def sub_data_properties(self, dp: OWLDataProperty, direct: bool = False) -> Iterable[OWLDataProperty]:
         yield from self._base_reasoner.sub_data_properties(dp=dp, direct=direct)
