@@ -260,7 +260,8 @@ def _(axiom: OWLPropertyRangeAxiom, ontology: OWLOntology, world: owlready2.name
         _check_expression(range_, ontology, world)
     with ont_x:
         property_x = conv._to_owlready2_property(property_)
-        range_x = conv.map_concept(range_) if isinstance(OWLObjectPropertyRangeAxiom) else conv.map_datarange(range_)
+        range_x = conv.map_concept(range_) if isinstance(axiom, OWLObjectPropertyRangeAxiom) \
+            else conv.map_datarange(range_)
         property_x.range.append(range_x)
 
 
@@ -479,7 +480,7 @@ def _(axiom: OWLNaryIndividualAxiom, ontology: OWLOntology, world: owlready2.nam
     ont_x: owlready2.Ontology = conv.map_object(ontology)
 
     with ont_x:
-        individuals_x = set(map(conv._to_owlready2_individual, axiom.individuals()))
+        individuals_x = list(map(conv._to_owlready2_individual, axiom.individuals()))
         if len(individuals_x) < 2 or not all(individuals_x):
             return
         if isinstance(axiom, OWLSameIndividualAxiom):
@@ -490,6 +491,7 @@ def _(axiom: OWLNaryIndividualAxiom, ontology: OWLOntology, world: owlready2.nam
                     if individual_2_x in individual_1_x.equivalent_to:
                         individual_1_x.equivalent_to.remove(individual_2_x)
         elif isinstance(axiom, OWLDifferentIndividualsAxiom):
+            individuals_x = set(individuals_x)
             for different_x in ont_x.different_individuals():
                 if set(different_x.entities) == individuals_x:
                     del different_x.entities[:-1]
