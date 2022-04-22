@@ -51,6 +51,7 @@ declare_datatype(Timedelta, IRI.create(namespaces.XSD, "duration").as_str(),
 
 class BaseReasoner_Owlready2(Enum):
     PELLET = auto()
+    HERMIT = auto()
 
 
 class OWLOntologyManager_Owlready2(OWLOntologyManager):
@@ -468,17 +469,24 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                     yield OWLClass(IRI.create(c.iri))
                 # Anonymous classes are ignored
 
-    def _sync_reasoner(self, other_reasoner: BaseReasoner_Owlready2 = None, **kwargs) -> None:
+    def _sync_reasoner(self, other_reasoner: BaseReasoner_Owlready2 = None,
+                       infer_property_values: bool = True,
+                       infer_data_property_values: bool = True) -> None:
         """Call Owlready2's sync_reasoner method, which spawns a Java process on a temp file to infer more
 
-        Keyword arguments:
-            other_reasoner -- set to BaseReasoner.PELLET to use pellet
+        Args:
+            other_reasoner: set to BaseReasoner.PELLET (default) or BaseReasoner.HERMIT
+            infer_property_values: whether to infer property values
+            infer_data_property_values: whether to infer data property values (only for PELLET)
         """
         assert other_reasoner is None or isinstance(other_reasoner, BaseReasoner_Owlready2)
-        if other_reasoner == BaseReasoner_Owlready2.PELLET:
-            owlready2.sync_reasoner_pellet(self._world, **kwargs)
-        else:
-            owlready2.sync_reasoner(self._world, **kwargs)
+        with self.get_root_ontology()._onto:
+            if other_reasoner == BaseReasoner_Owlready2.HERMIT:
+                owlready2.sync_reasoner_hermit(self._world, infer_property_values=infer_property_values)
+            else:
+                owlready2.sync_reasoner_pellet(self._world,
+                                               infer_property_values=infer_property_values,
+                                               infer_data_property_values=infer_data_property_values)
 
     def get_root_ontology(self) -> OWLOntology:
         return self._ontology

@@ -16,12 +16,12 @@ Factory = Callable
 
 logger = logging.getLogger(__name__)
 
-
+# TODO:CD: To many non pythonic functions
+# TODO:CD: Almost no documentation
 def _Default_OntologyManagerFactory(world_store=None) -> OWLOntologyManager:
     from owlapy.owlready2 import OWLOntologyManager_Owlready2
 
     return OWLOntologyManager_Owlready2(world_store=world_store)
-
 
 def _Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
     from owlapy.owlready2 import OWLOntology_Owlready2
@@ -34,16 +34,17 @@ def _Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
                                                base_reasoner=base_reasoner)
     return reasoner
 
-
 def _Default_ClassExpressionLengthMetricFactory() -> OWLClassExpressionLengthMetric:
     return OWLClassExpressionLengthMetric.get_default()
 
-
+# TODO:CD: Unclear why we need this class definition
 class EvaluatedConcept:
     __slots__ = 'q', 'inds', 'ic'
     pass
 
-
+# TODO:CD: __init__ is overcrowded. This bit can/should be simplified to few lines
+# TODO:CD: Namings are not self-explanatory: User does not need to know
+#  a) factory programming pattern b) Manager Classes etc inadvertently increases cognitive load
 class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
     """Knowledge Base Class representing Tbox and Abox along with concept hierarchies
 
@@ -71,7 +72,6 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
     path: str
     use_individuals_cache: bool
-
     @overload
     def __init__(self, *,
                  path: str,

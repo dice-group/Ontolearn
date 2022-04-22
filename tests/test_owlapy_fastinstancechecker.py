@@ -16,6 +16,7 @@ from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, OWLDataty
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from pytest import mark
 
+# @TODO:CD: Why does test_complement2 fails ?
 
 class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
     # noinspection DuplicatedCode
