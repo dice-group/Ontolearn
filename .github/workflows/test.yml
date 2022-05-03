@@ -1,6 +1,6 @@
 name: Test
 
-on: [push]
+on: [push, pull_request]
 
 env:
   tox_dep: 'tox=3.24.3'

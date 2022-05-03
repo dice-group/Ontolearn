@@ -1,6 +1,6 @@
 name: Lint
 
-on: [push]
+on: [push, pull_request]
 
 env:
   tox_dep: 'tox=3.23.1'
