@@ -8,7 +8,7 @@ dependencies:
   - pandas=1.2.3
   - pytorch=1.8.0
   - rdflib=6.0.2
-  - scikit-learn=0.24.1
+  - scikit-learn=1.0.2
   - sortedcontainers=2.4.0
   - owlready2=0.34
   - flask=1.1.2
