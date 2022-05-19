@@ -1,6 +1,6 @@
 name: Verify external files
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   verify:

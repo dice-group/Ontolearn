@@ -1,24 +1,23 @@
 import logging
-import types
 from datetime import date, datetime
 from enum import Enum, auto
 from itertools import chain
 from types import MappingProxyType
-from typing import Iterable, Set, Final, cast
+from typing import Iterable, Set, Final
 
 import owlready2
 from owlready2 import declare_datatype
 from pandas import Timedelta
 
+from owlapy.owlready2 import axioms
 from owlapy import namespaces
 from owlapy.ext import OWLReasonerEx
 from owlapy.model import OWLObjectPropertyRangeAxiom, OWLOntologyManager, OWLDataProperty, OWLObjectProperty, \
     OWLNamedIndividual, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, OWLOntology, \
-    OWLOntologyChange, AddImport, OWLEquivalentClassesAxiom, OWLThing, OWLAnnotationAssertionAxiom, DoubleOWLDatatype, \
+    OWLOntologyChange, AddImport, OWLThing, DoubleOWLDatatype, OWLObjectPropertyDomainAxiom, OWLLiteral, \
     OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, DateOWLDatatype, DateTimeOWLDatatype, OWLClass, \
-    DurationOWLDatatype, StringOWLDatatype, IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLLiteral, \
-    OWLObjectPropertyDomainAxiom, OWLSubClassOfAxiom
-from owlapy.owlready2.utils import FromOwlready2, ToOwlready2
+    DurationOWLDatatype, StringOWLDatatype, IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom
+from owlapy.owlready2.utils import FromOwlready2
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +51,7 @@ declare_datatype(Timedelta, IRI.create(namespaces.XSD, "duration").as_str(),
 
 class BaseReasoner_Owlready2(Enum):
     PELLET = auto()
+    HERMIT = auto()
 
 
 class OWLOntologyManager_Owlready2(OWLOntologyManager):
@@ -82,66 +82,10 @@ class OWLOntologyManager_Owlready2(OWLOntologyManager):
             raise NotImplementedError
 
     def add_axiom(self, ontology: OWLOntology, axiom: OWLAxiom):
-        conv = ToOwlready2(self._world)
-        ont_x: owlready2.namespace.Ontology = conv.map_object(ontology)
+        axioms._add_axiom(axiom, ontology, self._world)
 
-        if isinstance(axiom, OWLEquivalentClassesAxiom):
-            cls_a, cls_b = axiom.class_expressions()
-            thing_x: owlready2.entity.ThingClass = conv.map_concept(OWLThing)
-            with ont_x:
-                assert isinstance(cls_a, OWLClass), f'{cls_a} is no named class'
-                w_x: owlready2.entity.ThingClass = cast(thing_x,
-                                                        types.new_class(name=cls_a.get_iri().get_remainder(),
-                                                                        bases=(thing_x,)))
-                w_x.namespace = ont_x.get_namespace(cls_a.get_iri().get_namespace())
-                w_x.is_a.remove(thing_x)
-                w_x.equivalent_to.append(conv.map_concept(cls_b))
-        elif isinstance(axiom, OWLSubClassOfAxiom):
-            sub_class = axiom.get_sub_class()
-            super_class = axiom.get_super_class()
-            with ont_x:
-                assert isinstance(sub_class, OWLClass), f'Owlready2 only supports named classes ({sub_class})'
-                sub_class_x = self._world[sub_class.to_string_id()]
-                if sub_class_x is None:
-                    thing_x: owlready2.entity.ThingClass = conv.map_concept(OWLThing)
-                    sub_class_x: owlready2.entity.ThingClass = cast(thing_x,
-                                                                    types.new_class(
-                                                                        name=sub_class.get_iri().get_remainder(),
-                                                                        bases=(thing_x,)))
-                    sub_class_x.namespace = ont_x.get_namespace(sub_class.get_iri().get_namespace())
-                    sub_class_x.is_a.remove(thing_x)
-                sub_class_x.is_a.append(conv.map_concept(super_class))
-        elif isinstance(axiom, OWLAnnotationAssertionAxiom):
-            prop_x = conv.map_object(axiom.get_property())
-            if prop_x is None:
-                with ont_x:
-                    prop_x: owlready2.annotation.AnnotationPropertyClass = cast(
-                        owlready2.AnnotationProperty,
-                        types.new_class(
-                            name=axiom.get_property().get_iri().get_remainder(),
-                            bases=(owlready2.AnnotationProperty,)))
-                    prop_x.namespace = ont_x.get_namespace(axiom.get_property().get_iri().get_namespace())
-            sub_x = self._world[axiom.get_subject().as_iri().as_str()]
-            assert sub_x is not None, f'{axiom.get_subject} not found in {ontology}'
-            if axiom.get_value().is_literal():
-                literal = axiom.get_value().as_literal()
-                if literal.is_double():
-                    v = literal.parse_double()
-                elif literal.is_integer():
-                    v = literal.parse_integer()
-                elif literal.is_boolean():
-                    v = literal.parse_boolean()
-                else:
-                    # TODO XXX
-                    raise NotImplementedError
-                setattr(sub_x, prop_x.python_name, v)
-            else:
-                o_x = self._world[axiom.get_value().as_iri().as_str()]
-                assert o_x is not None, f'{axiom.get_value()} not found in {ontology}'
-                setattr(sub_x, prop_x.python_name, o_x)
-        else:
-            # TODO XXX
-            raise NotImplementedError
+    def remove_axiom(self, ontology: OWLOntology, axiom: OWLAxiom):
+        axioms._remove_axiom(axiom, ontology, self._world)
 
     def save_ontology(self, ontology: OWLOntology, document_iri: IRI):
         ont_x: owlready2.namespace.Ontology = self._world.get_ontology(
@@ -313,6 +257,27 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         else:
             raise NotImplementedError("equivalent_classes for complex class expressions not implemented", ce)
 
+    def disjoint_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
+        if isinstance(ce, OWLClass):
+            c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
+            for c in chain.from_iterable(map(lambda d: d.entities, c_x.disjoints())):
+                if isinstance(c, owlready2.ThingClass) and c != c_x:
+                    yield OWLClass(IRI.create(c.iri))
+                # Anonymous classes are ignored
+        else:
+            raise NotImplementedError("disjoint_classes for complex class expressions not implemented", ce)
+
+    def different_individuals(self, ind: OWLNamedIndividual) -> Iterable[OWLNamedIndividual]:
+        i: owlready2.Thing = self._world[ind.get_iri().as_str()]
+        yield from (OWLNamedIndividual(IRI.create(d_i.iri))
+                    for d_i in chain.from_iterable(map(lambda x: x.entities, i.differents()))
+                    if isinstance(d_i, owlready2.Thing) and i != d_i)
+
+    def same_individuals(self, ind: OWLNamedIndividual) -> Iterable[OWLNamedIndividual]:
+        i: owlready2.Thing = self._world[ind.get_iri().as_str()]
+        yield from (OWLNamedIndividual(IRI.create(d_i.iri)) for d_i in i.equivalent_to
+                    if isinstance(d_i, owlready2.Thing))
+
     def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
         i: owlready2.Thing = self._world[ind.get_iri().as_str()]
         p: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
@@ -413,6 +378,38 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         else:
             raise NotImplementedError("super classes for complex class expressions not implemented", ce)
 
+    def equivalent_object_properties(self, op: OWLObjectPropertyExpression) -> Iterable[OWLObjectPropertyExpression]:
+        if isinstance(op, OWLObjectProperty):
+            p_x: owlready2.ObjectPropertyClass = self._world[op.get_iri().as_str()]
+            yield from (OWLObjectProperty(IRI.create(ep_x.iri)) for ep_x in p_x.equivalent_to
+                        if isinstance(ep_x, owlready2.ObjectPropertyClass))
+        else:
+            raise NotImplementedError("equivalent properties of inverse properties not yet implemented", op)
+
+    def equivalent_data_properties(self, dp: OWLDataProperty) -> Iterable[OWLDataProperty]:
+        p_x: owlready2.DataPropertyClass = self._world[dp.get_iri().as_str()]
+        yield from (OWLDataProperty(IRI.create(ep_x.iri)) for ep_x in p_x.equivalent_to
+                    if isinstance(ep_x, owlready2.DataPropertyClass))
+
+    def disjoint_object_properties(self, op: OWLObjectPropertyExpression) -> Iterable[OWLObjectPropertyExpression]:
+        if isinstance(op, OWLObjectProperty):
+            p_x: owlready2.ObjectPropertyClass = self._world[op.get_iri().as_str()]
+            ont_x: owlready2.Ontology = self.get_root_ontology()._onto
+            for disjoint in ont_x.disjoint_properties():
+                if p_x in disjoint.entities:
+                    yield from (OWLObjectProperty(IRI.create(o_p.iri)) for o_p in disjoint.entities
+                                if isinstance(o_p, owlready2.ObjectPropertyClass) and o_p != p_x)
+        else:
+            raise NotImplementedError("disjoint object properties of inverse properties not yet implemented", op)
+
+    def disjoint_data_properties(self, dp: OWLDataProperty) -> Iterable[OWLDataProperty]:
+        p_x: owlready2.DataPropertyClass = self._world[dp.get_iri().as_str()]
+        ont_x: owlready2.Ontology = self.get_root_ontology()._onto
+        for disjoint in ont_x.disjoint_properties():
+            if p_x in disjoint.entities:
+                yield from (OWLDataProperty(IRI.create(o_p.iri)) for o_p in disjoint.entities
+                            if isinstance(o_p, owlready2.DataPropertyClass) and o_p != p_x)
+
     def _sub_data_properties_recursive(self, dp: OWLDataProperty, seen_set: Set) -> Iterable[OWLDataProperty]:
         p_x: owlready2.DataPropertyClass = self._world[dp.get_iri().as_str()]
         assert isinstance(p_x, owlready2.DataPropertyClass)
@@ -472,17 +469,24 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                     yield OWLClass(IRI.create(c.iri))
                 # Anonymous classes are ignored
 
-    def _sync_reasoner(self, other_reasoner: BaseReasoner_Owlready2 = None, **kwargs) -> None:
+    def _sync_reasoner(self, other_reasoner: BaseReasoner_Owlready2 = None,
+                       infer_property_values: bool = True,
+                       infer_data_property_values: bool = True) -> None:
         """Call Owlready2's sync_reasoner method, which spawns a Java process on a temp file to infer more
 
-        Keyword arguments:
-            other_reasoner -- set to BaseReasoner.PELLET to use pellet
+        Args:
+            other_reasoner: set to BaseReasoner.PELLET (default) or BaseReasoner.HERMIT
+            infer_property_values: whether to infer property values
+            infer_data_property_values: whether to infer data property values (only for PELLET)
         """
         assert other_reasoner is None or isinstance(other_reasoner, BaseReasoner_Owlready2)
-        if other_reasoner == BaseReasoner_Owlready2.PELLET:
-            owlready2.sync_reasoner_pellet(self._world, **kwargs)
-        else:
-            owlready2.sync_reasoner(self._world, **kwargs)
+        with self.get_root_ontology()._onto:
+            if other_reasoner == BaseReasoner_Owlready2.HERMIT:
+                owlready2.sync_reasoner_hermit(self._world, infer_property_values=infer_property_values)
+            else:
+                owlready2.sync_reasoner_pellet(self._world,
+                                               infer_property_values=infer_property_values,
+                                               infer_data_property_values=infer_data_property_values)
 
     def get_root_ontology(self) -> OWLOntology:
         return self._ontology
