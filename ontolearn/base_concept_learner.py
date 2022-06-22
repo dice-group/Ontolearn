@@ -1,14 +1,15 @@
 import logging
 import time
 from abc import ABCMeta, abstractmethod
-from typing import List, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, cast, Callable, Type
+from typing import List, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, Union, cast, Callable, Type
 
 import numpy as np
 import pandas as pd
 
-from owlapy.model import OWLClassExpression, OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
+from owlapy.model import OWLDeclarationAxiom, OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
     OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, OWLAnnotationAssertionAxiom, OWLAnnotation, \
-    OWLAnnotationProperty, OWLLiteral, IRI
+    OWLAnnotationProperty, OWLLiteral, IRI, OWLClassExpression, OWLReasoner, OWLAxiom
+from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, AbstractKnowledgeBase, \
     AbstractConceptNode, AbstractLearningProblem
@@ -182,56 +183,91 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         """
         pass
 
-    def assign_labels_to_individuals(self, *, individuals: List[OWLNamedIndividual], hypotheses: List[_N]) \
-            -> np.ndarray:
+    def _assign_labels_to_individuals(self, individuals: List[OWLNamedIndividual],
+                                      hypotheses: List[OWLClassExpression],
+                                      reasoner: Optional[OWLReasoner] = None) -> np.ndarray:
         """
-        Use each given search tree node as a hypothesis, and use it as a binary function to assign 1 or 0 to each
+        Use each class expression as a hypothesis, and use it as a binary function to assign 1 or 0 to each
         individual.
 
         Args:
             individuals: A list of OWL individuals.
-            hypotheses: A list of search tree nodes (that have a concept property)
+            hypotheses: A list of class expressions.
+            reasoner: Optionally use a different reasoner. If reasoner=None, the knowledge base of the concept
+                      learner is used.
 
         Returns:
             matrix of \\|individuals\\| x \\|hypotheses\\|
         """
+        retrieval_func = self.kb.individuals_set if reasoner is None else reasoner.instances
+
         labels = np.zeros((len(individuals), len(hypotheses)))
-        for jth_hypo in range(len(hypotheses)):
-            node = hypotheses[jth_hypo]
-
-            kb_individuals = self.kb.individuals_set(node.concept)
-            for ith_ind in range(len(individuals)):
-                ind = individuals[ith_ind]
-
+        for idx_hyp, hyp in enumerate(hypotheses):
+            kb_individuals = retrieval_func(hyp)
+            for idx_ind, ind in enumerate(individuals):
                 if ind in kb_individuals:
-                    labels[ith_ind][jth_hypo] = 1
+                    labels[idx_ind][idx_hyp] = 1
         return labels
 
-    def predict(self, individuals: List[OWLNamedIndividual], hypotheses: Optional[List[_N]] = None,
-                n: Optional[int] = None) -> pd.DataFrame:
-        """Create a binary data frame showing for each individual whether it is entailed in a class expression
+    # TODO: I dont really like this reasoner argument
+    def predict(self, individuals: List[OWLNamedIndividual],
+                hypotheses: Optional[List[Union[_N, OWLClassExpression]]] = None, n: int = 10,
+                reasoner: Optional[OWLReasoner] = None) -> pd.DataFrame:
+        """Create a binary data frame showing for each individual whether it is entailed in the given hypotheses
+           (class expressions).
 
         Args:
-            individuals: A list of individuals/instances where each item is a string.
-            hypotheses: A list of ALC concepts.
+            individuals: A list of individuals/instances.
+            hypotheses: A list of search tree nodes or class expressions.
             n: integer denoting number of ALC concepts to extract from search tree if hypotheses=None.
+            reasoner: Optionally use a different reasoner. If reasoner=None, the knowledge base of the concept
+                      learner is used.
 
         Returns:
             Data frame which has a 1 in each cell where the individual is entailed by the hypothesis
         """
-        assert isinstance(individuals, List)  # set would not work.
         if hypotheses is None:
-            try:
-                assert isinstance(n, int) and n > 0
-            except AssertionError:
-                raise ValueError('**n** must be positive integer.')
-            hypotheses = list(self.best_hypotheses(n))
+            hypotheses = [hyp.concept for hyp in self.best_hypotheses(n)]
+        else:
+            hypotheses = [(hyp.concept if isinstance(hyp, AbstractConceptNode) else hyp) for hyp in hypotheses]
 
         dlr = DLSyntaxObjectRenderer()
 
-        return pd.DataFrame(data=self.assign_labels_to_individuals(individuals=individuals, hypotheses=hypotheses),
-                            index=[dlr.render(_) for _ in individuals],
-                            columns=[dlr.render(c.concept) for c in hypotheses])
+        return pd.DataFrame(data=self._assign_labels_to_individuals(individuals, hypotheses, reasoner),
+                            index=[dlr.render(i) for i in individuals],
+                            columns=[dlr.render(c) for c in hypotheses])
+
+    def predict_new_individuals(self, individuals: List[OWLNamedIndividual], axioms: List[OWLAxiom],
+                                hypotheses: Optional[List[Union[_N, OWLClassExpression]]] = None, n: int = 10,
+                                reasoner: Optional[OWLReasoner] = None) -> pd.DataFrame:
+        """Takes a list of new individuals together with their axioms which do not exist in the knowledge base yet.
+           Creates a binary data frame showing for each individual whether it is entailed in the given hypotheses
+           (class expressions).
+
+        Args:
+            individuals: A list of new individuals/instances.
+            axioms: A list of axioms which describe the given individuals.
+            hypotheses: A list search tree nodes or class expressions.
+            n: integer denoting number of ALC concepts to extract from search tree if hypotheses=None.
+            reasoner: Optionally use a different reasoner. If reasoner=None, the knowledge base of the concept
+                      learner is used.
+
+        Returns:
+            Data frame which has a 1 in each cell where the individual is entailed by the hypothesis
+        """
+        ontology = self.kb.ontology()
+        manager: OWLOntologyManager = ontology.get_owl_ontology_manager()
+        for axiom in axioms:
+            manager.add_axiom(ontology, axiom)
+
+        reasoner = OWLReasoner_Owlready2_TempClasses(ontology) if reasoner is None else reasoner
+        result = self.predict(individuals, hypotheses=hypotheses, n=n, reasoner=reasoner)
+
+        for axiom in axioms:
+            manager.remove_axiom(ontology, axiom)
+        for ind in individuals:
+            manager.remove_axiom(ontology, OWLDeclarationAxiom(ind))
+        return result
 
     @property
     def number_of_tested_concepts(self):
