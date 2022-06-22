@@ -156,7 +156,7 @@ class OWLOntology_Owlready2(OWLOntology):
             yield OWLDataPropertyDomainAxiom(pe, OWLThing)
         else:
             for dom in domains:
-                if isinstance(dom, owlready2.ThingClass) or isinstance(dom, owlready2.ClassConstruct):
+                if isinstance(dom, (owlready2.ThingClass, owlready2.ClassConstruct)):
                     yield OWLDataPropertyDomainAxiom(pe, _parse_concept_to_owlapy(dom))
                 else:
                     logger.warning("Construct %s not implemented at %s", dom, pe)
@@ -185,7 +185,7 @@ class OWLOntology_Owlready2(OWLOntology):
             yield OWLObjectPropertyDomainAxiom(pe, OWLThing)
         else:
             for dom in domains:
-                if isinstance(dom, owlready2.ThingClass) or isinstance(dom, owlready2.ClassConstruct):
+                if isinstance(dom, (owlready2.ThingClass, owlready2.ClassConstruct)):
                     yield OWLObjectPropertyDomainAxiom(pe, _parse_concept_to_owlapy(dom))
                 else:
                     logger.warning("Construct %s not implemented at %s", dom, pe)
@@ -198,7 +198,7 @@ class OWLOntology_Owlready2(OWLOntology):
             yield OWLObjectPropertyRangeAxiom(pe, OWLThing)
         else:
             for rng in ranges:
-                if isinstance(rng, owlready2.ThingClass) or isinstance(rng, owlready2.ClassConstruct):
+                if isinstance(rng, (owlready2.ThingClass, owlready2.ClassConstruct)):
                     yield OWLObjectPropertyRangeAxiom(pe, _parse_concept_to_owlapy(rng))
                 else:
                     logger.warning("Construct %s not implemented at %s", rng, pe)
@@ -246,24 +246,21 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             if not direct:
                 yield from self.super_classes(ax.get_range())
 
-    def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
+    def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClassExpression]:
         """Return the named classes that are directly equivalent to the class expression"""
         if isinstance(ce, OWLClass):
             c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
-            for c in c_x.equivalent_to:
-                if isinstance(c, owlready2.ThingClass):
-                    yield OWLClass(IRI.create(c.iri))
-                # Anonymous classes are ignored
+            yield from (_parse_concept_to_owlapy(eq_x) for eq_x in c_x.equivalent_to
+                        if isinstance(eq_x, (owlready2.ThingClass, owlready2.ClassConstruct)))
         else:
             raise NotImplementedError("equivalent_classes for complex class expressions not implemented", ce)
 
-    def disjoint_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
+    def disjoint_classes(self, ce: OWLClassExpression) -> Iterable[OWLClassExpression]:
         if isinstance(ce, OWLClass):
             c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
-            for c in chain.from_iterable(map(lambda d: d.entities, c_x.disjoints())):
-                if isinstance(c, owlready2.ThingClass) and c != c_x:
-                    yield OWLClass(IRI.create(c.iri))
-                # Anonymous classes are ignored
+            yield from (_parse_concept_to_owlapy(d_x)
+                        for d_x in chain.from_iterable(map(lambda d: d.entities, c_x.disjoints()))
+                        if isinstance(d_x, (owlready2.ThingClass, owlready2.ClassConstruct)) and d_x != c_x)
         else:
             raise NotImplementedError("disjoint_classes for complex class expressions not implemented", ce)
 
