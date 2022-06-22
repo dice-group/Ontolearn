@@ -237,7 +237,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     def number_of_tested_concepts(self):
         return self._number_of_tested_concepts
 
-    def save_best_hypothesis(self, n: int = 10, path='Predictions', rdf_format='rdfxml') -> None:
+    def save_best_hypothesis(self, n: int = 10, path: str = 'Predictions', rdf_format: str = 'rdfxml') -> None:
         """Serialise the best hypotheses to a file
 
         Args:
@@ -265,8 +265,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
         manager.load_ontology(IRI.create(self.kb.path))
-        kb_iri = self.kb.ontology().get_ontology_id().get_ontology_iri()
-        manager.apply_change(AddImport(ontology, OWLImportsDeclaration(kb_iri)))
+        manager.apply_change(AddImport(ontology, OWLImportsDeclaration(IRI.create('file://' + self.kb.path))))
         for ith, h in enumerate(self.best_hypotheses(n=n)):
             cls_a: OWLClass = OWLClass(IRI.create(NS, "Pred_" + str(ith)))
             equivalent_classes_axiom = OWLEquivalentClassesAxiom(cls_a, h.concept)
@@ -291,6 +290,19 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
                 manager.add_axiom(ontology, f1_score)
 
         manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))
+
+    def load_hypotheses(self, path: str) -> Iterable[OWLClassExpression]:
+        """Loads hypotheses (class expressions) from a file saved by :func:`BaseConceptLearner.save_best_hypothesis`
+
+        Args:
+            path: Path to the file containing hypotheses
+        """
+        from owlapy.owlready2 import OWLOntologyManager_Owlready2
+        manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
+        ontology: OWLOntology = manager.load_ontology(IRI.create('file://' + path))
+        from owlapy.owlready2 import OWLReasoner_Owlready2
+        reasoner = OWLReasoner_Owlready2(ontology)
+        yield from (next(reasoner.equivalent_classes(c)) for c in ontology.classes_in_signature())
 
 
 class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
