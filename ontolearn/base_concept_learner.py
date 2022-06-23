@@ -1,14 +1,23 @@
+from ast import Call
 import logging
 import time
 from abc import ABCMeta, abstractmethod
+from itertools import chain
 from typing import List, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, Union, cast, Callable, Type
 
 import numpy as np
 import pandas as pd
 
+from ontolearn.heuristics import CELOEHeuristic
+from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.metrics import F1, Accuracy
+from ontolearn.refinement_operators import ModifiedCELOERefinement
+from ontolearn.search import _NodeQuality
+
 from owlapy.model import OWLDeclarationAxiom, OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
     OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, OWLAnnotationAssertionAxiom, OWLAnnotation, \
     OWLAnnotationProperty, OWLLiteral, IRI, OWLClassExpression, OWLReasoner, OWLAxiom
+from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLOntology_Owlready2, OWLReasoner_Owlready2
 from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, AbstractKnowledgeBase, \
@@ -48,8 +57,8 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
     name: ClassVar[str]
 
-    kb: AbstractKnowledgeBase
-    quality_func: AbstractScorer
+    kb: KnowledgeBase
+    quality_func: Optional[AbstractScorer]
     max_num_of_concepts_tested: Optional[int]
     terminate_on_goal: Optional[bool]
     _goal_found: bool
@@ -59,7 +68,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self,
-                 knowledge_base: Optional[AbstractKnowledgeBase] = None,
+                 knowledge_base: KnowledgeBase,
                  quality_func: Optional[AbstractScorer] = None,
                  max_num_of_concepts_tested: Optional[int] = None,
                  max_runtime: Optional[int] = None,
@@ -94,9 +103,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         """
 
         if self.quality_func is None:
-            from ontolearn.metrics import F1
             self.quality_func = F1()
-
         if self.max_num_of_concepts_tested is None:
             self.max_num_of_concepts_tested = 10_000
         if self.terminate_on_goal is None:
@@ -203,7 +210,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         labels = np.zeros((len(individuals), len(hypotheses)))
         for idx_hyp, hyp in enumerate(hypotheses):
-            kb_individuals = retrieval_func(hyp)
+            kb_individuals = retrieval_func(hyp) # type: ignore
             for idx_ind, ind in enumerate(individuals):
                 if ind in kb_individuals:
                     labels[idx_ind][idx_hyp] = 1
@@ -255,8 +262,8 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         Returns:
             Data frame which has a 1 in each cell where the individual is entailed by the hypothesis
         """
-        ontology = self.kb.ontology()
-        manager: OWLOntologyManager = ontology.get_owl_ontology_manager()
+        ontology: OWLOntology_Owlready2 = cast(OWLOntology_Owlready2, self.kb.ontology())
+        manager: OWLOntologyManager_Owlready2 = ontology.get_owl_ontology_manager()
         for axiom in axioms:
             manager.add_axiom(ontology, axiom)
 
@@ -287,7 +294,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         if rdf_format != 'rdfxml':
             raise NotImplementedError
 
-        from ontolearn.knowledge_base import KnowledgeBase
         assert isinstance(self.kb, KnowledgeBase)
 
         best = list(self.best_hypotheses(n))
@@ -296,7 +302,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         except AssertionError:
             logger.warning("There were only %d results", len(best))
 
-        from owlapy.owlready2 import OWLOntologyManager_Owlready2
         manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
 
         ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
@@ -308,14 +313,11 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             manager.add_axiom(ontology, equivalent_classes_axiom)
 
             try:
-                from ontolearn.search import _NodeQuality
-                h = cast(_NodeQuality, h)
+                assert isinstance(h, _NodeQuality)
                 quality = h.quality
             except AttributeError:
                 quality = None
 
-            from ontolearn.metrics import Accuracy
-            from ontolearn.metrics import F1
             if isinstance(self.quality_func, Accuracy):
                 accuracy = OWLAnnotationAssertionAxiom(cls_a.get_iri(), OWLAnnotation(
                     OWLAnnotationProperty(IRI.create(SNS, "accuracy")), OWLLiteral(quality)))
@@ -333,12 +335,10 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         Args:
             path: Path to the file containing hypotheses
         """
-        from owlapy.owlready2 import OWLOntologyManager_Owlready2
-        manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
-        ontology: OWLOntology = manager.load_ontology(IRI.create('file://' + path))
-        from owlapy.owlready2 import OWLReasoner_Owlready2
+        manager: OWLOntologyManager_Owlready2 = OWLOntologyManager_Owlready2()
+        ontology: OWLOntology_Owlready2 = manager.load_ontology(IRI.create('file://' + path))
         reasoner = OWLReasoner_Owlready2(ontology)
-        yield from (next(reasoner.equivalent_classes(c)) for c in ontology.classes_in_signature())
+        yield from chain.from_iterable(reasoner.equivalent_classes(c) for c in ontology.classes_in_signature())
 
 
 class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
@@ -348,15 +348,15 @@ class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
     """
     __slots__ = 'operator', 'heuristic_func', 'max_child_length', 'start_class', 'iter_bound'
 
-    operator: BaseRefinement
-    heuristic_func: AbstractHeuristic
+    operator: Optional[BaseRefinement]
+    heuristic_func: Optional[AbstractHeuristic]
     max_child_length: Optional[int]
     start_class: Optional[OWLClassExpression]
     iter_bound: Optional[int]
 
     @abstractmethod
     def __init__(self,
-                 knowledge_base: Optional[AbstractKnowledgeBase] = None,
+                 knowledge_base: KnowledgeBase,
                  refinement_operator: Optional[BaseRefinement] = None,
                  heuristic_func: Optional[AbstractHeuristic] = None,
                  quality_func: Optional[AbstractScorer] = None,
@@ -404,13 +404,10 @@ class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
             self.max_child_length = 10
 
         if self.operator is None:
-            from ontolearn.refinement_operators import ModifiedCELOERefinement
-            from ontolearn.knowledge_base import KnowledgeBase
             assert isinstance(self.kb, KnowledgeBase)
             self.operator = ModifiedCELOERefinement(self.kb, max_child_length=self.max_child_length)
 
         if self.heuristic_func is None:
-            from ontolearn.heuristics import CELOEHeuristic
             self.heuristic_func = CELOEHeuristic()
 
         if self.start_class is None:
