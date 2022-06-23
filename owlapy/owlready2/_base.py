@@ -468,7 +468,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
 
     def _sync_reasoner(self, other_reasoner: BaseReasoner_Owlready2 = None,
                        infer_property_values: bool = True,
-                       infer_data_property_values: bool = True) -> None:
+                       infer_data_property_values: bool = True, debug: bool = False) -> None:
         """Call Owlready2's sync_reasoner method, which spawns a Java process on a temp file to infer more
 
         Args:
@@ -479,11 +479,12 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         assert other_reasoner is None or isinstance(other_reasoner, BaseReasoner_Owlready2)
         with self.get_root_ontology()._onto:
             if other_reasoner == BaseReasoner_Owlready2.HERMIT:
-                owlready2.sync_reasoner_hermit(self._world, infer_property_values=infer_property_values)
+                owlready2.sync_reasoner_hermit(self._world, infer_property_values=infer_property_values, debug=debug)
             else:
                 owlready2.sync_reasoner_pellet(self._world,
                                                infer_property_values=infer_property_values,
-                                               infer_data_property_values=infer_data_property_values)
+                                               infer_data_property_values=infer_data_property_values,
+                                               debug=debug)
 
     def get_root_ontology(self) -> OWLOntology:
         return self._ontology
