@@ -91,7 +91,7 @@ class DLFOILHeuristic(AbstractHeuristic):
 
 
 class OCELHeuristic(AbstractHeuristic):
-    __slots__ = 'accuracy', 'gainBonusFactor', 'expansionPenaltyFactor'
+    __slots__ = 'accuracy_method', 'gainBonusFactor', 'expansionPenaltyFactor'
 
     name: Final = 'OCEL_Heuristic'
 
@@ -103,12 +103,12 @@ class OCELHeuristic(AbstractHeuristic):
         self.gainBonusFactor = gainBonusFactor  # called alpha in the paper and gainBonusFactor in the original code
         self.expansionPenaltyFactor = expansionPenaltyFactor  # called beta in the paper
 
-    def apply(self, node, instances, learning_problem: EncodedPosNegLPStandard):
+    def apply(self, node: LBLNode, instances, learning_problem: EncodedPosNegLPStandard):
         assert isinstance(node, LBLNode), "OCEL Heuristic requires instances information of a node"
 
         heuristic_val = 0
         accuracy_gain = 0
-        _, accuracy = self.accuracy_method.score_elp(instances, learning_problem)
+        _, accuracy = self.accuracy_method.score_elp(node.individuals, learning_problem)
 
         if node.parent_node is not None:
             _, parent_accuracy = self.accuracy_method.score_elp(node.parent_node.individuals, learning_problem)

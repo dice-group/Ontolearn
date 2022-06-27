@@ -30,7 +30,7 @@ from ontolearn.knowledge_base import EvaluatedConcept
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from ontolearn.metrics import Accuracy, F1
 from ontolearn.refinement_operators import LengthBasedRefinement
-from ontolearn.search import EvoLearnerNode, HeuristicOrderedNode, OENode, TreeNode, LengthOrderedNode, \
+from ontolearn.search import EvoLearnerNode, HeuristicOrderedNode, LBLNode, OENode, TreeNode, LengthOrderedNode, \
     QualityOrderedNode, RL_State, DRILLSearchTreePriorityQueue
 from ontolearn.utils import oplogging, create_experiment_folder
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter, EntropyValueSplitter
@@ -462,13 +462,40 @@ class OCEL(CELOE):
 
     name = 'ocel_python'
 
-    def __init__(self, knowledge_base, quality_func=None, iter_bound=None, max_num_of_concepts_tested=None,
-                 terminate_on_goal=None):
+    def __init__(self,
+                 knowledge_base: KnowledgeBase,
+                 refinement_operator: Optional[BaseRefinement[OENode]] = None,
+                 quality_func: Optional[AbstractScorer] = None,
+                 heuristic_func: Optional[AbstractHeuristic] = None,
+                 terminate_on_goal: Optional[bool] = None,
+                 iter_bound: Optional[int] = None,
+                 max_num_of_concepts_tested: Optional[int] = None,
+                 max_runtime: Optional[int] = None,
+                 max_results: int = 10,
+                 best_only: bool = False,
+                 calculate_min_max: bool = True):
+
+        if heuristic_func is None:
+            heuristic_func = OCELHeuristic()
+
         super().__init__(knowledge_base=knowledge_base,
+                         refinement_operator=refinement_operator,
                          quality_func=quality_func,
-                         heuristic_func=OCELHeuristic(),
+                         heuristic_func=heuristic_func,
                          terminate_on_goal=terminate_on_goal,
-                         iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested)
+                         iter_bound=iter_bound,
+                         max_num_of_concepts_tested=max_num_of_concepts_tested,
+                         max_runtime=max_runtime,
+                         max_results=max_results,
+                         best_only=best_only,
+                         calculate_min_max=calculate_min_max)
+
+    def make_node(self, c: OWLClassExpression, parent_node: Optional[OENode] = None, is_root: bool = False) -> OENode:
+        assert parent_node is None or isinstance(parent_node, LBLNode)
+        r = LBLNode(c, self.kb.concept_len(c), self.kb.individuals_set(c), parent_node=parent_node, is_root=is_root)
+        if parent_node is not None:
+            parent_node.add_child(r)
+        return r
 
 
 class Drill(AbstractDrill, RefinementBasedConceptLearner):
