@@ -335,6 +335,26 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         else:
             return frozenset(self._ontology.individuals_in_signature())
 
+    def most_general_object_properties(self, *, domain: OWLClassExpression, inverse: bool = False) \
+            -> Iterable[OWLObjectProperty]:
+        assert isinstance(domain, OWLClassExpression)
+
+        func = self.get_object_property_ranges if inverse else self.get_object_property_domains
+
+        inds_domain = self.individuals_set(domain)
+        for prop in self._object_property_hierarchy.most_general_roles():
+            if domain.is_owl_thing() or inds_domain <= self.individuals_set(func(prop)):
+                yield prop
+
+    def _data_properties_for_domain(self, domain: OWLClassExpression, data_properties: Iterable[OWLDataProperty]) \
+            -> Iterable[OWLDataProperty]:
+        assert isinstance(domain, OWLClassExpression)
+
+        inds_domain = self.individuals_set(domain)
+        for prop in data_properties:
+            if domain.is_owl_thing() or inds_domain <= self.individuals_set(self.get_data_property_domains(prop)):
+                yield prop
+
     def __repr__(self):
         properties_count = iter_count(self.ontology().object_properties_in_signature()) + iter_count(
             self.ontology().data_properties_in_signature())
