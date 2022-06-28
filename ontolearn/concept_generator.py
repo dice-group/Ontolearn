@@ -203,9 +203,9 @@ class ConceptGenerator:
 
         func = self.get_object_property_ranges if inverse else self.get_object_property_domains
 
+        inds_domain = set(self._reasoner.instances(domain))
         for prop in self._object_property_hierarchy.most_general_roles():
-            # Probably need to do this with instance checks
-            if domain.is_owl_thing() or domain == func(prop):
+            if domain.is_owl_thing() or inds_domain <= set(self._reasoner.instances(func(prop))):
                 yield prop
 
     def _data_properties_for_domain(self, domain: OWLClassExpression, data_properties: Iterable[OWLDataProperty]) \
@@ -221,9 +221,10 @@ class ConceptGenerator:
         """
         assert isinstance(domain, OWLClassExpression)
 
+        inds_domain = set(self._reasoner.instances(domain))
         for prop in data_properties:
-            # Probably need to do this with instance checks
-            if domain.is_owl_thing() or domain == self.get_data_property_domains(prop):
+            if domain.is_owl_thing() or inds_domain <= set(self._reasoner.instances(
+                                                            self.get_data_property_domains(prop))):
                 yield prop
 
     def most_general_data_properties(self, *, domain: OWLClassExpression) -> Iterable[OWLDataProperty]:
