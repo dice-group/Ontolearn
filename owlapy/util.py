@@ -1,13 +1,15 @@
 from functools import singledispatchmethod, total_ordering
-from typing import Iterable, TypeVar, Generic, Tuple, cast, Optional
+from itertools import chain
+from typing import Iterable, List, Type, TypeVar, Generic, Tuple, cast, Optional
 
-from owlapy.model import OWLObject, HasIndex, HasIRI, OWLClassExpression, OWLClass, OWLObjectIntersectionOf, \
+from owlapy.model import OWLNaryBooleanClassExpression, OWLObject, HasIndex, HasIRI, OWLClassExpression, OWLClass, \
     OWLObjectUnionOf, OWLObjectComplementOf, OWLNothing, OWLRestriction, OWLThing, OWLObjectSomeValuesFrom, \
     OWLObjectHasValue, OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality, OWLObjectHasSelf, \
     OWLObjectOneOf, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataExactCardinality, OWLDataHasValue, \
     OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLObjectAllValuesFrom, HasFiller, HasCardinality, HasOperands, \
     OWLObjectInverseOf, OWLDatatypeRestriction, OWLDataComplementOf, OWLDatatype, OWLDataUnionOf, \
-    OWLDataIntersectionOf, OWLDataOneOf, OWLFacetRestriction, OWLLiteral
+    OWLDataIntersectionOf, OWLDataOneOf, OWLFacetRestriction, OWLLiteral, OWLObjectIntersectionOf
+
 
 _HasIRI = TypeVar('_HasIRI', bound=HasIRI)  #:
 _HasIndex = TypeVar('_HasIndex', bound=HasIndex)  #:
@@ -275,6 +277,89 @@ class NNF:
 
 
 # OWL-APy custom util start
+
+class TopLevelCNF:
+    """This class contains functions to transform a class expression into Top-Level Conjunctive Normal Form"""
+
+    def get_top_level_cnf(self, ce: OWLClassExpression) -> OWLClassExpression:
+        """Convert a class expression into Top-Level Conjunctive Normal Form.
+
+        Args:
+            ce: Class Expression
+
+        Returns:
+            Class Expression in Top-Level Conjunctive Normal Form
+            """
+        return _get_top_level_form(ce.get_nnf(), OWLObjectUnionOf, OWLObjectIntersectionOf)
+
+
+class TopLevelDNF:
+    """This class contains functions to transform a class expression into Top-Level Disjunctive Normal Form"""
+
+    def get_top_level_dnf(self, ce: OWLClassExpression) -> OWLClassExpression:
+        """Convert a class expression into Top-Level Disjunctive Normal Form.
+
+        Args:
+            ce: Class Expression
+
+        Returns:
+            Class Expression in Top-Level Disjunctive Normal Form
+            """
+        return _get_top_level_form(ce.get_nnf(), OWLObjectIntersectionOf, OWLObjectUnionOf)
+
+
+def _get_top_level_form(ce: OWLClassExpression,
+                        type_a: Type[OWLNaryBooleanClassExpression],
+                        type_b: Type[OWLNaryBooleanClassExpression]) -> OWLClassExpression:
+    """ Transforms a class expression (that's already in NNF) into Top-Level Conjunctive/Disjunctive Normal Form.
+    Here type_a specifies the operand which should be distributed inwards over type_b.
+
+    Conjunctive Normal form:
+        type_a = OWLObjectUnionOf
+        type_b = OWLObjectIntersectionOf
+    Disjunctive Normal form:
+        type_a = OWLObjectIntersectionOf
+        type_b = OWLObjectUnionOf
+    """
+
+    def parse_nested_exprs(c: OWLClassExpression) -> List[OWLClassExpression]:
+        exprs: List[OWLClassExpression] = []
+        if isinstance(c, type_a):
+            exprs.extend(chain.from_iterable(parse_nested_exprs(op) for op in c.operands()))
+        else:
+            exprs.append(c)
+        return exprs
+
+    def distributive_law(a: OWLClassExpression, b: OWLNaryBooleanClassExpression) -> OWLNaryBooleanClassExpression:
+        return type_b(type_a([a, op]) for op in b.operands())
+
+    if isinstance(ce, type_a):
+        nested_exprs = parse_nested_exprs(ce)
+        type_b_exprs = [op for op in nested_exprs if isinstance(op, type_b)]
+        non_type_b_exprs = [op for op in nested_exprs if not isinstance(op, type_b)]
+        if not len(type_b_exprs):
+            return ce
+
+        if len(non_type_b_exprs):
+            expr = non_type_b_exprs[0] if len(non_type_b_exprs) == 1 \
+                else type_a(non_type_b_exprs)
+            expr = distributive_law(expr, type_b_exprs[0])
+        else:
+            expr = type_b_exprs[0]
+
+        if len(type_b_exprs) == 1:
+            return _get_top_level_form(expr, type_a, type_b)
+
+        for type_b_expr in type_b_exprs[1:]:
+            expr = distributive_law(type_b_expr, expr)
+        return _get_top_level_form(expr, type_a, type_b)
+    elif isinstance(ce, type_b):
+        return type_b(_get_top_level_form(op, type_a, type_b) for op in ce.operands())
+    elif isinstance(ce, OWLClassExpression):
+        return ce
+    else:
+        raise ValueError('Top-Level CNF/DNF only applicable on class expressions', ce)
+
 
 def iter_count(i: Iterable) -> int:
     """Count the number of elements in an iterable"""
