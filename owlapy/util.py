@@ -291,7 +291,7 @@ class TopLevelCNF:
         Returns:
             Class Expression in Top-Level Conjunctive Normal Form
             """
-        c = _get_top_level_form(combine_nary_expressions(ce.get_nnf()), OWLObjectUnionOf, OWLObjectIntersectionOf)
+        c = _get_top_level_form(ce.get_nnf(), OWLObjectUnionOf, OWLObjectIntersectionOf)
         return combine_nary_expressions(c)
 
 
@@ -307,7 +307,7 @@ class TopLevelDNF:
         Returns:
             Class Expression in Top-Level Disjunctive Normal Form
             """
-        c = _get_top_level_form(combine_nary_expressions(ce.get_nnf()), OWLObjectIntersectionOf, OWLObjectUnionOf)
+        c = _get_top_level_form(ce.get_nnf(), OWLObjectIntersectionOf, OWLObjectUnionOf)
         return combine_nary_expressions(c)
 
 
@@ -329,6 +329,7 @@ def _get_top_level_form(ce: OWLClassExpression,
         return type_b(type_a([a, op]) for op in b.operands())
 
     if isinstance(ce, type_a):
+        ce = cast(OWLNaryBooleanClassExpression, combine_nary_expressions(ce))
         type_b_exprs = [op for op in ce.operands() if isinstance(op, type_b)]
         non_type_b_exprs = [op for op in ce.operands() if not isinstance(op, type_b)]
         if not len(type_b_exprs):
