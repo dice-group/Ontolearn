@@ -1,13 +1,16 @@
 from functools import singledispatchmethod, total_ordering
-from typing import Iterable, TypeVar, Generic, Tuple, cast, Optional
+from typing import Iterable, List, Type, TypeVar, Generic, Tuple, cast, Optional, Union, overload
 
-from owlapy.model import OWLObject, HasIndex, HasIRI, OWLClassExpression, OWLClass, OWLObjectIntersectionOf, \
-    OWLObjectUnionOf, OWLObjectComplementOf, OWLNothing, OWLRestriction, OWLThing, OWLObjectSomeValuesFrom, \
+from owlapy.model import HasIndex, HasIRI, OWLClassExpression, OWLClass, OWLObjectCardinalityRestriction, \
+    OWLObjectComplementOf, OWLNothing, OWLPropertyRange, OWLRestriction, OWLThing, OWLObjectSomeValuesFrom, \
     OWLObjectHasValue, OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality, OWLObjectHasSelf, \
     OWLObjectOneOf, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataExactCardinality, OWLDataHasValue, \
     OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLObjectAllValuesFrom, HasFiller, HasCardinality, HasOperands, \
     OWLObjectInverseOf, OWLDatatypeRestriction, OWLDataComplementOf, OWLDatatype, OWLDataUnionOf, \
-    OWLDataIntersectionOf, OWLDataOneOf, OWLFacetRestriction, OWLLiteral
+    OWLDataIntersectionOf, OWLDataOneOf, OWLFacetRestriction, OWLLiteral, OWLObjectIntersectionOf, \
+    OWLDataCardinalityRestriction, OWLNaryBooleanClassExpression, OWLNaryDataRange, OWLObjectUnionOf, \
+    OWLDataRange, OWLObject
+
 
 _HasIRI = TypeVar('_HasIRI', bound=HasIRI)  #:
 _HasIndex = TypeVar('_HasIndex', bound=HasIndex)  #:
@@ -275,6 +278,131 @@ class NNF:
 
 
 # OWL-APy custom util start
+
+class TopLevelCNF:
+    """This class contains functions to transform a class expression into Top-Level Conjunctive Normal Form"""
+
+    def get_top_level_cnf(self, ce: OWLClassExpression) -> OWLClassExpression:
+        """Convert a class expression into Top-Level Conjunctive Normal Form. Operands will be sorted.
+
+        Args:
+            ce: Class Expression
+
+        Returns:
+            Class Expression in Top-Level Conjunctive Normal Form
+            """
+        c = _get_top_level_form(ce.get_nnf(), OWLObjectUnionOf, OWLObjectIntersectionOf)
+        return combine_nary_expressions(c)
+
+
+class TopLevelDNF:
+    """This class contains functions to transform a class expression into Top-Level Disjunctive Normal Form"""
+
+    def get_top_level_dnf(self, ce: OWLClassExpression) -> OWLClassExpression:
+        """Convert a class expression into Top-Level Disjunctive Normal Form. Operands will be sorted.
+
+        Args:
+            ce: Class Expression
+
+        Returns:
+            Class Expression in Top-Level Disjunctive Normal Form
+            """
+        c = _get_top_level_form(ce.get_nnf(), OWLObjectIntersectionOf, OWLObjectUnionOf)
+        return combine_nary_expressions(c)
+
+
+def _get_top_level_form(ce: OWLClassExpression,
+                        type_a: Type[OWLNaryBooleanClassExpression],
+                        type_b: Type[OWLNaryBooleanClassExpression]) -> OWLClassExpression:
+    """ Transforms a class expression (that's already in NNF) into Top-Level Conjunctive/Disjunctive Normal Form.
+    Here type_a specifies the operand which should be distributed inwards over type_b.
+
+    Conjunctive Normal form:
+        type_a = OWLObjectUnionOf
+        type_b = OWLObjectIntersectionOf
+    Disjunctive Normal form:
+        type_a = OWLObjectIntersectionOf
+        type_b = OWLObjectUnionOf
+    """
+
+    def distributive_law(a: OWLClassExpression, b: OWLNaryBooleanClassExpression) -> OWLNaryBooleanClassExpression:
+        return type_b(type_a([a, op]) for op in b.operands())
+
+    if isinstance(ce, type_a):
+        ce = cast(OWLNaryBooleanClassExpression, combine_nary_expressions(ce))
+        type_b_exprs = [op for op in ce.operands() if isinstance(op, type_b)]
+        non_type_b_exprs = [op for op in ce.operands() if not isinstance(op, type_b)]
+        if not len(type_b_exprs):
+            return ce
+
+        if len(non_type_b_exprs):
+            expr = non_type_b_exprs[0] if len(non_type_b_exprs) == 1 \
+                else type_a(non_type_b_exprs)
+            expr = distributive_law(expr, type_b_exprs[0])
+        else:
+            expr = type_b_exprs[0]
+
+        if len(type_b_exprs) == 1:
+            return _get_top_level_form(expr, type_a, type_b)
+
+        for type_b_expr in type_b_exprs[1:]:
+            expr = distributive_law(type_b_expr, expr)
+        return _get_top_level_form(expr, type_a, type_b)
+    elif isinstance(ce, type_b):
+        return type_b(_get_top_level_form(op, type_a, type_b) for op in ce.operands())
+    elif isinstance(ce, OWLClassExpression):
+        return ce
+    else:
+        raise ValueError('Top-Level CNF/DNF only applicable on class expressions', ce)
+
+
+@overload
+def combine_nary_expressions(ce: OWLClassExpression) -> OWLClassExpression:
+    ...
+
+
+@overload
+def combine_nary_expressions(ce: OWLDataRange) -> OWLDataRange:
+    ...
+
+
+def combine_nary_expressions(ce: OWLPropertyRange) -> OWLPropertyRange:
+    ''' Shortens an OWLClassExpression or OWLDataRange by combining all nested nary expressions of the same type.
+    Operands will be sorted.
+
+    E.g. OWLObjectUnionOf(A, OWLObjectUnionOf(C, B)) -> OWLObjectUnionOf(A, B, C)
+    '''
+    if isinstance(ce, (OWLNaryBooleanClassExpression, OWLNaryDataRange)):
+        expressions: List[OWLPropertyRange] = []
+        for op in ce.operands():
+            expr = combine_nary_expressions(op)
+            if type(expr) is type(ce):
+                expr = cast(Union[OWLNaryBooleanClassExpression, OWLNaryDataRange], expr)
+                expressions.extend(expr.operands())
+            else:
+                expressions.append(expr)
+        return type(ce)(_sort_by_ordered_owl_object(expressions))  # type: ignore
+    elif isinstance(ce, OWLObjectComplementOf):
+        return OWLObjectComplementOf(combine_nary_expressions(ce.get_operand()))
+    elif isinstance(ce, OWLDataComplementOf):
+        return OWLDataComplementOf(combine_nary_expressions(ce.get_data_range()))
+    elif isinstance(ce, OWLObjectCardinalityRestriction):
+        return type(ce)(ce.get_cardinality(), ce.get_property(), combine_nary_expressions(ce.get_filler()))
+    elif isinstance(ce, OWLDataCardinalityRestriction):
+        return type(ce)(ce.get_cardinality(), ce.get_property(), combine_nary_expressions(ce.get_filler()))
+    elif isinstance(ce, (OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom)):
+        return type(ce)(ce.get_property(), combine_nary_expressions(ce.get_filler()))
+    elif isinstance(ce, (OWLDataSomeValuesFrom, OWLDataAllValuesFrom)):
+        return type(ce)(ce.get_property(), combine_nary_expressions(ce.get_filler()))
+    elif isinstance(ce, OWLObjectOneOf):
+        return OWLObjectOneOf(_sort_by_ordered_owl_object(ce.operands()))
+    elif isinstance(ce, OWLDataOneOf):
+        return OWLDataOneOf(_sort_by_ordered_owl_object(ce.operands()))
+    elif isinstance(ce, OWLPropertyRange):
+        return ce
+    else:
+        raise ValueError(f'({expr}) is not an OWLObject.')
+
 
 def iter_count(i: Iterable) -> int:
     """Count the number of elements in an iterable"""
