@@ -95,4 +95,17 @@ for str_target_concept, examples in settings['problems'].items():
         
     best_hyperparameter = grid_search(target_kb, space_grid, lp)
     print("Best Hyper Parameter", best_hyperparameter)
+    
+    #Fit the model with the received Hyper parameter
+    model = EvoLearner(knowledge_base=target_kb, **best_hyperparameter)
+    model.fit(lp, verbose=False)
+    model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
+    hypotheses = list(model.best_hypotheses(n=3))
+
+    #Predict the model with test data
+    predictions = model.predict(individuals=list(test_pos | test_neg),
+                                hypotheses=hypotheses)
+    print("----------------------Predictions--------------------------")
+    print(predictions)
+
    
