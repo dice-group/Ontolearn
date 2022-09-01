@@ -1,6 +1,7 @@
 import json
 import os
 from random import shuffle
+import numpy as np
 
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import EvoLearner
@@ -9,10 +10,11 @@ from owlapy.model import OWLClass, OWLNamedIndividual, IRI
 from ontolearn.utils import setup_logging
 from ontolearn.metrics import F1
 from sklearn.model_selection import ParameterGrid
+from owlapy.render import DLSyntaxObjectRenderer
 
 setup_logging()
 
-def grid_search(target_kb, space, lp):
+def grid_search(target_kb, space_grid, lp):
     best_quality = None
     best_parameter = None
 
@@ -25,12 +27,20 @@ def grid_search(target_kb, space, lp):
         
         if best_quality is None:
             best_quality = quality
-            best_hyperparameter = parameter_grid
+            best_parameter = parameter_grid
         elif best_quality <= quality:
             best_quality = quality
             best_parameter = parameter_grid
 
-    return best_parameter            
+    return best_parameter
+
+def get_short_names(individuals):
+    short_names = []
+    for individual in individuals :
+        sn = individual.get_iri().get_short_form()
+        short_names.append(sn)
+
+    return short_names          
     
 try:
     os.chdir("examples")
@@ -107,5 +117,32 @@ for str_target_concept, examples in settings['problems'].items():
                                 hypotheses=hypotheses)
     print("----------------------Predictions--------------------------")
     print(predictions)
+    concepts_sorted = sorted(predictions)
+
+    print("...................F1 Score  of Prediction.....................")    
+    concepts_dict = {}
+    for con in concepts_sorted:        
+        positive_indivuals = predictions[predictions[con].values > 0.0].index.values
+        negative_indivuals = predictions[predictions[con].values > 0.0].index.values
+        concepts_dict[con] = {"Pos":positive_indivuals,"Neg":negative_indivuals}        
+
+    for key in concepts_dict:        
+        tp = len(list(set(get_short_names(list(test_pos))).intersection(set(concepts_dict[key]["Pos"]))))
+        tn = len(list(set(get_short_names(list(test_neg))).intersection(set(concepts_dict[key]["Neg"]))))
+        fp = len(list(set(get_short_names(list(test_neg))).intersection(set(concepts_dict[key]["Pos"]))))
+        fn = len(list(set(get_short_names(list(test_pos))).intersection(set(concepts_dict[key]["Neg"]))))
+        f1 = F1(tp=tp,fn=fn,fp=fp,tn=tn)
+        f1_score = f1.score2(tp=tp,fn=fn,fp=fp,tn=tn)
+        concept_and_score = [key,f1_score]
+        print(concept_and_score)
+        
+
+
+        
+    
+
+
+    
+    
 
    
