@@ -123,7 +123,7 @@ for str_target_concept, examples in settings['problems'].items():
     concepts_dict = {}
     for con in concepts_sorted:        
         positive_indivuals = predictions[predictions[con].values > 0.0].index.values
-        negative_indivuals = predictions[predictions[con].values > 0.0].index.values
+        negative_indivuals = predictions[predictions[con].values <= 0.0].index.values
         concepts_dict[con] = {"Pos":positive_indivuals,"Neg":negative_indivuals}        
 
     for key in concepts_dict:        
