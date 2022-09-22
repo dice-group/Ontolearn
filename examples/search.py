@@ -5,11 +5,11 @@ from sklearn.model_selection import ParameterGrid
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import EvoLearner
 from ontolearn.learning_problem import PosNegLPStandard
-from ontolearn.metrics import F1
+from ontolearn.metrics import F1, Accuracy
 from ontolearn.utils import setup_logging
 
 
-df = pd.DataFrame(columns=['LP', 'max_runtime', 'tournament_size', 'F1_train','F1_test','length'])
+df = pd.DataFrame(columns=['LP', 'max_runtime', 'tournament_size', 'height_limit','use_data_properties','value_splitter', 'F1_train', 'Accuracy_test','F1_test','length'])
 
 def grid_search(target_kb, str_target_concept, space_grid, lp):
     best_quality = None
@@ -31,7 +31,7 @@ def grid_search(target_kb, str_target_concept, space_grid, lp):
 
     return best_parameter
 
-def calc_prediction_F1(predictions,test_pos,test_neg):    
+def calc_prediction(predictions,test_pos,test_neg):    
     concepts_sorted = sorted(predictions)   
     concepts_dict = {}    
     for con in concepts_sorted:        
@@ -44,10 +44,12 @@ def calc_prediction_F1(predictions,test_pos,test_neg):
         tn = len(list(set(get_short_names(list(test_neg))).intersection(set(concepts_dict[key]["Neg"]))))
         fp = len(list(set(get_short_names(list(test_neg))).intersection(set(concepts_dict[key]["Pos"]))))
         fn = len(list(set(get_short_names(list(test_pos))).intersection(set(concepts_dict[key]["Neg"]))))
-        f1 = F1(tp=tp,fn=fn,fp=fp,tn=tn)
+        f1 = F1()
+        accuracy = Accuracy()
         f1_score = list(f1.score2(tp=tp,fn=fn,fp=fp,tn=tn))
+        accuracy_score = list(accuracy.score2(tp=tp,fn=fn,fp=fp,tn=tn))
         concept_and_score = [key,f1_score]        
-        return f1_score
+        return f1_score, accuracy_score
 
 def custom_split(x_pos,x_neg, n_splits):
     #Return validation set and train set indices
@@ -99,23 +101,23 @@ def grid_search_with_custom_cv(target_kb,str_target_concept, train_pos, train_ne
     X_pos = np.array(train_pos)
     X_neg = np.array(train_neg)
     best_quality = None
-    best_parameter = None    
-    for train_index_x_pos, test_index_x_pos, train_index_x_neg, test_index_x_neg in  custom_split(X_pos, X_neg, n_splits):
-        X_pos_train, X_pos_test = set(X_pos[train_index_x_pos].tolist()), set(X_pos[test_index_x_pos].tolist())
-        X_neg_train, X_neg_test = set(X_neg[train_index_x_neg].tolist()), set(X_neg[test_index_x_neg].tolist())
-             
-        lp = PosNegLPStandard(pos=X_pos_train, neg=X_neg_train)
+    best_parameter = None
 
-        for parameter_grid in space_grid:            
-            model = EvoLearner(knowledge_base=target_kb,quality_func=F1(), **parameter_grid)
+    for parameter_grid in space_grid: 
+        for train_index_x_pos, test_index_x_pos, train_index_x_neg, test_index_x_neg in  custom_split(X_pos, X_neg, n_splits):
+            model = EvoLearner(knowledge_base=target_kb, quality_func=F1(), **parameter_grid)
+            X_pos_train, X_pos_test = set(X_pos[train_index_x_pos].tolist()), set(X_pos[test_index_x_pos].tolist())
+            X_neg_train, X_neg_test = set(X_neg[train_index_x_neg].tolist()), set(X_neg[test_index_x_neg].tolist())       
+
+            lp = PosNegLPStandard(pos=X_pos_train, neg=X_neg_train)           
             model.fit(lp, verbose=False)
             model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))      
             hypotheses = list(model.best_hypotheses(n=1))
-            quality = hypotheses[0].quality            
+            quality = hypotheses[0].quality          
             predictions = model.predict(individuals=list(X_pos_test | X_neg_test),
                                     hypotheses=hypotheses)
-            f1_measure = calc_prediction_F1(predictions,X_pos_test,X_neg_test)            
-            df.loc[len(df.index)] = [str_target_concept,parameter_grid['max_runtime'],parameter_grid['tournament_size'],quality,f1_measure[1],hypotheses[0]._len]
+            f1_measure, accuracy = calc_prediction(predictions,X_pos_test,X_neg_test)            
+            df.loc[len(df.index)] = [str_target_concept,parameter_grid['max_runtime'],parameter_grid['tournament_size'],parameter_grid['height_limit'],parameter_grid['use_data_properties'],parameter_grid['value_splitter'],quality,accuracy[1],f1_measure[1],hypotheses[0]._len]
 
        
 def get_short_names(individuals):
