@@ -1497,15 +1497,20 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
     def __set_splitting_values(self):
         for p in self._dp_splits:
-            del self.pset.terminals[self._dp_to_prim_type[p]]
             if len(self._dp_splits[p]) == 0:
                 if p in self.kb.get_numeric_data_properties():
-                    self.pset.addTerminal(OWLLiteral(0), self._dp_to_prim_type[p],
-                                          name=owlliteral_to_primitive_string(OWLLiteral(0), p))
+                    self._dp_splits[p].append(OWLLiteral(0))
                 else:
                     pass  # TODO:
+
+            # Remove terminal for multiple fits, unfortunately there exists no better way in DEAP
+            # This removal is probably not needed, the important one is removal from the context below
+            self.pset.terminals.pop(self._dp_to_prim_type[p], None)
             for split in self._dp_splits[p]:
-                self.pset.addTerminal(split, self._dp_to_prim_type[p], name=owlliteral_to_primitive_string(split, p))
+                terminal_name = owlliteral_to_primitive_string(split, p)
+                # Remove terminal for multiple fits, unfortunately there exists no better way in DEAP
+                self.pset.context.pop(terminal_name, None)
+                self.pset.addTerminal(split, self._dp_to_prim_type[p], name=terminal_name)
 
     def register_op(self, alias: str, function: Callable, *args, **kargs):
         self.toolbox.register(alias, function, *args, **kargs)
@@ -1589,4 +1594,13 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
     def clean(self):
         self._result_population = None
+
+        # Resets classes if they already exist, names must match the ones that were created in the toolbox
+        try:
+            del creator.Fitness
+            del creator.Individual
+            del creator.Quality
+        except AttributeError:
+            pass
+
         super().clean()

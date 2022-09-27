@@ -108,7 +108,7 @@ class Celoe_Test(unittest.TestCase):
         print(best_pred)
         self.assertEqual(best_pred.quality, 1.0)
         r = DLSyntaxObjectRenderer()
-        self.assertEqual(r.render(best_pred.concept), 'male ⊓ (∃ hasChild.⊤)')
+        self.assertEqual(r.render(best_pred.concept), '(¬female) ⊓ (∃ hasChild.⊤)')
 
     def test_multiple_fits(self):
         kb = KnowledgeBase(path=PATH_FAMILY)

@@ -3,7 +3,7 @@ import os
 import pickle
 import random
 import time
-from typing import Callable, Set, TypeVar
+from typing import Callable, Set, TypeVar, Tuple
 
 from ontolearn.utils.log_config import setup_logging  # noqa: F401
 from owlapy.model import OWLNamedIndividual, IRI, OWLClass, HasIRI
@@ -83,7 +83,7 @@ def apply_TSNE_on_df(df) -> None:
     plt.show()
 
 
-def balanced_sets(a: set, b: set) -> (set, set):
+def balanced_sets(a: set, b: set) -> Tuple[Set, Set]:
     """
     Balance given two sets through sampling without replacement.
     Returned sets have the same length.
@@ -93,10 +93,10 @@ def balanced_sets(a: set, b: set) -> (set, set):
     """
 
     if len(a) > len(b):
-        sampled_a = random.sample(a, len(b))
+        sampled_a = random.sample(list(a), len(b))
         return set(sampled_a), b
     elif len(b) > len(a):
-        sampled_b = random.sample(b, len(a))
+        sampled_b = random.sample(list(b), len(a))
         return a, set(sampled_b)
     else:
         assert len(a) == len(b)
