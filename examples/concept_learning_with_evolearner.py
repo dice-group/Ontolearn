@@ -94,9 +94,10 @@ for str_target_concept, examples in settings['problems'].items():
     test_neg = set(typed_neg[-int(len(typed_neg)*0.2):])
     
     lp = PosNegLPStandard(pos=train_pos, neg=train_neg)
-
+    
     #Create the grid space for hyper parameter tuning
     space_grid = get_space_grid()    
     es.grid_search_with_custom_cv(target_kb, str_target_concept, list(train_pos), list(train_neg), space_grid, 2)
 
-print(es.df)
+es.convert_to_csv(es.df)
+print(es.df.head(500))
