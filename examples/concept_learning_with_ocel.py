@@ -1,8 +1,13 @@
 import json
 import os
 
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import OCEL
+from ontolearn.learning_problem import PosNegLPStandard
+from ontolearn.utils import setup_logging
+from owlapy.model import OWLClass, IRI, OWLNamedIndividual
+
+setup_logging()
 
 try:
     os.chdir("examples")
@@ -13,7 +18,7 @@ with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 
 kb = KnowledgeBase(path=settings['data_path'])
-model = OCEL(knowledge_base=kb, verbose=1)
+
 for str_target_concept, examples in settings['problems'].items():
     p = set(examples['positive_examples'])
     n = set(examples['negative_examples'])
@@ -21,10 +26,38 @@ for str_target_concept, examples in settings['problems'].items():
     concepts_to_ignore = set()
     # lets inject more background info
     if str_target_concept in ['Granddaughter', 'Aunt', 'Sister']:
-        concepts_to_ignore.update(
-            {'http://www.benchmark.org/family#Brother',
-             'Father', 'http://www.benchmark.org/family#Grandparent'})  # Use URI, or concept with length 1.
-    model.fit(pos=p, neg=n, ignore=concepts_to_ignore)
+        NS = 'http://www.benchmark.org/family#'
+        concepts_to_ignore = {
+            OWLClass(IRI(NS, 'Brother')),
+            OWLClass(IRI(NS, 'Sister')),
+            OWLClass(IRI(NS, 'Daughter')),
+            OWLClass(IRI(NS, 'Mother')),
+            OWLClass(IRI(NS, 'Grandmother')),
+            OWLClass(IRI(NS, 'Father')),
+            OWLClass(IRI(NS, 'Grandparent')),
+            OWLClass(IRI(NS, 'PersonWithASibling')),
+            OWLClass(IRI(NS, 'Granddaughter')),
+            OWLClass(IRI(NS, 'Son')),
+            OWLClass(IRI(NS, 'Child')),
+            OWLClass(IRI(NS, 'Grandson')),
+            OWLClass(IRI(NS, 'Grandfather')),
+            OWLClass(IRI(NS, 'Grandchild')),
+            OWLClass(IRI(NS, 'Parent')),
+        }
+        target_kb = kb.ignore_and_copy(ignored_classes=concepts_to_ignore)
+    else:
+        target_kb = kb
+
+    typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
+    typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
+    lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
+
+    model = OCEL(knowledge_base=target_kb,
+                 max_runtime=600,
+                 max_num_of_concepts_tested=10_000_000_000,
+                 iter_bound=10_000_000_000)
+    model.fit(lp)
+
     model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
-    hypotheses = model.best_hypotheses(n=1)
-    print(hypotheses[0])
+    hypotheses = model.best_hypotheses(n=3)
+    [print(_) for _ in hypotheses]

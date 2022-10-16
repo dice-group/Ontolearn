@@ -20,9 +20,9 @@ class TestEvoLearner(unittest.TestCase):
         kb = KnowledgeBase(path=settings['data_path'][3:])
         model = EvoLearner(knowledge_base=kb, max_runtime=10)
 
-        regression_test_evolearner = {'Aunt': .9, 'Brother': 1.0,
-                                      'Cousin': .78, 'Granddaughter': 1.0,
-                                      'Uncle': .85, 'Grandgrandfather': .94}
+        regression_test_evolearner = {'Aunt': 0.9, 'Brother': 1.0,
+                                      'Cousin': 0.9, 'Granddaughter': 1.0,
+                                      'Uncle': 0.9, 'Grandgrandfather': 0.94}
         for str_target_concept, examples in settings['problems'].items():
             pos = set(map(OWLNamedIndividual, map(IRI.create, set(examples['positive_examples']))))
             neg = set(map(OWLNamedIndividual, map(IRI.create, set(examples['negative_examples']))))
@@ -36,7 +36,7 @@ class TestEvoLearner(unittest.TestCase):
             self.assertGreaterEqual(hypotheses[0].quality, hypotheses[1].quality)
             self.assertGreaterEqual(hypotheses[1].quality, hypotheses[2].quality)
 
-    def test_regression_mutagenesis(self):
+    def test_regression_mutagenesis_multiple_fits(self):
         kb = KnowledgeBase(path='KGs/Mutagenesis/mutagenesis.owl')
 
         namespace_ = 'http://dl-learner.org/mutagenesis#'
@@ -49,6 +49,10 @@ class TestEvoLearner(unittest.TestCase):
 
         lp = PosNegLPStandard(pos=pos, neg=neg)
         model = EvoLearner(knowledge_base=kb, max_runtime=10)
+        returned_model = model.fit(learning_problem=lp)
+        best_pred = next(returned_model.best_hypotheses(n=1))
+        self.assertEqual(best_pred.quality, 1.00)
+
         returned_model = model.fit(learning_problem=lp)
         best_pred = next(returned_model.best_hypotheses(n=1))
         self.assertEqual(best_pred.quality, 1.00)

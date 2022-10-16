@@ -228,11 +228,13 @@ class ConceptGeneratorTest(unittest.TestCase):
         res = set(self.generator.most_general_existential_restrictions(domain=OWLThing))
         self.assertEqual(true_res, res)
 
-        true_res = {OWLObjectAllValuesFrom(filler=OWLThing, property=self.in_bond)}
+        true_res = {OWLObjectAllValuesFrom(filler=OWLThing, property=self.in_bond),
+                    OWLObjectAllValuesFrom(filler=OWLThing, property=self.in_structure)}
         res = set(self.generator.most_general_universal_restrictions(domain=self.bond))
         self.assertEqual(true_res, res)
 
-        true_res = {OWLObjectSomeValuesFrom(filler=OWLThing, property=self.has_bond.get_inverse_property())}
+        true_res = {OWLObjectSomeValuesFrom(filler=OWLThing, property=self.has_bond.get_inverse_property()),
+                    OWLObjectSomeValuesFrom(filler=OWLThing, property=self.has_structure.get_inverse_property())}
         res = set(self.generator.most_general_existential_restrictions_inverse(domain=self.bond))
         self.assertEqual(true_res, res)
 

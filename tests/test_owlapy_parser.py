@@ -8,7 +8,7 @@ from owlapy.model import OWLObjectInverseOf, OWLObjectMinCardinality, OWLObjectS
     OWLLiteral, OWLNamedIndividual, OWLObjectAllValuesFrom, OWLObjectComplementOf, OWLObjectExactCardinality, \
     OWLObjectHasSelf, OWLObjectHasValue, OWLObjectIntersectionOf, OWLObjectMaxCardinality, OWLObjectOneOf, \
     OWLObjectProperty, OWLDataComplementOf, OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataUnionOf, \
-    OWLDataMinCardinality, OWLDataHasValue
+    OWLDataMinCardinality, OWLDataHasValue, OWLThing, OWLNothing
 
 from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, OWLDatatypeMinMaxExclusiveRestriction, \
     OWLDatatypeMaxExclusiveRestriction
@@ -56,6 +56,15 @@ class ManchesterOWLSyntaxParserTest(unittest.TestCase):
                                                             self.atom)),
                                                        self.compound)),
                               self.bond))
+        self.assertEqual(p, c)
+
+    def test_thing_nothing(self):
+        p = self.parser.parse_expression('(hasBond some (Thing and Nothing)) and Nothing or Thing')
+        c = OWLObjectUnionOf((
+                OWLObjectIntersectionOf((
+                    OWLObjectSomeValuesFrom(self.has_bond, OWLObjectIntersectionOf((OWLThing, OWLNothing))),
+                    OWLNothing)),
+                OWLThing))
         self.assertEqual(p, c)
 
     def test_object_properties(self):
@@ -307,6 +316,15 @@ class DLSyntaxParserTest(unittest.TestCase):
                                                             self.atom)),
                                                        self.compound)),
                               self.bond))
+        self.assertEqual(p, c)
+
+    def test_top_bottom(self):
+        p = self.parser.parse_expression('(∃ hasBond.(⊤ ⊓ ⊥)) ⊓ ⊥ ⊔ ⊤')
+        c = OWLObjectUnionOf((
+                OWLObjectIntersectionOf((
+                    OWLObjectSomeValuesFrom(self.has_bond, OWLObjectIntersectionOf((OWLThing, OWLNothing))),
+                    OWLNothing)),
+                OWLThing))
         self.assertEqual(p, c)
 
     def test_object_properties(self):
