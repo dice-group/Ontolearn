@@ -722,9 +722,9 @@ class DLSyntaxParser(NodeVisitor, OWLObjectParser, metaclass=_DLSyntaxParserMeta
     def visit_class_iri(self, node, children) -> OWLClass:
         top_bottom = _node_text(node)
         if top_bottom == _DL_SYNTAX.TOP:
-            return OWLRDFVocabulary.OWL_THING.get_iri()
+            return OWLClass(OWLRDFVocabulary.OWL_THING.get_iri())
         elif top_bottom == _DL_SYNTAX.BOTTOM:
-            return OWLRDFVocabulary.OWL_NOTHING.get_iri()
+            return OWLClass(OWLRDFVocabulary.OWL_NOTHING.get_iri())
         else:
             return OWLClass(children[0])
 
