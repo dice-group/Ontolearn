@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import ParameterGrid
+import time
 
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import EvoLearner
@@ -10,6 +11,11 @@ from ontolearn.utils import setup_logging
 
 
 df = pd.DataFrame(columns=['LP', 'max_runtime', 'tournament_size', 'height_limit','use_data_properties','value_splitter', 'F1_train', 'Accuracy_test','F1_test','length'])
+
+def convert_to_csv(dataframe):
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+    filename = "Output"+str(timestr)  
+    dataframe.to_csv(filename+".csv",index=False)
 
 def grid_search(target_kb, str_target_concept, space_grid, lp):
     best_quality = None
