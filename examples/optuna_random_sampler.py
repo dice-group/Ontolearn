@@ -24,6 +24,7 @@ with open('carcinogenesis_lp.json') as json_file:
     settings = json.load(json_file)
 
 kb = KnowledgeBase(path=settings['data_path'])
+#TO DO: Create a Wrapper in order to try other hyper parameters such as use_card_restrictions, different value_splitter etc
 
 class OptunaSamplers():
     def __init__(self, lp):
@@ -31,12 +32,21 @@ class OptunaSamplers():
         self.study_random_sampler = optuna.create_study(sampler=RandomSampler())
         self.study_tpe_sampler = optuna.create_study(sampler=TPESampler())
         self.sampler = optuna.samplers.CmaEsSampler()
+        self.nsgii = optuna.samplers.NSGAIISampler(population_size=100)
+        self.qmc_sampler = optuna.samplers.QMCSampler()
         self.study_cmaes_sampler = optuna.create_study(sampler=self.sampler)
+        self.study_nsgaii_sampler = optuna.create_study(sampler=self.nsgii)
+        self.study_qmc_sampler = optuna.create_study(sampler=self.qmc_sampler)
 
     def objective(self,trial):
+        binning_value_splitter = BinningValueSplitter()
+        entropy_value_splitter = EntropyValueSplitter()
         max_runtime = trial.suggest_int("max_runtime", 10, 20)
         tournament_size = trial.suggest_int("tournament_size", 2, 10)
-        model = EvoLearner(knowledge_base=kb, max_runtime=max_runtime, tournament_size=tournament_size)
+        height_limit = trial.suggest_int('height_limit',3, 25)
+        card_limit = trial.suggest_int('card_limit', 5, 10)
+        #value_splitter = trial.suggest_categorical('value_splitter',[binning_value_splitter,entropy_value_splitter])
+        model = EvoLearner(knowledge_base=kb, max_runtime=max_runtime, tournament_size=tournament_size, height_limit=height_limit,card_limit=card_limit)
         model.fit(self.lp, verbose=False)
         model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
         hypotheses = list(model.best_hypotheses(n=1))
@@ -76,6 +86,28 @@ class OptunaSamplers():
         print("-------BEST Value----------")
         print(self.study_cmaes_sampler.best_value)
 
+    def get_best_optimization_result_for_nsgii_sampler(self, population_size):
+        self.study_nsgaii_sampler.optimize(self.objective, n_trials=population_size)
+        print("-------BEST TRIAL-----------")
+        print(self.study_nsgaii_sampler.best_trial)
+        #best parameter combination
+        print("-------BEST PARAMS----------")
+        print(self.study_nsgaii_sampler.best_params)
+        #score achieved with best parameter combination
+        print("-------BEST Value----------")
+        print(self.study_nsgaii_sampler.best_value)
+    
+    def get_best_optimization_result_for_qmc_sampler(self, n_trials):
+        self.study_qmc_sampler.optimize(self.objective, n_trials=n_trials)
+        print("-------BEST TRIAL-----------")
+        print(self.study_qmc_sampler.best_trial)
+        #best parameter combination
+        print("-------BEST PARAMS----------")
+        print(self.study_qmc_sampler.best_params)
+        #score achieved with best parameter combination
+        print("-------BEST Value----------")
+        print(self.study_qmc_sampler.best_value)
+
 
 if __name__ == "__main__":
     for str_target_concept, examples in settings['problems'].items():
@@ -98,4 +130,4 @@ if __name__ == "__main__":
 
         #create class object and get the optimised result
         optuna1 = OptunaSamplers(lp)
-        optuna1.get_best_optimization_result_for_cmes_sampler(10)
+        optuna1.get_best_optimization_result_for_qmc_sampler(10)
