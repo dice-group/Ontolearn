@@ -759,7 +759,7 @@ class CustomRefinementOperator(BaseRefinement[Node]):
 
 
 class ExpressRefinement(BaseRefinement[Node]):
-    """ A top down refinement operator refinement operator in ALCQ(D)."""
+    """ A top down refinement operator refinement operator in ALCHIQ(D)."""
     
     __slots__ = 'expressivity', 'downsample', 'k', 'max_child_length', 'use_inverse', 'use_card_restrictions', \
                 'max_nr_fillers', 'card_limit', 'use_numeric_datatypes', 'use_boolean_datatype', 'dp_splits', \
