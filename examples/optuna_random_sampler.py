@@ -4,6 +4,9 @@ import os
 from random import shuffle
 from optuna.samplers import RandomSampler
 from optuna.samplers import TPESampler
+import pandas as pd
+from torch import maximum
+import time
 
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import EvoLearner
@@ -11,9 +14,8 @@ from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.model import OWLClass, OWLNamedIndividual, IRI
 from ontolearn.utils import setup_logging
 from ontolearn.metrics import F1
-from sklearn.model_selection import ParameterGrid
 from owlapy.render import DLSyntaxObjectRenderer
-from ontolearn.value_splitter import BinningValueSplitter, EntropyValueSplitter
+from wrapper_evolearner import EvoLearnerWrapper
 
 try:
     os.chdir("examples")
@@ -23,35 +25,54 @@ except FileNotFoundError:
 with open('carcinogenesis_lp.json') as json_file:
     settings = json.load(json_file)
 
-kb = KnowledgeBase(path=settings['data_path'])
-#TO DO: Create a Wrapper in order to try other hyper parameters such as use_card_restrictions, different value_splitter etc
+kb = KnowledgeBase(path=settings['data_path'])    
+df = pd.DataFrame(columns=['LP', 'max_runtime', 'tournament_size', 'height_limit','card_limit','value_splitter', 'quality_score'])
 
 class OptunaSamplers():
-    def __init__(self, lp):
+    def __init__(self, lp, concept):
         self.lp = lp
-        self.study_random_sampler = optuna.create_study(sampler=RandomSampler())
-        self.study_tpe_sampler = optuna.create_study(sampler=TPESampler())
+        self.concept = concept
+        self.study_random_sampler = optuna.create_study(sampler=RandomSampler(), direction='maximize')
+        self.study_tpe_sampler = optuna.create_study(sampler=TPESampler(), direction='maximize')
         self.sampler = optuna.samplers.CmaEsSampler()
         self.nsgii = optuna.samplers.NSGAIISampler(population_size=100)
         self.qmc_sampler = optuna.samplers.QMCSampler()
         self.study_cmaes_sampler = optuna.create_study(sampler=self.sampler)
         self.study_nsgaii_sampler = optuna.create_study(sampler=self.nsgii)
         self.study_qmc_sampler = optuna.create_study(sampler=self.qmc_sampler)
+    
+    def write_to_df(self, **space):
+        df.loc[len(df.index)] = [self.concept, space['max_runtime'], space['tournament_size'], space['height_limit'], space['card_limit'],
+        space['value_splitter'], space['quality_score']]
+    
+    def convert_to_csv(self, df):
+        timestr = time.strftime("%Y%m%d-%H%M%S")
+        filename = "Output"+str(timestr)  
+        df.to_csv(filename+".csv",index=False)
 
-    def objective(self,trial):
-        binning_value_splitter = BinningValueSplitter()
-        entropy_value_splitter = EntropyValueSplitter()
+    def objective(self,trial):             
         max_runtime = trial.suggest_int("max_runtime", 10, 20)
         tournament_size = trial.suggest_int("tournament_size", 2, 10)
         height_limit = trial.suggest_int('height_limit',3, 25)
         card_limit = trial.suggest_int('card_limit', 5, 10)
-        #value_splitter = trial.suggest_categorical('value_splitter',[binning_value_splitter,entropy_value_splitter])
-        model = EvoLearner(knowledge_base=kb, max_runtime=max_runtime, tournament_size=tournament_size, height_limit=height_limit,card_limit=card_limit)
+        value_splitter = trial.suggest_categorical('value_splitter',['binning_value_splitter','entropy_value_splitter'])
+        #create a dictionary
+        space = dict()
+        space['max_runtime'] = max_runtime
+        space['tournament_size'] = tournament_size
+        space['height_limit'] = height_limit
+        space['card_limit'] = card_limit
+        space['value_splitter'] = value_splitter
+        #call the wrapper class
+        wrap_obj = EvoLearnerWrapper(knowledge_base=kb, max_runtime=max_runtime, tournament_size=tournament_size, height_limit=height_limit,card_limit=card_limit,value_splitter=value_splitter )
+        model = wrap_obj.get_evolearner_model()
         model.fit(self.lp, verbose=False)
         model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
         hypotheses = list(model.best_hypotheses(n=1))
         quality = hypotheses[0].quality
-        return quality
+        space['quality_score'] = quality
+        self.write_to_df(**space)
+        return quality    
 
     def get_best_optimisation_result_for_random_sampler(self, n_trials):
         self.study_random_sampler.optimize(self.objective, n_trials=n_trials)
@@ -118,7 +139,7 @@ if __name__ == "__main__":
         typed_neg = list(set(map(OWLNamedIndividual, map(IRI.create, n))))
         
         #shuffle the Positive and Negative Sample
-        shuffle(typed_pos)   
+        shuffle(typed_pos)
         shuffle(typed_neg)
 
         #Split the data into Training Set and Test Set
@@ -129,5 +150,6 @@ if __name__ == "__main__":
         lp = PosNegLPStandard(pos=train_pos, neg=train_neg)
 
         #create class object and get the optimised result
-        optuna1 = OptunaSamplers(lp)
-        optuna1.get_best_optimization_result_for_qmc_sampler(10)
+        optuna1 = OptunaSamplers(lp, str_target_concept)
+        optuna1.get_best_optimization_result_for_tpe_sampler(10)
+        optuna1.convert_to_csv(df)
