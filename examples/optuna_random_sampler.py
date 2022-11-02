@@ -22,8 +22,8 @@ with open('carcinogenesis_lp.json') as json_file:
     settings = json.load(json_file)
 
 kb = KnowledgeBase(path=settings['data_path'])
-df = pd.DataFrame(columns=['LP', 'max_runtime', 'tournament_size', 'height_limit', 'use_data_properties',
-                           'quality_func', 'card_limit', 'value_splitter', 'quality_score'])
+df = pd.DataFrame(columns=['LP', 'max_runtime', 'tournament_size', 'height_limit', 'card_limit',
+                           'use_data_properties', 'quality_func', 'value_splitter', 'quality_score'])
 
 
 class OptunaSamplers():
@@ -58,15 +58,6 @@ class OptunaSamplers():
         quality_func = trial.suggest_categorical('quality_func', ['F1', 'Accuracy'])
         value_splitter = trial.suggest_categorical('value_splitter', 
                                                    ['binning_value_splitter', 'entropy_value_splitter'])
-        # create a dictionary
-        space = dict()
-        space['max_runtime'] = max_runtime
-        space['tournament_size'] = tournament_size
-        space['height_limit'] = height_limit
-        space['card_limit'] = card_limit
-        space['use_data_properties'] = use_data_properties
-        space['value_splitter'] = value_splitter
-        space['quality_func'] = quality_func
         # call the wrapper class
         wrap_obj = EvoLearnerWrapper(knowledge_base=kb, max_runtime=max_runtime, tournament_size=tournament_size,
                                      height_limit=height_limit, card_limit=card_limit, 
@@ -78,6 +69,16 @@ class OptunaSamplers():
         model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
         hypotheses = list(model.best_hypotheses(n=1))
         quality = hypotheses[0].quality
+
+        # create a dictionary
+        space = dict()
+        space['max_runtime'] = max_runtime
+        space['tournament_size'] = tournament_size
+        space['height_limit'] = height_limit
+        space['card_limit'] = card_limit
+        space['use_data_properties'] = use_data_properties
+        space['value_splitter'] = value_splitter
+        space['quality_func'] = quality_func
         space['quality_score'] = quality
         self.write_to_df(**space)
         return quality    
