@@ -128,8 +128,8 @@ class ManchesterOWLSyntaxParserTest(unittest.TestCase):
         self.assertEqual(p, c)
 
         p = self.parser.parse_expression('charge some <http://www.w3.org/2001/XMLSchema#double>'
-                                         '[> "4.4"^^xsd:double, < 32f]')
-        c = OWLDataSomeValuesFrom(self.charge, OWLDatatypeMinMaxExclusiveRestriction(4.4, 32))
+                                         '[> "4.4"^^xsd:double, < -32.5]')
+        c = OWLDataSomeValuesFrom(self.charge, OWLDatatypeMinMaxExclusiveRestriction(4.4, -32.5))
         self.assertEqual(p, c)
 
         p = self.parser.parse_expression('charge max 4 not (integer[> +4] and integer or xsd:integer[< "1"^^integer])')
@@ -388,8 +388,8 @@ class DLSyntaxParserTest(unittest.TestCase):
         self.assertEqual(p, c)
 
         p = self.parser.parse_expression('∃ charge.<http://www.w3.org/2001/XMLSchema#double>'
-                                         '[> "4.4"^^xsd:double, < 32f]')
-        c = OWLDataSomeValuesFrom(self.charge, OWLDatatypeMinMaxExclusiveRestriction(4.4, 32))
+                                         '[> "4.4"^^xsd:double, < -32.5]')
+        c = OWLDataSomeValuesFrom(self.charge, OWLDatatypeMinMaxExclusiveRestriction(4.4, -32.5))
         self.assertEqual(p, c)
 
         p = self.parser.parse_expression('≤ 4 charge.(¬(integer[> +4] ⊓ integer ⊔ xsd:integer[< "1"^^integer]))')
