@@ -6,30 +6,37 @@ from optuna.samplers import RandomSampler
 from optuna.samplers import TPESampler
 import pandas as pd
 import time
+import logging
 
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.model import OWLNamedIndividual, IRI
-from ontolearn.utils import setup_logging
+from ontolearn.utils import oplogging
 from wrapper_evolearner import EvoLearnerWrapper
+from search import calc_prediction
+
+logger = logging.getLogger(__name__)
 
 try:
     os.chdir("examples")
 except FileNotFoundError:
     pass
 
-with open('carcinogenesis_lp.json') as json_file:
+with open('dataset/premier_league.json') as json_file:
     settings = json.load(json_file)
 
 kb = KnowledgeBase(path=settings['data_path'])
 df = pd.DataFrame(columns=['LP', 'max_runtime', 'tournament_size', 'height_limit', 'card_limit',
-                           'use_data_properties', 'quality_func', 'value_splitter', 'quality_score'])
+                           'use_data_properties', 'quality_func', 'value_splitter', 'quality_score',
+                           'test_f1_Score', 'test_accuracy'])
 
 
 class OptunaSamplers():
-    def __init__(self, lp, concept):
+    def __init__(self, lp, concept, test_pos, test_neg):
         self.lp = lp
         self.concept = concept
+        self.test_pos = test_pos
+        self.test_neg = test_neg
         self.study_random_sampler = optuna.create_study(sampler=RandomSampler(), direction='maximize')
         self.study_tpe_sampler = optuna.create_study(sampler=TPESampler(), direction='maximize')
         self.sampler = optuna.samplers.CmaEsSampler()
@@ -42,7 +49,8 @@ class OptunaSamplers():
     def write_to_df(self, **space):
         df.loc[len(df.index)] = [self.concept, space['max_runtime'], space['tournament_size'], 
                                  space['height_limit'], space['card_limit'], space['use_data_properties'], 
-                                 space['quality_func'], space['value_splitter'], space['quality_score']]
+                                 space['quality_func'], space['value_splitter'], space['quality_score'],
+                                 space['test_f1_Score'], space['test_accuracy']]
     
     def convert_to_csv(self, df):
         timestr = time.strftime("%Y%m%d-%H%M%S")
@@ -68,8 +76,11 @@ class OptunaSamplers():
         model.fit(self.lp, verbose=False)
         model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
         hypotheses = list(model.best_hypotheses(n=1))
+        predictions = model.predict(individuals=list(self.test_pos | self.test_neg),
+                                    hypotheses=hypotheses)       
+        f1_score, accuracy = calc_prediction(predictions, self.test_pos, self.test_neg)       
         quality = hypotheses[0].quality
-
+        
         # create a dictionary
         space = dict()
         space['max_runtime'] = max_runtime
@@ -80,6 +91,8 @@ class OptunaSamplers():
         space['value_splitter'] = value_splitter
         space['quality_func'] = quality_func
         space['quality_score'] = quality
+        space['test_f1_Score'] = f1_score
+        space['test_accuracy'] = accuracy
         self.write_to_df(**space)
         return quality    
 
@@ -159,6 +172,6 @@ if __name__ == "__main__":
         lp = PosNegLPStandard(pos=train_pos, neg=train_neg)
 
         # create class object and get the optimised result
-        optuna1 = OptunaSamplers(lp, str_target_concept)
+        optuna1 = OptunaSamplers(lp, str_target_concept, test_pos, test_neg)
         optuna1.get_best_optimization_result_for_tpe_sampler(10)
         optuna1.convert_to_csv(df)
