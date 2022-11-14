@@ -4,8 +4,8 @@ from ontolearn.abstracts import AbstractFitness, AbstractScorer
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import EvoLearner
 from ontolearn.value_splitter import BinningValueSplitter, EntropyValueSplitter
-from ontolearn.ea_initialization import AbstractEAInitialization, EARandomInitialization, EARandomWalkInitialization
-from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
+from ontolearn.ea_initialization import AbstractEAInitialization
+from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm
 from ontolearn.metrics import Accuracy, F1
 
 
@@ -20,7 +20,7 @@ class EvoLearnerWrapper:
                  max_runtime: Optional[int] = None,
                  use_data_properties: Optional[str] = 'True',
                  use_card_restrictions: bool = True, 
-                 use_inverse: bool = False, 
+                 use_inverse: Optional[str] = 'False', 
                  tournament_size: int = 7,
                  card_limit: int = 10,
                  population_size: int = 800,
@@ -40,7 +40,7 @@ class EvoLearnerWrapper:
         self.use_data_properties = self.transform_use_data_properties(use_data_properties)
         self.use_card_restrictions = use_card_restrictions
         self.max_runtime = max_runtime
-        self.use_inverse = use_inverse
+        self.use_inverse = self.transform_use_inverse(use_inverse)
         self.tournament_size = tournament_size
         self.card_limit = card_limit
         self.population_size = population_size
@@ -63,6 +63,13 @@ class EvoLearnerWrapper:
             use_data_properties = True
         return use_data_properties
     
+    def transform_use_inverse(self, use_inverse):
+        if use_inverse == 'True':
+            use_inverse = True
+        else:
+            use_inverse = False
+        return use_inverse
+
     def transform_quality_func(self, quality_func):
         if quality_func == 'F1':
             quality_func = F1()
@@ -79,7 +86,7 @@ class EvoLearnerWrapper:
                                 self.mut_uniform_gen, 
                                 self.value_splitter, 
                                 self.terminate_on_goal,
-                                self. max_runtime, 
+                                self.max_runtime, 
                                 self.use_data_properties, 
                                 self.use_card_restrictions, 
                                 self.use_inverse, 
@@ -89,7 +96,4 @@ class EvoLearnerWrapper:
                                 self.num_generations, 
                                 self.height_limit)
         return model
-        
-
-        
             

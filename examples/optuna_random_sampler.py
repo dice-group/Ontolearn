@@ -33,11 +33,18 @@ df = pd.DataFrame(columns=['LP', 'max_runtime', 'tournament_size', 'height_limit
 
 class OptunaSamplers():
     def __init__(self, lp, concept, test_pos, test_neg):
+        # For grid sampler specify the search space
+        search_space = {'max_runtime': [2, 10, 50, 100],
+                        'tournament_size': [2, 5, 15],
+                        'height_limit': [3, 10, 25],
+                        'card_limit': [2, 5, 10]
+                        }
         self.lp = lp
         self.concept = concept
         self.test_pos = test_pos
-        self.test_neg = test_neg
+        self.test_neg = test_neg        
         self.study_random_sampler = optuna.create_study(sampler=RandomSampler(), direction='maximize')
+        self.study_grid_sampler = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space=search_space))
         self.study_tpe_sampler = optuna.create_study(sampler=TPESampler(), direction='maximize')
         self.sampler = optuna.samplers.CmaEsSampler()
         self.nsgii = optuna.samplers.NSGAIISampler(population_size=100)
@@ -57,12 +64,35 @@ class OptunaSamplers():
         filename = "Output"+str(timestr)  
         df.to_csv(filename+".csv", index=False)
 
-    def objective(self, trial):             
-        max_runtime = trial.suggest_int("max_runtime", 10, 20)
+    def objective(self, trial):
+        max_runtime = trial.suggest_int("max_runtime", 2, 100)
+        tournament_size = trial.suggest_int("tournament_size", 2, 16)
+        height_limit = trial.suggest_int('height_limit', 3, 26)
+        card_limit = trial.suggest_int('card_limit', 1, 10)
+
+        # call the wrapper class
+        wrap_obj = EvoLearnerWrapper(knowledge_base=kb, max_runtime=max_runtime, tournament_size=tournament_size,
+                                     height_limit=height_limit, card_limit=card_limit
+                                     )
+        model = wrap_obj.get_evolearner_model()
+        model.fit(self.lp, verbose=False)
+        model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
+        hypotheses = list(model.best_hypotheses(n=1))
+        predictions = model.predict(individuals=list(self.test_pos | self.test_neg),
+                                    hypotheses=hypotheses)       
+        f1_score, accuracy = calc_prediction(predictions, self.test_pos, self.test_neg)       
+        quality = hypotheses[0].quality
+        return quality
+
+    def objective_with_categorical_distribution(self, trial):
+        # categorical distribution efficiently works for the following samplers
+        # Random Sampler, Grid Sampler, TPE Sampler and NSGAII Sampler             
+        max_runtime = trial.suggest_int("max_runtime", 2, 20)
         tournament_size = trial.suggest_int("tournament_size", 2, 10)
         height_limit = trial.suggest_int('height_limit', 3, 25)
         card_limit = trial.suggest_int('card_limit', 5, 10)
         use_data_properties = trial.suggest_categorical('use_data_properties', ['True', 'False'])
+        use_inverse = trial.suggest_categorical('use_inverse', ['True', 'False'])
         quality_func = trial.suggest_categorical('quality_func', ['F1', 'Accuracy'])
         value_splitter = trial.suggest_categorical('value_splitter', 
                                                    ['binning_value_splitter', 'entropy_value_splitter'])
@@ -70,6 +100,7 @@ class OptunaSamplers():
         wrap_obj = EvoLearnerWrapper(knowledge_base=kb, max_runtime=max_runtime, tournament_size=tournament_size,
                                      height_limit=height_limit, card_limit=card_limit, 
                                      use_data_properties=use_data_properties,
+                                     use_inverse=use_inverse,
                                      quality_func=quality_func,
                                      value_splitter=value_splitter)
         model = wrap_obj.get_evolearner_model()
@@ -80,7 +111,7 @@ class OptunaSamplers():
                                     hypotheses=hypotheses)       
         f1_score, accuracy = calc_prediction(predictions, self.test_pos, self.test_neg)       
         quality = hypotheses[0].quality
-        
+
         # create a dictionary
         space = dict()
         space['max_runtime'] = max_runtime
@@ -88,16 +119,67 @@ class OptunaSamplers():
         space['height_limit'] = height_limit
         space['card_limit'] = card_limit
         space['use_data_properties'] = use_data_properties
+        space['use_inverse'] = use_inverse
         space['value_splitter'] = value_splitter
         space['quality_func'] = quality_func
         space['quality_score'] = quality
         space['test_f1_Score'] = f1_score
         space['test_accuracy'] = accuracy
         self.write_to_df(**space)
-        return quality    
+        return quality
 
+    def objective_without_categorical_distribution(self, trial):
+        # Categorical distribution does not work for QMC and CMEs sampler
+        # The categorical distribution values are sampled in such cases using Random Sampler
+        # Using a threshold value to categorise the hyperparameters.
+        max_runtime = trial.suggest_int("max_runtime", 2, 20)
+        tournament_size = trial.suggest_int("tournament_size", 2, 10)
+        height_limit = trial.suggest_int('height_limit', 3, 25)
+        card_limit = trial.suggest_int('card_limit', 5, 10)
+        use_data_properties = trial.suggest_int('use_data_properties', 1, 2)
+        use_inverse = trial.suggest_int('use_inverse', 1, 2)
+        quality_func = trial.suggest_int('quality_func', 1, 2)
+        value_splitter = trial.suggest_int('value_splitter', 1, 2)
+
+        use_data_properties = 'True' if use_data_properties >= 2 else 'False'
+        use_inverse = 'True' if use_inverse >= 2 else 'False'
+        quality_func = 'F1' if quality_func >= 2 else 'Accuracy'
+        value_splitter = 'binning_value_splitter' if value_splitter >= 2 else 'entropy_value_splitter'
+
+        # call the wrapper class
+        wrap_obj = EvoLearnerWrapper(knowledge_base=kb, max_runtime=max_runtime, tournament_size=tournament_size,
+                                     height_limit=height_limit, card_limit=card_limit, 
+                                     use_data_properties=use_data_properties,
+                                     use_inverse=use_inverse,
+                                     quality_func=quality_func,
+                                     value_splitter=value_splitter)
+        model = wrap_obj.get_evolearner_model()
+        model.fit(self.lp, verbose=False)
+        model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
+        hypotheses = list(model.best_hypotheses(n=1))
+        predictions = model.predict(individuals=list(self.test_pos | self.test_neg),
+                                    hypotheses=hypotheses)       
+        f1_score, accuracy = calc_prediction(predictions, self.test_pos, self.test_neg)       
+        quality = hypotheses[0].quality
+
+        # create a dictionary
+        space = dict()
+        space['max_runtime'] = max_runtime
+        space['tournament_size'] = tournament_size
+        space['height_limit'] = height_limit
+        space['card_limit'] = card_limit
+        space['use_data_properties'] = use_data_properties
+        space['use_inverse'] = use_inverse
+        space['value_splitter'] = value_splitter
+        space['quality_func'] = quality_func
+        space['quality_score'] = quality
+        space['test_f1_Score'] = f1_score
+        space['test_accuracy'] = accuracy
+        self.write_to_df(**space)
+        return quality
+    
     def get_best_optimisation_result_for_random_sampler(self, n_trials):
-        self.study_random_sampler.optimize(self.objective, n_trials=n_trials)
+        self.study_random_sampler.optimize(self.objective_with_categorical_distribution, n_trials=n_trials)
         print("-------BEST TRIAL-----------")
         print(self.study_random_sampler.best_trial)
         # best parameter combination
@@ -107,8 +189,19 @@ class OptunaSamplers():
         print("-------BEST Value----------")
         print(self.study_random_sampler.best_value)
 
+    def get_best_optimization_result_for_grid_sampler(self, n_trials):
+        self.study_grid_sampler.optimize(self.objective, n_trials=n_trials)
+        print("-------BEST TRIAL-----------")
+        print(self.study_grid_sampler.best_trial)
+        # best parameter combination
+        print("-------BEST PARAMS----------")
+        print(self.study_grid_sampler.best_params)
+        # score achieved with best parameter combination
+        print("-------BEST Value----------")
+        print(self.study_grid_sampler.best_value)
+
     def get_best_optimization_result_for_tpe_sampler(self, n_trials):
-        self.study_tpe_sampler.optimize(self.objective, n_trials=n_trials)
+        self.study_tpe_sampler.optimize(self.objective_with_categorical_distribution, n_trials=n_trials)
         print("-------BEST TRIAL-----------")
         print(self.study_tpe_sampler.best_trial)
         # best parameter combination
@@ -119,7 +212,7 @@ class OptunaSamplers():
         print(self.study_tpe_sampler.best_value)
 
     def get_best_optimization_result_for_cmes_sampler(self, n_trials):
-        self.study_cmaes_sampler.optimize(self.objective, n_trials=n_trials)
+        self.study_cmaes_sampler.optimize(self.objective_with_categorical_distribution, n_trials=n_trials)
         print("-------BEST TRIAL-----------")
         print(self.study_cmaes_sampler.best_trial)
         # best parameter combination
@@ -130,7 +223,7 @@ class OptunaSamplers():
         print(self.study_cmaes_sampler.best_value)
 
     def get_best_optimization_result_for_nsgii_sampler(self, population_size):
-        self.study_nsgaii_sampler.optimize(self.objective, n_trials=population_size)
+        self.study_nsgaii_sampler.optimize(self.objective_with_categorical_distribution, n_trials=population_size)
         print("-------BEST TRIAL-----------")
         print(self.study_nsgaii_sampler.best_trial)
         # best parameter combination
@@ -141,7 +234,7 @@ class OptunaSamplers():
         print(self.study_nsgaii_sampler.best_value)
 
     def get_best_optimization_result_for_qmc_sampler(self, n_trials):
-        self.study_qmc_sampler.optimize(self.objective, n_trials=n_trials)
+        self.study_qmc_sampler.optimize(self.objective_without_categorical_distribution, n_trials=n_trials)
         print("-------BEST TRIAL-----------")
         print(self.study_qmc_sampler.best_trial)
         # best parameter combination
@@ -156,7 +249,7 @@ if __name__ == "__main__":
     for str_target_concept, examples in settings['problems'].items():
         p = set(examples['positive_examples'])
         n = set(examples['negative_examples'])
-        print('Target concept: ', str_target_concept)
+
         typed_pos = list(set(map(OWLNamedIndividual, map(IRI.create, p))))
         typed_neg = list(set(map(OWLNamedIndividual, map(IRI.create, n))))
         
@@ -173,5 +266,5 @@ if __name__ == "__main__":
 
         # create class object and get the optimised result
         optuna1 = OptunaSamplers(lp, str_target_concept, test_pos, test_neg)
-        optuna1.get_best_optimization_result_for_tpe_sampler(10)
+        optuna1.get_best_optimization_result_for_qmc_sampler(10)
         optuna1.convert_to_csv(df)
