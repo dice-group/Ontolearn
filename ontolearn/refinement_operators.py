@@ -197,7 +197,7 @@ class LengthBasedRefinement(BaseRefinement):
         elif isinstance(class_expression, OWLObjectIntersectionOf):
             yield from self.refine_object_intersection_of(class_expression)
         else:
-            raise ValueError
+            raise ValueError(f"{type(class_expression)} objects are not yet supported")
 
 
 class ModifiedCELOERefinement(BaseRefinement[OENode]):
@@ -625,7 +625,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         elif isinstance(ce, OWLDataHasValue):
             yield from self.refine_data_has_value(ce)
         else:
-            raise ValueError(ce)
+            raise ValueError(f"{type(ce)} objects are not yet supported")
 
 
 class CustomRefinementOperator(BaseRefinement[Node]):
@@ -755,23 +755,23 @@ class CustomRefinementOperator(BaseRefinement[Node]):
         elif isinstance(concept, OWLObjectIntersectionOf):
             yield from self.refine_object_intersection_of(concept)
         else:
-            raise ValueError
+            raise ValueError(f"{type(concept)} objects are not yet supported")
 
 
-class ExpressRefinement(BaseRefinement[Node]):
+class ExpressRefinement(BaseRefinement[OENode]):
     """ A top down refinement operator refinement operator in ALCHIQ(D)."""
-    
+
     __slots__ = 'expressivity', 'downsample', 'k', 'max_child_length', 'use_inverse', 'use_card_restrictions', \
                 'max_nr_fillers', 'card_limit', 'use_numeric_datatypes', 'use_boolean_datatype', 'dp_splits', \
                 'value_splitter', 'use_time_datatypes'
 
-    #_Node: Final = OENode
+    _Node: Final = OENode
 
     kb: KnowledgeBase
     value_splitter: Optional[AbstractValueSplitter]
     expressivity: float
     downsample: int
-    k: int # k is used to sample fillers for object properties
+    k: int  # k is used to sample fillers for object properties
     max_child_length: int
     use_card_restrictions: bool
     use_numeric_datatypes: bool
@@ -781,11 +781,11 @@ class ExpressRefinement(BaseRefinement[Node]):
 
     max_nr_fillers: DefaultDict[OWLObjectPropertyExpression, int]
     dp_splits: Dict[OWLDataPropertyExpression, List[OWLLiteral]]
-        
+
     def __init__(self, knowledge_base,
-                 downsample: bool = True, 
+                 downsample: bool = True,
                  expressivity: float = 0.8,
-                 k: int  = 5,
+                 k: int = 5,
                  value_splitter: Optional[AbstractValueSplitter] = None,
                  max_child_length: int = 10,
                  use_all_constructor: bool = True,
@@ -836,9 +836,7 @@ class ExpressRefinement(BaseRefinement[Node]):
 
         if len(split_dps) > 0:
             self.dp_splits = self.value_splitter.compute_splits_properties(self.kb.reasoner(), split_dps)
-            
-            
-            
+
     def _operands_len(self, _Type: Type[OWLNaryBooleanClassExpression],
                       ops: List[OWLClassExpression]) -> int:
         """Calculate the length of a OWL Union or Intersection with operands ops
@@ -868,36 +866,35 @@ class ExpressRefinement(BaseRefinement[Node]):
                     filler=OWLDatatypeMaxInclusiveRestriction(splits[-1]), property=dp))
         return restrictions
 
-    
-    def refine_atomic_concept(self, ce: OWLClass) -> Generator:
-                    
+    def refine_atomic_concept(self, ce: OWLClass) -> Iterable[OWLClassExpression]:
         if ce.is_owl_nothing():
-            yield from {OWLNothing}
+            yield OWLNothing
         else:
             any_refinement = False
             # Get all subconcepts
             iter_container_sub = list(self.kb.get_all_sub_concepts(ce))
-            if iter_container_sub == []:
+            if len(iter_container_sub) == 0:
                 iter_container_sub = [ce]
             iter_container_restrict = []
             # Get negations of all subconcepts
             iter_container_neg = list(self.kb.negation_from_iterables(iter_container_sub))
             # (3) Create ∀.r.C and ∃.r.C where r is the most general relation and C in Fillers
-            Fillers = {OWLThing, OWLNothing} if len(iter_container_sub) < self.k else {OWLThing,
-                                                                                           OWLNothing}.union(
-                set(random.sample(iter_container_sub, k=self.k))).union(set(random.sample(iter_container_neg, k=self.k)))
-            for C in Fillers:
-                if self.len(C) + 2 <= self.max_child_length:
+            fillers = {OWLThing, OWLNothing}
+            if len(iter_container_sub) >= self.k:
+                fillers = fillers | set(random.sample(iter_container_sub, k=self.k)) | \
+                    set(random.sample(iter_container_neg, k=self.k))
+            for c in fillers:
+                if self.len(c) + 2 <= self.max_child_length:
                     iter_container_restrict.append(
-                        set(self.kb.most_general_universal_restrictions(domain=ce, filler=C)))
+                        set(self.kb.most_general_universal_restrictions(domain=ce, filler=c)))
                     iter_container_restrict.append(
-                        set(self.kb.most_general_existential_restrictions(domain=ce, filler=C)))
+                        set(self.kb.most_general_existential_restrictions(domain=ce, filler=c)))
                     if self.use_inverse:
                         iter_container_restrict.append(
-                            set(self.kb.most_general_existential_restrictions_inverse(domain=ce, filler=C)))
+                            set(self.kb.most_general_existential_restrictions_inverse(domain=ce, filler=c)))
                         iter_container_restrict.append(
-                            set(self.kb.most_general_universal_restrictions_inverse(domain=ce, filler=C)))
-            
+                            set(self.kb.most_general_universal_restrictions_inverse(domain=ce, filler=c)))
+
             if self.use_numeric_datatypes:
                 iter_container_restrict.append(set(self._get_dp_restrictions(
                     self.kb.most_general_numeric_data_properties(domain=ce))))
@@ -918,11 +915,11 @@ class ExpressRefinement(BaseRefinement[Node]):
                     if max_ > 1:
                         card_res.append(self.kb.max_cardinality_restriction(self.kb.thing, prop, max_ - 1))
                 iter_container_restrict.append(set(card_res))
-            
+
             iter_container_restrict = list(set(chain.from_iterable(iter_container_restrict)))
             container = iter_container_restrict + iter_container_neg + iter_container_sub
             if self.downsample:  # downsampling is necessary if no enough computation resources
-                assert self.expressivity < 1, "When downsampling, the expressivity is less than 1"
+                assert self.expressivity < 1, "When downsampling, the expressivity must be less than 1"
                 m = int(self.expressivity * len(container))
                 container = random.sample(container, k=max(m, 1))
             else:
@@ -957,7 +954,7 @@ class ExpressRefinement(BaseRefinement[Node]):
                 print(f"No refinements found for {repr(ce)}")
                 yield ce
 
-    def refine_complement_of(self, ce: OWLObjectComplementOf) -> Generator:
+    def refine_complement_of(self, ce: OWLObjectComplementOf) -> Iterable[OWLClassExpression]:
         assert isinstance(ce, OWLObjectComplementOf)
         any_refinement = False
         parents = self.kb.get_direct_parents(self.kb.negation(ce))
@@ -968,7 +965,7 @@ class ExpressRefinement(BaseRefinement[Node]):
         if not any_refinement:
             yield ce
 
-    def refine_object_some_values_from(self, ce) -> Generator:
+    def refine_object_some_values_from(self, ce: OWLObjectSomeValuesFrom) -> Iterable[OWLClassExpression]:
         assert isinstance(ce, OWLObjectSomeValuesFrom)
         assert isinstance(ce.get_filler(), OWLClassExpression)
         any_refinement = False
@@ -981,20 +978,20 @@ class ExpressRefinement(BaseRefinement[Node]):
             any_refinement = True
             reft = self.kb.universal_restriction(ce.get_filler(), ce.get_property())
             yield reft
-            
+
         for more_special_op in self.kb.object_property_hierarchy(). \
                 more_special_roles(ce.get_property().get_named_property()):
             if self.len(ce) <= self.max_child_length:
                 yield self.kb.existential_restriction(ce.get_filler(), more_special_op)
                 any_refinement = True
-            
+
         if self.len(ce) <= self.max_child_length and self.max_nr_fillers[ce.get_property()] > 1:
             yield self.kb.min_cardinality_restriction(ce.get_filler(), ce.get_property(), 2)
             any_refinement = True
         if not any_refinement:
             yield ce
 
-    def refine_object_all_values_from(self, ce: OWLObjectAllValuesFrom) -> Generator:
+    def refine_object_all_values_from(self, ce: OWLObjectAllValuesFrom) -> Iterable[OWLClassExpression]:
         assert isinstance(ce, OWLObjectAllValuesFrom)
         assert isinstance(ce.get_filler(), OWLClassExpression)
         any_refinement = False
@@ -1003,8 +1000,8 @@ class ExpressRefinement(BaseRefinement[Node]):
                 any_refinement = True
                 reft = self.kb.universal_restriction(ref, ce.get_property())
                 yield reft
-        for more_special_op in self.kb.object_property_hierarchy().\
-            more_special_roles(ce.get_property().get_named_property()):
+        for more_special_op in self.kb.object_property_hierarchy(). \
+                more_special_roles(ce.get_property().get_named_property()):
             if 2 + self.len(ce.get_filler()) <= self.max_child_length:
                 yield self.kb.universal_restriction(ce.get_filler(), more_special_op)
                 any_refinement = True
@@ -1014,7 +1011,7 @@ class ExpressRefinement(BaseRefinement[Node]):
             yield OWLNothing
 
     def refine_object_min_card_restriction(self, ce: OWLObjectMinCardinality) \
-            -> Generator:
+            -> Iterable[OWLObjectMinCardinality]:
         assert isinstance(ce, OWLObjectMinCardinality)
         assert ce.get_cardinality() >= 0
 
@@ -1026,7 +1023,7 @@ class ExpressRefinement(BaseRefinement[Node]):
             yield self.kb.min_cardinality_restriction(ce.get_filler(), ce.get_property(), ce.get_cardinality() + 1)
 
     def refine_object_max_card_restriction(self, ce: OWLObjectMaxCardinality) \
-            -> Generator:
+            -> Iterable[OWLObjectMaxCardinality]:
         assert isinstance(ce, OWLObjectMaxCardinality)
         assert ce.get_cardinality() >= 0
 
@@ -1037,8 +1034,7 @@ class ExpressRefinement(BaseRefinement[Node]):
         if ce.get_cardinality() > 1:
             yield self.kb.max_cardinality_restriction(ce.get_filler(), ce.get_property(), ce.get_cardinality() - 1)
 
-
-    def refine_object_union_of(self, ce: OWLObjectUnionOf) -> Generator:
+    def refine_object_union_of(self, ce: OWLObjectUnionOf) -> Iterable[OWLClassExpression]:
         assert isinstance(ce, OWLObjectUnionOf)
         any_refinement = False
         for op in ce.operands():
@@ -1056,7 +1052,7 @@ class ExpressRefinement(BaseRefinement[Node]):
         if not any_refinement:
             yield ce
 
-    def refine_object_intersection_of(self, ce: OWLObjectIntersectionOf) -> Generator:
+    def refine_object_intersection_of(self, ce: OWLObjectIntersectionOf) -> Iterable[OWLClassExpression]:
         assert isinstance(ce, OWLObjectIntersectionOf)
         any_refinement = False
         operands = list(ce.operands())
@@ -1069,8 +1065,8 @@ class ExpressRefinement(BaseRefinement[Node]):
                     any_refinement = True
         if not any_refinement:
             yield ce
-            
-    def refine_data_some_values_from(self, ce: OWLDataSomeValuesFrom) -> Generator:
+
+    def refine_data_some_values_from(self, ce: OWLDataSomeValuesFrom) -> Iterable[OWLDataSomeValuesFrom]:
         assert isinstance(ce, OWLDataSomeValuesFrom)
         any_refinement = False
         datarange = ce.get_filler()
@@ -1092,23 +1088,21 @@ class ExpressRefinement(BaseRefinement[Node]):
         if not any_refinement:
             yield ce
 
-    def refine_data_has_value(self, ce: OWLDataHasValue) -> Generator:
+    def refine_data_has_value(self, ce: OWLDataHasValue) -> Iterable[OWLDataHasValue]:
         assert isinstance(ce, OWLDataHasValue)
         any_refinement = False
         for more_special_dp in self.kb.data_property_hierarchy().more_special_roles(ce.get_property()):
             yield self.kb.data_has_value_restriction(ce.get_filler(), more_special_dp)
             any_refinement = True
-        
+
         if not any_refinement:
             yield ce
-       
-    def refine(self, ce, **kwargs) -> Generator:
+
+    def refine(self, ce, **kwargs) -> Iterable[OWLClassExpression]:
         """Refine a given concept
 
         Args:
             ce: concept to refine
-            max_length: refine up to this concept length
-            current_domain:
 
         Returns:
             iterable of refined concepts
@@ -1137,5 +1131,4 @@ class ExpressRefinement(BaseRefinement[Node]):
         elif isinstance(ce, OWLDataHasValue):
             yield from self.refine_data_has_value(ce)
         else:
-            print(f"{type(ce)} objects are not yet supported")
-            raise ValueError
+            raise ValueError(f"{type(ce)} objects are not yet supported")
