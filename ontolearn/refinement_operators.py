@@ -253,9 +253,9 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         self.card_limit = card_limit
 
         super().__init__(knowledge_base)
-        self.__setup()
+        self._setup()
 
-    def __setup(self):
+    def _setup(self):
         if self.value_splitter is None:
             self.value_splitter = BinningValueSplitter()
 
@@ -758,113 +758,41 @@ class CustomRefinementOperator(BaseRefinement[Node]):
             raise ValueError(f"{type(concept)} objects are not yet supported")
 
 
-class ExpressRefinement(BaseRefinement[OENode]):
+class ExpressRefinement(ModifiedCELOERefinement):
     """ A top down refinement operator refinement operator in ALCHIQ(D)."""
 
-    __slots__ = 'expressivity', 'downsample', 'k', 'max_child_length', 'use_inverse', 'use_card_restrictions', \
-                'max_nr_fillers', 'card_limit', 'use_numeric_datatypes', 'use_boolean_datatype', 'dp_splits', \
-                'value_splitter', 'use_time_datatypes'
+    __slots__ = 'expressivity', 'downsample', 'sample_fillers_count'
 
-    _Node: Final = OENode
-
-    kb: KnowledgeBase
-    value_splitter: Optional[AbstractValueSplitter]
     expressivity: float
-    downsample: int
-    k: int  # k is used to sample fillers for object properties
-    max_child_length: int
-    use_card_restrictions: bool
-    use_numeric_datatypes: bool
-    use_time_datatypes: bool
-    use_boolean_datatype: bool
-    card_limit: int
-
-    max_nr_fillers: DefaultDict[OWLObjectPropertyExpression, int]
-    dp_splits: Dict[OWLDataPropertyExpression, List[OWLLiteral]]
+    downsample: bool
+    sample_fillers_count: int
 
     def __init__(self, knowledge_base,
                  downsample: bool = True,
                  expressivity: float = 0.8,
-                 k: int = 5,
+                 sample_fillers_count: int = 5,
                  value_splitter: Optional[AbstractValueSplitter] = None,
                  max_child_length: int = 10,
-                 use_all_constructor: bool = True,
                  use_inverse: bool = True,
                  use_card_restrictions: bool = True,
                  use_numeric_datatypes: bool = True,
                  use_time_datatypes: bool = True,
                  use_boolean_datatype: bool = True,
                  card_limit: int = 10):
-        self.max_child_length = max_child_length
         self.downsample = downsample
-        self.k = k
+        self.sample_fillers_count = sample_fillers_count
         self.expressivity = expressivity
-        self.value_splitter = value_splitter
-        self.max_child_length = max_child_length
-        self.use_inverse = use_inverse
-        self.use_card_restrictions = use_card_restrictions
-        self.use_numeric_datatypes = use_numeric_datatypes
-        self.use_time_datatypes = use_time_datatypes
-        self.use_boolean_datatype = use_boolean_datatype
-        self.card_limit = card_limit
-        super().__init__(knowledge_base)
-        self.__setup()
 
-    def __setup(self):
-        if self.value_splitter is None:
-            self.value_splitter = BinningValueSplitter()
-
-        if self.use_card_restrictions:
-            obj_properties = list(self.kb.get_object_properties())
-            if self.use_inverse:
-                obj_properties.extend(list(map(OWLObjectInverseOf, obj_properties)))
-
-            self.max_nr_fillers = defaultdict(int)
-            for prop in obj_properties:
-                for ind in self.kb.individuals():
-                    num = sum(1 for _ in zip(self.kb.get_object_property_values(ind, prop), range(self.card_limit)))
-                    self.max_nr_fillers[prop] = max(self.max_nr_fillers[prop], num)
-                    if num == self.card_limit:
-                        break
-
-        split_dps = []
-        if self.use_numeric_datatypes:
-            split_dps.extend(self.kb.get_numeric_data_properties())
-
-        if self.use_time_datatypes:
-            split_dps.extend(self.kb.get_time_data_properties())
-
-        if len(split_dps) > 0:
-            self.dp_splits = self.value_splitter.compute_splits_properties(self.kb.reasoner(), split_dps)
-
-    def _operands_len(self, _Type: Type[OWLNaryBooleanClassExpression],
-                      ops: List[OWLClassExpression]) -> int:
-        """Calculate the length of a OWL Union or Intersection with operands ops
-
-        Args:
-            _Type: type of class expression (OWLObjectUnionOf or OWLObjectIntersectionOf)
-            ops: list of operands
-
-        Returns:
-            length of expression
-        """
-        length = 0
-        if len(ops) == 1:
-            length += self.len(ops[0])
-        elif ops:
-            length += self.len(_Type(ops))
-        return length
-
-    def _get_dp_restrictions(self, data_properties: Iterable[OWLDataProperty]) -> List[OWLDataSomeValuesFrom]:
-        restrictions = []
-        for dp in data_properties:
-            splits = self.dp_splits[dp]
-            if len(splits) > 0:
-                restrictions.append(self.kb.data_existential_restriction(
-                    filler=OWLDatatypeMinInclusiveRestriction(splits[0]), property=dp))
-                restrictions.append(self.kb.data_existential_restriction(
-                    filler=OWLDatatypeMaxInclusiveRestriction(splits[-1]), property=dp))
-        return restrictions
+        super().__init__(knowledge_base,
+                         value_splitter=value_splitter,
+                         max_child_length=max_child_length,
+                         use_inverse=use_inverse,
+                         use_card_restrictions=use_card_restrictions,
+                         use_numeric_datatypes=use_numeric_datatypes,
+                         use_time_datatypes=use_time_datatypes,
+                         use_boolean_datatype=use_boolean_datatype,
+                         card_limit=card_limit)
+        self._setup()
 
     def refine_atomic_concept(self, ce: OWLClass) -> Iterable[OWLClassExpression]:
         if ce.is_owl_nothing():
@@ -879,10 +807,10 @@ class ExpressRefinement(BaseRefinement[OENode]):
             # Get negations of all subconcepts
             iter_container_neg = list(self.kb.negation_from_iterables(iter_container_sub))
             # (3) Create ∀.r.C and ∃.r.C where r is the most general relation and C in Fillers
-            fillers = {OWLThing, OWLNothing}
-            if len(iter_container_sub) >= self.k:
-                fillers = fillers | set(random.sample(iter_container_sub, k=self.k)) | \
-                    set(random.sample(iter_container_neg, k=self.k))
+            fillers: Set[OWLClassExpression] = {OWLThing, OWLNothing}
+            if len(iter_container_sub) >= self.sample_fillers_count:
+                fillers = fillers | set(random.sample(iter_container_sub, k=self.sample_fillers_count)) | \
+                    set(random.sample(iter_container_neg, k=self.sample_fillers_count))
             for c in fillers:
                 if self.len(c) + 2 <= self.max_child_length:
                     iter_container_restrict.append(
@@ -951,7 +879,6 @@ class ExpressRefinement(BaseRefinement[OENode]):
                             yield intersect
                             any_refinement = True
             if not any_refinement:
-                print(f"No refinements found for {repr(ce)}")
                 yield ce
 
     def refine_complement_of(self, ce: OWLObjectComplementOf) -> Iterable[OWLClassExpression]:
