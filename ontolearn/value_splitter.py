@@ -41,6 +41,9 @@ class AbstractValueSplitter(metaclass=ABCMeta):
         else:
             return a
 
+    def reset(self):
+        pass
+
 
 class BinningValueSplitter(AbstractValueSplitter):
     """Calculate a number of bins of equal size as splits."""
@@ -112,6 +115,7 @@ class EntropyValueSplitter(AbstractValueSplitter):
 
     def __init__(self, max_nr_splits: int = 2):
         super().__init__(max_nr_splits)
+        self._prop_to_values = {}
 
     def compute_splits_properties(self, reasoner: OWLReasoner, properties: List[OWLDataProperty],
                                   pos: Set[OWLNamedIndividual] = None, neg: Set[OWLNamedIndividual] = None) \
@@ -119,8 +123,10 @@ class EntropyValueSplitter(AbstractValueSplitter):
         assert pos is not None
         assert neg is not None
 
+        self.reset()
+        properties = properties.copy()
+
         dp_splits: Dict[OWLDataProperty, List[OWLLiteral]] = {}
-        self._prop_to_values = {}
         for property_ in properties:
             dp_splits[property_] = []
             self._prop_to_values[property_] = IndividualValues(self._get_values_for_inds(reasoner, property_, pos),
@@ -221,3 +227,6 @@ class EntropyValueSplitter(AbstractValueSplitter):
             except StopIteration:
                 pass
         return inds_to_value
+
+    def reset(self):
+        self._prop_to_values = {}

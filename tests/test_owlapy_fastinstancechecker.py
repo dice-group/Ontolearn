@@ -14,9 +14,7 @@ from owlapy.model import DurationOWLDatatype, OWLObjectOneOf, OWLObjectProperty,
 from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, OWLDatatypeMinMaxInclusiveRestriction, \
     OWLDatatypeMinMaxExclusiveRestriction, OWLDatatypeMaxExclusiveRestriction, OWLDatatypeMaxInclusiveRestriction
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from pytest import mark
 
-# @TODO:CD: Why does test_complement2 fails ?
 
 class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
     # noinspection DuplicatedCode
@@ -104,23 +102,17 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
         mgr = OWLOntologyManager_Owlready2()
         onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
 
-        male = OWLClass(IRI.create(NS, 'male'))
-        female = OWLClass(IRI.create(NS, 'female'))
         has_child = OWLObjectProperty(IRI(NS, 'hasChild'))
 
         base_reasoner = OWLReasoner_Owlready2(onto)
         reasoner_nd = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner, negation_default=True)
 
         # note, these answers are all wrong under OWA
-        only_male_child = frozenset(reasoner_nd.instances(OWLObjectAllValuesFrom(property=has_child, filler=male)))
-        only_female_child = frozenset(reasoner_nd.instances(OWLObjectAllValuesFrom(property=has_child, filler=female)))
         no_child = frozenset(reasoner_nd.instances(OWLObjectAllValuesFrom(property=has_child, filler=OWLNothing)))
         target_inst = frozenset({OWLNamedIndividual(IRI('http://example.com/father#', 'michelle')),
                                  OWLNamedIndividual(IRI('http://example.com/father#', 'heinz'))})
         self.assertEqual(no_child, target_inst)
-        print(no_child)
 
-    @mark.xfail
     def test_complement2(self):
         NS = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
@@ -128,15 +120,13 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
 
         male = OWLClass(IRI.create(NS, 'male'))
         female = OWLClass(IRI.create(NS, 'female'))
-        has_child = OWLObjectProperty(IRI(NS, 'hasChild'))
 
         base_reasoner = OWLReasoner_Owlready2(onto)
         reasoner_open = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner, negation_default=False)
 
-        self.assertEqual(set(reasoner_open.instances(male)),
-                         set(reasoner_open.instances(OWLObjectComplementOf(female))))
-        self.assertEqual(set(reasoner_open.instances(female)),
-                         set(reasoner_open.instances(OWLObjectComplementOf(male))))
+        # Should be empty under open world assumption
+        self.assertEqual(set(), set(reasoner_open.instances(OWLObjectComplementOf(female))))
+        self.assertEqual(set(), set(reasoner_open.instances(OWLObjectComplementOf(male))))
 
     def test_cardinality_restrictions(self):
         NS = "http://dl-learner.org/mutagenesis#"

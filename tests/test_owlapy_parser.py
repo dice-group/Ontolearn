@@ -8,7 +8,7 @@ from owlapy.model import OWLObjectInverseOf, OWLObjectMinCardinality, OWLObjectS
     OWLLiteral, OWLNamedIndividual, OWLObjectAllValuesFrom, OWLObjectComplementOf, OWLObjectExactCardinality, \
     OWLObjectHasSelf, OWLObjectHasValue, OWLObjectIntersectionOf, OWLObjectMaxCardinality, OWLObjectOneOf, \
     OWLObjectProperty, OWLDataComplementOf, OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataUnionOf, \
-    OWLDataMinCardinality, OWLDataHasValue
+    OWLDataMinCardinality, OWLDataHasValue, OWLThing, OWLNothing
 
 from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, OWLDatatypeMinMaxExclusiveRestriction, \
     OWLDatatypeMaxExclusiveRestriction
@@ -56,6 +56,15 @@ class ManchesterOWLSyntaxParserTest(unittest.TestCase):
                                                             self.atom)),
                                                        self.compound)),
                               self.bond))
+        self.assertEqual(p, c)
+
+    def test_thing_nothing(self):
+        p = self.parser.parse_expression('(hasBond some (Thing and Nothing)) and Nothing or Thing')
+        c = OWLObjectUnionOf((
+                OWLObjectIntersectionOf((
+                    OWLObjectSomeValuesFrom(self.has_bond, OWLObjectIntersectionOf((OWLThing, OWLNothing))),
+                    OWLNothing)),
+                OWLThing))
         self.assertEqual(p, c)
 
     def test_object_properties(self):
@@ -119,8 +128,8 @@ class ManchesterOWLSyntaxParserTest(unittest.TestCase):
         self.assertEqual(p, c)
 
         p = self.parser.parse_expression('charge some <http://www.w3.org/2001/XMLSchema#double>'
-                                         '[> "4.4"^^xsd:double, < 32f]')
-        c = OWLDataSomeValuesFrom(self.charge, OWLDatatypeMinMaxExclusiveRestriction(4.4, 32))
+                                         '[> "4.4"^^xsd:double, < -32.5]')
+        c = OWLDataSomeValuesFrom(self.charge, OWLDatatypeMinMaxExclusiveRestriction(4.4, -32.5))
         self.assertEqual(p, c)
 
         p = self.parser.parse_expression('charge max 4 not (integer[> +4] and integer or xsd:integer[< "1"^^integer])')
@@ -309,6 +318,15 @@ class DLSyntaxParserTest(unittest.TestCase):
                               self.bond))
         self.assertEqual(p, c)
 
+    def test_top_bottom(self):
+        p = self.parser.parse_expression('(∃ hasBond.(⊤ ⊓ ⊥)) ⊓ ⊥ ⊔ ⊤')
+        c = OWLObjectUnionOf((
+                OWLObjectIntersectionOf((
+                    OWLObjectSomeValuesFrom(self.has_bond, OWLObjectIntersectionOf((OWLThing, OWLNothing))),
+                    OWLNothing)),
+                OWLThing))
+        self.assertEqual(p, c)
+
     def test_object_properties(self):
         p = self.parser.parse_expression('∃ inBond.Bond')
         c = OWLObjectSomeValuesFrom(self.in_bond, self.bond)
@@ -370,8 +388,8 @@ class DLSyntaxParserTest(unittest.TestCase):
         self.assertEqual(p, c)
 
         p = self.parser.parse_expression('∃ charge.<http://www.w3.org/2001/XMLSchema#double>'
-                                         '[> "4.4"^^xsd:double, < 32f]')
-        c = OWLDataSomeValuesFrom(self.charge, OWLDatatypeMinMaxExclusiveRestriction(4.4, 32))
+                                         '[> "4.4"^^xsd:double, < -32.5]')
+        c = OWLDataSomeValuesFrom(self.charge, OWLDatatypeMinMaxExclusiveRestriction(4.4, -32.5))
         self.assertEqual(p, c)
 
         p = self.parser.parse_expression('≤ 4 charge.(¬(integer[> +4] ⊓ integer ⊔ xsd:integer[< "1"^^integer]))')
