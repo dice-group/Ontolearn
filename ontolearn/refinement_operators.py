@@ -197,7 +197,7 @@ class LengthBasedRefinement(BaseRefinement):
         elif isinstance(class_expression, OWLObjectIntersectionOf):
             yield from self.refine_object_intersection_of(class_expression)
         else:
-            raise ValueError
+            raise ValueError(f"{type(class_expression)} objects are not yet supported")
 
 
 class ModifiedCELOERefinement(BaseRefinement[OENode]):
@@ -253,9 +253,9 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         self.card_limit = card_limit
 
         super().__init__(knowledge_base)
-        self.__setup()
+        self._setup()
 
-    def __setup(self):
+    def _setup(self):
         if self.value_splitter is None:
             self.value_splitter = BinningValueSplitter()
 
@@ -625,7 +625,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         elif isinstance(ce, OWLDataHasValue):
             yield from self.refine_data_has_value(ce)
         else:
-            raise ValueError(ce)
+            raise ValueError(f"{type(ce)} objects are not yet supported")
 
 
 class CustomRefinementOperator(BaseRefinement[Node]):
@@ -755,53 +755,108 @@ class CustomRefinementOperator(BaseRefinement[Node]):
         elif isinstance(concept, OWLObjectIntersectionOf):
             yield from self.refine_object_intersection_of(concept)
         else:
-            raise ValueError
+            raise ValueError(f"{type(concept)} objects are not yet supported")
 
 
-class ExpressRefinement(BaseRefinement[Node]):
-    """ A top down refinement operator refinement operator in ALC."""
+class ExpressRefinement(ModifiedCELOERefinement):
+    """ A top down refinement operator refinement operator in ALCHIQ(D)."""
 
-    def __init__(self, knowledge_base, max_child_length=25, downsample=True, expressivity=0.8):
-        super().__init__(knowledge_base)
-        self.max_child_length = max_child_length
+    __slots__ = 'expressivity', 'downsample', 'sample_fillers_count'
+
+    expressivity: float
+    downsample: bool
+    sample_fillers_count: int
+
+    def __init__(self, knowledge_base,
+                 downsample: bool = True,
+                 expressivity: float = 0.8,
+                 sample_fillers_count: int = 5,
+                 value_splitter: Optional[AbstractValueSplitter] = None,
+                 max_child_length: int = 10,
+                 use_inverse: bool = True,
+                 use_card_restrictions: bool = True,
+                 use_numeric_datatypes: bool = True,
+                 use_time_datatypes: bool = True,
+                 use_boolean_datatype: bool = True,
+                 card_limit: int = 10):
         self.downsample = downsample
+        self.sample_fillers_count = sample_fillers_count
         self.expressivity = expressivity
 
-    def refine_atomic_concept(self, concept: OWLClass):
-        if concept.is_owl_nothing():
-            yield from {OWLNothing}
+        super().__init__(knowledge_base,
+                         value_splitter=value_splitter,
+                         max_child_length=max_child_length,
+                         use_inverse=use_inverse,
+                         use_card_restrictions=use_card_restrictions,
+                         use_numeric_datatypes=use_numeric_datatypes,
+                         use_time_datatypes=use_time_datatypes,
+                         use_boolean_datatype=use_boolean_datatype,
+                         card_limit=card_limit)
+        self._setup()
+
+    def refine_atomic_concept(self, ce: OWLClass) -> Iterable[OWLClassExpression]:
+        if ce.is_owl_nothing():
+            yield OWLNothing
         else:
+            any_refinement = False
             # Get all subconcepts
-            iter_container_sub = list(self.kb.get_all_sub_concepts(concept))
-            if iter_container_sub == []:
-                iter_container_sub = [concept]
+            iter_container_sub = list(self.kb.get_all_sub_concepts(ce))
+            if len(iter_container_sub) == 0:
+                iter_container_sub = [ce]
             iter_container_restrict = []
             # Get negations of all subconcepts
             iter_container_neg = list(self.kb.negation_from_iterables(iter_container_sub))
             # (3) Create ∀.r.C and ∃.r.C where r is the most general relation and C in Fillers
-            Fillers = {concept, OWLThing, OWLNothing} if len(iter_container_sub) < 5 else {concept, OWLThing,
-                                                                                           OWLNothing}.union(
-                set(random.sample(iter_container_sub, k=5))).union(set(random.sample(iter_container_neg, k=5)))
-            for C in Fillers:
-                if self.len(C) + 2 <= self.max_child_length:
+            fillers: Set[OWLClassExpression] = {OWLThing, OWLNothing}
+            if len(iter_container_sub) >= self.sample_fillers_count:
+                fillers = fillers | set(random.sample(iter_container_sub, k=self.sample_fillers_count)) | \
+                    set(random.sample(iter_container_neg, k=self.sample_fillers_count))
+            for c in fillers:
+                if self.len(c) + 2 <= self.max_child_length:
                     iter_container_restrict.append(
-                        set(self.kb.most_general_universal_restrictions(domain=concept, filler=C)))
+                        set(self.kb.most_general_universal_restrictions(domain=ce, filler=c)))
                     iter_container_restrict.append(
-                        set(self.kb.most_general_existential_restrictions(domain=concept, filler=C)))
+                        set(self.kb.most_general_existential_restrictions(domain=ce, filler=c)))
+                    if self.use_inverse:
+                        iter_container_restrict.append(
+                            set(self.kb.most_general_existential_restrictions_inverse(domain=ce, filler=c)))
+                        iter_container_restrict.append(
+                            set(self.kb.most_general_universal_restrictions_inverse(domain=ce, filler=c)))
+
+            if self.use_numeric_datatypes:
+                iter_container_restrict.append(set(self._get_dp_restrictions(
+                    self.kb.most_general_numeric_data_properties(domain=ce))))
+            if self.use_time_datatypes:
+                iter_container_restrict.append(set(self._get_dp_restrictions(
+                    self.kb.most_general_time_data_properties(domain=ce))))
+            if self.use_boolean_datatype:
+                bool_res = []
+                for bool_dp in self.kb.most_general_boolean_data_properties(domain=ce):
+                    bool_res.append(self.kb.data_has_value_restriction(value=OWLLiteral(True), property=bool_dp))
+                    bool_res.append(self.kb.data_has_value_restriction(value=OWLLiteral(False), property=bool_dp))
+                iter_container_restrict.append(set(bool_res))
+
+            if self.use_card_restrictions and (self.max_child_length >= self.len(ce) + 3):
+                card_res = []
+                for prop in self.kb.most_general_object_properties(domain=ce):
+                    max_ = self.max_nr_fillers[prop]
+                    if max_ > 1:
+                        card_res.append(self.kb.max_cardinality_restriction(self.kb.thing, prop, max_ - 1))
+                iter_container_restrict.append(set(card_res))
+
             iter_container_restrict = list(set(chain.from_iterable(iter_container_restrict)))
             container = iter_container_restrict + iter_container_neg + iter_container_sub
             if self.downsample:  # downsampling is necessary if no enough computation resources
-                assert self.expressivity < 1, "When downsampling, the expressivity is less than 1"
+                assert self.expressivity < 1, "When downsampling, the expressivity must be less than 1"
                 m = int(self.expressivity * len(container))
                 container = random.sample(container, k=max(m, 1))
             else:
                 self.expressivity = 1.
-            if concept.is_owl_thing():  # If this is satisfied then all possible refinements are subconcepts
+            if ce.is_owl_thing():  # If this is satisfied then all possible refinements are subconcepts
                 if iter_container_neg + iter_container_restrict:
                     any_refinement = True
                     yield from iter_container_neg + iter_container_restrict
             del iter_container_restrict, iter_container_neg
-            any_refinement = False
             # Yield all subconcepts
             if iter_container_sub:
                 any_refinement = True
@@ -809,13 +864,13 @@ class ExpressRefinement(BaseRefinement[Node]):
             for sub in iter_container_sub:
                 for other_ref in container:
                     if sub != other_ref and self.len(sub) + self.len(other_ref) < self.max_child_length:
-                        if concept.is_owl_thing() or (other_ref in iter_container_sub):
+                        if ce.is_owl_thing() or (other_ref in iter_container_sub):
                             union = self.kb.union([sub, other_ref])
                             yield union
                             any_refinement = True
                         elif other_ref not in iter_container_sub:
                             union = self.kb.union([sub, other_ref])
-                            union = self.kb.intersection([concept, union])
+                            union = self.kb.intersection([ce, union])
                             if self.len(union) <= self.max_child_length:
                                 yield union
                                 any_refinement = True
@@ -824,100 +879,183 @@ class ExpressRefinement(BaseRefinement[Node]):
                             yield intersect
                             any_refinement = True
             if not any_refinement:
-                print(f"No refinements found for {repr(concept)}")
-                yield concept
+                yield ce
 
-    def refine_complement_of(self, concept: OWLObjectComplementOf) -> Generator:
+    def refine_complement_of(self, ce: OWLObjectComplementOf) -> Iterable[OWLClassExpression]:
+        assert isinstance(ce, OWLObjectComplementOf)
         any_refinement = False
-        parents = self.kb.get_direct_parents(self.kb.negation(concept))
+        parents = self.kb.get_direct_parents(self.kb.negation(ce))
         for ref in self.kb.negation_from_iterables(parents):
             if self.len(ref) <= self.max_child_length:
                 any_refinement = True
                 yield ref
         if not any_refinement:
-            yield concept
+            yield ce
 
-    def refine_object_some_values_from(self, concept) -> Generator:
-        assert isinstance(concept.get_filler(), OWLClassExpression)
+    def refine_object_some_values_from(self, ce: OWLObjectSomeValuesFrom) -> Iterable[OWLClassExpression]:
+        assert isinstance(ce, OWLObjectSomeValuesFrom)
+        assert isinstance(ce.get_filler(), OWLClassExpression)
         any_refinement = False
-        for ref in self.refine(concept.get_filler()):
+        for ref in self.refine(ce.get_filler()):
             if 2 + self.len(ref) <= self.max_child_length:
                 any_refinement = True
-                reft = self.kb.existential_restriction(ref, concept.get_property())
+                reft = self.kb.existential_restriction(ref, ce.get_property())
                 yield reft
-        if self.len(concept) <= self.max_child_length:
+        if self.len(ce) <= self.max_child_length:
             any_refinement = True
-            reft = self.kb.universal_restriction(concept.get_filler(), concept.get_property())
+            reft = self.kb.universal_restriction(ce.get_filler(), ce.get_property())
             yield reft
-        if not any_refinement:
-            yield concept
 
-    def refine_object_all_values_from(self, concept: OWLObjectAllValuesFrom) -> Generator:
+        for more_special_op in self.kb.object_property_hierarchy(). \
+                more_special_roles(ce.get_property().get_named_property()):
+            if self.len(ce) <= self.max_child_length:
+                yield self.kb.existential_restriction(ce.get_filler(), more_special_op)
+                any_refinement = True
+
+        if self.len(ce) <= self.max_child_length and self.max_nr_fillers[ce.get_property()] > 1:
+            yield self.kb.min_cardinality_restriction(ce.get_filler(), ce.get_property(), 2)
+            any_refinement = True
+        if not any_refinement:
+            yield ce
+
+    def refine_object_all_values_from(self, ce: OWLObjectAllValuesFrom) -> Iterable[OWLClassExpression]:
+        assert isinstance(ce, OWLObjectAllValuesFrom)
+        assert isinstance(ce.get_filler(), OWLClassExpression)
         any_refinement = False
-        for ref in self.refine(concept.get_filler()):
+        for ref in self.refine(ce.get_filler()):
             if 2 + self.len(ref) <= self.max_child_length:
                 any_refinement = True
-                reft = self.kb.universal_restriction(ref, concept.get_property())
+                reft = self.kb.universal_restriction(ref, ce.get_property())
                 yield reft
-        if not any_refinement and not concept.get_filler().is_owl_nothing():
-            yield concept
-        elif not any_refinement and concept.get_filler().is_owl_nothing():
+        for more_special_op in self.kb.object_property_hierarchy(). \
+                more_special_roles(ce.get_property().get_named_property()):
+            if 2 + self.len(ce.get_filler()) <= self.max_child_length:
+                yield self.kb.universal_restriction(ce.get_filler(), more_special_op)
+                any_refinement = True
+        if not any_refinement and not ce.get_filler().is_owl_nothing():
+            yield ce
+        elif not any_refinement and ce.get_filler().is_owl_nothing():
             yield OWLNothing
 
-    def _operands_len(self, type_: Type[OWLNaryBooleanClassExpression],
-                      ops: List[OWLClassExpression]):
-        length = 0
-        if len(ops) == 1:
-            length += self.len(ops[0])
-        elif ops:
-            length += self.len(type_(ops))
-        return length
+    def refine_object_min_card_restriction(self, ce: OWLObjectMinCardinality) \
+            -> Iterable[OWLObjectMinCardinality]:
+        assert isinstance(ce, OWLObjectMinCardinality)
+        assert ce.get_cardinality() >= 0
 
-    def refine_object_union_of(self, concept: OWLObjectUnionOf) -> Generator:
+        for ref in self.refine(ce.get_filler()):
+            if ref is not None:
+                yield self.kb.min_cardinality_restriction(ref, ce.get_property(), ce.get_cardinality())
+
+        if ce.get_cardinality() < self.max_nr_fillers[ce.get_property()]:
+            yield self.kb.min_cardinality_restriction(ce.get_filler(), ce.get_property(), ce.get_cardinality() + 1)
+
+    def refine_object_max_card_restriction(self, ce: OWLObjectMaxCardinality) \
+            -> Iterable[OWLObjectMaxCardinality]:
+        assert isinstance(ce, OWLObjectMaxCardinality)
+        assert ce.get_cardinality() >= 0
+
+        for ref in self.refine(ce.get_filler()):
+            if ref is not None:
+                yield self.kb.max_cardinality_restriction(ref, ce.get_property(), ce.get_cardinality())
+
+        if ce.get_cardinality() > 1:
+            yield self.kb.max_cardinality_restriction(ce.get_filler(), ce.get_property(), ce.get_cardinality() - 1)
+
+    def refine_object_union_of(self, ce: OWLObjectUnionOf) -> Iterable[OWLClassExpression]:
+        assert isinstance(ce, OWLObjectUnionOf)
         any_refinement = False
-        for op in concept.operands():
+        for op in ce.operands():
             if self.len(op) <= self.max_child_length:
                 yield op
                 any_refinement = True
-        operands = list(concept.operands())
+        operands = list(ce.operands())
         for i in range(len(operands)):
-            concept_left, concept_, concept_right = operands[:i], operands[i], operands[i + 1:]
-            other_length = self._operands_len(OWLObjectUnionOf, concept_left + concept_right)
-            for ref_concept in self.refine(concept_):
-                if self.max_child_length >= other_length + self.len(ref_concept):
-                    yield self.kb.union(concept_left + [ref_concept] + concept_right)
+            ce_left, ce_, ce_right = operands[:i], operands[i], operands[i + 1:]
+            other_length = self._operands_len(OWLObjectUnionOf, ce_left + ce_right)
+            for ref_ce in self.refine(ce_):
+                if self.max_child_length >= other_length + self.len(ref_ce):
+                    yield self.kb.union(ce_left + [ref_ce] + ce_right)
                     any_refinement = True
         if not any_refinement:
-            yield concept
+            yield ce
 
-    def refine_object_intersection_of(self, concept: OWLObjectIntersectionOf) -> Generator:
+    def refine_object_intersection_of(self, ce: OWLObjectIntersectionOf) -> Iterable[OWLClassExpression]:
+        assert isinstance(ce, OWLObjectIntersectionOf)
         any_refinement = False
-        operands = list(concept.operands())
+        operands = list(ce.operands())
         for i in range(len(operands)):
-            concept_left, concept, concept_right = operands[:i], operands[i], operands[i + 1:]
-            other_length = self._operands_len(OWLObjectIntersectionOf, concept_left + concept_right)
-            for ref_concept in self.refine(concept):
-                if self.max_child_length >= other_length + self.len(ref_concept):
-                    yield self.kb.intersection(concept_left + [ref_concept] + concept_right)
+            ce_left, ce, ce_right = operands[:i], operands[i], operands[i + 1:]
+            other_length = self._operands_len(OWLObjectIntersectionOf, ce_left + ce_right)
+            for ref_ce in self.refine(ce):
+                if self.max_child_length >= other_length + self.len(ref_ce):
+                    yield self.kb.intersection(ce_left + [ref_ce] + ce_right)
                     any_refinement = True
         if not any_refinement:
-            yield concept
+            yield ce
 
-    def refine(self, concept, **kwargs) -> Generator:
-        # we ignore additional arguments like "max_length" or "current_domain" that might be supplied by the
+    def refine_data_some_values_from(self, ce: OWLDataSomeValuesFrom) -> Iterable[OWLDataSomeValuesFrom]:
+        assert isinstance(ce, OWLDataSomeValuesFrom)
+        any_refinement = False
+        datarange = ce.get_filler()
+        if isinstance(datarange, OWLDatatypeRestriction) and ce.get_property() in self.dp_splits:
+            splits = self.dp_splits[ce.get_property()]
+            if len(splits) > 0 and len(datarange.get_facet_restrictions()) > 0:
+                facet_res = datarange.get_facet_restrictions()[0]
+                val = facet_res.get_facet_value()
+                idx = splits.index(val)
+
+                if facet_res.get_facet() == OWLFacet.MIN_INCLUSIVE and (next_idx := idx + 1) < len(splits):
+                    yield self.kb.data_existential_restriction(OWLDatatypeMinInclusiveRestriction(splits[next_idx]),
+                                                               ce.get_property())
+                    any_refinement = True
+                elif facet_res.get_facet() == OWLFacet.MAX_INCLUSIVE and (next_idx := idx - 1) >= 0:
+                    yield self.kb.data_existential_restriction(OWLDatatypeMaxInclusiveRestriction(splits[next_idx]),
+                                                               ce.get_property())
+                    any_refinement = True
+        if not any_refinement:
+            yield ce
+
+    def refine_data_has_value(self, ce: OWLDataHasValue) -> Iterable[OWLDataHasValue]:
+        assert isinstance(ce, OWLDataHasValue)
+        any_refinement = False
+        for more_special_dp in self.kb.data_property_hierarchy().more_special_roles(ce.get_property()):
+            yield self.kb.data_has_value_restriction(ce.get_filler(), more_special_dp)
+            any_refinement = True
+
+        if not any_refinement:
+            yield ce
+
+    def refine(self, ce, **kwargs) -> Iterable[OWLClassExpression]:
+        """Refine a given concept
+
+        Args:
+            ce: concept to refine
+
+        Returns:
+            iterable of refined concepts
+        """
+        # we ignore additional arguments like "max_length" or "current_domain" that might be supplied by the learning
         # algorithm by using **kwargs
-        if self.len(concept) == 1:
-            yield from self.refine_atomic_concept(concept)
-        elif isinstance(concept, OWLObjectComplementOf):
-            yield from self.refine_complement_of(concept)
-        elif isinstance(concept, OWLObjectSomeValuesFrom):
-            yield from self.refine_object_some_values_from(concept)
-        elif isinstance(concept, OWLObjectAllValuesFrom):
-            yield from self.refine_object_all_values_from(concept)
-        elif isinstance(concept, OWLObjectUnionOf):
-            yield from self.refine_object_union_of(concept)
-        elif isinstance(concept, OWLObjectIntersectionOf):
-            yield from self.refine_object_intersection_of(concept)
+        assert isinstance(ce, OWLClassExpression)
+        if self.len(ce) == 1:
+            yield from self.refine_atomic_concept(ce)
+        elif isinstance(ce, OWLObjectComplementOf):
+            yield from self.refine_complement_of(ce)
+        elif isinstance(ce, OWLObjectSomeValuesFrom):
+            yield from self.refine_object_some_values_from(ce)
+        elif isinstance(ce, OWLObjectAllValuesFrom):
+            yield from self.refine_object_all_values_from(ce)
+        elif isinstance(ce, OWLObjectMinCardinality):
+            yield from self.refine_object_min_card_restriction(ce)
+        elif isinstance(ce, OWLObjectMaxCardinality):
+            yield from self.refine_object_max_card_restriction(ce)
+        elif isinstance(ce, OWLObjectUnionOf):
+            yield from self.refine_object_union_of(ce)
+        elif isinstance(ce, OWLObjectIntersectionOf):
+            yield from self.refine_object_intersection_of(ce)
+        elif isinstance(ce, OWLDataSomeValuesFrom):
+            yield from self.refine_data_some_values_from(ce)
+        elif isinstance(ce, OWLDataHasValue):
+            yield from self.refine_data_has_value(ce)
         else:
-            print(f"{type(concept)} objects are not yet supported")
-            raise ValueError
+            raise ValueError(f"{type(ce)} objects are not yet supported")
