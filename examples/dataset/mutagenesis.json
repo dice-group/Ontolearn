@@ -1,0 +1,55 @@
+{
+    "data_path": "../KGs/Mutagenesis/mutagenesis.owl",
+    "problems": {
+        "lp_4": {
+        "positive_examples":
+            [
+                "http://dl-learner.org/mutagenesis#d190",
+                "http://dl-learner.org/mutagenesis#d191",
+                "http://dl-learner.org/mutagenesis#d194",
+                "http://dl-learner.org/mutagenesis#d197",
+                "http://dl-learner.org/mutagenesis#e1",
+                "http://dl-learner.org/mutagenesis#e2",
+                "http://dl-learner.org/mutagenesis#e27",
+                "http://dl-learner.org/mutagenesis#f1",
+                "http://dl-learner.org/mutagenesis#f2",
+                "http://dl-learner.org/mutagenesis#f3",
+                "http://dl-learner.org/mutagenesis#f4",
+                "http://dl-learner.org/mutagenesis#f5",
+                "http://dl-learner.org/mutagenesis#f6"
+            ],
+        "negative_examples": 
+            [                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+                "http://dl-learner.org/mutagenesis#d189",
+                "http://dl-learner.org/mutagenesis#d192",
+                "http://dl-learner.org/mutagenesis#d193",
+                "http://dl-learner.org/mutagenesis#d195",
+                "http://dl-learner.org/mutagenesis#d196",
+                "http://dl-learner.org/mutagenesis#e10",
+                "http://dl-learner.org/mutagenesis#e11",
+                "http://dl-learner.org/mutagenesis#e12",
+                "http://dl-learner.org/mutagenesis#e13",
+                "http://dl-learner.org/mutagenesis#e14",
+                "http://dl-learner.org/mutagenesis#e15",
+                "http://dl-learner.org/mutagenesis#e16",
+                "http://dl-learner.org/mutagenesis#e17",
+                "http://dl-learner.org/mutagenesis#e18",
+                "http://dl-learner.org/mutagenesis#e19",
+                "http://dl-learner.org/mutagenesis#e20",
+                "http://dl-learner.org/mutagenesis#e21",
+                "http://dl-learner.org/mutagenesis#e22",
+                "http://dl-learner.org/mutagenesis#e23",
+                "http://dl-learner.org/mutagenesis#e24",
+                "http://dl-learner.org/mutagenesis#e25",
+                "http://dl-learner.org/mutagenesis#e26",
+                "http://dl-learner.org/mutagenesis#e3",
+                "http://dl-learner.org/mutagenesis#e4",
+                "http://dl-learner.org/mutagenesis#e5",
+                "http://dl-learner.org/mutagenesis#e6",
+                "http://dl-learner.org/mutagenesis#e7",
+                "http://dl-learner.org/mutagenesis#e8",
+                "http://dl-learner.org/mutagenesis#e9"
+        ]
+    }
+}
+}

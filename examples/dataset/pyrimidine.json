@@ -1,0 +1,53 @@
+{
+    "data_path": "../KGs/Pyrimidine/pyrimidine.owl",
+    "problems": {
+        "lp_1": {
+        "positive_examples":
+            [                                
+                "http://dl-learner.org/res/pyrimidine002",
+                "http://dl-learner.org/res/pyrimidine003",
+                "http://dl-learner.org/res/pyrimidine007",
+                "http://dl-learner.org/res/pyrimidine014",
+                "http://dl-learner.org/res/pyrimidine017",
+                "http://dl-learner.org/res/pyrimidine021",
+                "http://dl-learner.org/res/pyrimidine023",
+                "http://dl-learner.org/res/pyrimidine024",
+                "http://dl-learner.org/res/pyrimidine025",
+                "http://dl-learner.org/res/pyrimidine026",
+                "http://dl-learner.org/res/pyrimidine029",
+                "http://dl-learner.org/res/pyrimidine030",
+                "http://dl-learner.org/res/pyrimidine042",
+                "http://dl-learner.org/res/pyrimidine048",
+                "http://dl-learner.org/res/pyrimidine069",
+                "http://dl-learner.org/res/pyrimidine070",
+                "http://dl-learner.org/res/pyrimidine071",
+                "http://dl-learner.org/res/pyrimidine072",
+                "http://dl-learner.org/res/pyrimidine073",
+                "http://dl-learner.org/res/pyrimidine074"
+            ],
+        "negative_examples": 
+            [   
+                "http://dl-learner.org/res/pyrimidine001",
+                "http://dl-learner.org/res/pyrimidine004",
+                "http://dl-learner.org/res/pyrimidine006",
+                "http://dl-learner.org/res/pyrimidine010",
+                "http://dl-learner.org/res/pyrimidine011",
+                "http://dl-learner.org/res/pyrimidine012",
+                "http://dl-learner.org/res/pyrimidine013",
+                "http://dl-learner.org/res/pyrimidine015",
+                "http://dl-learner.org/res/pyrimidine016",
+                "http://dl-learner.org/res/pyrimidine022",
+                "http://dl-learner.org/res/pyrimidine027",
+                "http://dl-learner.org/res/pyrimidine032",
+                "http://dl-learner.org/res/pyrimidine033",
+                "http://dl-learner.org/res/pyrimidine038",
+                "http://dl-learner.org/res/pyrimidine039",
+                "http://dl-learner.org/res/pyrimidine041",
+                "http://dl-learner.org/res/pyrimidine044",
+                "http://dl-learner.org/res/pyrimidine045",
+                "http://dl-learner.org/res/pyrimidine054",
+                "http://dl-learner.org/res/pyrimidine056"
+        ]
+    }
+}
+}
