@@ -1,13 +1,7 @@
-import logging
 import operator
-import random
 import time
-from collections import deque
-from contextlib import contextmanager
-from itertools import islice, chain
-from typing import Any, Callable, Dict, FrozenSet, Set, List, Tuple, Iterable, Optional, Generator, SupportsFloat
-
-from torch.nn.init import xavier_normal_
+from itertools import chain
+from typing import Any, Callable, Dict, FrozenSet, List, Tuple, Iterable, Optional
 from deap import gp, tools, base, creator
 
 from ontolearn.knowledge_base import KnowledgeBase
@@ -19,7 +13,7 @@ from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVoca
     owlliteral_to_primitive_string
 from ontolearn.fitness_functions import LinearPressureFitness
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
-from ontolearn.metrics import Accuracy, F1
+from ontolearn.metrics import Accuracy
 from ontolearn.search import EvoLearnerNode
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter, EntropyValueSplitter
 from owlapy.model import OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual
@@ -31,7 +25,8 @@ class EvoLearnerFeatureSelection(BaseConceptLearner[EvoLearnerNode]):
     __slots__ = 'fitness_func', 'init_method', 'algorithm', 'value_splitter', 'tournament_size',  \
                 'population_size', 'num_generations', 'height_limit', 'use_data_properties', 'pset', 'toolbox', \
                 '_learning_problem', '_result_population', 'mut_uniform_gen', '_dp_to_prim_type', '_dp_splits', \
-                '_split_properties', '_cache', 'use_card_restrictions', 'card_limit', 'use_inverse', 'feature_names'
+                '_split_properties', '_cache', 'use_card_restrictions', 'card_limit', 'use_inverse', \
+                'feature_obj_prop_name', 'feature_data_categorical_prop', 'feature_data_numeric_prop'
 
     name = 'evolearner'
 
@@ -49,7 +44,9 @@ class EvoLearnerFeatureSelection(BaseConceptLearner[EvoLearnerNode]):
     population_size: int
     num_generations: int
     height_limit: int
-    feature_names: list
+    feature_obj_prop_name: list
+    feature_data_categorical_prop: list
+    feature_data_numeric_prop: list
 
     pset: gp.PrimitiveSetTyped
     toolbox: base.Toolbox
@@ -70,7 +67,9 @@ class EvoLearnerFeatureSelection(BaseConceptLearner[EvoLearnerNode]):
                  value_splitter: Optional[AbstractValueSplitter] = None,
                  terminate_on_goal: Optional[bool] = None,
                  max_runtime: Optional[int] = None,
-                 feature_names: Optional[list] = None,
+                 feature_obj_prop_name: Optional[list] = None,
+                 feature_data_categorical_prop: Optional[list] = None,
+                 feature_data_numeric_prop: Optional[list] = None,
                  use_data_properties: bool = True,
                  use_card_restrictions: bool = True,
                  use_inverse: bool = False,
@@ -88,6 +87,7 @@ class EvoLearnerFeatureSelection(BaseConceptLearner[EvoLearnerNode]):
                          terminate_on_goal=terminate_on_goal,
                          max_runtime=max_runtime)
 
+
         self.fitness_func = fitness_func
         self.init_method = init_method
         self.algorithm = algorithm
@@ -101,7 +101,9 @@ class EvoLearnerFeatureSelection(BaseConceptLearner[EvoLearnerNode]):
         self.population_size = population_size
         self.num_generations = num_generations
         self.height_limit = height_limit
-        self.feature_names = feature_names
+        self.feature_obj_prop_name = feature_obj_prop_name
+        self.feature_data_numeric_prop = feature_data_numeric_prop
+        self.feature_data_categorical_prop = feature_data_categorical_prop
 
         self.__setup()
 
@@ -145,8 +147,8 @@ class EvoLearnerFeatureSelection(BaseConceptLearner[EvoLearnerNode]):
 
         for op in self.kb.get_object_properties():
             name = escape(op.get_iri().get_remainder())
-            if self.feature_names:
-                if name in self.feature_names:                        
+            if self.feature_obj_prop_name:
+                if name in self.feature_obj_prop_name:
                     existential, universal = factory.create_existential_universal(op)
                     pset.addPrimitive(existential, [OWLClassExpression], OWLClassExpression,
                                     name=OperatorVocabulary.EXISTENTIAL + name)
@@ -183,41 +185,66 @@ class EvoLearnerFeatureSelection(BaseConceptLearner[EvoLearnerNode]):
 
             for bool_dp in self.kb.get_boolean_data_properties():
                 name = escape(bool_dp.get_iri().get_remainder())
-                self._dp_to_prim_type[bool_dp] = Bool
+                if self.feature_data_categorical_prop:
+                    if name in self.feature_data_categorical_prop:
+                        self._dp_to_prim_type[bool_dp] = Bool
 
-                data_has_value = factory.create_data_has_value(bool_dp)
-                pset.addPrimitive(data_has_value, [Bool], OWLClassExpression,
-                                  name=OperatorVocabulary.DATA_HAS_VALUE + name)
+                        data_has_value = factory.create_data_has_value(bool_dp)
+                        pset.addPrimitive(data_has_value, [Bool], OWLClassExpression,
+                                        name=OperatorVocabulary.DATA_HAS_VALUE + name)
+                else:
+                    self._dp_to_prim_type[bool_dp] = Bool
+                    data_has_value = factory.create_data_has_value(bool_dp)
+                    pset.addPrimitive(data_has_value, [Bool], OWLClassExpression,
+                                    name=OperatorVocabulary.DATA_HAS_VALUE + name)
 
             for split_dp in chain(self.kb.get_time_data_properties(), self.kb.get_numeric_data_properties()):
                 name = escape(split_dp.get_iri().get_remainder())
-                type_ = type(name, (object,), {})
-
-                self._dp_to_prim_type[split_dp] = type_
-                self._split_properties.append(split_dp)
-
-                min_inc, max_inc, _, _ = factory.create_data_some_values(split_dp)
-                pset.addPrimitive(min_inc, [type_], OWLClassExpression,
-                                  name=OperatorVocabulary.DATA_MIN_INCLUSIVE + name)
-                pset.addPrimitive(max_inc, [type_], OWLClassExpression,
-                                  name=OperatorVocabulary.DATA_MAX_INCLUSIVE + name)
-                # pset.addPrimitive(min_exc, [type_], OWLClassExpression,
-                #                  name=OperatorVocabulary.DATA_MIN_EXCLUSIVE + name)
-                # pset.addPrimitive(max_exc, [type_], OWLClassExpression,
-                #                  name=OperatorVocabulary.DATA_MAX_EXCLUSIVE + name)
+                if self.feature_data_numeric_prop:
+                    if name in self.feature_data_numeric_prop:
+                        type_ = type(name, (object,), {})
+                        self._dp_to_prim_type[split_dp] = type_
+                        self._split_properties.append(split_dp)
+                        min_inc, max_inc, _, _ = factory.create_data_some_values(split_dp)
+                        pset.addPrimitive(min_inc, [type_], OWLClassExpression,
+                                        name=OperatorVocabulary.DATA_MIN_INCLUSIVE + name)
+                        pset.addPrimitive(max_inc, [type_], OWLClassExpression,
+                                        name=OperatorVocabulary.DATA_MAX_INCLUSIVE + name)
+                        # pset.addPrimitive(min_exc, [type_], OWLClassExpression,
+                        #                  name=OperatorVocabulary.DATA_MIN_EXCLUSIVE + name)
+                        # pset.addPrimitive(max_exc, [type_], OWLClassExpression,
+                        #                  name=OperatorVocabulary.DATA_MAX_EXCLUSIVE + name)
+                else:
+                    type_ = type(name, (object,), {})
+                    self._dp_to_prim_type[split_dp] = type_
+                    self._split_properties.append(split_dp)
+                    min_inc, max_inc, _, _ = factory.create_data_some_values(split_dp)
+                    pset.addPrimitive(min_inc, [type_], OWLClassExpression,
+                                    name=OperatorVocabulary.DATA_MIN_INCLUSIVE + name)
+                    pset.addPrimitive(max_inc, [type_], OWLClassExpression,
+                                    name=OperatorVocabulary.DATA_MAX_INCLUSIVE + name)
 
         if self.use_card_restrictions:
             for i in range(1, self.card_limit+1):
                 pset.addTerminal(i, int)
             for op in self.kb.get_object_properties():
                 name = escape(op.get_iri().get_remainder())
-                card_min, card_max, _ = factory.create_card_restrictions(op)
-                pset.addPrimitive(card_min, [int, OWLClassExpression], OWLClassExpression,
-                                  name=OperatorVocabulary.CARD_MIN + name)
-                pset.addPrimitive(card_max, [int, OWLClassExpression], OWLClassExpression,
-                                  name=OperatorVocabulary.CARD_MAX + name)
-                # pset.addPrimitive(card_exact, [int, OWLClassExpression], OWLClassExpression,
-                #                  name=OperatorVocabulary.CARD_EXACT + name)
+                if self.feature_obj_prop_name:
+                    if name in self.feature_obj_prop_name:
+                        card_min, card_max, _ = factory.create_card_restrictions(op)
+                        pset.addPrimitive(card_min, [int, OWLClassExpression], OWLClassExpression,
+                                        name=OperatorVocabulary.CARD_MIN + name)
+                        pset.addPrimitive(card_max, [int, OWLClassExpression], OWLClassExpression,
+                                        name=OperatorVocabulary.CARD_MAX + name)
+                        # pset.addPrimitive(card_exact, [int, OWLClassExpression], OWLClassExpression,
+                        #                  name=OperatorVocabulary.CARD_EXACT + name)
+                else:
+                        card_min, card_max, _ = factory.create_card_restrictions(op)
+                        pset.addPrimitive(card_min, [int, OWLClassExpression], OWLClassExpression,
+                                        name=OperatorVocabulary.CARD_MIN + name)
+                        pset.addPrimitive(card_max, [int, OWLClassExpression], OWLClassExpression,
+                                        name=OperatorVocabulary.CARD_MAX + name)
+
 
         for class_ in self.kb.get_concepts():
             pset.addTerminal(class_, OWLClassExpression, name=escape(class_.get_iri().get_remainder()))
@@ -260,7 +287,10 @@ class EvoLearnerFeatureSelection(BaseConceptLearner[EvoLearnerNode]):
         for p in self._dp_splits:
             if len(self._dp_splits[p]) == 0:
                 if p in self.kb.get_numeric_data_properties():
-                    self._dp_splits[p].append(OWLLiteral(0))
+                    if self.feature_data_numeric_prop:
+                        self._dp_splits[p].append(OWLLiteral(0))
+                    else:
+                        self._dp_splits[p].append(OWLLiteral(0))
                 else:
                     pass  # TODO:
 

@@ -1,30 +1,39 @@
 import pandas as pd
 import json
 import os
+import time
 from random import shuffle
 import numpy as np
 from sklearn.feature_selection import VarianceThreshold
-from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import SelectKBest, SelectFpr
 from sklearn.preprocessing import MultiLabelBinarizer
 from scipy import sparse as sp
-from sklearn.feature_selection import chi2
+from sklearn.feature_selection import chi2, f_classif,  mutual_info_classif
 from owlready2 import get_ontology, default_world
+import logging
 
 from examples.evolearner_feature_selection import EvoLearnerFeatureSelection
 from examples.search import calc_prediction
-
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.model import OWLNamedIndividual, IRI
 
+LOG_FILE = 'featureSelection.log'
+DATASET = 'hepatitis'
+
+logging.basicConfig(filename=LOG_FILE,
+                    filemode="a",
+                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                    datefmt='%H:%M:%S',
+                    level=logging.INFO)
 
 try:
     os.chdir("Ontolearn/examples")
 except FileNotFoundError:
-    print(os.getcwd())
+    logging.error(FileNotFoundError)
     pass
 
-with open('dataset/premier_league.json') as json_file:
+with open(f'dataset/{DATASET}.json') as json_file:
     settings = json.load(json_file)
 
 
@@ -33,7 +42,7 @@ def get_data_properties(onto):
         data_properties = onto.data_properties()
     except Exception as e:
         data_properties = None
-        print(e)
+        logging.error(e)
     return data_properties
 
 
@@ -42,51 +51,68 @@ def get_object_properties(onto):
         object_properties = onto.object_properties()
     except Exception as e:
         object_properties = None
-        print(e)
+        logging.error(e)
     return object_properties
 
 
 def calc_variance_threshold(pd3):
     pd3 = (pd3.notnull()).astype('int')
     sparse_matrix = sp.csr_matrix.tocsr(pd3.iloc[:, 1:].values)
-    pd3.to_csv("dataset_converted_to_bool.csv")
+    pd3.to_csv(f"{DATASET}_dataset_converted_to_bool.csv")
 
     try:
         sel = VarianceThreshold(threshold=(.8 * (1 - .8)))
         output_variance_threshold = sel.fit_transform(sparse_matrix)
-        output_variance_threshold.to_csv(
-                        'best_features_variance_threshold.csv')
+        output_variance_threshold.to_csv(f"{DATASET}_best_features_variance_threshold.csv")
     except ValueError:
-        print("None of the Features meet the minimum variance threshold")
-        sel = []
-        output_variance_threshold = []
-
-    print(output_variance_threshold)
+        logging.error("None of the Features meet the minimum variance threshold")
 
 
-def calc_chi2(pd3):
+def select_k_best_features(pd3, method):
     '''
-    Select K-Best features based on chi2 analysis
+    Select K-Best features based on chi2/mutual_info_classif analysis
     '''
     X = pd3.iloc[:, 1:].values
     labels = pd3.iloc[:, 0].values
 
     try:
         select_k_best_classifier = SelectKBest(
-                                chi2, k=5).fit(
+                                method, k=5).fit(
                                 X, labels.tolist())
         mask = select_k_best_classifier.get_support(indices=True)
         k_best_features = pd.DataFrame(index=pd3.index)
         k_best_features = pd3.iloc[:, [x+1 for x in mask.tolist()]]
-        k_best_features.to_csv("kbest_features_chi2.csv")
+        k_best_features.to_csv(f"{DATASET}_kbest_features_chi2.csv")
         k_best_features_names = k_best_features.columns
 
     except Exception as e:
-        print(e)
-        k_best_features = []
+        logging.error(e)
         k_best_features_names = []
-
     return k_best_features_names
+
+
+def select_fpr_features(pd3, method):
+    '''
+    Select features based on chi2/f_classif analysis
+    False Positive Rate test checks the total amt. of False detection
+    '''
+    X = pd3.iloc[:, 1:].values
+    labels = pd3.iloc[:, 0].values
+
+    try:
+        select_k_best_classifier = SelectFpr(
+                                method, alpha=0.01).fit(
+                                X, labels.tolist())
+        mask = select_k_best_classifier.get_support(indices=True)
+        fpr_features = pd.DataFrame(index=pd3.index)
+        fpr_features = pd3.iloc[:, [x+1 for x in mask.tolist()]]
+        fpr_features.to_csv(f"{DATASET}_fpr_features_chi2.csv")
+        fpr_features_names = fpr_features.columns
+
+    except Exception as e:
+        logging.error(e)
+        fpr_features_names = []
+    return fpr_features_names
 
 
 def one_hot_encoder(pd3):
@@ -103,11 +129,10 @@ def one_hot_encoder(pd3):
                 index=pd3.index,
                 columns=new_col_names)
             )
-
     return pd3
 
 
-def iterate_properties(properties, pos, neg, prop_type):
+def iterate_object_properties(properties, pos, neg):
     '''
     Iterate over properties and convert it to tabular data
     '''
@@ -120,18 +145,7 @@ def iterate_properties(properties, pos, neg, prop_type):
             column_headers.append(prop.name)
         column_headers.append('label')
 
-        flag = 0
         for op in properties_value:
-            if not prop_type:
-                if (op.range[0] is int):
-                    pass
-                elif (op.range[0] is float):
-                    pass
-                elif(op.range[0] is bool):
-                    flag = 1
-                    pass
-                else:
-                    continue
             temp_prop_iri = op.iri
             properties_iri.append(temp_prop_iri)
             triples_list = list(default_world.sparql("""
@@ -139,49 +153,26 @@ def iterate_properties(properties, pos, neg, prop_type):
             WHERE {?subject <""" + str(temp_prop_iri) + """> ?object}
             """))
 
-            triples_iri = []
             for items in triples_list:
-                temp = []
-                temp.append(items[0].iri)
-                obj_val = ''
-                if prop_type:
-                    obj_val = items[1].iri
-                    temp.append(obj_val)
-                else:
-                    if flag == 1:
-                        obj_val = int(items[1])
-                    else:
-                        obj_val = items[1]
-                    temp.append(obj_val)
-                triples_iri.append(temp)
-
-            for sub, obj in triples_iri:
-                label = 2
+                sub, obj = items[0].iri, items[1].iri
                 if sub in pos:
                     label = 1
                 elif sub in neg:
                     label = 0
-
-                if prop_type:
-                    if sub not in dict_of_triples:
-                        dict_of_triples[sub] = {'label': label, op.name: [obj]}
-                    elif sub in dict_of_triples:
-                        if op.name in dict_of_triples[sub].keys():
-                            dict_of_triples[sub][op.name].append(obj)
-                        else:
-                            dict_of_triples[sub][op.name] = [obj]
                 else:
-                    if sub not in dict_of_triples:
-                        dict_of_triples[sub] = {'label': label, op.name: obj}
-                    elif sub in dict_of_triples:
-                        dict_of_triples[sub][op.name] = obj
+                    label = 2
+
+                if sub not in dict_of_triples:
+                    dict_of_triples[sub] = {'label': label, op.name: [obj]}
+                elif sub in dict_of_triples:
+                    if op.name in dict_of_triples[sub].keys():
+                        dict_of_triples[sub][op.name].append(obj)
+                    else:
+                        dict_of_triples[sub][op.name] = [obj]
 
         pandas_dataframe = pd.DataFrame(dict_of_triples)
         df_transposed = pandas_dataframe.transpose()
-        if prop_type:
-            df_transposed.to_csv("Object_properties_to_tabular_form.csv")
-        else:
-            df_transposed.to_csv("Data_properties_to_tabular_form.csv")
+        df_transposed.to_csv(f"{DATASET}_Object_properties_to_tabular_form.csv")
     else:
         df_transposed = pd.DataFrame()
     return df_transposed
@@ -194,7 +185,7 @@ def transform_object_properties(obj_prop, pos, neg):
     '''
     with onto:
         obj_prop = get_object_properties(onto)
-        df_object_prop = iterate_properties(obj_prop, pos, neg, True)
+        df_object_prop = iterate_object_properties(obj_prop, pos, neg)
         return df_object_prop
 
 
@@ -205,10 +196,73 @@ def transform_data_properties(onto, pos, neg):
     '''
     with onto:
         data_prop = get_data_properties(onto)
-        df_data_prop = iterate_properties(data_prop, pos, neg, False)
-        if not df_data_prop.empty:
-            df_data_prop = df_data_prop.replace(np.nan, 0, regex=True)
-        return df_data_prop
+
+        properties_iri = []
+        dict_of_triples_num = {}
+        dict_of_triples_bool = {}
+        column_headers = ['subject']
+
+        if data_prop is not None:
+            properties_value = list(data_prop)
+            for prop in properties_value:
+                column_headers.append(prop.name)
+            column_headers.append('label')
+
+            for op in properties_value:
+                if (op.range[0] is int):
+                    flag = 0
+                elif (op.range[0] is float):
+                    flag = 0
+                elif(op.range[0] is bool):
+                    flag = 1
+                else:
+                    continue
+
+                temp_prop_iri = op.iri
+                properties_iri.append(temp_prop_iri)
+                triples_list = list(default_world.sparql("""
+                SELECT ?subject ?object
+                WHERE {?subject <""" + str(temp_prop_iri) + """> ?object}
+                """))
+
+                for items in triples_list:
+                    sub = items[0].iri
+                    if flag:
+                        obj = int(items[1])
+                    else:
+                        obj = items[1]
+
+                    if sub in pos:
+                        label = 1
+                    elif sub in neg:
+                        label = 0
+                    else:
+                        label = 2
+
+                    if flag:
+                        data_structure = dict_of_triples_bool
+                    else:
+                        data_structure = dict_of_triples_num
+
+                    if sub not in data_structure:
+                        data_structure[sub] = {'label': label, op.name: obj}
+                    elif sub in data_structure:
+                        data_structure[sub][op.name] = obj
+
+            pandas_dataframe_numeric_data_types = pd.DataFrame(dict_of_triples_num)
+            pandas_dataframe_categorical_data_type = pd.DataFrame(dict_of_triples_bool)
+            df_transposed_numeric_dtype = pandas_dataframe_numeric_data_types.transpose()
+            df_transposed_categorical_dtype = pandas_dataframe_categorical_data_type.transpose()
+
+            df_transposed_numeric_dtype.to_csv(f"{DATASET}_Numeric_data_properties_to_tabular_form.csv")
+            df_transposed_categorical_dtype.to_csv(f"{DATASET}_Boolean_data_properties_to_tabular_form.csv")
+
+        if not df_transposed_numeric_dtype.empty:
+            df_transposed_numeric_dtype = df_transposed_numeric_dtype.replace(np.nan, 0, regex=True)
+        if not df_transposed_categorical_dtype.empty:
+            df_transposed_categorical_dtype = df_transposed_categorical_dtype.replace(np.nan, 0, regex=True)
+
+        return df_transposed_categorical_dtype, df_transposed_numeric_dtype
 
 
 if __name__ == "__main__":
@@ -232,27 +286,33 @@ if __name__ == "__main__":
         test_neg = set(typed_neg[-int(len(typed_neg)*0.2):])
         lp = PosNegLPStandard(pos=train_pos, neg=train_neg)
 
-        pd3 = transform_object_properties(onto, p, n)
-        print('Finished Converting Object Properties')
-        pd4 = transform_data_properties(onto, p, n)
-        print('Finished Converting Data Properties')
-
+        object_properties_df = transform_object_properties(onto, p, n)
+        bool_dtype_df, numeric_dtype_df = transform_data_properties(onto, p, n)
         feature_names = []
-        if not pd3.empty:
-            pd_one_hot = one_hot_encoder(pd3)
-            if not pd4.empty:
-                features_object_properties = list(calc_chi2(pd_one_hot))
-                features_data_properties = list(calc_chi2(pd4))
-                feature_names = features_object_properties + features_data_properties
-            elif pd4.empty:
-                feature_names = calc_chi2(pd_one_hot)
-            feature_names = list(set(map(lambda x: x.split("_feature_name_")[0], feature_names)))
-        elif not pd4.empty:
-            feature_names = calc_chi2(pd4)
-            print(feature_names)
+        features_data_properties_categoical = []
+        feature_data_prop_numeric = []
+        features_object_properties = []
 
+        if not object_properties_df.empty:
+            pd_one_hot = one_hot_encoder(object_properties_df)
+            features_object_properties = list(select_k_best_features(pd_one_hot, chi2))
+            features_object_properties = list(set(map(lambda x: x.split("_feature_name_")[0], features_object_properties)))
+
+        if not bool_dtype_df.empty:
+            features_data_properties_categoical = list(select_k_best_features(bool_dtype_df, chi2))
+
+        if not numeric_dtype_df.empty:
+            feature_data_prop_numeric = list(select_k_best_features(numeric_dtype_df, mutual_info_classif))
+
+        logging.info(f"OBJECT_PROP:{features_object_properties}")
+        logging.info(f"DATA_PROP_Numeric:{feature_data_prop_numeric}")
+        logging.info(f"DATA_PROP_BOOL:{feature_data_prop_numeric}")
+
+        st = time.time()
         model = EvoLearnerFeatureSelection(knowledge_base=kb,
-                           feature_names=feature_names)
+                                           feature_obj_prop_name=features_object_properties,
+                                           feature_data_categorical_prop=features_data_properties_categoical,
+                                           feature_data_numeric_prop=feature_data_prop_numeric)
 
         model.fit(lp)
         model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
@@ -261,10 +321,9 @@ if __name__ == "__main__":
                                     hypotheses=hypotheses)
         f1_score, accuracy = calc_prediction(predictions, test_pos, test_neg)
         quality = hypotheses[0].quality
-        print("_____________QUALITY______________")
-        print(quality)
-        print("f1_score", f1_score)
-        print("accuracy", accuracy)
-        print("-----------Predictions------------")
-        print(predictions)
-        break
+        et = time.time()
+        elapsed_time = et - st
+        with open(f'{DATASET}_featureSelection.txt', 'a') as f:
+            print('F1 Score', f1_score[1], file=f)
+            print('Accuracy', accuracy[1], file=f)
+            print('Time Taken', elapsed_time, file=f)
