@@ -125,16 +125,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
 
     def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression, direct: bool = True) \
             -> Iterable[OWLNamedIndividual]:
-        if self._property_cache:
-            self._lazy_cache_obj_prop(pe)
-            if isinstance(pe, OWLObjectProperty):
-                yield from self._obj_prop[pe][ind]
-            elif isinstance(pe, OWLObjectInverseOf):
-                yield from self._obj_prop_inv[pe.get_named_property()][ind]
-            else:
-                raise NotImplementedError
-        else:
-            yield from self._base_reasoner.object_property_values(ind, pe, direct)
+        yield from self._base_reasoner.object_property_values(ind, pe, direct)
 
     def flush(self) -> None:
         self._base_reasoner.flush()
