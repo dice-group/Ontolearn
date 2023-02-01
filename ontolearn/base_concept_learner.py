@@ -1,4 +1,3 @@
-from ast import Call
 import logging
 import time
 from abc import ABCMeta, abstractmethod
@@ -20,7 +19,7 @@ from owlapy.model import OWLDeclarationAxiom, OWLNamedIndividual, OWLOntologyMan
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLOntology_Owlready2, OWLReasoner_Owlready2
 from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 from owlapy.render import DLSyntaxObjectRenderer
-from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, AbstractKnowledgeBase, \
+from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
     AbstractConceptNode, AbstractLearningProblem
 from .utils import oplogging
 
@@ -210,13 +209,12 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         labels = np.zeros((len(individuals), len(hypotheses)))
         for idx_hyp, hyp in enumerate(hypotheses):
-            kb_individuals = retrieval_func(hyp) # type: ignore
+            kb_individuals = set(retrieval_func(hyp))  # type: ignore
             for idx_ind, ind in enumerate(individuals):
                 if ind in kb_individuals:
                     labels[idx_ind][idx_hyp] = 1
         return labels
 
-    # TODO: I dont really like this reasoner argument
     def predict(self, individuals: List[OWLNamedIndividual],
                 hypotheses: Optional[List[Union[_N, OWLClassExpression]]] = None, n: int = 10,
                 reasoner: Optional[OWLReasoner] = None) -> pd.DataFrame:
@@ -231,18 +229,19 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
                       learner is used.
 
         Returns:
-            Data frame which has a 1 in each cell where the individual is entailed by the hypothesis
+            Pandas data frame with dimensions |individuals|*|hypotheses| indicating for each individual and each
+            hypothesis whether the individual is entailed in the hypothesis
         """
         if hypotheses is None:
             hypotheses = [hyp.concept for hyp in self.best_hypotheses(n)]
         else:
             hypotheses = [(hyp.concept if isinstance(hyp, AbstractConceptNode) else hyp) for hyp in hypotheses]
 
-        dlr = DLSyntaxObjectRenderer()
+        renderer = DLSyntaxObjectRenderer()
 
         return pd.DataFrame(data=self._assign_labels_to_individuals(individuals, hypotheses, reasoner),
-                            index=[dlr.render(i) for i in individuals],
-                            columns=[dlr.render(c) for c in hypotheses])
+                            index=[renderer.render(i) for i in individuals],
+                            columns=[renderer.render(c) for c in hypotheses])
 
     def predict_new_individuals(self, individuals: List[OWLNamedIndividual], axioms: List[OWLAxiom],
                                 hypotheses: Optional[List[Union[_N, OWLClassExpression]]] = None, n: int = 10,
@@ -260,7 +259,8 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
                       learner is used.
 
         Returns:
-            Data frame which has a 1 in each cell where the individual is entailed by the hypothesis
+            Pandas data frame with dimensions |individuals|*|hypotheses| indicating for each individual and each
+            hypothesis whether the individual is entailed in the hypothesis
         """
         ontology: OWLOntology_Owlready2 = cast(OWLOntology_Owlready2, self.kb.ontology())
         manager: OWLOntologyManager_Owlready2 = ontology.get_owl_ontology_manager()
