@@ -284,10 +284,12 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         yield from (OWLNamedIndividual(IRI.create(d_i.iri)) for d_i in i.equivalent_to
                     if isinstance(d_i, owlready2.Thing))
 
-    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
+    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty, direct: bool = True) \
+            -> Iterable[OWLLiteral]:
         i: owlready2.Thing = self._world[ind.get_iri().as_str()]
         p: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
-        for val in p._get_values_for_individual(i):
+        retrieval_func = p._get_values_for_individual if direct else p._get_indirect_values_for_individual
+        for val in retrieval_func(i):
             yield OWLLiteral(val)
 
     def all_data_property_values(self, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
@@ -295,12 +297,13 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         for _, val in p.get_relations():
             yield OWLLiteral(val)
 
-    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
+    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression, direct: bool = True) \
             -> Iterable[OWLNamedIndividual]:
         if isinstance(pe, OWLObjectProperty):
             i: owlready2.Thing = self._world[ind.get_iri().as_str()]
             p: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
-            for val in p._get_values_for_individual(i):
+            func = p._get_values_for_individual if direct else p._get_indirect_values_for_individual
+            for val in func(i):
                 yield OWLNamedIndividual(IRI.create(val.iri))
         elif isinstance(pe, OWLObjectInverseOf):
             i: owlready2.Thing = self._world[ind.get_iri().as_str()]

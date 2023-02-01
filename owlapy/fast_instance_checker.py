@@ -116,13 +116,14 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
     def same_individuals(self, ce: OWLNamedIndividual) -> Iterable[OWLNamedIndividual]:
         yield from self._base_reasoner.same_individuals(ce)
 
-    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
-        yield from self._base_reasoner.data_property_values(ind, pe)
+    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty, direct: bool = True) \
+            -> Iterable[OWLLiteral]:
+        yield from self._base_reasoner.data_property_values(ind, pe, direct)
 
     def all_data_property_values(self, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
         yield from self._base_reasoner.all_data_property_values(pe)
 
-    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
+    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression, direct: bool = True) \
             -> Iterable[OWLNamedIndividual]:
         if self._property_cache:
             self._lazy_cache_obj_prop(pe)
@@ -133,7 +134,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
             else:
                 raise NotImplementedError
         else:
-            yield from self._base_reasoner.object_property_values(ind, pe)
+            yield from self._base_reasoner.object_property_values(ind, pe, direct)
 
     def flush(self) -> None:
         self._base_reasoner.flush()
