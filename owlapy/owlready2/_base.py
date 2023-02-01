@@ -229,22 +229,28 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         self._world = ontology._world
 
     def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
-        for ax in self.get_root_ontology().data_property_domain_axioms(pe):
-            yield ax.get_domain()
-            if not direct:
-                yield from self.super_classes(ax.get_domain())
+        domains = {d.get_domain() for d in self.get_root_ontology().data_property_domain_axioms(pe)}
+        # TODO: Remove if when super_classes is implemented for complex class expressions
+        super_domains = set(chain.from_iterable([self.super_classes(d) for d in domains if isinstance(d, OWLClass)]))
+        yield from domains - super_domains
+        if not direct:
+            yield from super_domains
 
     def object_property_domains(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
-        for ax in self.get_root_ontology().object_property_domain_axioms(pe):
-            yield ax.get_domain()
-            if not direct:
-                yield from self.super_classes(ax.get_domain())
+        domains = {d.get_domain() for d in self.get_root_ontology().object_property_domain_axioms(pe)}
+        # TODO: Remove if when super_classes is implemented for complex class expressions
+        super_domains = set(chain.from_iterable([self.super_classes(d) for d in domains if isinstance(d, OWLClass)]))
+        yield from domains - super_domains
+        if not direct:
+            yield from super_domains
 
     def object_property_ranges(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
-        for ax in self.get_root_ontology().object_property_range_axioms(pe):
-            yield ax.get_range()
-            if not direct:
-                yield from self.super_classes(ax.get_range())
+        ranges = {r.get_range() for r in self.get_root_ontology().object_property_range_axioms(pe)}
+        # TODO: Remove if when super_classes is implemented for complex class expressions
+        super_ranges = set(chain.from_iterable([self.super_classes(d) for d in ranges if isinstance(d, OWLClass)]))
+        yield from ranges - super_ranges
+        if not direct:
+            yield from super_ranges
 
     def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClassExpression]:
         """Return the named classes that are directly equivalent to the class expression"""

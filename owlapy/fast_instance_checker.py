@@ -53,7 +53,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
     _negation_default: bool
 
     def __init__(self, ontology: OWLOntology, base_reasoner: OWLReasoner, *,
-                 property_cache=True, negation_default=False):
+                 property_cache=True, negation_default=True):
         """Fast instance checker
 
         Args:

@@ -41,6 +41,8 @@ def _(axiom: OWLDeclarationAxiom, ontology: OWLOntology, world: owlready2.namesp
 
         thing_x: owlready2.entity.ThingClass = conv.map_concept(OWLThing)
         if isinstance(entity, OWLClass):
+            if entity.is_owl_thing() or entity.is_owl_nothing():
+                return
             entity_x = types.new_class(name=entity.get_iri().get_remainder(), bases=(thing_x,))
         elif isinstance(entity, OWLIndividual):
             entity_x = thing_x(entity.get_iri().get_remainder())
@@ -53,6 +55,7 @@ def _(axiom: OWLDeclarationAxiom, ontology: OWLOntology, world: owlready2.namesp
         else:
             raise ValueError(f'Cannot add ({entity}). Not an atomic class, property, or individual.')
         entity_x.namespace = ont_x.get_namespace(entity.get_iri().get_namespace())
+        entity_x.namespace.world._refactor(entity_x.storid, entity_x.iri)
 
 
 @_add_axiom.register

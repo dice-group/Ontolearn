@@ -69,7 +69,7 @@ MANCHESTER_GRAMMAR = Grammar(r"""
     float_with_integer_part = non_negative_integer ("." ~"[0-9]+")? exponent?
     float_no_integer_part = "." ~"[0-9]+" exponent?
     exponent = ("e"/"E") sign ~"[0-9]+"
-    decimal_literal = non_negative_integer "." ~"[0-9]+"
+    decimal_literal = sign non_negative_integer "." ~"[0-9]+"
     integer_literal = sign non_negative_integer
     boolean_literal = ~"[tT]rue" / ~"[fF]alse"
     date_literal = ~"[0-9]{4}-((0[1-9])|(1[0-2]))-(([0-2][0-9])|(3[01]))"
@@ -469,7 +469,7 @@ DL_GRAMMAR = Grammar(r"""
     float_with_integer_part = non_negative_integer ("." ~"[0-9]+")? exponent?
     float_no_integer_part = "." ~"[0-9]+" exponent?
     exponent = ("e"/"E") sign ~"[0-9]+"
-    decimal_literal = non_negative_integer "." ~"[0-9]+"
+    decimal_literal = sign non_negative_integer "." ~"[0-9]+"
     integer_literal = sign non_negative_integer
     boolean_literal = ~"[tT]rue" / ~"[fF]alse"
     date_literal = ~"[0-9]{4}-((0[1-9])|(1[0-2]))-(([0-2][0-9])|(3[01]))"
@@ -722,9 +722,9 @@ class DLSyntaxParser(NodeVisitor, OWLObjectParser, metaclass=_DLSyntaxParserMeta
     def visit_class_iri(self, node, children) -> OWLClass:
         top_bottom = _node_text(node)
         if top_bottom == _DL_SYNTAX.TOP:
-            return OWLRDFVocabulary.OWL_THING.get_iri()
+            return OWLClass(OWLRDFVocabulary.OWL_THING.get_iri())
         elif top_bottom == _DL_SYNTAX.BOTTOM:
-            return OWLRDFVocabulary.OWL_NOTHING.get_iri()
+            return OWLClass(OWLRDFVocabulary.OWL_NOTHING.get_iri())
         else:
             return OWLClass(children[0])
 
