@@ -436,9 +436,9 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             for sp in p_x.subclasses(world=self._world):
                 if isinstance(sp, owlready2.DataPropertyClass):
                     yield OWLDataProperty(IRI.create(sp.iri))
-            else:
-                seen_set = set()
-                yield from self._sub_data_properties_recursive(dp, seen_set)
+        else:
+            seen_set = set()
+            yield from self._sub_data_properties_recursive(dp, seen_set)
 
     def _sub_object_properties_recursive(self, op: OWLObjectProperty, seen_set: Set) -> Iterable[OWLObjectProperty]:
         p_x: owlready2.ObjectPropertyClass = self._world[op.get_iri().as_str()]
