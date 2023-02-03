@@ -104,10 +104,10 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
     def object_property_ranges(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
         yield from self._base_reasoner.object_property_ranges(pe, direct=direct)
 
-    def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
+    def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClassExpression]:
         yield from self._base_reasoner.equivalent_classes(ce)
 
-    def disjoint_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
+    def disjoint_classes(self, ce: OWLClassExpression) -> Iterable[OWLClassExpression]:
         yield from self._base_reasoner.disjoint_classes(ce)
 
     def different_individuals(self, ce: OWLNamedIndividual) -> Iterable[OWLNamedIndividual]:
