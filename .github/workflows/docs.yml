@@ -7,10 +7,6 @@ on:
      - develop
   pull_request:
 
-env:
-  tox_dep: 'tox=3.23.1'
-  conda_dep: '$(conda -V|tr " " "=")'
-
 jobs:
   docs:
     runs-on: ubuntu-latest
@@ -18,26 +14,19 @@ jobs:
       max-parallel: 5
 
     steps:
-    - uses: actions/checkout@v2
-    - name: add conda to path
-      run: |
-        # $CONDA is an environment variable pointing to the root of the miniconda directory
-        echo "$CONDA/bin" >> $GITHUB_PATH
-    - uses: actions/cache@v2
-      with:
-        key: ${{ runner.os }}-conda-${{ env.tox_dep }}
-        path: /usr/share/miniconda
+    - uses: actions/checkout@v3
     - name: Install tox
+      id: install-tox
       run: |
-        # workaround for github bug where conda-tox is broken after self-upgrade
-        conda install -c conda-forge --no-update-deps ${{ env.tox_dep }} ${{ env.conda_dep }}
+        pip install tox
+        echo "tox_version=$(pip list | grep tox | tr -d ' ')" >> $GITHUB_OUTPUT
     - name: prepare required software
       run: |
         # epstopdf & dot & noto-fonts
         sudo apt update && sudo apt install texlive-font-utils graphviz fonts-noto
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
-        key: ${{ runner.os }}-${{ env.tox_dep }}-docs-${{ hashFiles('environment.yml', 'tox.ini') }}
+        key: ${{ runner.os }}-${{ steps.install-tox.outputs.tox_version }}-docs-${{ hashFiles('environment.yml', 'tox.ini') }}
         path: .tox
     - name: Build docs with tox
       run: |
