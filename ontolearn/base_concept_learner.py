@@ -15,7 +15,7 @@ from ontolearn.search import _NodeQuality
 
 from owlapy.model import OWLDeclarationAxiom, OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
     OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, OWLAnnotationAssertionAxiom, OWLAnnotation, \
-    OWLAnnotationProperty, OWLLiteral, IRI, OWLClassExpression, OWLReasoner, OWLAxiom
+    OWLAnnotationProperty, OWLLiteral, IRI, OWLClassExpression, OWLReasoner, OWLAxiom, OWLThing
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLOntology_Owlready2, OWLReasoner_Owlready2
 from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 from owlapy.render import DLSyntaxObjectRenderer
@@ -216,65 +216,63 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         return labels
 
     def predict(self, individuals: List[OWLNamedIndividual],
-                hypotheses: Optional[List[Union[_N, OWLClassExpression]]] = None, n: int = 10,
+                hypotheses: Optional[List[Union[_N, OWLClassExpression]]] = None,
+                axioms: Optional[List[OWLAxiom]] = None,
+                n: int = 10,
                 reasoner: Optional[OWLReasoner] = None) -> pd.DataFrame:
-        """Create a binary data frame showing for each individual whether it is entailed in the given hypotheses
-           (class expressions).
+        """Creates a binary data frame showing for each individual whether it is entailed in the given hypotheses
+        (class expressions). The individuals do not have to be in the ontology/knowledge base yet. In that case,
+        axioms describing these individuals must be provided.
+
+        The state of the knowledge base/ontology is not changed, any provided axioms will be removed again.
 
         Args:
             individuals: A list of individuals/instances.
-            hypotheses: A list of search tree nodes or class expressions.
-            n: integer denoting number of ALC concepts to extract from search tree if hypotheses=None.
-            reasoner: Optionally use a different reasoner. If reasoner=None, the knowledge base of the concept
+            hypotheses: (Optional) A list of search tree nodes or class expressions. If not provided, the
+                        current :func:`BaseConceptLearner.best_hypothesis` of the concept learner are used.
+            axioms: (Optional) A list of axioms that are not in the current knowledge base/ontology.
+                    If the individual list contains individuals that are not in the ontology yet, axioms
+                    describing these individuals must be provided. The argument can also be used to add
+                    arbitrary axioms to the ontology for the prediction.
+            n: Integer denoting number of ALC concepts to extract from search tree if hypotheses=None.
+            reasoner: (Optional) Use a different reasoner. If reasoner=None, the knowledge base of the concept
                       learner is used.
 
         Returns:
             Pandas data frame with dimensions |individuals|*|hypotheses| indicating for each individual and each
             hypothesis whether the individual is entailed in the hypothesis
         """
+        new_individuals = set(individuals) - self.kb.individuals_set(OWLThing)
+        if len(new_individuals) > 0 and (axioms is None or len(axioms) == 0):
+            raise RuntimeError('If individuals are provided that are not in the knowledge base yet, a list of axioms '
+                               f'has to be provided. New Individuals:\n{new_individuals}.')
+
+        # If axioms are provided they need to be added to the ontology
+        if axioms is not None:
+            ontology: OWLOntology = cast(OWLOntology_Owlready2, self.kb.ontology())
+            manager: OWLOntologyManager = ontology.get_owl_ontology_manager()
+            for axiom in axioms:
+                manager.add_axiom(ontology, axiom)
+            reasoner = OWLReasoner_Owlready2_TempClasses(ontology) if reasoner is None else reasoner
+
         if hypotheses is None:
             hypotheses = [hyp.concept for hyp in self.best_hypotheses(n)]
         else:
             hypotheses = [(hyp.concept if isinstance(hyp, AbstractConceptNode) else hyp) for hyp in hypotheses]
 
         renderer = DLSyntaxObjectRenderer()
+        predictions = pd.DataFrame(data=self._assign_labels_to_individuals(individuals, hypotheses, reasoner),
+                                   index=[renderer.render(i) for i in individuals],
+                                   columns=[renderer.render(c) for c in hypotheses])
 
-        return pd.DataFrame(data=self._assign_labels_to_individuals(individuals, hypotheses, reasoner),
-                            index=[renderer.render(i) for i in individuals],
-                            columns=[renderer.render(c) for c in hypotheses])
+        # Remove the axioms from the ontology
+        if axioms is not None:
+            for axiom in axioms:
+                manager.remove_axiom(ontology, axiom)
+            for ind in individuals:
+                manager.remove_axiom(ontology, OWLDeclarationAxiom(ind))
 
-    def predict_new_individuals(self, individuals: List[OWLNamedIndividual], axioms: List[OWLAxiom],
-                                hypotheses: Optional[List[Union[_N, OWLClassExpression]]] = None, n: int = 10,
-                                reasoner: Optional[OWLReasoner] = None) -> pd.DataFrame:
-        """Takes a list of new individuals together with their axioms which do not exist in the knowledge base yet.
-           Creates a binary data frame showing for each individual whether it is entailed in the given hypotheses
-           (class expressions).
-
-        Args:
-            individuals: A list of new individuals/instances.
-            axioms: A list of axioms which describe the given individuals.
-            hypotheses: A list search tree nodes or class expressions.
-            n: integer denoting number of ALC concepts to extract from search tree if hypotheses=None.
-            reasoner: Optionally use a different reasoner. If reasoner=None, the knowledge base of the concept
-                      learner is used.
-
-        Returns:
-            Pandas data frame with dimensions |individuals|*|hypotheses| indicating for each individual and each
-            hypothesis whether the individual is entailed in the hypothesis
-        """
-        ontology: OWLOntology_Owlready2 = cast(OWLOntology_Owlready2, self.kb.ontology())
-        manager: OWLOntologyManager_Owlready2 = ontology.get_owl_ontology_manager()
-        for axiom in axioms:
-            manager.add_axiom(ontology, axiom)
-
-        reasoner = OWLReasoner_Owlready2_TempClasses(ontology) if reasoner is None else reasoner
-        result = self.predict(individuals, hypotheses=hypotheses, n=n, reasoner=reasoner)
-
-        for axiom in axioms:
-            manager.remove_axiom(ontology, axiom)
-        for ind in individuals:
-            manager.remove_axiom(ontology, OWLDeclarationAxiom(ind))
-        return result
+        return predictions
 
     @property
     def number_of_tested_concepts(self):
@@ -292,7 +290,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         NS: Final = 'https://dice-research.org/predictions/' + str(time.time()) + '#'
 
         if rdf_format != 'rdfxml':
-            raise NotImplementedError
+            raise NotImplementedError(f'Format {rdf_format} not implemented.')
 
         assert isinstance(self.kb, KnowledgeBase)
 
