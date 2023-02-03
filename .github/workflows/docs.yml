@@ -33,7 +33,7 @@ jobs:
         tox -o -e docs
     - name: Build latex docs with tox
       run: |
-        tox -o -e docs latex
+        tox -o -e docs -- latex
     - name: Compile LaTeX document
       uses: docker://texlive/texlive:latest
       with:
