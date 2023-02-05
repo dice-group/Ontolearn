@@ -125,8 +125,8 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
             -> Iterable[OWLLiteral]:
         yield from self._base_reasoner.data_property_values(ind, pe, direct)
 
-    def all_data_property_values(self, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
-        yield from self._base_reasoner.all_data_property_values(pe)
+    def all_data_property_values(self, pe: OWLDataProperty, direct: bool = True) -> Iterable[OWLLiteral]:
+        yield from self._base_reasoner.all_data_property_values(pe, direct)
 
     def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression, direct: bool = True) \
             -> Iterable[OWLNamedIndividual]:
@@ -235,15 +235,10 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
             # shortcut for owlready2
             from owlapy.owlready2 import OWLOntology_Owlready2
             if isinstance(self._ontology, OWLOntology_Owlready2):
-                if isinstance(pe, OWLObjectInverseOf):
-                    inverse = True
-                else:
-                    inverse = False
-
                 import owlready2
                 # _x => owlready2 objects
                 for s_x, o_x in self._retrieve_triples(pe):
-                    if inverse:
+                    if isinstance(pe, OWLObjectInverseOf):
                         l_x = o_x
                     else:
                         l_x = s_x
@@ -565,6 +560,8 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
         self._cls_to_ind[c] = frozenset(temp)
 
     def _retrieve_triples(self, pe: OWLPropertyExpression) -> Iterable:
+        """Retrieve all subject/object pairs for the given property."""
+
         if isinstance(pe, OWLObjectPropertyExpression):
             retrieval_func = self.sub_object_properties
             p_x: owlready2.ObjectProperty = self._ontology._world[pe.get_named_property().get_iri().as_str()]
@@ -572,11 +569,14 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
             retrieval_func = self.sub_data_properties
             p_x: owlready2.DataProperty = self._ontology._world[pe.get_iri().as_str()]
 
+        relations = p_x.get_relations()
         if self._sub_properties:
-            relations = chain.from_iterable(
+            # Retrieve the subject/object pairs for all sub properties of pe
+            indirect_relations = chain.from_iterable(
                 map(lambda x: self._ontology._world[x.get_iri().as_str()].get_relations(),
-                    retrieval_func(pe)))
-            relations = chain.from_iterable((relations, p_x.get_relations()))
-        else:
-            relations = p_x.get_relations()
+                    retrieval_func(pe, direct=False)))
+            # If pe is an OWLObjectInverseOf we need to swap the pairs
+            if isinstance(pe, OWLObjectInverseOf):
+                indirect_relations = ((r[1], r[0]) for r in indirect_relations)
+            relations = chain(relations, indirect_relations)
         yield from relations

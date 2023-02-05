@@ -292,9 +292,15 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         for val in retrieval_func(i):
             yield OWLLiteral(val)
 
-    def all_data_property_values(self, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
+    def all_data_property_values(self, pe: OWLDataProperty, direct: bool = True) -> Iterable[OWLLiteral]:
         p: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
-        for _, val in p.get_relations():
+        relations = p.get_relations()
+        if not direct:
+            indirect_relations = chain.from_iterable(
+                map(lambda x: self._world[x.get_iri().as_str()].get_relations(),
+                    self.sub_data_properties(pe, direct=False)))
+            relations = chain(relations, indirect_relations)
+        for _, val in relations:
             yield OWLLiteral(val)
 
     def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression, direct: bool = True) \
@@ -302,14 +308,13 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         if isinstance(pe, OWLObjectProperty):
             i: owlready2.Thing = self._world[ind.get_iri().as_str()]
             p: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
-            func = p._get_values_for_individual if direct else p._get_indirect_values_for_individual
-            for val in func(i):
+            retieval_func = p._get_values_for_individual if direct else p._get_indirect_values_for_individual
+            for val in retieval_func(i):
                 yield OWLNamedIndividual(IRI.create(val.iri))
         elif isinstance(pe, OWLObjectInverseOf):
-            i: owlready2.Thing = self._world[ind.get_iri().as_str()]
             p: owlready2.ObjectPropertyClass = self._world[pe.get_named_property().get_iri().as_str()]
-            for val in p._get_inverse_values_for_individual(i):
-                yield OWLNamedIndividual(IRI.create(val.iri))
+            inverse_p = p.inverse_property
+            yield from self.object_property_values(ind, OWLObjectProperty(IRI.create(inverse_p.iri)), direct)
         else:
             raise NotImplementedError(pe)
 
@@ -462,8 +467,12 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             else:
                 seen_set = set()
                 yield from self._sub_object_properties_recursive(op, seen_set)
+        elif isinstance(op, OWLObjectInverseOf):
+            p: owlready2.ObjectPropertyClass = self._world[op.get_named_property().get_iri().as_str()]
+            inverse_p = p.inverse_property
+            yield from self.sub_object_properties(OWLObjectProperty(IRI.create(inverse_p.iri)), direct)
         else:
-            raise NotImplementedError("sub properties of inverse properties not yet implemented", op)
+            raise NotImplementedError(op)
 
     def types(self, ind: OWLNamedIndividual, direct: bool = False) -> Iterable[OWLClass]:
         i: owlready2.Thing = self._world[ind.get_iri().as_str()]

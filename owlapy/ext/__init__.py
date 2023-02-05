@@ -32,11 +32,13 @@ class OWLReasonerEx(OWLReasoner, metaclass=ABCMeta):
                 # TODO:
 
     # default
-    def all_data_property_values(self, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
+    def all_data_property_values(self, pe: OWLDataProperty, direct: bool = True) -> Iterable[OWLLiteral]:
         """Gets all values for the given data property expression that appear in the knowledge base.
 
         Args:
             pe: The data property expression whose values are to be retrieved
+            direct: Specifies if only the direct values of the data property pe should be retrieved (True), or if
+                    the values of sub properties of pe should be taken into account (False).
 
         Returns:
             A set of OWLLiterals containing literals such that for each literal l in the set, the set of reasoner
@@ -44,7 +46,7 @@ class OWLReasonerEx(OWLReasoner, metaclass=ABCMeta):
         """
         onto = self.get_root_ontology()
         for ind in onto.individuals_in_signature():
-            for lit in self.data_property_values(ind, pe):
+            for lit in self.data_property_values(ind, pe, direct):
                 yield lit
 
     # default

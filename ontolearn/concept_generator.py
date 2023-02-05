@@ -504,6 +504,9 @@ class ConceptGenerator:
 
         Args:
             ind: individual
+            direct: Whether only direct properties should be considered (True), or if also
+                    indirect properties should be considered (False). Indirect properties
+                    would be super properties super_p of properties p with ObjectPropertyAssertion(p ind obj)
 
         Returns:
             object properties
@@ -516,6 +519,9 @@ class ConceptGenerator:
 
         Args:
             ind: individual
+            direct: Whether only direct properties should be considered (True), or if also
+                    indirect properties should be considered (False). Indirect properties
+                    would be super properties super_p of properties p with ObjectPropertyAssertion(p ind obj)
 
         Returns:
             data properties
@@ -531,6 +537,8 @@ class ConceptGenerator:
         Args:
             ind: individual
             property: object property
+            direct: Whether only the property property_ should be considered (True), or if also
+                    the values of sub properties of property_ should be considered (False)
 
         Returns:
             individuals
@@ -545,6 +553,8 @@ class ConceptGenerator:
         Args:
             ind: individual
             property: data property
+            direct: Whether only the property property_ should be considered (True), or if also
+                    the values of sub properties of property_ should be considered (False)
 
         Returns:
             literals

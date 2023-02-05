@@ -3269,8 +3269,8 @@ class OWLReasoner(metaclass=ABCMeta):
 
     @abstractmethod
     def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
-        """Gets the class expressions that are the direct or indirect domains of this property with respect to the imports
-        closure of the root ontology.
+        """Gets the class expressions that are the direct or indirect domains of this property with respect to the
+           imports closure of the root ontology.
 
         Args:
             pe: The property expression whose domains are to be retrieved.
@@ -3288,8 +3288,8 @@ class OWLReasoner(metaclass=ABCMeta):
 
     @abstractmethod
     def object_property_domains(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
-        """Gets the class expressions that are the direct or indirect domains of this property with respect to the imports
-        closure of the root ontology.
+        """Gets the class expressions that are the direct or indirect domains of this property with respect to the
+           imports closure of the root ontology.
 
         Args:
             pe: The property expression whose domains are to be retrieved.
@@ -3306,8 +3306,8 @@ class OWLReasoner(metaclass=ABCMeta):
 
     @abstractmethod
     def object_property_ranges(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
-        """Gets the class expressions that are the direct or indirect ranges of this property with respect to the imports
-        closure of the root ontology.
+        """Gets the class expressions that are the direct or indirect ranges of this property with respect to the
+           imports closure of the root ontology.
 
         Args:
             pe: The property expression whose ranges are to be retrieved.
