@@ -314,7 +314,17 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         elif isinstance(pe, OWLObjectInverseOf):
             p: owlready2.ObjectPropertyClass = self._world[pe.get_named_property().get_iri().as_str()]
             inverse_p = p.inverse_property
-            yield from self.object_property_values(ind, OWLObjectProperty(IRI.create(inverse_p.iri)), direct)
+            # If the inverse property is explicitly defined we can take shortcut
+            if inverse_p is not None:
+                yield from self.object_property_values(ind, OWLObjectProperty(IRI.create(inverse_p.iri)), direct)
+            else:
+                if not direct:
+                    raise NotImplementedError('Indirect values of inverse properties are only implemented if the '
+                                              'inverse property is explicitly defined in the ontology.'
+                                              f'Property: {pe}')
+                i: owlready2.Thing = self._world[ind.get_iri().as_str()]
+                for val in p._get_inverse_values_for_individual(i):
+                    yield OWLNamedIndividual(IRI.create(val.iri))
         else:
             raise NotImplementedError(pe)
 
@@ -470,7 +480,12 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         elif isinstance(op, OWLObjectInverseOf):
             p: owlready2.ObjectPropertyClass = self._world[op.get_named_property().get_iri().as_str()]
             inverse_p = p.inverse_property
-            yield from self.sub_object_properties(OWLObjectProperty(IRI.create(inverse_p.iri)), direct)
+            if inverse_p is not None:
+                yield from self.sub_object_properties(OWLObjectProperty(IRI.create(inverse_p.iri)), direct)
+            else:
+                raise NotImplementedError('Sub properties of inverse properties are only implemented if the '
+                                          'inverse property is explicitly defined in the ontology. '
+                                          f'Property: {op}')
         else:
             raise NotImplementedError(op)
 
