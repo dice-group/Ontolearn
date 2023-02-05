@@ -1360,6 +1360,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         self.__setup()
 
     def __setup(self):
+        self.clean()
         if self.fitness_func is None:
             self.fitness_func = LinearPressureFitness()
 

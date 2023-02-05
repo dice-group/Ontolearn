@@ -1,16 +1,25 @@
 import logging
 import time
 from abc import ABCMeta, abstractmethod
-from typing import List, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, cast, Callable, Type
+from itertools import chain
+from typing import List, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, Union, cast, Callable, Type
 
 import numpy as np
 import pandas as pd
 
-from owlapy.model import OWLClassExpression, OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
+from ontolearn.heuristics import CELOEHeuristic
+from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.metrics import F1, Accuracy
+from ontolearn.refinement_operators import ModifiedCELOERefinement
+from ontolearn.search import _NodeQuality
+
+from owlapy.model import OWLDeclarationAxiom, OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
     OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, OWLAnnotationAssertionAxiom, OWLAnnotation, \
-    OWLAnnotationProperty, OWLLiteral, IRI
+    OWLAnnotationProperty, OWLLiteral, IRI, OWLClassExpression, OWLReasoner, OWLAxiom, OWLThing
+from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLOntology_Owlready2, OWLReasoner_Owlready2
+from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 from owlapy.render import DLSyntaxObjectRenderer
-from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, AbstractKnowledgeBase, \
+from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
     AbstractConceptNode, AbstractLearningProblem
 from .utils import oplogging
 
@@ -47,8 +56,8 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
     name: ClassVar[str]
 
-    kb: AbstractKnowledgeBase
-    quality_func: AbstractScorer
+    kb: KnowledgeBase
+    quality_func: Optional[AbstractScorer]
     max_num_of_concepts_tested: Optional[int]
     terminate_on_goal: Optional[bool]
     _goal_found: bool
@@ -58,7 +67,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self,
-                 knowledge_base: Optional[AbstractKnowledgeBase] = None,
+                 knowledge_base: KnowledgeBase,
                  quality_func: Optional[AbstractScorer] = None,
                  max_num_of_concepts_tested: Optional[int] = None,
                  max_runtime: Optional[int] = None,
@@ -93,9 +102,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         """
 
         if self.quality_func is None:
-            from ontolearn.metrics import F1
             self.quality_func = F1()
-
         if self.max_num_of_concepts_tested is None:
             self.max_num_of_concepts_tested = 10_000
         if self.terminate_on_goal is None:
@@ -182,62 +189,96 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         """
         pass
 
-    def assign_labels_to_individuals(self, *, individuals: List[OWLNamedIndividual], hypotheses: List[_N]) \
-            -> np.ndarray:
+    def _assign_labels_to_individuals(self, individuals: List[OWLNamedIndividual],
+                                      hypotheses: List[OWLClassExpression],
+                                      reasoner: Optional[OWLReasoner] = None) -> np.ndarray:
         """
-        Use each given search tree node as a hypothesis, and use it as a binary function to assign 1 or 0 to each
+        Use each class expression as a hypothesis, and use it as a binary function to assign 1 or 0 to each
         individual.
 
         Args:
             individuals: A list of OWL individuals.
-            hypotheses: A list of search tree nodes (that have a concept property)
+            hypotheses: A list of class expressions.
+            reasoner: Optionally use a different reasoner. If reasoner=None, the knowledge base of the concept
+                      learner is used.
 
         Returns:
             matrix of \\|individuals\\| x \\|hypotheses\\|
         """
+        retrieval_func = self.kb.individuals_set if reasoner is None else reasoner.instances
+
         labels = np.zeros((len(individuals), len(hypotheses)))
-        for jth_hypo in range(len(hypotheses)):
-            node = hypotheses[jth_hypo]
-
-            kb_individuals = self.kb.individuals_set(node.concept)
-            for ith_ind in range(len(individuals)):
-                ind = individuals[ith_ind]
-
+        for idx_hyp, hyp in enumerate(hypotheses):
+            kb_individuals = set(retrieval_func(hyp))  # type: ignore
+            for idx_ind, ind in enumerate(individuals):
                 if ind in kb_individuals:
-                    labels[ith_ind][jth_hypo] = 1
+                    labels[idx_ind][idx_hyp] = 1
         return labels
 
-    def predict(self, individuals: List[OWLNamedIndividual], hypotheses: Optional[List[_N]] = None,
-                n: Optional[int] = None) -> pd.DataFrame:
-        """Create a binary data frame showing for each individual whether it is entailed in a class expression
+    def predict(self, individuals: List[OWLNamedIndividual],
+                hypotheses: Optional[List[Union[_N, OWLClassExpression]]] = None,
+                axioms: Optional[List[OWLAxiom]] = None,
+                n: int = 10,
+                reasoner: Optional[OWLReasoner] = None) -> pd.DataFrame:
+        """Creates a binary data frame showing for each individual whether it is entailed in the given hypotheses
+        (class expressions). The individuals do not have to be in the ontology/knowledge base yet. In that case,
+        axioms describing these individuals must be provided.
+
+        The state of the knowledge base/ontology is not changed, any provided axioms will be removed again.
 
         Args:
-            individuals: A list of individuals/instances where each item is a string.
-            hypotheses: A list of ALC concepts.
-            n: integer denoting number of ALC concepts to extract from search tree if hypotheses=None.
+            individuals: A list of individuals/instances.
+            hypotheses: (Optional) A list of search tree nodes or class expressions. If not provided, the
+                        current :func:`BaseConceptLearner.best_hypothesis` of the concept learner are used.
+            axioms: (Optional) A list of axioms that are not in the current knowledge base/ontology.
+                    If the individual list contains individuals that are not in the ontology yet, axioms
+                    describing these individuals must be provided. The argument can also be used to add
+                    arbitrary axioms to the ontology for the prediction.
+            n: Integer denoting number of ALC concepts to extract from search tree if hypotheses=None.
+            reasoner: (Optional) Use a different reasoner. If reasoner=None, the knowledge base of the concept
+                      learner is used.
 
         Returns:
-            Data frame which has a 1 in each cell where the individual is entailed by the hypothesis
+            Pandas data frame with dimensions |individuals|*|hypotheses| indicating for each individual and each
+            hypothesis whether the individual is entailed in the hypothesis
         """
-        assert isinstance(individuals, List)  # set would not work.
+        new_individuals = set(individuals) - self.kb.individuals_set(OWLThing)
+        if len(new_individuals) > 0 and (axioms is None or len(axioms) == 0):
+            raise RuntimeError('If individuals are provided that are not in the knowledge base yet, a list of axioms '
+                               f'has to be provided. New Individuals:\n{new_individuals}.')
+
+        # If axioms are provided they need to be added to the ontology
+        if axioms is not None:
+            ontology: OWLOntology = cast(OWLOntology_Owlready2, self.kb.ontology())
+            manager: OWLOntologyManager = ontology.get_owl_ontology_manager()
+            for axiom in axioms:
+                manager.add_axiom(ontology, axiom)
+            reasoner = OWLReasoner_Owlready2_TempClasses(ontology) if reasoner is None else reasoner
+
         if hypotheses is None:
-            try:
-                assert isinstance(n, int) and n > 0
-            except AssertionError:
-                raise ValueError('**n** must be positive integer.')
-            hypotheses = list(self.best_hypotheses(n))
+            hypotheses = [hyp.concept for hyp in self.best_hypotheses(n)]
+        else:
+            hypotheses = [(hyp.concept if isinstance(hyp, AbstractConceptNode) else hyp) for hyp in hypotheses]
 
-        dlr = DLSyntaxObjectRenderer()
+        renderer = DLSyntaxObjectRenderer()
+        predictions = pd.DataFrame(data=self._assign_labels_to_individuals(individuals, hypotheses, reasoner),
+                                   index=[renderer.render(i) for i in individuals],
+                                   columns=[renderer.render(c) for c in hypotheses])
 
-        return pd.DataFrame(data=self.assign_labels_to_individuals(individuals=individuals, hypotheses=hypotheses),
-                            index=[dlr.render(_) for _ in individuals],
-                            columns=[dlr.render(c.concept) for c in hypotheses])
+        # Remove the axioms from the ontology
+        if axioms is not None:
+            for axiom in axioms:
+                manager.remove_axiom(ontology, axiom)
+            for ind in individuals:
+                manager.remove_axiom(ontology, OWLDeclarationAxiom(ind))
+
+        return predictions
 
     @property
     def number_of_tested_concepts(self):
         return self._number_of_tested_concepts
 
-    def save_best_hypothesis(self, n: int = 10, path='Predictions', rdf_format='rdfxml') -> None:
+    def save_best_hypothesis(self, n: int = 10, path: str = 'Predictions', rdf_format: str = 'rdfxml') -> None:
         """Serialise the best hypotheses to a file
 
         Args:
@@ -249,9 +290,8 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         NS: Final = 'https://dice-research.org/predictions/' + str(time.time()) + '#'
 
         if rdf_format != 'rdfxml':
-            raise NotImplementedError
+            raise NotImplementedError(f'Format {rdf_format} not implemented.')
 
-        from ontolearn.knowledge_base import KnowledgeBase
         assert isinstance(self.kb, KnowledgeBase)
 
         best = list(self.best_hypotheses(n))
@@ -260,27 +300,22 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         except AssertionError:
             logger.warning("There were only %d results", len(best))
 
-        from owlapy.owlready2 import OWLOntologyManager_Owlready2
         manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
 
         ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
         manager.load_ontology(IRI.create(self.kb.path))
-        kb_iri = self.kb.ontology().get_ontology_id().get_ontology_iri()
-        manager.apply_change(AddImport(ontology, OWLImportsDeclaration(kb_iri)))
+        manager.apply_change(AddImport(ontology, OWLImportsDeclaration(IRI.create('file://' + self.kb.path))))
         for ith, h in enumerate(self.best_hypotheses(n=n)):
             cls_a: OWLClass = OWLClass(IRI.create(NS, "Pred_" + str(ith)))
             equivalent_classes_axiom = OWLEquivalentClassesAxiom(cls_a, h.concept)
             manager.add_axiom(ontology, equivalent_classes_axiom)
 
             try:
-                from ontolearn.search import _NodeQuality
-                h = cast(_NodeQuality, h)
+                assert isinstance(h, _NodeQuality)
                 quality = h.quality
             except AttributeError:
                 quality = None
 
-            from ontolearn.metrics import Accuracy
-            from ontolearn.metrics import F1
             if isinstance(self.quality_func, Accuracy):
                 accuracy = OWLAnnotationAssertionAxiom(cls_a.get_iri(), OWLAnnotation(
                     OWLAnnotationProperty(IRI.create(SNS, "accuracy")), OWLLiteral(quality)))
@@ -292,6 +327,17 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))
 
+    def load_hypotheses(self, path: str) -> Iterable[OWLClassExpression]:
+        """Loads hypotheses (class expressions) from a file saved by :func:`BaseConceptLearner.save_best_hypothesis`
+
+        Args:
+            path: Path to the file containing hypotheses
+        """
+        manager: OWLOntologyManager_Owlready2 = OWLOntologyManager_Owlready2()
+        ontology: OWLOntology_Owlready2 = manager.load_ontology(IRI.create('file://' + path))
+        reasoner = OWLReasoner_Owlready2(ontology)
+        yield from chain.from_iterable(reasoner.equivalent_classes(c) for c in ontology.classes_in_signature())
+
 
 class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
     """
@@ -300,15 +346,15 @@ class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
     """
     __slots__ = 'operator', 'heuristic_func', 'max_child_length', 'start_class', 'iter_bound'
 
-    operator: BaseRefinement
-    heuristic_func: AbstractHeuristic
+    operator: Optional[BaseRefinement]
+    heuristic_func: Optional[AbstractHeuristic]
     max_child_length: Optional[int]
     start_class: Optional[OWLClassExpression]
     iter_bound: Optional[int]
 
     @abstractmethod
     def __init__(self,
-                 knowledge_base: Optional[AbstractKnowledgeBase] = None,
+                 knowledge_base: KnowledgeBase,
                  refinement_operator: Optional[BaseRefinement] = None,
                  heuristic_func: Optional[AbstractHeuristic] = None,
                  quality_func: Optional[AbstractScorer] = None,
@@ -356,13 +402,10 @@ class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
             self.max_child_length = 10
 
         if self.operator is None:
-            from ontolearn.refinement_operators import ModifiedCELOERefinement
-            from ontolearn.knowledge_base import KnowledgeBase
             assert isinstance(self.kb, KnowledgeBase)
             self.operator = ModifiedCELOERefinement(self.kb, max_child_length=self.max_child_length)
 
         if self.heuristic_func is None:
-            from ontolearn.heuristics import CELOEHeuristic
             self.heuristic_func = CELOEHeuristic()
 
         if self.start_class is None:

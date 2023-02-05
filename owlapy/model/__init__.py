@@ -3324,31 +3324,31 @@ class OWLReasoner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
-        """Gets the named classes that are equivalent to the specified class expression with respect to the set of
+    def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClassExpression]:
+        """Gets the class expressions that are equivalent to the specified class expression with respect to the set of
         reasoner axioms.
 
         Args:
             ce: The class expression whose equivalent classes are to be retrieved.
 
         Returns:
-            All named classes C where the root ontology imports closure entails EquivalentClasses(ce C). If ce is not a
-            class name (i.e. it is an anonymous class expression) and there are no such classes C then there will be
-            no result. If ce is unsatisfiable with respect to the set of reasoner axioms then  owl:Nothing, i.e. the
+            All class expressions C where the root ontology imports closure entails EquivalentClasses(ce C). If ce is
+            not a class name (i.e. it is an anonymous class expression) and there are no such classes C then there will
+            be no result. If ce is unsatisfiable with respect to the set of reasoner axioms then  owl:Nothing, i.e. the
             bottom node, will be returned.
         """
         pass
 
     @abstractmethod
-    def disjoint_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
-        """Gets the named classes that are disjoint with specified class expression with respect to the set of
+    def disjoint_classes(self, ce: OWLClassExpression) -> Iterable[OWLClassExpression]:
+        """Gets the class expressions that are disjoint with specified class expression with respect to the set of
         reasoner axioms.
 
         Args:
             ce: The class expression whose disjoint classes are to be retrieved.
 
         Returns:
-            All named classes D where the set of reasoner axioms entails EquivalentClasses(D ObjectComplementOf(ce))
+            All class expressions D where the set of reasoner axioms entails EquivalentClasses(D ObjectComplementOf(ce))
             or StrictSubClassOf(D ObjectComplementOf(ce)).
         """
         pass
