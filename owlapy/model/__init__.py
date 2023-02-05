@@ -3269,8 +3269,8 @@ class OWLReasoner(metaclass=ABCMeta):
 
     @abstractmethod
     def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
-        """Gets the class expressions that are the direct or indirect domains of this property with respect to the imports
-        closure of the root ontology.
+        """Gets the class expressions that are the direct or indirect domains of this property with respect to the
+           imports closure of the root ontology.
 
         Args:
             pe: The property expression whose domains are to be retrieved.
@@ -3288,8 +3288,8 @@ class OWLReasoner(metaclass=ABCMeta):
 
     @abstractmethod
     def object_property_domains(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
-        """Gets the class expressions that are the direct or indirect domains of this property with respect to the imports
-        closure of the root ontology.
+        """Gets the class expressions that are the direct or indirect domains of this property with respect to the
+           imports closure of the root ontology.
 
         Args:
             pe: The property expression whose domains are to be retrieved.
@@ -3306,8 +3306,8 @@ class OWLReasoner(metaclass=ABCMeta):
 
     @abstractmethod
     def object_property_ranges(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
-        """Gets the class expressions that are the direct or indirect ranges of this property with respect to the imports
-        closure of the root ontology.
+        """Gets the class expressions that are the direct or indirect ranges of this property with respect to the
+           imports closure of the root ontology.
 
         Args:
             pe: The property expression whose ranges are to be retrieved.
@@ -3410,12 +3410,15 @@ class OWLReasoner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable['OWLLiteral']:
+    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty, direct: bool = True) \
+            -> Iterable['OWLLiteral']:
         """Gets the data property values for the specified individual and data property expression.
 
         Args:
             ind: The individual that is the subject of the data property values
             pe: The data property expression whose values are to be retrieved for the specified individual
+            direct: Specifies if the direct values should be retrieved (True), or if all values should be retrieved
+                (False), so that sub properties are taken into account.
 
         Returns:
             A set of OWLLiterals containing literals such that for each literal l in the set, the set of reasoner
@@ -3424,13 +3427,15 @@ class OWLReasoner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
+    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression, direct: bool = True) \
             -> Iterable[OWLNamedIndividual]:
         """Gets the object property values for the specified individual and object property expression.
 
         Args:
             ind: The individual that is the subject of the object property values
             pe: The object property expression whose values are to be retrieved for the specified individual
+            direct: Specifies if the direct values should be retrieved (True), or if all values should be retrieved
+                (False), so that sub properties are taken into account.
 
         Returns:
             The named individuals such that for each individual j, the set of reasoner axioms entails

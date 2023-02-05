@@ -618,8 +618,8 @@ def _(axiom: OWLDataPropertyCharacteristicAxiom, ontology: OWLOntology, world: o
             property_x.is_a.remove(owlready2.FunctionalProperty)
 
 
-# Creates all entities (individuals, classes, properties) that appear in the given (complex) class expressions
-# that do not exist in the given ontology yet
+# Creates all entities (individuals, classes, properties) that appear in the given (complex) class expression
+# and do not exist in the given ontology yet
 def _check_expression(expr: OWLObject, ontology: OWLOntology, world: owlready2.namespace.World):
     if isinstance(expr, (OWLClass, OWLProperty, OWLNamedIndividual,)):
         _add_axiom(OWLDeclarationAxiom(expr), ontology, world)

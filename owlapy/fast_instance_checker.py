@@ -1,10 +1,11 @@
 from collections import defaultdict
 import logging
 import operator
+import owlready2
 from functools import singledispatchmethod, reduce
-from itertools import repeat
+from itertools import repeat, chain
 from types import MappingProxyType, FunctionType
-from typing import DefaultDict, Iterable, Dict, Mapping, Set, Type, TypeVar, Union, Optional, FrozenSet
+from typing import DefaultDict, Iterable, Dict, Mapping, Set, Type, TypeVar, Optional, FrozenSet
 
 from owlapy.ext import OWLReasonerEx
 from owlapy.model import OWLDataRange, OWLObjectOneOf, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
@@ -51,9 +52,10 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
     _data_prop: Dict[OWLDataProperty, Mapping[OWLNamedIndividual, Set[OWLLiteral]]]
     _property_cache: bool
     _negation_default: bool
+    _sub_properties: bool
 
     def __init__(self, ontology: OWLOntology, base_reasoner: OWLReasoner, *,
-                 property_cache=True, negation_default=True):
+                 property_cache: bool = True, negation_default: bool = True, sub_properties: bool = False):
         """Fast instance checker
 
         Args:
@@ -61,12 +63,15 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
             base_reasoner: Reasoner to get instances/types from
             property_cache: Whether to cache property values
             negation_default: Whether to assume a missing fact means it is false ("closed world view")
+            sub_properties: Whether to take sub properties into account for the
+                :func:`OWLReasoner_FastInstanceChecker.instances` retrieval
             """
         super().__init__(ontology)
         self._ontology = ontology
         self._base_reasoner = base_reasoner
         self._property_cache = property_cache
         self._negation_default = negation_default
+        self._sub_properties = sub_properties
         self.__warned = 0
         self._init()
 
@@ -116,24 +121,16 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
     def same_individuals(self, ce: OWLNamedIndividual) -> Iterable[OWLNamedIndividual]:
         yield from self._base_reasoner.same_individuals(ce)
 
-    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
-        yield from self._base_reasoner.data_property_values(ind, pe)
+    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty, direct: bool = True) \
+            -> Iterable[OWLLiteral]:
+        yield from self._base_reasoner.data_property_values(ind, pe, direct)
 
-    def all_data_property_values(self, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
-        yield from self._base_reasoner.all_data_property_values(pe)
+    def all_data_property_values(self, pe: OWLDataProperty, direct: bool = True) -> Iterable[OWLLiteral]:
+        yield from self._base_reasoner.all_data_property_values(pe, direct)
 
-    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
+    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression, direct: bool = True) \
             -> Iterable[OWLNamedIndividual]:
-        if self._property_cache:
-            self._lazy_cache_obj_prop(pe)
-            if isinstance(pe, OWLObjectProperty):
-                yield from self._obj_prop[pe][ind]
-            elif isinstance(pe, OWLObjectInverseOf):
-                yield from self._obj_prop_inv[pe.get_named_property()][ind]
-            else:
-                raise NotImplementedError
-        else:
-            yield from self._base_reasoner.object_property_values(ind, pe)
+        yield from self._base_reasoner.object_property_values(ind, pe, direct)
 
     def flush(self) -> None:
         self._base_reasoner.flush()
@@ -198,8 +195,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
         if isinstance(self._ontology, OWLOntology_Owlready2):
             import owlready2
             # _x => owlready2 objects
-            p_x: owlready2.ObjectProperty = self._ontology._world[pe.get_named_property().get_iri().as_str()]
-            for l_x, r_x in p_x.get_relations():
+            for l_x, r_x in self._retrieve_triples(pe):
                 if inverse:
                     o_x = l_x
                     s_x = r_x
@@ -214,7 +210,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
                     opc[s] |= {o}
         else:
             for s in self._ind_set:
-                individuals = set(self._base_reasoner.object_property_values(s, pe))
+                individuals = set(self._base_reasoner.object_property_values(s, pe, not self._sub_properties))
                 if individuals:
                     opc[s] = individuals
 
@@ -239,18 +235,10 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
             # shortcut for owlready2
             from owlapy.owlready2 import OWLOntology_Owlready2
             if isinstance(self._ontology, OWLOntology_Owlready2):
-                if isinstance(pe, OWLObjectInverseOf):
-                    inverse = True
-                    iri = pe.get_named_property().get_iri()
-                else:
-                    inverse = False
-                    iri = pe.get_iri()
-
                 import owlready2
                 # _x => owlready2 objects
-                p_x: Union[owlready2.ObjectProperty, owlready2.DataProperty] = self._ontology._world[iri.as_str()]
-                for s_x, o_x in p_x.get_relations():
-                    if inverse:
+                for s_x, o_x in self._retrieve_triples(pe):
+                    if isinstance(pe, OWLObjectInverseOf):
                         l_x = o_x
                     else:
                         l_x = s_x
@@ -264,7 +252,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
 
                 for s in self._ind_set:
                     try:
-                        next(iter(func(s, pe)))
+                        next(iter(func(s, pe, not self._sub_properties)))
                         subs |= {s}
                     except StopIteration:
                         pass
@@ -303,7 +291,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
 
             for s in subs:
                 count = 0
-                for o in self._base_reasoner.object_property_values(s, pe):
+                for o in self._base_reasoner.object_property_values(s, pe, not self._sub_properties):
                     if {o} & filler_inds:
                         count = count + 1
                         if max_count is None and count >= min_count:
@@ -326,8 +314,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
         if isinstance(self._ontology, OWLOntology_Owlready2):
             import owlready2
             # _x => owlready2 objects
-            p_x: owlready2.DataProperty = self._ontology._world[pe.get_iri().as_str()]
-            for s_x, o_x in p_x.get_relations():
+            for s_x, o_x in self._retrieve_triples(pe):
                 if isinstance(s_x, owlready2.Thing):
                     o_literal = OWLLiteral(o_x)
                     s = OWLNamedIndividual(IRI.create(s_x.iri))
@@ -571,3 +558,25 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
             return
         temp = self._base_reasoner.instances(c)
         self._cls_to_ind[c] = frozenset(temp)
+
+    def _retrieve_triples(self, pe: OWLPropertyExpression) -> Iterable:
+        """Retrieve all subject/object pairs for the given property."""
+
+        if isinstance(pe, OWLObjectPropertyExpression):
+            retrieval_func = self.sub_object_properties
+            p_x: owlready2.ObjectProperty = self._ontology._world[pe.get_named_property().get_iri().as_str()]
+        else:
+            retrieval_func = self.sub_data_properties
+            p_x: owlready2.DataProperty = self._ontology._world[pe.get_iri().as_str()]
+
+        relations = p_x.get_relations()
+        if self._sub_properties:
+            # Retrieve the subject/object pairs for all sub properties of pe
+            indirect_relations = chain.from_iterable(
+                map(lambda x: self._ontology._world[x.get_iri().as_str()].get_relations(),
+                    retrieval_func(pe, direct=False)))
+            # If pe is an OWLObjectInverseOf we need to swap the pairs
+            if isinstance(pe, OWLObjectInverseOf):
+                indirect_relations = ((r[1], r[0]) for r in indirect_relations)
+            relations = chain(relations, indirect_relations)
+        yield from relations

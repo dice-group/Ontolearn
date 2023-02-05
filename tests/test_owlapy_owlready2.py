@@ -2,23 +2,24 @@ from datetime import date, datetime
 import unittest
 
 from pandas import Timedelta
+from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
 from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
     OWLDatatypeMinMaxExclusiveRestriction, OWLDatatypeMinMaxInclusiveRestriction
 
 import owlready2
 import owlapy.owlready2.utils
-from owlapy.model import OWLObjectPropertyRangeAxiom, OWLSameIndividualAxiom, OWLSubClassOfAxiom, OWLClass, \
+from owlapy.model import OWLObjectInverseOf, OWLObjectPropertyRangeAxiom, OWLSameIndividualAxiom, OWLClass, \
     OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectComplementOf, IRI, OWLDataAllValuesFrom, \
     OWLDataComplementOf, OWLDataHasValue, OWLDataIntersectionOf, OWLDataProperty, OWLDataSomeValuesFrom, \
     OWLDataUnionOf, OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLDataOneOf, \
     OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataMinCardinality, OWLObjectExactCardinality, \
     OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectHasValue, OWLObjectAllValuesFrom, \
     OWLObjectOneOf, DateOWLDatatype, DateTimeOWLDatatype, DurationOWLDatatype, OWLClassAssertionAxiom, \
-    OWLNamedIndividual, OWLEquivalentClassesAxiom, OWLSubObjectPropertyOfAxiom, OWLThing, \
+    OWLNamedIndividual, OWLEquivalentClassesAxiom, OWLSubDataPropertyOfAxiom, OWLSubObjectPropertyOfAxiom, OWLThing, \
     OWLDifferentIndividualsAxiom, OWLDisjointClassesAxiom, OWLDisjointDataPropertiesAxiom, OWLObjectUnionOf, \
     OWLDisjointObjectPropertiesAxiom, OWLEquivalentDataPropertiesAxiom, OWLEquivalentObjectPropertiesAxiom, \
     OWLDataPropertyAssertionAxiom, OWLObjectProperty, OWLDataPropertyDomainAxiom, OWLDataPropertyRangeAxiom, \
-    OWLObjectPropertyAssertionAxiom, OWLObjectPropertyDomainAxiom
+    OWLObjectPropertyAssertionAxiom, OWLObjectPropertyDomainAxiom, OWLInverseObjectPropertiesAxiom, OWLSubClassOfAxiom
 
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
@@ -87,15 +88,151 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         reasoner = OWLReasoner_Owlready2(onto)
 
         stefan = OWLNamedIndividual(IRI.create(ns, 'stefan'))
+        markus = OWLNamedIndividual(IRI.create(ns, 'markus'))
+        heinz = OWLNamedIndividual(IRI(ns, 'heinz'))
         has_child = OWLObjectProperty(IRI.create(ns, 'hasChild'))
+        super_has_child = OWLObjectProperty(IRI.create(ns, 'super_hasChild'))
+        mgr.add_axiom(onto, OWLSubObjectPropertyOfAxiom(has_child, super_has_child))
 
         kids = frozenset(reasoner.object_property_values(stefan, has_child))
-        target_kids = frozenset({OWLNamedIndividual(IRI(ns, 'markus'))})
+        target_kids = frozenset({markus})
         self.assertEqual(target_kids, kids)
 
-        heinz = OWLNamedIndividual(IRI(ns, 'heinz'))
         no_kids = frozenset(reasoner.object_property_values(heinz, has_child))
         self.assertEqual(frozenset(), no_kids)
+
+        # test sub property
+        kids = frozenset(reasoner.object_property_values(stefan, super_has_child, direct=True))
+        target_kids = frozenset()
+        self.assertEqual(target_kids, kids)
+
+        kids = frozenset(reasoner.object_property_values(stefan, super_has_child, direct=False))
+        target_kids = frozenset({markus})
+        self.assertEqual(target_kids, kids)
+
+        # test inverse
+        has_child_inverse = OWLObjectProperty(IRI.create(ns, 'hasChild_inverse'))
+        mgr.add_axiom(onto, OWLInverseObjectPropertiesAxiom(has_child, has_child_inverse))
+        parents = frozenset(reasoner.object_property_values(markus, OWLObjectInverseOf(has_child), direct=True))
+        target_parents = frozenset({stefan})
+        self.assertEqual(target_parents, parents)
+        # Remove again for completeness, would not be necessary
+        mgr.remove_axiom(onto, OWLInverseObjectPropertiesAxiom(has_child, has_child_inverse))
+
+        # test inverse with sub property
+        # Setup:
+        # hasChild subPropertyOf super_hasChild
+        # hasChild inverseOf hasChild_inverse
+        # super_hasChild inverseOf super_hasChild_inverse
+        super_has_child_inverse = OWLObjectProperty(IRI.create(ns, 'super_hasChild_inverse'))
+        mgr.add_axiom(onto, OWLInverseObjectPropertiesAxiom(super_has_child, super_has_child_inverse))
+
+        parents = frozenset(reasoner.object_property_values(stefan,
+                                                            OWLObjectInverseOf(super_has_child_inverse),
+                                                            direct=True))
+        target_parents = frozenset()
+        self.assertEqual(target_parents, parents)
+
+        parents = frozenset(reasoner.object_property_values(stefan,
+                                                            OWLObjectInverseOf(super_has_child_inverse),
+                                                            direct=False))
+        target_parents = frozenset({markus})
+        self.assertEqual(target_parents, parents)
+        mgr.remove_axiom(onto, OWLInverseObjectPropertiesAxiom(super_has_child, super_has_child_inverse))
+        mgr.remove_axiom(onto, OWLSubObjectPropertyOfAxiom(has_child, super_has_child))
+
+    def test_data_values(self):
+        ns = "http://dl-learner.org/mutagenesis#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://KGs/Mutagenesis/mutagenesis.owl"))
+        base_reasoner = OWLReasoner_Owlready2(onto)
+        reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner)
+
+        d100_1 = OWLNamedIndividual(IRI.create(ns, 'd100_1'))
+        charge = OWLDataProperty(IRI.create(ns, 'charge'))
+        super_charge = OWLDataProperty(IRI.create(ns, 'super_charge'))
+        mgr.add_axiom(onto, OWLSubDataPropertyOfAxiom(charge, super_charge))
+
+        values = frozenset(reasoner.data_property_values(d100_1, charge))
+        targets = frozenset({OWLLiteral(-0.128)})
+        self.assertEqual(targets, values)
+
+        d100 = OWLNamedIndividual(IRI(ns, 'd100'))
+        values = frozenset(reasoner.data_property_values(d100, charge))
+        self.assertEqual(frozenset(), values)
+
+        # super_charge sub property
+        values = frozenset(reasoner.data_property_values(d100_1, super_charge, direct=False))
+        targets = frozenset({OWLLiteral(-0.128)})
+        self.assertEqual(targets, values)
+
+        values = frozenset(reasoner.data_property_values(d100_1, super_charge, direct=True))
+        targets = frozenset()
+        self.assertEqual(targets, values)
+        mgr.remove_axiom(onto, OWLSubDataPropertyOfAxiom(charge, super_charge))
+
+    def test_all_data_values(self):
+        ns = "http://dl-learner.org/mutagenesis#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://KGs/Mutagenesis/mutagenesis.owl"))
+        base_reasoner = OWLReasoner_Owlready2(onto)
+        reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner)
+
+        charge = OWLDataProperty(IRI.create(ns, 'charge'))
+        super_charge = OWLDataProperty(IRI.create(ns, 'super_charge'))
+        mgr.add_axiom(onto, OWLSubDataPropertyOfAxiom(charge, super_charge))
+
+        values = frozenset(reasoner.all_data_property_values(charge, direct=True))
+        self.assertEqual(529, len(values))
+
+        values = frozenset(reasoner.all_data_property_values(super_charge, direct=True))
+        self.assertEqual(0, len(values))
+
+        values = frozenset(reasoner.all_data_property_values(super_charge, direct=False))
+        self.assertEqual(529, len(values))
+        mgr.remove_axiom(onto, OWLSubDataPropertyOfAxiom(charge, super_charge))
+
+    def test_ind_object_properties(self):
+        ns = "http://example.com/father#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
+        base_reasoner = OWLReasoner_Owlready2(onto)
+        reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner)
+
+        stefan = OWLNamedIndividual(IRI.create(ns, 'stefan'))
+        has_child = OWLObjectProperty(IRI.create(ns, 'hasChild'))
+        super_has_child = OWLObjectProperty(IRI.create(ns, 'super_hasChild'))
+        mgr.add_axiom(onto, OWLSubObjectPropertyOfAxiom(has_child, super_has_child))
+
+        properties = frozenset(reasoner.ind_object_properties(stefan, direct=True))
+        target_properties = frozenset({has_child})
+        self.assertEqual(target_properties, properties)
+
+        properties = frozenset(reasoner.ind_object_properties(stefan, direct=False))
+        target_properties = frozenset({has_child, super_has_child})
+        self.assertEqual(target_properties, properties)
+        mgr.remove_axiom(onto, OWLSubObjectPropertyOfAxiom(has_child, super_has_child))
+
+    def test_ind_data_properties(self):
+        ns = "http://dl-learner.org/mutagenesis#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://KGs/Mutagenesis/mutagenesis.owl"))
+        base_reasoner = OWLReasoner_Owlready2(onto)
+        reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner)
+
+        d100_1 = OWLNamedIndividual(IRI.create(ns, 'd100_1'))
+        charge = OWLDataProperty(IRI.create(ns, 'charge'))
+        super_charge = OWLDataProperty(IRI.create(ns, 'super_charge'))
+        mgr.add_axiom(onto, OWLSubDataPropertyOfAxiom(charge, super_charge))
+
+        properties = frozenset(reasoner.ind_data_properties(d100_1, direct=True))
+        target_properties = frozenset({charge})
+        self.assertEqual(target_properties, properties)
+
+        properties = frozenset(reasoner.ind_data_properties(d100_1, direct=False))
+        target_properties = frozenset({charge, super_charge})
+        self.assertEqual(target_properties, properties)
+        mgr.remove_axiom(onto, OWLSubDataPropertyOfAxiom(charge, super_charge))
 
     def test_add_remove_axiom(self):
         ns = "http://example.com/father#"
