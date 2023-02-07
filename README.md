@@ -1,13 +1,23 @@
 # Ontolearn
 
-Ontolearn is an open-source software library for explainable structured machine learning in Python.
+*Ontolearn* is an open-source software library for explainable structured machine learning in Python.
+It contains the following ready-to-apply algorithms that learn OWL class expressions from positive and negative examples:
+- **CELOE** -> Concept Learning for Refinement Operators in ALC
+- **Drill** -> Deep Reinforcement Learning for Refinement Operators in ALC
+- **EvoLearner** -> an evolutionary approach to learn concepts in ALCQ(D)
+- **OCEL** -> a limited version of CELOE
 
+You can find more details about *Ontolearn* and these algorithms and their variations in the [documentation](https://ontolearn-docs-dice-group.netlify.app/index.html).
+
+Quick naviagtion: 
 - [Installation](#installation)
-
+- [Usage](#usage)
+- [Contribution](#contribution)
 # Installation
 
 ### Installation from source
 
+Note: Make sure to set up a virtual python environment like [Anaconda](https://www.anaconda.com/) before continuing with the installation.
 ```shell
 git clone https://github.com/dice-group/Ontolearn.git
 cd Ontolearn
@@ -19,16 +29,20 @@ python -c "import ontolearn"
 python -m pytest tests # Partial test with pytest
 tox  # full test with tox
 ```
-
+For more detailed instructions please refer to the [installation guide](https://ontolearn-docs-dice-group.netlify.app/usage/installation.html) in the documentation.
 ### Installation via pip
 
 ```shell
 pip install ontolearn  # currently it is only a place holder https://pypi.org/project/ontolearn/
 ```
 ## Usage
-See the [manual](https://ontolearn-docs-dice-group.netlify.app/),
-tests and examples folder for details.
 
+In the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder you can find examples on how to use
+the learning algorithms and more. Also in the [tests](https://github.com/dice-group/Ontolearn/tree/develop/tests) folder we have added some test cases.
+
+For more detailed instructions we suggest to follow the [guides](https://ontolearn-docs-dice-group.netlify.app/usage/03_algorithm.html) in the documentation.
+
+Below we give a simple example on using CELOE to learn class expressions for a small dataset.
 ```python
 from ontolearn.concept_learner import CELOE
 from ontolearn.model_adapter import ModelAdapter
