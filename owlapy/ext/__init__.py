@@ -32,11 +32,13 @@ class OWLReasonerEx(OWLReasoner, metaclass=ABCMeta):
                 # TODO:
 
     # default
-    def all_data_property_values(self, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
+    def all_data_property_values(self, pe: OWLDataProperty, direct: bool = True) -> Iterable[OWLLiteral]:
         """Gets all values for the given data property expression that appear in the knowledge base.
 
         Args:
             pe: The data property expression whose values are to be retrieved
+            direct: Specifies if only the direct values of the data property pe should be retrieved (True), or if
+                    the values of sub properties of pe should be taken into account (False).
 
         Returns:
             A set of OWLLiterals containing literals such that for each literal l in the set, the set of reasoner
@@ -44,15 +46,17 @@ class OWLReasonerEx(OWLReasoner, metaclass=ABCMeta):
         """
         onto = self.get_root_ontology()
         for ind in onto.individuals_in_signature():
-            for lit in self.data_property_values(ind, pe):
+            for lit in self.data_property_values(ind, pe, direct):
                 yield lit
 
     # default
-    def ind_data_properties(self, ind: OWLNamedIndividual) -> Iterable[OWLDataProperty]:
+    def ind_data_properties(self, ind: OWLNamedIndividual, direct: bool = True) -> Iterable[OWLDataProperty]:
         """Gets all data properties for the given individual that appear in the knowledge base.
 
         Args:
             ind: The named individual whose data properties are to be retrieved
+            direct: Specifies if the direct data properties should be retrieved (True), or if all
+                data properties should be retrieved (False), so that sub properties are taken into account.
 
         Returns:
             All data properties pe where the set of reasoner axioms entails DataPropertyAssertion(pe ind l)
@@ -61,17 +65,19 @@ class OWLReasonerEx(OWLReasoner, metaclass=ABCMeta):
         onto = self.get_root_ontology()
         for dp in onto.data_properties_in_signature():
             try:
-                next(iter(self.data_property_values(ind, dp)))
+                next(iter(self.data_property_values(ind, dp, direct)))
                 yield dp
             except StopIteration:
                 pass
 
     # default
-    def ind_object_properties(self, ind: OWLNamedIndividual) -> Iterable[OWLObjectProperty]:
+    def ind_object_properties(self, ind: OWLNamedIndividual, direct: bool = True) -> Iterable[OWLObjectProperty]:
         """Gets all object properties for the given individual that appear in the knowledge base.
 
         Args:
             ind: The named individual whose object properties are to be retrieved
+            direct: Specifies if the direct object properties should be retrieved (True), or if all
+                object properties should be retrieved (False), so that sub properties are taken into account.
 
         Returns:
             All data properties pe where the set of reasoner axioms entails ObjectPropertyAssertion(pe ind ind2)
@@ -80,7 +86,7 @@ class OWLReasonerEx(OWLReasoner, metaclass=ABCMeta):
         onto = self.get_root_ontology()
         for op in onto.object_properties_in_signature():
             try:
-                next(iter(self.object_property_values(ind, op)))
+                next(iter(self.object_property_values(ind, op, direct)))
                 yield op
             except StopIteration:
                 pass
