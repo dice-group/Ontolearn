@@ -2,11 +2,8 @@
 
 Ontolearn is an open-source software library for explainable structured machine learning in Python.
 
-- [Installation](#installation)
 
-# Installation
-
-### Installation from source
+### Installation
 
 ```shell
 git clone https://github.com/dice-group/Ontolearn.git
@@ -20,15 +17,12 @@ python -m pytest tests # Partial test with pytest
 tox  # full test with tox
 ```
 
-### Installation via pip
-
+#### Installation via pip
 ```shell
 pip install ontolearn  # currently it is only a place holder https://pypi.org/project/ontolearn/
 ```
-## Usage
-See the [manual](https://ontolearn-docs-dice-group.netlify.app/),
-tests and examples folder for details.
 
+### Examples
 ```python
 from ontolearn.concept_learner import CELOE
 from ontolearn.model_adapter import ModelAdapter
@@ -90,19 +84,26 @@ tox -e build
 tox -e docs
 ```
 
-
-
-
-## Contribution
-Feel free to create a pull request
-
-### Simple Linting
-
-Run
-```shell
-tox -e lint --
+## How to cite
+Currently, we are working on our manuscript describing our framework. 
+If you really like our work and want to cite it now, feel free to chose one :) 
 ```
-
-This will run [flake8](https://flake8.pycqa.org/) on the source code.
-
+# Evolearner
+@inproceedings{heindorf2022evolearner,
+  title={Evolearner: Learning description logics with evolutionary algorithms},
+  author={Heindorf, Stefan and Bl{\"u}baum, Lukas and D{\"u}sterhus, Nick and Werner, Till and Golani, Varun Nandkumar and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+  booktitle={Proceedings of the ACM Web Conference 2022},
+  pages={818--828},
+  year={2022}
+}
+# CLIP
+@inproceedings{kouagou2022learning,
+  title={Learning Concept Lengths Accelerates Concept Learning in ALC},
+  author={Kouagou, N and Heindorf, Stefan and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+  booktitle={European Semantic Web Conference},
+  pages={236--252},
+  year={2022},
+  organization={Springer}
+}
+```
 For any further questions, please contact:  ```onto-learn@lists.uni-paderborn.de```
