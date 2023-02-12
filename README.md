@@ -2,10 +2,10 @@
 
 *Ontolearn* is an open-source software library for explainable structured machine learning in Python.
 It contains the following ready-to-apply algorithms that learn OWL class expressions from positive and negative examples:
-- **CELOE** -> Concept Learning for Refinement Operators in ALC
-- **Drill** -> Deep Reinforcement Learning for Refinement Operators in ALC
-- **EvoLearner** -> an evolutionary approach to learn concepts in ALCQ(D)
-- **OCEL** -> a limited version of CELOE
+- **EvoLearner<sup>1</sup>** &rarr; An evolutionary approach to learn concepts in ALCQ(D)
+- **Drill** &rarr; Deep Reinforcement Learning for Refinement Operators in ALC
+- **CELOE** &rarr; Concept Learning for Refinement Operators in ALC
+- **OCEL** &rarr; A limited version of CELOE
 
 You can find more details about *Ontolearn* and these algorithms and their variations in the [documentation](https://ontolearn-docs-dice-group.netlify.app/index.html).
 
@@ -13,6 +13,7 @@ Quick naviagtion:
 - [Installation](#installation)
 - [Usage](#usage)
 - [Contribution](#contribution)
+- [Relevant Papers](#relevant-papers)
 # Installation
 
 ### Installation from source
@@ -33,12 +34,12 @@ For more detailed instructions please refer to the [installation guide](https://
 ### Installation via pip
 
 ```shell
-pip install ontolearn  # currently it is only a place holder https://pypi.org/project/ontolearn/
+pip install ontolearn  # more on https://pypi.org/project/ontolearn/
 ```
-## Usage
+# Usage
 
-In the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder you can find examples on how to use
-the learning algorithms and more. Also in the [tests](https://github.com/dice-group/Ontolearn/tree/develop/tests) folder we have added some test cases.
+In the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder, you can find examples on how to use
+the learning algorithms. Also in the [tests](https://github.com/dice-group/Ontolearn/tree/develop/tests) folder we have added some test cases.
 
 For more detailed instructions we suggest to follow the [guides](https://ontolearn-docs-dice-group.netlify.app/usage/03_algorithm.html) in the documentation.
 
@@ -63,7 +64,7 @@ negative_examples = {OWLNamedIndividual(IRI.create(NS, 'heinz')),
 # Only the class of the learning algorithm is specified
 model = ModelAdapter(learner_type=CELOE,
                      reasoner_factory=ClosedWorld_ReasonerFactory,
-                     path="KGs/father.owl")
+                     path="../KGs/father.owl")
 
 model.fit(pos=positive_examples,
           neg=negative_examples)
@@ -73,6 +74,12 @@ dlsr = DLSyntaxObjectRenderer()
 for desc in model.best_hypotheses(1):
     print('The result:', dlsr.render(desc.concept), 'has quality', desc.quality)
 ```
+The goal in this example is to learn a class expression for the concept "father". 
+The output is as follows:
+```
+The result: (¬female) ⊓ (∃ hasChild.⊤) has quality 1.0
+```
+
 ### Download external files (.link files)
 
 Some resources like pre-calculated embeddings or `pre_trained_agents`
@@ -93,13 +100,16 @@ and use the following command.
 ```
 
 ### Building (sdist and bdist_wheel)
+You can use <code>tox</code> to build sdist and bdist_wheel packages for Ontolearn.
+- "sdist" is short for "source distribution" and is useful for distribution of packages that will be installed from source.
+- "bdist_wheel" is short for "built distribution wheel" and is useful for distributing packages that include large amounts of compiled code, as well as for distributing packages that have complex dependencies.
 
+To build and compile the necessary components of Ontolearn, use:
 ```shell
 tox -e build
 ```
 
-#### Building the docs
-
+To automatically build and test the documentation of Ontolearn, use:
 ```shell
 tox -e docs
 ```
@@ -107,16 +117,38 @@ tox -e docs
 
 
 
-## Contribution
+# Contribution
 Feel free to create a pull request
 
 ### Simple Linting
 
-Run
+Using the following command will run the linting tool [flake8](https://flake8.pycqa.org/) on the source code.
 ```shell
 tox -e lint --
 ```
 
-This will run [flake8](https://flake8.pycqa.org/) on the source code.
-
 For any further questions, please contact:  ```onto-learn@lists.uni-paderborn.de```
+
+# Relevant papers
+
+<sup>1</sup> Stefan Heindorf, Lukas Blübaum, Nick Düsterhus, Till Werner, Varun Nandkumar Golani, Caglar Demir, and Axel-Cyrille Ngonga Ngomo. 2022. EvoLearner: Learning Description Logics with Evolutionary Algorithms. In Proceedings of the ACM Web Conference 2022 (WWW '22). Association for Computing Machinery, New York, NY, USA, 818–828. https://doi.org/10.1145/3485447.3511925
+
+### Citing
+If you find **EvoLearner** useful in your research, please consider citing the paper:
+
+```
+@inproceedings{Heindorf2022EvoLearner,
+  author    = {Stefan Heindorf and
+               Lukas Bl{\"{u}}baum and
+               Nick D{\"{u}}sterhus and
+               Till Werner and
+               Varun Nandkumar Golani and
+               Caglar Demir and
+               Axel{-}Cyrille Ngonga Ngomo},
+  title     = {EvoLearner: Learning Description Logics with Evolutionary Algorithms},
+  booktitle = {{WWW}},
+  pages     = {818--828},
+  publisher = {{ACM}},
+  year      = {2022}
+}
+```
