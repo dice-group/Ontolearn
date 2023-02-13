@@ -498,55 +498,68 @@ class ConceptGenerator:
             if type_ in all_types or type_ == OWLThing:
                 yield type_
 
-    def get_object_properties_for_ind(self, ind: OWLNamedIndividual) -> Iterable[OWLObjectProperty]:
+    def get_object_properties_for_ind(self, ind: OWLNamedIndividual, direct: bool = True) \
+            -> Iterable[OWLObjectProperty]:
         """Get the object properties for the given individual
 
         Args:
             ind: individual
+            direct: Whether only direct properties should be considered (True), or if also
+                    indirect properties should be considered (False). Indirect properties
+                    would be super properties super_p of properties p with ObjectPropertyAssertion(p ind obj)
 
         Returns:
             object properties
         """
         properties = set(self.get_object_properties())
-        yield from (pe for pe in self._reasoner.ind_object_properties(ind) if pe in properties)
+        yield from (pe for pe in self._reasoner.ind_object_properties(ind, direct) if pe in properties)
 
-    def get_data_properties_for_ind(self, ind: OWLNamedIndividual) -> Iterable[OWLDataProperty]:
+    def get_data_properties_for_ind(self, ind: OWLNamedIndividual, direct: bool = True) -> Iterable[OWLDataProperty]:
         """Get the data properties for the given individual
 
         Args:
             ind: individual
+            direct: Whether only direct properties should be considered (True), or if also
+                    indirect properties should be considered (False). Indirect properties
+                    would be super properties super_p of properties p with ObjectPropertyAssertion(p ind obj)
 
         Returns:
             data properties
         """
         properties = set(self.get_data_properties())
-        yield from (pe for pe in self._reasoner.ind_data_properties(ind) if pe in properties)
+        yield from (pe for pe in self._reasoner.ind_data_properties(ind, direct) if pe in properties)
 
-    def get_object_property_values(self, ind: OWLNamedIndividual, property_: OWLObjectPropertyExpression) \
-            -> Iterable[OWLNamedIndividual]:
+    def get_object_property_values(self, ind: OWLNamedIndividual,
+                                   property_: OWLObjectPropertyExpression,
+                                   direct: bool = True) -> Iterable[OWLNamedIndividual]:
         """Get the object property values for the given individual and property
 
         Args:
             ind: individual
             property: object property
+            direct: Whether only the property property_ should be considered (True), or if also
+                    the values of sub properties of property_ should be considered (False)
 
         Returns:
             individuals
         """
-        yield from self._reasoner.object_property_values(ind, property_)
+        yield from self._reasoner.object_property_values(ind, property_, direct)
 
-    def get_data_property_values(self, ind: OWLNamedIndividual, property_: OWLDataPropertyExpression) \
-            -> Iterable[OWLLiteral]:
+    def get_data_property_values(self, ind: OWLNamedIndividual,
+                                 property_: OWLDataPropertyExpression,
+                                 direct: bool = True) -> Iterable[OWLLiteral]:
         """Get the data property values for the given individual and property
 
         Args:
             ind: individual
             property: data property
+            direct: Whether only the property property_ should be considered (True), or if also
+                    the values of sub properties of property_ should be considered (False)
 
         Returns:
             literals
         """
-        yield from self._reasoner.data_property_values(ind, property_)
+        yield from self._reasoner.data_property_values(ind, property_, direct)
 
     # noinspection PyMethodMayBeStatic
     def existential_restriction(self, filler: OWLClassExpression, property: OWLObjectPropertyExpression) \

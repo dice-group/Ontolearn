@@ -5,12 +5,14 @@ from owlready2.prop import DataProperty
 from pandas import Timedelta
 
 from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.model import DurationOWLDatatype, OWLObjectOneOf, OWLObjectProperty, OWLNamedIndividual, \
+from owlapy.model import OWLObjectInverseOf, OWLObjectOneOf, OWLObjectProperty, OWLNamedIndividual, \
     OWLObjectSomeValuesFrom, OWLThing, OWLObjectComplementOf, IRI, OWLObjectAllValuesFrom, OWLNothing, \
     OWLObjectHasValue, DoubleOWLDatatype, OWLClass, OWLDataAllValuesFrom, OWLDataComplementOf, \
     OWLDataHasValue, OWLDataIntersectionOf, OWLDataOneOf, OWLDataProperty, OWLDataSomeValuesFrom, \
     OWLDataUnionOf, OWLLiteral, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectMinCardinality, \
-    OWLObjectIntersectionOf
+    OWLObjectIntersectionOf, OWLSubDataPropertyOfAxiom, OWLSubObjectPropertyOfAxiom, OWLInverseObjectPropertiesAxiom, \
+    DurationOWLDatatype
+
 from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, OWLDatatypeMinMaxInclusiveRestriction, \
     OWLDatatypeMinMaxExclusiveRestriction, OWLDatatypeMaxExclusiveRestriction, OWLDatatypeMaxInclusiveRestriction
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
@@ -307,6 +309,104 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
         inst = frozenset(reasoner.instances(OWLDataSomeValuesFrom(property=age_, filler=filler)))
         target_inst = frozenset({anna, martin})
         self.assertEqual(inst, target_inst)
+
+    def test_sub_property_inclusion(self):
+        ns = "http://dl-learner.org/mutagenesis#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://KGs/Mutagenesis/mutagenesis.owl"))
+
+        carbon_22 = OWLClass(IRI(ns, 'Carbon-22'))
+        compound = OWLClass(IRI(ns, 'Compound'))
+        benzene = OWLClass(IRI(ns, 'Benzene'))
+        has_structure = OWLObjectProperty(IRI(ns, 'hasStructure'))
+        super_has_structure = OWLObjectProperty(IRI(ns, 'superHasStucture'))
+        charge = OWLDataProperty(IRI(ns, 'charge'))
+        super_charge = OWLDataProperty(IRI.create(ns, 'super_charge'))
+        mgr.add_axiom(onto, OWLSubObjectPropertyOfAxiom(has_structure, super_has_structure))
+        mgr.add_axiom(onto, OWLSubDataPropertyOfAxiom(charge, super_charge))
+
+        # sub_property = True
+        base_reasoner = OWLReasoner_Owlready2(onto)
+        reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner, sub_properties=True)
+
+        # object property
+        ce = OWLObjectIntersectionOf([compound, OWLObjectSomeValuesFrom(super_has_structure, benzene)])
+        individuals = frozenset(reasoner.instances(ce))
+        self.assertEqual(len(individuals), 222)
+
+        # data property
+        ce = OWLObjectIntersectionOf([carbon_22, OWLDataHasValue(super_charge, OWLLiteral(-0.128))])
+        individuals = frozenset(reasoner.instances(ce))
+        self.assertEqual(len(individuals), 75)
+
+        # sub_property = False
+        base_reasoner = OWLReasoner_Owlready2(onto)
+        reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner, sub_properties=False)
+
+        # object property
+        ce = OWLObjectIntersectionOf([compound, OWLObjectSomeValuesFrom(super_has_structure, benzene)])
+        individuals = frozenset(reasoner.instances(ce))
+        self.assertEqual(len(individuals), 0)
+
+        # data property
+        ce = OWLObjectIntersectionOf([carbon_22, OWLDataHasValue(super_charge, OWLLiteral(-0.128))])
+        individuals = frozenset(reasoner.instances(ce))
+        self.assertEqual(len(individuals), 0)
+
+        mgr.remove_axiom(onto, OWLSubObjectPropertyOfAxiom(has_structure, super_has_structure))
+        mgr.remove_axiom(onto, OWLSubDataPropertyOfAxiom(charge, super_charge))
+
+    def test_inverse(self):
+        ns = "http://example.com/father#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
+
+        has_child = OWLObjectProperty(IRI(ns, 'hasChild'))
+        has_child_inverse = OWLObjectProperty(IRI.create(ns, 'hasChild_inverse'))
+        mgr.add_axiom(onto, OWLInverseObjectPropertiesAxiom(has_child, has_child_inverse))
+
+        parents = {OWLNamedIndividual(IRI.create(ns, 'anna')),
+                   OWLNamedIndividual(IRI.create(ns, 'martin')),
+                   OWLNamedIndividual(IRI.create(ns, 'stefan')),
+                   OWLNamedIndividual(IRI.create(ns, 'markus'))}
+
+        base_reasoner = OWLReasoner_Owlready2(onto)
+        reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner, sub_properties=False)
+
+        expr = OWLObjectSomeValuesFrom(has_child, OWLThing)
+        expr_inverse = OWLObjectSomeValuesFrom(OWLObjectInverseOf(has_child_inverse), OWLThing)
+        parents_expr = frozenset(reasoner.instances(expr))
+        parents_expr_inverse = frozenset(reasoner.instances(expr_inverse))
+        self.assertEqual(parents_expr, parents)
+        self.assertEqual(parents_expr_inverse, parents)
+        # Removal not needed, just for completeness
+        mgr.remove_axiom(onto, OWLInverseObjectPropertiesAxiom(has_child, has_child_inverse))
+
+        # test sub properties
+        super_has_child = OWLObjectProperty(IRI(ns, 'super_hasChild'))
+        mgr.add_axiom(onto, OWLSubObjectPropertyOfAxiom(has_child, super_has_child))
+        super_has_child_inverse = OWLObjectProperty(IRI(ns, 'super_hasChild_inverse'))
+        mgr.add_axiom(onto, OWLInverseObjectPropertiesAxiom(super_has_child, super_has_child_inverse))
+
+        # False (sub properties not taken into account)
+        expr = OWLObjectSomeValuesFrom(super_has_child, OWLThing)
+        expr_inverse = OWLObjectSomeValuesFrom(OWLObjectInverseOf(super_has_child_inverse), OWLThing)
+        parents_expr = frozenset(reasoner.instances(expr))
+        parents_expr_inverse = frozenset(reasoner.instances(expr_inverse))
+        self.assertEqual(parents_expr, frozenset())
+        self.assertEqual(parents_expr_inverse, frozenset())
+
+        # True (sub properties taken into account)
+        reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner, sub_properties=True)
+        expr = OWLObjectSomeValuesFrom(super_has_child, OWLThing)
+        expr_inverse = OWLObjectSomeValuesFrom(OWLObjectInverseOf(super_has_child_inverse), OWLThing)
+        parents_expr = frozenset(reasoner.instances(expr))
+        parents_expr_inverse = frozenset(reasoner.instances(expr_inverse))
+        self.assertEqual(parents_expr, parents)
+        self.assertEqual(parents_expr_inverse, parents)
+
+        mgr.remove_axiom(onto, OWLSubObjectPropertyOfAxiom(has_child, super_has_child))
+        mgr.remove_axiom(onto, OWLInverseObjectPropertiesAxiom(super_has_child, super_has_child_inverse))
 
 
 if __name__ == '__main__':

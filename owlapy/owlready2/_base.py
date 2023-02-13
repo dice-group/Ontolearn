@@ -156,7 +156,7 @@ class OWLOntology_Owlready2(OWLOntology):
             yield OWLDataPropertyDomainAxiom(pe, OWLThing)
         else:
             for dom in domains:
-                if isinstance(dom, owlready2.ThingClass) or isinstance(dom, owlready2.ClassConstruct):
+                if isinstance(dom, (owlready2.ThingClass, owlready2.ClassConstruct)):
                     yield OWLDataPropertyDomainAxiom(pe, _parse_concept_to_owlapy(dom))
                 else:
                     logger.warning("Construct %s not implemented at %s", dom, pe)
@@ -185,7 +185,7 @@ class OWLOntology_Owlready2(OWLOntology):
             yield OWLObjectPropertyDomainAxiom(pe, OWLThing)
         else:
             for dom in domains:
-                if isinstance(dom, owlready2.ThingClass) or isinstance(dom, owlready2.ClassConstruct):
+                if isinstance(dom, (owlready2.ThingClass, owlready2.ClassConstruct)):
                     yield OWLObjectPropertyDomainAxiom(pe, _parse_concept_to_owlapy(dom))
                 else:
                     logger.warning("Construct %s not implemented at %s", dom, pe)
@@ -198,7 +198,7 @@ class OWLOntology_Owlready2(OWLOntology):
             yield OWLObjectPropertyRangeAxiom(pe, OWLThing)
         else:
             for rng in ranges:
-                if isinstance(rng, owlready2.ThingClass) or isinstance(rng, owlready2.ClassConstruct):
+                if isinstance(rng, (owlready2.ThingClass, owlready2.ClassConstruct)):
                     yield OWLObjectPropertyRangeAxiom(pe, _parse_concept_to_owlapy(rng))
                 else:
                     logger.warning("Construct %s not implemented at %s", rng, pe)
@@ -252,24 +252,21 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         if not direct:
             yield from super_ranges
 
-    def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
+    def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClassExpression]:
         """Return the named classes that are directly equivalent to the class expression"""
         if isinstance(ce, OWLClass):
             c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
-            for c in c_x.equivalent_to:
-                if isinstance(c, owlready2.ThingClass):
-                    yield OWLClass(IRI.create(c.iri))
-                # Anonymous classes are ignored
+            yield from (_parse_concept_to_owlapy(eq_x) for eq_x in c_x.equivalent_to
+                        if isinstance(eq_x, (owlready2.ThingClass, owlready2.ClassConstruct)))
         else:
             raise NotImplementedError("equivalent_classes for complex class expressions not implemented", ce)
 
-    def disjoint_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
+    def disjoint_classes(self, ce: OWLClassExpression) -> Iterable[OWLClassExpression]:
         if isinstance(ce, OWLClass):
             c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
-            for c in chain.from_iterable(map(lambda d: d.entities, c_x.disjoints())):
-                if isinstance(c, owlready2.ThingClass) and c != c_x:
-                    yield OWLClass(IRI.create(c.iri))
-                # Anonymous classes are ignored
+            yield from (_parse_concept_to_owlapy(d_x)
+                        for d_x in chain.from_iterable(map(lambda d: d.entities, c_x.disjoints()))
+                        if isinstance(d_x, (owlready2.ThingClass, owlready2.ClassConstruct)) and d_x != c_x)
         else:
             raise NotImplementedError("disjoint_classes for complex class expressions not implemented", ce)
 
@@ -284,29 +281,47 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         yield from (OWLNamedIndividual(IRI.create(d_i.iri)) for d_i in i.equivalent_to
                     if isinstance(d_i, owlready2.Thing))
 
-    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
+    def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty, direct: bool = True) \
+            -> Iterable[OWLLiteral]:
         i: owlready2.Thing = self._world[ind.get_iri().as_str()]
         p: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
-        for val in p._get_values_for_individual(i):
+        retrieval_func = p._get_values_for_individual if direct else p._get_indirect_values_for_individual
+        for val in retrieval_func(i):
             yield OWLLiteral(val)
 
-    def all_data_property_values(self, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
+    def all_data_property_values(self, pe: OWLDataProperty, direct: bool = True) -> Iterable[OWLLiteral]:
         p: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
-        for _, val in p.get_relations():
+        relations = p.get_relations()
+        if not direct:
+            indirect_relations = chain.from_iterable(
+                map(lambda x: self._world[x.get_iri().as_str()].get_relations(),
+                    self.sub_data_properties(pe, direct=False)))
+            relations = chain(relations, indirect_relations)
+        for _, val in relations:
             yield OWLLiteral(val)
 
-    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression) \
+    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression, direct: bool = True) \
             -> Iterable[OWLNamedIndividual]:
         if isinstance(pe, OWLObjectProperty):
             i: owlready2.Thing = self._world[ind.get_iri().as_str()]
             p: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
-            for val in p._get_values_for_individual(i):
+            retieval_func = p._get_values_for_individual if direct else p._get_indirect_values_for_individual
+            for val in retieval_func(i):
                 yield OWLNamedIndividual(IRI.create(val.iri))
         elif isinstance(pe, OWLObjectInverseOf):
-            i: owlready2.Thing = self._world[ind.get_iri().as_str()]
             p: owlready2.ObjectPropertyClass = self._world[pe.get_named_property().get_iri().as_str()]
-            for val in p._get_inverse_values_for_individual(i):
-                yield OWLNamedIndividual(IRI.create(val.iri))
+            inverse_p = p.inverse_property
+            # If the inverse property is explicitly defined we can take shortcut
+            if inverse_p is not None:
+                yield from self.object_property_values(ind, OWLObjectProperty(IRI.create(inverse_p.iri)), direct)
+            else:
+                if not direct:
+                    raise NotImplementedError('Indirect values of inverse properties are only implemented if the '
+                                              'inverse property is explicitly defined in the ontology.'
+                                              f'Property: {pe}')
+                i: owlready2.Thing = self._world[ind.get_iri().as_str()]
+                for val in p._get_inverse_values_for_individual(i):
+                    yield OWLNamedIndividual(IRI.create(val.iri))
         else:
             raise NotImplementedError(pe)
 
@@ -433,9 +448,9 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             for sp in p_x.subclasses(world=self._world):
                 if isinstance(sp, owlready2.DataPropertyClass):
                     yield OWLDataProperty(IRI.create(sp.iri))
-            else:
-                seen_set = set()
-                yield from self._sub_data_properties_recursive(dp, seen_set)
+        else:
+            seen_set = set()
+            yield from self._sub_data_properties_recursive(dp, seen_set)
 
     def _sub_object_properties_recursive(self, op: OWLObjectProperty, seen_set: Set) -> Iterable[OWLObjectProperty]:
         p_x: owlready2.ObjectPropertyClass = self._world[op.get_iri().as_str()]
@@ -459,8 +474,17 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             else:
                 seen_set = set()
                 yield from self._sub_object_properties_recursive(op, seen_set)
+        elif isinstance(op, OWLObjectInverseOf):
+            p: owlready2.ObjectPropertyClass = self._world[op.get_named_property().get_iri().as_str()]
+            inverse_p = p.inverse_property
+            if inverse_p is not None:
+                yield from self.sub_object_properties(OWLObjectProperty(IRI.create(inverse_p.iri)), direct)
+            else:
+                raise NotImplementedError('Sub properties of inverse properties are only implemented if the '
+                                          'inverse property is explicitly defined in the ontology. '
+                                          f'Property: {op}')
         else:
-            raise NotImplementedError("sub properties of inverse properties not yet implemented", op)
+            raise NotImplementedError(op)
 
     def types(self, ind: OWLNamedIndividual, direct: bool = False) -> Iterable[OWLClass]:
         i: owlready2.Thing = self._world[ind.get_iri().as_str()]
@@ -477,7 +501,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
 
     def _sync_reasoner(self, other_reasoner: BaseReasoner_Owlready2 = None,
                        infer_property_values: bool = True,
-                       infer_data_property_values: bool = True) -> None:
+                       infer_data_property_values: bool = True, debug: bool = False) -> None:
         """Call Owlready2's sync_reasoner method, which spawns a Java process on a temp file to infer more
 
         Args:
@@ -488,11 +512,12 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         assert other_reasoner is None or isinstance(other_reasoner, BaseReasoner_Owlready2)
         with self.get_root_ontology()._onto:
             if other_reasoner == BaseReasoner_Owlready2.HERMIT:
-                owlready2.sync_reasoner_hermit(self._world, infer_property_values=infer_property_values)
+                owlready2.sync_reasoner_hermit(self._world, infer_property_values=infer_property_values, debug=debug)
             else:
                 owlready2.sync_reasoner_pellet(self._world,
                                                infer_property_values=infer_property_values,
-                                               infer_data_property_values=infer_data_property_values)
+                                               infer_data_property_values=infer_data_property_values,
+                                               debug=debug)
 
     def get_root_ontology(self) -> OWLOntology:
         return self._ontology
