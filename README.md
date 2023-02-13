@@ -2,7 +2,7 @@
 
 *Ontolearn* is an open-source software library for explainable structured machine learning in Python.
 It contains the following ready-to-apply algorithms that learn OWL class expressions from positive and negative examples:
-- **EvoLearner<sup>1</sup>** &rarr; An evolutionary approach to learn concepts in ALCQ(D)
+- **EvoLearner** &rarr; An evolutionary approach to learn concepts in ALCQ(D)
 - **Drill** &rarr; Deep Reinforcement Learning for Refinement Operators in ALC
 - **CELOE** &rarr; Concept Learning for Refinement Operators in ALC
 - **OCEL** &rarr; A limited version of CELOE
@@ -12,11 +12,9 @@ You can find more details about *Ontolearn* and these algorithms and their varia
 Quick naviagtion: 
 - [Installation](#installation)
 - [Usage](#usage)
-- [Contribution](#contribution)
 - [Relevant Papers](#relevant-papers)
-# Installation
+## Installation
 
-### Installation from source
 
 Note: Make sure to set up a virtual python environment like [Anaconda](https://www.anaconda.com/) before continuing with the installation.
 ```shell
@@ -31,12 +29,12 @@ python -m pytest tests # Partial test with pytest
 tox  # full test with tox
 ```
 For more detailed instructions please refer to the [installation guide](https://ontolearn-docs-dice-group.netlify.app/usage/installation.html) in the documentation.
-### Installation via pip
+#### Installation via pip
 
 ```shell
 pip install ontolearn  # more on https://pypi.org/project/ontolearn/
 ```
-# Usage
+## Usage
 
 In the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder, you can find examples on how to use
 the learning algorithms. Also in the [tests](https://github.com/dice-group/Ontolearn/tree/develop/tests) folder we have added some test cases.
@@ -79,12 +77,14 @@ The output is as follows:
 ```
 The result: (¬female) ⊓ (∃ hasChild.⊤) has quality 1.0
 ```
+----------------------------------------------------------------------------
 
-### Download external files (.link files)
+#### Download external files (.link files)
 
 Some resources like pre-calculated embeddings or `pre_trained_agents`
 are not included in the Git repository directly. Use the following
 command to download them from our data server.
+
 
 ```shell
 ./big_gitext/download_big.sh examples/pre_trained_agents.zip.link
@@ -98,8 +98,8 @@ and use the following command.
 ```shell
 ./big_gitext/upload_big.sh pre_trained_agents.zip
 ```
-
-### Building (sdist and bdist_wheel)
+----------------------------------------------------------------------------
+#### Building (sdist and bdist_wheel)
 You can use <code>tox</code> to build sdist and bdist_wheel packages for Ontolearn.
 - "sdist" is short for "source distribution" and is useful for distribution of packages that will be installed from source.
 - "bdist_wheel" is short for "built distribution wheel" and is useful for distributing packages that include large amounts of compiled code, as well as for distributing packages that have complex dependencies.
@@ -114,41 +114,46 @@ To automatically build and test the documentation of Ontolearn, use:
 tox -e docs
 ```
 
+----------------------------------------------------------------------------
 
-
-
-# Contribution
-Feel free to create a pull request
-
-### Simple Linting
+#### Simple Linting
 
 Using the following command will run the linting tool [flake8](https://flake8.pycqa.org/) on the source code.
 ```shell
 tox -e lint --
 ```
+----------------------------------------------------------------------------
 
-For any further questions, please contact:  ```onto-learn@lists.uni-paderborn.de```
+#### Contribution
+Feel free to create a pull request!
 
-# Relevant papers
 
-<sup>1</sup> Stefan Heindorf, Lukas Blübaum, Nick Düsterhus, Till Werner, Varun Nandkumar Golani, Caglar Demir, and Axel-Cyrille Ngonga Ngomo. 2022. EvoLearner: Learning Description Logics with Evolutionary Algorithms. In Proceedings of the ACM Web Conference 2022 (WWW '22). Association for Computing Machinery, New York, NY, USA, 818–828. https://doi.org/10.1145/3485447.3511925
+## Relevant papers
 
+- [Evolearner](https://doi.org/10.1145/3485447.3511925): Learning description logics with evolutionary algorithms.
+- [CLIP](https://arxiv.org/abs/2107.04911): Learning Concept Lengths Accelerates Concept Learning in ALC.
 ### Citing
-If you find **EvoLearner** useful in your research, please consider citing the paper:
-
+Currently, we are working on our manuscript describing our framework. 
+If you find our work useful in your research, please consider citing the respective paper:
 ```
-@inproceedings{Heindorf2022EvoLearner,
-  author    = {Stefan Heindorf and
-               Lukas Bl{\"{u}}baum and
-               Nick D{\"{u}}sterhus and
-               Till Werner and
-               Varun Nandkumar Golani and
-               Caglar Demir and
-               Axel{-}Cyrille Ngonga Ngomo},
-  title     = {EvoLearner: Learning Description Logics with Evolutionary Algorithms},
-  booktitle = {{WWW}},
-  pages     = {818--828},
-  publisher = {{ACM}},
-  year      = {2022}
+# EvoLearner
+@inproceedings{heindorf2022evolearner,
+  title={Evolearner: Learning description logics with evolutionary algorithms},
+  author={Heindorf, Stefan and Bl{\"u}baum, Lukas and D{\"u}sterhus, Nick and Werner, Till and Golani, Varun Nandkumar and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+  booktitle={Proceedings of the ACM Web Conference 2022},
+  pages={818--828},
+  year={2022}
+}
+
+# CLIP
+@inproceedings{kouagou2022learning,
+  title={Learning Concept Lengths Accelerates Concept Learning in ALC},
+  author={Kouagou, N and Heindorf, Stefan and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+  booktitle={European Semantic Web Conference},
+  pages={236--252},
+  year={2022},
+  organization={Springer}
 }
 ```
+
+For any further questions, please contact:  ```onto-learn@lists.uni-paderborn.de```
