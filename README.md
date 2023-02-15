@@ -2,14 +2,17 @@
 
 *Ontolearn* is an open-source software library for explainable structured machine learning in Python.
 It contains the following ready-to-apply algorithms that learn OWL class expressions from positive and negative examples:
-- **EvoLearner** &rarr; An evolutionary approach to learn concepts in ALCQ(D)
-- **Drill** &rarr; Deep Reinforcement Learning for Refinement Operators in ALC
+- **EvoLearner** &rarr; [An evolutionary approach to learn concepts in ALCQ(D)](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
+- **Drill** &rarr; [Deep Reinforcement Learning for Refinement Operators in ALC](https://arxiv.org/pdf/2106.15373.pdf)
 - **CELOE** &rarr; Concept Learning for Refinement Operators in ALC
 - **OCEL** &rarr; A limited version of CELOE
+- **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
+- **NCES** &rarr; (soon) [Neural Class Expression Synthesis](https://arxiv.org/pdf/2111.08486.pdf)
+- **NERO** &rarr; (soon) [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://github.com/dice-group/Nero)
 
 You can find more details about *Ontolearn* and these algorithms and their variations in the [documentation](https://ontolearn-docs-dice-group.netlify.app/index.html).
 
-Quick naviagtion: 
+Quick navigation: 
 - [Installation](#installation)
 - [Usage](#usage)
 - [Relevant Papers](#relevant-papers)
