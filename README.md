@@ -1,10 +1,25 @@
 # Ontolearn
 
-Ontolearn is an open-source software library for explainable structured machine learning in Python.
+*Ontolearn* is an open-source software library for explainable structured machine learning in Python.
+It contains the following ready-to-apply algorithms that learn OWL class expressions from positive and negative examples:
+- **EvoLearner** &rarr; [An evolutionary approach to learn concepts in ALCQ(D)](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
+- **Drill** &rarr; [Deep Reinforcement Learning for Refinement Operators in ALC](https://arxiv.org/pdf/2106.15373.pdf)
+- **CELOE** &rarr; Concept Learning for Refinement Operators in ALC
+- **OCEL** &rarr; A limited version of CELOE
+- **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
+- **NCES** &rarr; (soon) [Neural Class Expression Synthesis](https://arxiv.org/pdf/2111.08486.pdf)
+- **NERO** &rarr; (soon) [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://github.com/dice-group/Nero)
+
+You can find more details about *Ontolearn* and these algorithms and their variations in the [documentation](https://ontolearn-docs-dice-group.netlify.app/index.html).
+
+Quick navigation: 
+- [Installation](#installation)
+- [Usage](#usage)
+- [Relevant Papers](#relevant-papers)
+## Installation
 
 
-### Installation
-
+Note: Make sure to set up a virtual python environment like [Anaconda](https://www.anaconda.com/) before continuing with the installation.
 ```shell
 git clone https://github.com/dice-group/Ontolearn.git
 cd Ontolearn
@@ -16,13 +31,20 @@ python -c "import ontolearn"
 python -m pytest tests # Partial test with pytest
 tox  # full test with tox
 ```
-
+For more detailed instructions please refer to the [installation guide](https://ontolearn-docs-dice-group.netlify.app/usage/installation.html) in the documentation.
 #### Installation via pip
-```shell
-pip install ontolearn  # currently it is only a place holder https://pypi.org/project/ontolearn/
-```
 
-### Examples
+```shell
+pip install ontolearn  # more on https://pypi.org/project/ontolearn/
+```
+## Usage
+
+In the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder, you can find examples on how to use
+the learning algorithms. Also in the [tests](https://github.com/dice-group/Ontolearn/tree/develop/tests) folder we have added some test cases.
+
+For more detailed instructions we suggest to follow the [guides](https://ontolearn-docs-dice-group.netlify.app/usage/03_algorithm.html) in the documentation.
+
+Below we give a simple example on using CELOE to learn class expressions for a small dataset.
 ```python
 from ontolearn.concept_learner import CELOE
 from ontolearn.model_adapter import ModelAdapter
@@ -53,11 +75,19 @@ dlsr = DLSyntaxObjectRenderer()
 for desc in model.best_hypotheses(1):
     print('The result:', dlsr.render(desc.concept), 'has quality', desc.quality)
 ```
-### Download external files (.link files)
+The goal in this example is to learn a class expression for the concept "father". 
+The output is as follows:
+```
+The result: (¬female) ⊓ (∃ hasChild.⊤) has quality 1.0
+```
+----------------------------------------------------------------------------
+
+#### Download external files (.link files)
 
 Some resources like pre-calculated embeddings or `pre_trained_agents`
 are not included in the Git repository directly. Use the following
 command to download them from our data server.
+
 
 ```shell
 ./big_gitext/download_big.sh examples/pre_trained_agents.zip.link
@@ -71,24 +101,45 @@ and use the following command.
 ```shell
 ./big_gitext/upload_big.sh pre_trained_agents.zip
 ```
+----------------------------------------------------------------------------
+#### Building (sdist and bdist_wheel)
+You can use <code>tox</code> to build sdist and bdist_wheel packages for Ontolearn.
+- "sdist" is short for "source distribution" and is useful for distribution of packages that will be installed from source.
+- "bdist_wheel" is short for "built distribution wheel" and is useful for distributing packages that include large amounts of compiled code, as well as for distributing packages that have complex dependencies.
 
-### Building (sdist and bdist_wheel)
-
+To build and compile the necessary components of Ontolearn, use:
 ```shell
 tox -e build
 ```
 
-#### Building the docs
-
+To automatically build and test the documentation of Ontolearn, use:
 ```shell
 tox -e docs
 ```
 
-## How to cite
-Currently, we are working on our manuscript describing our framework. 
-If you really like our work and want to cite it now, feel free to chose one :) 
+----------------------------------------------------------------------------
+
+#### Simple Linting
+
+Using the following command will run the linting tool [flake8](https://flake8.pycqa.org/) on the source code.
+```shell
+tox -e lint --
 ```
-# Evolearner
+----------------------------------------------------------------------------
+
+#### Contribution
+Feel free to create a pull request!
+
+
+## Relevant papers
+
+- [Evolearner](https://doi.org/10.1145/3485447.3511925): Learning description logics with evolutionary algorithms.
+- [CLIP](https://arxiv.org/abs/2107.04911): Learning Concept Lengths Accelerates Concept Learning in ALC.
+### Citing
+Currently, we are working on our manuscript describing our framework. 
+If you find our work useful in your research, please consider citing the respective paper:
+```
+# EvoLearner
 @inproceedings{heindorf2022evolearner,
   title={Evolearner: Learning description logics with evolutionary algorithms},
   author={Heindorf, Stefan and Bl{\"u}baum, Lukas and D{\"u}sterhus, Nick and Werner, Till and Golani, Varun Nandkumar and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
@@ -96,6 +147,7 @@ If you really like our work and want to cite it now, feel free to chose one :)
   pages={818--828},
   year={2022}
 }
+
 # CLIP
 @inproceedings{kouagou2022learning,
   title={Learning Concept Lengths Accelerates Concept Learning in ALC},
@@ -106,4 +158,5 @@ If you really like our work and want to cite it now, feel free to chose one :)
   organization={Springer}
 }
 ```
+
 For any further questions, please contact:  ```onto-learn@lists.uni-paderborn.de```
