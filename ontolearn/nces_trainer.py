@@ -108,6 +108,8 @@ class NCESTrainer:
     
     def train(self, train_dataloader, save_model=True, optimizer='Adam', record_runtime=True):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if isinstance(self.nces.model, list):
+            self.nces.model = copy.deepcopy(self.nces.model[0])
         model_size = self.show_num_learnable_params()
         if device.type == "cpu": print("Training on CPU, it may take long...")
         else: print("GPU available !")
@@ -116,7 +118,7 @@ class NCESTrainer:
         print()
         print("{} starts training... \n".format(self.nces.model.name))
         print("#"*50, "\n")
-        synthesizer = copy.deepcopy(self.nces.model)
+        synthesizer = copy.deepcopy(self.nces.model).train()
         desc = synthesizer.name
         if device.type == "cuda": synthesizer.cuda()
         opt = self.get_optimizer(synthesizer=synthesizer, optimizer=optimizer)
@@ -174,7 +176,7 @@ class NCESTrainer:
         if save_model:
             if not os.path.exists(self.storage_path+"/trained_models/"):
                 os.mkdir(self.storage_path+"/trained_models/")
-            torch.save(synthesizer, self.storage_path+"/trained_models/"+"model_"+desc+".pt")
+            torch.save(synthesizer, self.storage_path+"/trained_models/"+"trained_"+desc+".pt")
             print("{} saved".format(synthesizer.name))
         if not os.path.exists(self.storage_path+"/metrics/"):
             os.mkdir(self.storage_path+"/metrics/")
