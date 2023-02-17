@@ -1,6 +1,7 @@
 import torch
 from collections import deque
-
+import pandas as pd
+import random
 
 # @Todo CD:Could we combine PrepareBatchOfPrediction and PrepareBatchOfTraining?
 
@@ -130,3 +131,83 @@ class Experience:
         self.current_states.clear()
         self.next_states.clear()
         self.rewards.clear()
+
+        
+
+class BaseDataLoader:
+    
+    def __init__(self, vocab, inv_vocab):
+        
+        self.vocab = vocab
+        self.inv_vocab = inv_vocab
+        self.vocab_df = pd.DataFrame(self.vocab.values(), index=self.vocab.keys())
+        
+    @staticmethod
+    def decompose(concept_name: str) -> list:
+        list_ordered_pieces = []
+        i = 0
+        while i < len(concept_name):
+            concept = ''
+            while i < len(concept_name) and not concept_name[i] in ['(', ')', '⊔', '⊓', '∃', '∀', '¬', '.', ' ']:
+                concept += concept_name[i]
+                i += 1
+            if concept and i < len(concept_name):
+                list_ordered_pieces.extend([concept, concept_name[i]])
+            elif concept:
+                list_ordered_pieces.append(concept)
+            elif i < len(concept_name):
+                list_ordered_pieces.append(concept_name[i])
+            i += 1
+        return list_ordered_pieces
+    
+    def get_labels(self, target):
+        target = self.decompose(target)
+        labels = [self.vocab[atm] for atm in target]
+        return labels, len(target)
+    
+
+class NCESDataLoader(BaseDataLoader, torch.utils.data.Dataset):
+    
+    def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, max_length):
+        self.data_raw = data
+        self.embeddings = embeddings
+        self.max_length = max_length
+        super().__init__(vocab, inv_vocab)
+        self.shuffle_examples = shuffle_examples
+
+    def __len__(self):
+        return len(self.data_raw)
+    
+    def __getitem__(self, idx):
+        key, value = self.data_raw[idx]
+        pos = value['positive examples']
+        neg = value['negative examples']
+        if self.shuffle_examples:
+            random.shuffle(pos)
+            random.shuffle(neg)
+        assert '#' in pos[0] or '.' in pos[0], 'Namespace error, expected separator # or .'
+        datapoint_pos = torch.FloatTensor(self.embeddings.loc[pos].values)
+        datapoint_neg = torch.FloatTensor(self.embeddings.loc[neg].values)
+        labels, length = self.get_labels(key)
+        return datapoint_pos, datapoint_neg, torch.cat([torch.tensor(labels), self.vocab['PAD']*torch.ones(self.max_length-length)]).long()
+    
+class NCESDataLoaderInference(BaseDataLoader, torch.utils.data.Dataset):
+    
+    def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples):
+        self.data_raw = data
+        self.embeddings = embeddings
+        super().__init__(vocab, inv_vocab)
+        self.shuffle_examples = shuffle_examples
+
+    def __len__(self):
+        return len(self.data_raw)
+    
+    def __getitem__(self, idx):
+        _, pos, neg = self.data_raw[idx]
+        if self.shuffle_examples:
+            random.shuffle(pos)
+            random.shuffle(neg)
+        assert '#' in pos[0] or '.' in pos[0], 'Namespace error, expected separator # or .'
+        datapoint_pos = torch.FloatTensor(self.embeddings.loc[pos].values)
+        datapoint_neg = torch.FloatTensor(self.embeddings.loc[neg].values)
+        return datapoint_pos, datapoint_neg

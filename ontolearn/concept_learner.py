@@ -5,11 +5,12 @@ import time
 from collections import deque
 from contextlib import contextmanager
 from itertools import islice, chain
-from typing import Any, Callable, Dict, FrozenSet, Set, List, Tuple, Iterable, Optional, Generator, SupportsFloat
+from typing import Any, Callable, Dict, FrozenSet, Set, List, Tuple, Iterable, Optional, Generator, SupportsFloat, Union
 
 import numpy as np
 import torch
 from torch import nn
+from torch.utils.data import DataLoader
 from torch.functional import F
 from torch.nn.init import xavier_normal_
 from deap import gp, tools, base, creator
@@ -19,7 +20,7 @@ from ontolearn.abstracts import AbstractDrill, AbstractFitness, AbstractScorer, 
     AbstractHeuristic, EncodedPosNegLPStandardKind
 from ontolearn.base_concept_learner import BaseConceptLearner, RefinementBasedConceptLearner
 from ontolearn.core.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter, OperandSetTransform
-from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
+from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction, NCESDataLoader, NCESDataLoaderInference
 from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
 from ontolearn.ea_initialization import AbstractEAInitialization, EARandomInitialization, EARandomWalkInitialization
 from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVocabulary, Tree, escape, ind_to_string, \
@@ -34,10 +35,16 @@ from ontolearn.search import EvoLearnerNode, HeuristicOrderedNode, LBLNode, OENo
     QualityOrderedNode, RL_State, DRILLSearchTreePriorityQueue
 from ontolearn.utils import oplogging, create_experiment_folder
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter, EntropyValueSplitter
+from ontolearn.base_nces import BaseNCES
+from ontolearn.nces_architectures import LSTM, GRU, SetTransformer
+from ontolearn.nces_trainer import NCESTrainer, before_pad
+from ontolearn.nces_utils import SimpleSolution
 from owlapy.model import OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual
 from owlapy.render import DLSyntaxObjectRenderer
+from owlapy.parser import DLSyntaxParser
 from owlapy.util import OrderedOWLObject
 from sortedcontainers import SortedSet
+import os
 
 # pd.set_option('display.max_columns', 100)
 
@@ -503,7 +510,7 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
 
     def __init__(self, knowledge_base,
                  path_of_embeddings: str, refinement_operator: LengthBasedRefinement, quality_func: AbstractScorer,
-                 reward_func=None, batch_size=None, num_workers=None, pretrained_model_path=None,
+                 reward_func=None, batch_size=None, num_workers=None, pretrained_model_name=None,
                  iter_bound=None, max_num_of_concepts_tested=None, verbose=None, terminate_on_goal=None,
                  max_len_replay_memory=None, epsilon_decay=None, epsilon_min=None, num_epochs_per_replay=None,
                  num_episodes_per_replay=None, learning_rate=None, max_runtime=None, num_of_sequential_actions=None,
@@ -530,8 +537,8 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
         if self.learning_rate:
             self.optimizer = torch.optim.Adam(self.heuristic_func.net.parameters(), lr=self.learning_rate)
 
-        if pretrained_model_path:
-            m = torch.load(pretrained_model_path, torch.device('cpu'))
+        if pretrained_model_name:
+            m = torch.load(pretrained_model_name, torch.device('cpu'))
             self.heuristic_func.net.load_state_dict(m)
 
         RefinementBasedConceptLearner.__init__(self, knowledge_base=knowledge_base,
@@ -1605,3 +1612,127 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             pass
 
         super().clean()
+
+    
+class NCES(BaseNCES):
+    
+    def __init__(self, knowledge_base_path, learner_name, path_of_embeddings, proj_dim, rnn_n_layers, drop_prob, num_heads, num_seeds, num_inds, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=8, max_length=48, load_pretrained=True, pretrained_model_name=None):
+        super().__init__(knowledge_base_path, learner_name, path_of_embeddings, batch_size, learning_rate, decay_rate, clip_value, num_workers)
+        self.max_length = max_length
+        self.proj_dim = proj_dim
+        self.rnn_n_layers = rnn_n_layers
+        self.drop_prob = drop_prob
+        self.num_heads = num_heads
+        self.num_seeds = num_seeds
+        self.num_inds = num_inds
+        self.ln = ln
+        self.load_pretrained = load_pretrained
+        self.pretrained_model_name = pretrained_model_name
+        self.model = self.get_synthesizer()
+    
+    def get_synthesizer(self):
+        if self.load_pretrained and isinstance(self.pretrained_model_name, str):
+            return [torch.load(self.knowledge_base_path[:self.knowledge_base_path.rfind("/")]+"/trained_models/model_"+self.pretrained_model_name+".pt", map_location=torch.device('cpu'))]
+        elif self.load_pretrained and isinstance(self.pretrained_model_name, list):
+            return [torch.load(self.knowledge_base_path[:self.knowledge_base_path.rfind("/")]+"/trained_models/model_"+name+".pt", map_location=torch.device('cpu')) for name in self.pretrained_model_name]
+        elif self.learner_name == 'SetTransformer':
+            return SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size, self.proj_dim, self.num_heads, self.num_seeds, self.num_inds, self.ln)
+        elif self.learner_name == 'GRU':
+            return GRU(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size, self.proj_dim, self.rnn_n_layers, self.drop_prob)
+        elif self.learner_name == 'LSTM':
+            return LSTM(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size, self.proj_dim, self.rnn_n_layers, self.drop_prob)
+        else:
+            raise ValueError('Wrong concept learner name')
+            
+    def refresh(self):
+        self.model = self.get_synthesizer()
+    
+    @staticmethod
+    def get_prediction(models, x1, x2):
+        for i,model in enumerate(models):
+            model.eval()
+            if i == 0:
+                _, scores = model(x1, x2)
+            else:
+                _, sc = model(x1, x2)
+                scores = scores + sc
+        scores = scores/len(models)
+        prediction = model.inv_vocab[scores.argmax(1)]
+        return prediction
+    
+    def fit(self, pos: Union[Set[OWLNamedIndividual], Set[str]] , neg: Union[Set[OWLNamedIndividual], Set[str]], shuffle_examples=False, **kwargs):
+        pos = list(pos)
+        neg = list(neg)
+        if isinstance(pos[0], OWLNamedIndividual):
+            pos_str = [ind.get_iri().as_str().split("/")[-1] for ind in pos]
+            neg_str = [ind.get_iri().as_str().split("/")[-1] for ind in neg]
+        elif isinstance(pos[0], str):
+            pos_str = pos
+            neg_str = neg
+        else:
+            raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
+            
+        assert self.load_pretrained and self.pretrained_model_name, "No pretrained model found. Please first train NCES, see the <<train>> method below"
+        
+        dataset = NCESDataLoaderInference([("", pos_str, neg_str)], self.instance_embeddings, self.vocab, self.inv_vocab, shuffle_examples)
+        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch_inference, shuffle=False)
+        x_pos, x_neg = next(iter(dataloader))
+        simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
+        dl_parser = DLSyntaxParser(namespace = self.kb_namespace)
+        prediction = self.get_prediction(self.model, x_pos, x_neg)
+        try:
+            prediction_as_owl_class_expression = dl_parser.parse("".join(before_pad(prediction.squeeze())))
+        except:
+            print("Wrong syntax on ", prediction.squeeze())
+            prediction_as_owl_class_expression = dl_parser.parse(simpleSolution.predict("".join(before_pad(prediction.squeeze()))))
+        return prediction_as_owl_class_expression
+    
+    @staticmethod
+    def convert_to_list_str_from_iterable(data):
+        target_concept_str, examples = data[0], data[1:]
+        pos = list(examples[0]); neg = list(examples[1])
+        if isinstance(pos[0], OWLNamedIndividual):
+            pos_str = [ind.get_iri().as_str().split("/")[-1] for ind in pos]
+            neg_str = [ind.get_iri().as_str().split("/")[-1] for ind in neg]
+        elif isinstance(pos[0], str):
+            pos_str =list(pos)
+            neg_str = list(neg)
+        else:
+            raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
+        return (target_concept_str, pos_str, neg_str)
+        
+        
+    def fit_from_iterable(self, dataset: Union[List[Tuple[str, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]],
+                                               List[Tuple[str, Set[str], Set[str]]]], shuffle_examples=False, **kwargs) -> List:
+        """
+        dataset is a list of tuples where the first items are strings corresponding to target concepts
+        """
+        assert self.load_pretrained and self.pretrained_model_name, "No pretrained model found. Please first train NCES, see the <<train>> method"
+        dataset = list(map(self.convert_to_list_str_from_iterable, dataset))
+        dataset = NCESDataLoaderInference(dataset, self.instance_embeddings, self.vocab, self.inv_vocab, shuffle_examples)
+        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch_inference, shuffle=False)
+        simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
+        dl_parser = DLSyntaxParser(namespace = self.kb_namespace)
+        predictions_as_owl_class_expressions = []
+        for x_pos, x_neg in dataloader:
+            predictions = self.get_prediction(self.model, x_pos, x_neg)
+            for prediction in predictions:
+                try:
+                    ce = dl_parser.parse("".join(before_pad(prediction)))
+                except:
+                    ce = dl_parser.parse(simpleSolution.predict("".join(before_pad(prediction))))
+                predictions_as_owl_class_expressions.append(ce)
+        return predictions_as_owl_class_expressions
+            
+        
+    def train(self, data: Iterable[List[Tuple]], epochs=300, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True, shuffle_examples=False):
+        train_dataset = NCESDataLoader(data, self.instance_embeddings, self.vocab, self.inv_vocab, shuffle_examples, self.max_length)
+        train_dataloader = DataLoader(train_dataset, batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch, shuffle=True)
+        if storage_path == None:
+            storage_path = self.knowledge_base_path[:self.knowledge_base_path.rfind("/")]
+        elif not os.path.exists(storage_path):
+            os.mkdir(storage_path)
+        trainer = NCESTrainer(self, epochs=epochs, learning_rate=learning_rate, decay_rate=decay_rate, clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
+        trainer.train(train_dataloader, save_model, optimizer, record_runtime)
+        
+        
