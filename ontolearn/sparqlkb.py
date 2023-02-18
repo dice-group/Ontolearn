@@ -3,7 +3,6 @@ from functools import singledispatchmethod
 from typing import Optional, Iterable, FrozenSet
 
 import httpx as httpx
-from httpx import AsyncClient
 
 from ontolearn import KnowledgeBase
 from ontolearn.abstracts import AbstractScorer, AbstractLearningProblem, AbstractKnowledgeBase, \
@@ -11,17 +10,16 @@ from ontolearn.abstracts import AbstractScorer, AbstractLearningProblem, Abstrac
 from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric
 from ontolearn.knowledge_base import EvaluatedConcept, Factory, _Default_ClassExpressionLengthMetricFactory
-from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
-from ontolearn.metrics import Recall
+from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.utils import oplogging
 from owlapy.ext import OWLReasonerEx
-from owlapy.model import OWLClassExpression, OWLEntity, OWLOntology, OWLClass, OWLNamedIndividual, \
+from owlapy.model import OWLClassAxiom, OWLClassExpression, OWLEntity, OWLOntology, OWLClass, OWLNamedIndividual, \
     OWLObjectPropertyExpression, OWLDataProperty, OWLObjectProperty, OWLOntologyID, _M, OWLDataPropertyRangeAxiom, \
-    IRI, OWLThing, OWLLiteral, OWLDatatype, OWLDataPropertyDomainAxiom, OWLObjectPropertyDomainAxiom, \
+    IRI, OWLLiteral, OWLDatatype, OWLDataPropertyDomainAxiom, OWLObjectPropertyDomainAxiom, \
     OWLObjectPropertyRangeAxiom
 from owlapy.owl2sparql.converter import Owl2SparqlConverter
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer
+from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.util import LRUCache
 from owlapy.vocab import OWLRDFVocabulary
 
@@ -45,7 +43,7 @@ class EncodedPosNegLPStandardSparql(EncodedPosNegLPStandardKind):
         self.neg = lp.neg
 
     def __repr__(self):
-        return f'EncodedPosNegLPStandardSparql()'
+        return 'EncodedPosNegLPStandardSparql()'
 
 
 class SparqlClient:
@@ -149,8 +147,13 @@ class SparqlOntology(OWLOntology):
         for ind in self.client.unwrap(res):
             yield OWLNamedIndividual(ind)
 
+    def general_class_axioms(self) -> Iterable[OWLClassAxiom]:
+        logger.debug("Calling general_class_axioms from backing onto")
+        yield from self._backing_onto.general_class_axioms()
+
     def data_property_range_axioms(self, property: OWLDataProperty) -> Iterable[OWLDataPropertyRangeAxiom]:
-        raise NotImplementedError
+        logger.debug("Calling data_property_range_axioms from backing onto")
+        yield from self._backing_onto.data_property_range_axioms(property)
 
     def data_property_domain_axioms(self, property: OWLDataProperty) -> Iterable[OWLDataPropertyDomainAxiom]:
         logger.debug("Calling data_property_domain_axioms from backing onto")

@@ -4,7 +4,7 @@ import types
 from typing import cast
 
 import owlready2
-from owlready2 import destroy_entity, AllDisjoint, AllDifferent
+from owlready2 import destroy_entity, AllDisjoint, AllDifferent, GeneralClassAxiom
 
 from owlapy.model import OWLDisjointUnionAxiom, OWLQuantifiedDataRestriction, OWLQuantifiedObjectRestriction, \
     OWLAnnotationAssertionAxiom, OWLClass, OWLClassAssertionAxiom, OWLEquivalentClassesAxiom, OWLObject, \
@@ -115,17 +115,22 @@ def _(axiom: OWLSubClassOfAxiom, ontology: OWLOntology, world: owlready2.namespa
     ont_x: owlready2.namespace.Ontology = conv.map_object(ontology)
 
     sub_class = axiom.get_sub_class()
-    assert isinstance(sub_class, OWLClass), f'Owlready2 only supports named classes as sub class ({sub_class}).'
     super_class = axiom.get_super_class()
 
-    _add_axiom(OWLDeclarationAxiom(sub_class), ontology, world)
+    _check_expression(sub_class, ontology, world)
     _check_expression(super_class, ontology, world)
     with ont_x:
         thing_x = conv.map_concept(OWLThing)
         sub_class_x = conv.map_concept(sub_class)
         super_class_x = conv.map_concept(super_class)
-        if thing_x in sub_class_x.is_a:
-            sub_class_x.is_a.remove(thing_x)
+        if isinstance(sub_class, OWLClass):
+            if thing_x in sub_class_x.is_a:
+                sub_class_x.is_a.remove(thing_x)
+        else:
+            # Currently owlready2 seems to expect that we make a new GeneralClassAxiom object each time.
+            # Another option would be to check whether a GeneralClassAxiom with the sub_class_x already exists and just
+            # add the super_class_x to its is_a attribute
+            sub_class_x = GeneralClassAxiom(sub_class_x)
         sub_class_x.is_a.append(super_class_x)
 
 
@@ -399,17 +404,23 @@ def _(axiom: OWLSubClassOfAxiom, ontology: OWLOntology, world: owlready2.namespa
     conv = ToOwlready2(world)
     ont_x: owlready2.namespace.Ontology = conv.map_object(ontology)
     sub_class = axiom.get_sub_class()
-    assert isinstance(sub_class, OWLClass), f'Owlready2 only supports named classes as sub class ({sub_class}).'
+    super_class = axiom.get_super_class()
 
     with ont_x:
         sub_class_x = conv.map_concept(sub_class)
-        super_class_x = conv.map_concept(axiom.get_super_class())
+        super_class_x = conv.map_concept(super_class)
         if sub_class_x is None or super_class_x is None:
             return
-        if super_class_x in sub_class_x.is_a:
-            sub_class_x.is_a.remove(super_class_x)
-        elif isinstance(axiom.get_sub_class(), OWLClass) and isinstance(axiom.get_super_class(), OWLClass):
-            ont_x._del_obj_triple_spo(sub_class_x.storid, owlready2.rdfs_subclassof, super_class_x.storid)
+
+        if isinstance(sub_class, OWLClass):
+            if super_class_x in sub_class_x.is_a:
+                sub_class_x.is_a.remove(super_class_x)
+            elif isinstance(axiom.get_sub_class(), OWLClass) and isinstance(axiom.get_super_class(), OWLClass):
+                ont_x._del_obj_triple_spo(sub_class_x.storid, owlready2.rdfs_subclassof, super_class_x.storid)
+        else:
+            for ca in ont_x.general_class_axioms():
+                if ca.left_side == sub_class_x and super_class_x in ca.is_a:
+                    ca.is_a.remove(super_class_x)
 
 
 @_remove_axiom.register

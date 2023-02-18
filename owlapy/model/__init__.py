@@ -3074,6 +3074,16 @@ class OWLOntology(OWLObject, metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def general_class_axioms(self) -> Iterable[OWLClassAxiom]:
+        """Get the general class axioms of this ontology. This includes SubClass axioms with a complex class expression
+           as the sub class and EquivalentClass axioms and DisjointClass axioms with only complex class expressions.
+
+        Returns:
+            General class axioms that are in this ontology.
+        """
+        pass
+
+    @abstractmethod
     def data_property_domain_axioms(self, property: OWLDataProperty) -> Iterable[OWLDataPropertyDomainAxiom]:
         """Gets the OWLDataPropertyDomainAxiom objects where the property is equal to the specified property.
 

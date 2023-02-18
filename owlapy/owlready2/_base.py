@@ -16,7 +16,8 @@ from owlapy.model import OWLObjectPropertyRangeAxiom, OWLOntologyManager, OWLDat
     OWLNamedIndividual, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, OWLOntology, \
     OWLOntologyChange, AddImport, OWLThing, DoubleOWLDatatype, OWLObjectPropertyDomainAxiom, OWLLiteral, \
     OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, DateOWLDatatype, DateTimeOWLDatatype, OWLClass, \
-    DurationOWLDatatype, StringOWLDatatype, IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom
+    DurationOWLDatatype, StringOWLDatatype, IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLClassAxiom, \
+    OWLSubClassOfAxiom
 from owlapy.owlready2.utils import FromOwlready2
 
 logger = logging.getLogger(__name__)
@@ -132,6 +133,12 @@ class OWLOntology_Owlready2(OWLOntology):
     def individuals_in_signature(self) -> Iterable[OWLNamedIndividual]:
         for i in self._onto.individuals():
             yield OWLNamedIndividual(IRI.create(i.iri))
+
+    def general_class_axioms(self) -> Iterable[OWLClassAxiom]:
+        # TODO: At the moment owlready2 only supports SubClassOf general class axioms. (18.02.2023)
+        for ca in self._onto.general_class_axioms():
+            yield from (OWLSubClassOfAxiom(_parse_concept_to_owlapy(ca.left_side), _parse_concept_to_owlapy(c))
+                        for c in ca.is_a)
 
     def get_owl_ontology_manager(self) -> OWLOntologyManager_Owlready2:
         return self._manager
