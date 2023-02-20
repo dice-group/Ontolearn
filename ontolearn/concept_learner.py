@@ -1632,9 +1632,9 @@ class NCES(BaseNCES):
     
     def get_synthesizer(self):
         if self.load_pretrained and isinstance(self.pretrained_model_name, str):
-            return [torch.load(self.knowledge_base_path[:self.knowledge_base_path.rfind("/")]+"/trained_models/model_"+self.pretrained_model_name+".pt", map_location=torch.device('cpu'))]
+            return [torch.load(self.knowledge_base_path[:self.knowledge_base_path.rfind("/")]+"/trained_models/trained_"+self.pretrained_model_name+".pt", map_location=torch.device('cpu'))]
         elif self.load_pretrained and isinstance(self.pretrained_model_name, list):
-            return [torch.load(self.knowledge_base_path[:self.knowledge_base_path.rfind("/")]+"/trained_models/model_"+name+".pt", map_location=torch.device('cpu')) for name in self.pretrained_model_name]
+            return [torch.load(self.knowledge_base_path[:self.knowledge_base_path.rfind("/")]+"/trained_models/trained_"+name+".pt", map_location=torch.device('cpu')) for name in self.pretrained_model_name]
         elif self.learner_name == 'SetTransformer':
             return SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size, self.proj_dim, self.num_heads, self.num_seeds, self.num_inds, self.ln)
         elif self.learner_name == 'GRU':
@@ -1660,7 +1660,7 @@ class NCES(BaseNCES):
         prediction = model.inv_vocab[scores.argmax(1)]
         return prediction
     
-    def fit(self, pos: Union[Set[OWLNamedIndividual], Set[str]] , neg: Union[Set[OWLNamedIndividual], Set[str]], shuffle_examples=False, **kwargs):
+    def fit(self, pos: Union[Set[OWLNamedIndividual], Set[str]] , neg: Union[Set[OWLNamedIndividual], Set[str]], shuffle_examples=False, verbose=True, **kwargs):
         pos = list(pos)
         neg = list(neg)
         if isinstance(pos[0], OWLNamedIndividual):
@@ -1681,10 +1681,15 @@ class NCES(BaseNCES):
         dl_parser = DLSyntaxParser(namespace = self.kb_namespace)
         prediction = self.get_prediction(self.model, x_pos, x_neg)
         try:
-            prediction_as_owl_class_expression = dl_parser.parse("".join(before_pad(prediction.squeeze())))
+            prediction_str = "".join(before_pad(prediction.squeeze()))
+            prediction_as_owl_class_expression = dl_parser.parse(prediction_str)
+            if verbose:
+                print("Prediction: ", prediction_str)
         except:
-            print("Wrong syntax on ", prediction.squeeze())
-            prediction_as_owl_class_expression = dl_parser.parse(simpleSolution.predict("".join(before_pad(prediction.squeeze()))))
+            prediction_str = simpleSolution.predict("".join(before_pad(prediction.squeeze())))
+            prediction_as_owl_class_expression = dl_parser.parse(prediction_str)
+            if verbose:
+                print("Prediction: ", prediction_str)
         return prediction_as_owl_class_expression
     
     @staticmethod
@@ -1703,7 +1708,7 @@ class NCES(BaseNCES):
         
         
     def fit_from_iterable(self, dataset: Union[List[Tuple[str, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]],
-                                               List[Tuple[str, Set[str], Set[str]]]], shuffle_examples=False, **kwargs) -> List:
+                                               List[Tuple[str, Set[str], Set[str]]]], shuffle_examples=False, verbose=False, **kwargs) -> List:
         """
         dataset is a list of tuples where the first items are strings corresponding to target concepts
         """
@@ -1714,14 +1719,21 @@ class NCES(BaseNCES):
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         dl_parser = DLSyntaxParser(namespace = self.kb_namespace)
         predictions_as_owl_class_expressions = []
+        predictions_str = []
         for x_pos, x_neg in dataloader:
             predictions = self.get_prediction(self.model, x_pos, x_neg)
             for prediction in predictions:
                 try:
-                    ce = dl_parser.parse("".join(before_pad(prediction)))
+                    prediction_str = "".join(before_pad(prediction))
+                    ce = dl_parser.parse(prediction_str)
+                    predictions_str.append(prediction_str)
                 except:
-                    ce = dl_parser.parse(simpleSolution.predict("".join(before_pad(prediction))))
+                    prediction_str = simpleSolution.predict("".join(before_pad(prediction)))
+                    predictions_str.append(prediction_str)
+                    ce = dl_parser.parse(prediction_str)
                 predictions_as_owl_class_expressions.append(ce)
+        if verbose:
+            print("Predictions: ", predictions_str)
         return predictions_as_owl_class_expressions
             
         
