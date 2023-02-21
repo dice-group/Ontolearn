@@ -2,7 +2,7 @@
 ====================================================================
 Using DL-Learner
 
-In this example, we should how to use DL-Learner within our framework.
+In this example, we show how to use DL-Learner within our framework.
 
 Via, DLLearnerBinder, a new class expression learning algorithm can be easily compared against CELOE, OCEL, and ELTL.
 Moreover, the user does not need to write a config file for each learning problem.
@@ -23,6 +23,7 @@ dl_learner_binary_path = '/home/demir/Desktop/DL/dllearner-1.4.0/'
 # (3) Initialize CELOE, OCEL, and ELTL
 celoe = DLLearnerBinder(binary_path=dl_learner_binary_path, kb_path=kb_path, model='celoe')
 ocel = DLLearnerBinder(binary_path=dl_learner_binary_path, kb_path=kb_path, model='ocel')
+# TODO: line 27 throws a FileExistsError. (it tries to create a log file with the same name of the last created one)
 eltl = DLLearnerBinder(binary_path=dl_learner_binary_path, kb_path=kb_path, model='eltl')
 # (4) Fit (4) on the learning problems and show the best concept.
 for str_target_concept, examples in settings['problems'].items():

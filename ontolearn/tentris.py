@@ -5,7 +5,7 @@ from typing import Optional, Iterable
 
 import httpx as httpx
 
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.abstracts import AbstractScorer, AbstractLearningProblem, AbstractKnowledgeBase, \
     EncodedPosNegLPStandardKind
 from ontolearn.concept_generator import ConceptGenerator
@@ -23,6 +23,8 @@ from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRe
 from owlapy.util import LRUCache
 
 logger = logging.getLogger(__name__)
+
+# TODO: 14 warnings that need to be fixed
 
 _Metric_map = MappingProxyType({
     F1: 'f1_score',

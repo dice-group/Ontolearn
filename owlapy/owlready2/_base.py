@@ -100,6 +100,8 @@ class OWLOntologyManager_Owlready2(OWLOntologyManager):
             raise NotImplementedError
 
     def save_world(self):
+        """saves the actual state of the quadstore in the SQLite3 file
+        """
         self._world.save()
 
 

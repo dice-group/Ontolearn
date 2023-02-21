@@ -17,6 +17,8 @@ from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, O
 from .search import Node, OENode
 
 
+# TODO: 23 Warnings need to be fixed here to avoid runtime errors
+
 class LengthBasedRefinement(BaseRefinement):
     """ A top down refinement operator refinement operator in ALC."""
 
