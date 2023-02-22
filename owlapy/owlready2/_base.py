@@ -260,13 +260,14 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             yield from super_ranges
 
     def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClassExpression]:
-        """Return the named classes that are directly equivalent to the class expression"""
         if isinstance(ce, OWLClass):
             c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
-            yield from (_parse_concept_to_owlapy(eq_x) for eq_x in c_x.equivalent_to
+            yield from (_parse_concept_to_owlapy(eq_x) for eq_x in c_x.INDIRECT_equivalent_to
                         if isinstance(eq_x, (owlready2.ThingClass, owlready2.ClassConstruct)))
         else:
-            raise NotImplementedError("equivalent_classes for complex class expressions not implemented", ce)
+            # Slow but works. No better way to do this in owlready2 without using the reasoners at the moment.
+            # Might be able to change this when owlready2 supports general class axioms for EquivalentClasses
+            yield from (c for c in self._ontology.classes_in_signature() if ce in self.equivalent_classes(c))
 
     def disjoint_classes(self, ce: OWLClassExpression) -> Iterable[OWLClassExpression]:
         if isinstance(ce, OWLClass):
@@ -409,14 +410,14 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
     def equivalent_object_properties(self, op: OWLObjectPropertyExpression) -> Iterable[OWLObjectPropertyExpression]:
         if isinstance(op, OWLObjectProperty):
             p_x: owlready2.ObjectPropertyClass = self._world[op.get_iri().as_str()]
-            yield from (OWLObjectProperty(IRI.create(ep_x.iri)) for ep_x in p_x.equivalent_to
+            yield from (OWLObjectProperty(IRI.create(ep_x.iri)) for ep_x in p_x.INDIRECT_equivalent_to
                         if isinstance(ep_x, owlready2.ObjectPropertyClass))
         else:
             raise NotImplementedError("equivalent properties of inverse properties not yet implemented", op)
 
     def equivalent_data_properties(self, dp: OWLDataProperty) -> Iterable[OWLDataProperty]:
         p_x: owlready2.DataPropertyClass = self._world[dp.get_iri().as_str()]
-        yield from (OWLDataProperty(IRI.create(ep_x.iri)) for ep_x in p_x.equivalent_to
+        yield from (OWLDataProperty(IRI.create(ep_x.iri)) for ep_x in p_x.INDIRECT_equivalent_to
                     if isinstance(ep_x, owlready2.DataPropertyClass))
 
     def disjoint_object_properties(self, op: OWLObjectPropertyExpression) -> Iterable[OWLObjectPropertyExpression]:
