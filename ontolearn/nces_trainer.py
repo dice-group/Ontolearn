@@ -158,9 +158,9 @@ class NCESTrainer:
             duration = time.time()-t0
             runtime_info = {"Architecture": synthesizer.name,
                            "Number of Epochs": self.epochs, "Runtime (s)": duration}
-            if not os.path.exists(self.storage_path+"runtime/"):
-                os.mkdir(self.storage_path+"runtime/")
-            with open(self.storage_path+"runtime/runtime"+"_"+desc+".json", "w") as file:
+            if not os.path.exists(self.storage_path+"/runtime/"):
+                os.mkdir(self.storage_path+"/runtime/")
+            with open(self.storage_path+"/runtime/runtime"+"_"+desc+".json", "w") as file:
                 json.dump(runtime_info, file, indent=3)
         results_dict = dict()
         print("Top performance: loss: {:.4f}, soft accuracy: {:.2f} ... hard accuracy: {:.2f}".format(min(Train_loss), max(Train_acc['soft']), max(Train_acc['hard'])))
