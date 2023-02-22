@@ -1,6 +1,6 @@
 import numpy as np, copy
 import torch
-from tqdm import tqdm
+from tqdm import trange
 from collections import defaultdict
 from sklearn.utils import resample
 from torch.utils.data import DataLoader
@@ -125,9 +125,11 @@ class NCESTrainer:
         if self.decay_rate: self.scheduler = ExponentialLR(opt, self.decay_rate)
         Train_loss = []; Train_acc = defaultdict(list); best_score = 0.
         if record_runtime: t0 = time.time()
-        for e in range(self.epochs):
+        s_acc, h_acc = 0, 0
+        Epochs = trange(self.epochs, desc=f'Loss: {np.nan}, Soft Acc: {s_acc}, Hard Acc: {h_acc}', leave=True)
+        for e in Epochs:
             soft_acc, hard_acc = [], []; train_losses = []
-            for x1, x2, labels in tqdm(train_dataloader, desc="training batch..."):
+            for x1, x2, labels in train_dataloader:
                 target_sequence = self.map_to_token(labels)
                 if device.type == "cuda":
                     x1, x2, labels = x1.cuda(), x2.cuda(), labels.cuda()
@@ -145,13 +147,8 @@ class NCESTrainer:
             Train_loss.append(np.mean(train_losses))
             Train_acc['soft'].append(train_soft_acc)
             Train_acc['hard'].append(train_hard_acc)
-            print("Epoch: {}/{}...".format(e+1, self.epochs),
-                  "Train loss: {:.4f}...".format(np.mean(train_losses)),
-                  "Train soft acc: {:.2f}%...".format(train_soft_acc),
-                  "Train hard acc: {:.2f}%...".format(train_hard_acc))
-            if np.random.rand() > 0.7:
-                print("Visualizing some prediction: ", pred_sequence[np.random.choice(range(x1.shape[0]))])
-                print()
+            Epochs.set_description('Loss: {:.4f}, Soft Acc: {:.2f}%, Hard Acc: {:.2f}%'.format(Train_loss[-1], train_soft_acc, train_hard_acc))
+            Epochs.refresh()
             weights = copy.deepcopy(synthesizer.state_dict())
             if Train_acc['hard'] and Train_acc['hard'][-1] > best_score:
                 best_score = Train_acc['hard'][-1]
@@ -166,7 +163,7 @@ class NCESTrainer:
             with open(self.storage_path+"runtime/runtime"+"_"+desc+".json", "w") as file:
                 json.dump(runtime_info, file, indent=3)
         results_dict = dict()
-        print("Train soft accuracy: {} ... Train hard accuracy: {}".format(max(Train_acc['soft']), max(Train_acc['hard'])))
+        print("Top performance: loss: {:.4f}, soft accuracy: {:.2f} ... hard accuracy: {:.2f}".format(min(Train_loss), max(Train_acc['soft']), max(Train_acc['hard'])))
         print()
         results_dict.update({"Train Max Soft Acc": max(Train_acc['soft']), "Train Max Hard Acc": max(Train_acc['hard']), "Train Min Loss": min(Train_loss)})
         if not os.path.exists(self.storage_path+"/results/"):
@@ -176,7 +173,7 @@ class NCESTrainer:
         if save_model:
             if not os.path.exists(self.storage_path+"/trained_models/"):
                 os.mkdir(self.storage_path+"/trained_models/")
-            torch.save(synthesizer, self.storage_path+"/trained_models/"+"trained_"+desc+".pt")
+            torch.save(synthesizer.state_dict(), self.storage_path+"/trained_models/"+"trained_"+desc+".pt")
             print("{} saved".format(synthesizer.name))
         if not os.path.exists(self.storage_path+"/metrics/"):
             os.mkdir(self.storage_path+"/metrics/")

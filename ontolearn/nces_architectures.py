@@ -7,6 +7,7 @@ class LSTM(nn.Module):
         super().__init__()
         self.name = 'LSTM'
         self.max_len = max_length
+        self.proj_dim = proj_dim
         self.vocab = vocab
         self.inv_vocab = inv_vocab
         self.loss = nn.CrossEntropyLoss()
@@ -36,6 +37,7 @@ class GRU(nn.Module):
         super().__init__()
         self.name = 'GRU'
         self.max_len = max_length
+        self.proj_dim = proj_dim
         self.vocab = vocab
         self.inv_vocab = inv_vocab
         self.loss = nn.CrossEntropyLoss()
