@@ -307,7 +307,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         manager.apply_change(AddImport(ontology, OWLImportsDeclaration(IRI.create('file://' + self.kb.path))))
         for ith, h in enumerate(self.best_hypotheses(n=n)):
             cls_a: OWLClass = OWLClass(IRI.create(NS, "Pred_" + str(ith)))
-            equivalent_classes_axiom = OWLEquivalentClassesAxiom(cls_a, h.concept)
+            equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, h.concept])
             manager.add_axiom(ontology, equivalent_classes_axiom)
 
             try:

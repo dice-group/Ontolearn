@@ -2172,16 +2172,21 @@ class OWLEquivalentClassesAxiom(OWLNaryClassAxiom):
     """Represents an EquivalentClasses axiom in the OWL 2 Specification."""
     __slots__ = ()
 
-    def __init__(self, cls_a: OWLClassExpression, cls_b: OWLClassExpression,
+    def __init__(self, class_expressions: List[OWLClassExpression],
                  annotations: Optional[Iterable['OWLAnnotation']] = None):
-        """Get an equivalent classes axiom with specified operands
+        super().__init__(class_expressions=class_expressions, annotations=annotations)
 
-        Args:
-            cls_a: one class for equivalence
-            cls_b: one class for equivalence
-            annotations: annotations
-        """
-        super().__init__([cls_a, cls_b], annotations=annotations)
+    def contains_named_equivalent_class(self) -> bool:
+        return any(isinstance(ce, OWLClass) for ce in self._class_expressions)
+
+    def contains_owl_nothing(self) -> bool:
+        return any(isinstance(ce, OWLNothing) for ce in self._class_expressions)
+
+    def contains_owl_thing(self) -> bool:
+        return any(isinstance(ce, OWLThing) for ce in self._class_expressions)
+
+    def named_classes(self) -> Iterable[OWLClass]:
+        yield from (ce for ce in self._class_expressions if isinstance(ce, OWLClass))
 
 
 class OWLDisjointClassesAxiom(OWLNaryClassAxiom):

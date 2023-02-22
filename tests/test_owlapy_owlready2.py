@@ -346,9 +346,9 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
                          list(reasoner.data_property_ranges(age)))
 
         self.assertFalse(list(reasoner.equivalent_classes(brother)))
-        mgr.add_axiom(onto, OWLEquivalentClassesAxiom(brother, male))
+        mgr.add_axiom(onto, OWLEquivalentClassesAxiom([brother, male]))
         self.assertIn(male, list(reasoner.equivalent_classes(brother)))
-        mgr.remove_axiom(onto, OWLEquivalentClassesAxiom(brother, male))
+        mgr.remove_axiom(onto, OWLEquivalentClassesAxiom([brother, male]))
         self.assertNotIn(male, list(reasoner.equivalent_classes(brother)))
 
         self.assertFalse(list(reasoner.equivalent_object_properties(has_child)))

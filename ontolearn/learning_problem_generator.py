@@ -76,7 +76,7 @@ class LearningProblemGenerator:
         manager.apply_change(AddImport(ontology, OWLImportsDeclaration(kb_iri)))
         for ith, h in enumerate(concepts):
             cls_a: OWLClass = OWLClass(IRI.create(NS, "Pred_" + str(ith)))
-            equivalent_classes_axiom = OWLEquivalentClassesAxiom(cls_a, h.concept)
+            equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, h.concept])
             manager.add_axiom(ontology, equivalent_classes_axiom)
 
             count = None
