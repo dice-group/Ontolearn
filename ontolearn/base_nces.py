@@ -23,7 +23,8 @@ class BaseNCES:
         self.inv_vocab = np.array(vocab, dtype='object')
         self.vocab = {vocab[i]:i for i in range(len(vocab))}
         self.learner_name = learner_name
-        self.num_examples = min(kb.individuals_count()//2, 1000)
+        self.num_examples = self.find_optimal_number_of_examples(kb)
+        #min(kb.individuals_count()//2, 1000)
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.decay_rate = decay_rate
@@ -32,6 +33,12 @@ class BaseNCES:
         self.instance_embeddings = read_csv(path_of_embeddings)
         self.input_size = self.instance_embeddings.shape[1]
         
+    @staticmethod   
+    def find_optimal_number_of_examples(kb):
+        if kb.individuals_count() >= 600:
+            return min(kb.individuals_count()//2, 1000)
+        return kb.individuals_count()
+    
     def collate_batch(self, batch):
         pos_emb_list = []
         neg_emb_list = []

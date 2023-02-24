@@ -65,13 +65,12 @@ class KB2Data:
    Finally, we aim at training a deep neural network to predict the syntax of concepts from their instances. Hence, we export each concept and its instances (eventually positive and negative examples) into json files.  
     """
 
-    def __init__(self, path, rho_name="ExpressRefinement", depth=5, max_child_length=25, refinement_expressivity=0.6, downsample_refinements=True, k=10, num_rand_samples=150, min_num_pos_examples=1, max_num_pos_examples=2000):
+    def __init__(self, path, rho_name="ExpressRefinement", depth=5, max_child_length=25, refinement_expressivity=0.6, downsample_refinements=True, k=10, num_rand_samples=150, min_num_pos_examples=1):
         self.path = path
         self.dl_syntax_renderer = DLSyntaxObjectRenderer()
         self.kb = KnowledgeBase(path=path)
-        self.num_examples = min(self.kb.individuals_count()//2, 1000)
+        self.num_examples = self.find_optimal_number_of_examples()
         self.min_num_pos_examples = min_num_pos_examples
-        self.max_num_pos_examples = max_num_pos_examples
         atomic_concepts = frozenset(self.kb.ontology().classes_in_signature())
         self.atomic_concept_names = frozenset([self.dl_syntax_renderer.render(a) for a in atomic_concepts])
         rho = ExpressRefinement(knowledge_base=self.kb, max_child_length=max_child_length, sample_fillers_count=k, downsample=downsample_refinements,\
@@ -80,6 +79,11 @@ class KB2Data:
         self.lp_gen = ConceptDescriptionGenerator(knowledge_base=self.kb, refinement_operator=rho, depth=depth, num_rand_samples=num_rand_samples)
 
     
+    def find_optimal_number_of_examples(self):
+        if self.kb.individuals_count() >= 600:
+            return min(self.kb.individuals_count()//2, 1000)
+        return self.kb.individuals_count()
+                   
     def generate_descriptions(self):
         print()
         print("#"*60)
@@ -112,6 +116,7 @@ class KB2Data:
         for concept in tqdm(self.train_concepts, desc="Sample examples and save data..."):
             pos = set(self.kb.individuals(concept))
             neg = set(self.kb.individuals())-pos
+            if len(neg) == 0: continue
             pos = [ind.get_iri().as_str().split("/")[-1] for ind in pos]
             neg = [ind.get_iri().as_str().split("/")[-1] for ind in neg]
             if min(len(neg),len(pos)) >= self.num_examples//2:
@@ -138,9 +143,6 @@ class KB2Data:
             
         data = list(data.items())
         os.makedirs(f'{self.path[:self.path.rfind("/")]}/training_data/', exist_ok=True)
-        if not os.path.isfile(f'{self.path[:self.path.rfind("/")]}/training_data/Data.json'):
-            with open(f'{self.path[:self.path.rfind("/")]}/training_data/Data.json', 'w') as file_train:
-                json.dump(dict(data), file_train, indent=3, ensure_ascii=False)
-            print(f'Data saved at {self.path[:self.path.rfind("/")]}')
-        else:
-            print("Training data already exists!")
+        with open(f'{self.path[:self.path.rfind("/")]}/training_data/Data.json', 'w') as file_train:
+            json.dump(dict(data), file_train, indent=3, ensure_ascii=False)
+        print(f'Data saved at {self.path[:self.path.rfind("/")]}')

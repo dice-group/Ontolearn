@@ -1646,9 +1646,9 @@ class NCES(BaseNCES):
                 print("\n\n Loaded pretrained model! \n")
             return model
         if not self.load_pretrained:
-            return load_model(self.learner_name, self.load_pretrained)
+            return [load_model(self.learner_name, self.load_pretrained)]
         elif self.load_pretrained and isinstance(self.pretrained_model_name, str):
-            return load_model(self.pretrained_model_name, self.load_pretrained)
+            return [load_model(self.pretrained_model_name, self.load_pretrained)]
         elif self.load_pretrained and isinstance(self.pretrained_model_name, list):
             return [load_model(name, self.load_pretrained) for name in self.pretrained_model_name]
         
