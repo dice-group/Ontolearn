@@ -1618,6 +1618,7 @@ class NCES(BaseNCES):
     
     def __init__(self, knowledge_base_path, learner_name, path_of_embeddings, proj_dim, rnn_n_layers, drop_prob, num_heads, num_seeds, num_inds, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=8, max_length=48, load_pretrained=True, pretrained_model_name=None):
         super().__init__(knowledge_base_path, learner_name, path_of_embeddings, batch_size, learning_rate, decay_rate, clip_value, num_workers)
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.max_length = max_length
         self.proj_dim = proj_dim
         self.rnn_n_layers = rnn_n_layers
@@ -1631,19 +1632,26 @@ class NCES(BaseNCES):
         self.model = self.get_synthesizer()
     
     def get_synthesizer(self):
-        if self.load_pretrained and isinstance(self.pretrained_model_name, str):
-            return [torch.load(self.knowledge_base_path[:self.knowledge_base_path.rfind("/")]+"/trained_models/trained_"+self.pretrained_model_name+".pt", map_location=torch.device('cpu'))]
+        def load_model(learner_name, load_pretrained):
+            if learner_name == 'SetTransformer':
+                model = SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size, self.proj_dim, self.num_heads, self.num_seeds, self.num_inds, self.ln)
+            elif learner_name == 'GRU':
+                model = GRU(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size, self.proj_dim, self.rnn_n_layers, self.drop_prob)
+            elif learner_name == 'LSTM':
+                model = LSTM(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size, self.proj_dim, self.rnn_n_layers, self.drop_prob)
+            if load_pretrained:
+                model_path = self.knowledge_base_path[:self.knowledge_base_path.rfind("/")]+"/trained_models/trained_"+learner_name+".pt"
+                model.load_state_dict(torch.load(model_path, map_location=self.device))
+                model.eval()
+                print("\n\n Loaded pretrained model! \n")
+            return model
+        if not self.load_pretrained:
+            return load_model(self.learner_name, self.load_pretrained)
+        elif self.load_pretrained and isinstance(self.pretrained_model_name, str):
+            return load_model(self.pretrained_model_name, self.load_pretrained)
         elif self.load_pretrained and isinstance(self.pretrained_model_name, list):
-            return [torch.load(self.knowledge_base_path[:self.knowledge_base_path.rfind("/")]+"/trained_models/trained_"+name+".pt", map_location=torch.device('cpu')) for name in self.pretrained_model_name]
-        elif self.learner_name == 'SetTransformer':
-            return SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size, self.proj_dim, self.num_heads, self.num_seeds, self.num_inds, self.ln)
-        elif self.learner_name == 'GRU':
-            return GRU(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size, self.proj_dim, self.rnn_n_layers, self.drop_prob)
-        elif self.learner_name == 'LSTM':
-            return LSTM(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size, self.proj_dim, self.rnn_n_layers, self.drop_prob)
-        else:
-            raise ValueError('Wrong concept learner name')
-            
+            return [load_model(name, self.load_pretrained) for name in self.pretrained_model_name]
+        
     def refresh(self):
         self.model = self.get_synthesizer()
     

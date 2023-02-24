@@ -163,7 +163,7 @@ class NCESTrainer:
             with open(self.storage_path+"/runtime/runtime"+"_"+desc+".json", "w") as file:
                 json.dump(runtime_info, file, indent=3)
         results_dict = dict()
-        print("Top performance: loss: {:.4f}, soft accuracy: {:.2f} ... hard accuracy: {:.2f}".format(min(Train_loss), max(Train_acc['soft']), max(Train_acc['hard'])))
+        print("Top performance: loss: {:.4f}, soft accuracy: {:.2f}% ... hard accuracy: {:.2f}%".format(min(Train_loss), max(Train_acc['soft']), max(Train_acc['hard'])))
         print()
         results_dict.update({"Train Max Soft Acc": max(Train_acc['soft']), "Train Max Hard Acc": max(Train_acc['hard']), "Train Min Loss": min(Train_loss)})
         if not os.path.exists(self.storage_path+"/results/"):
