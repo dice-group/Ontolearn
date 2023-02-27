@@ -19,6 +19,8 @@ def before_pad(arg):
         if atm == 'PAD':
             break
         arg_temp.append(atm)
+    if len(set(arg_temp)) == 3 and ('⊓' in arg_temp or '⊔' in arg_temp):
+        return arg_temp[0]
     return arg_temp
     
 class NCESTrainer:

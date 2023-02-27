@@ -1,5 +1,6 @@
 import argparse, json
 from helper_classes import RDFTriples, KB2Data
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--kbs', type=str, nargs='+', default=['carcinogenesis'], help='Knowledge base name')

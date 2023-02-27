@@ -180,8 +180,8 @@ class NCESDataLoader(BaseDataLoader, torch.utils.data.Dataset):
     
     def __getitem__(self, idx):
         key, value = self.data_raw[idx]
-        pos = value['positive examples']
-        neg = value['negative examples']
+        pos = sorted(value['positive examples'])
+        neg = sorted(value['negative examples'])
         if self.shuffle_examples:
             random.shuffle(pos)
             random.shuffle(neg)
@@ -204,6 +204,7 @@ class NCESDataLoaderInference(BaseDataLoader, torch.utils.data.Dataset):
     
     def __getitem__(self, idx):
         _, pos, neg = self.data_raw[idx]
+        pos, neg = sorted(pos), sorted(neg)
         if self.shuffle_examples:
             random.shuffle(pos)
             random.shuffle(neg)

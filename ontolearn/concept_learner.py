@@ -1616,7 +1616,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
     
 class NCES(BaseNCES):
     
-    def __init__(self, knowledge_base_path, learner_name, path_of_embeddings, proj_dim, rnn_n_layers, drop_prob, num_heads, num_seeds, num_inds, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=8, max_length=48, load_pretrained=True, pretrained_model_name=None):
+    def __init__(self, knowledge_base_path, learner_name, path_of_embeddings, proj_dim, rnn_n_layers, drop_prob, num_heads, num_seeds, num_inds, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=8, max_length=48, load_pretrained=True, sorted_examples=True, pretrained_model_name=None):
         super().__init__(knowledge_base_path, learner_name, path_of_embeddings, batch_size, learning_rate, decay_rate, clip_value, num_workers)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.max_length = max_length
@@ -1628,6 +1628,7 @@ class NCES(BaseNCES):
         self.num_inds = num_inds
         self.ln = ln
         self.load_pretrained = load_pretrained
+        self.sorted_examples = sorted_examples
         self.pretrained_model_name = pretrained_model_name
         self.model = self.get_synthesizer()
     
@@ -1654,6 +1655,25 @@ class NCES(BaseNCES):
         
     def refresh(self):
         self.model = self.get_synthesizer()
+        
+    def sample_examples(self, pos, neg):
+        num_ex = self.num_examples
+        if min(len(pos),len(neg)) >= num_ex//2:
+            if len(pos) > len(neg):
+                num_neg_ex = num_ex//2
+                num_pos_ex = num_ex-num_neg_ex
+            else:
+                num_pos_ex = num_ex//2
+                num_neg_ex = num_ex-num_pos_ex
+        elif len(pos) > len(neg):
+            num_neg_ex = len(neg)
+            num_pos_ex = num_ex-num_neg_ex
+        elif len(pos) < len(neg):
+            num_pos_ex = len(pos)
+            num_neg_ex = num_ex-num_pos_ex
+        positive = random.sample(pos, min(num_pos_ex, len(pos)))
+        negative = random.sample(neg, min(num_neg_ex, len(neg)))
+        return positive, negative
     
     @staticmethod
     def get_prediction(models, x1, x2):
@@ -1674,11 +1694,13 @@ class NCES(BaseNCES):
         if isinstance(pos[0], OWLNamedIndividual):
             pos_str = [ind.get_iri().as_str().split("/")[-1] for ind in pos]
             neg_str = [ind.get_iri().as_str().split("/")[-1] for ind in neg]
+            pos_str, neg_str = self.sample_examples(pos_str, neg_str)
         elif isinstance(pos[0], str):
-            pos_str = pos
-            neg_str = neg
+            pos_str, neg_str = self.sample_examples(pos, neg)
         else:
             raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
+        if self.sorted_examples:
+            pos_str, neg_str = sorted(pos_str), sorted(neg_str)
             
         assert self.load_pretrained and self.pretrained_model_name, "No pretrained model found. Please first train NCES, see the <<train>> method below"
         
@@ -1700,18 +1722,19 @@ class NCES(BaseNCES):
                 print("Prediction: ", prediction_str)
         return prediction_as_owl_class_expression
     
-    @staticmethod
-    def convert_to_list_str_from_iterable(data):
+    def convert_to_list_str_from_iterable(self, data):
         target_concept_str, examples = data[0], data[1:]
         pos = list(examples[0]); neg = list(examples[1])
         if isinstance(pos[0], OWLNamedIndividual):
             pos_str = [ind.get_iri().as_str().split("/")[-1] for ind in pos]
             neg_str = [ind.get_iri().as_str().split("/")[-1] for ind in neg]
+            pos_str, neg_str = self.sample_examples(pos_str, neg_str)
         elif isinstance(pos[0], str):
-            pos_str =list(pos)
-            neg_str = list(neg)
+            pos_str, neg_str = self.sample_examples(list(pos), list(neg))
         else:
             raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
+        if self.sorted_examples:
+            pos_str, neg_str = sorted(pos_str), sorted(neg_str)
         return (target_concept_str, pos_str, neg_str)
         
         

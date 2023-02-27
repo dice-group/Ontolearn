@@ -110,6 +110,23 @@ class KB2Data:
         print("Data generation completed")
         return self
     
+    def sample_examples(self, pos, neg):
+        if min(len(pos),len(neg)) >= self.num_examples//2:
+            if len(pos) > len(neg):
+                num_neg_ex = self.num_examples//2
+                num_pos_ex = self.num_examples-num_neg_ex
+            else:
+                num_pos_ex = self.num_examples//2
+                num_neg_ex = self.num_examples-num_pos_ex
+        elif len(pos) > len(neg):
+            num_neg_ex = len(neg)
+            num_pos_ex = self.num_examples-num_neg_ex
+        elif len(pos) < len(neg):
+            num_pos_ex = len(pos)
+            num_neg_ex = self.num_examples-num_pos_ex
+        positive = random.sample(pos, min(num_pos_ex, len(pos)))
+        negative = random.sample(neg, min(num_neg_ex, len(neg)))
+        return positive, negative
 
     def save_data(self):
         data = dict()
@@ -119,28 +136,9 @@ class KB2Data:
             if len(neg) == 0: continue
             pos = [ind.get_iri().as_str().split("/")[-1] for ind in pos]
             neg = [ind.get_iri().as_str().split("/")[-1] for ind in neg]
-            if min(len(neg),len(pos)) >= self.num_examples//2:
-                if len(pos) > len(neg):
-                    num_neg_ex = self.num_examples//2
-                    num_pos_ex = self.num_examples-num_neg_ex
-                else:
-                    num_pos_ex = self.num_examples//2
-                    num_neg_ex = self.num_examples-num_pos_ex
-            elif len(pos) > len(neg):
-                num_neg_ex = len(neg)
-                num_pos_ex = self.num_examples-num_neg_ex
-            elif len(pos) < len(neg):
-                num_pos_ex = len(pos)
-                num_neg_ex = self.num_examples-num_pos_ex
-            else:
-                print("Invalid number of instances")
-                continue
-            positive = random.sample(pos, num_pos_ex)
-            negative = random.sample(neg, num_neg_ex)
-            
+            positive, negative = self.sample_examples(pos, neg)
             concept_name = self.dl_syntax_renderer.render(concept.get_nnf())
             data[concept_name] = {'positive examples': positive, 'negative examples': negative}
-            
         data = list(data.items())
         os.makedirs(f'{self.path[:self.path.rfind("/")]}/training_data/', exist_ok=True)
         with open(f'{self.path[:self.path.rfind("/")]}/training_data/Data.json', 'w') as file_train:
