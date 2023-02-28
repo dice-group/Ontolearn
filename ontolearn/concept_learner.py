@@ -1671,6 +1671,9 @@ class NCES(BaseNCES):
         elif len(pos) < len(neg):
             num_pos_ex = len(pos)
             num_neg_ex = num_ex-num_pos_ex
+        else:
+            num_pos_ex = len(pos)
+            num_neg_ex = len(neg)
         positive = random.sample(pos, min(num_pos_ex, len(pos)))
         negative = random.sample(neg, min(num_neg_ex, len(neg)))
         return positive, negative
@@ -1704,7 +1707,7 @@ class NCES(BaseNCES):
             
         assert self.load_pretrained and self.pretrained_model_name, "No pretrained model found. Please first train NCES, see the <<train>> method below"
         
-        dataset = NCESDataLoaderInference([("", pos_str, neg_str)], self.instance_embeddings, self.vocab, self.inv_vocab, shuffle_examples)
+        dataset = NCESDataLoaderInference([("", pos_str, neg_str)], self.instance_embeddings, self.vocab, self.inv_vocab, shuffle_examples, self.sorted_examples)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch_inference, shuffle=False)
         x_pos, x_neg = next(iter(dataloader))
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)

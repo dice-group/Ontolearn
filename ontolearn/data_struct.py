@@ -168,21 +168,25 @@ class BaseDataLoader:
 
 class NCESDataLoader(BaseDataLoader, torch.utils.data.Dataset):
     
-    def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, max_length):
+    def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, max_length, sorted_examples=True):
         self.data_raw = data
         self.embeddings = embeddings
         self.max_length = max_length
         super().__init__(vocab, inv_vocab)
         self.shuffle_examples = shuffle_examples
+        self.sorted_examples = sorted_examples
 
     def __len__(self):
         return len(self.data_raw)
     
     def __getitem__(self, idx):
         key, value = self.data_raw[idx]
-        pos = sorted(value['positive examples'])
-        neg = sorted(value['negative examples'])
-        if self.shuffle_examples:
+        pos = value['positive examples']
+        neg = value['negative examples']
+        if self.sorted_examples:
+            pos = sorted(pos)
+            neg = sorted(neg)
+        elif self.shuffle_examples:
             random.shuffle(pos)
             random.shuffle(neg)
         assert '#' in pos[0] or '.' in pos[0], 'Namespace error, expected separator # or .'
@@ -193,19 +197,21 @@ class NCESDataLoader(BaseDataLoader, torch.utils.data.Dataset):
     
 class NCESDataLoaderInference(BaseDataLoader, torch.utils.data.Dataset):
     
-    def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples):
+    def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, sorted_examples=True):
         self.data_raw = data
         self.embeddings = embeddings
         super().__init__(vocab, inv_vocab)
         self.shuffle_examples = shuffle_examples
+        self.sorted_examples = sorted_examples
 
     def __len__(self):
         return len(self.data_raw)
     
     def __getitem__(self, idx):
         _, pos, neg = self.data_raw[idx]
-        pos, neg = sorted(pos), sorted(neg)
-        if self.shuffle_examples:
+        if self.sorted_examples:
+            pos, neg = sorted(pos), sorted(neg)
+        elif self.shuffle_examples:
             random.shuffle(pos)
             random.shuffle(neg)
         assert '#' in pos[0] or '.' in pos[0], 'Namespace error, expected separator # or .'
