@@ -1656,8 +1656,12 @@ class NCES(BaseNCES):
     def refresh(self):
         self.model = self.get_synthesizer()
         
-    def sample_examples(self, pos, neg):
+    def sample_examples(self, pos, neg, all_inds=set()):
+        assert type(pos[0]) == type(neg[0]), "The two interables pos and neg must be of same type"
+        if all_inds:
+            assert type(list(all_inds)[0]) == type(pos[0]) == type(neg[0]), "The three iterables pos, neg, all_inds must be of same type"
         num_ex = self.num_examples
+        resample_negs = False
         if min(len(pos),len(neg)) >= num_ex//2:
             if len(pos) > len(neg):
                 num_neg_ex = num_ex//2
@@ -1671,11 +1675,20 @@ class NCES(BaseNCES):
         elif len(pos) < len(neg):
             num_pos_ex = len(pos)
             num_neg_ex = num_ex-num_pos_ex
+        elif len(pos) + len(neg) < num_ex and len(all_inds):
+            num_pos_ex = len(pos)
+            num_neg_ex = num_ex-num_pos_ex
+            resample_negs = True
         else:
             num_pos_ex = len(pos)
             num_neg_ex = len(neg)
-        positive = random.sample(pos, min(num_pos_ex, len(pos)))
-        negative = random.sample(neg, min(num_neg_ex, len(neg)))
+        if resample_negs:
+            positive = pos
+            remaining = list((all_inds-set(pos))-set(neg))
+            negative = neg + random.sample(remaining, min(num_neg_ex, len(remaining)))
+        else:
+            positive = random.sample(pos, min(num_pos_ex, len(pos)))
+            negative = random.sample(neg, min(num_neg_ex, len(neg)))
         return positive, negative
     
     @staticmethod
@@ -1691,15 +1704,15 @@ class NCES(BaseNCES):
         prediction = model.inv_vocab[scores.argmax(1)]
         return prediction
     
-    def fit(self, pos: Union[Set[OWLNamedIndividual], Set[str]] , neg: Union[Set[OWLNamedIndividual], Set[str]], shuffle_examples=False, verbose=True, **kwargs):
+    def fit(self, pos: Union[Set[OWLNamedIndividual], Set[str]] , neg: Union[Set[OWLNamedIndividual], Set[str]], all_inds=set(), shuffle_examples=False, verbose=True, **kwargs):
         pos = list(pos)
         neg = list(neg)
         if isinstance(pos[0], OWLNamedIndividual):
             pos_str = [ind.get_iri().as_str().split("/")[-1] for ind in pos]
             neg_str = [ind.get_iri().as_str().split("/")[-1] for ind in neg]
-            pos_str, neg_str = self.sample_examples(pos_str, neg_str)
+            pos_str, neg_str = self.sample_examples(pos_str, neg_str, all_inds)
         elif isinstance(pos[0], str):
-            pos_str, neg_str = self.sample_examples(pos, neg)
+            pos_str, neg_str = self.sample_examples(pos, neg, all_inds)
         else:
             raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
         if self.sorted_examples:
@@ -1725,15 +1738,15 @@ class NCES(BaseNCES):
                 print("Prediction: ", prediction_str)
         return prediction_as_owl_class_expression
     
-    def convert_to_list_str_from_iterable(self, data):
+    def convert_to_list_str_from_iterable(self, data, all_inds=set()):
         target_concept_str, examples = data[0], data[1:]
         pos = list(examples[0]); neg = list(examples[1])
         if isinstance(pos[0], OWLNamedIndividual):
             pos_str = [ind.get_iri().as_str().split("/")[-1] for ind in pos]
             neg_str = [ind.get_iri().as_str().split("/")[-1] for ind in neg]
-            pos_str, neg_str = self.sample_examples(pos_str, neg_str)
+            pos_str, neg_str = self.sample_examples(pos_str, neg_str, all_inds)
         elif isinstance(pos[0], str):
-            pos_str, neg_str = self.sample_examples(list(pos), list(neg))
+            pos_str, neg_str = self.sample_examples(list(pos), list(neg), all_inds)
         else:
             raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
         if self.sorted_examples:
@@ -1742,12 +1755,12 @@ class NCES(BaseNCES):
         
         
     def fit_from_iterable(self, dataset: Union[List[Tuple[str, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]],
-                                               List[Tuple[str, Set[str], Set[str]]]], shuffle_examples=False, verbose=False, **kwargs) -> List:
+                                               List[Tuple[str, Set[str], Set[str]]]], all_inds=set(), shuffle_examples=False, verbose=False, **kwargs) -> List:
         """
         dataset is a list of tuples where the first items are strings corresponding to target concepts
         """
         assert self.load_pretrained and self.pretrained_model_name, "No pretrained model found. Please first train NCES, see the <<train>> method"
-        dataset = list(map(self.convert_to_list_str_from_iterable, dataset))
+        dataset = [self.convert_to_list_str_from_iterable(datapoint, all_inds) for datapoint in dataset]
         dataset = NCESDataLoaderInference(dataset, self.instance_embeddings, self.vocab, self.inv_vocab, shuffle_examples)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch_inference, shuffle=False)
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
