@@ -17,7 +17,7 @@ from owlapy.model import OWLObjectPropertyRangeAxiom, OWLOntologyManager, OWLDat
     OWLOntologyChange, AddImport, OWLThing, DoubleOWLDatatype, OWLObjectPropertyDomainAxiom, OWLLiteral, \
     OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, DateOWLDatatype, DateTimeOWLDatatype, OWLClass, \
     DurationOWLDatatype, StringOWLDatatype, IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLClassAxiom, \
-    OWLSubClassOfAxiom
+    OWLSubClassOfAxiom, OWLEquivalentClassesAxiom
 from owlapy.owlready2.utils import FromOwlready2
 
 logger = logging.getLogger(__name__)
@@ -133,6 +133,12 @@ class OWLOntology_Owlready2(OWLOntology):
     def individuals_in_signature(self) -> Iterable[OWLNamedIndividual]:
         for i in self._onto.individuals():
             yield OWLNamedIndividual(IRI.create(i.iri))
+
+    def equivalent_classes_axioms(self, c: OWLClass) -> Iterable[OWLEquivalentClassesAxiom]:
+        c_x: owlready2.ThingClass = self._world[c.get_iri().as_str()]
+        # TODO: Should this also return EquivalentClasses general class axioms? Compare to java owlapi
+        for ec_x in c_x.equivalent_to:
+            yield OWLEquivalentClassesAxiom([c, _parse_concept_to_owlapy(ec_x)])
 
     def general_class_axioms(self) -> Iterable[OWLClassAxiom]:
         # TODO: At the moment owlready2 only supports SubClassOf general class axioms. (18.02.2023)
@@ -259,24 +265,31 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         if not direct:
             yield from super_ranges
 
-    def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClassExpression]:
+    def equivalent_classes(self, ce: OWLClassExpression, only_named: bool = True) -> Iterable[OWLClassExpression]:
         if isinstance(ce, OWLClass):
             c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
-            yield from (_parse_concept_to_owlapy(eq_x) for eq_x in c_x.INDIRECT_equivalent_to
-                        if isinstance(eq_x, (owlready2.ThingClass, owlready2.ClassConstruct)))
+            for eq_x in c_x.INDIRECT_equivalent_to:
+                if isinstance(eq_x, owlready2.ThingClass) or \
+                        (isinstance(eq_x, owlready2.ClassConstruct) and not only_named):
+                    yield _parse_concept_to_owlapy(eq_x)
         else:
+            # Extend as soon as owlready2 supports EquivalentClasses general class axioms
             # Slow but works. No better way to do this in owlready2 without using the reasoners at the moment.
             # Might be able to change this when owlready2 supports general class axioms for EquivalentClasses
-            yield from (c for c in self._ontology.classes_in_signature() if ce in self.equivalent_classes(c))
+            yield from (c for c in self._ontology.classes_in_signature() if ce in self.equivalent_classes(c, False))
 
-    def disjoint_classes(self, ce: OWLClassExpression) -> Iterable[OWLClassExpression]:
+    def disjoint_classes(self, ce: OWLClassExpression, only_named: bool = True) -> Iterable[OWLClassExpression]:
         if isinstance(ce, OWLClass):
             c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
-            yield from (_parse_concept_to_owlapy(d_x)
-                        for d_x in chain.from_iterable(map(lambda d: d.entities, c_x.disjoints()))
-                        if isinstance(d_x, (owlready2.ThingClass, owlready2.ClassConstruct)) and d_x != c_x)
+            for d_x in chain.from_iterable(map(lambda d: d.entities, c_x.disjoints())):
+                if d_x != c_x and (isinstance(d_x, owlready2.ThingClass) or
+                                   (isinstance(d_x, owlready2.ClassConstruct) and not only_named)):
+                    yield _parse_concept_to_owlapy(d_x)
         else:
-            raise NotImplementedError("disjoint_classes for complex class expressions not implemented", ce)
+            # Extend as soon as owlready2 supports DisjointClasses general class axioms
+            # Slow but works. No better way to do this in owlready2 without using the reasoners at the moment.
+            # Might be able to change this when owlready2 supports general class axioms for DjsjointClasses
+            yield from (c for c in self._ontology.classes_in_signature() if ce in self.disjoint_classes(c, False))
 
     def different_individuals(self, ind: OWLNamedIndividual) -> Iterable[OWLNamedIndividual]:
         i: owlready2.Thing = self._world[ind.get_iri().as_str()]
@@ -364,48 +377,131 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             else:
                 raise NotImplementedError("instances for complex class expressions not implemented", ce)
 
-    def _named_sub_classes_recursive(self, c: OWLClass, seen_set: Set) -> Iterable[OWLClass]:
-        c_x: owlready2.EntityClass = self._world[c.get_iri().as_str()]
+    def _sub_classes_recursive(self, ce: OWLClassExpression, seen_set: Set, only_named: bool = True) \
+            -> Iterable[OWLClassExpression]:
         # work around issue in class equivalence detection in Owlready2
-        for c2 in [c_x, *c_x.equivalent_to]:
-            if isinstance(c2, owlready2.ThingClass):
-                for sc in c2.subclasses(world=self._world):
-                    if isinstance(sc, owlready2.ThingClass) and sc not in seen_set:
+        for c in [ce, *self.equivalent_classes(ce, only_named=False)]:
+            if isinstance(c, OWLClass):
+                c_x: owlready2.EntityClass = self._world[c.get_iri().as_str()]
+                for sc_x in c_x.subclasses(world=self._world):
+                    sc = _parse_concept_to_owlapy(sc_x)
+                    if isinstance(sc, OWLClass) and sc not in seen_set:
                         seen_set.add(sc)
-                        owl_sc = OWLClass(IRI.create(sc.iri))
-                        yield owl_sc
-                        yield from self._named_sub_classes_recursive(owl_sc, seen_set)
+                        yield sc
+                        yield from self._sub_classes_recursive(sc, seen_set, only_named=only_named)
 
-    def sub_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
-        if isinstance(ce, OWLClass):
-            if direct:
+                if not only_named:
+                    for axiom in self._ontology.general_class_axioms():
+                        if (isinstance(axiom, OWLSubClassOfAxiom) and axiom.get_super_class() == ce
+                                and axiom.get_sub_class() not in seen_set):
+                            seen_set.add(axiom.get_sub_class())
+                            yield axiom.get_sub_class()
+                            yield from self._sub_classes_recursive(axiom.get_sub_class(), seen_set, only_named)
+            elif isinstance(c, OWLClassExpression):
+                # First go through all general class axioms, they should only have complex classes as sub_classes
+                if not only_named:
+                    for axiom in self._ontology.general_class_axioms():
+                        if (isinstance(axiom, OWLSubClassOfAxiom) and axiom.get_super_class() == ce
+                                and axiom.get_sub_class() not in seen_set):
+                            seen_set.add(axiom.get_sub_class())
+                            yield axiom.get_sub_class()
+                            yield from self._sub_classes_recursive(axiom.get_sub_class(), seen_set, only_named)
+                # Slow but works. No better way to do this in owlready2 without using the reasoners at the moment.
+                for c in self._ontology.classes_in_signature():
+                    if ce in self.super_classes(c, direct=True, only_named=False) and c not in seen_set:
+                        seen_set.add(c)
+                        yield c
+                        yield from self._sub_classes_recursive(c, seen_set, only_named=only_named)
+            else:
+                raise ValueError(f'Sub classes retrieval not implemented for: {ce}')
+
+    def sub_classes(self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True) \
+            -> Iterable[OWLClassExpression]:
+        if not direct:
+            seen_set = set()
+            yield from self._sub_classes_recursive(ce, seen_set, only_named=only_named)
+        else:
+            if isinstance(ce, OWLClass):
                 c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
                 for sc in c_x.subclasses(world=self._world):
                     if isinstance(sc, owlready2.ThingClass):
                         yield OWLClass(IRI.create(sc.iri))
-                    # Anonymous classes are ignored
-            else:
-                # indirect
-                seen_set = set()
-                yield from self._named_sub_classes_recursive(ce, seen_set)
-        else:
-            raise NotImplementedError("sub classes for complex class expressions not implemented", ce)
 
-    def super_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
-        if isinstance(ce, OWLClass):
-            c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
-            if direct:
-                for sc in c_x.is_a:
-                    if isinstance(sc, owlready2.ThingClass):
-                        yield OWLClass(IRI.create(sc.iri))
-                    # Anonymous classes are ignored
+                if not only_named:
+                    for axiom in self._ontology.general_class_axioms():
+                        if isinstance(axiom, OWLSubClassOfAxiom) and axiom.get_super_class() == ce:
+                            yield axiom.get_sub_class()
+            elif isinstance(ce, OWLClassExpression):
+                # First go through all general class axioms, they should only have complex classes as sub_classes
+                if not only_named:
+                    for axiom in self._ontology.general_class_axioms():
+                        if isinstance(axiom, OWLSubClassOfAxiom) and axiom.get_super_class() == ce:
+                            yield axiom.get_sub_class()
+                # Slow but works. No better way to do this in owlready2 without using the reasoners at the moment.
+                for c in self._ontology.classes_in_signature():
+                    if ce in self.super_classes(c, direct=True, only_named=False):
+                        yield c
             else:
-                # indirect
-                for sc in c_x.ancestors(include_self=False):
-                    if isinstance(sc, owlready2.ThingClass):
-                        yield OWLClass(IRI.create(sc.iri))
+                raise ValueError(f'Sub classes retrieval not implemented for: {ce}')
+
+    def _super_classes_recursive(self, ce: OWLClassExpression, seen_set: Set, only_named: bool = True) \
+            -> Iterable[OWLClassExpression]:
+        # work around issue in class equivalence detection in Owlready2
+        for c in [ce, *self.equivalent_classes(ce, only_named=False)]:
+            if isinstance(c, OWLClass):
+                c_x: owlready2.EntityClass = self._world[c.get_iri().as_str()]
+                for sc_x in c_x.is_a:
+                    sc = _parse_concept_to_owlapy(sc_x)
+                    if ((isinstance(sc, OWLClass)
+                            or (not only_named and isinstance(sc, OWLClassExpression))) and sc not in seen_set):
+                        seen_set.add(sc)
+                        yield sc
+                        yield from self._super_classes_recursive(sc, seen_set, only_named=only_named)
+            elif isinstance(ce, OWLClassExpression):
+                for axiom in self._ontology.general_class_axioms():
+                    if (isinstance(axiom, OWLSubClassOfAxiom) and axiom.get_sub_class() == ce
+                            and (axiom.get_super_class() not in seen_set) and
+                            (not only_named or isinstance(axiom.get_super_class(), OWLClass))):
+                        super_class = axiom.get_super_class()
+                        seen_set.add(super_class)
+                        yield super_class
+                        yield from self._super_classes_recursive(super_class, seen_set, only_named=only_named)
+
+                # Slow but works. No better way to do this in owlready2 without using the reasoners at the moment.
+                for c in self._ontology.classes_in_signature():
+                    if ce in self.sub_classes(c, direct=True, only_named=False) and c not in seen_set:
+                        seen_set.add(c)
+                        yield c
+                        yield from self._super_classes_recursive(c, seen_set, only_named=only_named)
+            else:
+                raise ValueError(f'Super classes retrieval not supported for: {ce}')
+
+    def super_classes(self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True) \
+            -> Iterable[OWLClassExpression]:
+        if not direct:
+            seen_set = set()
+            yield from self._super_classes_recursive(ce, seen_set, only_named=only_named)
         else:
-            raise NotImplementedError("super classes for complex class expressions not implemented", ce)
+            if isinstance(ce, OWLClass):
+                c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
+                for sc in c_x.is_a:
+                    if (isinstance(sc, owlready2.ThingClass) or
+                            (not only_named and isinstance(sc, owlready2.ClassConstruct))):
+                        yield _parse_concept_to_owlapy(sc)
+            elif isinstance(ce, OWLClassExpression):
+                seen_set = set()
+                for axiom in self._ontology.general_class_axioms():
+                    if (isinstance(axiom, OWLSubClassOfAxiom) and axiom.get_sub_class() == ce
+                            and (not only_named or isinstance(axiom.get_super_class(), OWLClass))):
+                        seen_set.add(axiom.get_super_class())
+                        yield axiom.get_super_class()
+                # Slow but works. No better way to do this in owlready2 without using the reasoners at the moment.
+                for c in self._ontology.classes_in_signature():
+                    if ce in self.super_classes(c, direct=True, only_named=False) and c not in seen_set:
+                        seen_set.add(c)
+                        yield c
+            else:
+                raise ValueError(f'Super classes retrieval not supported for {ce}')
 
     def equivalent_object_properties(self, op: OWLObjectPropertyExpression) -> Iterable[OWLObjectPropertyExpression]:
         if isinstance(op, OWLObjectProperty):
