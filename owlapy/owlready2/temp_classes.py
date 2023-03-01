@@ -32,6 +32,7 @@ class OWLReasoner_Owlready2_TempClasses(OWLReasoner_Owlready2):
                 temp_pred.equivalent_to = [self._conv.map_concept(ce)]
             self._sync_reasoner(other_reasoner=self._base_reasoner)
             instances = list(temp_pred.instances(world=self._world))
+            temp_pred.equivalent_to = []
             owlready2.destroy_entity(temp_pred)
             self._cnt += 1
             for i in instances:
