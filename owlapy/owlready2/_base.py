@@ -266,17 +266,36 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             yield from super_ranges
 
     def equivalent_classes(self, ce: OWLClassExpression, only_named: bool = True) -> Iterable[OWLClassExpression]:
+        seen_set = {ce}
         if isinstance(ce, OWLClass):
             c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
             for eq_x in c_x.INDIRECT_equivalent_to:
-                if isinstance(eq_x, owlready2.ThingClass) or \
-                        (isinstance(eq_x, owlready2.ClassConstruct) and not only_named):
-                    yield _parse_concept_to_owlapy(eq_x)
+                eq = _parse_concept_to_owlapy(eq_x)
+                if (isinstance(eq, OWLClass) or
+                        (isinstance(eq, OWLClassExpression) and not only_named)) and eq not in seen_set:
+                    seen_set.add(eq)
+                    yield eq
+                # Workaround for problems in owlready2. It does not always recognize equivalent complex class
+                # expressions through INDIRECT_equivalent_to. Maybe it will works as soon as owlready2 adds support for
+                # EquivalentClasses general class axioms
+                if not only_named and isinstance(eq_x, owlready2.ThingClass):
+                    for eq_2_x in eq_x.equivalent_to:
+                        eq_2 = _parse_concept_to_owlapy(eq_2_x)
+                        if eq_2 not in seen_set:
+                            seen_set.add(eq_2)
+                            yield eq_2
         else:
             # Extend as soon as owlready2 supports EquivalentClasses general class axioms
             # Slow but works. No better way to do this in owlready2 without using the reasoners at the moment.
             # Might be able to change this when owlready2 supports general class axioms for EquivalentClasses
-            yield from (c for c in self._ontology.classes_in_signature() if ce in self.equivalent_classes(c, False))
+            for c in self._ontology.classes_in_signature():
+                if ce in self.equivalent_classes(c, only_named=False) and c not in seen_set:
+                    seen_set.add(c)
+                    yield c
+                    for e_c in self.equivalent_classes(c, only_named=False):
+                        if e_c not in seen_set and (not only_named or isinstance(e_c, OWLClass)):
+                            seen_set.add(e_c)
+                            yield e_c
 
     def disjoint_classes(self, ce: OWLClassExpression, only_named: bool = True) -> Iterable[OWLClassExpression]:
         if isinstance(ce, OWLClass):
