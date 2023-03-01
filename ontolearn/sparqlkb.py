@@ -204,7 +204,7 @@ class SparqlReasoner(OWLReasonerEx):
         logger.debug("Calling object_property_ranges(%s) from backing reasoner", _debug_render(pe))
         yield from self._backing_reasoner.object_property_ranges(pe, direct=direct)
 
-    def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClass]:
+    def equivalent_classes(self, ce: OWLClassExpression, only_named: bool = True) -> Iterable[OWLClassExpression]:
         raise NotImplementedError
 
     def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty) -> Iterable[OWLLiteral]:
@@ -227,9 +227,10 @@ class SparqlReasoner(OWLReasonerEx):
         for i in self._ontology.client.unwrap(res):
             yield OWLNamedIndividual(i)
 
-    def sub_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
+    def sub_classes(self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True) \
+            -> Iterable[OWLClassExpression]:
         logger.debug("Calling sub_classes(%s) from backing reasoner", _debug_render(ce))
-        yield from self._backing_reasoner.sub_classes(ce, direct=direct)
+        yield from self._backing_reasoner.sub_classes(ce, direct=direct, only_named=only_named)
 
     def sub_data_properties(self, dp: OWLDataProperty, direct: bool = False) -> Iterable[OWLDataProperty]:
         logger.debug("Calling sub_data_properties(%s) from backing reasoner", _debug_render(dp))
@@ -246,7 +247,8 @@ class SparqlReasoner(OWLReasonerEx):
     def get_root_ontology(self) -> SparqlOntology:
         return self._ontology
 
-    def super_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
+    def super_classes(self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True) \
+            -> Iterable[OWLClassExpression]:
         raise NotImplementedError
 
 

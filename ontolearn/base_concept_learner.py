@@ -1,7 +1,6 @@
 import logging
 import time
 from abc import ABCMeta, abstractmethod
-from itertools import chain
 from typing import List, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, Union, cast, Callable, Type
 
 import numpy as np
@@ -16,7 +15,7 @@ from ontolearn.search import _NodeQuality
 from owlapy.model import OWLDeclarationAxiom, OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
     OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, OWLAnnotationAssertionAxiom, OWLAnnotation, \
     OWLAnnotationProperty, OWLLiteral, IRI, OWLClassExpression, OWLReasoner, OWLAxiom, OWLThing
-from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLOntology_Owlready2, OWLReasoner_Owlready2
+from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLOntology_Owlready2
 from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
@@ -335,8 +334,11 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         """
         manager: OWLOntologyManager_Owlready2 = OWLOntologyManager_Owlready2()
         ontology: OWLOntology_Owlready2 = manager.load_ontology(IRI.create('file://' + path))
-        reasoner = OWLReasoner_Owlready2(ontology)
-        yield from chain.from_iterable(reasoner.equivalent_classes(c) for c in ontology.classes_in_signature())
+        for c in ontology.classes_in_signature():
+            for equivalent_classes in ontology.equivalent_classes_axioms(c):
+                for equivalent_c in equivalent_classes.class_expressions():
+                    if equivalent_c != c:
+                        yield equivalent_c
 
 
 class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
