@@ -408,7 +408,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             # First go through all general class axioms, they should only have complex classes as sub_classes.
             # Done for OWLClass and OWLClassExpression.
             for axiom in self._ontology.general_class_axioms():
-                if (isinstance(axiom, OWLSubClassOfAxiom) and axiom.get_super_class() == ce
+                if (isinstance(axiom, OWLSubClassOfAxiom) and axiom.get_super_class() == c
                         and axiom.get_sub_class() not in seen_set):
                     seen_set.add(axiom.get_sub_class())
                     if not only_named:
@@ -426,11 +426,11 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                         yield from self._sub_classes_recursive(sc, seen_set, only_named=only_named)
             elif isinstance(c, OWLClassExpression):
                 # Slow but works. No better way to do this in owlready2 without using the reasoners at the moment.
-                for c in self._ontology.classes_in_signature():
-                    if ce in self.super_classes(c, direct=True, only_named=False) and c not in seen_set:
-                        seen_set.add(c)
-                        yield c
-                        yield from self._sub_classes_recursive(c, seen_set, only_named=only_named)
+                for atomic_c in self._ontology.classes_in_signature():
+                    if c in self.super_classes(atomic_c, direct=True, only_named=False) and atomic_c not in seen_set:
+                        seen_set.add(atomic_c)
+                        yield atomic_c
+                        yield from self._sub_classes_recursive(atomic_c, seen_set, only_named=only_named)
             else:
                 raise ValueError(f'Sub classes retrieval not implemented for: {ce}')
 
@@ -476,9 +476,9 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                         if isinstance(sc, OWLClass) or not only_named:
                             yield sc
                         yield from self._super_classes_recursive(sc, seen_set, only_named=only_named)
-            elif isinstance(ce, OWLClassExpression):
+            elif isinstance(c, OWLClassExpression):
                 for axiom in self._ontology.general_class_axioms():
-                    if (isinstance(axiom, OWLSubClassOfAxiom) and axiom.get_sub_class() == ce
+                    if (isinstance(axiom, OWLSubClassOfAxiom) and axiom.get_sub_class() == c
                             and (axiom.get_super_class() not in seen_set)):
                         super_class = axiom.get_super_class()
                         seen_set.add(super_class)
@@ -489,11 +489,11 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                         yield from self._super_classes_recursive(super_class, seen_set, only_named=only_named)
 
                 # Slow but works. No better way to do this in owlready2 without using the reasoners at the moment.
-                for c in self._ontology.classes_in_signature():
-                    if ce in self.sub_classes(c, direct=True, only_named=False) and c not in seen_set:
-                        seen_set.add(c)
-                        yield c
-                        yield from self._super_classes_recursive(c, seen_set, only_named=only_named)
+                for atomic_c in self._ontology.classes_in_signature():
+                    if c in self.sub_classes(atomic_c, direct=True, only_named=False) and atomic_c not in seen_set:
+                        seen_set.add(atomic_c)
+                        yield atomic_c
+                        yield from self._super_classes_recursive(atomic_c, seen_set, only_named=only_named)
             else:
                 raise ValueError(f'Super classes retrieval not supported for: {ce}')
 
