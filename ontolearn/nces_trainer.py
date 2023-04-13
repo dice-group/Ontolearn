@@ -3,7 +3,6 @@ import torch
 from tqdm import trange
 from collections import defaultdict
 from sklearn.utils import resample
-from torch.utils.data import DataLoader
 import os, json
 from ontolearn.data_struct import BaseDataLoader
 from torch.optim.lr_scheduler import ExponentialLR
