@@ -109,11 +109,11 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
     def object_property_ranges(self, pe: OWLObjectProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
         yield from self._base_reasoner.object_property_ranges(pe, direct=direct)
 
-    def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClassExpression]:
-        yield from self._base_reasoner.equivalent_classes(ce)
+    def equivalent_classes(self, ce: OWLClassExpression, only_named: bool = True) -> Iterable[OWLClassExpression]:
+        yield from self._base_reasoner.equivalent_classes(ce, only_named=only_named)
 
-    def disjoint_classes(self, ce: OWLClassExpression) -> Iterable[OWLClassExpression]:
-        yield from self._base_reasoner.disjoint_classes(ce)
+    def disjoint_classes(self, ce: OWLClassExpression, only_named: bool = True) -> Iterable[OWLClassExpression]:
+        yield from self._base_reasoner.disjoint_classes(ce, only_named=only_named)
 
     def different_individuals(self, ce: OWLNamedIndividual) -> Iterable[OWLNamedIndividual]:
         yield from self._base_reasoner.different_individuals(ce)
@@ -143,11 +143,13 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
         temp = self._find_instances(ce)
         yield from temp
 
-    def sub_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
-        yield from self._base_reasoner.sub_classes(ce, direct=direct)
+    def sub_classes(self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True) \
+            -> Iterable[OWLClassExpression]:
+        yield from self._base_reasoner.sub_classes(ce, direct=direct, only_named=only_named)
 
-    def super_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
-        yield from self._base_reasoner.super_classes(ce, direct=direct)
+    def super_classes(self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True) \
+            -> Iterable[OWLClassExpression]:
+        yield from self._base_reasoner.super_classes(ce, direct=direct, only_named=only_named)
 
     def types(self, ind: OWLNamedIndividual, direct: bool = False) -> Iterable[OWLClass]:
         yield from self._base_reasoner.types(ind, direct=direct)

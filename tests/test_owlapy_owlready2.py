@@ -26,14 +26,172 @@ from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
 
 
 class Owlapy_Owlready2_Test(unittest.TestCase):
-    def test_sub_classes(self):
-        ns = "http://example.com/father#"
+
+    def test_equivalent_classes(self):
+        ns = "http://dl-learner.org/mutagenesis#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/Mutagenesis/mutagenesis.owl"))
         reasoner = OWLReasoner_Owlready2(onto)
 
-        classes = frozenset(reasoner.sub_classes(OWLClass(IRI.create(ns, "person"))))
-        target_classes = frozenset((OWLClass(IRI.create(ns, "male")), OWLClass(IRI.create(ns, "female"))))
+        atom = OWLClass(IRI(ns, 'Atom'))
+        bond = OWLClass(IRI(ns, 'Bond'))
+        ball3 = OWLClass(IRI(ns, 'Ball3'))
+        benzene = OWLClass(IRI(ns, 'Benzene'))
+        compound = OWLClass(IRI(ns, 'Compound'))
+        has_atom = OWLObjectProperty(IRI(ns, 'hasAtom'))
+
+        mgr.add_axiom(onto, OWLEquivalentClassesAxiom([OWLObjectUnionOf([atom, bond]), compound, atom, bond]))
+        mgr.add_axiom(onto, OWLEquivalentClassesAxiom([bond, benzene]))
+        mgr.add_axiom(onto, OWLEquivalentClassesAxiom([bond, OWLObjectSomeValuesFrom(has_atom, ball3)]))
+
+        classes = frozenset({atom, compound, bond})
+        target_classes = frozenset(reasoner.equivalent_classes(benzene, only_named=True))
+        self.assertEqual(classes, target_classes)
+
+        classes = frozenset({OWLObjectUnionOf([atom, bond]), atom, compound, bond,
+                             OWLObjectSomeValuesFrom(has_atom, ball3)})
+        target_classes = frozenset(reasoner.equivalent_classes(benzene, only_named=False))
+        self.assertEqual(classes, target_classes)
+
+        classes = frozenset({bond, atom, compound, benzene})
+        target_classes = frozenset(reasoner.equivalent_classes(OWLObjectUnionOf([atom, bond]), only_named=True))
+        self.assertEqual(classes, target_classes)
+
+        classes = frozenset({atom, compound, bond, benzene, OWLObjectSomeValuesFrom(has_atom, ball3)})
+        target_classes = frozenset(reasoner.equivalent_classes(OWLObjectUnionOf([atom, bond]), only_named=False))
+        self.assertEqual(classes, target_classes)
+
+        classes = frozenset({bond, atom, compound, benzene})
+        target_classes = frozenset(reasoner.equivalent_classes(OWLObjectSomeValuesFrom(has_atom, ball3),
+                                                               only_named=True))
+        self.assertEqual(classes, target_classes)
+
+        classes = frozenset({atom, compound, bond, benzene, OWLObjectUnionOf([atom, bond])})
+        target_classes = frozenset(reasoner.equivalent_classes(OWLObjectSomeValuesFrom(has_atom, ball3),
+                                                               only_named=False))
+        self.assertEqual(classes, target_classes)
+
+    def test_sub_classes(self):
+        ns = "http://dl-learner.org/mutagenesis#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://KGs/Mutagenesis/mutagenesis.owl"))
+        reasoner = OWLReasoner_Owlready2(onto)
+
+        bond = OWLClass(IRI(ns, 'Bond'))
+        ball3 = OWLClass(IRI(ns, 'Ball3'))
+        benzene = OWLClass(IRI(ns, 'Benzene'))
+        has_atom = OWLObjectProperty(IRI(ns, 'hasAtom'))
+
+        mgr.add_axiom(onto, OWLSubClassOfAxiom(benzene, OWLObjectUnionOf([bond, bond])))
+        mgr.add_axiom(onto, OWLSubClassOfAxiom(OWLObjectUnionOf([bond, bond]), ball3))
+        mgr.add_axiom(onto, OWLSubClassOfAxiom(ball3, OWLObjectSomeValuesFrom(has_atom, ball3)))
+
+        # Named class
+        # Direct, only named
+        classes = frozenset({})
+        target_classes = frozenset(reasoner.sub_classes(ball3, direct=True, only_named=True))
+        self.assertEqual(classes, target_classes)
+
+        # non Direct, only named
+        classes = frozenset({benzene})
+        target_classes = frozenset(reasoner.sub_classes(ball3, direct=False, only_named=True))
+        self.assertEqual(classes, target_classes)
+
+        # Direct, not only named
+        classes = frozenset({OWLObjectUnionOf([bond, bond])})
+        target_classes = frozenset(reasoner.sub_classes(ball3, direct=True, only_named=False))
+        self.assertEqual(classes, target_classes)
+
+        # non Direct, not only named
+        classes = frozenset({OWLObjectUnionOf([bond, bond]), benzene})
+        target_classes = frozenset(reasoner.sub_classes(ball3, direct=False, only_named=False))
+        self.assertEqual(classes, target_classes)
+
+        # Complex class expression
+        # Direct, only named
+        classes = frozenset({ball3})
+        target_classes = frozenset(reasoner.sub_classes(OWLObjectSomeValuesFrom(has_atom, ball3),
+                                                        direct=True, only_named=True))
+        self.assertEqual(classes, target_classes)
+
+        # non Direct, only named
+        classes = frozenset({ball3, benzene})
+        target_classes = frozenset(reasoner.sub_classes(OWLObjectSomeValuesFrom(has_atom, ball3),
+                                                        direct=False, only_named=True))
+        self.assertEqual(classes, target_classes)
+
+        # Direct, not only named
+        classes = frozenset({ball3})
+        target_classes = frozenset(reasoner.sub_classes(OWLObjectSomeValuesFrom(has_atom, ball3),
+                                                        direct=True, only_named=False))
+        self.assertEqual(classes, target_classes)
+
+        # non Direct, not only named
+        classes = frozenset({OWLObjectUnionOf([bond, bond]), benzene, ball3})
+        target_classes = frozenset(reasoner.sub_classes(OWLObjectSomeValuesFrom(has_atom, ball3),
+                                                        direct=False, only_named=False))
+        self.assertEqual(classes, target_classes)
+
+    def test_super_classes(self):
+        ns = "http://dl-learner.org/mutagenesis#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://KGs/Mutagenesis/mutagenesis.owl"))
+        reasoner = OWLReasoner_Owlready2(onto)
+
+        bond = OWLClass(IRI(ns, 'Bond'))
+        ball3 = OWLClass(IRI(ns, 'Ball3'))
+        benzene = OWLClass(IRI(ns, 'Benzene'))
+        ring_structure = OWLClass(IRI(ns, 'RingStructure'))
+        has_atom = OWLObjectProperty(IRI(ns, 'hasAtom'))
+
+        mgr.add_axiom(onto, OWLSubClassOfAxiom(OWLObjectSomeValuesFrom(has_atom, ball3), benzene))
+        mgr.add_axiom(onto, OWLSubClassOfAxiom(benzene, OWLObjectUnionOf([bond, bond])))
+        mgr.add_axiom(onto, OWLSubClassOfAxiom(OWLObjectUnionOf([bond, bond]), ball3))
+
+        # Named class
+        # Direct, only named
+        classes = frozenset({ring_structure})
+        target_classes = frozenset(reasoner.super_classes(benzene, direct=True, only_named=True))
+        self.assertEqual(classes, target_classes)
+
+        # non Direct, only named
+        classes = frozenset({ring_structure, OWLThing, ball3})
+        target_classes = frozenset(reasoner.super_classes(benzene, direct=False, only_named=True))
+        self.assertEqual(classes, target_classes)
+
+        # Direct, not only named
+        classes = frozenset({OWLObjectUnionOf([bond, bond]), ring_structure})
+        target_classes = frozenset(reasoner.super_classes(benzene, direct=True, only_named=False))
+        self.assertEqual(classes, target_classes)
+
+        # non Direct, not only named
+        classes = frozenset({OWLObjectUnionOf([bond, bond]), ball3, ring_structure, OWLThing})
+        target_classes = frozenset(reasoner.super_classes(benzene, direct=False, only_named=False))
+        self.assertEqual(classes, target_classes)
+
+        # Complex class expression
+        # Direct, only named
+        classes = frozenset({benzene})
+        target_classes = frozenset(reasoner.super_classes(OWLObjectSomeValuesFrom(has_atom, ball3),
+                                                          direct=True, only_named=True))
+        self.assertEqual(classes, target_classes)
+
+        # non Direct, only named
+        classes = frozenset({ring_structure, OWLThing, benzene, ball3})
+        target_classes = frozenset(reasoner.super_classes(OWLObjectSomeValuesFrom(has_atom, ball3),
+                                                          direct=False, only_named=True))
+        self.assertEqual(classes, target_classes)
+
+        # Direct, not only named
+        classes = frozenset({benzene})
+        target_classes = frozenset(reasoner.super_classes(OWLObjectSomeValuesFrom(has_atom, ball3),
+                                                          direct=True, only_named=False))
+        self.assertEqual(classes, target_classes)
+
+        # non Direct, not only named
+        classes = frozenset({OWLObjectUnionOf([bond, bond]), ball3, ring_structure, OWLThing, benzene})
+        target_classes = frozenset(reasoner.super_classes(OWLObjectSomeValuesFrom(has_atom, ball3),
+                                                          direct=False, only_named=False))
         self.assertEqual(classes, target_classes)
 
     def test_sub_object_properties(self):
@@ -346,9 +504,9 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
                          list(reasoner.data_property_ranges(age)))
 
         self.assertFalse(list(reasoner.equivalent_classes(brother)))
-        mgr.add_axiom(onto, OWLEquivalentClassesAxiom(brother, male))
+        mgr.add_axiom(onto, OWLEquivalentClassesAxiom([brother, male]))
         self.assertIn(male, list(reasoner.equivalent_classes(brother)))
-        mgr.remove_axiom(onto, OWLEquivalentClassesAxiom(brother, male))
+        mgr.remove_axiom(onto, OWLEquivalentClassesAxiom([brother, male]))
         self.assertNotIn(male, list(reasoner.equivalent_classes(brother)))
 
         self.assertFalse(list(reasoner.equivalent_object_properties(has_child)))

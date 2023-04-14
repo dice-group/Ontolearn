@@ -2172,16 +2172,21 @@ class OWLEquivalentClassesAxiom(OWLNaryClassAxiom):
     """Represents an EquivalentClasses axiom in the OWL 2 Specification."""
     __slots__ = ()
 
-    def __init__(self, cls_a: OWLClassExpression, cls_b: OWLClassExpression,
+    def __init__(self, class_expressions: List[OWLClassExpression],
                  annotations: Optional[Iterable['OWLAnnotation']] = None):
-        """Get an equivalent classes axiom with specified operands
+        super().__init__(class_expressions=class_expressions, annotations=annotations)
 
-        Args:
-            cls_a: one class for equivalence
-            cls_b: one class for equivalence
-            annotations: annotations
-        """
-        super().__init__([cls_a, cls_b], annotations=annotations)
+    def contains_named_equivalent_class(self) -> bool:
+        return any(isinstance(ce, OWLClass) for ce in self._class_expressions)
+
+    def contains_owl_nothing(self) -> bool:
+        return any(isinstance(ce, OWLNothing) for ce in self._class_expressions)
+
+    def contains_owl_thing(self) -> bool:
+        return any(isinstance(ce, OWLThing) for ce in self._class_expressions)
+
+    def named_classes(self) -> Iterable[OWLClass]:
+        yield from (ce for ce in self._class_expressions if isinstance(ce, OWLClass))
 
 
 class OWLDisjointClassesAxiom(OWLNaryClassAxiom):
@@ -3074,6 +3079,28 @@ class OWLOntology(OWLObject, metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def equivalent_classes_axioms(self, c: OWLClass) -> Iterable[OWLEquivalentClassesAxiom]:
+        """ Gets all of the equivalent axioms in this ontology that contain the specified class as an operand.
+
+        Args:
+            c: The class for which the EquivalentClasses axioms should be retrieved.
+
+        Returns:
+            EquivalentClasses axioms contained in this ontology.
+        """
+        pass
+
+    @abstractmethod
+    def general_class_axioms(self) -> Iterable[OWLClassAxiom]:
+        """Get the general class axioms of this ontology. This includes SubClass axioms with a complex class expression
+           as the sub class and EquivalentClass axioms and DisjointClass axioms with only complex class expressions.
+
+        Returns:
+            General class axioms contained in this ontology.
+        """
+        pass
+
+    @abstractmethod
     def data_property_domain_axioms(self, property: OWLDataProperty) -> Iterable[OWLDataPropertyDomainAxiom]:
         """Gets the OWLDataPropertyDomainAxiom objects where the property is equal to the specified property.
 
@@ -3324,12 +3351,13 @@ class OWLReasoner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def equivalent_classes(self, ce: OWLClassExpression) -> Iterable[OWLClassExpression]:
+    def equivalent_classes(self, ce: OWLClassExpression, only_named: bool = True) -> Iterable[OWLClassExpression]:
         """Gets the class expressions that are equivalent to the specified class expression with respect to the set of
         reasoner axioms.
 
         Args:
             ce: The class expression whose equivalent classes are to be retrieved.
+            only_named: Whether to only retrieve named equivalent classes or also complex class expressions.
 
         Returns:
             All class expressions C where the root ontology imports closure entails EquivalentClasses(ce C). If ce is
@@ -3340,12 +3368,13 @@ class OWLReasoner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def disjoint_classes(self, ce: OWLClassExpression) -> Iterable[OWLClassExpression]:
+    def disjoint_classes(self, ce: OWLClassExpression, only_named: bool = True) -> Iterable[OWLClassExpression]:
         """Gets the class expressions that are disjoint with specified class expression with respect to the set of
         reasoner axioms.
 
         Args:
             ce: The class expression whose disjoint classes are to be retrieved.
+            only_named: Whether to only retrieve named disjoint classes or also complex class expressions.
 
         Returns:
             All class expressions D where the set of reasoner axioms entails EquivalentClasses(D ObjectComplementOf(ce))
@@ -3467,7 +3496,8 @@ class OWLReasoner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def sub_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
+    def sub_classes(self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True) \
+            -> Iterable[OWLClassExpression]:
         """Gets the set of named classes that are the strict (potentially direct) subclasses of the specified class
         expression with respect to the reasoner axioms.
 
@@ -3475,6 +3505,7 @@ class OWLReasoner(metaclass=ABCMeta):
             ce: The class expression whose strict (direct) subclasses are to be retrieved.
             direct: Specifies if the direct subclasses should be retrieved (True) or if the all subclasses
                 (descendant) classes should be retrieved (False).
+            only_named: Whether to only retrieve named sub classes or also complex class expressions.
 
         Returns:
             If direct is True, each class C where reasoner axioms entails DirectSubClassOf(C, ce). If direct is False,
@@ -3575,7 +3606,8 @@ class OWLReasoner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def super_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
+    def super_classes(self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True) \
+            -> Iterable[OWLClassExpression]:
         """Gets the stream of named classes that are the strict (potentially direct) super classes of the specified
         class expression with respect to the imports closure of the root ontology.
 
@@ -3583,6 +3615,7 @@ class OWLReasoner(metaclass=ABCMeta):
             ce: The class expression whose strict (direct) super classes are to be retrieved.
             direct: Specifies if the direct super classes should be retrieved (True) or if the all super classes
                 (ancestors) classes should be retrieved (False).
+            only_named: Whether to only retrieve named super classes or also complex class expressions.
 
         Returns:
             If direct is True, each class C where the set of reasoner axioms entails DirectSubClassOf(ce, C).
