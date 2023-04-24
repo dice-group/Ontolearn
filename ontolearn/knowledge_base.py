@@ -17,7 +17,6 @@ Factory = Callable
 logger = logging.getLogger(__name__)
 
 # TODO:CD: To many non pythonic functions
-# TODO:CD: Almost no documentation
 def _Default_OntologyManagerFactory(world_store=None) -> OWLOntologyManager:
     from owlapy.owlready2 import OWLOntologyManager_Owlready2
 
@@ -37,8 +36,11 @@ def _Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
 def _Default_ClassExpressionLengthMetricFactory() -> OWLClassExpressionLengthMetric:
     return OWLClassExpressionLengthMetric.get_default()
 
-# TODO:CD: Unclear why we need this class definition
 class EvaluatedConcept:
+    """This class is used to explicitly declare the attributes that should be returned by the evaluate_concept method.
+    This way, Python uses a more efficient way to store the instance attributes, which can significantly reduce the
+    memory usage
+    """
     __slots__ = 'q', 'inds', 'ic'
     pass
 
@@ -46,7 +48,8 @@ class EvaluatedConcept:
 # TODO:CD: Namings are not self-explanatory: User does not need to know
 #  a) factory programming pattern b) Manager Classes etc inadvertently increases cognitive load
 class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
-    """Knowledge Base Class representing Tbox and Abox along with concept hierarchies
+    """Knowledge Base Class is used to represent an OWL knowledge base in Ontolearn, meaning that it represents the
+    Tbox and Abox along with concept hierarchies
 
     Args:
         path: path to an ontology file that is to be loaded
@@ -72,6 +75,9 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
     path: str
     use_individuals_cache: bool
+
+    # The simplest way to create an instance of this class is by just passing the 'path' of the OWL knowledge base in
+    # the constructor
     @overload
     def __init__(self, *,
                  path: str,
@@ -107,6 +113,12 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
                  backend_store: bool = False):
         AbstractKnowledgeBase.__init__(self)
         self.path = path
+
+        """
+            In the code below, until the first method of the class, 
+            we assign some of the class attributes depending on
+            the arguments passed on the instance initialization. 
+        """
         if ontology is not None:
             self._manager = ontology.get_owl_ontology_manager()
             self._ontology = ontology
@@ -159,35 +171,39 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
         self.describe()
 
+    """____________________________↓ Class Methods ↓____________________________"""
+
     def ontology(self) -> OWLOntology:
-        """Root Ontology loaded in this knowledge base
+        """Get the root Ontology loaded in this knowledge base
 
         Returns:
-            Ontology
+            The Ontology
         """
+
         return self._ontology
 
     def reasoner(self) -> OWLReasoner:
-        """Reasoner loaded in this knowledge base
+        """Get the Reasoner loaded in this knowledge base
 
         Returns:
-            reasoner
+            The Reasoner
         """
+
         return self._reasoner
 
     def ignore_and_copy(self, ignored_classes: Optional[Iterable[OWLClass]] = None,
                         ignored_object_properties: Optional[Iterable[OWLObjectProperty]] = None,
                         ignored_data_properties: Optional[Iterable[OWLDataProperty]] = None) -> 'KnowledgeBase':
-        """Make a copy of the knowledge base while ignoring specified concepts and properties
+        """Makes a copy of the knowledge base while ignoring specified concepts and properties
 
         Args:
             ignored_classes: classes to ignore
             ignored_object_properties: object properties to ignore
             ignored_data_properties: data properties to ignore
-
         Returns:
-            a new KnowledgeBase with the hierarchies restricted as requested
+            A new KnowledgeBase with the hierarchies restricted as requested
         """
+
         new = object.__new__(KnowledgeBase)
 
         AbstractKnowledgeBase.__init__(new)
@@ -238,19 +254,28 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         return new
 
     def concept_len(self, ce: OWLClassExpression) -> int:
-        """Calculate the length of a concept
+        """Calculates the length of a concept and is used by some concept learning algorithms to
+        find the best results considering also the length of the concepts
 
         Args:
-            ce: concept
-
+            ce: the concept to be measured
         Returns:
-            length of the concept
+            Length of the concept
         """
+
         return self._length_metric.length(ce)
 
     def clean(self):
-        """Clean all stored values if there is any.
+        """Clean all stored values (states and caches) if there is any
+
+        Note:
+            1. If you have more than one learning problem that you want to fit to the same model (i.e. to learn the
+            concept using the same concept learner model) use this method to make sure that you have cleared every
+            previous stored value.
+            2. If you store another KnowledgeBase instance using the same variable name as before, it is recommended to
+            use this method before the initialization to avoid data mismatch.
         """
+
         ConceptGenerator.clean(self)
         if self.use_individuals_cache:
             self._ind_cache.cache_clear()
@@ -283,14 +308,15 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
             return iter_count(self._reasoner.instances(ce))
 
     def individuals(self, concept: Optional[OWLClassExpression] = None) -> Iterable[OWLNamedIndividual]:
-        """All named individuals belonging to the concept in the ontology
+        """Retrieve all individuals belonging to the concept in the ontology. If the concept property is not
+        specified then it returns all the individuals
 
         Args:
             concept: class expression of which to list individuals
-
         Returns:
-            individuals belonging to the given class
+            Individuals belonging to the given class
         """
+
         if concept is None or concept.is_owl_thing():
             for i in self._ind_set:
                 yield i
@@ -298,7 +324,14 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
             yield from self._maybe_cache_individuals(concept)
 
     def individuals_count(self, concept: Optional[OWLClassExpression] = None) -> int:
-        """Number of individuals"""
+        """Returns the number of all individuals belonging to the concept in the ontology
+
+        Args:
+            concept: class expression of the individuals to count
+        Returns:
+            Number of the individuals belonging to the given class
+        """
+
         if concept is None or concept.is_owl_thing():
             return len(self._ind_set)
         else:
@@ -317,6 +350,17 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
         ...
 
     def individuals_set(self, arg: Union[Iterable[OWLNamedIndividual], OWLNamedIndividual, OWLClassExpression]):
+        """Retrieve the individuals specified in the arg as a frozenset. If `arg` is an OWLClassExpression then this
+        method behaves as the method "individuals" but will return the final result as a frozenset
+
+        Args:
+            arg: more than one individual
+                single individual
+                class expression of which to list individuals
+        Returns:
+            frozenset of the individuals depending on the arg type
+        """
+
         if isinstance(arg, OWLClassExpression):
             if self.use_individuals_cache:
                 self._cache_individuals(arg)
@@ -330,6 +374,12 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
             return frozenset(arg)
 
     def all_individuals_set(self):
+        """Retrieve all the individuals of the knowledge base
+
+        Returns:
+            frozenset of the all individuals
+        """
+
         if self._ind_set is not None:
             return self._ind_set
         else:
@@ -370,6 +420,21 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
     @encode_learning_problem.register
     def _(self, lp: PosNegLPStandard):
+        """Provides the encoded learning problem (lp), i.e. the class containing the set of OWLNamedIndividuals
+        as follows:
+            kb_pos --> the positive examples set
+            kb_neg --> the negative examples set
+            kb_all --> all lp individuals / all individuals set
+            kb_diff --> kb_all - (kb_pos + kb_neg)
+        Note:
+            Simple access of the learning problem individuals divided in respective sets.
+            You will need the encoded learning problem to use the method evaluate_concept of this class.
+        Args:
+            lp: the learning problem
+        Return:
+            The encoded learning problem
+        """
+
         assert len(self.class_hierarchy()) > 0
 
         if lp.all is None:
@@ -408,6 +473,19 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
     def evaluate_concept(self, concept: OWLClassExpression, quality_func: AbstractScorer,
                          encoded_learning_problem: EncodedLearningProblem) -> EvaluatedConcept:
+        """Evaluates a concept by using the encoded learning problem examples, in terms of Accuracy or F1-score
+
+        Note:
+            This method is useful to tell the quality (e.q) of a generated concept by the concept learners, to get
+            the set of individuals (e.inds) that are classified by this concept and the amount of them (e.ic).
+        Args:
+            concept: the concept to be evaluated
+            quality_func: quality measurement in terms of Accuracy or F1-score
+            encoded_learning_problem: the encoded learning problem
+        Return:
+            The evaluated concept
+        """
+
         e = EvaluatedConcept()
         e.inds = self.individuals_set(concept)
         e.ic = len(e.inds)
@@ -416,4 +494,9 @@ class KnowledgeBase(AbstractKnowledgeBase, ConceptGenerator):
 
     async def evaluate_concept_async(self, concept: OWLClassExpression, quality_func: AbstractScorer,
                                      encoded_learning_problem: EncodedLearningProblem) -> EvaluatedConcept:
+        """The asynchronous version of evaluate_concept
+
+        Raises:
+            NotImplementedError: This method is not implemented yet
+        """
         raise NotImplementedError
