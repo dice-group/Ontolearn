@@ -4,10 +4,10 @@
 It contains the following ready-to-apply algorithms that learn OWL class expressions from positive and negative examples:
 - **EvoLearner** &rarr; [An evolutionary approach to learn concepts in ALCQ(D)](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
 - **Drill** &rarr; [Deep Reinforcement Learning for Refinement Operators in ALC](https://arxiv.org/pdf/2106.15373.pdf)
-- **CELOE** &rarr; Concept Learning for Refinement Operators in ALC
+- **CELOE** &rarr; [Class Expression Learning for Ontology Engineering] (https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
 - **OCEL** &rarr; A limited version of CELOE
 - **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
-- **NCES** &rarr; (soon) [Neural Class Expression Synthesis](https://arxiv.org/pdf/2111.08486.pdf)
+- **NCES** &rarr; [Neural Class Expression Synthesis](https://arxiv.org/pdf/2111.08486.pdf)
 - **NERO** &rarr; (soon) [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://github.com/dice-group/Nero)
 
 You can find more details about *Ontolearn* and these algorithms and their variations in the [documentation](https://ontolearn-docs-dice-group.netlify.app/index.html).
@@ -133,6 +133,7 @@ Feel free to create a pull request!
 
 ## Relevant papers
 
+- [NCES](https://arxiv.org/pdf/2111.08486.pdf): Neural Class Expression Synthesis
 - [Evolearner](https://doi.org/10.1145/3485447.3511925): Learning description logics with evolutionary algorithms.
 - [CLIP](https://arxiv.org/abs/2107.04911): Learning Concept Lengths Accelerates Concept Learning in ALC.
 ### Citing
