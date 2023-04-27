@@ -3,16 +3,16 @@
 This is a guide to show how to use a concept learner to generate hypotheses for a target
 concept in an ontology.
 In this guide we will show how to use the following concept learners
-of OntoLearn library:
+of Ontolearn library:
 - [EvoLearner](ontolearn.concept_learner.EvoLearner)
 - [CELOE](ontolearn.concept_learner.CELOE)
 - [OCEL](ontolearn.concept_learner.OCEL)
 
-These algorithms are similar in execution, for that reason we are 
+These algorithms are similar in execution, for that reason, we are 
 describing them in a general manner. To test them separately we have provided
 a jupyter notebook file for each of them (find them [here](#end-notes)).
 Each algorithm may have different available configuration. However, at
-minimum they require a [knowledge base](01_knowledge_base.md) and a
+minimum, they require a [knowledge base](01_knowledge_base.md) and a
 [learning problem](02_learning_problem.md).
 
 Let's see the prerequisites needed to run the concept learners:
@@ -21,9 +21,9 @@ Let's see the prerequisites needed to run the concept learners:
 
 ## Prerequisites
 
-Before configuring and running an algorithm, we recommend you to store the dataset path
-having a `.owl` extension and the **learning problems** in a json file. For each learning problem 
-there are the positive and negative examples which consist of IRIs of the respective individuals
+Before configuring and running an algorithm, we recommend you store the dataset path
+having a `.owl` extension and the **learning problems** in a json file. For each learning problem, 
+there are positive and negative examples that consist of IRIs of the respective individuals
 as a string. Now we have the learning problems more organized, and we can access them later by loading the json file. Below is 
 an example file `synthetic_problems.json` showing how should it look:
 
@@ -126,7 +126,7 @@ which target concept is currently being learned:
 ```
 
 *(Optional)* If you have target concepts that you want to ignore check 
-[how to ignore concept](01_knowledge_base.md#ignore-concepts)
+[how to ignore concepts](01_knowledge_base.md#ignore-concepts)
 
 
 In Ontolearn you represent the learning problem as an object of the class
@@ -164,7 +164,7 @@ Let's start by setting a quality function.
 The default quality function to evaluate the quality of the
 found expressions is [F1 Score](ontolearn.metrics.F1).
 There are as well [Predictive Accuracy](ontolearn.metrics.Accuracy),
-[Precision](ontolearn.metrics.Precision), or
+[Precision](ontolearn.metrics.Precision), and
 [Recall](ontolearn.metrics.Recall). To use another quality function, first create an instance of the function:
 
 <!--pytest-codeblocks:cont-->
@@ -190,7 +190,7 @@ we have specified some of the parameters which OCEL offers:
                   iter_bound=10_000_000_000)
 ```
 
-The parameter `knowledge_base` which is the only required parameter, specify the
+The parameter `knowledge_base` which is the only required parameter, specifies the
 knowledge base that is used to learn and test concepts. 
 The following parameters are optional.
 - `quality_func` - function to evaluate the quality of solution concepts. (Default value = F1()) 
@@ -203,7 +203,7 @@ The following parameters are optional.
 
 Now, after creating the model you can **fit** the learning problem
 into this model, and it will find 
-the **hypotheses** that explains the positive and negative examples.
+the **hypotheses** that explain the positive and negative examples.
 You can do that by calling the method `fit` :
 
 <!--pytest-codeblocks:cont-->
@@ -219,14 +219,14 @@ The hypotheses can be saved or printed:
 ```
 
 `save_best_hypothesis` method creates a `.owl` file containing the hypotheses. 
-The number of the hypotheses is specified by the parameter `n`. 
+The number of hypotheses is specified by the parameter `n`. 
 `path` parameter specifies the name of the file.
 
 If you want to print the hypotheses you can use the method `best_hypotheses`
 which will return the `n` best hypotheses together with some insights such 
 as quality which by default is F1-score, length, tree length, tree depth of 
-the hypotheses and number of individuals that each of them is covering, use 
-the method `best_hypotheses` where `n` is the number of hypothesis you want to return.
+the hypotheses, and the number of individuals that each of them is covering, use 
+the method `best_hypotheses` where `n` is the number of hypotheses you want to return.
 
 <!--pytest-codeblocks:cont-->
 ```python
@@ -241,8 +241,8 @@ the method `best_hypotheses` where `n` is the number of hypothesis you want to r
 
 In this guide, we have shown the prerequisites of running a concept learner,
 how to configure its input properties and how to run it to successfully
-create hypotheses for learning problems in an ontology. You can try the concept
-learners we mentioned in this guide by executing the following jupyter notebook 
+learn class expressions for learning problems in an ontology. You can try the concept
+learners that we mentioned in this guide by executing the following jupyter notebook 
 files:
 
 - [EvoLearner notebook](evolearner_notebook.ipynb)

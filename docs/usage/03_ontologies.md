@@ -42,7 +42,7 @@ You can get the object properties in the signature:
 onto.object_properties_in_signature()
 ```
 
-For more methods, refer to the [OWLOntology](owlapy.model.OWLOntology) documentation.
+For more methods, refer to the [OWLOntology](owlapy.model.OWLOntology) class documentation.
 
 ----------------------------------------------------------------------------
 
@@ -194,68 +194,10 @@ created in the same directory as the file you are running this code.
 
 ## Attaching a Reasoner
 
-To validate facts about statements in the ontology (and thus
-also for the Structured Machine Learning task), the help of a reasoner
-component is required.
-
-In our Ontolearn library, we provide several **reasoners** to choose
-from. Currently, there are the following reasoners available for you to choose from: 
-
-- Fast instance checker: [OWLReasoner_FastInstanceChecker](owlapy.fast_instance_checker.OWLReasoner_FastInstanceChecker)
-- Structural Owlready2 reasoner: [OWLReasoner_Owlready2](owlapy.owlready2.OWLReasoner_Owlready2)
-- Class instantiation Owlready2 reasoner:  [OWLReasoner_Owlready2_TempClasses](owlapy.owlready2.temp_classes.OWLReasoner_Owlready2_TempClasses)
-
-
-To load any reasoner, use the following code:
-
-<!--pytest-codeblocks:cont-->
-```python
-from owlapy.owlready2 import OWLReasoner_Owlready2
-from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
-from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-
-structural_reasoner = OWLReasoner_Owlready2(onto)
-temp_classes_reasoner = OWLReasoner_Owlready2_TempClasses(onto)
-fast_instance_checker = OWLReasoner_FastInstanceChecker(onto, temp_classes_reasoner)
-```
-
-The reasoner takes as its first argument the ontology to load. The
-fast instance checker requires a base reasoner to which any reasoning
-tasks not covered by the fast instance checking code are deferred to.
-
-----------------------------------------------------------------------------
-
-## Usage of the Reasoner
-Besides the method for each reasoner which you can find in the API documentation, there 
-are some extra convenience methods implemented in the class: [OWLReasonerEx](owlapy.ext.OWLReasonerEx).
-Let us show some examples of these methods.
-
-You can get all the object properties that an individual has by using the 
-following method:
-
-<!--pytest-codeblocks:cont-->
-```python
-anna = individuals[0] # get the 1st individual in the list of individuals which is 'anna'
-object_properties = structural_reasoner.ind_object_properties(anna)
-```
-
-Now we can get the individuals of these object properties for 'anna'.
-
-<!--pytest-codeblocks:cont-->
-```python
-for op in object_properties:
-    object_properties_values = structural_reasoner.object_property_values(anna, op)
-    for individual in object_properties_values:
-        print(individual)
-```
-
-In this example we iterated over the `object_properties` and we use the reasoner
-to get the values for each object property `op` of the individual `anna`. The values 
-are individuals which we store in the variable `object_properties_values` and are 
-printed in the end. The method `object_property_values` requires as the
-first argument, an [OWLNamedIndividual](owlapy.model.OWLNamedIndividual) that is the subject of the object property values and 
-the second argument an [OWLObjectProperty](owlapy.model.OWLObjectProperty) whose values are to be retrieved for the 
-specified individual.  
+It is important that an ontology also contains a reasoner that is used to inferring knowledge 
+from the knowledge base, i.e. to perform ontology reasoning.
+In the next guide we show how to attach a reason in Ontolearn and describe some 
+convenient methods that they offer.
 
 
 
