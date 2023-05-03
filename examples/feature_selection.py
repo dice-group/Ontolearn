@@ -10,18 +10,29 @@ from sklearn.preprocessing import MultiLabelBinarizer
 from scipy import sparse as sp
 from sklearn.feature_selection import chi2, f_classif,  mutual_info_classif
 from owlready2 import get_ontology, default_world
+from sklearn.feature_selection import RFECV
+from sklearn.model_selection import StratifiedKFold
+from sklearn.linear_model import LogisticRegression
 import logging
+from owlready2 import get_ontology, destroy_entity
+from ontolearn.concept_learner import OCEL
 
 from examples.evolearner_feature_selection import EvoLearnerFeatureSelection
 from examples.search import calc_prediction
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.model import OWLNamedIndividual, IRI
+from ontolearn.concept_learner import EvoLearner
 
-LOG_FILE = 'featureSelection.log'
-DATASET = 'hepatitis'
+DIRECTORY = './FS_Sklearn_LOG/'
+LOG_FILE = "feature_selection_sklearn.log"
 
-logging.basicConfig(filename=LOG_FILE,
+DT = ['mammograph', 'mutagenesis', 'pyrimidine','nectrer','synthetic_problems']
+if not os.path.exists(DIRECTORY):
+    os.makedirs(DIRECTORY)
+
+LOG_FILE_PATH = os.path.join(DIRECTORY, LOG_FILE)
+logging.basicConfig(filename=LOG_FILE_PATH,
                     filemode="a",
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                     datefmt='%H:%M:%S',
@@ -33,8 +44,12 @@ except FileNotFoundError:
     logging.error(FileNotFoundError)
     pass
 
-with open(f'dataset/{DATASET}.json') as json_file:
-    settings = json.load(json_file)
+for dataset in DT:
+    DATASET = dataset
+    path_dataset = f'dataset/{DATASET}.json'
+    print('Path', path_dataset)
+    with open(path_dataset) as json_file:
+        settings = json.load(json_file)
 
 
 def get_data_properties(onto):
@@ -131,6 +146,16 @@ def one_hot_encoder(pd3):
             )
     return pd3
 
+
+def create_new_kb_without_features(features):
+    prop_object = list(get_object_properties(onto)) + list(get_data_properties(onto))
+
+    for prop in prop_object:
+        if prop.name not in features:
+            print('prop.name', prop.name)
+            destroy_entity(prop)
+    onto.save("kb_with_selected_features.owl")
+    return KnowledgeBase(path="./kb_with_selected_features.owl")
 
 def iterate_object_properties(properties, pos, neg):
     '''
@@ -286,6 +311,7 @@ if __name__ == "__main__":
         test_neg = set(typed_neg[-int(len(typed_neg)*0.2):])
         lp = PosNegLPStandard(pos=train_pos, neg=train_neg)
 
+        st = time.time()
         object_properties_df = transform_object_properties(onto, p, n)
         bool_dtype_df, numeric_dtype_df = transform_data_properties(onto, p, n)
         feature_names = []
@@ -306,24 +332,40 @@ if __name__ == "__main__":
 
         logging.info(f"OBJECT_PROP:{features_object_properties}")
         logging.info(f"DATA_PROP_Numeric:{feature_data_prop_numeric}")
-        logging.info(f"DATA_PROP_BOOL:{feature_data_prop_numeric}")
-
-        st = time.time()
-        model = EvoLearnerFeatureSelection(knowledge_base=kb,
-                                           feature_obj_prop_name=features_object_properties,
-                                           feature_data_categorical_prop=features_data_properties_categoical,
-                                           feature_data_numeric_prop=feature_data_prop_numeric)
-
+        logging.info(f"DATA_PROP_BOOL:{features_data_properties_categoical}")
+        st1 = time.time()
+        selected_properties = features_object_properties + feature_data_prop_numeric + features_data_properties_categoical
+        print('Selected', selected_properties)
+        kb_with_selected_features = create_new_kb_without_features(selected_properties)
+        # model = EvoLearner(knowledge_base=kb_with_selected_features)
+        #
+        # model.fit(lp)
+        # model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
+        # hypotheses = list(model.best_hypotheses(n=1))
+        # predictions = model.predict(individuals=list(test_pos | test_neg),
+        #                             hypotheses=hypotheses)
+        # f1_score, accuracy = calc_prediction(predictions, test_pos, test_neg)
+        # quality = hypotheses[0].quality
+        model = OCEL(knowledge_base=kb_with_selected_features,
+                     max_runtime=600,
+                     max_num_of_concepts_tested=10_000_000_000,
+                     iter_bound=10_000_000_000)
         model.fit(lp)
         model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
-        hypotheses = list(model.best_hypotheses(n=1))
+        hypotheses = model.best_hypotheses(n=1)
+        hypotheses = [hypo for hypo in hypotheses]
+        print(hypotheses)
         predictions = model.predict(individuals=list(test_pos | test_neg),
                                     hypotheses=hypotheses)
         f1_score, accuracy = calc_prediction(predictions, test_pos, test_neg)
         quality = hypotheses[0].quality
         et = time.time()
         elapsed_time = et - st
-        with open(f'{DATASET}_featureSelection.txt', 'a') as f:
+        elapsed_time_2 = et - st1
+        with open(f'{DIRECTORY}{DATASET}_featureSelection.txt', 'a') as f:
+            print('--------str_target_concept-----------',str_target_concept,file=f)
             print('F1 Score', f1_score[1], file=f)
             print('Accuracy', accuracy[1], file=f)
+            print('selected feature', selected_properties, file=f)
             print('Time Taken', elapsed_time, file=f)
+            print('Time Taken 2', elapsed_time_2, file=f)
