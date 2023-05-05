@@ -15,11 +15,14 @@ from owlapy.model import OWLNamedIndividual, IRI
 from wrapper_evolearner import EvoLearnerWrapper
 from search import calc_prediction
 
-
+DIRECTORY = './OptunaLOG/'
 LOG_FILE = "hpo.log"
-DATASET = "lymphography"
+DATASET = 'premier_league'
+if not os.path.exists(DIRECTORY):
+    os.makedirs(DIRECTORY)
 
-logging.basicConfig(filename=LOG_FILE,
+LOG_FILE_PATH = os.path.join(DIRECTORY, LOG_FILE)
+logging.basicConfig(filename=LOG_FILE_PATH,
                     filemode="a",
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                     datefmt='%H:%M:%S',
@@ -30,7 +33,9 @@ try:
 except FileNotFoundError:
     pass
 
+
 path_dataset = f'dataset/{DATASET}.json'
+print('Path', path_dataset)
 with open(path_dataset) as json_file:
     settings = json.load(json_file)
 
@@ -44,7 +49,7 @@ df = pd.DataFrame(columns=['LP', 'max_runtime', 'tournament_size',
 
 
 class OptunaSamplers():
-    def __init__(self, lp, concept, val_pos, val_neg):
+    def __init__(self, dataset, kb, lp, concept, val_pos, val_neg, df):
         # For grid sampler specify the search space
         search_space = {'max_runtime': [2, 10, 50, 100],
                         'tournament_size': [2, 5, 15],
@@ -55,6 +60,9 @@ class OptunaSamplers():
         self.concept = concept
         self.val_pos = val_pos
         self.val_neg = val_neg
+        self.dataset = dataset
+        self.kb = kb
+        self.df = df
         self.study_random_sampler = optuna.create_study(sampler=RandomSampler(),
                                                         direction='maximize')
         self.study_grid_sampler = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space=search_space))
@@ -68,17 +76,17 @@ class OptunaSamplers():
         self.study_qmc_sampler = optuna.create_study(sampler=self.qmc_sampler)
 
     def write_to_df(self, **space):
-        df.loc[len(df.index)] = [self.concept, space['max_runtime'],
+        self.df.loc[len(self.df.index)] = [self.concept, space['max_runtime'],
                                  space['tournament_size'], space['height_limit'],
                                  space['card_limit'], space['use_data_properties'],
                                  space['quality_func'], space['use_inverse'],
                                  space['value_splitter'], space['quality_score'],
                                  space['Validation_f1_Score'], space['Validation_accuracy']]
 
-    def convert_to_csv(self, df):
+    def convert_to_csv(self, trial=None):
         timestr = str(time.strftime("%Y%m%d-%H%M%S"))
-        filename = f'{DATASET}_Output {timestr}'
-        df.to_csv(filename+".csv", index=False)
+        filename = f'{self.dataset}_Output_{trial if trial else ""}{timestr}'
+        self.df.to_csv(filename+".csv", index=False)
 
     def objective(self, trial):
         max_runtime = trial.suggest_int("max_runtime", 2, 100)
@@ -87,14 +95,14 @@ class OptunaSamplers():
         card_limit = trial.suggest_int('card_limit', 1, 10)
 
         # call the wrapper class
-        wrap_obj = EvoLearnerWrapper(knowledge_base=kb,
+        wrap_obj = EvoLearnerWrapper(knowledge_base=self.kb,
                                      max_runtime=max_runtime,
                                      tournament_size=tournament_size,
                                      height_limit=height_limit,
                                      card_limit=card_limit)
         model = wrap_obj.get_evolearner_model()
         model.fit(self.lp, verbose=False)
-        model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
+        model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(self.concept))
         hypotheses = list(model.best_hypotheses(n=1))
         predictions = model.predict(individuals=list(self.val_pos | self.val_neg),
                                     hypotheses=hypotheses)
@@ -117,7 +125,7 @@ class OptunaSamplers():
                                                    ['binning_value_splitter',
                                                     'entropy_value_splitter'])
         # call the wrapper class
-        wrap_obj = EvoLearnerWrapper(knowledge_base=kb,
+        wrap_obj = EvoLearnerWrapper(knowledge_base=self.kb,
                                      max_runtime=max_runtime,
                                      tournament_size=tournament_size,
                                      height_limit=height_limit,
@@ -128,7 +136,7 @@ class OptunaSamplers():
                                      value_splitter=value_splitter)
         model = wrap_obj.get_evolearner_model()
         model.fit(self.lp, verbose=False)
-        model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
+        model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(self.concept))
         hypotheses = list(model.best_hypotheses(n=1))
         predictions = model.predict(individuals=list(self.val_pos | self.val_neg),
                                     hypotheses=hypotheses)
@@ -171,7 +179,7 @@ class OptunaSamplers():
         value_splitter = 'binning_value_splitter' if value_splitter >= 2 else 'entropy_value_splitter'
 
         # call the wrapper class
-        wrap_obj = EvoLearnerWrapper(knowledge_base=kb,
+        wrap_obj = EvoLearnerWrapper(knowledge_base=self.kb,
                                      max_runtime=max_runtime,
                                      tournament_size=tournament_size,
                                      height_limit=height_limit,
@@ -182,7 +190,7 @@ class OptunaSamplers():
                                      value_splitter=value_splitter)
         model = wrap_obj.get_evolearner_model()
         model.fit(self.lp, verbose=False)
-        model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
+        model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(self.concept))
         hypotheses = list(model.best_hypotheses(n=1))
         predictions = model.predict(individuals=list(self.val_pos | self.val_neg),
                                     hypotheses=hypotheses)
@@ -279,10 +287,12 @@ if __name__ == "__main__":
 
         lp = PosNegLPStandard(pos=train_pos, neg=train_neg)
 
+        st = time.time()
+
         # create class object and get the optimised result
-        optuna1 = OptunaSamplers(lp, str_target_concept, val_pos, val_neg)
-        optuna1.get_best_optimization_result_for_tpe_sampler(2)
-        optuna1.convert_to_csv(df)
+        optuna1 = OptunaSamplers(DATASET, kb, lp, str_target_concept, val_pos, val_neg, df)
+        optuna1.get_best_optimization_result_for_cmes_sampler(80)
+        optuna1.convert_to_csv()
 
         # get the best hpo
         best_hpo = df.loc[df['Validation_f1_Score'] == df['Validation_f1_Score'].values.max()]
@@ -290,7 +300,7 @@ if __name__ == "__main__":
             best_hpo = best_hpo.loc[(best_hpo['Validation_accuracy'] == best_hpo['Validation_accuracy'].values.max()) &
                                     (best_hpo['max_runtime'] == best_hpo['max_runtime'].values.min())]
         logging.info(f"BEST HPO : {best_hpo}")
-
+        st1 = time.time()
         wrap_obj = EvoLearnerWrapper(knowledge_base=kb,
                                      max_runtime=int(best_hpo['max_runtime'].values[0]),
                                      tournament_size=int(best_hpo['tournament_size'].values[0]),
@@ -309,7 +319,21 @@ if __name__ == "__main__":
                                     hypotheses=hypotheses)
         f1_score, accuracy = calc_prediction(predictions, test_pos, test_neg)
         quality = hypotheses[0].quality
-
-        with open(f'{DATASET}.txt', 'a') as f:
-            print('F1 Score', f1_score[1], file=f)
-            print('Accuracy', accuracy[1], file=f)
+        et = time.time()
+        elapsed_time = et - st
+        elapsed_time_1 = et - st1
+        with open(f'{DIRECTORY}{DATASET}.txt', 'a') as f:
+            print('F1 Score:', f1_score[1], file=f)
+            print('Accuracy:', accuracy[1], file=f)
+            print('Time Taken:', elapsed_time, file=f)
+            print('best hpo', best_hpo, file=f)
+            print('----------------------------',file=f)
+            print('best_hpo-maxr',best_hpo['max_runtime'].values[0],file=f)
+            print('best_hpo-tournament_size', best_hpo['tournament_size'].values[0], file=f)
+            print('best_hpo-card_limit', best_hpo['card_limit'].values[0], file=f)
+            print('best_hpo-height_limit', best_hpo['height_limit'].values[0], file=f)
+            print('best_hpo-use_data_properties', best_hpo['use_data_properties'].values[0], file=f)
+            print('best_hpo-use_inverse_prop', best_hpo['use_inverse_prop'].values[0], file=f)
+            print('best_hpo-quality_func', best_hpo['quality_func'].values[0], file=f)
+            print('best_hpo-value_splitter', best_hpo['value_splitter'].values[0], file=f)
+            print('Time Taken 2:', elapsed_time_1, file=f)
