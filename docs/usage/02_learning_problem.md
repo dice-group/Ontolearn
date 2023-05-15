@@ -64,3 +64,5 @@ from ontolearn.learning_problem import PosNegLPStandard
 lp = PosNegLPStandard(pos=positive_examples, neg=negative_examples)
 ```
 
+In the next guide, you can learn more about ontologies in Ontolearn and how you can modify them
+using axioms.
