@@ -68,8 +68,9 @@ In order to run our test suite, type:
 tox
 ```
 
-You can also run the tests directly using:
-
+You can also run the tests directly as follows but make sure you have installed 
+the external files using the commands described [here](#download-external-files-link-files)
+to successfully pass all the tests:
 ```shell
 pytest
 ```
@@ -89,7 +90,7 @@ pip install ontolearn
 This will download and install the latest release version of Ontolearn
 and all its dependencies from <https://pypi.org/project/ontolearn/>.
 
-### Download external files (.link files)
+## Download external files (.link files)
 
 Some resources like pre-calculated embeddings or `pre_trained_agents`
 are not included in the Git repository directly. Use the following
