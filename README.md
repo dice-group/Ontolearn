@@ -4,7 +4,7 @@
 It contains the following ready-to-apply algorithms that learn OWL class expressions from positive and negative examples:
 - **EvoLearner** &rarr; [An evolutionary approach to learn concepts in ALCQ(D)](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
 - **Drill** &rarr; [Deep Reinforcement Learning for Refinement Operators in ALC](https://arxiv.org/pdf/2106.15373.pdf)
-- **CELOE** &rarr; [Class Expression Learning for Ontology Engineering] (https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
+- **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
 - **OCEL** &rarr; A limited version of CELOE
 - **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
 - **NCES** &rarr; [Neural Class Expression Synthesis](https://arxiv.org/pdf/2111.08486.pdf)
