@@ -44,7 +44,7 @@ If you are not already familiar with this small dataset,
 you can find an overview of it [here](01_knowledge_base.md).
 
 
-### Class Reasoning
+## Class Reasoning
 
 Using an [OWLOntology](owlapy.model.OWLOntology) you can list all the classes in the signature, 
 but a reasoner can give you more than that. You can get the subclasses, superclasses or the 
@@ -94,7 +94,7 @@ of this ontology. You can see more details on ontologies in the [Working with On
 guide. 
 
 
-### Object Properties and Data Properties Reasoning
+## Object Properties and Data Properties Reasoning
 Fast instance checker offers some convenient methods for working with object properties and 
 data properties. Below we show some of them, but you can always check all the methods in the 
 [OWLReasoner_FastInstanceChecker](owlapy.fast_instance_checker.OWLReasoner_FastInstanceChecker) 
@@ -158,7 +158,7 @@ hasChild_ranges = fast_instance_checker.object_property_ranges(hasChild)
 > method name you should put 'data'.
 
 
-### Find Instances
+## Find Instances
 
 The method `instances` of fast instance checker is a very convenient method. It takes only 1 argument that is basically
 a class expression and returns all the individuals belonging to that class expression. In Ontolearn 
@@ -191,5 +191,19 @@ for ind in male_individuals:
     print(ind)
 ```
 
+
+
+## Sync Reasoner
+
+_sync_reasoner_ is a definition used in owlready2 to call HermiT or Pellet. We made it possible in our
+reasoners to use that functionality by implementing a delegator method. This is an 
+internal method of the class 
+[OWLReasoner_Owlready2](owlapy.owlready2.OWLReasoner_Owlready2) named `_sync_reasoner`
+which is used at [OWLReasoner_Owlready2_TempClasses](owlapy.owlready2.temp_classes.OWLReasoner_Owlready2_TempClasses) 
+in the `instances` method and only for complex classes.
+Soon we will implement the other methods of the base class for _OWLReasoner_Owlready2_TempClasses_ and
+update the `instances` method to cover the atomic classes as well.
+
+
 In the next guide, we show how to use concept learners to learn class expressions in a 
-knowledge base for a learning problem.
+knowledge base for a certain learning problem.
