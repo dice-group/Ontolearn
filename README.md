@@ -6,8 +6,8 @@ It contains the following ready-to-apply algorithms that learn OWL class express
 - **Drill** &rarr; [Deep Reinforcement Learning for Refinement Operators in ALC](https://arxiv.org/pdf/2106.15373.pdf)
 - **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
 - **OCEL** &rarr; A limited version of CELOE
+- **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13)
 - **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
-- **NCES** &rarr; [Neural Class Expression Synthesis](https://arxiv.org/pdf/2111.08486.pdf)
 - **NERO** &rarr; (soon) [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://github.com/dice-group/Nero)
 
 You can find more details about *Ontolearn* and these algorithms and their variations in the [documentation](https://ontolearn-docs-dice-group.netlify.app/index.html).
@@ -28,7 +28,7 @@ before continuing with the installation.
 
 To successfully pass all the tests you need to download some external resources in advance 
 (see [_Download external files_](#download-external-files-link-files)). We recommend to
-download them all. Also, install _java_ and _curl_ if you dont have them in your system:
+download them all. Also, install _java_ and _curl_ if you don't have them in your system:
 
 ```commandline
 sudo apt install openjdk-11-jdk
