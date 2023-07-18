@@ -1,6 +1,5 @@
 import os
-from owlready2 import declare_datatype
-from concept_learner import NCES
+from ontolearn.concept_learner import NCES
 import argparse, json
 
 
