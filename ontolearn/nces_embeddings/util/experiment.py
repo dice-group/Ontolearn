@@ -270,9 +270,7 @@ class Experiment:
         num_param = sum([p.numel() for p in model.parameters()])
         print("'Number of free parameters: {0}".format(num_param))
         # Store the setting.
-        if not os.path.exists(self.storage_path):
-            os.mkdir(self.storage_path)
-        with open(f'{self.storage_path}/settings.json', 'w') as file_descriptor:
+        with open(self.storage_path + '/settings.json', 'w') as file_descriptor:
             json.dump(self.kwargs, file_descriptor)
 
         self.describe()
