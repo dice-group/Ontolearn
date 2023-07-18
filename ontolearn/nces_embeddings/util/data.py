@@ -1,5 +1,5 @@
 class Data:
-    def __init__(self, data_dir=None, train_plus_valid=False, reverse=True, tail_pred_constraint=False,
+    def __init__(self, data_dir=None, train_plus_valid=False, reverse=False, tail_pred_constraint=False,
                  out_of_vocab_flag=False):
         """
         ****** reverse=True
