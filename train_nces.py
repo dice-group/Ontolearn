@@ -1,5 +1,8 @@
-from ontolearn.concept_learner import NCES
+import os
+from owlready2 import declare_datatype
+from concept_learner import NCES
 import argparse, json
+
 
 def str2bool(v):
     if isinstance(v, bool):
