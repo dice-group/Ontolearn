@@ -4,10 +4,14 @@
 It contains the following ready-to-apply algorithms that learn OWL class expressions from positive and negative examples:
 - **EvoLearner** &rarr; [An evolutionary approach to learn concepts in ALCQ(D)](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
 - **Drill** &rarr; [Deep Reinforcement Learning for Refinement Operators in ALC](https://arxiv.org/pdf/2106.15373.pdf)
-- **CELOE** &rarr; [Class Expression Learning for Ontology Engineering] (https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
+- **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
 - **OCEL** &rarr; A limited version of CELOE
-- **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
 - **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13)
+- **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
+<<<<<<< HEAD
+- **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13)
+=======
+>>>>>>> develop
 - **NERO** &rarr; (soon) [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://github.com/dice-group/Nero)
 
 You can find more details about *Ontolearn* and these algorithms and their variations in the [documentation](https://ontolearn-docs-dice-group.netlify.app/index.html).
@@ -18,8 +22,25 @@ Quick navigation:
 - [Relevant Papers](#relevant-papers)
 ## Installation
 
+For detailed instructions please refer to the [installation guide](https://ontolearn-docs-dice-group.netlify.app/usage/installation.html) in the documentation.
 
-Note: Make sure to set up a virtual python environment like [Anaconda](https://www.anaconda.com/) before continuing with the installation.
+### Installation from source
+
+Make sure to set up a virtual python environment like [Anaconda](https://www.anaconda.com/) 
+before continuing with the installation. 
+
+
+To successfully pass all the tests you need to download some external resources in advance 
+(see [_Download external files_](#download-external-files-link-files)). We recommend to
+download them all. Also, install _java_ and _curl_ if you don't have them in your system:
+
+```commandline
+sudo apt install openjdk-11-jdk
+sudo apt install curl
+```
+
+A quick start up will be as follows:
+
 ```shell
 git clone https://github.com/dice-group/Ontolearn.git
 cd Ontolearn
@@ -31,8 +52,8 @@ python -c "import ontolearn"
 python -m pytest tests # Partial test with pytest
 tox  # full test with tox
 ```
-For more detailed instructions please refer to the [installation guide](https://ontolearn-docs-dice-group.netlify.app/usage/installation.html) in the documentation.
-#### Installation via pip
+
+### Installation via pip
 
 ```shell
 pip install ontolearn  # more on https://pypi.org/project/ontolearn/
@@ -82,7 +103,7 @@ The result: (¬female) ⊓ (∃ hasChild.⊤) has quality 1.0
 ```
 ----------------------------------------------------------------------------
 
-#### Download external files (.link files)
+### Download external files (.link files)
 
 Some resources like pre-calculated embeddings or `pre_trained_agents`
 are not included in the Git repository directly. Use the following
@@ -102,7 +123,7 @@ and use the following command.
 ./big_gitext/upload_big.sh pre_trained_agents.zip
 ```
 ----------------------------------------------------------------------------
-#### Building (sdist and bdist_wheel)
+### Building (sdist and bdist_wheel)
 You can use <code>tox</code> to build sdist and bdist_wheel packages for Ontolearn.
 - "sdist" is short for "source distribution" and is useful for distribution of packages that will be installed from source.
 - "bdist_wheel" is short for "built distribution wheel" and is useful for distributing packages that include large amounts of compiled code, as well as for distributing packages that have complex dependencies.
@@ -119,7 +140,7 @@ tox -e docs
 
 ----------------------------------------------------------------------------
 
-#### Simple Linting
+### Simple Linting
 
 Using the following command will run the linting tool [flake8](https://flake8.pycqa.org/) on the source code.
 ```shell
@@ -127,8 +148,8 @@ tox -e lint --
 ```
 ----------------------------------------------------------------------------
 
-#### Contribution
-Feel free to create a pull request!
+## Contribution
+Feel free to create a pull request or submit an issue in case of any!
 
 
 ## Relevant papers
