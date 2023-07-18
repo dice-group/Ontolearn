@@ -163,7 +163,7 @@ If you find our work useful in your research, please consider citing the respect
 # CLIP
 @inproceedings{kouagou2022learning,
   title={Learning Concept Lengths Accelerates Concept Learning in ALC},
-  author={Kouagou, N and Heindorf, Stefan and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+  author={Kouagou, N’Dah Jean and Heindorf, Stefan and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
   booktitle={European Semantic Web Conference},
   pages={236--252},
   year={2022},
