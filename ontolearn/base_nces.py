@@ -24,7 +24,6 @@ class BaseNCES:
         self.vocab = {vocab[i]:i for i in range(len(vocab))}
         self.learner_name = learner_name
         self.num_examples = self.find_optimal_number_of_examples(kb)
-        #min(kb.individuals_count()//2, 1000)
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.decay_rate = decay_rate
