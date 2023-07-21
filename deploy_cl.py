@@ -3,6 +3,7 @@ import torch
 import gradio as gr
 from argparse import ArgumentParser
 import random
+import os
 
 from ontolearn.ea_algorithms import EASimple
 from ontolearn.ea_initialization import EARandomWalkInitialization, RandomInitMethod, EARandomInitialization
@@ -647,5 +648,10 @@ if __name__ == '__main__':
     #                     type=str,
     #                     default='pre_trained_agents/DrillHeuristic_averaging/DrillHeuristic_averaging.pth',
     #                     help='*Only for DRILL* Provide a path of .pth file')
-
+    
+    if not os.path.exists("NCESData/"):
+        print("\nDownloading data")
+        import subprocess
+        subprocess.run("./big_gitext/download_nces_data", shell=True)
+        print("Done!")
     run(parser.parse_args())
