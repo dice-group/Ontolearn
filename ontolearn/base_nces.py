@@ -11,7 +11,7 @@ class BaseNCES:
     def __init__(self, knowledge_base_path, learner_name, path_of_embeddings, batch_size=256, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, num_workers=8):
         self.name = "NCES"
         kb = KnowledgeBase(path=knowledge_base_path)
-        self.kb_namespace = list(kb.individuals())[0].get_iri().get_namespace()
+        self.kb_namespace = list(kb.ontology().classes_in_signature())[0].get_iri().get_namespace()
         renderer = DLSyntaxObjectRenderer()
         atomic_concepts = list(kb.ontology().classes_in_signature())
         atomic_concept_names = [renderer.render(a) for a in atomic_concepts]
