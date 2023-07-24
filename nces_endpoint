@@ -130,4 +130,4 @@ if __name__ == '__main__':
 
     loading = True
     app = create_flask_app()
-    app.run(host="131.234.31.255", port=9080, processes=1)
+    app.run(host="0.0.0.0", port=9080, processes=1)
