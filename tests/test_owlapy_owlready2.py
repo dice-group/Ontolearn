@@ -22,7 +22,7 @@ from owlapy.model import OWLObjectInverseOf, OWLObjectPropertyRangeAxiom, OWLSam
     OWLObjectPropertyAssertionAxiom, OWLObjectPropertyDomainAxiom, OWLInverseObjectPropertiesAxiom, OWLSubClassOfAxiom
 
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
+from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
 
 
 class Owlapy_Owlready2_Test(unittest.TestCase):
@@ -799,7 +799,7 @@ class Owlapy_Owlready2_TempClasses_Test(unittest.TestCase):
         has_child = OWLObjectProperty(IRI(ns, 'hasChild'))
 
         # reasoner = OWLReasoner_Owlready2(onto)
-        reasoner = OWLReasoner_Owlready2_TempClasses(onto)
+        reasoner = OWLReasoner_Owlready2_ComplexCEInstances(onto)
 
         inst = frozenset(reasoner.instances(female))
         target_inst = frozenset({OWLNamedIndividual(IRI(ns, 'anna')),

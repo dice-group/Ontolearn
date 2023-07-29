@@ -15,13 +15,14 @@ from. Currently, there are the following reasoners available for you to choose f
 To load any reasoner, use the following code:
 
 <!--pytest-codeblocks:cont-->
+
 ```python
 from owlapy.owlready2 import OWLReasoner_Owlready2
-from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
+from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
 from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
 
 structural_reasoner = OWLReasoner_Owlready2(onto)
-temp_classes_reasoner = OWLReasoner_Owlready2_TempClasses(onto)
+temp_classes_reasoner = OWLReasoner_Owlready2_ComplexCEInstances(onto)
 fast_instance_checker = OWLReasoner_FastInstanceChecker(onto, temp_classes_reasoner)
 ```
 

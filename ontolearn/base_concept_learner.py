@@ -16,7 +16,7 @@ from owlapy.model import OWLDeclarationAxiom, OWLNamedIndividual, OWLOntologyMan
     OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, OWLAnnotationAssertionAxiom, OWLAnnotation, \
     OWLAnnotationProperty, OWLLiteral, IRI, OWLClassExpression, OWLReasoner, OWLAxiom, OWLThing
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLOntology_Owlready2
-from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
+from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
 from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
     AbstractConceptNode, AbstractLearningProblem
@@ -252,7 +252,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             manager: OWLOntologyManager = ontology.get_owl_ontology_manager()
             for axiom in axioms:
                 manager.add_axiom(ontology, axiom)
-            reasoner = OWLReasoner_Owlready2_TempClasses(ontology) if reasoner is None else reasoner
+            reasoner = OWLReasoner_Owlready2_ComplexCEInstances(ontology) if reasoner is None else reasoner
 
         if hypotheses is None:
             hypotheses = [hyp.concept for hyp in self.best_hypotheses(n)]
