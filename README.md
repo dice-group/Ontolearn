@@ -1,14 +1,15 @@
 # Ontolearn
 
 *Ontolearn* is an open-source software library for explainable structured machine learning in Python.
-It contains the following ready-to-apply algorithms that learn OWL class expressions from positive and negative examples:
+It contains the following (ready-to-apply) algorithms that learn OWL class expressions from positive and negative examples:
 - **EvoLearner** &rarr; [An evolutionary approach to learn concepts in ALCQ(D)](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
 - **Drill** &rarr; [Deep Reinforcement Learning for Refinement Operators in ALC](https://arxiv.org/pdf/2106.15373.pdf)
+- **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13)
+- **NCES2** &rarr; (soon) [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
+- **NERO** &rarr; (soon) [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://github.com/dice-group/Nero)
+- **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
 - **CELOE** &rarr; [Class Expression Learning for Ontology Engineering] (https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
 - **OCEL** &rarr; A limited version of CELOE
-- **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
-- **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13)
-- **NERO** &rarr; (soon) [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://github.com/dice-group/Nero)
 
 You can find more details about *Ontolearn* and these algorithms and their variations in the [documentation](https://ontolearn-docs-dice-group.netlify.app/index.html).
 
@@ -107,18 +108,16 @@ pos = set(KB.individuals(brother)).union(set(KB.individuals(daughter)))
 neg = set(KB.individuals())-set(pos)
 
 t0 = time.time()
-concept = nces.fit(pos, neg) # Use NCES to synthesize the solution class expression
+concept = nces.fit(pos, neg) # Use NCES to synthesize the solution class expression. Note that NCES is not given the concepts Brother and Daughter. Still, it is able to compute the exact solution!
 t1 = time.time()
 print("Duration: ", t1-t0, " seconds")
 print("\nPrediction: ", dl_syntax_renderer.render(concept))
 quality(KB, concept, pos, neg)
-
 ```
 
 ```
 Duration: 0.5029337406158447  seconds
 ```
-
 
 ```
 Prediction: Brother ⊔ Daughter
@@ -130,7 +129,6 @@ Precision: 100.0%
 Recall: 100.0%
 F1: 100.0%
 ```
-
 
 ----------------------------------------------------------------------------
 
@@ -197,6 +195,18 @@ Feel free to create a pull request!
 Currently, we are working on our manuscript describing our framework. 
 If you find our work useful in your research, please consider citing the respective paper:
 ```
+
+# NCES2
+@inproceedings{kouagou2023nces2,
+author={Kouagou, N'Dah Jean and Heindorf, Stefan and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+title={Neural Class Expression Synthesis in ALCHIQ(D)},
+url = {https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf},
+booktitle={Machine Learning and Knowledge Discovery in Databases},
+year={2023},
+publisher={Springer Nature Switzerland},
+address="Cham"
+}
+
 # NCES
 @inproceedings{kouagou2023neural,
   title={Neural class expression synthesis},
@@ -204,7 +214,7 @@ If you find our work useful in your research, please consider citing the respect
   booktitle={European Semantic Web Conference},
   pages={209--226},
   year={2023},
-  organization={Springer}
+  publisher={Springer Nature Switzerland}
 }
 
 # EvoLearner
@@ -224,7 +234,7 @@ If you find our work useful in your research, please consider citing the respect
   booktitle={European Semantic Web Conference},
   pages={236--252},
   year={2022},
-  organization={Springer}
+  publisher={Springer Nature Switzerland}
 }
 ```
 
