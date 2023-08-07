@@ -37,7 +37,6 @@ sudo apt install curl
 
 A quick start up will be as follows:
 
-Note: Make sure to set up a virtual python environment like [Anaconda](https://www.anaconda.com/) before continuing with the installation.
 ```shell
 git clone https://github.com/dice-group/Ontolearn.git
 cd Ontolearn
