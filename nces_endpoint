@@ -43,10 +43,10 @@ def nocache(view):
 
 
 def sanity_checking(learning_problem, app):
-    if "positive examples" not in learning_problem:
+    if "positives" not in learning_problem:
         app.logger.debug('positives key does not exist in the input. Exit!')
         exit(1)
-    if "negative examples" not in learning_problem:
+    if "negatives" not in learning_problem:
         app.logger.debug('negatives key does not exist in the input. Exit!')
         exit(1)
 
@@ -76,8 +76,8 @@ def create_flask_app():
             sanity_checking(learning_problem, app)
 
             try:
-                typed_pos = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["positive examples"]))))
-                typed_neg = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["negative examples"]))))
+                typed_pos = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["positives"]))))
+                typed_neg = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["negatives"]))))
                 prediction = nces.fit(typed_pos, typed_neg)
             except Exception as e:
                 app.logger.debug(e)
