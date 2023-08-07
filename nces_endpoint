@@ -121,7 +121,7 @@ def create_flask_app():
 #            global ready
 #            ready = True
 #
-#    return app
+    return app
 
 
 if __name__ == '__main__':
