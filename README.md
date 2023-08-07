@@ -49,7 +49,6 @@ python -c "import ontolearn"
 python -m pytest tests # Partial test with pytest
 tox  # full test with tox
 ```
-For more detailed instructions please refer to the [installation guide](https://ontolearn-docs-dice-group.netlify.app/usage/installation.html) in the documentation.
 #### Installation via pip
 
 ```shell
