@@ -106,7 +106,7 @@ def create_flask_app():
         return status
 
     with app.app_context():
-	global lock
+        global lock
         with lock:
             global loading
             loading = False
