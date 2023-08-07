@@ -93,8 +93,8 @@ sys.path.append("examples/")
 from quality_functions import quality
 import time
 
-nces = NCES(knowledge_base_path="./NCESData/family/family.owl", learner_name="SetTransformer",\
-            path_of_embeddings="./NCESData/family/embeddings/ConEx_entity_embeddings.csv",load_pretrained=True,\
+nces = NCES(knowledge_base_path="../NCESData/family/family.owl", learner_name="SetTransformer",\
+            path_of_embeddings="../NCESData/family/embeddings/ConEx_entity_embeddings.csv",load_pretrained=True,\
             max_length=48, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, num_inds=32,\
             pretrained_model_name=["SetTransformer", "LSTM", "GRU"])
 
@@ -108,7 +108,10 @@ pos = set(KB.individuals(brother)).union(set(KB.individuals(daughter)))
 neg = set(KB.individuals())-set(pos)
 
 t0 = time.time()
-concept = nces.fit(pos, neg) # Use NCES to synthesize the solution class expression. Note that NCES is not given the concepts Brother and Daughter. Still, it is able to compute the exact solution!
+concept = nces.fit(pos, neg)
+# Use NCES to synthesize the solution class expression.
+# Note that NCES is not given the concepts Brother and Daughter.
+# Yet, it is able to compute the exact solution!
 t1 = time.time()
 print("Duration: ", t1-t0, " seconds")
 print("\nPrediction: ", dl_syntax_renderer.render(concept))
