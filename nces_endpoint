@@ -105,17 +105,23 @@ def create_flask_app():
         status = {"status": flag}
         return status
 
-    @app.before_first_request
-    def set_ready():
-        global lock
+    with app.app_context():
+	global lock
         with lock:
             global loading
             loading = False
             global ready
             ready = True
-
-    return app
-
+#    @app.before_first_request
+#    def set_ready():
+#        global lock
+#        with lock:
+#            global loading
+#            loading = False
+#            global ready
+#            ready = True
+#
+#    return app
 
 
 if __name__ == '__main__':
