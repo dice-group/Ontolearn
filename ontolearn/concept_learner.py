@@ -1618,6 +1618,7 @@ class NCES(BaseNCES):
     
     def __init__(self, knowledge_base_path, learner_name, path_of_embeddings, proj_dim, rnn_n_layers, drop_prob, num_heads, num_seeds, num_inds, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=8, max_length=48, load_pretrained=True, sorted_examples=True, pretrained_model_name=None):
         super().__init__(knowledge_base_path, learner_name, path_of_embeddings, batch_size, learning_rate, decay_rate, clip_value, num_workers)
+        self.path_of_embeddings = path_of_embeddings
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.max_length = max_length
         self.proj_dim = proj_dim
@@ -1641,7 +1642,7 @@ class NCES(BaseNCES):
             elif learner_name == 'LSTM':
                 model = LSTM(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size, self.proj_dim, self.rnn_n_layers, self.drop_prob)
             if load_pretrained:
-                model_path = self.knowledge_base_path[:self.knowledge_base_path.rfind("/")]+"/trained_models/trained_"+learner_name+".pt"
+                model_path = self.path_of_embeddings.split("embeddings")[0]+"trained_models/trained_"+learner_name+".pt"
                 model.load_state_dict(torch.load(model_path, map_location=self.device))
                 model.eval()
                 print("\n\n Loaded pretrained model! \n")

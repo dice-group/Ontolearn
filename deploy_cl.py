@@ -3,6 +3,7 @@ import torch
 import gradio as gr
 from argparse import ArgumentParser
 import random
+import os
 
 from ontolearn.ea_algorithms import EASimple
 from ontolearn.ea_initialization import EARandomWalkInitialization, RandomInitMethod, EARandomInitialization
@@ -25,6 +26,16 @@ metrics = {'F1': F1,
            }
 renderer = DLSyntaxObjectRenderer()
 
+def compute_quality(KB, solution, pos, neg, qulaity_func="F1"):
+    func = metrics[qulaity_func]().score2
+    instances = set(KB.individuals(solution))
+    if isinstance(list(pos)[0], str):
+        instances = {ind.get_iri().as_str().split("/")[-1] for ind in instances}
+    tp=len(pos.intersection(instances))
+    fn=len(pos.difference(instances))
+    fp=len(neg.intersection(instances))
+    tn=len(neg.difference(instances))
+    return func(tp=tp, fn=fn, fp=fp, tn=tn)[-1]
 
 def setup_prerequisites(individuals, pos_ex, neg_ex, random_ex: bool, size_of_ex):
 
@@ -34,7 +45,8 @@ def setup_prerequisites(individuals, pos_ex, neg_ex, random_ex: bool, size_of_ex
 
     if random_ex:
         typed_pos = set(random.sample(individuals, int(size_of_ex)))
-        typed_neg = set(random.sample(individuals, int(size_of_ex)))
+        remaining = list(set(individuals)-typed_pos)
+        typed_neg = set(random.sample(remaining, min(len(remaining), int(size_of_ex))))#set(random.sample(individuals, int(size_of_ex)))
         pos_str = [pos_ind.get_iri().as_str() for pos_ind in typed_pos]
         neg_str = [neg_ind.get_iri().as_str() for neg_ind in typed_neg]
     else:
@@ -173,7 +185,7 @@ def launch_evolearner(args):
                 o2 = gr.Dataframe(label='Predictions', type='pandas')
         submit_btn.click(predict, inputs=[i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15, i16,
                                           i17, i18, i19, i20, i21, i22, i23, i24, i25, i26, i27], outputs=[o1, o2])
-    evolearner_interface.launch()
+    evolearner_interface.launch(share=True)
 
 
 # -----------------------------------------------CELOE------------------------------------------------------------------
@@ -294,7 +306,7 @@ def launch_celoe(args):
                 o2 = gr.Dataframe(label='Predictions', type='pandas')
         submit_btn.click(predict, inputs=[i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15, i16,
                                           i17, i18, i19, i20, i21, i22, i23, i24, i25, i26], outputs=[o1, o2])
-    celoe_interface.launch()
+    celoe_interface.launch(share=True)
 
 # -----------------------------------------------OCEL------------------------------------------------------------------
 
@@ -408,7 +420,7 @@ def launch_ocel(args):
                 o2 = gr.Dataframe(label='Predictions', type='pandas')
         submit_btn.click(predict, inputs=[i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15, i16,
                                           i17, i18, i19, i20, i21, i22, i23, i24], outputs=[o1, o2])
-    ocel_interface.launch()
+    ocel_interface.launch(share=True)
 
 
 # -----------------------------------------------NCES------------------------------------------------------------------
@@ -420,7 +432,7 @@ def launch_nces(args):
     individuals = list(kb.individuals())
     # kb_display_value = args.path_knowledge_base.split("/")[-1]
 
-    def predict(positive_examples, negative_examples, random_examples: bool, size_of_examples, learner_name,
+    def predict(positive_examples, negative_examples, random_examples: bool, size_of_examples, quality_func, learner_name,
                 proj_dim, rnn_n_layers, drop_prob, num_heads, num_seeds, num_inds, ln, learning_rate, decay_rate,
                 clip_value, batch_size, num_workers, max_length, load_pretrained, sorted_examples, pretrained_model_name
                 ):
@@ -440,7 +452,8 @@ def launch_nces(args):
 
         with torch.no_grad():
             hypotheses = model.fit(lp.pos, lp.neg)
-            report = {'Prediction': renderer.render(hypotheses)}
+            report = {'Prediction': renderer.render(hypotheses), f'Quality({quality_func})': compute_quality(kb, hypotheses, lp.pos,\
+                                    lp.neg, quality_func), 'Individuals': kb.individuals_count(hypotheses)}
 
         return s, pd.DataFrame([report])
 
@@ -461,40 +474,42 @@ def launch_nces(args):
                         i4 = gr.Slider(minimum=1, label="Size of the random set", maximum=len(individuals) - 1,
                                        info="The slider has no effect if the 'Random Examples' option is not selected.")
                 with gr.Tab("Algorithm Settings"):
+                    with gr.Box():
+                        i5 = gr.Dropdown(label="Quality function", choices=["F1", "Accuracy", "Recall", "Precision",
+                                                                            "WeightedAccuracy"], value="F1")
                     gr.Markdown("General arguments")
                     with gr.Box():
-                        i5 = gr.Dropdown(label="Learner name", choices=["SetTransformer", "GRU", "LSTM"],
+                        i6 = gr.Dropdown(label="Learner name", choices=["SetTransformer", "GRU", "LSTM"],
                                          value="SetTransformer")
                         with gr.Row():
-                            i6 = gr.Number(label="Number of recurrent neural network layers", value=128,
-                                           info="only for LSTM and GRU")
-                            i7 = gr.Number(label="Rnn n layers", value=2)
-                            i8 = gr.Number(label="Drop probability", value=0.1)
+                            i7 = gr.Number(label="Number of projection dimensions", value=128)
+                            i8 = gr.Number(label="Number of RNN layers", value=2, info="only for LSTM and GRU")
+                            i9 = gr.Number(label="Drop probability", value=0.1)
                         with gr.Row():
-                            i9 = gr.Number(label="Number of heads", value=4)
-                            i10 = gr.Number(label="Number of seeds", value=1)
-                            i11 = gr.Number(label="Number of individuals", value=32)
+                            i10 = gr.Number(label="Number of heads", value=4)
+                            i11 = gr.Number(label="Number of seeds", value=1, info="only for SetTransformer")
+                            i12 = gr.Number(label="Number of inducing points", value=32, info="only for SetTransformer")
                         with gr.Row():
-                            i13 = gr.Number(label="Learning rate", value=1e-4)
-                            i14 = gr.Number(label="Decay rate", value=0)
-                            i15 = gr.Number(label="Clip value", value=5)
+                            i14 = gr.Number(label="Learning rate", value=1e-4)
+                            i15 = gr.Number(label="Decay rate", value=0)
+                            i16 = gr.Number(label="Clip value", value=5)
                         with gr.Row():
-                            i16 = gr.Number(label="Batch size", value=256)
-                            i17 = gr.Number(label="Number of workers", value=8)
-                            i18 = gr.Number(label="Maximum length", value=48)
+                            i17 = gr.Number(label="Batch size", value=256)
+                            i18 = gr.Number(label="Number of workers", value=8)
+                            i19 = gr.Number(label="Maximum length", value=48)
                         with gr.Row():
-                            i12 = gr.Checkbox(label="Layer normalization", value=False)
-                            i19 = gr.Checkbox(label="Load pretrained", value=True)
-                            i20 = gr.Checkbox(label="Sorted examples", value=True)
-                        i21 = gr.CheckboxGroup(label="Pretrained model name", choices=["SetTransformer", "GRU", "LSTM"],
+                            i13 = gr.Checkbox(label="Layer normalization", value=False, info="only for SetTransformer")
+                            i20 = gr.Checkbox(label="Load pretrained", value=True)
+                            i21 = gr.Checkbox(label="Sorted examples", value=True)
+                        i22 = gr.CheckboxGroup(label="Pretrained model name", choices=["SetTransformer", "GRU", "LSTM"],
                                                value="SetTransformer")
                 submit_btn = gr.Button("Run")
             with gr.Column():
                 o1 = gr.Textbox(label='Learning Problem')
                 o2 = gr.Dataframe(label='Predictions', type='pandas')
         submit_btn.click(predict, inputs=[i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15, i16,
-                                          i17, i18, i19, i20, i21], outputs=[o1, o2])
-    nces_interface.launch()
+                                          i17, i18, i19, i20, i21, i22], outputs=[o1, o2])
+    nces_interface.launch(share=True)
 
 
 # -----------------------------------------------DRILL------------------------------------------------------------------
@@ -613,10 +628,10 @@ if __name__ == '__main__':
     parser = ArgumentParser()
 
     # ---- General ----
-    parser.add_argument("--model", type=str, default='ocel', choices=['evolearner', 'celoe', 'ocel', 'nces'],
-                        help='The concept learning model. (default: evolearner) ')
+    parser.add_argument("--model", type=str, default='nces', choices=['evolearner', 'celoe', 'ocel', 'nces'],
+                        help='The concept learning model. (default: nces) ')
 
-    parser.add_argument("--path_knowledge_base", type=str, default='KGs/father.owl',
+    parser.add_argument("--path_knowledge_base", type=str, default='NCESData/family/family.owl',
                         help='Location of the knowledge base that you wish to use')
 
     # ---- DRILL, NCES only ----
@@ -633,5 +648,10 @@ if __name__ == '__main__':
     #                     type=str,
     #                     default='pre_trained_agents/DrillHeuristic_averaging/DrillHeuristic_averaging.pth',
     #                     help='*Only for DRILL* Provide a path of .pth file')
-
+    
+    if not os.path.exists("NCESData/"):
+        print("\nDownloading data")
+        import subprocess
+        subprocess.run("./big_gitext/download_nces_data", shell=True)
+        print("Done!")
     run(parser.parse_args())

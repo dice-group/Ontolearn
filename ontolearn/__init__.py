@@ -15,5 +15,4 @@ __version__ = '0.6.0.dev'
 # from .base_concept_learner import BaseConceptLearner
 # from .metrics import *
 # from .search import *
-
 __all__ = ['knowledge_base', 'abstracts', 'base_concept_learner', 'metrics', 'search']
