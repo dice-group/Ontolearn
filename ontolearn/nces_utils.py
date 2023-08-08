@@ -23,8 +23,8 @@ class SimpleSolution:
     def predict(self, expression: str):
         atomic_classes = [atm for atm in self.tokenizer.tokenize(expression) if atm in self.atomic_concept_names]
         if atomic_classes == []:
-            # If no atomic class found, then randomly pick and use the first 10
+            # If no atomic class found, then randomly pick and use the first 3
             random.shuffle(self.atomic_concept_names)
-            atomic_classes = self.atomic_concept_names[:10]
+            atomic_classes = self.atomic_concept_names[:3]
         return " ⊔ ".join(atomic_classes)
     
