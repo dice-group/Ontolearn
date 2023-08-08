@@ -18,9 +18,25 @@ Quick navigation:
 - [Usage](#usage)
 - [Relevant Papers](#relevant-papers)
 ## Installation
+For detailed instructions please refer to the [installation guide](https://ontolearn-docs-dice-group.netlify.app/usage/installation.html) in the documentation.
+
+### Installation from source
+
+Make sure to set up a virtual python environment like [Anaconda](https://www.anaconda.com/) 
+before continuing with the installation. 
 
 
-Note: Make sure to set up a virtual python environment like [Anaconda](https://www.anaconda.com/) before continuing with the installation.
+To successfully pass all the tests you need to download some external resources in advance 
+(see [_Download external files_](#download-external-files-link-files)). We recommend to
+download them all. Also, install _java_ and _curl_ if you don't have them in your system:
+
+```commandline
+sudo apt install openjdk-11-jdk
+sudo apt install curl
+```
+
+A quick start up will be as follows:
+
 ```shell
 git clone https://github.com/dice-group/Ontolearn.git
 cd Ontolearn
@@ -32,7 +48,6 @@ python -c "import ontolearn"
 python -m pytest tests # Partial test with pytest
 tox  # full test with tox
 ```
-For more detailed instructions please refer to the [installation guide](https://ontolearn-docs-dice-group.netlify.app/usage/installation.html) in the documentation.
 #### Installation via pip
 
 ```shell
