@@ -17,6 +17,9 @@ from owlapy.model import OWLNamedIndividual
 from owlapy.model import IRI
 from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer
 import logging
+import random
+
+random.seed(1)
 
 setup_logging()
 logger = logging.getLogger(__name__)
