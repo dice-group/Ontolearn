@@ -86,7 +86,7 @@ def create_flask_app():
                 app.logger.debug(e)
                 abort(400)
             try:
-                hypotheses_ser = renderer.render(prediction)
+                hypotheses_ser = prediction#renderer.render(prediction)
             except Exception as ex:
                 print(ex)
             return Response(hypotheses_ser)
