@@ -39,7 +39,7 @@ from ontolearn.base_nces import BaseNCES
 from ontolearn.nces_architectures import LSTM, GRU, SetTransformer
 from ontolearn.nces_trainer import NCESTrainer, before_pad
 from ontolearn.nces_utils import SimpleSolution
-from owlapy.model import OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual
+from owlapy.model import OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual, OWLReasoner
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.parser import DLSyntaxParser
 from owlapy.util import OrderedOWLObject
@@ -60,7 +60,6 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
     name = 'celoe_python'
 
     kb: KnowledgeBase
-
     max_he: int
     min_he: int
     best_only: bool
@@ -74,6 +73,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
+                 reasoner: Optional[OWLReasoner] = None,
                  refinement_operator: Optional[BaseRefinement[OENode]] = None,
                  quality_func: Optional[AbstractScorer] = None,
                  heuristic_func: Optional[AbstractHeuristic] = None,
@@ -85,6 +85,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
                  best_only: bool = False,
                  calculate_min_max: bool = True):
         super().__init__(knowledge_base=knowledge_base,
+                         reasoner=reasoner,
                          refinement_operator=refinement_operator,
                          quality_func=quality_func,
                          heuristic_func=heuristic_func,
@@ -471,6 +472,7 @@ class OCEL(CELOE):
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
+                 reasoner: Optional[OWLReasoner] = None,
                  refinement_operator: Optional[BaseRefinement[OENode]] = None,
                  quality_func: Optional[AbstractScorer] = None,
                  heuristic_func: Optional[AbstractHeuristic] = None,
@@ -486,6 +488,7 @@ class OCEL(CELOE):
             heuristic_func = OCELHeuristic()
 
         super().__init__(knowledge_base=knowledge_base,
+                         reasoner=reasoner,
                          refinement_operator=refinement_operator,
                          quality_func=quality_func,
                          heuristic_func=heuristic_func,
@@ -1278,15 +1281,14 @@ class DrillNet(nn.Module):
 
 
 class CustomConceptLearner(CELOE):
-    def __init__(self, knowledge_base, quality_func=None, iter_bound=None, max_num_of_concepts_tested=None,
-                 heuristic_func=None,
-                 ignored_concepts=None, verbose=None, terminate_on_goal=None):
+    def __init__(self, knowledge_base, reasoner=None, quality_func=None, iter_bound=None,
+                 max_num_of_concepts_tested=None, heuristic_func=None, terminate_on_goal=None):
         super().__init__(knowledge_base=knowledge_base,
+                         reasoner=reasoner,
                          quality_func=quality_func,
                          heuristic_func=heuristic_func,
-                         ignored_concepts=ignored_concepts,
                          terminate_on_goal=terminate_on_goal,
-                         iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested, verbose=verbose)
+                         iter_bound=iter_bound, max_num_of_concepts_tested=max_num_of_concepts_tested)
         self.name = heuristic_func.name
 
 
@@ -1325,6 +1327,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
+                 reasoner: Optional[OWLReasoner] = None,
                  quality_func: Optional[AbstractScorer] = None,
                  fitness_func: Optional[AbstractFitness] = None,
                  init_method: Optional[AbstractEAInitialization] = None,
@@ -1346,10 +1349,11 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             quality_func = Accuracy()
 
         super().__init__(knowledge_base=knowledge_base,
+                         reasoner=reasoner,
                          quality_func=quality_func,
                          terminate_on_goal=terminate_on_goal,
                          max_runtime=max_runtime)
-
+        self.reasoner = reasoner
         self.fitness_func = fitness_func
         self.init_method = init_method
         self.algorithm = algorithm
@@ -1546,17 +1550,18 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         return self.terminate()
 
     def _initialize(self, pos: FrozenSet[OWLNamedIndividual], neg: FrozenSet[OWLNamedIndividual]) -> List[Tree]:
+        reasoner = self.kb.reasoner() if self.reasoner is None else self.reasoner
         if self.use_data_properties:
             if isinstance(self.value_splitter, BinningValueSplitter):
-                self._dp_splits = self.value_splitter.compute_splits_properties(self.kb.reasoner(),
+                self._dp_splits = self.value_splitter.compute_splits_properties(reasoner,
                                                                                 self._split_properties)
             elif isinstance(self.value_splitter, EntropyValueSplitter):
-                entropy_splits = self.value_splitter.compute_splits_properties(self.kb.reasoner(),
+                entropy_splits = self.value_splitter.compute_splits_properties(reasoner,
                                                                                self._split_properties,
                                                                                pos, neg)
                 no_splits = [prop for prop in entropy_splits if len(entropy_splits[prop]) == 0]
                 temp_splitter = BinningValueSplitter(max_nr_splits=10)
-                binning_splits = temp_splitter.compute_splits_properties(self.kb.reasoner(), no_splits)
+                binning_splits = temp_splitter.compute_splits_properties(reasoner, no_splits)
                 self._dp_splits = {**entropy_splits, **binning_splits}
             else:
                 raise ValueError(self.value_splitter)
