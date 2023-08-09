@@ -361,14 +361,14 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         for _, val in relations:
             yield OWLLiteral(val)
 
-    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression, direct: bool = True) \
+    def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression, direct: bool = False) \
             -> Iterable[OWLNamedIndividual]:
         if isinstance(pe, OWLObjectProperty):
             i: owlready2.Thing = self._world[ind.get_iri().as_str()]
             p: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
-            # should always get indirect values because _get_values_for_individual does not give consistent result
+            # Recommended to use direct=False because _get_values_for_individual does not give consistent result
             # for the case when there are equivalent object properties. At least until this is fixed on owlready2.
-            retieval_func = p._get_indirect_values_for_individual
+            retieval_func = p._get_values_for_individual if direct else p._get_indirect_values_for_individual
             for val in retieval_func(i):
                 yield OWLNamedIndividual(IRI.create(val.iri))
         elif isinstance(pe, OWLObjectInverseOf):
