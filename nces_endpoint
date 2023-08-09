@@ -16,6 +16,7 @@ from ontolearn.utils.log_config import setup_logging
 from owlapy.model import OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
     OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, IRI
 from owlapy.owlready2 import OWLOntologyManager_Owlready2
+import time, io
 
 from typing import Final
 import logging
