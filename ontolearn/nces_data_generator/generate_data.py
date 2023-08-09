@@ -1,5 +1,7 @@
-import argparse, json
+import os, argparse, json
 from helper_classes import RDFTriples, KB2Data
+
+base_path = os.path.dirname(os.path.realpath(__file__)).split("ontolearn")[0]
 
 parser = argparse.ArgumentParser()
 
@@ -13,9 +15,9 @@ parser.add_argument('--rho', type=str, default='ExpressRefinement', choices=['Ex
 args = parser.parse_args()
 
 for kb in args.kbs:
-    triples = RDFTriples(source_kg_path=f'../NCESData/{kb}/{kb}.owl')
+    triples = RDFTriples(source_kg_path=f'{base_path}NCESData/{kb}/{kb}.owl')
     triples.export_triples()
-    with open(f'../NCESData/{kb}/data_generation_settings.json', "w") as setting:
+    with open(f'{base_path}NCESData/{kb}/data_generation_settings.json', "w") as setting:
         json.dump(vars(args), setting)
-    DataGen = KB2Data(path=f'../NCESData/{kb}/{kb}.owl', rho_name=args.rho, depth=args.depth, max_child_length=args.max_child_len, refinement_expressivity=args.refinement_expressivity, downsample_refinements=True, num_rand_samples=args.num_rand_samples, min_num_pos_examples=1)
+    DataGen = KB2Data(path=f'{base_path}NCESData/{kb}/{kb}.owl', rho_name=args.rho, depth=args.depth, max_child_length=args.max_child_len, refinement_expressivity=args.refinement_expressivity, downsample_refinements=True, num_rand_samples=args.num_rand_samples, min_num_pos_examples=1)
     DataGen.generate_descriptions().save_data()

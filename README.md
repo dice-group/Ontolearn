@@ -1,14 +1,15 @@
 # Ontolearn
 
 *Ontolearn* is an open-source software library for explainable structured machine learning in Python.
-It contains the following ready-to-apply algorithms that learn OWL class expressions from positive and negative examples:
-- **EvoLearner** &rarr; [An evolutionary approach to learn concepts in ALCQ(D)](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
+It contains the following (ready-to-apply) algorithms that learn OWL class expressions from positive and negative examples:
+- **NCES2** &rarr; (soon) [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
 - **Drill** &rarr; [Deep Reinforcement Learning for Refinement Operators in ALC](https://arxiv.org/pdf/2106.15373.pdf)
-- **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
-- **OCEL** &rarr; A limited version of CELOE
 - **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13)
-- **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
 - **NERO** &rarr; (soon) [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://github.com/dice-group/Nero)
+- **EvoLearner** &rarr; [An evolutionary approach to learn concepts in ALCQ(D)](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
+- **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
+- **CELOE** &rarr; [Class Expression Learning for Ontology Engineering] (https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
+- **OCEL** &rarr; A limited version of CELOE
 
 You can find more details about *Ontolearn* and these algorithms and their variations in the [documentation](https://ontolearn-docs-dice-group.netlify.app/index.html).
 
@@ -17,7 +18,6 @@ Quick navigation:
 - [Usage](#usage)
 - [Relevant Papers](#relevant-papers)
 ## Installation
-
 For detailed instructions please refer to the [installation guide](https://ontolearn-docs-dice-group.netlify.app/usage/installation.html) in the documentation.
 
 ### Installation from source
@@ -48,8 +48,7 @@ python -c "import ontolearn"
 python -m pytest tests # Partial test with pytest
 tox  # full test with tox
 ```
-
-### Installation via pip
+#### Installation via pip
 
 ```shell
 pip install ontolearn  # more on https://pypi.org/project/ontolearn/
@@ -97,29 +96,86 @@ The output is as follows:
 ```
 The result: (¬female) ⊓ (∃ hasChild.⊤) has quality 1.0
 ```
+
+NCES can be used as follows (first make sure to download datasets and pretrained models as described in the next section)
+```python
+from ontolearn.concept_learner import NCES
+from ontolearn.knowledge_base import KnowledgeBase
+from owlapy.parser import DLSyntaxParser
+from owlapy.render import DLSyntaxObjectRenderer
+import sys
+sys.path.append("examples/")
+from quality_functions import quality
+import time
+
+nces = NCES(knowledge_base_path="./NCESData/family/family.owl", learner_name="SetTransformer",\
+            path_of_embeddings="./NCESData/family/embeddings/ConEx_entity_embeddings.csv",load_pretrained=True,\
+            max_length=48, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, num_inds=32,\
+            pretrained_model_name=["SetTransformer", "LSTM", "GRU"])
+
+KB = KnowledgeBase(path=nces.knowledge_base_path)
+dl_syntax_renderer = DLSyntaxObjectRenderer()
+dl_parser = DLSyntaxParser(nces.kb_namespace)
+brother = dl_parser.parse('Brother')
+daughter = dl_parser.parse('Daughter')
+
+pos = set(KB.individuals(brother)).union(set(KB.individuals(daughter)))
+neg = set(KB.individuals())-set(pos)
+
+t0 = time.time()
+concept = nces.fit(pos, neg)
+# Use NCES to synthesize the solution class expression.
+# Note that NCES is not given the concepts Brother and Daughter.
+# Yet, it is able to compute the exact solution!
+t1 = time.time()
+print("Duration: ", t1-t0, " seconds")
+print("\nPrediction: ", dl_syntax_renderer.render(concept))
+quality(KB, concept, pos, neg)
+```
+
+```
+Duration: 0.5029337406158447  seconds
+```
+
+```
+Prediction: Brother ⊔ Daughter
+```
+
+```
+Accuracy: 100.0%
+Precision: 100.0%
+Recall: 100.0%
+F1: 100.0%
+```
+
 ----------------------------------------------------------------------------
 
-### Download external files (.link files)
+#### Download external files (.link files)
 
 Some resources like pre-calculated embeddings or `pre_trained_agents`
 are not included in the Git repository directly. Use the following
 command to download them from our data server.
 
-
+For Drill:
 ```shell
 ./big_gitext/download_big.sh examples/pre_trained_agents.zip.link
 ./big_gitext/download_big.sh -A  # to download them all into examples folder
 ```
 
+For NCES:
+```shell
+./big_gitext/download_nces_data
+```
+
 To update or upload resource files, follow the instructions
 [here](https://github.com/dice-group/Ontolearn-internal/wiki/Upload-big-data-to-hobbitdata)
-and use the following command.
+and use the following command (only for Drill):
 
 ```shell
 ./big_gitext/upload_big.sh pre_trained_agents.zip
 ```
 ----------------------------------------------------------------------------
-### Building (sdist and bdist_wheel)
+#### Building (sdist and bdist_wheel)
 You can use <code>tox</code> to build sdist and bdist_wheel packages for Ontolearn.
 - "sdist" is short for "source distribution" and is useful for distribution of packages that will be installed from source.
 - "bdist_wheel" is short for "built distribution wheel" and is useful for distributing packages that include large amounts of compiled code, as well as for distributing packages that have complex dependencies.
@@ -136,7 +192,7 @@ tox -e docs
 
 ----------------------------------------------------------------------------
 
-### Simple Linting
+#### Simple Linting
 
 Using the following command will run the linting tool [flake8](https://flake8.pycqa.org/) on the source code.
 ```shell
@@ -144,19 +200,42 @@ tox -e lint --
 ```
 ----------------------------------------------------------------------------
 
-## Contribution
-Feel free to create a pull request or submit an issue in case of any!
+#### Contribution
+Feel free to create a pull request!
 
 
 ## Relevant papers
 
-- [NCES](https://arxiv.org/pdf/2111.08486.pdf): Neural Class Expression Synthesis
+- [NCES2](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf): Neural Class Expression Synthesis in ALCHIQ(D)
+- [NCES](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13): Neural Class Expression Synthesis
 - [Evolearner](https://doi.org/10.1145/3485447.3511925): Learning description logics with evolutionary algorithms.
-- [CLIP](https://arxiv.org/abs/2107.04911): Learning Concept Lengths Accelerates Concept Learning in ALC.
+- [CLIP](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14): Learning Concept Lengths Accelerates Concept Learning in ALC.
 ### Citing
 Currently, we are working on our manuscript describing our framework. 
 If you find our work useful in your research, please consider citing the respective paper:
 ```
+
+# NCES2
+@inproceedings{kouagou2023nces2,
+author={Kouagou, N'Dah Jean and Heindorf, Stefan and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+title={Neural Class Expression Synthesis in ALCHIQ(D)},
+url = {https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf},
+booktitle={Machine Learning and Knowledge Discovery in Databases},
+year={2023},
+publisher={Springer Nature Switzerland},
+address="Cham"
+}
+
+# NCES
+@inproceedings{kouagou2023neural,
+  title={Neural class expression synthesis},
+  author={Kouagou, N’Dah Jean and Heindorf, Stefan and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+  booktitle={European Semantic Web Conference},
+  pages={209--226},
+  year={2023},
+  publisher={Springer Nature Switzerland}
+}
+
 # EvoLearner
 @inproceedings{heindorf2022evolearner,
   title={Evolearner: Learning description logics with evolutionary algorithms},
@@ -166,14 +245,15 @@ If you find our work useful in your research, please consider citing the respect
   year={2022}
 }
 
+
 # CLIP
 @inproceedings{kouagou2022learning,
   title={Learning Concept Lengths Accelerates Concept Learning in ALC},
-  author={Kouagou, N and Heindorf, Stefan and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+  author={Kouagou, N’Dah Jean and Heindorf, Stefan and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
   booktitle={European Semantic Web Conference},
   pages={236--252},
   year={2022},
-  organization={Springer}
+  publisher={Springer Nature Switzerland}
 }
 ```
 

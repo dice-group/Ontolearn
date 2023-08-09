@@ -189,7 +189,6 @@ class NCESDataLoader(BaseDataLoader, torch.utils.data.Dataset):
         elif self.shuffle_examples:
             random.shuffle(pos)
             random.shuffle(neg)
-        assert '#' in pos[0] or '.' in pos[0], 'Namespace error, expected separator # or .'
         datapoint_pos = torch.FloatTensor(self.embeddings.loc[pos].values)
         datapoint_neg = torch.FloatTensor(self.embeddings.loc[neg].values)
         labels, length = self.get_labels(key)
@@ -214,7 +213,6 @@ class NCESDataLoaderInference(BaseDataLoader, torch.utils.data.Dataset):
         elif self.shuffle_examples:
             random.shuffle(pos)
             random.shuffle(neg)
-        assert '#' in pos[0] or '.' in pos[0], 'Namespace error, expected separator # or .'
         datapoint_pos = torch.FloatTensor(self.embeddings.loc[pos].values)
         datapoint_neg = torch.FloatTensor(self.embeddings.loc[neg].values)
         return datapoint_pos, datapoint_neg

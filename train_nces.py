@@ -1,5 +1,7 @@
+import os
 from ontolearn.concept_learner import NCES
 import argparse, json
+
 
 def str2bool(v):
     if isinstance(v, bool):
