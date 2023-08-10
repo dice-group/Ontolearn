@@ -9,7 +9,12 @@ def quality(KB, solution, pos, neg):
     fn=len(pos.difference(instances))
     fp=len(neg.intersection(instances))
     tn=len(neg.difference(instances))
-    print("Accuracy: {}%".format(100*accuracy(tp, fn, fp, tn)[-1]))
-    print("Precision: {}%".format(100*precision(tp, fn, fp, tn)[-1]))
-    print("Recall: {}%".format(100*recall(tp, fn, fp, tn)[-1]))
-    print("F1: {}%".format(100*f1(tp, fn, fp, tn)[-1]))
+    acc = 100*accuracy(tp, fn, fp, tn)[-1]
+    prec = 100*precision(tp, fn, fp, tn)[-1]
+    rec = 100*recall(tp, fn, fp, tn)[-1]
+    f_1 = 100*f1(tp, fn, fp, tn)[-1]
+    print("Accuracy: {}%".format(acc))
+    print("Precision: {}%".format(prec))
+    print("Recall: {}%".format(rec))
+    print("F1: {}%".format(f_1))
+    return acc, prec, rec, f_1

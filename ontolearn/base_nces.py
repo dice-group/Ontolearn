@@ -20,6 +20,8 @@ class BaseNCES:
         vocab = atomic_concept_names + role_names + ['⊔', '⊓', '∃', '∀', '¬', '⊤', '⊥', '.', ' ', '(', ')']
         vocab = sorted(vocab) + ['PAD']
         self.knowledge_base_path = knowledge_base_path
+        self.kb = kb
+        self.all_individuals = set([ind.get_iri().as_str().split("/")[-1] for ind in kb.individuals()])
         self.inv_vocab = np.array(vocab, dtype='object')
         self.vocab = {vocab[i]:i for i in range(len(vocab))}
         self.learner_name = learner_name
