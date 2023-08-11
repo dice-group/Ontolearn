@@ -1674,15 +1674,14 @@ class NCES(BaseNCES):
         elif len(pos) + len(neg) >= num_ex and len(pos) < len(neg):
             num_pos_ex = len(pos)
             num_neg_ex = num_ex-num_pos_ex
-        elif len(pos) + len(neg) < num_ex:
-            num_pos_ex = max(num_ex//3, len(pos))
-            num_neg_ex = max(num_ex-num_pos_ex, len(neg))
-            oversample = True
+        #elif len(pos) + len(neg) < num_ex:
+        #    num_pos_ex = max(num_ex//3, len(pos))
+        #    num_neg_ex = max(num_ex-num_pos_ex, len(neg))
+        #    oversample = True
         else:
             num_pos_ex = len(pos)
             num_neg_ex = len(neg)
         if oversample:
-            print("Over sampling...")
             remaining = list(self.all_individuals.difference(set(pos).union(set(neg))))
             positive = pos + random.sample(remaining, min(max(0,num_pos_ex-len(pos)), len(remaining)))
             remaining = list(set(remaining).difference(set(positive)))
