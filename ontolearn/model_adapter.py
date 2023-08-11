@@ -63,6 +63,9 @@ def ModelAdapter(*args, **kwargs):  # noqa: C901
     """
     if "knowledge_base" in kwargs:
         kb = kwargs.pop("knowledge_base")
+        if "reasoner" in kwargs:
+            kwargs["cl_reasoner"] = kwargs["reasoner"]
+            kwargs.pop("reasoner")
         if "knowledge_base_type" in kwargs:
             raise ValueError("both knowledge_base and _type specified")
     else:

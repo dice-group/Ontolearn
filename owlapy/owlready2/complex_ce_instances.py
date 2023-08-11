@@ -31,7 +31,10 @@ class OWLReasoner_Owlready2_ComplexCEInstances(OWLReasoner_Owlready2):
             with self._world.get_ontology("http://temp.classes/"):
                 temp_pred = cast(owlready2.ThingClass, types.new_class("TempCls%d" % self._cnt, (owlready2.owl.Thing,)))
                 temp_pred.equivalent_to = [self._conv.map_concept(ce)]
-            self._sync_reasoner(other_reasoner=self._base_reasoner)
+                if self._base_reasoner == BaseReasoner_Owlready2.HERMIT:
+                    owlready2.sync_reasoner_hermit(self._world.get_ontology("http://temp.classes/"), debug=False)
+                else:
+                    owlready2.sync_reasoner_pellet(self._world.get_ontology("http://temp.classes/"), debug=False)
             instances = list(temp_pred.instances(world=self._world))
             temp_pred.equivalent_to = []
             try:
