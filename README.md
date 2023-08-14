@@ -95,7 +95,12 @@ The output is as follows:
 The result: (¬female) ⊓ (∃ hasChild.⊤) has quality 1.0
 ```
 
-NCES can be used as follows (first make sure to download datasets and pretrained models as described in the next section)
+NCES can be used as follows (you can also download all datasets and pretrained models as described in the next section)
+```shell
+wget https://hobbitdata.informatik.uni-leipzig.de/NCES_Ontolearn_Data/NCESFamilyData.zip -O NCESFamilyData.zip
+unzip -o ./NCESFamilyData.zip
+rm -f ./NCESFamilyData.zip
+```
 ```python
 from ontolearn.concept_learner import NCES
 from ontolearn.knowledge_base import KnowledgeBase
