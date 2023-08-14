@@ -1784,9 +1784,11 @@ class NCES(BaseNCES):
         return predictions_as_owl_class_expressions
             
         
-    def train(self, data: Iterable[List[Tuple]], epochs=300, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True, shuffle_examples=False):
-        train_dataset = NCESDataLoader(data, self.instance_embeddings, self.vocab, self.inv_vocab, shuffle_examples, self.max_length)
-        train_dataloader = DataLoader(train_dataset, batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch, shuffle=True)
+    def train(self, data: Iterable[List[Tuple]], epochs=300, batch_size=None, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True, example_sizes=[], shuffle_examples=False):
+        if batch_size is None:
+            batch_size = self.batch_size
+        train_dataset = NCESDataLoader(data, self.instance_embeddings, self.vocab, self.inv_vocab, shuffle_examples=shuffle_examples, max_length=self.max_length, example_sizes=example_sizes)
+        train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch, shuffle=True)
         if storage_path == None:
             storage_path = self.knowledge_base_path[:self.knowledge_base_path.rfind("/")]
         elif not os.path.exists(storage_path):
