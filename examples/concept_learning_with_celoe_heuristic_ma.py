@@ -2,10 +2,14 @@ import json
 import os
 import random
 
+from ontolearn.concept_learner import CELOE
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.model_adapter import ModelAdapter
 from owlapy.model import OWLClass, OWLNamedIndividual, IRI
 from ontolearn.utils import setup_logging
-
+from owlapy.owlready2 import BaseReasoner_Owlready2, OWLOntology_Owlready2
+from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
+from typing import cast
 setup_logging()
 
 try:
@@ -25,7 +29,7 @@ for str_target_concept, examples in settings['problems'].items():
     print('Target concept: ', str_target_concept)
 
     concepts_to_ignore = None
-    # lets inject more background info
+    # let's inject more background info
     if str_target_concept in ['Granddaughter', 'Aunt', 'Sister']:
         NS = 'http://www.benchmark.org/family#'
         concepts_to_ignore = {
@@ -48,9 +52,16 @@ for str_target_concept, examples in settings['problems'].items():
 
     typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
     typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
+
+    kb = KnowledgeBase(path=settings['data_path'])
+    reasoner = OWLReasoner_Owlready2_ComplexCEInstances(cast(OWLOntology_Owlready2, kb.ontology()),
+                                                        BaseReasoner_Owlready2.HERMIT)
+
     model = ModelAdapter(path=settings['data_path'],
                          ignore=concepts_to_ignore,
-                         max_runtime=600,
+                         reasoner=reasoner,
+                         learner_type=CELOE,
+                         max_runtime=60,
                          max_num_of_concepts_tested=10_000_000_000,
                          iter_bound=10_000_000_000,
                          expansionPenaltyFactor=0.01)

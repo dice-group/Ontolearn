@@ -16,7 +16,7 @@ from owlapy.model import OWLDeclarationAxiom, OWLNamedIndividual, OWLOntologyMan
     OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, OWLAnnotationAssertionAxiom, OWLAnnotation, \
     OWLAnnotationProperty, OWLLiteral, IRI, OWLClassExpression, OWLReasoner, OWLAxiom, OWLThing
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLOntology_Owlready2
-from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
+from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
 from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
     AbstractConceptNode, AbstractLearningProblem
@@ -46,11 +46,11 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             ** E^+ \\cup E^- \\subseteq K_N
             ** E^+ \\cap E^- = \\emptyset
 
-    The goal is to to learn a set of concepts $\\hypotheses \\subseteq \\ALCConcepts$ such that
+    The goal is to learn a set of concepts $\\hypotheses \\subseteq \\ALCConcepts$ such that
           ∀  H \\in \\hypotheses: { (K \\wedge H \\models E^+) \\wedge  \\neg( K \\wedge H \\models E^-) }.
 
     """
-    __slots__ = 'kb', 'quality_func', 'max_num_of_concepts_tested', 'terminate_on_goal', 'max_runtime', \
+    __slots__ = 'kb', 'reasoner', 'quality_func', 'max_num_of_concepts_tested', 'terminate_on_goal', 'max_runtime', \
                 'start_time', '_goal_found', '_number_of_tested_concepts'
 
     name: ClassVar[str]
@@ -67,6 +67,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     @abstractmethod
     def __init__(self,
                  knowledge_base: KnowledgeBase,
+                 reasoner: Optional[OWLReasoner] = None,
                  quality_func: Optional[AbstractScorer] = None,
                  max_num_of_concepts_tested: Optional[int] = None,
                  max_runtime: Optional[int] = None,
@@ -80,8 +81,11 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             max_num_of_concepts_tested: limit to stop the algorithm after n concepts tested. defaults to 10_000
             max_runtime: limit to stop the algorithm after n seconds. defaults to 5
             terminate_on_goal: whether to stop the algorithm if a perfect solution is found. defaults to True
+            reasoner: Optionally use a different reasoner. If reasoner=None, the knowledge base of the concept
+                      learner is used.
         """
         self.kb = knowledge_base
+        self.reasoner = reasoner
         self.quality_func = quality_func
         self.max_num_of_concepts_tested = max_num_of_concepts_tested
         self.terminate_on_goal = terminate_on_goal
@@ -198,8 +202,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         Args:
             individuals: A list of OWL individuals.
             hypotheses: A list of class expressions.
-            reasoner: Optionally use a different reasoner. If reasoner=None, the knowledge base of the concept
-                      learner is used.
 
         Returns:
             matrix of \\|individuals\\| x \\|hypotheses\\|
@@ -217,8 +219,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     def predict(self, individuals: List[OWLNamedIndividual],
                 hypotheses: Optional[List[Union[_N, OWLClassExpression]]] = None,
                 axioms: Optional[List[OWLAxiom]] = None,
-                n: int = 10,
-                reasoner: Optional[OWLReasoner] = None) -> pd.DataFrame:
+                n: int = 10) -> pd.DataFrame:
         """Creates a binary data frame showing for each individual whether it is entailed in the given hypotheses
         (class expressions). The individuals do not have to be in the ontology/knowledge base yet. In that case,
         axioms describing these individuals must be provided.
@@ -234,13 +235,12 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
                     describing these individuals must be provided. The argument can also be used to add
                     arbitrary axioms to the ontology for the prediction.
             n: Integer denoting number of ALC concepts to extract from search tree if hypotheses=None.
-            reasoner: (Optional) Use a different reasoner. If reasoner=None, the knowledge base of the concept
-                      learner is used.
 
         Returns:
             Pandas data frame with dimensions |individuals|*|hypotheses| indicating for each individual and each
             hypothesis whether the individual is entailed in the hypothesis
         """
+        reasoner = self.reasoner
         new_individuals = set(individuals) - self.kb.individuals_set(OWLThing)
         if len(new_individuals) > 0 and (axioms is None or len(axioms) == 0):
             raise RuntimeError('If individuals are provided that are not in the knowledge base yet, a list of axioms '
@@ -252,7 +252,8 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             manager: OWLOntologyManager = ontology.get_owl_ontology_manager()
             for axiom in axioms:
                 manager.add_axiom(ontology, axiom)
-            reasoner = OWLReasoner_Owlready2_TempClasses(ontology) if reasoner is None else reasoner
+            if reasoner is None:
+                reasoner = OWLReasoner_Owlready2_ComplexCEInstances(ontology)
 
         if hypotheses is None:
             hypotheses = [hyp.concept for hyp in self.best_hypotheses(n)]
@@ -357,6 +358,7 @@ class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
     @abstractmethod
     def __init__(self,
                  knowledge_base: KnowledgeBase,
+                 reasoner: Optional[OWLReasoner] = None,
                  refinement_operator: Optional[BaseRefinement] = None,
                  heuristic_func: Optional[AbstractHeuristic] = None,
                  quality_func: Optional[AbstractScorer] = None,
@@ -383,6 +385,7 @@ class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
             root_concept: the start concept to begin the search from. defaults to OWL Thing
         """
         super().__init__(knowledge_base=knowledge_base,
+                         reasoner=reasoner,
                          quality_func=quality_func,
                          max_num_of_concepts_tested=max_num_of_concepts_tested,
                          max_runtime=max_runtime,

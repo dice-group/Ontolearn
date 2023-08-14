@@ -22,7 +22,7 @@ from owlapy.model import OWLObjectInverseOf, OWLObjectPropertyRangeAxiom, OWLSam
     OWLObjectPropertyAssertionAxiom, OWLObjectPropertyDomainAxiom, OWLInverseObjectPropertiesAxiom, OWLSubClassOfAxiom
 
 from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
+from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
 
 
 class Owlapy_Owlready2_Test(unittest.TestCase):
@@ -414,6 +414,8 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         sister = OWLClass(IRI(ns, 'sister'))
         person = OWLClass(IRI(ns, 'person'))
         person_sibling = OWLClass(IRI(ns, 'PersonWithASibling'))
+        animal = OWLClass(IRI(ns, 'animal'))
+        aerial_animal = OWLClass(IRI(ns, 'aerialAnimal'))
 
         self.assertNotIn(sister, list(onto.classes_in_signature()))
         mgr.add_axiom(onto, OWLClassAssertionAxiom(anna, sister))
@@ -462,9 +464,14 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         self.assertNotIn(OWLLiteral(31), list(reasoner.data_property_values(anna, age)))
 
         self.assertNotIn(brother, list(onto.classes_in_signature()))
+        self.assertNotIn(animal, list(onto.classes_in_signature()))
+        self.assertNotIn(aerial_animal, list(onto.classes_in_signature()))
         mgr.add_axiom(onto, OWLSubClassOfAxiom(brother, male))
+        mgr.add_axiom(onto, OWLSubClassOfAxiom(aerial_animal, animal))
         self.assertIn(brother, list(reasoner.sub_classes(male)))
+        self.assertIn(aerial_animal, list(reasoner.sub_classes(animal)))
         self.assertIn(male, list(reasoner.super_classes(brother)))
+        self.assertIn(animal, list(reasoner.super_classes(aerial_animal)))
         mgr.remove_axiom(onto, OWLSubClassOfAxiom(brother, male))
         self.assertNotIn(brother, list(reasoner.sub_classes(male)))
         self.assertNotIn(male, list(reasoner.super_classes(brother)))
@@ -528,15 +535,15 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         self.assertFalse(set(reasoner.same_individuals(markus)))
 
         self.assertFalse(list(reasoner.disjoint_classes(brother)))
-        self.assertFalse(list(reasoner.disjoint_classes(sister)))
-        mgr.add_axiom(onto, OWLDisjointClassesAxiom([brother, male]))
-        mgr.add_axiom(onto, OWLDisjointClassesAxiom([brother, sister, person]))
-        self.assertEqual(set([male, sister, person]), set(reasoner.disjoint_classes(brother)))
-        self.assertEqual(set([brother, person]), set(reasoner.disjoint_classes(sister)))
-        mgr.remove_axiom(onto, OWLDisjointClassesAxiom([brother, male]))
-        mgr.remove_axiom(onto, OWLDisjointClassesAxiom([brother, sister, person]))
+        self.assertFalse(list(reasoner.disjoint_classes(person)))
+        mgr.add_axiom(onto, OWLDisjointClassesAxiom([brother, sister, aerial_animal]))
+        self.assertEqual(set([sister, aerial_animal]), set(reasoner.disjoint_classes(brother)))
+        mgr.remove_axiom(onto, OWLDisjointClassesAxiom([brother, sister, aerial_animal]))
         self.assertFalse(set(reasoner.disjoint_classes(brother)))
-        self.assertFalse(set(reasoner.disjoint_classes(sister)))
+        mgr.add_axiom(onto, OWLDisjointClassesAxiom([person, animal]))
+        self.assertEqual(set([animal, aerial_animal]), set(reasoner.disjoint_classes(person)))
+        mgr.remove_axiom(onto, OWLDisjointClassesAxiom([person, animal]))
+        self.assertFalse(set(reasoner.disjoint_classes(person)))
 
         self.assertFalse(list(reasoner.disjoint_object_properties(has_sibling)))
         self.assertFalse(list(reasoner.disjoint_object_properties(has_child)))
@@ -799,7 +806,7 @@ class Owlapy_Owlready2_TempClasses_Test(unittest.TestCase):
         has_child = OWLObjectProperty(IRI(ns, 'hasChild'))
 
         # reasoner = OWLReasoner_Owlready2(onto)
-        reasoner = OWLReasoner_Owlready2_TempClasses(onto)
+        reasoner = OWLReasoner_Owlready2_ComplexCEInstances(onto)
 
         inst = frozenset(reasoner.instances(female))
         target_inst = frozenset({OWLNamedIndividual(IRI(ns, 'anna')),

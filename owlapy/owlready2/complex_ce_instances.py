@@ -9,7 +9,7 @@ from owlapy.owlready2 import OWLReasoner_Owlready2, OWLOntology_Owlready2, BaseR
 from owlapy.owlready2.utils import ToOwlready2
 
 
-class OWLReasoner_Owlready2_TempClasses(OWLReasoner_Owlready2):
+class OWLReasoner_Owlready2_ComplexCEInstances(OWLReasoner_Owlready2):
     __slots__ = '_cnt', '_conv', '_base_reasoner'
 
     _conv: ToOwlready2
@@ -20,6 +20,7 @@ class OWLReasoner_Owlready2_TempClasses(OWLReasoner_Owlready2):
         self._cnt = 1
         self._conv = ToOwlready2(world=self._world)
         self._base_reasoner = base_reasoner
+        self._sync_reasoner(other_reasoner=self._base_reasoner)
 
     def instances(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLNamedIndividual]:
         if isinstance(ce, OWLClass):
@@ -30,10 +31,16 @@ class OWLReasoner_Owlready2_TempClasses(OWLReasoner_Owlready2):
             with self._world.get_ontology("http://temp.classes/"):
                 temp_pred = cast(owlready2.ThingClass, types.new_class("TempCls%d" % self._cnt, (owlready2.owl.Thing,)))
                 temp_pred.equivalent_to = [self._conv.map_concept(ce)]
-            self._sync_reasoner(other_reasoner=self._base_reasoner)
+                if self._base_reasoner == BaseReasoner_Owlready2.HERMIT:
+                    owlready2.sync_reasoner_hermit(self._world.get_ontology("http://temp.classes/"), debug=False)
+                else:
+                    owlready2.sync_reasoner_pellet(self._world.get_ontology("http://temp.classes/"), debug=False)
             instances = list(temp_pred.instances(world=self._world))
             temp_pred.equivalent_to = []
-            owlready2.destroy_entity(temp_pred)
+            try:
+                owlready2.destroy_entity(temp_pred)
+            except AttributeError as e:
+                print(f"AttributeError: {e} Source: {__file__} (you can ignore this)")
             self._cnt += 1
             for i in instances:
                 yield OWLNamedIndividual(IRI.create(i.iri))
