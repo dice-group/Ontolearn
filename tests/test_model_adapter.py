@@ -16,9 +16,9 @@ from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexC
 class ModelAdapterTest(unittest.TestCase):
 
     def test_celoe_quality_variant_1(self):
-        with open('file://examples/synthetic_problems.json') as json_file:
+        with open('examples/synthetic_problems.json') as json_file:
             settings = json.load(json_file)
-        kb_path = "file://KGs/Family/family-benchmark_rich_background.owl"
+        kb_path = "KGs/Family/family-benchmark_rich_background.owl"
         kb = KnowledgeBase(path=kb_path)
         reasoner = OWLReasoner_Owlready2_ComplexCEInstances(cast(OWLOntology_Owlready2, kb.ontology()),
                                                             BaseReasoner_Owlready2.HERMIT)
@@ -42,9 +42,9 @@ class ModelAdapterTest(unittest.TestCase):
         self.assertGreaterEqual(hypothesis.quality, 0.86)
 
     def test_celoe_quality_variant_2(self):
-        with open('file://examples/synthetic_problems.json') as json_file:
+        with open('examples/synthetic_problems.json') as json_file:
             settings = json.load(json_file)
-        kb_path = "file://KGs/Family/family-benchmark_rich_background.owl"
+        kb_path = "KGs/Family/family-benchmark_rich_background.owl"
         kb = KnowledgeBase(path=kb_path)
         reasoner = OWLReasoner_Owlready2_ComplexCEInstances(cast(OWLOntology_Owlready2, kb.ontology()),
                                                             BaseReasoner_Owlready2.PELLET)
@@ -73,9 +73,9 @@ class ModelAdapterTest(unittest.TestCase):
         self.assertGreaterEqual(hypothesis.quality, 0.59)
 
     def test_evolearner_quality(self):
-        with open('file://examples/synthetic_problems.json') as json_file:
+        with open('examples/synthetic_problems.json') as json_file:
             settings = json.load(json_file)
-        kb = KnowledgeBase(path="file://KGs/Family/family-benchmark_rich_background.owl")
+        kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
         reasoner = OWLReasoner_Owlready2_ComplexCEInstances(cast(OWLOntology_Owlready2, kb.ontology()),
                                                             BaseReasoner_Owlready2.HERMIT)
         p = set(settings['problems']['Uncle']['positive_examples'])
