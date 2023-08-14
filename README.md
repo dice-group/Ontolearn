@@ -38,11 +38,9 @@ sudo apt install curl
 A quick start up will be as follows:
 
 ```shell
-git clone https://github.com/dice-group/Ontolearn.git
-cd Ontolearn
-conda create --name temp python=3.8
-conda activate temp
-conda env update --name temp
+git clone https://github.com/dice-group/Ontolearn.git && conda create --name onto python=3.8 && conda activate onto 
+# Incase needed
+# conda env update --name onto
 python -c 'from setuptools import setup; setup()' develop
 python -c "import ontolearn"
 python -m pytest tests # Partial test with pytest
