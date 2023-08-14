@@ -8,7 +8,7 @@ It contains the following (ready-to-apply) algorithms that learn OWL class expre
 - **NERO** &rarr; (soon) [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://github.com/dice-group/Nero)
 - **EvoLearner** &rarr; [An evolutionary approach to learn concepts in ALCQ(D)](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
 - **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
-- **CELOE** &rarr; [Class Expression Learning for Ontology Engineering] (https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
+- **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
 - **OCEL** &rarr; A limited version of CELOE
 
 You can find more details about *Ontolearn* and these algorithms and their variations in the [documentation](https://ontolearn-docs-dice-group.netlify.app/index.html).
@@ -98,8 +98,8 @@ The result: (¬female) ⊓ (∃ hasChild.⊤) has quality 1.0
 NCES can be used as follows (you can also download all datasets and pretrained models as described in the next section)
 ```shell
 wget https://hobbitdata.informatik.uni-leipzig.de/NCES_Ontolearn_Data/NCESFamilyData.zip -O NCESFamilyData.zip
-unzip -o ./NCESFamilyData.zip
-rm -f ./NCESFamilyData.zip
+unzip -o NCESFamilyData.zip
+rm -f NCESFamilyData.zip
 ```
 ```python
 from ontolearn.concept_learner import NCES
@@ -111,8 +111,8 @@ sys.path.append("examples/")
 from quality_functions import quality
 import time
 
-nces = NCES(knowledge_base_path="./NCESData/family/family.owl", learner_name="SetTransformer",\
-            path_of_embeddings="./NCESData/family/embeddings/ConEx_entity_embeddings.csv",load_pretrained=True,\
+nces = NCES(knowledge_base_path="NCESData/family/family.owl", learner_name="SetTransformer",\
+            path_of_embeddings="NCESData/family/embeddings/ConEx_entity_embeddings.csv",load_pretrained=True,\
             max_length=48, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, num_inds=32,\
             pretrained_model_name=["SetTransformer", "LSTM", "GRU"])
 

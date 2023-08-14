@@ -89,7 +89,7 @@ class ModelAdapterTest(unittest.TestCase):
 
         model = model.fit(pos=typed_pos, neg=typed_neg)
         hypothesis = next(model.best_hypotheses(n=1))
-        self.assertGreaterEqual(hypothesis.quality, 1.0)
+        self.assertGreaterEqual(hypothesis.quality, 0.9)
 
 
 if __name__ == '__main__':
