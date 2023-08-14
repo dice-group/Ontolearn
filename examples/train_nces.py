@@ -1,5 +1,5 @@
 """ 
-(1) To get the data: wget https://hobbitdata.informatik.uni-leipzig.de/NCES_Ontolearn_Data/NCESFamilyData.zip
+(1) To get the data: wget https://hobbitdata.informatik.uni-leipzig.de/NCES_Ontolearn_Data/NCESData.zip
 (2) pip install ontolearn
 """
 
