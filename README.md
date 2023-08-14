@@ -111,8 +111,8 @@ sys.path.append("examples/")
 from quality_functions import quality
 import time
 
-nces = NCES(knowledge_base_path="NCESData/family/family.owl", learner_name="SetTransformer",\
-            path_of_embeddings="NCESData/family/embeddings/ConEx_entity_embeddings.csv",load_pretrained=True,\
+nces = NCES(knowledge_base_path="file://NCESData/family/family.owl", learner_name="SetTransformer",\
+            path_of_embeddings="file://NCESData/family/embeddings/ConEx_entity_embeddings.csv",load_pretrained=True,\
             max_length=48, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, num_inds=32,\
             pretrained_model_name=["SetTransformer", "LSTM", "GRU"])
 
