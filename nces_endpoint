@@ -7,6 +7,7 @@ from argparse import ArgumentParser
 from functools import wraps, update_wrapper
 from flask import Flask, request, Response, abort
 from flask import make_response
+import urllib.parse
 
 import ontolearn
 from ontolearn.concept_learner import NCES
@@ -103,10 +104,13 @@ def create_flask_app():
             sanity_checking(learning_problem, app)
 
             try:
-                typed_pos = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["positives"]))))
-                typed_neg = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["negatives"]))))
+                pos = set([urllib.parse.quote(p) for p in learning_problem["positives"]])
+                neg = set([urllib.parse.quote(n) for n in learning_problem["negatives"]])
+                typed_pos = set(map(OWLNamedIndividual, map(IRI.create, pos)))
+                typed_neg = set(map(OWLNamedIndividual, map(IRI.create, neg)))
                 prediction = nces.fit(typed_pos, typed_neg)
             except Exception as e:
+                print(f"Failed, some of {learning_problem["positives"]} or {learning_problem["negatives"]} are unknown")
                 app.logger.debug(e)
                 abort(400)
             import tempfile
