@@ -10,7 +10,6 @@ from flask import make_response
 
 import ontolearn
 from ontolearn.concept_learner import NCES
-from ontolearn.metrics import F1
 from ontolearn.utils.log_config import setup_logging
 
 from owlapy.model import OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
@@ -59,7 +58,7 @@ def sanity_checking(learning_problem, app):
     # TODO: Whether each input can be mapped into OWLNamedIndividual and such owl individual exist in the input KG
 
 def serialize_prediction(prediction, destination_path: str = '', kb_path: str = '', rdf_format: str = 'rdfxml') -> None:
-    """Serialise class expression
+    """Serialize class expression
 
     Args:
         destination_path: serialization path (extension will be added automatically)
