@@ -109,10 +109,6 @@ def create_flask_app():
                 typed_neg = set(map(OWLNamedIndividual, map(IRI.create, neg)))
                 prediction = nces.fit(typed_pos, typed_neg)
             except Exception as e:
-                print("\nComparing examples ...\n")
-                print("--->", list(nces.all_individuals)[:10])
-                print("\nand --->", learning_problem["positives"][:10])
-                print("")
                 app.logger.debug(e)
                 abort(400)
             import tempfile
