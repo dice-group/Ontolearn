@@ -110,7 +110,7 @@ def create_flask_app():
                 typed_neg = set(map(OWLNamedIndividual, map(IRI.create, neg)))
                 prediction = nces.fit(typed_pos, typed_neg)
             except Exception as e:
-                print(f"Failed, some of {learning_problem["positives"]} or {learning_problem["negatives"]} are unknown")
+                print(f"Failed, some of {learning_problem['positives']} or {learning_problem['negatives']} are unknown")
                 app.logger.debug(e)
                 abort(400)
             import tempfile
