@@ -1,3 +1,9 @@
+""" 
+(1) To get the data: wget https://hobbitdata.informatik.uni-leipzig.de/NCES_Ontolearn_Data/NCESData.zip
+(2) pip install ontolearn
+"""
+
+
 import os
 from ontolearn.concept_learner import NCES
 import argparse, json

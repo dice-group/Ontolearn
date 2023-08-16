@@ -14,13 +14,13 @@ from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
 from owlapy.model import OWLOntology, OWLNamedIndividual, IRI
 from owlapy.namespaces import Namespaces
 from owlapy.owlready2 import OWLOntology_Owlready2, OWLOntologyManager_Owlready2
-from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
+from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
 from owlapy.render import DLSyntaxObjectRenderer
 
 
 def my_reasoner_factory(onto: OWLOntology):
     assert isinstance(onto, OWLOntology_Owlready2)
-    temp_classes_reasoner = OWLReasoner_Owlready2_TempClasses(onto)
+    temp_classes_reasoner = OWLReasoner_Owlready2_ComplexCEInstances(onto)
     fast_instance_checker = OWLReasoner_FastInstanceChecker(
         onto,
         temp_classes_reasoner)
@@ -46,12 +46,12 @@ model = ModelAdapter(learner_type=CELOE,
                      expansionPenaltyFactor=0.05,
                      startNodeBonus=1.0,
                      nodeRefinementPenalty=0.01,
-                    )
+                     )
 
 # no need to construct the IRI here ourselves
 model.fit(pos=positive_examples,
           neg=negative_examples,
-         )
+          )
 
 dlsr = DLSyntaxObjectRenderer()
 

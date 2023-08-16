@@ -161,9 +161,9 @@ def create_flask_app():
 if __name__ == '__main__':
     parser = ArgumentParser()
     
-    parser.add_argument("--path_knowledge_base", type=str, default='NCESData/animals/animals.owl')
+    parser.add_argument("--path_knowledge_base", type=str, default='')
     parser.add_argument("--path_knowledge_base_embeddings", type=str,
-                        default='NCESData/animals/embeddings/ConEx_entity_embeddings.csv')
+                        default='')
     args = parser.parse_args()
     nces = NCES(knowledge_base_path=args.path_knowledge_base, learner_name="SetTransformer", path_of_embeddings=args.path_knowledge_base_embeddings, max_length=48, proj_dim=128,\
          rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, num_inds=32, load_pretrained=True, pretrained_model_name=["SetTransformer", "LSTM", "GRU"])
