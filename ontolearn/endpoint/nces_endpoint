@@ -10,7 +10,6 @@ from flask import make_response
 
 import ontolearn
 from ontolearn.concept_learner import NCES
-from ontolearn.metrics import F1
 from ontolearn.utils.log_config import setup_logging
 
 from owlapy.model import OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
@@ -59,7 +58,7 @@ def sanity_checking(learning_problem, app):
     # TODO: Whether each input can be mapped into OWLNamedIndividual and such owl individual exist in the input KG
 
 def serialize_prediction(prediction, destination_path: str = '', kb_path: str = '', rdf_format: str = 'rdfxml') -> None:
-    """Serialise class expression
+    """Serialize class expression
 
     Args:
         destination_path: serialization path (extension will be added automatically)
@@ -104,8 +103,10 @@ def create_flask_app():
             sanity_checking(learning_problem, app)
 
             try:
-                typed_pos = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["positives"]))))
-                typed_neg = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["negatives"]))))
+                pos = learning_problem["positives"]
+                neg = learning_problem["negatives"]
+                typed_pos = set(map(OWLNamedIndividual, map(IRI.create, pos)))
+                typed_neg = set(map(OWLNamedIndividual, map(IRI.create, neg)))
                 prediction = nces.fit(typed_pos, typed_neg)
             except Exception as e:
                 app.logger.debug(e)
@@ -145,15 +146,24 @@ def create_flask_app():
             loading = False
             global ready
             ready = True
+#    @app.before_first_request
+#    def set_ready():
+#        global lock
+#        with lock:
+#            global loading
+#            loading = False
+#            global ready
+#            ready = True
+#
     return app
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     
-    parser.add_argument("--path_knowledge_base", type=str, default='NCESData/animals/animals.owl')
+    parser.add_argument("--path_knowledge_base", type=str, default='')
     parser.add_argument("--path_knowledge_base_embeddings", type=str,
-                        default='NCESData/animals/embeddings/ConEx_entity_embeddings.csv')
+                        default='')
     args = parser.parse_args()
     nces = NCES(knowledge_base_path=args.path_knowledge_base, learner_name="SetTransformer", path_of_embeddings=args.path_knowledge_base_embeddings, max_length=48, proj_dim=128,\
          rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, num_inds=32, load_pretrained=True, pretrained_model_name=["SetTransformer", "LSTM", "GRU"])

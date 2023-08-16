@@ -95,61 +95,7 @@ The output is as follows:
 The result: (¬female) ⊓ (∃ hasChild.⊤) has quality 1.0
 ```
 
-NCES can be used as follows (you can also download all datasets and pretrained models as described in the next section)
-```shell
-wget https://hobbitdata.informatik.uni-leipzig.de/NCES_Ontolearn_Data/NCESFamilyData.zip -O NCESFamilyData.zip
-unzip -o NCESFamilyData.zip
-rm -f NCESFamilyData.zip
-```
-```python
-from ontolearn.concept_learner import NCES
-from ontolearn.knowledge_base import KnowledgeBase
-from owlapy.parser import DLSyntaxParser
-from owlapy.render import DLSyntaxObjectRenderer
-import sys
-sys.path.append("examples/")
-from quality_functions import quality
-import time
-
-nces = NCES(knowledge_base_path="file://NCESData/family/family.owl", learner_name="SetTransformer",\
-            path_of_embeddings="file://NCESData/family/embeddings/ConEx_entity_embeddings.csv",load_pretrained=True,\
-            max_length=48, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, num_inds=32,\
-            pretrained_model_name=["SetTransformer", "LSTM", "GRU"])
-
-KB = KnowledgeBase(path=nces.knowledge_base_path)
-dl_syntax_renderer = DLSyntaxObjectRenderer()
-dl_parser = DLSyntaxParser(nces.kb_namespace)
-brother = dl_parser.parse('Brother')
-daughter = dl_parser.parse('Daughter')
-
-pos = set(KB.individuals(brother)).union(set(KB.individuals(daughter)))
-neg = set(KB.individuals())-set(pos)
-
-t0 = time.time()
-concept = nces.fit(pos, neg)
-# Use NCES to synthesize the solution class expression.
-# Note that NCES is not given the concepts Brother and Daughter.
-# Yet, it is able to compute the exact solution!
-t1 = time.time()
-print("Duration: ", t1-t0, " seconds")
-print("\nPrediction: ", dl_syntax_renderer.render(concept))
-quality(KB, concept, pos, neg)
-```
-
-```
-Duration: 0.5029337406158447  seconds
-```
-
-```
-Prediction: Brother ⊔ Daughter
-```
-
-```
-Accuracy: 100.0%
-Precision: 100.0%
-Recall: 100.0%
-F1: 100.0%
-```
+For a quick start on how to use NCES, please refer to the notebook [simple usage NCES](examples/simple-usage-NCES.ipynb)
 
 ----------------------------------------------------------------------------
 
