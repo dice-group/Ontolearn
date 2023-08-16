@@ -95,7 +95,7 @@ The output is as follows:
 The result: (¬female) ⊓ (∃ hasChild.⊤) has quality 1.0
 ```
 
-For a quick start on how to use NCES, please refer to the notebook [simple usage NCES](simple-usage-NCES.ipynb)
+For a quick start on how to use NCES, please refer to the notebook [simple usage NCES](examples/simple-usage-NCES.ipynb)
 
 ----------------------------------------------------------------------------
 
