@@ -10,13 +10,18 @@ from flask import make_response
 
 import ontolearn
 from ontolearn.concept_learner import NCES
-from ontolearn.metrics import F1
 from ontolearn.utils.log_config import setup_logging
 
-from owlapy.model import OWLNamedIndividual
-from owlapy.model import IRI
-from owlapy.render import DLSyntaxObjectRenderer
+from owlapy.model import OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
+    OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, IRI
+from owlapy.owlready2 import OWLOntologyManager_Owlready2
+import time, io
+
+from typing import Final
 import logging
+import random
+
+random.seed(1)
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -27,7 +32,6 @@ args = None
 lock = threading.Lock()
 loading: bool = False
 ready: bool = False
-dls_renderer = DLSyntaxObjectRenderer()
 
 def nocache(view):
     @wraps(view)
@@ -53,7 +57,30 @@ def sanity_checking(learning_problem, app):
     # TODO: Sanity checking
     # TODO: Whether each input can be mapped into OWLNamedIndividual and such owl individual exist in the input KG
 
+def serialize_prediction(prediction, destination_path: str = '', kb_path: str = '', rdf_format: str = 'rdfxml') -> None:
+    """Serialize class expression
 
+    Args:
+        destination_path: serialization path (extension will be added automatically)
+        rdf_format: serialisation format. currently supported: "rdfxml"
+    """
+    SNS: Final = 'https://dice-research.org/predictions-schema/'
+    NS: Final = 'https://dice-research.org/predictions/' + str(time.time()) + '#'
+
+    if rdf_format != 'rdfxml':
+        raise NotImplementedError(f'Format {rdf_format} not implemented.')
+
+    manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
+    ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
+    manager.load_ontology(IRI.create(kb_path))
+    manager.apply_change(AddImport(ontology, OWLImportsDeclaration(IRI.create('file://' + kb_path))))
+    cls_a: OWLClass = OWLClass(IRI.create(NS, "Pred_0"))
+    equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, prediction])
+    manager.add_axiom(ontology, equivalent_classes_axiom)
+
+    manager.save_ontology(ontology, IRI.create('file:/' + destination_path + '.owl'))
+
+    
 def create_flask_app():
     app = Flask(__name__, instance_relative_config=True, )
 
@@ -76,17 +103,24 @@ def create_flask_app():
             sanity_checking(learning_problem, app)
 
             try:
-                typed_pos = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["positives"]))))
-                typed_neg = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["negatives"]))))
+                pos = learning_problem["positives"]
+                neg = learning_problem["negatives"]
+                typed_pos = set(map(OWLNamedIndividual, map(IRI.create, pos)))
+                typed_neg = set(map(OWLNamedIndividual, map(IRI.create, neg)))
                 prediction = nces.fit(typed_pos, typed_neg)
             except Exception as e:
                 app.logger.debug(e)
                 abort(400)
+            import tempfile
+            tmp = tempfile.NamedTemporaryFile()
             try:
-                hypotheses_ser = dls_renderer.render(prediction)
+                serialize_prediction(prediction, destination_path=tmp.name, kb_path=nces.knowledge_base_path)
             except Exception as ex:
                 print(ex)
-            return Response(hypotheses_ser)
+            hypothesis_ser = io.open(tmp.name+'.owl', mode="r", encoding="utf-8").read()
+            from pathlib import Path
+            Path(tmp.name+'.owl').unlink(True)
+            return Response(hypothesis_ser, mimetype="application/rdf+xml")
         finally:
             ready = True
             lock.release()
@@ -127,9 +161,9 @@ def create_flask_app():
 if __name__ == '__main__':
     parser = ArgumentParser()
     
-    parser.add_argument("--path_knowledge_base", type=str, default='NCESData/animals/animals.owl')
+    parser.add_argument("--path_knowledge_base", type=str, default='')
     parser.add_argument("--path_knowledge_base_embeddings", type=str,
-                        default='NCESData/animals/embeddings/ConEx_entity_embeddings.csv')
+                        default='')
     args = parser.parse_args()
     nces = NCES(knowledge_base_path=args.path_knowledge_base, learner_name="SetTransformer", path_of_embeddings=args.path_knowledge_base_embeddings, max_length=48, proj_dim=128,\
          rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, num_inds=32, load_pretrained=True, pretrained_model_name=["SetTransformer", "LSTM", "GRU"])

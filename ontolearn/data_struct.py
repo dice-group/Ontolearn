@@ -168,12 +168,13 @@ class BaseDataLoader:
 
 class NCESDataLoader(BaseDataLoader, torch.utils.data.Dataset):
     
-    def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, max_length, sorted_examples=True):
+    def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, max_length, example_sizes=None, sorted_examples=True):
         self.data_raw = data
         self.embeddings = embeddings
         self.max_length = max_length
         super().__init__(vocab, inv_vocab)
         self.shuffle_examples = shuffle_examples
+        self.example_sizes = example_sizes
         self.sorted_examples = sorted_examples
 
     def __len__(self):
@@ -183,14 +184,17 @@ class NCESDataLoader(BaseDataLoader, torch.utils.data.Dataset):
         key, value = self.data_raw[idx]
         pos = value['positive examples']
         neg = value['negative examples']
-        if self.sorted_examples:
-            pos = sorted(pos)
-            neg = sorted(neg)
-        elif self.shuffle_examples:
-            random.shuffle(pos)
-            random.shuffle(neg)
-        datapoint_pos = torch.FloatTensor(self.embeddings.loc[pos].values)
-        datapoint_neg = torch.FloatTensor(self.embeddings.loc[neg].values)
+        if self.example_sizes is not None:
+            k_pos, k_neg = random.choice(self.example_sizes)
+            k_pos = min(k_pos, len(pos))
+            k_neg = min(k_neg, len(neg))
+            selected_pos = random.sample(pos, k_pos)
+            selected_neg = random.sample(neg, k_neg)
+        else:
+            selected_pos = pos
+            selected_neg = neg
+        datapoint_pos = torch.FloatTensor(self.embeddings.loc[selected_pos].values.squeeze())
+        datapoint_neg = torch.FloatTensor(self.embeddings.loc[selected_neg].values.squeeze())
         labels, length = self.get_labels(key)
         return datapoint_pos, datapoint_neg, torch.cat([torch.tensor(labels), self.vocab['PAD']*torch.ones(self.max_length-length)]).long()
     

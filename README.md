@@ -8,7 +8,7 @@ It contains the following (ready-to-apply) algorithms that learn OWL class expre
 - **NERO** &rarr; (soon) [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://github.com/dice-group/Nero)
 - **EvoLearner** &rarr; [An evolutionary approach to learn concepts in ALCQ(D)](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
 - **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
-- **CELOE** &rarr; [Class Expression Learning for Ontology Engineering] (https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
+- **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
 - **OCEL** &rarr; A limited version of CELOE
 
 You can find more details about *Ontolearn* and these algorithms and their variations in the [documentation](https://ontolearn-docs-dice-group.netlify.app/index.html).
@@ -38,11 +38,9 @@ sudo apt install curl
 A quick start up will be as follows:
 
 ```shell
-git clone https://github.com/dice-group/Ontolearn.git
-cd Ontolearn
-conda create --name temp python=3.8
-conda activate temp
-conda env update --name temp
+git clone https://github.com/dice-group/Ontolearn.git && conda create --name onto python=3.8 && conda activate onto 
+# Incase needed
+# conda env update --name onto
 python -c 'from setuptools import setup; setup()' develop
 python -c "import ontolearn"
 python -m pytest tests # Partial test with pytest
@@ -97,56 +95,7 @@ The output is as follows:
 The result: (¬female) ⊓ (∃ hasChild.⊤) has quality 1.0
 ```
 
-NCES can be used as follows (first make sure to download datasets and pretrained models as described in the next section)
-```python
-from ontolearn.concept_learner import NCES
-from ontolearn.knowledge_base import KnowledgeBase
-from owlapy.parser import DLSyntaxParser
-from owlapy.render import DLSyntaxObjectRenderer
-import sys
-sys.path.append("examples/")
-from quality_functions import quality
-import time
-
-nces = NCES(knowledge_base_path="./NCESData/family/family.owl", learner_name="SetTransformer",\
-            path_of_embeddings="./NCESData/family/embeddings/ConEx_entity_embeddings.csv",load_pretrained=True,\
-            max_length=48, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, num_inds=32,\
-            pretrained_model_name=["SetTransformer", "LSTM", "GRU"])
-
-KB = KnowledgeBase(path=nces.knowledge_base_path)
-dl_syntax_renderer = DLSyntaxObjectRenderer()
-dl_parser = DLSyntaxParser(nces.kb_namespace)
-brother = dl_parser.parse('Brother')
-daughter = dl_parser.parse('Daughter')
-
-pos = set(KB.individuals(brother)).union(set(KB.individuals(daughter)))
-neg = set(KB.individuals())-set(pos)
-
-t0 = time.time()
-concept = nces.fit(pos, neg)
-# Use NCES to synthesize the solution class expression.
-# Note that NCES is not given the concepts Brother and Daughter.
-# Yet, it is able to compute the exact solution!
-t1 = time.time()
-print("Duration: ", t1-t0, " seconds")
-print("\nPrediction: ", dl_syntax_renderer.render(concept))
-quality(KB, concept, pos, neg)
-```
-
-```
-Duration: 0.5029337406158447  seconds
-```
-
-```
-Prediction: Brother ⊔ Daughter
-```
-
-```
-Accuracy: 100.0%
-Precision: 100.0%
-Recall: 100.0%
-F1: 100.0%
-```
+For a quick start on how to use NCES, please refer to the notebook [simple usage NCES](examples/simple-usage-NCES.ipynb)
 
 ----------------------------------------------------------------------------
 
