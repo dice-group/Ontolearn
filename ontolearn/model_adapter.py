@@ -5,6 +5,9 @@ from typing import TypeVar
 from ontolearn.abstracts import AbstractHeuristic, AbstractScorer, BaseRefinement, AbstractKnowledgeBase, \
     AbstractNode
 from ontolearn.base_concept_learner import BaseConceptLearner
+from owlapy.model import OWLReasoner
+from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
+from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
 
 logger = logging.getLogger(__name__)
 # TODO:CD: Move all imports to the top of the file
@@ -58,9 +61,11 @@ def ModelAdapter(*args, **kwargs):  # noqa: C901
         learner_type: a Base Concept Learner type
         ...: arguments for the learning algorithm
     """
-
     if "knowledge_base" in kwargs:
         kb = kwargs.pop("knowledge_base")
+        if "reasoner" in kwargs:
+            kwargs["cl_reasoner"] = kwargs["reasoner"]
+            kwargs.pop("reasoner")
         if "knowledge_base_type" in kwargs:
             raise ValueError("both knowledge_base and _type specified")
     else:
@@ -70,7 +75,8 @@ def ModelAdapter(*args, **kwargs):  # noqa: C901
             kb_type = KnowledgeBase
         else:
             kb_type = kb_type
-
+        if "reasoner" in kwargs:
+            kwargs["cl_reasoner"] = kwargs["reasoner"]
         kb_args = _get_matching_opts(kb_type, {}, kwargs)
         try:
             kb = kb_type(**kb_args)
@@ -85,6 +91,21 @@ def ModelAdapter(*args, **kwargs):  # noqa: C901
         target_kb = kb.ignore_and_copy(ignored_classes=kwargs.pop("ignore"))
     else:
         target_kb = kb
+
+    if "cl_reasoner" in kwargs:
+        reasoner = kwargs.pop("cl_reasoner")
+        if "reasoner_type" in kwargs:
+            raise ValueError("both reasoner and _type specified")
+    else:
+        reasoner_type = kwargs.pop("reasoner_type", None)
+        if reasoner_type is None:
+            reasoner_type = OWLReasoner_Owlready2_ComplexCEInstances
+        assert issubclass(reasoner_type, OWLReasoner)
+        reasoner = reasoner_type(**_get_matching_opts(
+            reasoner_type, {
+                'ontology': target_kb.ontology()
+            }, kwargs))
+    assert isinstance(reasoner, OWLReasoner)
 
     if "refinement_operator" in kwargs:
         operator = kwargs.pop("refinement_operator")
@@ -165,6 +186,7 @@ def ModelAdapter(*args, **kwargs):  # noqa: C901
         # noinspection PyArgumentList
         inst = cls(**_get_matching_opts(cls, {
             'knowledge_base': target_kb,
+            'reasoner': reasoner,
             'refinement_operator': operator,
             'quality_func': qual,
             'heuristic_func': heur,
@@ -176,6 +198,7 @@ def ModelAdapter(*args, **kwargs):  # noqa: C901
             learner_type, {
                 **other_instances,
                 'knowledge_base': target_kb,
+                'reasoner': reasoner,
                 'refinement_operator': operator,
                 'quality_func': qual,
                 'heuristic_func': heur,

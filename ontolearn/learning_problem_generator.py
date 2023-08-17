@@ -7,7 +7,7 @@ import numpy as np
 from owlapy.model import OWLClassExpression, OWLOntologyManager, OWLOntology, AddImport, OWLImportsDeclaration, \
     OWLClass, OWLEquivalentClassesAxiom, IRI, OWLNamedIndividual, OWLAnnotationAssertionAxiom, OWLAnnotation, \
     OWLAnnotationProperty, OWLLiteral
-from .knowledge_base import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from .refinement_operators import LengthBasedRefinement
 from .search import Node, RL_State
 from .utils import balanced_sets
@@ -64,7 +64,6 @@ class LearningProblemGenerator:
         NS: Final = 'https://dice-research.org/predictions/' + str(time.time()) + '#'
         # NS: Final = 'https://dice-research.org/problems/' + str(time.time()) + '#'
 
-        from ontolearn import KnowledgeBase
         assert isinstance(self.kb, KnowledgeBase)
 
         from owlapy.owlready2 import OWLOntologyManager_Owlready2
@@ -76,7 +75,7 @@ class LearningProblemGenerator:
         manager.apply_change(AddImport(ontology, OWLImportsDeclaration(kb_iri)))
         for ith, h in enumerate(concepts):
             cls_a: OWLClass = OWLClass(IRI.create(NS, "Pred_" + str(ith)))
-            equivalent_classes_axiom = OWLEquivalentClassesAxiom(cls_a, h.concept)
+            equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, h.concept])
             manager.add_axiom(ontology, equivalent_classes_axiom)
 
             count = None
@@ -247,10 +246,11 @@ class LearningProblemGenerator:
                                                    search_algo=search_algo):
             assert len(example_node.concept.instances), f'{example_node}\nDoes not contain any instances. ' \
                                                         f'No instance to balance. Exiting.'
+            # TODO: convert_owlready2_individuals_to_uri_from_iterable() and difference() are outdated.
             string_all_pos = set(
                 self.kb.convert_owlready2_individuals_to_uri_from_iterable(example_node.concept.instances))
             string_all_neg = set(self.kb.convert_owlready2_individuals_to_uri_from_iterable(
-                self.kb.individuals.difference(example_node.concept.instances)))
+                self.kb.individuals().difference(example_node.concept.instances)))
             res.append((example_node.concept.str, string_all_pos, string_all_neg))
         return res
 
@@ -420,11 +420,6 @@ class LearningProblemGenerator:
         @param state:
         @param depth:
         @param apply_rho:
-        @param num_problems:
-        @param max_length:
-        @param min_length:
-        @param min_num_ind:
-        @param max_num_ind:
         @return:
         """
 

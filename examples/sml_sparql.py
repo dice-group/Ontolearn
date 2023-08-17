@@ -13,6 +13,8 @@ ENDPOINT_URL = "http://172.17.0.2:3030/ds/query"
 # ENDPOINT_URL = "http://172.18.0.2:7200/repositories/carcinogenesis"
 
 
+# TODO: check if this works after fixing the warnings in ontolearn\sparqlkb.py
+
 async def run_async(data_file, endpoint_url, pos_file, neg_file):
     kb = SparqlKnowledgeBase(data_file, endpoint_url)
     pos = read_individuals_file(pos_file)
@@ -39,13 +41,14 @@ async def run_async(data_file, endpoint_url, pos_file, neg_file):
     await kb.async_client.aclose()
     # render = ManchesterOWLSyntaxOWLObjectRenderer()
     render = DLSyntaxObjectRenderer()
+    encoded_lp = kb.encode_learning_problem(lp)
     print("solutions:")
     i = 1
     for h in alg.best_hypotheses(3):
         # individuals_set = kb.individuals_set(h.concept)
         print(f'{i}: {render.render(h.concept)} ('
-              f'pred. acc.: {kb.evaluate_concept(h.concept, pred_acc, alg.encoded_learning_problem()).q}, '
-              f'F-Measure: {kb.evaluate_concept(h.concept, f1, alg.encoded_learning_problem()).q}'
+              f'pred. acc.: {kb.evaluate_concept(h.concept, pred_acc, encoded_lp).q}, '
+              f'F-Measure: {kb.evaluate_concept(h.concept, f1, encoded_lp).q}'
               f') [Node '
               f'quality: {h.quality}, h-exp: {h.h_exp}, RC: {h.refinement_count}'
               f']')
@@ -92,13 +95,14 @@ def run(data_file, endpoint_url, pos_file, neg_file):
     alg.fit(lp)
     # render = ManchesterOWLSyntaxOWLObjectRenderer()
     render = DLSyntaxObjectRenderer()
+    encoded_lp = kb.encode_learning_problem(lp)
     print("solutions:")
     i = 1
     for h in alg.best_hypotheses(3):
         # individuals_set = kb.individuals_set(h.concept)
         print(f'{i}: {render.render(h.concept)} ('
-              f'pred. acc.: {kb.evaluate_concept(h.concept, pred_acc, alg._learning_problem).q}, '
-              f'F-Measure: {kb.evaluate_concept(h.concept, f1, alg._learning_problem).q}'
+              f'pred. acc.: {kb.evaluate_concept(h.concept, pred_acc, encoded_lp).q}, '
+              f'F-Measure: {kb.evaluate_concept(h.concept, f1, encoded_lp).q}'
               f') [Node '
               f'quality: {h.quality}, h-exp: {h.h_exp}, RC: {h.refinement_count}'
               f']')

@@ -1,6 +1,6 @@
 import random
 
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import Accuracy, F1
@@ -13,6 +13,7 @@ if __name__ == '__main__':
     # In[45]:
 
     mgr = OWLOntologyManager_Owlready2()
+    # TODO: the file "ai4bd-sml1.owl" does not exists !?
     onto = mgr.load_ontology(IRI.create("file://ai4bd-sml1.owl"))
     base_reasoner = OWLReasoner_Owlready2(onto)
     reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner,
@@ -55,11 +56,10 @@ if __name__ == '__main__':
 
     # In[50]:
 
-    lp = PosNegLPStandard(knowledge_base=kb, pos=pos, neg=neg)
-    pred_acc = Accuracy(lp)
-    f1 = F1(lp)
+    lp = PosNegLPStandard(pos=pos, neg=neg)
+    pred_acc = Accuracy()
+    f1 = F1()
     alg = CELOE(knowledge_base=kb,
-                learning_problem=lp,
                 max_runtime=60,
                 iter_bound=1_000_000,
                 max_num_of_concepts_tested=1_000_000,
@@ -67,21 +67,21 @@ if __name__ == '__main__':
 
     # In[ ]:
 
-    alg.fit()
+    alg.fit(lp)
 
     # In[29]:
 
     render = DLSyntaxObjectRenderer()
 
     # In[40]:
-
+    encoded_lp = kb.encode_learning_problem(lp)
     print("solutions:")
     i = 1
     for h in alg.best_hypotheses(3):
         individuals_set = kb.individuals_set(h.concept)
         print(f'{i}: {render.render(h.concept)} ('
-              f'pred. acc.: {pred_acc.score_elp(individuals_set)[1]}, '
-              f'F-Measure: {f1.score_elp(individuals_set)[1]}'
+              f'pred. acc.: {pred_acc.score_elp(individuals_set,encoded_lp)[1]}, '
+              f'F-Measure: {f1.score_elp(individuals_set,encoded_lp)[1]}'
               f') [Node '
               f'quality: {h.quality}, h-exp: {h.h_exp}, RC: {h.refinement_count}'
               f']')

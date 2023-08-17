@@ -17,6 +17,8 @@ from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, O
 from .search import Node, OENode
 
 
+# TODO: 23 Warnings need to be fixed here to avoid runtime errors
+
 class LengthBasedRefinement(BaseRefinement):
     """ A top down refinement operator refinement operator in ALC."""
 
@@ -912,7 +914,7 @@ class ExpressRefinement(ModifiedCELOERefinement):
                 yield self.kb.existential_restriction(ce.get_filler(), more_special_op)
                 any_refinement = True
 
-        if self.len(ce) <= self.max_child_length and self.max_nr_fillers[ce.get_property()] > 1:
+        if self.use_card_restrictions and self.len(ce) <= self.max_child_length and self.max_nr_fillers[ce.get_property()] > 1:
             yield self.kb.min_cardinality_restriction(ce.get_filler(), ce.get_property(), 2)
             any_refinement = True
         if not any_refinement:
@@ -946,7 +948,7 @@ class ExpressRefinement(ModifiedCELOERefinement):
             if ref is not None:
                 yield self.kb.min_cardinality_restriction(ref, ce.get_property(), ce.get_cardinality())
 
-        if ce.get_cardinality() < self.max_nr_fillers[ce.get_property()]:
+        if self.use_card_restrictions and ce.get_cardinality() < self.max_nr_fillers[ce.get_property()]:
             yield self.kb.min_cardinality_restriction(ce.get_filler(), ce.get_property(), ce.get_cardinality() + 1)
 
     def refine_object_max_card_restriction(self, ce: OWLObjectMaxCardinality) \

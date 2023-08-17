@@ -4,7 +4,7 @@ import types
 from typing import cast
 
 import owlready2
-from owlready2 import destroy_entity, AllDisjoint, AllDifferent
+from owlready2 import destroy_entity, AllDisjoint, AllDifferent, GeneralClassAxiom
 
 from owlapy.model import OWLDisjointUnionAxiom, OWLQuantifiedDataRestriction, OWLQuantifiedObjectRestriction, \
     OWLAnnotationAssertionAxiom, OWLClass, OWLClassAssertionAxiom, OWLEquivalentClassesAxiom, OWLObject, \
@@ -115,37 +115,43 @@ def _(axiom: OWLSubClassOfAxiom, ontology: OWLOntology, world: owlready2.namespa
     ont_x: owlready2.namespace.Ontology = conv.map_object(ontology)
 
     sub_class = axiom.get_sub_class()
-    assert isinstance(sub_class, OWLClass), f'Owlready2 only supports named classes as sub class ({sub_class}).'
     super_class = axiom.get_super_class()
 
-    _add_axiom(OWLDeclarationAxiom(sub_class), ontology, world)
+    _check_expression(sub_class, ontology, world)
     _check_expression(super_class, ontology, world)
     with ont_x:
         thing_x = conv.map_concept(OWLThing)
         sub_class_x = conv.map_concept(sub_class)
         super_class_x = conv.map_concept(super_class)
-        if thing_x in sub_class_x.is_a:
-            sub_class_x.is_a.remove(thing_x)
+        if isinstance(sub_class, OWLClass):
+            if thing_x in sub_class_x.is_a:
+                sub_class_x.is_a.remove(thing_x)
+        else:
+            # Currently owlready2 seems to expect that we make a new GeneralClassAxiom object each time.
+            # Another option would be to check whether a GeneralClassAxiom with the sub_class_x already exists and just
+            # add the super_class_x to its is_a attribute
+            sub_class_x = GeneralClassAxiom(sub_class_x)
         sub_class_x.is_a.append(super_class_x)
 
 
-# TODO: Update EquivalentClasses to not only consider 2 classes
+# TODO: Update as soon as owlready2 adds support for EquivalentClasses general class axioms
 @_add_axiom.register
 def _(axiom: OWLEquivalentClassesAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
     conv = ToOwlready2(world)
     ont_x = conv.map_object(ontology)
 
-    cls_a, cls_b = axiom.class_expressions()
-    assert isinstance(cls_a, OWLClass), f'{cls_a} is no named class'
-    _add_axiom(OWLDeclarationAxiom(cls_a), ontology, world)
-    _check_expression(cls_b, ontology, world)
+    assert axiom.contains_named_equivalent_class(), 'Owlready2 does not support general' \
+                                                    'class axioms for equivalent classes.'
+    for ce in axiom.class_expressions():
+        _check_expression(ce, ontology, world)
     with ont_x:
-        thing_x = conv.map_concept(OWLThing)
-        a_x = conv.map_concept(cls_a)
-        b_x = conv.map_concept(cls_b)
-        if thing_x in a_x.is_a:
-            a_x.is_a.remove(thing_x)
-        a_x.equivalent_to.append(b_x)
+        for ce_1, ce_2 in combinations(axiom.class_expressions(), 2):
+            ce_1_x = conv.map_concept(ce_1)
+            ce_2_x = conv.map_concept(ce_2)
+            if isinstance(ce_1_x, owlready2.ThingClass):
+                ce_1_x.equivalent_to.append(ce_2_x)
+            if isinstance(ce_2_x, owlready2.ThingClass):
+                ce_2_x.equivalent_to.append(ce_1_x)
 
 
 @_add_axiom.register
@@ -399,31 +405,44 @@ def _(axiom: OWLSubClassOfAxiom, ontology: OWLOntology, world: owlready2.namespa
     conv = ToOwlready2(world)
     ont_x: owlready2.namespace.Ontology = conv.map_object(ontology)
     sub_class = axiom.get_sub_class()
-    assert isinstance(sub_class, OWLClass), f'Owlready2 only supports named classes as sub class ({sub_class}).'
+    super_class = axiom.get_super_class()
 
     with ont_x:
         sub_class_x = conv.map_concept(sub_class)
-        super_class_x = conv.map_concept(axiom.get_super_class())
+        super_class_x = conv.map_concept(super_class)
         if sub_class_x is None or super_class_x is None:
             return
-        if super_class_x in sub_class_x.is_a:
-            sub_class_x.is_a.remove(super_class_x)
-        elif isinstance(axiom.get_sub_class(), OWLClass) and isinstance(axiom.get_super_class(), OWLClass):
-            ont_x._del_obj_triple_spo(sub_class_x.storid, owlready2.rdfs_subclassof, super_class_x.storid)
+
+        if isinstance(sub_class, OWLClass):
+            if super_class_x in sub_class_x.is_a:
+                sub_class_x.is_a.remove(super_class_x)
+            elif isinstance(axiom.get_sub_class(), OWLClass) and isinstance(axiom.get_super_class(), OWLClass):
+                ont_x._del_obj_triple_spo(sub_class_x.storid, owlready2.rdfs_subclassof, super_class_x.storid)
+        else:
+            for ca in ont_x.general_class_axioms():
+                if ca.left_side == sub_class_x and super_class_x in ca.is_a:
+                    ca.is_a.remove(super_class_x)
 
 
+# TODO: Update as soons as owlready2 adds support for EquivalentClasses general class axioms
 @_remove_axiom.register
 def _(axiom: OWLEquivalentClassesAxiom, ontology: OWLOntology, world: owlready2.namespace.World):
     conv = ToOwlready2(world)
     ont_x = conv.map_object(ontology)
 
-    cls_a, cls_b = axiom.class_expressions()
-    assert isinstance(cls_a, OWLClass), f'{cls_a} is no named class'
+    if not axiom.contains_named_equivalent_class():
+        return
+
     with ont_x:
-        a_x = conv.map_concept(cls_a)
-        b_x = conv.map_concept(cls_b)
-        if a_x is not None and b_x is not None and b_x in a_x.equivalent_to:
-            a_x.equivalent_to.remove(b_x)
+        ces_x = list(map(conv.map_concept, axiom.class_expressions()))
+        if len(ces_x) < 2 or not all(ces_x):
+            return
+
+        for ce_1_x, ce_2_x in combinations(ces_x, 2):
+            if isinstance(ce_2_x, owlready2.ThingClass) and ce_1_x in ce_2_x.equivalent_to:
+                ce_2_x.equivalent_to.remove(ce_1_x)
+            if isinstance(ce_1_x, owlready2.ThingClass) and ce_2_x in ce_1_x.equivalent_to:
+                ce_1_x.equivalent_to.remove(ce_2_x)
 
 
 @_remove_axiom.register
@@ -554,6 +573,7 @@ def _(axiom: OWLNaryPropertyAxiom, ontology: OWLOntology, world: owlready2.names
         if len(properties_x) < 2 or not all(properties_x):
             return
         if isinstance(axiom, (OWLEquivalentObjectPropertiesAxiom, OWLEquivalentDataPropertiesAxiom,)):
+            # Check if all equivalent properties are defined in the ontology
             if set(properties_x[1:-1]) <= set(properties_x[0].INDIRECT_equivalent_to):
                 for property_1_x, property_2_x in combinations(properties_x, 2):
                     if property_1_x in property_2_x.equivalent_to:

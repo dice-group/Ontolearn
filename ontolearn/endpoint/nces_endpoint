@@ -1,0 +1,173 @@
+#!/usr/bin/env python
+
+import os
+import threading
+from datetime import datetime
+from argparse import ArgumentParser
+from functools import wraps, update_wrapper
+from flask import Flask, request, Response, abort
+from flask import make_response
+
+import ontolearn
+from ontolearn.concept_learner import NCES
+from ontolearn.utils.log_config import setup_logging
+
+from owlapy.model import OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
+    OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, IRI
+from owlapy.owlready2 import OWLOntologyManager_Owlready2
+import time, io
+
+from typing import Final
+import logging
+import random
+
+random.seed(1)
+
+setup_logging()
+logger = logging.getLogger(__name__)
+
+# @ TODO: We may want to provide an endpoint without threading.
+nces = None
+args = None
+lock = threading.Lock()
+loading: bool = False
+ready: bool = False
+
+def nocache(view):
+    @wraps(view)
+    def no_cache(*args, **kwargs):
+        response = make_response(view(*args, **kwargs))
+        response.headers['Last-Modified'] = datetime.now()
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '-1'
+        return response
+
+    return update_wrapper(no_cache, view)
+
+
+def sanity_checking(learning_problem, app):
+    if "positives" not in learning_problem:
+        app.logger.debug('positives key does not exist in the input. Exit!')
+        exit(1)
+    if "negatives" not in learning_problem:
+        app.logger.debug('negatives key does not exist in the input. Exit!')
+        exit(1)
+
+    # TODO: Sanity checking
+    # TODO: Whether each input can be mapped into OWLNamedIndividual and such owl individual exist in the input KG
+
+def serialize_prediction(prediction, destination_path: str = '', kb_path: str = '', rdf_format: str = 'rdfxml') -> None:
+    """Serialize class expression
+
+    Args:
+        destination_path: serialization path (extension will be added automatically)
+        rdf_format: serialisation format. currently supported: "rdfxml"
+    """
+    SNS: Final = 'https://dice-research.org/predictions-schema/'
+    NS: Final = 'https://dice-research.org/predictions/' + str(time.time()) + '#'
+
+    if rdf_format != 'rdfxml':
+        raise NotImplementedError(f'Format {rdf_format} not implemented.')
+
+    manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
+    ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
+    manager.load_ontology(IRI.create(kb_path))
+    manager.apply_change(AddImport(ontology, OWLImportsDeclaration(IRI.create('file://' + kb_path))))
+    cls_a: OWLClass = OWLClass(IRI.create(NS, "Pred_0"))
+    equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, prediction])
+    manager.add_axiom(ontology, equivalent_classes_axiom)
+
+    manager.save_ontology(ontology, IRI.create('file:/' + destination_path + '.owl'))
+
+    
+def create_flask_app():
+    app = Flask(__name__, instance_relative_config=True, )
+
+    @app.route('/concept_learning', methods=['POST'])
+    def concept_learning_endpoint():
+        """
+        Accepts a json object with parameters "positives" and "negatives". Those must have as value a list of entity
+        strings each.
+        """
+        global lock
+        global ready
+        global args
+        lock.acquire()
+        try:
+            global nces
+            ready = False
+            learning_problem = request.get_json(force=True)
+            app.logger.debug(learning_problem)
+
+            sanity_checking(learning_problem, app)
+
+            try:
+                pos = learning_problem["positives"]
+                neg = learning_problem["negatives"]
+                typed_pos = set(map(OWLNamedIndividual, map(IRI.create, pos)))
+                typed_neg = set(map(OWLNamedIndividual, map(IRI.create, neg)))
+                prediction = nces.fit(typed_pos, typed_neg)
+            except Exception as e:
+                app.logger.debug(e)
+                abort(400)
+            import tempfile
+            tmp = tempfile.NamedTemporaryFile()
+            try:
+                serialize_prediction(prediction, destination_path=tmp.name, kb_path=nces.knowledge_base_path)
+            except Exception as ex:
+                print(ex)
+            hypothesis_ser = io.open(tmp.name+'.owl', mode="r", encoding="utf-8").read()
+            from pathlib import Path
+            Path(tmp.name+'.owl').unlink(True)
+            return Response(hypothesis_ser, mimetype="application/rdf+xml")
+        finally:
+            ready = True
+            lock.release()
+
+    @app.route('/status')
+    @nocache
+    def status_endpoint():
+        global loading
+        global ready
+        if loading:
+            flag = "loading"
+        elif ready:
+            flag = "ready"
+        else:
+            flag = "busy"
+        status = {"status": flag}
+        return status
+
+    with app.app_context():
+        global lock
+        with lock:
+            global loading
+            loading = False
+            global ready
+            ready = True
+#    @app.before_first_request
+#    def set_ready():
+#        global lock
+#        with lock:
+#            global loading
+#            loading = False
+#            global ready
+#            ready = True
+#
+    return app
+
+
+if __name__ == '__main__':
+    parser = ArgumentParser()
+    
+    parser.add_argument("--path_knowledge_base", type=str, default='')
+    parser.add_argument("--path_knowledge_base_embeddings", type=str,
+                        default='')
+    args = parser.parse_args()
+    nces = NCES(knowledge_base_path=args.path_knowledge_base, learner_name="SetTransformer", path_of_embeddings=args.path_knowledge_base_embeddings, max_length=48, proj_dim=128,\
+         rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, num_inds=32, load_pretrained=True, pretrained_model_name=["SetTransformer", "LSTM", "GRU"])
+
+    loading = True
+    app = create_flask_app()
+    app.run(host="0.0.0.0", port=9080, processes=1)

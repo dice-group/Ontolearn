@@ -1,0 +1,396 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#"
+     xml:base="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+    <owl:Ontology rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11"/>
+
+
+
+    <!--
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r1 -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r1">
+<!--              <rdfs:domain rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#AB"/> -->
+             <rdfs:range rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#G"/>
+    </owl:ObjectProperty>
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r2 -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r2">
+            <rdfs:subPropertyOf rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r1"/>
+    </owl:ObjectProperty>
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#dp1"/>
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#dp2">
+            <rdfs:subPropertyOf rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#dp1"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#dp3"/>
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r3 -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r3">
+            <rdfs:subPropertyOf rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r4"/>
+    </owl:ObjectProperty>
+
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r4">
+<!--             <rdfs:subPropertyOf rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r3"/> -->
+    </owl:ObjectProperty>
+
+    <owl:AllDisjointProperties>
+        <owl:members rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r5"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r1"/>
+        </owl:members>
+    </owl:AllDisjointProperties>
+
+    <owl:AllDisjointProperties>
+        <owl:members rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#dp1"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#dp3"/>
+        </owl:members>
+    </owl:AllDisjointProperties>
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r5"/>
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r6"/>
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r7"/>
+
+
+    <!--
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#A -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#A"/>
+
+
+
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#AB -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#AB">
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:intersectionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#A"/>
+                    <rdf:Description rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#B"/>
+                </owl:intersectionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf>
+            <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#C"/>
+        </rdfs:subClassOf>
+    </owl:Class>
+
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#B -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#B"/>
+
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#C -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#C"/>
+
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#D -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#D">
+        <rdfs:subClassOf>
+            <owl:Class>
+                <owl:intersectionOf rdf:parseType="Collection">
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r7"/>
+                        <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#E"/>
+                    </owl:Restriction>
+                    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#B"/>
+                </owl:intersectionOf>
+            </owl:Class>
+        </rdfs:subClassOf>
+    </owl:Class>
+
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#E -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#E"/>
+
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#F -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#F">
+        <owl:equivalentClass>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r2"/>
+                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#G"/>
+            </owl:Restriction>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#H"/>
+    </owl:Class>
+
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#G -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#G"/>
+
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#H -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#H">
+    </owl:Class>
+
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#I -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#I">
+        <rdfs:subClassOf>
+            <owl:Class>
+                <owl:intersectionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#J"/>
+                    <rdf:Description rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#K"/>
+                </owl:intersectionOf>
+            </owl:Class>
+        </rdfs:subClassOf>
+    </owl:Class>
+
+
+<!--    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#I">-->
+<!--        <rdfs:subClassOf>-->
+<!--            <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#N"/>-->
+<!--        </rdfs:subClassOf>-->
+<!--        <owl:intersectionOf rdf:parseType="Collection">-->
+<!--            <rdf:Description rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#J"/>-->
+<!--            <rdf:Description rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#K"/>-->
+<!--        </owl:intersectionOf>-->
+<!--    </owl:Class>-->
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#J -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#J"/>
+
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#K -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#K"/>
+
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#L">
+            <owl:disjointWith rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#M"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#M"/>
+
+
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#N">
+             <owl:equivalentClass rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#Q"/>
+    </owl:Class>
+
+
+
+     <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#O">
+            <rdfs:subClassOf>
+                    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#P"/>
+            </rdfs:subClassOf>
+     </owl:Class>
+
+     <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#P">
+<!--              <rdfs:subClassOf> -->
+<!--                     <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#O"/> -->
+<!--             </rdfs:subClassOf> -->
+     </owl:Class>
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#Q"/>
+
+
+<!--    <owl:Class>-->
+<!--        <owl:Restriction>-->
+<!--            <owl:onProperty rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r5"/>-->
+<!--            <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#Q"/>-->
+<!--        </owl:Restriction>-->
+<!--        <rdfs:subClassOf>-->
+<!--                <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#R"/>-->
+<!--        </rdfs:subClassOf>-->
+<!--    </owl:Class>-->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#R"/>
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#S"/>
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#T"/>
+
+    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#U"/>
+
+<!--    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#V"/>-->
+
+<!--    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#W"/>-->
+
+<!--    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#X"/>-->
+
+<!--    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#Y"/>-->
+
+<!--    <owl:Class rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#Z"/>-->
+
+    <!--
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Individuals
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#o">
+            <rdf:type rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#O"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#p">
+            <rdf:type rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#P"/>
+    </owl:NamedIndividual>
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#a -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#a">
+        <rdf:type rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#A"/>
+        <rdf:type rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#B"/>
+
+    </owl:NamedIndividual>
+
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#b -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#b">
+        <rdf:type rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#B"/>
+
+        <r7 rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#f"/>
+    </owl:NamedIndividual>
+
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#c -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#c">
+        <rdf:type rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#I"/>
+    </owl:NamedIndividual>
+
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#d -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#d">
+        <rdf:type rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#D"/>
+    </owl:NamedIndividual>
+
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#e -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#e">
+        <rdf:type rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#AB"/>
+
+    </owl:NamedIndividual>
+
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#f -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#f">
+            <rdf:type rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#E"/>
+    </owl:NamedIndividual>
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#g -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#g">
+         <rdf:type rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#G"/>
+    </owl:NamedIndividual>
+
+
+    <!-- http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#h -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#h"/>
+
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#n">
+            <rdf:type rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#N"/>
+            <r3 rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#q"/>
+            <r4 rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#l"/>
+            <r6 rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#s"/>
+            <r5 rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#q"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#m">
+        <rdf:type rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#M"/>
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#l">
+            <rdf:type rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#L"/>
+    </owl:NamedIndividual>
+
+     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#q">
+            <rdf:type rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#Q"/>
+    </owl:NamedIndividual>
+
+     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#ind1">
+           <r5 rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#q"/>
+           <r2 rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#g"/>
+           <r6 rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#s"/>
+    </owl:NamedIndividual>
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r">
+            <rdf:type rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#R"/>
+<!--             <owl:sameAs rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#s"/> -->
+    </owl:NamedIndividual>
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#s">
+            <rdf:type rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#S"/>
+            <rdf:type rdf:resource="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#T"/>
+    </owl:NamedIndividual>
+
+    <owl:AllDifferent>
+      <owl:distinctMembers rdf:parseType="Collection">
+        <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#l"/>
+        <owl:NamedIndividual rdf:about="http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#m"/>
+      </owl:distinctMembers>
+    </owl:AllDifferent>
+</rdf:RDF>
+
+
+
+<!-- Generated by the OWL API (version 4.5.9.2019-02-01T07:24:44Z) https://github.com/owlcs/owlapi -->
+

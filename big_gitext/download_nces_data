@@ -1,0 +1,3 @@
+! wget https://hobbitdata.informatik.uni-leipzig.de/NCES_Ontolearn_Data/NCESData.zip -O ./NCESData.zip
+! unzip -o ./NCESData.zip
+! rm -f ./NCESData.zip
