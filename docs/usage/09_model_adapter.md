@@ -10,22 +10,16 @@ from ontolearn.concept_learner import CELOE
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.metrics import Accuracy
 from ontolearn.model_adapter import ModelAdapter
-from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.model import OWLOntology, OWLNamedIndividual, IRI
+from owlapy.model import OWLNamedIndividual, IRI
 from owlapy.namespaces import Namespaces
-from owlapy.owlready2 import OWLOntology_Owlready2, OWLOntologyManager_Owlready2
+from owlapy.owlready2 import OWLOntologyManager_Owlready2
 from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
 from owlapy.render import DLSyntaxObjectRenderer
 
 
-def my_reasoner_factory(onto: OWLOntology):
-    assert isinstance(onto, OWLOntology_Owlready2)
-    temp_classes_reasoner = OWLReasoner_Owlready2_ComplexCEInstances(onto)
-    fast_instance_checker = OWLReasoner_FastInstanceChecker(
-        onto,
-        temp_classes_reasoner)
-    return fast_instance_checker
-
+manager = OWLOntologyManager_Owlready2()
+onto = manager.load_ontology(IRI.create("KGs/father.owl"))
+complex_ce_reasoner = OWLReasoner_Owlready2_ComplexCEInstances(onto)
 
 NS = Namespaces('ex', 'http://example.com/father#')
 
@@ -38,11 +32,10 @@ negative_examples = {OWLNamedIndividual(IRI.create(NS, 'heinz')),
 
 # Only the class of the learning algorithm is specified
 model = ModelAdapter(learner_type=CELOE,
-                     ontologymanager_factory=OWLOntologyManager_Owlready2,  # (*)
-                     reasoner_factory=my_reasoner_factory,  # (*)
+                     reasoner=complex_ce_reasoner, # (*)
                      path="KGs/father.owl",
                      quality_type=Accuracy,
-                     heuristic_type=CELOEHeuristic,
+                     heuristic_type=CELOEHeuristic, # (*)
                      expansionPenaltyFactor=0.05,
                      startNodeBonus=1.0,
                      nodeRefinementPenalty=0.01,
@@ -60,4 +53,4 @@ for desc in model.best_hypotheses(1):
 ```
 
 Lines marked with `(*)` are not strictly required as they happen to be
-the default choices.
+the default choices. For now, you can use ModelAdaptor only for EvoLearner, CELOE and OCEL.

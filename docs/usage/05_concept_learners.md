@@ -1,4 +1,4 @@
-﻿# Using Concept Learners
+﻿# Concept Learners
 
 This is a guide to show how to use a concept learner to generate hypotheses for a target
 concept in an ontology.
