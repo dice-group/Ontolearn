@@ -3,19 +3,19 @@
 from owlapy.model import IRI
 from owlapy.owlready2 import OWLOntologyManager_Owlready2
 from owlapy.owlready2 import OWLReasoner_Owlready2
-from owlapy.owlready2.temp_classes import OWLReasoner_Owlready2_TempClasses
+from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
 from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
 
 mgr = OWLOntologyManager_Owlready2()
 onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
 
 structural_reasoner = OWLReasoner_Owlready2(onto)
-temp_classes_reasoner = OWLReasoner_Owlready2_TempClasses(onto)
-fast_instance_checker = OWLReasoner_FastInstanceChecker(onto, temp_classes_reasoner)
+complex_ce_reasoner = OWLReasoner_Owlready2_ComplexCEInstances(onto)
+fast_instance_checker = OWLReasoner_FastInstanceChecker(onto, complex_ce_reasoner)
 ```
 -->
 
-# Defining a Learning Problem
+# Learning Problem
 
 The Structured Machine Learning implemented in our Ontolearn library
 is working with a type of [supervised

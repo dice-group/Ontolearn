@@ -1,4 +1,4 @@
-# Working with Ontologies
+# Ontologies
 
 In this guide, we will explain how to modify or get specific data from an Ontology. There 
 are some similar functionalities as the `KnowledgeBase` class which we describe here:
@@ -191,6 +191,22 @@ manager.save_ontology(onto, IRI.create('file:/' + 'test' + '.owl'))
 created in the same directory as the file you are running this code.
 
 ----------------------------------------------------------------------------
+
+## Worlds
+
+Owlready2 stores every triples in a ‘World’ object, and it can handle several Worlds in parallel.
+Owlready2 uses an optimized quadstore to store the world. Each world object is stored in a separate quadstore and 
+by default the quadstore is stored in memory,
+but it can also be stored in an SQLite3 file. The method `save_world()` of the ontology manager does the latter.
+When an _OWLOntologyManager_ object is created, a new world is also created as an attribute of the manager.
+By calling the method `load_ontology(iri)` the ontology is loaded to this world. 
+
+It possible to create several isolated “worlds”, sometimes
+called “universe of speech”. This makes it possible in particular to load
+the same ontology several times, independently, that is to say, without
+the modifications made on one copy affecting the other copy. In [Detailed reasoner docs](06_reasoning_details.md)
+we explain how you can isolate the worlds(together with the ontology) that a reasoner is using.
+
 
 ## Attaching a Reasoner
 
