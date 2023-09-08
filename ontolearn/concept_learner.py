@@ -1583,8 +1583,12 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
     def _get_top_hypotheses(self, population: List[Tree], n: int = 5, key: str = 'fitness') \
             -> Iterable[EvoLearnerNode]:
-        best_inds = tools.selBest(population, k=n, fit_attr=key)
-        best_concepts = [gp.compile(ind, self.pset) for ind in best_inds]
+        best_inds = tools.selBest(population, k=n*10, fit_attr=key)
+        best_inds_distinct = []
+        for ind in best_inds:
+            if ind not in best_inds_distinct:
+                best_inds_distinct.append(ind)
+        best_concepts = [gp.compile(ind, self.pset) for ind in best_inds_distinct[:n]]
 
         for con, ind in zip(best_concepts, best_inds):
             individuals_count = len(self.kb.individuals_set(con))
