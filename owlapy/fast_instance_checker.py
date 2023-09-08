@@ -67,7 +67,10 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
                 :func:`OWLReasoner_FastInstanceChecker.instances` retrieval
             """
         super().__init__(ontology)
-        self._ontology = ontology
+        if base_reasoner.is_isolated():
+            self._ontology = base_reasoner.get_root_ontology()
+        else:
+            self._ontology = ontology
         self._base_reasoner = base_reasoner
         self._property_cache = property_cache
         self._negation_default = negation_default

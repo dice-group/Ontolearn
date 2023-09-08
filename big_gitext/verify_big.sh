@@ -5,7 +5,7 @@
 
 set -eu
 
-HTTP=https://hobbitdata.informatik.uni-leipzig.de/GitExt/OntoPy
+HTTP=https://files.dice-research.org/archive/GitExt/OntoPy/
 
 abs2rel() { perl -l -MFile::Spec -e'print File::Spec->abs2rel(@ARGV)' "$@"; }
 

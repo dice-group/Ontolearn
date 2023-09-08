@@ -1,4 +1,4 @@
-# Working with Reasoners
+# Reasoners
 
 To validate facts about statements in the ontology (and thus
 also for the Structured Machine Learning task), the help of a reasoner
@@ -7,10 +7,17 @@ component is required.
 In our Ontolearn library, we provide several **reasoners** to choose
 from. Currently, there are the following reasoners available for you to choose from: 
 
+- Owlready2 reasoner with support for complex class expression instances:  [OWLReasoner_Owlready2_ComplexCEInstances](owlapy.owlready2.complex_ce_instances.OWLReasoner_Owlready2_ComplexCEInstances)
 - Fast instance checker: [OWLReasoner_FastInstanceChecker](owlapy.fast_instance_checker.OWLReasoner_FastInstanceChecker)
-- Structural Owlready2 reasoner: [OWLReasoner_Owlready2](owlapy.owlready2.OWLReasoner_Owlready2)
-- Class instantiation Owlready2 reasoner:  [OWLReasoner_Owlready2_TempClasses](owlapy.owlready2.temp_classes.OWLReasoner_Owlready2_TempClasses)
+- Structural Owlready2 reasoner (base reasoner): [OWLReasoner_Owlready2](owlapy.owlready2.OWLReasoner_Owlready2)
 
+>Both reasoners `OWLReasoner_Owlready2_ComplexCEInstances` and `OWLReasoner_FastInstanceChecker` 
+> only overrides the functionality of finding instances for complex class expression. 
+> All other functionalities are redirected to the base class `OWLReasoner_Owlready2`. 
+> 
+> There are further differences between the first 2 reasoners mentioned where the most
+> significant is that `OWLReasoner_Owlready2_ComplexCEInstances` uses sync_reasoner. You
+> can read more about sync reasoner in the [end of the page](#sync-reasoner).
 
 To load any reasoner, use the following code:
 
@@ -22,8 +29,8 @@ from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexC
 from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
 
 structural_reasoner = OWLReasoner_Owlready2(onto)
-temp_classes_reasoner = OWLReasoner_Owlready2_ComplexCEInstances(onto)
-fast_instance_checker = OWLReasoner_FastInstanceChecker(onto, temp_classes_reasoner)
+complex_reasoner = OWLReasoner_Owlready2_ComplexCEInstances(onto)
+fast_instance_checker = OWLReasoner_FastInstanceChecker(onto, structural_reasoner)
 ```
 
 The reasoner takes as its first argument the ontology to load. The
@@ -35,12 +42,13 @@ tasks not covered by the fast instance checking code are deferred to.
 ## Usage of the Reasoner
 All the reasoners available in the Ontolearn library inherit from the
 class: [OWLReasonerEx](owlapy.ext.OWLReasonerEx). This class provides some 
-extra convenient methods compared to its base class [OWLReasoner](owlapy.model.OWLReasoner).
-Further in this guide, we will use 
+extra convenient methods compared to its base class [OWLReasoner](owlapy.model.OWLReasoner), which is an 
+abstract class.
+Further in this guide, we use 
 [OWLReasoner_FastInstanceChecker](owlapy.fast_instance_checker.OWLReasoner_FastInstanceChecker) (FIC).
 to show the capabilities of a reasoner implemented in Ontolearn.
 
-To give examples we will consider the _father_ dataset. 
+To give examples we consider the _father_ dataset. 
 If you are not already familiar with this small dataset,
 you can find an overview of it [here](01_knowledge_base.md).
 
@@ -74,7 +82,7 @@ to show only named classes or complex classes as well. By default, its value is 
 means that it will return only the named classes.
 
 >**NOTE**: The extra arguments `direct` and `only_named` are also used in other methods that reason
-upon the class, object property, or data property hierarchy and not only.
+upon the class, object property, or data property hierarchy.
 
 You can get all the types of a certain individual using `types` method:
 
@@ -83,8 +91,8 @@ You can get all the types of a certain individual using `types` method:
 from owlapy.owlready2 import OWLOntologyManager_Owlready2
 
 manager = OWLOntologyManager_Owlready2()
-onto = manager.load_ontology(IRI.create("file://KGs/father.owl"))
-anna = list(onto.individuals_in_signature()).pop() # get the 1st individual in the list of individuals which is 'anna'
+onto = manager.load_ontology(IRI.create("KGs/father.owl"))
+anna = list(onto.individuals_in_signature()).pop() # getting the 1st individual in the list of individuals which is 'anna'
 
 anna_types = fast_instance_checker.types(anna)
 ```
@@ -92,11 +100,11 @@ anna_types = fast_instance_checker.types(anna)
 We first create a manager and use that to open the _father_ ontology. 
 We retrieve _anna_ as the first individual on the list of individuals 
 of this ontology. You can see more details on ontologies in the [Working with Ontologies](03_ontologies.md)
-guide. 
+guide. The `type` method only returns named classes.
 
 
 ## Object Properties and Data Properties Reasoning
-Fast instance checker offers some convenient methods for working with object properties and 
+Ontolearn resoners offers some convenient methods for working with object properties and 
 data properties. Below we show some of them, but you can always check all the methods in the 
 [OWLReasoner_FastInstanceChecker](owlapy.fast_instance_checker.OWLReasoner_FastInstanceChecker) 
 class documentation. 
@@ -133,7 +141,7 @@ specified individual.
 > **NOTE:** You can as well get all the data properties of an individual in the same way by using 
 `ind_data_properties` instead of `ind_object_properties` and `data_property_values` instead of 
 `object_property_values`. Keep in mind that `data_property_values` returns literal values 
-(type of [OWLLiteral](owlapy.model.OWLLiteral)) instead of individuals.
+(type of [OWLLiteral](owlapy.model.OWLLiteral)).
 
 In the same way as with classes, you can also get the sub object properties or equivalent object properties.
 
@@ -156,7 +164,7 @@ hasChild_ranges = fast_instance_checker.object_property_ranges(hasChild)
 ```
 
 > **NOTE:** Again, you can do the same for data properties but instead of the word 'object' in the 
-> method name you should put 'data'.
+> method name you should use 'data'.
 
 
 ## Find Instances
@@ -164,8 +172,7 @@ hasChild_ranges = fast_instance_checker.object_property_ranges(hasChild)
 The method `instances` of fast instance checker is a very convenient method. It takes only 1 argument that is basically
 a class expression and returns all the individuals belonging to that class expression. In Ontolearn 
 we have implemented a Python class for each type of class expression. Therefore `instances` 
-has multiple implementations depending on which type of argument is passed, but you don't have to 
-worry about any of that. Below you will find a list of all the supported class expressions for this 
+has multiple implementations depending on which type of argument is passed, but that is something for the developers. Below you will find a list of all the supported class expressions for this 
 method:
 
 - [OWLClass](owlapy.model.OWLClass)
@@ -192,19 +199,6 @@ for ind in male_individuals:
     print(ind)
 ```
 
-
-
-## Sync Reasoner
-
-_sync_reasoner_ is a definition used in owlready2 to call HermiT or Pellet. We made it possible in our
-reasoners to use that functionality by implementing a delegator method. This is an 
-internal method of the class 
-[OWLReasoner_Owlready2](owlapy.owlready2.OWLReasoner_Owlready2) named `_sync_reasoner`
-which is used at [OWLReasoner_Owlready2_TempClasses](owlapy.owlready2.temp_classes.OWLReasoner_Owlready2_TempClasses) 
-in the `instances` method and only for complex classes.
-Soon we will implement the other methods of the base class for _OWLReasoner_Owlready2_TempClasses_ and
-update the `instances` method to cover the atomic classes as well.
-
-
 In the next guide, we show how to use concept learners to learn class expressions in a 
 knowledge base for a certain learning problem.
+
