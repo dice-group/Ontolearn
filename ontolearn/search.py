@@ -9,7 +9,7 @@ from owlapy.io import OWLObjectRenderer
 from owlapy.model import OWLClassExpression
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.util import as_index, OrderedOWLObject
-from superprop import super_prop
+from ontolearn.superprop import super_prop
 from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree, \
     AbstractConceptNode, EncodedLearningProblem, DRILLAbstractTree
 
