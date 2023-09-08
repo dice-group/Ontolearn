@@ -33,6 +33,7 @@ def check_reasoner_instances_in_sparql_results(sparql_results: rdflib.query.Resu
 
 class Test_Owl2SparqlConverter(unittest.TestCase):
     _root_var_ = '?x'
+    maxDiff = None
 
     def test_as_query(self):
         prop_s = OWLObjectProperty(IRI.create("http://dl-learner.org/carcinogenesis#hasBond"))
