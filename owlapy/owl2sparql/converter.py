@@ -558,7 +558,7 @@ class Owl2SparqlConverter:
     def as_query(self,
                  root_variable: str,
                  ce: OWLClassExpression,
-                 count: bool,
+                 count: bool=False,
                  values: Optional[Iterable[OWLNamedIndividual]] = None,
                  named_individuals: bool = False):
         # root variable: the variable that will be projected
