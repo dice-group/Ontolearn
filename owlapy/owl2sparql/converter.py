@@ -111,9 +111,9 @@ class Owl2SparqlConverter:
     def modal_depth(self):
         return len(self.variables)
 
-    @property
-    def in_intersection(self):
-        return self._intersection[self.modal_depth]
+    # @property
+    # def in_intersection(self):
+    #     return self._intersection[self.modal_depth]
 
     @singledispatchmethod
     def render(self, e):
@@ -155,13 +155,13 @@ class Owl2SparqlConverter:
         else:
             return self.render(o)
 
-    @contextmanager
-    def intersection(self):
-        self._intersection[self.modal_depth] = True
-        try:
-            yield
-        finally:
-            del self._intersection[self.modal_depth]
+    # @contextmanager
+    # def intersection(self):
+    #     self._intersection[self.modal_depth] = True
+    #     try:
+    #         yield
+    #     finally:
+    #         del self._intersection[self.modal_depth]
 
     @contextmanager
     def stack_variable(self, var):
@@ -207,18 +207,23 @@ class Owl2SparqlConverter:
     @process.register
     def _(self, ce: OWLObjectIntersectionOf):
         # we iterate over the concepts that appear in the intersection
-        with self.intersection():
-            for op in ce.operands():
-                self.process(op)
-            props = self.properties[self.modal_depth]
-            vars_ = set()
-            if props:
-                for p in props:
-                    if p in self.mapping:
-                        vars_.add(self.mapping[p])
-                if len(vars_) == 2:
-                    v0, v1 = sorted(vars_)
-                    self.append(f"FILTER ( {v0} != {v1} )")
+        for op in ce.operands():
+            self.process(op)
+
+        # the following part was commented out because it was related to the possible optimization in the complement
+        # operator that has also been commented out
+        # with self.intersection():
+        #     for op in ce.operands():
+        #         self.process(op)
+        #     props = self.properties[self.modal_depth]
+        #     vars_ = set()
+        #     if props:
+        #         for p in props:
+        #             if p in self.mapping:
+        #                 vars_.add(self.mapping[p])
+        #         if len(vars_) == 2:
+        #             v0, v1 = sorted(vars_)
+        #             self.append(f"FILTER ( {v0} != {v1} )")
 
     # an overload of process function
     # this overload is responsible for handling unions of concepts (e.g., Brother ⊔ Sister)
@@ -582,14 +587,15 @@ class Owl2SparqlConverter:
         qs.extend(tp)
         qs.append(f" }}")
 
-        group_by_vars = self.grouping_vars[ce]
-        if group_by_vars:
-            qs.append("GROUP BY " + " ".join(sorted(group_by_vars)))
-        conditions = self.having_conditions[ce]
-        if conditions:
-            qs.append(" HAVING ( ")
-            qs.append(" && ".join(sorted(conditions)))
-            qs.append(" )")
+        # group_by_vars = self.grouping_vars[ce]
+        # if group_by_vars:
+        #     qs.append("GROUP BY " + " ".join(sorted(group_by_vars)))
+        # conditions = self.having_conditions[ce]
+        # if conditions:
+        #     qs.append(" HAVING ( ")
+        #     qs.append(" && ".join(sorted(conditions)))
+        #     qs.append(" )")
+
         query = "\n".join(qs)
         parseQuery(query)
         return query
