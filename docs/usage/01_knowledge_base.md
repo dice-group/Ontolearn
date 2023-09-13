@@ -1,4 +1,4 @@
-# Working with Knowledge Bases
+# Knowledge Bases
 
 To get started with Structured Machine Learning, the first thing
 required is an [Ontology](https://www.w3.org/TR/owl2-overview/) with

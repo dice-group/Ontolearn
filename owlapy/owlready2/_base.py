@@ -4,7 +4,7 @@ from datetime import date, datetime
 from enum import Enum, auto
 from itertools import chain
 from types import MappingProxyType
-from typing import Iterable, Set, Final
+from typing import Iterable, Set, Final, List
 
 import owlready2
 from owlready2 import declare_datatype
@@ -107,7 +107,7 @@ class OWLOntologyManager_Owlready2(OWLOntologyManager):
 
 
 class OWLOntology_Owlready2(OWLOntology):
-    __slots__ = '_manager', '_world', '_onto'
+    __slots__ = '_manager', '_iri', '_world', '_onto'
 
     _manager: OWLOntologyManager_Owlready2
     _onto: owlready2.Ontology
@@ -115,6 +115,7 @@ class OWLOntology_Owlready2(OWLOntology):
 
     def __init__(self, manager: OWLOntologyManager_Owlready2, ontology_iri: IRI, load: bool):
         self._manager = manager
+        self._iri = ontology_iri
         self._world = manager._world
         onto = self._world.get_ontology(ontology_iri.as_str())
         if load:
@@ -220,6 +221,9 @@ class OWLOntology_Owlready2(OWLOntology):
                     logger.warning("Construct %s not implemented at %s", rng, pe)
                     pass  # XXX TODO
 
+    def get_original_iri(self):
+        return self._iri
+
     def __eq__(self, other):
         if type(other) == type(self):
             return self._onto.loaded == other._onto.loaded and self._onto.base_iri == other._onto.base_iri
@@ -238,11 +242,52 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
     _ontology: OWLOntology_Owlready2
     _world: owlready2.World
 
-    def __init__(self, ontology: OWLOntology_Owlready2):
+    def __init__(self, ontology: OWLOntology_Owlready2, isolate: bool = False):
+        """
+        Base reasoner in Ontolearn, used to reason in the given ontology.
+
+        Args:
+            ontology: the ontology that should be used by the reasoner
+            isolate: Whether to isolate the reasoner in a new world + copy of the original ontology.
+                     Useful if you create multiple reasoner instances in the same script.
+        """
         super().__init__(ontology)
         assert isinstance(ontology, OWLOntology_Owlready2)
-        self._ontology = ontology
-        self._world = ontology._world
+        if isolate:
+            self._isolated = True
+            new_manager = OWLOntologyManager_Owlready2()
+            self._ontology = new_manager.load_ontology(ontology.get_original_iri())
+            self._world = new_manager._world
+            logger.info("'isolated' is set to True. Changes you make in the original ontology wont be reflected to the "
+                        "isolated ontology. \nTo make changes on the isolated ontology use the method "
+                        "'update_isolated_ontology()'.")
+
+        else:
+            self._isolated = False
+            self._ontology = ontology
+            self._world = ontology._world
+
+    def update_isolated_ontology(self, axioms_to_add: List[OWLAxiom] = None,
+                                 axioms_to_remove: List[OWLAxiom] = None):
+        """
+        Make changes to the isolated ontology that the reasoner is using.
+
+        Args:
+            axioms_to_add: Axioms to add to the isolated ontology
+            axioms_to_remove: Axioms to remove from the isolated ontology
+        """
+        if self._isolated:
+            if axioms_to_add is None and axioms_to_remove is None:
+                raise ValueError("At least one argument should be specified.")
+            manager = self._ontology.get_owl_ontology_manager()
+            if axioms_to_add is not None:
+                for axiom in axioms_to_add:
+                    manager.add_axiom(self._ontology, axiom)
+            if axioms_to_remove is not None:
+                for axiom in axioms_to_remove:
+                    manager.remove_axiom(self._ontology, axiom)
+        else:
+            raise AssertionError("The reasoner is not using an isolated ontology.")
 
     def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
         domains = {d.get_domain() for d in self.get_root_ontology().data_property_domain_axioms(pe)}
@@ -758,3 +803,6 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
 
     def get_root_ontology(self) -> OWLOntology:
         return self._ontology
+
+    def is_isolated(self):
+        return self._isolated

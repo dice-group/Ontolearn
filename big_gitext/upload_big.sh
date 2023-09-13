@@ -5,8 +5,8 @@
 
 set -eu
 
-FTP=ftp://hobbitdata.informatik.uni-leipzig.de/public/GitExt/OntoPy
-HTTP=https://hobbitdata.informatik.uni-leipzig.de/GitExt/OntoPy
+FTP=ftp://files.dice-research.org/archive/GitExt/OntoPy/
+HTTP=https://files.dice-research.org/archive/GitExt/OntoPy/
 
 abs2rel() { perl -l -MFile::Spec -e'print File::Spec->abs2rel(@ARGV)' "$@"; }
 
