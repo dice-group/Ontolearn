@@ -3,8 +3,8 @@ from typing import Final, List, Optional, Union
 from parsimonious.grammar import Grammar
 from parsimonious.grammar import NodeVisitor
 from parsimonious.nodes import Node
-from owlapy.io import OWLObjectParser
-from owlapy.model import OWLObjectHasSelf, OWLObjectIntersectionOf, OWLObjectMinCardinality, OWLObjectOneOf, \
+from ontolearn.owlapy.io import OWLObjectParser
+from ontolearn.owlapy.model import OWLObjectHasSelf, OWLObjectIntersectionOf, OWLObjectMinCardinality, OWLObjectOneOf, \
     OWLObjectProperty, OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectUnionOf, OWLClass, IRI, \
     OWLClassExpression, OWLDataProperty, OWLNamedIndividual, OWLObjectComplementOf, OWLObjectExactCardinality, \
     OWLObjectHasValue, OWLQuantifiedDataRestriction, OWLQuantifiedObjectRestriction, StringOWLDatatype,  \
@@ -13,10 +13,10 @@ from owlapy.model import OWLObjectHasSelf, OWLObjectIntersectionOf, OWLObjectMin
     OWLDataMaxCardinality, OWLObjectMaxCardinality, OWLDataIntersectionOf, OWLDataMinCardinality, OWLDataHasValue, \
     OWLLiteral, OWLDataRange, OWLDataUnionOf, OWLDataOneOf, OWLDatatype, OWLObjectCardinalityRestriction, \
     OWLDataCardinalityRestriction, OWLObjectAllValuesFrom, OWLDataAllValuesFrom, OWLDataComplementOf, BooleanOWLDatatype
-from owlapy.namespaces import Namespaces
+from ontolearn.owlapy.namespaces import Namespaces
 
-from owlapy.render import _DL_SYNTAX, _MAN_SYNTAX
-from owlapy.vocab import OWLFacet, OWLRDFVocabulary
+from ontolearn.owlapy.render import _DL_SYNTAX, _MAN_SYNTAX
+from ontolearn.owlapy.vocab import OWLFacet, OWLRDFVocabulary
 
 
 MANCHESTER_GRAMMAR = Grammar(r"""

@@ -3,9 +3,9 @@ from abc import ABCMeta, abstractmethod
 from typing import Final, Union, overload
 from weakref import WeakKeyDictionary
 
-from owlapy import namespaces
-from owlapy.model._base import OWLAnnotationSubject, OWLAnnotationValue
-from owlapy.namespaces import Namespaces
+from ontolearn.owlapy import namespaces
+from ontolearn.owlapy.model._base import OWLAnnotationSubject, OWLAnnotationValue
+from ontolearn.owlapy.namespaces import Namespaces
 
 
 class HasIRI(metaclass=ABCMeta):
@@ -117,7 +117,7 @@ class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
         Returns:
             :True if this IRI is equal to <http://www.w3.org/2002/07/owl#Nothing> and otherwise False
         """
-        from owlapy.vocab import OWLRDFVocabulary
+        from ontolearn.owlapy.vocab import OWLRDFVocabulary
         return self == OWLRDFVocabulary.OWL_NOTHING.get_iri()
 
     def is_thing(self):
@@ -126,7 +126,7 @@ class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
         Returns:
             :True if this IRI is equal to <http://www.w3.org/2002/07/owl#Thing> and otherwise False
         """
-        from owlapy.vocab import OWLRDFVocabulary
+        from ontolearn.owlapy.vocab import OWLRDFVocabulary
         return self == OWLRDFVocabulary.OWL_THING.get_iri()
 
     def is_reserved_vocabulary(self) -> bool:

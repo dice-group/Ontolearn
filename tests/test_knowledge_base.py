@@ -4,7 +4,7 @@ from itertools import repeat
 from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.knowledge_base import KnowledgeBase
 
-from owlapy.model import OWLObjectUnionOf, OWLSubDataPropertyOfAxiom, OWLSubObjectPropertyOfAxiom, OWLThing, \
+from ontolearn.owlapy.model import OWLObjectUnionOf, OWLSubDataPropertyOfAxiom, OWLSubObjectPropertyOfAxiom, OWLThing, \
     BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLClass, OWLDataAllValuesFrom, \
     OWLDataHasValue, OWLDataProperty, OWLDataSomeValuesFrom, OWLLiteral, OWLNamedIndividual, \
     OWLNothing, OWLObjectAllValuesFrom, OWLObjectComplementOf, OWLObjectExactCardinality, \

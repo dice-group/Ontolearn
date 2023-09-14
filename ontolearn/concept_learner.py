@@ -39,10 +39,10 @@ from ontolearn.base_nces import BaseNCES
 from ontolearn.nces_architectures import LSTM, GRU, SetTransformer
 from ontolearn.nces_trainer import NCESTrainer, before_pad
 from ontolearn.nces_utils import SimpleSolution
-from owlapy.model import OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual, OWLReasoner
-from owlapy.render import DLSyntaxObjectRenderer
-from owlapy.parser import DLSyntaxParser
-from owlapy.util import OrderedOWLObject
+from ontolearn.owlapy.model import OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual, OWLReasoner
+from ontolearn.owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.owlapy.parser import DLSyntaxParser
+from ontolearn.owlapy.util import OrderedOWLObject
 from sortedcontainers import SortedSet
 import os
 

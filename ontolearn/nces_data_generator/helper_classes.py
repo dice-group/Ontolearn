@@ -1,8 +1,8 @@
 from tqdm import tqdm
-import random, numpy as np
+import random
 from rdflib import graph
 from ontolearn.knowledge_base import KnowledgeBase
-from owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.refinement_operators import ExpressRefinement
 import os, json
 

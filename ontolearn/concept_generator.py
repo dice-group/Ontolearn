@@ -1,7 +1,7 @@
 from typing import Iterable, List, Generator
 
 from ontolearn.utils import parametrized_performance_debugger
-from owlapy.model import OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectSomeValuesFrom, \
+from ontolearn.owlapy.model import OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectPropertyExpression, OWLThing, \
     OWLNothing, OWLClass, OWLClassExpression, OWLObjectComplementOf, \
     OWLObjectExactCardinality, OWLDataAllValuesFrom, OWLDataPropertyExpression, OWLDataRange, OWLDataSomeValuesFrom, \

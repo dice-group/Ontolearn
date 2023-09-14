@@ -68,13 +68,14 @@ before fitting a model.
 It can be done as follows:
 
 <!--pytest-codeblocks:cont-->
-```python
-from owlapy.model import OWLClass
-from owlapy.model import IRI
 
-iri = IRI('http://example.com/father#', 'Father') 
+```python
+from ontolearn.owlapy.model import OWLClass
+from ontolearn.owlapy.model import IRI
+
+iri = IRI('http://example.com/father#', 'Father')
 father_concept = OWLClass(iri)
-concepts_to_ignore = {father_concept} # you can add more than 1
+concepts_to_ignore = {father_concept}  # you can add more than 1
 
 new_kb = kb.ignore_and_copy(ignored_classes=concepts_to_ignore)
 ```

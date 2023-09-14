@@ -3,13 +3,13 @@ from itertools import chain
 import random
 from typing import DefaultDict, Dict, Set, Optional, Iterable, List, Type, Final, Generator
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter
-from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction
-from owlapy.vocab import OWLFacet
+from ontolearn.owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction
+from ontolearn.owlapy.vocab import OWLFacet
 
 from .abstracts import BaseRefinement
 from .concept_generator import ConceptGenerator
 from .knowledge_base import KnowledgeBase
-from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
+from ontolearn.owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectIntersectionOf, OWLClassExpression, OWLNothing, OWLThing, OWLNaryBooleanClassExpression, \
     OWLObjectUnionOf, OWLClass, OWLObjectComplementOf, OWLObjectMaxCardinality, OWLObjectMinCardinality, \
     OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLLiteral, OWLObjectInverseOf, OWLDataProperty, \

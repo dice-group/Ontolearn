@@ -4,7 +4,7 @@ from typing import Literal, Iterable, Set, Tuple, Dict, List, Final, Generator
 
 import numpy as np
 
-from owlapy.model import OWLClassExpression, OWLOntologyManager, OWLOntology, AddImport, OWLImportsDeclaration, \
+from ontolearn.owlapy.model import OWLClassExpression, OWLOntologyManager, OWLOntology, AddImport, OWLImportsDeclaration, \
     OWLClass, OWLEquivalentClassesAxiom, IRI, OWLNamedIndividual, OWLAnnotationAssertionAxiom, OWLAnnotation, \
     OWLAnnotationProperty, OWLLiteral
 from ontolearn.knowledge_base import KnowledgeBase
@@ -66,7 +66,7 @@ class LearningProblemGenerator:
 
         assert isinstance(self.kb, KnowledgeBase)
 
-        from owlapy.owlready2 import OWLOntologyManager_Owlready2
+        from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2
         manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
 
         ontology: OWLOntology = manager.create_ontology(IRI.create(NS))

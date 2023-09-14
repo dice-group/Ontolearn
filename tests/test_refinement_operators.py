@@ -1,7 +1,6 @@
 """ Test for refinement_operators.py"""
 from functools import partial
 from itertools import repeat
-from pytest import mark
 import unittest
 
 import json
@@ -10,9 +9,9 @@ from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.core.owl.utils import ConceptOperandSorter
 from ontolearn.utils import setup_logging
-from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction
-from owlapy.render import DLSyntaxObjectRenderer
-from owlapy.model import OWLObjectMinCardinality, OWLObjectProperty, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
+from ontolearn.owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction
+from ontolearn.owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.owlapy.model import OWLObjectMinCardinality, OWLObjectProperty, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
     OWLClass, IRI, OWLDataHasValue, OWLDataProperty, OWLDataSomeValuesFrom, OWLLiteral, OWLObjectAllValuesFrom, \
     OWLObjectCardinalityRestriction, OWLObjectComplementOf, OWLObjectIntersectionOf, OWLObjectMaxCardinality
 from ontolearn.refinement_operators import ModifiedCELOERefinement, LengthBasedRefinement, \

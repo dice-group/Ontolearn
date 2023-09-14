@@ -2,14 +2,14 @@ import logging
 import random
 from functools import singledispatchmethod
 from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict
-from owlapy.owlready2 import OWLOntology_Owlready2, OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLNamedIndividual, \
+from ontolearn.owlapy.owlready2 import OWLOntology_Owlready2, OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
+from ontolearn.owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLNamedIndividual, \
     OWLObjectProperty, OWLClass, OWLDataProperty, IRI, OWLDataRange, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLDatatype, BooleanOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, OWLThing, OWLObjectPropertyExpression, \
-    OWLLiteral, OWLDataPropertyExpression, OWLNothing
-from owlapy.render import DLSyntaxObjectRenderer
-from owlapy.util import iter_count, LRUCache
+    OWLLiteral, OWLDataPropertyExpression
+from ontolearn.owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.owlapy.util import iter_count, LRUCache
 from .abstracts import AbstractKnowledgeBase, AbstractScorer, EncodedLearningProblem, AbstractLearningProblem
 from .concept_generator import ConceptGenerator
 from .core.owl.utils import OWLClassExpressionLengthMetric
@@ -149,7 +149,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                 raise TypeError("path missing")
             self._ontology = self._manager.load_ontology(IRI.create('file://' + self.path))
 
-            from owlapy.owlready2 import OWLOntologyManager_Owlready2
+            from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2
             if isinstance(self._manager, OWLOntologyManager_Owlready2) and backend_store:
                 self._manager.save_world()
                 logger.debug("Synced world to backend store")
@@ -188,7 +188,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self._dp_ranges = dict()
         self.generator = ConceptGenerator()
 
-        from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
+        from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
         if isinstance(self._reasoner, OWLReasoner_FastInstanceChecker):
             self._ind_set = self._reasoner._ind_set  # performance hack
         else:
@@ -312,7 +312,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             raise TypeError
         if ce in self._ind_cache:
             return
-        from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
+        from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
         if isinstance(self._reasoner, OWLReasoner_FastInstanceChecker):
             self._ind_cache[ce] = self._reasoner._find_instances(ce)  # performance hack
         else:

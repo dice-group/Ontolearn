@@ -1,5 +1,5 @@
 from ontolearn.knowledge_base import KnowledgeBase
-from owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.owlapy.render import DLSyntaxObjectRenderer
 import numpy as np
 from torch.functional import F
 from torch.nn.utils.rnn import pad_sequence

@@ -4,23 +4,23 @@ from typing import Optional, Iterable, FrozenSet
 
 import httpx as httpx
 
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.abstracts import AbstractScorer, AbstractLearningProblem, AbstractKnowledgeBase, \
     EncodedPosNegLPStandardKind
 from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric
 from ontolearn.knowledge_base import EvaluatedConcept, Factory, _Default_ClassExpressionLengthMetricFactory
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.utils import oplogging
-from owlapy.ext import OWLReasonerEx
-from owlapy.model import OWLClassAxiom, OWLClassExpression, OWLEntity, OWLOntology, OWLClass, OWLNamedIndividual, \
+from ontolearn.owlapy.ext import OWLReasonerEx
+from ontolearn.owlapy.model import OWLClassAxiom, OWLClassExpression, OWLEntity, OWLOntology, OWLClass, OWLNamedIndividual, \
     OWLObjectPropertyExpression, OWLDataProperty, OWLObjectProperty, OWLOntologyID, _M, OWLDataPropertyRangeAxiom, \
     IRI, OWLLiteral, OWLDatatype, OWLDataPropertyDomainAxiom, OWLObjectPropertyDomainAxiom, \
     OWLObjectPropertyRangeAxiom
-from owlapy.owl2sparql.converter import Owl2SparqlConverter
-from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from owlapy.render import DLSyntaxObjectRenderer
-from owlapy.util import LRUCache
-from owlapy.vocab import OWLRDFVocabulary
+from ontolearn.owlapy.owl2sparql.converter import Owl2SparqlConverter
+from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from ontolearn.owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.owlapy.util import LRUCache
+from ontolearn.owlapy.vocab import OWLRDFVocabulary
 
 logger = logging.getLogger(__name__)
 

@@ -4,13 +4,13 @@ from typing import Callable, Final, List, Optional, Tuple, Union
 from deap.gp import Primitive, Terminal
 
 from ontolearn.concept_generator import ConceptGenerator
-from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
+from ontolearn.owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
     OWLClassExpression, OWLDataHasValue, OWLDataPropertyExpression, OWLDataSomeValuesFrom, OWLLiteral, \
     OWLObjectAllValuesFrom, OWLObjectIntersectionOf, NUMERIC_DATATYPES, OWLDataProperty, OWLObjectProperty, \
     OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectMinCardinality
 import re
 
-from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
+from ontolearn.owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
     OWLDatatypeMaxExclusiveRestriction, OWLDatatypeMaxInclusiveRestriction
 
 

@@ -2,9 +2,9 @@ import logging
 from typing import Set, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ontolearn import KnowledgeBase
+    from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.abstracts import AbstractLearningProblem, EncodedLearningProblem, EncodedPosNegLPStandardKind
-from owlapy.model import OWLNamedIndividual
+from ontolearn.owlapy.model import OWLNamedIndividual
 
 logger = logging.getLogger(__name__)
 

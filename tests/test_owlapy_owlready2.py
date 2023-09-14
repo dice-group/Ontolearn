@@ -2,13 +2,12 @@ from datetime import date, datetime
 import unittest
 
 from pandas import Timedelta
-from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
+from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
+from ontolearn.owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
     OWLDatatypeMinMaxExclusiveRestriction, OWLDatatypeMinMaxInclusiveRestriction
 
 import owlready2
-import owlapy.owlready2.utils
-from owlapy.model import OWLObjectInverseOf, OWLObjectPropertyRangeAxiom, OWLSameIndividualAxiom, OWLClass, \
+from ontolearn.owlapy.model import OWLObjectInverseOf, OWLObjectPropertyRangeAxiom, OWLSameIndividualAxiom, OWLClass, \
     OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectComplementOf, IRI, OWLDataAllValuesFrom, \
     OWLDataComplementOf, OWLDataHasValue, OWLDataIntersectionOf, OWLDataProperty, OWLDataSomeValuesFrom, \
     OWLDataUnionOf, OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLDataOneOf, \
@@ -21,8 +20,8 @@ from owlapy.model import OWLObjectInverseOf, OWLObjectPropertyRangeAxiom, OWLSam
     OWLDataPropertyAssertionAxiom, OWLObjectProperty, OWLDataPropertyDomainAxiom, OWLDataPropertyRangeAxiom, \
     OWLObjectPropertyAssertionAxiom, OWLObjectPropertyDomainAxiom, OWLInverseObjectPropertiesAxiom, OWLSubClassOfAxiom
 
-from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
+from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
 
 
 class Owlapy_Owlready2_Test(unittest.TestCase):
@@ -583,7 +582,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         female = OWLClass(IRI.create(ns, 'female'))
         has_child = OWLObjectProperty(IRI(ns, 'hasChild'))
 
-        to_owlready = owlapy.owlready2.utils.ToOwlready2(world=onto._world)
+        to_owlready = ontolearn.owlapy.owlready2.utils.ToOwlready2(world=onto._world)
 
         ce = male
         owlready_ce = onto._onto.male
@@ -638,7 +637,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         act = OWLDataProperty(IRI(ns, 'act'))
         charge = OWLDataProperty(IRI(ns, 'charge'))
 
-        to_owlready = owlapy.owlready2.utils.ToOwlready2(world=onto._world)
+        to_owlready = ontolearn.owlapy.owlready2.utils.ToOwlready2(world=onto._world)
 
         # owlready2 defines no equal or hash method for ConstrainedDatatype, just using the __dict__ attribute
         # should be sufficient for the purpose of these tests
@@ -696,7 +695,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         female = onto._onto.female
         has_child = onto._onto.hasChild
 
-        from_owlready = owlapy.owlready2.utils.FromOwlready2()
+        from_owlready = ontolearn.owlapy.owlready2.utils.FromOwlready2()
 
         ce = male | female
         owl_ce = OWLObjectUnionOf((OWLClass(IRI.create(ns, 'male')), OWLClass(IRI.create(ns, 'female'))))
@@ -747,7 +746,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         act = onto._onto.act
         charge = onto._onto.charge
 
-        from_owlready = owlapy.owlready2.utils.FromOwlready2()
+        from_owlready = ontolearn.owlapy.owlready2.utils.FromOwlready2()
 
         ce = act.some(float)
         owl_ce = OWLDataSomeValuesFrom(OWLDataProperty(IRI(ns, 'act')), DoubleOWLDatatype)

@@ -13,8 +13,8 @@ To load an ontology as well as to manage it, you will need an [OWLOntologyManage
 To load an ontology, use the following Python code:
 
 ```python
-from owlapy.model import IRI
-from owlapy.owlready2 import OWLOntologyManager_Owlready2
+from ontolearn.owlapy.model import IRI
+from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2
 
 manager = OWLOntologyManager_Owlready2()
 onto = manager.load_ontology(IRI.create("file://KGs/father.owl"))
@@ -70,9 +70,10 @@ Let's suppose you want to add a new class in our example ontology `KGs/father.ow
 to see a description of it). It can be done as follows:
 
 <!--pytest-codeblocks:cont-->
+
 ```python
-from owlapy.model import OWLClass
-from owlapy.model import OWLDeclarationAxiom
+from ontolearn.owlapy.model import OWLClass
+from ontolearn.owlapy.model import OWLDeclarationAxiom
 
 iri = IRI('http://example.com/father#', 'child')
 child_class = OWLClass(iri)
@@ -98,16 +99,17 @@ you can use the class [OWLObjectProperty](owlapy.model.OWLObjectProperty) and fo
 properties you can use the class [OWLDataProperty](owlapy.model.OWLDataProperty).
 
 <!--pytest-codeblocks:cont-->
+
 ```python
-from owlapy.model import OWLObjectProperty
-from owlapy.model import OWLDataProperty
+from ontolearn.owlapy.model import OWLObjectProperty
+from ontolearn.owlapy.model import OWLDataProperty
 
 # adding the object property 'hasParent'
 hasParent_op = OWLObjectProperty(IRI('http://example.com/father#', 'hasParent'))
 hasParent_op_declaration_axiom = OWLDeclarationAxiom(hasParent_op)
 manager.add_axiom(onto, hasParent_op_declaration_axiom)
 
-#adding the data property 'hasAge' 
+# adding the data property 'hasAge' 
 hasAge_dp = OWLDataProperty(IRI('http://example.com/father#', 'hasAge'))
 hasAge_dp_declaration_axiom = OWLDeclarationAxiom(hasAge_dp)
 manager.add_axiom(onto, hasAge_dp_declaration_axiom)
@@ -120,11 +122,12 @@ See the [API documentation](owlapy.model) for more OWL entities that you can add
 To assign a class to a specific individual use the following code:
 
 <!--pytest-codeblocks:cont-->
+
 ```python
-from owlapy.model import OWLClassAssertionAxiom
+from ontolearn.owlapy.model import OWLClassAssertionAxiom
 
 individuals = list(onto.individuals_in_signature())
-heinz = individuals[1] # get the 2nd individual in the list which is 'heinz'
+heinz = individuals[1]  # get the 2nd individual in the list which is 'heinz'
 
 class_assertion_axiom = OWLClassAssertionAxiom(heinz, child_class)
 
@@ -142,9 +145,10 @@ Let's show one more example using a `OWLDataPropertyAssertionAxiom` to assign th
 heinz. 
 
 <!--pytest-codeblocks:cont-->
+
 ```python
-from owlapy.model import OWLLiteral
-from owlapy.model import OWLDataPropertyAssertionAxiom
+from ontolearn.owlapy.model import OWLLiteral
+from ontolearn.owlapy.model import OWLDataPropertyAssertionAxiom
 
 literal_17 = OWLLiteral(17)
 dp_assertion_axiom = OWLDataPropertyAssertionAxiom(heinz, hasAge_dp, literal_17)

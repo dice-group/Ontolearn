@@ -2,7 +2,7 @@ import logging
 from abc import ABCMeta
 from typing import Iterable
 
-from owlapy.model import OWLNamedIndividual, OWLObjectProperty, OWLReasoner, OWLDataProperty, OWLDataRange, OWLLiteral
+from ontolearn.owlapy.model import OWLNamedIndividual, OWLObjectProperty, OWLReasoner, OWLDataProperty, OWLDataRange, OWLLiteral
 
 
 logger = logging.getLogger(__name__)

@@ -12,12 +12,12 @@ from ontolearn.metrics import F1, Accuracy
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.search import _NodeQuality
 
-from owlapy.model import OWLDeclarationAxiom, OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
+from ontolearn.owlapy.model import OWLDeclarationAxiom, OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
     OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, OWLAnnotationAssertionAxiom, OWLAnnotation, \
     OWLAnnotationProperty, OWLLiteral, IRI, OWLClassExpression, OWLReasoner, OWLAxiom, OWLThing
-from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLOntology_Owlready2
-from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
-from owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLOntology_Owlready2
+from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
+from ontolearn.owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
     AbstractConceptNode, AbstractLearningProblem
 from .utils import oplogging

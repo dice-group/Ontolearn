@@ -59,12 +59,13 @@ the learning algorithms. Also in the [tests](https://github.com/dice-group/Ontol
 For more detailed instructions we suggest to follow the [guides](https://ontolearn-docs-dice-group.netlify.app/usage/03_algorithm.html) in the documentation.
 
 Below we give a simple example on using CELOE to learn class expressions for a small dataset.
+
 ```python
 from ontolearn.concept_learner import CELOE
 from ontolearn.model_adapter import ModelAdapter
-from owlapy.model import OWLNamedIndividual, IRI
-from owlapy.namespaces import Namespaces
-from owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.owlapy.model import OWLNamedIndividual, IRI
+from ontolearn.owlapy.namespaces import Namespaces
+from ontolearn.owlapy.render import DLSyntaxObjectRenderer
 from examples.experiments_standard import ClosedWorld_ReasonerFactory
 
 NS = Namespaces('ex', 'http://example.com/father#')

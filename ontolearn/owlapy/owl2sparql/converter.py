@@ -6,13 +6,13 @@ from typing import Set, List, Dict, Optional, Iterable
 
 from rdflib.plugins.sparql.parser import parseQuery
 
-from owlapy.model import OWLClassExpression, OWLClass, OWLEntity, OWLObjectProperty, OWLObjectIntersectionOf, \
+from ontolearn.owlapy.model import OWLClassExpression, OWLClass, OWLEntity, OWLObjectProperty, OWLObjectIntersectionOf, \
     OWLObjectUnionOf, OWLObjectComplementOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, OWLObjectHasValue, \
     OWLNamedIndividual, OWLObjectCardinalityRestriction, OWLObjectMinCardinality, OWLObjectExactCardinality, \
     OWLObjectMaxCardinality, OWLDataCardinalityRestriction, OWLDataProperty, OWLObjectHasSelf, OWLObjectOneOf, \
     OWLDataSomeValuesFrom, OWLDataAllValuesFrom, OWLDataHasValue, OWLDatatype, TopOWLDatatype, OWLDataOneOf, \
     OWLLiteral, OWLDatatypeRestriction
-from owlapy.vocab import OWLFacet, OWLRDFVocabulary
+from ontolearn.owlapy.vocab import OWLFacet, OWLRDFVocabulary
 
 _Variable_facet_comp = MappingProxyType({
     OWLFacet.MIN_INCLUSIVE: ">=",

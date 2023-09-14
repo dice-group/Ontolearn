@@ -1,5 +1,4 @@
 import logging
-import random
 from datetime import date, datetime
 from enum import Enum, auto
 from itertools import chain
@@ -10,16 +9,16 @@ import owlready2
 from owlready2 import declare_datatype
 from pandas import Timedelta
 
-from owlapy.owlready2 import axioms
-from owlapy import namespaces
-from owlapy.ext import OWLReasonerEx
-from owlapy.model import OWLObjectPropertyRangeAxiom, OWLOntologyManager, OWLDataProperty, OWLObjectProperty, \
+from ontolearn.owlapy.owlready2 import axioms
+from ontolearn.owlapy import namespaces
+from ontolearn.owlapy.ext import OWLReasonerEx
+from ontolearn.owlapy.model import OWLObjectPropertyRangeAxiom, OWLOntologyManager, OWLDataProperty, OWLObjectProperty, \
     OWLNamedIndividual, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, OWLOntology, \
     OWLOntologyChange, AddImport, OWLThing, DoubleOWLDatatype, OWLObjectPropertyDomainAxiom, OWLLiteral, \
     OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, DateOWLDatatype, DateTimeOWLDatatype, OWLClass, \
     DurationOWLDatatype, StringOWLDatatype, IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLClassAxiom, \
     OWLSubClassOfAxiom, OWLEquivalentClassesAxiom, OWLObjectSomeValuesFrom
-from owlapy.owlready2.utils import FromOwlready2
+from ontolearn.owlapy.owlready2.utils import FromOwlready2
 
 logger = logging.getLogger(__name__)
 
