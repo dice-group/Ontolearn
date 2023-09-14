@@ -337,27 +337,26 @@ FILTER NOT EXISTS {
         base_reasoner = OWLReasoner_Owlready2(onto)
         family_kb_reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner, negation_default=True)
 
-        ce_str = "∀hasChild.(∃hasChild.¬Male)"
-        ce_parsed = DLSyntaxParser(namespace="http://www.benchmark.org/family#").parse_expression(expression_str=ce_str)
-        actual_query = Owl2SparqlConverter().as_query(root_variable=self._root_var_, ce=ce_parsed, count=False,
+        concepts = [
+            "∀hasChild.(∃hasChild.¬Male)",
+            "∀hasChild.(∃hasChild.(Brother ⊔ Sister))",
+            "(Male ⊔ Male) ⊓ (Male ⊓ Male)",
+            "(Male ⊓ Male) ⊔ (Male ⊓ Male)",
+            "(Male ⊓ Male) ⊓ (Male ⊓ Male)",
+            "(Male ⊓ Male) ⊔ ((≥ 2 hasChild.(Male ⊔ Female)) ⊓ (≥ 3 hasChild.(Male ⊔ Female)))",
+        ]
+
+        for ce_str in concepts:
+            ce_parsed = DLSyntaxParser(namespace="http://www.benchmark.org/family#").parse_expression(expression_str=ce_str)
+            actual_query = Owl2SparqlConverter().as_query(root_variable=self._root_var_, ce=ce_parsed, count=False,
                                                       values=None, named_individuals=True)
 
-        sparql_results_actual = family_rdf_graph.query(actual_query)
-        reasoner_results = set(family_kb_reasoner.instances(ce_parsed))
+            sparql_results_actual = family_rdf_graph.query(actual_query)
+            reasoner_results = set(family_kb_reasoner.instances(ce_parsed))
 
-        self.assertEqual(len(sparql_results_actual), len(reasoner_results))
-        self.assertTrue(check_reasoner_instances_in_sparql_results(sparql_results_actual, reasoner_results))
+            self.assertEqual(len(sparql_results_actual), len(reasoner_results), ce_str)
+            self.assertTrue(check_reasoner_instances_in_sparql_results(sparql_results_actual, reasoner_results), ce_str)
 
-        ce_str = "∀hasChild.(∃hasChild.(Brother ⊔ Sister))"
-        ce_parsed = DLSyntaxParser(namespace="http://www.benchmark.org/family#").parse_expression(expression_str=ce_str)
-        actual_query = Owl2SparqlConverter().as_query(root_variable=self._root_var_, ce=ce_parsed, count=False,
-                                                      values=None, named_individuals=True)
-
-        sparql_results_actual = family_rdf_graph.query(actual_query)
-        reasoner_results = set(family_kb_reasoner.instances(ce_parsed))
-
-        self.assertEqual(len(sparql_results_actual), len(reasoner_results))
-        self.assertTrue(check_reasoner_instances_in_sparql_results(sparql_results_actual, reasoner_results))
 
     def test_QualifiedCardinalityRestriction(self):
         # rdf graph - using rdflib
@@ -369,27 +368,22 @@ FILTER NOT EXISTS {
         base_reasoner = OWLReasoner_Owlready2(onto)
         family_kb_reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner, negation_default=True)
 
-        ce_str = "≥ 2 hasChild.(Male ⊔ Female)"
-        ce_parsed = DLSyntaxParser(namespace="http://www.benchmark.org/family#").parse_expression(expression_str=ce_str)
-        actual_query = Owl2SparqlConverter().as_query(root_variable=self._root_var_, ce=ce_parsed, count=False,
+        concepts = [
+            "≥ 2 hasChild.(Male ⊔ Female)",
+            "≥ 2 hasChild.(Male ⊔ Female)",
+            "≤ 3 hasChild.Female"
+        ]
+
+        for ce_str in concepts:
+            ce_parsed = DLSyntaxParser(namespace="http://www.benchmark.org/family#").parse_expression(expression_str=ce_str)
+            actual_query = Owl2SparqlConverter().as_query(root_variable=self._root_var_, ce=ce_parsed, count=False,
                                                       values=None, named_individuals=True)
 
-        sparql_results_actual = family_rdf_graph.query(actual_query)
-        reasoner_results = set(family_kb_reasoner.instances(ce_parsed))
+            sparql_results_actual = family_rdf_graph.query(actual_query)
+            reasoner_results = set(family_kb_reasoner.instances(ce_parsed))
 
-        self.assertEqual(len(sparql_results_actual), len(reasoner_results))
-        self.assertTrue(check_reasoner_instances_in_sparql_results(sparql_results_actual, reasoner_results))
-
-        ce_str = "≤ 3 hasChild.Female"
-        ce_parsed = DLSyntaxParser(namespace="http://www.benchmark.org/family#").parse_expression(expression_str=ce_str)
-        actual_query = Owl2SparqlConverter().as_query(root_variable=self._root_var_, ce=ce_parsed, count=False,
-                                                      values=None, named_individuals=True)
-
-        sparql_results_actual = family_rdf_graph.query(actual_query)
-        reasoner_results = set(family_kb_reasoner.instances(ce_parsed))
-
-        self.assertEqual(len(sparql_results_actual), len(reasoner_results))
-        self.assertTrue(check_reasoner_instances_in_sparql_results(sparql_results_actual, reasoner_results))
+            self.assertEqual(len(sparql_results_actual), len(reasoner_results), ce_str)
+            self.assertTrue(check_reasoner_instances_in_sparql_results(sparql_results_actual, reasoner_results), ce_str)
 
         # need to further investigate the case for 0
         # ce_str = "≥ 0 hasChild.Male"
