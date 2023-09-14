@@ -1367,7 +1367,6 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         self.population_size = population_size
         self.num_generations = num_generations
         self.height_limit = height_limit
-
         self.__setup()
 
     def __setup(self):
@@ -1397,12 +1396,12 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         self.toolbox = self.__build_toolbox()
 
     def __build_primitive_set(self) -> gp.PrimitiveSetTyped:
-        factory = PrimitiveFactory(self.kb)
+        factory = PrimitiveFactory()
         union = factory.create_union()
         intersection = factory.create_intersection()
 
         pset = gp.PrimitiveSetTyped("concept_tree", [], OWLClassExpression)
-        pset.addPrimitive(self.kb.negation, [OWLClassExpression], OWLClassExpression,
+        pset.addPrimitive(self.kb.generator.negation, [OWLClassExpression], OWLClassExpression,
                           name=OperatorVocabulary.NEGATION)
         pset.addPrimitive(union, [OWLClassExpression, OWLClassExpression], OWLClassExpression,
                           name=OperatorVocabulary.UNION)
@@ -1473,8 +1472,8 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         for class_ in self.kb.get_concepts():
             pset.addTerminal(class_, OWLClassExpression, name=escape(class_.get_iri().get_remainder()))
 
-        pset.addTerminal(self.kb.thing, OWLClassExpression, name=escape(self.kb.thing.get_iri().get_remainder()))
-        pset.addTerminal(self.kb.nothing, OWLClassExpression, name=escape(self.kb.nothing.get_iri().get_remainder()))
+        pset.addTerminal(self.kb.generator.thing, OWLClassExpression, name=escape(self.kb.generator.thing.get_iri().get_remainder()))
+        pset.addTerminal(self.kb.generator.nothing, OWLClassExpression, name=escape(self.kb.generator.nothing.get_iri().get_remainder()))
         return pset
 
     def __build_toolbox(self) -> base.Toolbox:

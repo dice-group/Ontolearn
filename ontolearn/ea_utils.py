@@ -2,11 +2,12 @@ from enum import Enum
 from typing import Callable, Final, List, Optional, Tuple, Union
 
 from deap.gp import Primitive, Terminal
+
+from ontolearn.concept_generator import ConceptGenerator
 from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
     OWLClassExpression, OWLDataHasValue, OWLDataPropertyExpression, OWLDataSomeValuesFrom, OWLLiteral, \
     OWLObjectAllValuesFrom, OWLObjectIntersectionOf, NUMERIC_DATATYPES, OWLDataProperty, OWLObjectProperty, \
     OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectMinCardinality
-from ontolearn.knowledge_base import KnowledgeBase
 import re
 
 from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
@@ -18,22 +19,22 @@ Tree = List[Union[Primitive, Terminal]]
 
 class PrimitiveFactory:
 
-    __slots__ = 'knowledge_base'
+    __slots__ = 'generator'
 
-    def __init__(self, knowledge_base: KnowledgeBase):
-        self.knowledge_base = knowledge_base
+    def __init__(self):
+        self.generator = ConceptGenerator()
 
     def create_union(self) -> Callable[[OWLClassExpression, OWLClassExpression], OWLObjectUnionOf]:
 
         def union(A: OWLClassExpression, B: OWLClassExpression) -> OWLObjectUnionOf:
-            return self.knowledge_base.union([A, B])
+            return self.generator.union([A, B])
 
         return union
 
     def create_intersection(self) -> Callable[[OWLClassExpression, OWLClassExpression], OWLObjectIntersectionOf]:
 
         def intersection(A: OWLClassExpression, B: OWLClassExpression) -> OWLObjectIntersectionOf:
-            return self.knowledge_base.intersection([A, B])
+            return self.generator.intersection([A, B])
 
         return intersection
 
@@ -42,10 +43,10 @@ class PrimitiveFactory:
                      Callable[[OWLClassExpression], OWLObjectAllValuesFrom]]:
 
         def existential_restriction(filler: OWLClassExpression) -> OWLObjectSomeValuesFrom:
-            return self.knowledge_base.existential_restriction(filler, property_)
+            return self.generator.existential_restriction(filler, property_)
 
         def universal_restriction(filler: OWLClassExpression) -> OWLObjectAllValuesFrom:
-            return self.knowledge_base.universal_restriction(filler, property_)
+            return self.generator.universal_restriction(filler, property_)
 
         return existential_restriction, universal_restriction
 
@@ -55,13 +56,13 @@ class PrimitiveFactory:
                  Callable[[int, OWLClassExpression], OWLObjectExactCardinality]]:
 
         def min_cardinality(card: int, filler: OWLClassExpression) -> OWLObjectMinCardinality:
-            return self.knowledge_base.min_cardinality_restriction(filler, property_, card)
+            return self.generator.min_cardinality_restriction(filler, property_, card)
 
         def max_cardinality(card: int, filler: OWLClassExpression) -> OWLObjectMaxCardinality:
-            return self.knowledge_base.max_cardinality_restriction(filler, property_, card)
+            return self.generator.max_cardinality_restriction(filler, property_, card)
 
         def exact_cardinality(card: int, filler: OWLClassExpression) -> OWLObjectExactCardinality:
-            return self.knowledge_base.exact_cardinality_restriction(filler, property_, card)
+            return self.generator.exact_cardinality_restriction(filler, property_, card)
 
         return min_cardinality, max_cardinality, exact_cardinality
 
@@ -71,26 +72,26 @@ class PrimitiveFactory:
 
         def data_some_min_inclusive(value: OWLLiteral) -> OWLDataSomeValuesFrom:
             filler = OWLDatatypeMinInclusiveRestriction(value)
-            return self.knowledge_base.data_existential_restriction(filler, property_)
+            return self.generator.data_existential_restriction(filler, property_)
 
         def data_some_max_inclusive(value: OWLLiteral) -> OWLDataSomeValuesFrom:
             filler = OWLDatatypeMaxInclusiveRestriction(value)
-            return self.knowledge_base.data_existential_restriction(filler, property_)
+            return self.generator.data_existential_restriction(filler, property_)
 
         def data_some_min_exclusive(value: OWLLiteral) -> OWLDataSomeValuesFrom:
             filler = OWLDatatypeMinExclusiveRestriction(value)
-            return self.knowledge_base.data_existential_restriction(filler, property_)
+            return self.generator.data_existential_restriction(filler, property_)
 
         def data_some_max_exclusive(value: OWLLiteral) -> OWLDataSomeValuesFrom:
             filler = OWLDatatypeMaxExclusiveRestriction(value)
-            return self.knowledge_base.data_existential_restriction(filler, property_)
+            return self.generator.data_existential_restriction(filler, property_)
 
         return data_some_min_inclusive, data_some_max_inclusive, data_some_min_exclusive, data_some_max_exclusive
 
     def create_data_has_value(self, property_: OWLDataPropertyExpression) -> Callable[[OWLLiteral], OWLDataHasValue]:
 
         def data_has_value(value: OWLLiteral) -> OWLDataHasValue:
-            return self.knowledge_base.data_has_value_restriction(value, property_)
+            return self.generator.data_has_value_restriction(value, property_)
 
         return data_has_value
 

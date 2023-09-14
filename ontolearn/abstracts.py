@@ -279,8 +279,6 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
     """Abstract knowledge base"""
     __slots__ = ()
 
-    thing: OWLClassExpression
-
     @abstractmethod
     def ontology(self) -> OWLOntology:
         """The base ontology of this knowledge base"""

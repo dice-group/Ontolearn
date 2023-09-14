@@ -7,7 +7,6 @@ import httpx as httpx
 from ontolearn import KnowledgeBase
 from ontolearn.abstracts import AbstractScorer, AbstractLearningProblem, AbstractKnowledgeBase, \
     EncodedPosNegLPStandardKind
-from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric
 from ontolearn.knowledge_base import EvaluatedConcept, Factory, _Default_ClassExpressionLengthMetricFactory
 from ontolearn.learning_problem import PosNegLPStandard
@@ -293,7 +292,7 @@ class SparqlKnowledgeBase(KnowledgeBase):
         else:
             self._length_metric = _Default_ClassExpressionLengthMetricFactory()
 
-        ConceptGenerator.__init__(self, reasoner=self._reasoner)
+        # ConceptGenerator.__init__(self, reasoner=self._reasoner)
 
         individuals = self._ontology.individuals_in_signature()
         self._ind_set = frozenset(individuals)

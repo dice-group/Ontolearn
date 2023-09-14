@@ -22,7 +22,7 @@ class ConceptDescriptionGenerator:
         return {ref for ref in self.rho.refine(concept, max_length=self.max_length)}
 
     def generate(self):
-        roots = self.apply_rho(self.kb.thing)
+        roots = self.apply_rho(self.kb.generator.thing)
         Refinements = set()
         Refinements.update(roots)
         print ("|Thing refinements|: ", len(roots))
