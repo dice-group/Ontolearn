@@ -22,6 +22,7 @@ from ontolearn.owlapy.model import OWLObjectInverseOf, OWLObjectPropertyRangeAxi
 
 from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
+from ontolearn.owlapy.owlready2.utils import ToOwlready2, FromOwlready2
 
 
 class Owlapy_Owlready2_Test(unittest.TestCase):
@@ -582,7 +583,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         female = OWLClass(IRI.create(ns, 'female'))
         has_child = OWLObjectProperty(IRI(ns, 'hasChild'))
 
-        to_owlready = ontolearn.owlapy.owlready2.utils.ToOwlready2(world=onto._world)
+        to_owlready = ToOwlready2(world=onto._world)
 
         ce = male
         owlready_ce = onto._onto.male
@@ -637,7 +638,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         act = OWLDataProperty(IRI(ns, 'act'))
         charge = OWLDataProperty(IRI(ns, 'charge'))
 
-        to_owlready = ontolearn.owlapy.owlready2.utils.ToOwlready2(world=onto._world)
+        to_owlready = ToOwlready2(world=onto._world)
 
         # owlready2 defines no equal or hash method for ConstrainedDatatype, just using the __dict__ attribute
         # should be sufficient for the purpose of these tests
@@ -695,7 +696,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         female = onto._onto.female
         has_child = onto._onto.hasChild
 
-        from_owlready = ontolearn.owlapy.owlready2.utils.FromOwlready2()
+        from_owlready = FromOwlready2()
 
         ce = male | female
         owl_ce = OWLObjectUnionOf((OWLClass(IRI.create(ns, 'male')), OWLClass(IRI.create(ns, 'female'))))
@@ -746,7 +747,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         act = onto._onto.act
         charge = onto._onto.charge
 
-        from_owlready = ontolearn.owlapy.owlready2.utils.FromOwlready2()
+        from_owlready = FromOwlready2()
 
         ce = act.some(float)
         owl_ce = OWLDataSomeValuesFrom(OWLDataProperty(IRI(ns, 'act')), DoubleOWLDatatype)
