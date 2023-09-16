@@ -1,29 +1,25 @@
 import unittest
 from itertools import repeat
-from ontolearn.concept_generator import ConceptGenerator
 
-from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.model import OWLObjectUnionOf, OWLSubDataPropertyOfAxiom, OWLSubObjectPropertyOfAxiom, OWLThing, \
+from ontolearn.concept_generator import ConceptGenerator
+from ontolearn.knowledge_base import KnowledgeBase
+
+from ontolearn.owlapy.model import OWLObjectUnionOf, OWLSubDataPropertyOfAxiom, OWLSubObjectPropertyOfAxiom, OWLThing, \
     BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLClass, OWLDataAllValuesFrom, \
     OWLDataHasValue, OWLDataProperty, OWLDataSomeValuesFrom, OWLLiteral, OWLNamedIndividual, \
     OWLNothing, OWLObjectAllValuesFrom, OWLObjectComplementOf, OWLObjectExactCardinality, \
     OWLObjectHasValue, OWLObjectIntersectionOf, OWLObjectInverseOf, OWLObjectMaxCardinality, \
     OWLObjectMinCardinality, OWLObjectProperty, IRI, OWLObjectSomeValuesFrom
 
-from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 
-
-class ConceptGeneratorTest(unittest.TestCase):
+class KnowledgeBaseTest(unittest.TestCase):
 
     def setUp(self):
         self.namespace = "http://dl-learner.org/mutagenesis#"
-        self.mgr = OWLOntologyManager_Owlready2()
-        self.onto = self.mgr.load_ontology(IRI.create("file://KGs/Mutagenesis/mutagenesis.owl"))
-
-        base_reasoner = OWLReasoner_Owlready2(self.onto)
-        reasoner = OWLReasoner_FastInstanceChecker(self.onto, base_reasoner=base_reasoner, negation_default=True)
-        self.generator = ConceptGenerator(reasoner)
-
+        self.kb = KnowledgeBase(path="KGs/Mutagenesis/mutagenesis.owl")
+        self.onto = self.kb.ontology()
+        self.mgr = self.onto.get_owl_ontology_manager()
+        self.generator = ConceptGenerator()
         # Classes
         self.atom = OWLClass(IRI.create(self.namespace, 'Atom'))
         self.bond = OWLClass(IRI.create(self.namespace, 'Bond'))
@@ -63,115 +59,115 @@ class ConceptGeneratorTest(unittest.TestCase):
 
     def test_classes_retrieval(self):
         # get concepts
-        self.assertEqual(86, len(list(self.generator.get_concepts())))
+        self.assertEqual(86, len(list(self.kb.get_concepts())))
 
         # direct sub concepts
-        classes = frozenset(self.generator.get_direct_sub_concepts(OWLThing))
+        classes = frozenset(self.kb.get_direct_sub_concepts(OWLThing))
         true_classes = {self.atom, self.bond, self.compound, self.ring_structure}
         self.assertEqual(true_classes, classes)
 
         # all sub concepts
-        classes = frozenset(self.generator.get_all_sub_concepts(self.bond))
+        classes = frozenset(self.kb.get_all_sub_concepts(self.bond))
         true_classes = {self.bond1, self.bond2, self.bond3, self.bond4, self.bond5, self.bond7}
         self.assertEqual(true_classes, classes)
 
         # all leaf concepts
-        classes = frozenset(self.generator.get_leaf_concepts(self.bond))
+        classes = frozenset(self.kb.get_leaf_concepts(self.bond))
         self.assertEqual(true_classes, classes)
 
         # get direct parents
-        classes = frozenset(self.generator.get_direct_parents(self.bond1))
+        classes = frozenset(self.kb.get_direct_parents(self.bond1))
         true_classes = {self.bond}
         self.assertEqual(true_classes, classes)
 
         # types of an individual
-        classes = frozenset(self.generator.get_types(self.bond5225, direct=True))
+        classes = frozenset(self.kb.get_types(self.bond5225, direct=True))
         true_classes = {self.bond1}
         self.assertEqual(true_classes, classes)
 
-        classes = frozenset(self.generator.get_types(self.bond5225))
+        classes = frozenset(self.kb.get_types(self.bond5225))
         true_classes = {self.bond, self.bond1, OWLThing}
         self.assertEqual(true_classes, classes)
 
     def test_property_retrieval(self):
-        self.assertEqual(self.object_properties, frozenset(self.generator.get_object_properties()))
-        self.assertEqual(self.data_properties, frozenset(self.generator.get_data_properties()))
-        self.assertEqual(self.boolean_data_properties, frozenset(self.generator.get_boolean_data_properties()))
-        self.assertEqual(self.numeric_data_properties, frozenset(self.generator.get_numeric_data_properties()))
-        self.assertFalse(frozenset(self.generator.get_time_data_properties()))
+        self.assertEqual(self.object_properties, frozenset(self.kb.get_object_properties()))
+        self.assertEqual(self.data_properties, frozenset(self.kb.get_data_properties()))
+        self.assertEqual(self.boolean_data_properties, frozenset(self.kb.get_boolean_data_properties()))
+        self.assertEqual(self.numeric_data_properties, frozenset(self.kb.get_numeric_data_properties()))
+        self.assertFalse(frozenset(self.kb.get_time_data_properties()))
 
         # most general data properties
         self.assertEqual(self.boolean_data_properties,
-                         frozenset(self.generator.most_general_boolean_data_properties(domain=self.compound)))
-        self.assertFalse(frozenset(self.generator.most_general_boolean_data_properties(domain=self.bond)))
+                         frozenset(self.kb.most_general_boolean_data_properties(domain=self.compound)))
+        self.assertFalse(frozenset(self.kb.most_general_boolean_data_properties(domain=self.bond)))
 
         self.assertEqual({self.charge},
-                         frozenset(self.generator.most_general_numeric_data_properties(domain=self.atom)))
-        self.assertFalse(frozenset(self.generator.most_general_numeric_data_properties(domain=self.bond)))
+                         frozenset(self.kb.most_general_numeric_data_properties(domain=self.atom)))
+        self.assertFalse(frozenset(self.kb.most_general_numeric_data_properties(domain=self.bond)))
 
         self.data_properties.remove(self.charge)
         self.assertEqual(self.data_properties,
-                         frozenset(self.generator.most_general_data_properties(domain=self.compound)))
-        self.assertFalse(frozenset(self.generator.most_general_data_properties(domain=self.bond)))
+                         frozenset(self.kb.most_general_data_properties(domain=self.compound)))
+        self.assertFalse(frozenset(self.kb.most_general_data_properties(domain=self.bond)))
 
-        self.assertFalse(frozenset(self.generator.most_general_time_data_properties(domain=OWLThing)))
+        self.assertFalse(frozenset(self.kb.most_general_time_data_properties(domain=OWLThing)))
 
         # object property values of an individual
-        inds = frozenset(self.generator.get_object_property_values(self.bond5225, self.in_bond, direct=True))
+        inds = frozenset(self.kb.get_object_property_values(self.bond5225, self.in_bond, direct=True))
         true_inds = {self.d91_32, self.d91_17}
         self.assertEqual(true_inds, inds)
 
         # indirect object property values of an individual
         super_in_bond = OWLObjectProperty(IRI.create(self.namespace, 'super_inBond'))
         self.mgr.add_axiom(self.onto, OWLSubObjectPropertyOfAxiom(self.in_bond, super_in_bond))
-        inds = frozenset(self.generator.get_object_property_values(self.bond5225, super_in_bond, direct=False))
+        inds = frozenset(self.kb.get_object_property_values(self.bond5225, super_in_bond, direct=False))
         true_inds = {self.d91_32, self.d91_17}
         self.assertEqual(true_inds, inds)
-        inds = frozenset(self.generator.get_object_property_values(self.bond5225, super_in_bond, direct=True))
+        inds = frozenset(self.kb.get_object_property_values(self.bond5225, super_in_bond, direct=True))
         self.assertEqual(frozenset(), inds)
         self.mgr.remove_axiom(self.onto, OWLSubObjectPropertyOfAxiom(self.in_bond, super_in_bond))
 
         # data property values of an individual
-        values = frozenset(self.generator.get_data_property_values(self.d91_32, self.charge, direct=True))
+        values = frozenset(self.kb.get_data_property_values(self.d91_32, self.charge, direct=True))
         true_values = {OWLLiteral(0.146)}
         self.assertEqual(true_values, values)
 
         # indirect data property values of an individual
         super_charge = OWLDataProperty(IRI.create(self.namespace, 'super_charge'))
         self.mgr.add_axiom(self.onto, OWLSubDataPropertyOfAxiom(self.charge, super_charge))
-        values = frozenset(self.generator.get_data_property_values(self.d91_32, super_charge, direct=False))
+        values = frozenset(self.kb.get_data_property_values(self.d91_32, super_charge, direct=False))
         true_values = {OWLLiteral(0.146)}
         self.assertEqual(true_values, values)
-        values = frozenset(self.generator.get_data_property_values(self.d91_32, super_charge, direct=True))
+        values = frozenset(self.kb.get_data_property_values(self.d91_32, super_charge, direct=True))
         self.assertEqual(frozenset(), values)
         self.mgr.remove_axiom(self.onto, OWLSubDataPropertyOfAxiom(self.charge, super_charge))
 
         # object properties of an individual
-        properties = frozenset(self.generator.get_object_properties_for_ind(self.bond5225, direct=True))
+        properties = frozenset(self.kb.get_object_properties_for_ind(self.bond5225, direct=True))
         true_properties = {self.in_bond}
         self.assertEqual(true_properties, properties)
 
         # indirect object properties of an individual
         self.mgr.add_axiom(self.onto, OWLSubObjectPropertyOfAxiom(self.in_bond, self.has_bond))
-        properties = frozenset(self.generator.get_object_properties_for_ind(self.bond5225, direct=False))
+        properties = frozenset(self.kb.get_object_properties_for_ind(self.bond5225, direct=False))
         true_properties = {self.in_bond, self.has_bond}
         self.assertEqual(true_properties, properties)
-        properties = frozenset(self.generator.get_object_properties_for_ind(self.bond5225, direct=True))
+        properties = frozenset(self.kb.get_object_properties_for_ind(self.bond5225, direct=True))
         true_properties = {self.in_bond}
         self.assertEqual(true_properties, properties)
         self.mgr.remove_axiom(self.onto, OWLSubObjectPropertyOfAxiom(self.in_bond, self.has_bond))
 
         # data properties of an individual
-        properties = frozenset(self.generator.get_data_properties_for_ind(self.d91_32, direct=True))
+        properties = frozenset(self.kb.get_data_properties_for_ind(self.d91_32, direct=True))
         true_properties = {self.charge}
         self.assertEqual(true_properties, properties)
 
         # indirect data properties of an individual
         self.mgr.add_axiom(self.onto, OWLSubDataPropertyOfAxiom(self.charge, self.act))
-        properties = frozenset(self.generator.get_data_properties_for_ind(self.d91_32, direct=False))
+        properties = frozenset(self.kb.get_data_properties_for_ind(self.d91_32, direct=False))
         true_properties = {self.charge, self.act}
         self.assertEqual(true_properties, properties)
-        properties = frozenset(self.generator.get_data_properties_for_ind(self.d91_32, direct=True))
+        properties = frozenset(self.kb.get_data_properties_for_ind(self.d91_32, direct=True))
         true_properties = {self.charge}
         self.assertEqual(true_properties, properties)
         self.mgr.remove_axiom(self.onto, OWLSubDataPropertyOfAxiom(self.charge, self.act))
@@ -180,76 +176,76 @@ class ConceptGeneratorTest(unittest.TestCase):
         concepts_to_ignore = {self.bond1, self.compound}
         object_properties_to_ignore = {self.in_bond, self.has_structure}
         data_properties_to_ignore = {self.act, self.has_fife_examples}
-        self.generator._class_hierarchy = self.generator._class_hierarchy.restrict_and_copy(remove=concepts_to_ignore)
-        self.generator._object_property_hierarchy = (
-            self.generator._object_property_hierarchy.restrict_and_copy(remove=object_properties_to_ignore)
+        self.kb._class_hierarchy = self.kb._class_hierarchy.restrict_and_copy(remove=concepts_to_ignore)
+        self.kb._object_property_hierarchy = (
+            self.kb._object_property_hierarchy.restrict_and_copy(remove=object_properties_to_ignore)
         )
-        self.generator._data_property_hierarchy = (
-            self.generator._data_property_hierarchy.restrict_and_copy(remove=data_properties_to_ignore)
+        self.kb._data_property_hierarchy = (
+            self.kb._data_property_hierarchy.restrict_and_copy(remove=data_properties_to_ignore)
         )
 
         # get concepts
-        concepts = frozenset(self.generator.get_concepts())
+        concepts = frozenset(self.kb.get_concepts())
         self.assertEqual(84, len(concepts))
         self.assertTrue(self.bond1 not in concepts)
         self.assertTrue(self.compound not in concepts)
 
         # direct sub concepts
-        classes = frozenset(self.generator.get_direct_sub_concepts(OWLThing))
+        classes = frozenset(self.kb.get_direct_sub_concepts(OWLThing))
         true_classes = {self.atom, self.bond, self.ring_structure}
         self.assertEqual(true_classes, classes)
 
         # all sub concepts
-        classes = frozenset(self.generator.get_all_sub_concepts(self.bond))
+        classes = frozenset(self.kb.get_all_sub_concepts(self.bond))
         true_classes = {self.bond2, self.bond3, self.bond4, self.bond5, self.bond7}
         self.assertEqual(true_classes, classes)
 
         # all leaf concepts
-        classes = frozenset(self.generator.get_leaf_concepts(self.bond))
+        classes = frozenset(self.kb.get_leaf_concepts(self.bond))
         self.assertEqual(true_classes, classes)
 
         # types of an individual
-        classes = frozenset(self.generator.get_types(self.bond5225, direct=True))
+        classes = frozenset(self.kb.get_types(self.bond5225, direct=True))
         self.assertFalse(classes)
 
-        classes = frozenset(self.generator.get_types(self.bond5225))
+        classes = frozenset(self.kb.get_types(self.bond5225))
         true_classes = {self.bond, OWLThing}
         self.assertEqual(true_classes, classes)
 
         # properties
         object_properties = {self.has_bond, self.has_atom, self.in_structure}
-        self.assertEqual(object_properties, frozenset(self.generator.get_object_properties()))
+        self.assertEqual(object_properties, frozenset(self.kb.get_object_properties()))
 
         data_properties = {self.charge, self.logp, self.lumo, self.has_three}
-        self.assertEqual(data_properties, frozenset(self.generator.get_data_properties()))
+        self.assertEqual(data_properties, frozenset(self.kb.get_data_properties()))
 
         boolean_data_properties = {self.has_three}
-        self.assertEqual(boolean_data_properties, frozenset(self.generator.get_boolean_data_properties()))
+        self.assertEqual(boolean_data_properties, frozenset(self.kb.get_boolean_data_properties()))
 
         numeric_data_properties = {self.charge, self.logp, self.lumo}
-        self.assertEqual(numeric_data_properties, frozenset(self.generator.get_numeric_data_properties()))
+        self.assertEqual(numeric_data_properties, frozenset(self.kb.get_numeric_data_properties()))
 
         true_res = frozenset(map(OWLObjectSomeValuesFrom, object_properties, repeat(OWLThing)))
-        res = frozenset(self.generator.most_general_existential_restrictions(domain=OWLThing))
+        res = frozenset(self.kb.most_general_existential_restrictions(domain=OWLThing))
         self.assertEqual(true_res, res)
 
     def test_domain_range_retrieval(self):
         # object properties
-        self.assertEqual(self.compound, self.generator.get_object_property_domains(self.has_atom))
-        self.assertEqual(self.bond, self.generator.get_object_property_domains(self.in_bond))
+        self.assertEqual(self.compound, self.kb.get_object_property_domains(self.has_atom))
+        self.assertEqual(self.bond, self.kb.get_object_property_domains(self.in_bond))
 
-        self.assertEqual(self.ring_structure, self.generator.get_object_property_ranges(self.in_structure))
-        self.assertEqual(OWLThing, self.generator.get_object_property_domains(self.in_structure))
-        self.assertEqual(self.atom, self.generator.get_object_property_ranges(self.in_bond))
+        self.assertEqual(self.ring_structure, self.kb.get_object_property_ranges(self.in_structure))
+        self.assertEqual(OWLThing, self.kb.get_object_property_domains(self.in_structure))
+        self.assertEqual(self.atom, self.kb.get_object_property_ranges(self.in_bond))
 
         # data properties
-        self.assertEqual(self.atom, self.generator.get_data_property_domains(self.charge))
-        self.assertEqual(self.compound, self.generator.get_data_property_domains(self.act))
+        self.assertEqual(self.atom, self.kb.get_data_property_domains(self.charge))
+        self.assertEqual(self.compound, self.kb.get_data_property_domains(self.act))
 
-        self.assertEqual({DoubleOWLDatatype}, self.generator.get_data_property_ranges(self.charge))
-        self.assertEqual({BooleanOWLDatatype}, self.generator.get_data_property_ranges(self.has_fife_examples))
+        self.assertEqual({DoubleOWLDatatype}, self.kb.get_data_property_ranges(self.charge))
+        self.assertEqual({BooleanOWLDatatype}, self.kb.get_data_property_ranges(self.has_fife_examples))
 
-    def test_concept_building(self):
+    def test_concept_generation(self):
         # negation from iterables
         true_ces = {OWLObjectComplementOf(self.bond), self.atom}
         ces = frozenset(self.generator.negation_from_iterables([self.bond, OWLObjectComplementOf(self.atom)]))
@@ -276,22 +272,22 @@ class ConceptGeneratorTest(unittest.TestCase):
 
         # most general existential/universal restrictions
         true_res = frozenset(map(OWLObjectSomeValuesFrom, self.object_properties, repeat(OWLThing)))
-        res = frozenset(self.generator.most_general_existential_restrictions(domain=OWLThing))
+        res = frozenset(self.kb.most_general_existential_restrictions(domain=OWLThing))
         self.assertEqual(true_res, res)
 
         true_res = {OWLObjectAllValuesFrom(filler=OWLThing, property=self.in_bond),
                     OWLObjectAllValuesFrom(filler=OWLThing, property=self.in_structure)}
-        res = frozenset(self.generator.most_general_universal_restrictions(domain=self.bond))
+        res = frozenset(self.kb.most_general_universal_restrictions(domain=self.bond))
         self.assertEqual(true_res, res)
 
         true_res = {OWLObjectSomeValuesFrom(filler=OWLThing, property=self.has_bond.get_inverse_property()),
                     OWLObjectSomeValuesFrom(filler=OWLThing, property=self.has_structure.get_inverse_property())}
-        res = frozenset(self.generator.most_general_existential_restrictions_inverse(domain=self.bond))
+        res = frozenset(self.kb.most_general_existential_restrictions_inverse(domain=self.bond))
         self.assertEqual(true_res, res)
 
         true_res = frozenset(map(OWLObjectAllValuesFrom,
                                  map(OWLObjectInverseOf, self.object_properties), repeat(OWLThing)))
-        res = frozenset(self.generator.most_general_universal_restrictions_inverse(domain=OWLThing))
+        res = frozenset(self.kb.most_general_universal_restrictions_inverse(domain=OWLThing))
         self.assertEqual(true_res, res)
 
         # general functions for concept building

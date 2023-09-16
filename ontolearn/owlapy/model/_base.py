@@ -2,8 +2,8 @@ from abc import ABCMeta, abstractmethod
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from owlapy.model._iri import IRI
-    from owlapy.model import OWLLiteral
+    from ontolearn.owlapy.model._iri import IRI
+    from ontolearn.owlapy.model import OWLLiteral
 
 
 class OWLObject(metaclass=ABCMeta):

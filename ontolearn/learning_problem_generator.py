@@ -4,7 +4,7 @@ from typing import Literal, Iterable, Set, Tuple, Dict, List, Final, Generator
 
 import numpy as np
 
-from owlapy.model import OWLClassExpression, OWLOntologyManager, OWLOntology, AddImport, OWLImportsDeclaration, \
+from ontolearn.owlapy.model import OWLClassExpression, OWLOntologyManager, OWLOntology, AddImport, OWLImportsDeclaration, \
     OWLClass, OWLEquivalentClassesAxiom, IRI, OWLNamedIndividual, OWLAnnotationAssertionAxiom, OWLAnnotation, \
     OWLAnnotationProperty, OWLLiteral
 from ontolearn.knowledge_base import KnowledgeBase
@@ -66,7 +66,7 @@ class LearningProblemGenerator:
 
         assert isinstance(self.kb, KnowledgeBase)
 
-        from owlapy.owlready2 import OWLOntologyManager_Owlready2
+        from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2
         manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
 
         ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
@@ -176,7 +176,7 @@ class LearningProblemGenerator:
 
     def balanced_n_sampled_lp(self, n: int, string_all_pos: set):
 
-        string_all_neg = set(self.kb.individuals(self.kb.thing)).difference(string_all_pos)
+        string_all_neg = set(self.kb.individuals(self.kb.generator.thing)).difference(string_all_pos)
         for i in range(n):
             string_balanced_pos, string_balanced_neg = balanced_sets(string_all_pos, string_all_neg)
             assert len(string_balanced_pos) >= self.min_num_instances
@@ -354,8 +354,8 @@ class LearningProblemGenerator:
         def f2(x):
             return self.max_length >= len(x.length) >= self.min_length
 
-        rl_state = RL_State(self.kb.thing, parent_node=None, is_root=True)
-        rl_state.length = self.kb.concept_len(self.kb.thing)
+        rl_state = RL_State(self.kb.generator.thing, parent_node=None, is_root=True)
+        rl_state.length = self.kb.concept_len(self.kb.generator.thing)
         rl_state.instances = set(self.kb.individuals(rl_state.concept))
 
         refinements_rl = self.apply_rho_on_rl_state(rl_state)

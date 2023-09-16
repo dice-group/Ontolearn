@@ -5,19 +5,17 @@ import threading
 from argparse import ArgumentParser
 from datetime import datetime
 from functools import wraps, update_wrapper
-from typing import List
 
 from flask import Flask, request, Response, abort
 from flask import make_response
-from owlapy.model import OWLNamedIndividual
+from ontolearn.owlapy.model import OWLNamedIndividual
 
 from experiments_standard import ClosedWorld_ReasonerFactory
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.heuristics import Reward
 from ontolearn.metrics import F1
 from ontolearn.concept_learner import Drill
 from ontolearn.refinement_operators import LengthBasedRefinement
-from ontolearn.search import Node
 
 
 def nocache(view):
@@ -60,7 +58,7 @@ def create_flask_app():
             app.logger.debug(learning_problem)
             no_of_hypotheses = request.form.get("no_of_hypotheses", 1, type=int)
             try:
-                from owlapy.model import IRI
+                from ontolearn.owlapy.model import IRI
                 typed_pos = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["positives"]))))
                 typed_neg = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["negatives"]))))
                 drill.fit(typed_pos, typed_neg,

@@ -1,14 +1,13 @@
 import unittest
-from typing import Iterable
 
 import rdflib.plugins.sparql.sparql
 
-from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.model import OWLObjectProperty, IRI, OWLObjectSomeValuesFrom, OWLObjectMaxCardinality, OWLThing, \
-    OWLObjectMinCardinality, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLNamedIndividual
-from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from owlapy.parser import DLSyntaxParser
-from owlapy.owl2sparql.converter import Owl2SparqlConverter
+from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
+from ontolearn.owlapy.model import OWLObjectProperty, IRI, OWLObjectSomeValuesFrom, OWLObjectMaxCardinality, OWLThing, \
+    OWLObjectMinCardinality, OWLObjectIntersectionOf
+from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from ontolearn.owlapy.parser import DLSyntaxParser
+from ontolearn.owlapy.owl2sparql.converter import Owl2SparqlConverter
 from rdflib import Graph
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'

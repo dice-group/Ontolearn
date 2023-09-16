@@ -5,10 +5,10 @@ from typing import Iterable, cast, Optional, List
 import os
 import owlready2
 
-from owlapy.model import OWLClass, OWLClassExpression, OWLNamedIndividual, IRI, OWLAxiom
-from owlapy.owlready2 import OWLReasoner_Owlready2, OWLOntology_Owlready2, BaseReasoner_Owlready2, \
+from ontolearn.owlapy.model import OWLClass, OWLClassExpression, OWLNamedIndividual, IRI, OWLAxiom
+from ontolearn.owlapy.owlready2 import OWLReasoner_Owlready2, OWLOntology_Owlready2, BaseReasoner_Owlready2, \
     OWLOntologyManager_Owlready2
-from owlapy.owlready2.utils import ToOwlready2
+from ontolearn.owlapy.owlready2.utils import ToOwlready2
 
 logger = logging.getLogger(__name__)
 

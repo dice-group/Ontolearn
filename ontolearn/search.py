@@ -5,11 +5,10 @@ from functools import total_ordering
 from queue import PriorityQueue
 from typing import List, Optional, ClassVar, Final, Iterable, TypeVar, Generic, Set, Tuple, Dict
 
-from owlapy.io import OWLObjectRenderer
-from owlapy.model import OWLClassExpression
-from owlapy.render import DLSyntaxObjectRenderer
-from owlapy.util import as_index, OrderedOWLObject
-from superprop import super_prop
+from ontolearn.owlapy.io import OWLObjectRenderer
+from ontolearn.owlapy.model import OWLClassExpression
+from ontolearn.owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.owlapy.util import as_index, OrderedOWLObject
 from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree, \
     AbstractConceptNode, EncodedLearningProblem, DRILLAbstractTree
 
@@ -377,7 +376,7 @@ class LBLNode(_NodeIndividuals, OENode):
 
     @property
     def parent_node(self) -> Optional['LBLNode']:
-        return super_prop(super()).parent_node
+        return SuperProp(super()).parent_node
 
     @parent_node.setter
     def parent_node(self, parent_node: Optional['LBLNode']):
@@ -732,3 +731,47 @@ class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
     def clean(self):
         self.items_in_queue = PriorityQueue()
         self._nodes.clear()
+
+
+class SuperProp:
+    """
+    Super wrapper which allows property setting & deletion. Super can't be subclassed with empty __init__ arguments.
+    """
+
+    def __init__(self, super_obj):
+        object.__setattr__(self, 'super_obj', super_obj)
+
+    def _find_desc(self, name):
+        super_obj = object.__getattribute__(self, 'super_obj')
+        if name != '__class__':
+            mro = iter(super_obj.__thisclass__.__mro__)
+            for cls in mro:
+                if cls == super_obj.__thisclass__:
+                    break
+            for cls in mro:
+                if isinstance(cls, type):
+                    try:
+                        # don't lookup further up the chain
+                        return object.__getattribute__(cls, name)
+                    except AttributeError:
+                        continue
+                    except KeyError:
+                        return None
+        return None
+
+    def __getattr__(self, name):
+        return getattr(object.__getattribute__(self, 'super_obj'), name)
+
+    def __setattr__(self, name, value):
+        super_obj = object.__getattribute__(self, 'super_obj')
+        desc = object.__getattribute__(self, '_find_desc')(name)
+        if hasattr(desc, '__set__'):
+            return desc.__set__(super_obj.__self__, value)
+        return setattr(super_obj, name, value)
+
+    def __delattr__(self, name):
+        super_obj = object.__getattribute__(self, 'super_obj')
+        desc = object.__getattribute__(self, '_find_desc')(name)
+        if hasattr(desc, '__delete__'):
+            return desc.__delete__(super_obj.__self__)
+        return delattr(super_obj, name)

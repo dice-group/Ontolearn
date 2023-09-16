@@ -13,10 +13,10 @@ from typing import Generic, Iterable, Sequence, Set, TypeVar, Union, Final, Opti
 from pandas import Timedelta
 from datetime import datetime, date
 
-from owlapy.vocab import OWLRDFVocabulary, XSDVocabulary, OWLFacet
-from owlapy._utils import MOVE
-from owlapy.model._base import OWLObject, OWLAnnotationObject, OWLAnnotationSubject, OWLAnnotationValue
-from owlapy.model._iri import HasIRI, IRI
+from ontolearn.owlapy.vocab import OWLRDFVocabulary, XSDVocabulary, OWLFacet
+from ontolearn.owlapy._utils import MOVE
+from ontolearn.owlapy.model._base import OWLObject, OWLAnnotationObject, OWLAnnotationSubject, OWLAnnotationValue
+from ontolearn.owlapy.model._iri import HasIRI, IRI
 
 MOVE(OWLObject, OWLAnnotationObject, OWLAnnotationSubject, OWLAnnotationValue, HasIRI, IRI)
 
@@ -118,7 +118,7 @@ class OWLAnonymousClassExpression(OWLClassExpression, metaclass=ABCMeta):
 
     def get_nnf(self) -> 'OWLClassExpression':
         # documented in parent
-        from owlapy.util import NNF
+        from ontolearn.owlapy.util import NNF
         return NNF().get_class_nnf(self)
 
 

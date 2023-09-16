@@ -10,12 +10,11 @@ from ontolearn.concept_learner import CELOE
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.metrics import Accuracy
 from ontolearn.model_adapter import ModelAdapter
-from owlapy.model import OWLNamedIndividual, IRI
-from owlapy.namespaces import Namespaces
-from owlapy.owlready2 import OWLOntologyManager_Owlready2
-from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
-from owlapy.render import DLSyntaxObjectRenderer
-
+from ontolearn.owlapy.model import OWLNamedIndividual, IRI
+from ontolearn.owlapy.namespaces import Namespaces
+from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2
+from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
+from ontolearn.owlapy.render import DLSyntaxObjectRenderer
 
 manager = OWLOntologyManager_Owlready2()
 onto = manager.load_ontology(IRI.create("KGs/father.owl"))
@@ -32,10 +31,10 @@ negative_examples = {OWLNamedIndividual(IRI.create(NS, 'heinz')),
 
 # Only the class of the learning algorithm is specified
 model = ModelAdapter(learner_type=CELOE,
-                     reasoner=complex_ce_reasoner, # (*)
+                     reasoner=complex_ce_reasoner,  # (*)
                      path="KGs/father.owl",
                      quality_type=Accuracy,
-                     heuristic_type=CELOEHeuristic, # (*)
+                     heuristic_type=CELOEHeuristic,  # (*)
                      expansionPenaltyFactor=0.05,
                      startNodeBonus=1.0,
                      nodeRefinementPenalty=0.01,

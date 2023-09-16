@@ -8,19 +8,18 @@ import httpx as httpx
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.abstracts import AbstractScorer, AbstractLearningProblem, AbstractKnowledgeBase, \
     EncodedPosNegLPStandardKind
-from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric
 from ontolearn.knowledge_base import EvaluatedConcept, Factory, _Default_ClassExpressionLengthMetricFactory
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1, Precision, Accuracy, Recall
 from ontolearn.utils import oplogging
-from owlapy.ext import OWLReasonerEx
-from owlapy.model import OWLClassExpression, OWLEntity, OWLOntology, OWLClass, OWLNamedIndividual, \
+from ontolearn.owlapy.ext import OWLReasonerEx
+from ontolearn.owlapy.model import OWLClassExpression, OWLEntity, OWLOntology, OWLClass, OWLNamedIndividual, \
     OWLObjectPropertyExpression, OWLDataProperty, OWLObjectProperty, OWLOntologyID, _M, OWLDataPropertyRangeAxiom, \
     IRI, OWLThing, OWLLiteral, OWLObjectPropertyRangeAxiom, OWLObjectPropertyDomainAxiom, OWLDataPropertyDomainAxiom
-from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer
-from owlapy.util import LRUCache
+from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from ontolearn.owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer
+from ontolearn.owlapy.util import LRUCache
 
 logger = logging.getLogger(__name__)
 
@@ -224,8 +223,6 @@ class TentrisKnowledgeBase(KnowledgeBase):
             self._length_metric = length_metric_factory()
         else:
             self._length_metric = _Default_ClassExpressionLengthMetricFactory()
-
-        ConceptGenerator.__init__(self, reasoner=self._reasoner)
 
         individuals = self._ontology.individuals_in_signature()
         self._ind_set = frozenset(individuals)

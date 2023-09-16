@@ -4,7 +4,7 @@ import unittest
 from ontolearn.model_adapter import ModelAdapter
 from ontolearn.refinement_operators import ExpressRefinement
 from ontolearn.utils import setup_logging
-from owlapy.model import OWLClass, OWLNamedIndividual, IRI
+from ontolearn.owlapy.model import OWLClass, OWLNamedIndividual, IRI
 
 setup_logging("ontolearn/logging_test.conf")
 

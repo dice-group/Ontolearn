@@ -1,20 +1,20 @@
 """ Test for refinement_operators.py"""
 from functools import partial
 from itertools import repeat
-from pytest import mark
 import unittest
 
 import json
 
+from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.core.owl.utils import ConceptOperandSorter
 from ontolearn.utils import setup_logging
-from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction
-from owlapy.render import DLSyntaxObjectRenderer
-from owlapy.model import OWLObjectMinCardinality, OWLObjectProperty, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
+from ontolearn.owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction
+from ontolearn.owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.owlapy.model import OWLObjectMinCardinality, OWLObjectProperty, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
     OWLClass, IRI, OWLDataHasValue, OWLDataProperty, OWLDataSomeValuesFrom, OWLLiteral, OWLObjectAllValuesFrom, \
     OWLObjectCardinalityRestriction, OWLObjectComplementOf, OWLObjectIntersectionOf, OWLObjectMaxCardinality
-from ontolearn.refinement_operators import CustomRefinementOperator, ModifiedCELOERefinement, LengthBasedRefinement, \
+from ontolearn.refinement_operators import ModifiedCELOERefinement, LengthBasedRefinement, \
     ExpressRefinement
 
 
@@ -39,7 +39,7 @@ class ModifiedCELOERefinementTest(unittest.TestCase):
         self.bond5 = OWLClass(IRI.create(namespace_, 'Bond-5'))
         self.bond7 = OWLClass(IRI.create(namespace_, 'Bond-7'))
         self.ball3 = OWLClass(IRI.create(namespace_, 'Ball3'))
-
+        self.generator = ConceptGenerator()
         self.all_bond_classes = {self.bond1, self.bond2, self.bond3, self.bond4, self.bond5, self.bond7}
 
         # Object Properties
@@ -68,8 +68,8 @@ class ModifiedCELOERefinementTest(unittest.TestCase):
                            OWLObjectComplementOf(self.ball3)}
 
         rho = ModifiedCELOERefinement(self.kb, use_negation=True)
-        thing_refs = set(rho.refine(self.kb.thing, max_length=2, current_domain=self.kb.thing))
-        bond_refs = set(rho.refine(self.bond, max_length=2, current_domain=self.kb.thing))
+        thing_refs = set(rho.refine(self.generator.thing, max_length=2, current_domain=self.generator.thing))
+        bond_refs = set(rho.refine(self.bond, max_length=2, current_domain=self.generator.thing))
 
         self.assertLessEqual(thing_true_refs, thing_refs)
         self.assertLessEqual(bond_true_refs, bond_refs)
@@ -77,30 +77,30 @@ class ModifiedCELOERefinementTest(unittest.TestCase):
         self.assertFalse(bond_refs & bond_false_refs)
 
     def test_atomic_refinements_existential_universal(self):
-        thing_true_refs = {OWLObjectSomeValuesFrom(self.in_bond, self.kb.thing),
-                           OWLObjectAllValuesFrom(self.has_bond, self.kb.thing),
-                           OWLObjectSomeValuesFrom(self.has_atom.get_inverse_property(), self.kb.thing),
-                           OWLObjectAllValuesFrom(self.in_structure.get_inverse_property(), self.kb.thing)}
-        bond_true_refs = {OWLObjectSomeValuesFrom(self.in_bond, self.kb.thing),
-                          OWLObjectAllValuesFrom(self.in_bond, self.kb.thing),
-                          OWLObjectSomeValuesFrom(self.has_bond.get_inverse_property(), self.kb.thing),
-                          OWLObjectAllValuesFrom(self.has_bond.get_inverse_property(), self.kb.thing)}
+        thing_true_refs = {OWLObjectSomeValuesFrom(self.in_bond, self.generator.thing),
+                           OWLObjectAllValuesFrom(self.has_bond, self.generator.thing),
+                           OWLObjectSomeValuesFrom(self.has_atom.get_inverse_property(), self.generator.thing),
+                           OWLObjectAllValuesFrom(self.in_structure.get_inverse_property(), self.generator.thing)}
+        bond_true_refs = {OWLObjectSomeValuesFrom(self.in_bond, self.generator.thing),
+                          OWLObjectAllValuesFrom(self.in_bond, self.generator.thing),
+                          OWLObjectSomeValuesFrom(self.has_bond.get_inverse_property(), self.generator.thing),
+                          OWLObjectAllValuesFrom(self.has_bond.get_inverse_property(), self.generator.thing)}
         bond_false_refs = {OWLObjectSomeValuesFrom(self.has_bond, self.bond),
                            OWLObjectAllValuesFrom(self.has_bond, self.bond)}
 
         rho = ModifiedCELOERefinement(self.kb, use_negation=True, use_all_constructor=True, use_inverse=True)
-        thing_refs = set(rho.refine(self.kb.thing, max_length=3, current_domain=self.kb.thing))
-        bond_refs = set(rho.refine(self.bond, max_length=3, current_domain=self.kb.thing))
+        thing_refs = set(rho.refine(self.generator.thing, max_length=3, current_domain=self.generator.thing))
+        bond_refs = set(rho.refine(self.bond, max_length=3, current_domain=self.generator.thing))
         self.assertLessEqual(thing_true_refs, thing_refs)
         self.assertLessEqual(bond_true_refs, bond_refs)
         self.assertFalse(bond_refs & bond_false_refs)
 
         # max_length = 2 so property refinements should not be generated
-        for i in rho.refine(self.kb.thing, max_length=2, current_domain=self.kb.thing):
+        for i in rho.refine(self.generator.thing, max_length=2, current_domain=self.generator.thing):
             self.assertFalse(isinstance(i, OWLObjectSomeValuesFrom))
             self.assertFalse(isinstance(i, OWLObjectAllValuesFrom))
 
-        for i in rho.refine(self.bond, max_length=2, current_domain=self.kb.thing):
+        for i in rho.refine(self.bond, max_length=2, current_domain=self.generator.thing):
             self.assertFalse(isinstance(i, OWLObjectSomeValuesFrom))
             self.assertFalse(isinstance(i, OWLObjectAllValuesFrom))
 
@@ -113,12 +113,12 @@ class ModifiedCELOERefinementTest(unittest.TestCase):
                      OWLObjectUnionOf([self.atom, self.compound])}
         sorter = ConceptOperandSorter()
         true_refs = {sorter.sort(i) for i in true_refs}
-        thing_refs = set(rho.refine(self.kb.thing, max_length=3, current_domain=self.kb.thing))
+        thing_refs = set(rho.refine(self.generator.thing, max_length=3, current_domain=self.generator.thing))
         thing_refs = {sorter.sort(i) for i in thing_refs}
         self.assertLessEqual(true_refs, thing_refs)
 
         # max_length = 2 so union or intersection refinements should not be generated
-        for i in rho.refine(self.kb.thing, max_length=2, current_domain=self.kb.thing):
+        for i in rho.refine(self.generator.thing, max_length=2, current_domain=self.generator.thing):
             self.assertFalse(isinstance(i, OWLObjectIntersectionOf))
             self.assertFalse(isinstance(i, OWLObjectUnionOf))
 
@@ -133,7 +133,7 @@ class ModifiedCELOERefinementTest(unittest.TestCase):
                     OWLDataSomeValuesFrom(self.act, OWLDatatypeMaxInclusiveRestriction(9))}
         true_charge = {OWLDataSomeValuesFrom(self.charge, OWLDatatypeMinInclusiveRestriction(1)),
                        OWLDataSomeValuesFrom(self.charge, OWLDatatypeMaxInclusiveRestriction(9))}
-        thing_refs = set(rho.refine(self.kb.thing, max_length=3, current_domain=self.kb.thing))
+        thing_refs = set(rho.refine(self.generator.thing, max_length=3, current_domain=self.generator.thing))
         compound_refs = set(rho.refine(self.compound, max_length=3, current_domain=self.compound))
         bond_refs = set(rho.refine(self.bond, max_length=3, current_domain=self.bond))
         self.assertLessEqual(true_act, thing_refs)
@@ -153,33 +153,33 @@ class ModifiedCELOERefinementTest(unittest.TestCase):
         self.assertFalse(true_boolean & bond_refs)
 
         # max_length = 2 so data property refinements should not be generated
-        for i in rho.refine(self.kb.thing, max_length=2, current_domain=self.kb.thing):
+        for i in rho.refine(self.generator.thing, max_length=2, current_domain=self.generator.thing):
             self.assertFalse(isinstance(i, OWLDataSomeValuesFrom))
             self.assertFalse(isinstance(i, OWLDataHasValue))
 
     def test_atomic_refinements_cardinality(self):
         rho = ModifiedCELOERefinement(self.kb, card_limit=10, use_card_restrictions=True)
-        thing_true_refs = {OWLObjectMaxCardinality(9, self.has_bond, self.kb.thing),
-                           OWLObjectMaxCardinality(9, self.has_atom, self.kb.thing),
-                           OWLObjectMaxCardinality(1, self.in_bond, self.kb.thing),
-                           OWLObjectMaxCardinality(9, self.has_structure, self.kb.thing)}
-        thing_refs = set(rho.refine(self.kb.thing, max_length=4, current_domain=self.kb.thing))
-        bond_refs = set(rho.refine(self.bond, max_length=4, current_domain=self.kb.thing))
+        thing_true_refs = {OWLObjectMaxCardinality(9, self.has_bond, self.generator.thing),
+                           OWLObjectMaxCardinality(9, self.has_atom, self.generator.thing),
+                           OWLObjectMaxCardinality(1, self.in_bond, self.generator.thing),
+                           OWLObjectMaxCardinality(9, self.has_structure, self.generator.thing)}
+        thing_refs = set(rho.refine(self.generator.thing, max_length=4, current_domain=self.generator.thing))
+        bond_refs = set(rho.refine(self.bond, max_length=4, current_domain=self.generator.thing))
         self.assertLessEqual(thing_true_refs, thing_refs)
-        self.assertIn(OWLObjectMaxCardinality(1, self.in_bond, self.kb.thing), bond_refs)
+        self.assertIn(OWLObjectMaxCardinality(1, self.in_bond, self.generator.thing), bond_refs)
 
         # max_length = 3 so cardinality refinements should not be generated
-        thing_refs = set(rho.refine(self.kb.thing, max_length=3, current_domain=self.kb.thing))
-        bond_refs = set(rho.refine(self.bond, max_length=3, current_domain=self.kb.thing))
+        thing_refs = set(rho.refine(self.generator.thing, max_length=3, current_domain=self.generator.thing))
+        bond_refs = set(rho.refine(self.bond, max_length=3, current_domain=self.generator.thing))
         self.assertFalse(thing_true_refs & thing_refs)
-        self.assertNotIn(OWLObjectMaxCardinality(1, self.in_bond, self.kb.thing), bond_refs)
+        self.assertNotIn(OWLObjectMaxCardinality(1, self.in_bond, self.generator.thing), bond_refs)
 
     def test_atomic_use_flags(self):
         rho = ModifiedCELOERefinement(self.kb, use_negation=False, use_all_constructor=False,
                                       use_numeric_datatypes=False, use_boolean_datatype=False,
                                       use_card_restrictions=False)
 
-        for i in rho.refine(self.kb.thing, max_length=4, current_domain=self.kb.thing):
+        for i in rho.refine(self.generator.thing, max_length=4, current_domain=self.generator.thing):
             self.assertFalse(isinstance(i, OWLObjectAllValuesFrom))
             self.assertFalse(isinstance(i, OWLDataSomeValuesFrom))
             self.assertFalse(isinstance(i, OWLDataHasValue))
@@ -188,10 +188,10 @@ class ModifiedCELOERefinementTest(unittest.TestCase):
 
     def test_complement_of_refinements(self):
         rho = ModifiedCELOERefinement(self.kb, use_negation=True)
-        bond_refs = set(rho.refine(OWLObjectComplementOf(self.bond1), max_length=3, current_domain=self.kb.thing))
+        bond_refs = set(rho.refine(OWLObjectComplementOf(self.bond1), max_length=3, current_domain=self.generator.thing))
         self.assertEqual({OWLObjectComplementOf(self.bond)}, bond_refs)
 
-        ball3_refs = set(rho.refine(OWLObjectComplementOf(self.ball3), max_length=3, current_domain=self.kb.thing))
+        ball3_refs = set(rho.refine(OWLObjectComplementOf(self.ball3), max_length=3, current_domain=self.generator.thing))
         self.assertEqual({OWLObjectComplementOf(self.ring_structure)}, ball3_refs)
 
     def test_object_some_values_from_refinements(self):
@@ -199,31 +199,31 @@ class ModifiedCELOERefinementTest(unittest.TestCase):
         true_refs = set(map(partial(OWLObjectSomeValuesFrom, self.in_bond), self.all_bond_classes))
         true_refs.add(OWLObjectAllValuesFrom(self.in_bond, self.bond))
         refs = set(rho.refine(OWLObjectSomeValuesFrom(self.in_bond, self.bond),
-                              max_length=3, current_domain=self.kb.thing))
+                              max_length=3, current_domain=self.generator.thing))
         self.assertEqual(refs, true_refs)
 
         refs = set(rho.refine(OWLObjectSomeValuesFrom(self.in_bond, self.bond),
-                              max_length=4, current_domain=self.kb.thing))
+                              max_length=4, current_domain=self.generator.thing))
         self.assertIn(OWLObjectMinCardinality(2, self.in_bond, self.bond), refs)
 
     def test_object_all_values_from_refinements(self):
         rho = ModifiedCELOERefinement(self.kb, use_all_constructor=True)
         true_refs = set(map(partial(OWLObjectAllValuesFrom, self.in_bond), self.all_bond_classes))
         refs = set(rho.refine(OWLObjectAllValuesFrom(self.in_bond, self.bond),
-                              max_length=3, current_domain=self.kb.thing))
+                              max_length=3, current_domain=self.generator.thing))
         self.assertEqual(refs, true_refs)
 
     def test_intersection_refinements(self):
         rho = ModifiedCELOERefinement(self.kb)
         true_refs = set(map(OWLObjectIntersectionOf, zip(self.all_bond_classes, repeat(self.ball3))))
         refs = set(rho.refine(OWLObjectIntersectionOf([self.bond, self.ball3]),
-                              max_length=3, current_domain=self.kb.thing))
+                              max_length=3, current_domain=self.generator.thing))
         self.assertEqual(refs, true_refs)
 
     def test_union_refinements(self):
         rho = ModifiedCELOERefinement(self.kb)
         true_refs = set(map(OWLObjectUnionOf, zip(self.all_bond_classes, repeat(self.ball3))))
-        refs = set(rho.refine(OWLObjectUnionOf([self.bond, self.ball3]), max_length=3, current_domain=self.kb.thing))
+        refs = set(rho.refine(OWLObjectUnionOf([self.bond, self.ball3]), max_length=3, current_domain=self.generator.thing))
         self.assertEqual(refs, true_refs)
 
     def test_data_some_values_from_refinements(self):
@@ -234,24 +234,24 @@ class ModifiedCELOERefinementTest(unittest.TestCase):
 
         # min inclusive
         refs = set(rho.refine(OWLDataSomeValuesFrom(self.charge, OWLDatatypeMinInclusiveRestriction(4)),
-                              max_length=0, current_domain=self.kb.thing))
+                              max_length=0, current_domain=self.generator.thing))
         true_refs = {OWLDataSomeValuesFrom(self.charge, OWLDatatypeMinInclusiveRestriction(5))}
         self.assertEqual(refs, true_refs)
 
         # test empty
         refs = set(rho.refine(OWLDataSomeValuesFrom(self.act, OWLDatatypeMinInclusiveRestriction(9)),
-                              max_length=0, current_domain=self.kb.thing))
+                              max_length=0, current_domain=self.generator.thing))
         self.assertFalse(refs)
 
         # max inclusive
         refs = set(rho.refine(OWLDataSomeValuesFrom(self.charge, OWLDatatypeMaxInclusiveRestriction(8)),
-                              max_length=0, current_domain=self.kb.thing))
+                              max_length=0, current_domain=self.generator.thing))
         true_refs = {OWLDataSomeValuesFrom(self.charge, OWLDatatypeMaxInclusiveRestriction(7))}
         self.assertEqual(refs, true_refs)
 
         # test empty
         refs = set(rho.refine(OWLDataSomeValuesFrom(self.act, OWLDatatypeMaxInclusiveRestriction(1)),
-                              max_length=0, current_domain=self.kb.thing))
+                              max_length=0, current_domain=self.generator.thing))
         self.assertFalse(refs)
 
     def test_cardinality_refinements(self):
@@ -259,24 +259,24 @@ class ModifiedCELOERefinementTest(unittest.TestCase):
 
         # min cardinality
         refs = set(rho.refine(OWLObjectMinCardinality(4, self.has_atom, self.bond1),
-                              max_length=0, current_domain=self.kb.thing))
+                              max_length=0, current_domain=self.generator.thing))
         true_refs = {OWLObjectMinCardinality(5, self.has_atom, self.bond1)}
         self.assertEqual(true_refs, refs)
 
         # test empty
         refs = set(rho.refine(OWLObjectMinCardinality(10, self.has_atom, self.bond1),
-                              max_length=0, current_domain=self.kb.thing))
+                              max_length=0, current_domain=self.generator.thing))
         self.assertFalse(refs)
 
         # max cardinality
         refs = set(rho.refine(OWLObjectMaxCardinality(7, self.has_atom, self.bond1),
-                              max_length=0, current_domain=self.kb.thing))
+                              max_length=0, current_domain=self.generator.thing))
         true_refs = {OWLObjectMaxCardinality(6, self.has_atom, self.bond1)}
         self.assertEqual(true_refs, refs)
 
         # test empty
         refs = set(rho.refine(OWLObjectMaxCardinality(0, self.has_atom, self.bond1),
-                              max_length=0, current_domain=self.kb.thing))
+                              max_length=0, current_domain=self.generator.thing))
         self.assertFalse(refs)
 
     def test_max_nr_fillers(self):
@@ -304,7 +304,7 @@ class LengthBasedRefinementTest(unittest.TestCase):
     def test_length_refinement_operator(self):
         r = DLSyntaxObjectRenderer()
         rho = LengthBasedRefinement(kb)
-        for _ in enumerate(rho.refine(kb.thing)):
+        for _ in enumerate(rho.refine(kb.generator.thing)):
             print(r.render(_[1]))
             pass
 
@@ -314,7 +314,7 @@ class ExpressRefinementTest(unittest.TestCase):
     def test_express_refinement_operator(self):
         r = DLSyntaxObjectRenderer()
         rho = ExpressRefinement(kb)
-        for _ in enumerate(rho.refine(kb.thing)):
+        for _ in enumerate(rho.refine(kb.generator.thing)):
             print(r.render(_[1]))
             pass
 

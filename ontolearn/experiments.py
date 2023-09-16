@@ -6,7 +6,7 @@ from typing import List, Tuple, Set, Dict, Any, Iterable
 import numpy as np
 from sklearn.model_selection import KFold
 
-from owlapy.model import OWLNamedIndividual, IRI
+from ontolearn.owlapy.model import OWLNamedIndividual, IRI
 
 
 class Experiments:

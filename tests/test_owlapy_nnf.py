@@ -24,14 +24,14 @@
 #
 import unittest
 
-from owlapy.model import OWLObjectProperty, OWLNamedIndividual, OWLObjectComplementOf, \
+from ontolearn.owlapy.model import OWLObjectProperty, OWLNamedIndividual, OWLObjectComplementOf, \
     OWLObjectAllValuesFrom, OWLObjectSomeValuesFrom, OWLObjectIntersectionOf, OWLObjectUnionOf, \
     OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectHasValue, OWLObjectOneOf, OWLClassExpression, IRI, \
     BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLClass, OWLDataAllValuesFrom, OWLDataComplementOf, \
     OWLDataIntersectionOf, OWLDataProperty, OWLDataSomeValuesFrom, OWLDataUnionOf, \
     OWLDataHasValue, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataOneOf, OWLLiteral
-from owlapy.model.providers import OWLDatatypeMinMaxExclusiveRestriction
-from owlapy.util import NNF
+from ontolearn.owlapy.model.providers import OWLDatatypeMinMaxExclusiveRestriction
+from ontolearn.owlapy.util import NNF
 
 
 def iri(suffix):

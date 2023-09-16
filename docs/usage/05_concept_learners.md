@@ -137,13 +137,14 @@ each individual (stored as `string`) from the set `positive_examples `
 and `negative_examples` to `OWLNamedIndividual`: 
 
 <!--pytest-codeblocks:cont-->
+
 ```python
     from ontolearn.learning_problem import PosNegLPStandard
-    from owlapy.model import IRI,OWLNamedIndividual
-    
-    typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))  
-    typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
-    lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
+from ontolearn.owlapy.model import IRI, OWLNamedIndividual
+
+typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
+typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
+lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
 ```
 
 To construct an [OWLNamedIndividual](owlapy.model.OWLNamedIndividual) object an [IRI](owlapy.model.IRI) is required as an input. 

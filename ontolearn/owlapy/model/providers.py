@@ -1,6 +1,6 @@
 from typing import Union
 from datetime import datetime, date
-from owlapy.model import OWLDatatypeRestriction, OWLFacet, OWLFacetRestriction, OWLLiteral
+from ontolearn.owlapy.model import OWLDatatypeRestriction, OWLFacet, OWLFacetRestriction, OWLLiteral
 from pandas import Timedelta
 
 Restriction_Literals = Union[OWLLiteral, int, float, Timedelta, datetime, date]

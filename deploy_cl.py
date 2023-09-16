@@ -15,8 +15,8 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.value_splitter import EntropyValueSplitter, BinningValueSplitter
-from owlapy.model import OWLNamedIndividual, IRI
-from owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.owlapy.model import OWLNamedIndividual, IRI
+from ontolearn.owlapy.render import DLSyntaxObjectRenderer
 
 metrics = {'F1': F1,
            'Accuracy': Accuracy,

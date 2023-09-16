@@ -1,8 +1,8 @@
 from tqdm import tqdm
-import random, numpy as np
+import random
 from rdflib import graph
 from ontolearn.knowledge_base import KnowledgeBase
-from owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.refinement_operators import ExpressRefinement
 import os, json
 
@@ -22,7 +22,7 @@ class ConceptDescriptionGenerator:
         return {ref for ref in self.rho.refine(concept, max_length=self.max_length)}
 
     def generate(self):
-        roots = self.apply_rho(self.kb.thing)
+        roots = self.apply_rho(self.kb.generator.thing)
         Refinements = set()
         Refinements.update(roots)
         print ("|Thing refinements|: ", len(roots))

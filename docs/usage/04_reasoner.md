@@ -24,9 +24,9 @@ To load any reasoner, use the following code:
 <!--pytest-codeblocks:cont-->
 
 ```python
-from owlapy.owlready2 import OWLReasoner_Owlready2
-from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
-from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
+from ontolearn.owlapy.owlready2 import OWLReasoner_Owlready2
+from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
+from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
 
 structural_reasoner = OWLReasoner_Owlready2(onto)
 complex_reasoner = OWLReasoner_Owlready2_ComplexCEInstances(onto)
@@ -60,11 +60,13 @@ but a reasoner can give you more than that. You can get the subclasses, supercla
 equivalent classes of a class in the ontology:
 
 <!--pytest-codeblocks:cont-->
+
 ```python
-from owlapy.model import OWLClass
-from owlapy.model import IRI
+from ontolearn.owlapy.model import OWLClass
+from ontolearn.owlapy.model import IRI
+
 namespace = "http://example.com/father#"
-male = OWLClass(IRI(namespace,"male"))
+male = OWLClass(IRI(namespace, "male"))
 
 male_super_classes = fast_instance_checker.super_classes(male)
 male_sub_classes = fast_instance_checker.sub_classes(male)
@@ -87,12 +89,14 @@ upon the class, object property, or data property hierarchy.
 You can get all the types of a certain individual using `types` method:
 
 <!--pytest-codeblocks:cont-->
+
 ```python
-from owlapy.owlready2 import OWLOntologyManager_Owlready2
+from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2
 
 manager = OWLOntologyManager_Owlready2()
 onto = manager.load_ontology(IRI.create("KGs/father.owl"))
-anna = list(onto.individuals_in_signature()).pop() # getting the 1st individual in the list of individuals which is 'anna'
+anna = list(
+    onto.individuals_in_signature()).pop()  # getting the 1st individual in the list of individuals which is 'anna'
 
 anna_types = fast_instance_checker.types(anna)
 ```
@@ -146,10 +150,11 @@ specified individual.
 In the same way as with classes, you can also get the sub object properties or equivalent object properties.
 
 <!--pytest-codeblocks:cont-->
-```python
-from owlapy.model import OWLObjectProperty
 
-hasChild = OWLObjectProperty(IRI(namespace,"hasChild"))
+```python
+from ontolearn.owlapy.model import OWLObjectProperty
+
+hasChild = OWLObjectProperty(IRI(namespace, "hasChild"))
 
 equivalent_to_hasChild = fast_instance_checker.equivalent_object_properties(hasChild)
 hasChild_sub_properties = fast_instance_checker.sub_object_properties(hasChild)

@@ -33,9 +33,10 @@ describe) are stefan, markus, and martin. And our negative examples
 could write the following Python code:
 
 <!--pytest-codeblocks:cont-->
+
 ```python
-from owlapy.namespaces import Namespaces
-from owlapy.model import OWLNamedIndividual, IRI
+from ontolearn.owlapy.namespaces import Namespaces
+from ontolearn.owlapy.model import OWLNamedIndividual, IRI
 
 NS = Namespaces('ex', 'http://example.com/father#')
 

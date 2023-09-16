@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import os
 import threading
 from datetime import datetime
 from argparse import ArgumentParser
@@ -8,13 +7,12 @@ from functools import wraps, update_wrapper
 from flask import Flask, request, Response, abort
 from flask import make_response
 
-import ontolearn
 from ontolearn.concept_learner import NCES
 from ontolearn.utils.log_config import setup_logging
 
-from owlapy.model import OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
+from ontolearn.owlapy.model import OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
     OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, IRI
-from owlapy.owlready2 import OWLOntologyManager_Owlready2
+from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2
 import time, io
 
 from typing import Final

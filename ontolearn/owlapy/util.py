@@ -1,7 +1,7 @@
 from functools import singledispatchmethod, total_ordering
 from typing import Iterable, List, Type, TypeVar, Generic, Tuple, cast, Optional, Union, overload
 
-from owlapy.model import HasIndex, HasIRI, OWLClassExpression, OWLClass, OWLObjectCardinalityRestriction, \
+from ontolearn.owlapy.model import HasIndex, HasIRI, OWLClassExpression, OWLClass, OWLObjectCardinalityRestriction, \
     OWLObjectComplementOf, OWLNothing, OWLPropertyRange, OWLRestriction, OWLThing, OWLObjectSomeValuesFrom, \
     OWLObjectHasValue, OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality, OWLObjectHasSelf, \
     OWLObjectOneOf, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataExactCardinality, OWLDataHasValue, \

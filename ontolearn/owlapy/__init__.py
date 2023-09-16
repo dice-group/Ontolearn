@@ -9,4 +9,3 @@ OWLAPI licence: LGPL and Apache
 """
 
 # the import order must be fixed otherwise there are circular import errors
-import owlapy.model  # noqa: F401

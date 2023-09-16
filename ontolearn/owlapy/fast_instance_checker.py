@@ -7,15 +7,15 @@ from itertools import repeat, chain
 from types import MappingProxyType, FunctionType
 from typing import DefaultDict, Iterable, Dict, Mapping, Set, Type, TypeVar, Optional, FrozenSet
 
-from owlapy.ext import OWLReasonerEx
-from owlapy.model import OWLDataRange, OWLObjectOneOf, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
+from ontolearn.owlapy.ext import OWLReasonerEx
+from ontolearn.owlapy.model import OWLDataRange, OWLObjectOneOf, OWLOntology, OWLNamedIndividual, OWLClass, OWLClassExpression, \
     OWLObjectProperty, OWLDataProperty, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
     OWLObjectPropertyExpression, OWLObjectComplementOf, OWLObjectAllValuesFrom, IRI, OWLObjectInverseOf, \
     OWLDataSomeValuesFrom, OWLDataPropertyExpression, OWLDatatypeRestriction, OWLLiteral, \
     OWLDataComplementOf, OWLDataAllValuesFrom, OWLDatatype, OWLDataHasValue, OWLDataOneOf, OWLReasoner, \
     OWLDataIntersectionOf, OWLDataUnionOf, OWLObjectCardinalityRestriction, OWLObjectMinCardinality, \
     OWLObjectMaxCardinality, OWLObjectExactCardinality, OWLObjectHasValue, OWLPropertyExpression, OWLFacetRestriction
-from owlapy.util import LRUCache
+from ontolearn.owlapy.util import LRUCache
 
 logger = logging.getLogger(__name__)
 
@@ -196,7 +196,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
         opc: DefaultDict[OWLNamedIndividual, Set[OWLNamedIndividual]] = defaultdict(set)
 
         # shortcut for owlready2
-        from owlapy.owlready2 import OWLOntology_Owlready2
+        from ontolearn.owlapy.owlready2 import OWLOntology_Owlready2
         if isinstance(self._ontology, OWLOntology_Owlready2):
             import owlready2
             # _x => owlready2 objects
@@ -238,7 +238,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
             subs = set()
 
             # shortcut for owlready2
-            from owlapy.owlready2 import OWLOntology_Owlready2
+            from ontolearn.owlapy.owlready2 import OWLOntology_Owlready2
             if isinstance(self._ontology, OWLOntology_Owlready2):
                 import owlready2
                 # _x => owlready2 objects
@@ -315,7 +315,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
         opc: Dict[OWLNamedIndividual, Set[OWLLiteral]] = dict()
 
         # shortcut for owlready2
-        from owlapy.owlready2 import OWLOntology_Owlready2
+        from ontolearn.owlapy.owlready2 import OWLOntology_Owlready2
         if isinstance(self._ontology, OWLOntology_Owlready2):
             import owlready2
             # _x => owlready2 objects

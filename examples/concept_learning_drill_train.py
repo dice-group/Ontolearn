@@ -12,16 +12,16 @@ from ontolearn.learning_problem_generator import LearningProblemGenerator
 from ontolearn.concept_learner import Drill
 from ontolearn.metrics import F1
 from ontolearn.heuristics import Reward
-from owlapy.model import OWLOntology, OWLReasoner
+from ontolearn.owlapy.model import OWLOntology, OWLReasoner
 from ontolearn.utils import setup_logging
 
 setup_logging()
 
 
 def ClosedWorld_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
-    from owlapy.owlready2 import OWLOntology_Owlready2
-    from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
-    from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
+    from ontolearn.owlapy.owlready2 import OWLOntology_Owlready2
+    from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
+    from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
     assert isinstance(onto, OWLOntology_Owlready2)
     base_reasoner = OWLReasoner_Owlready2_ComplexCEInstances(ontology=onto)
     reasoner = OWLReasoner_FastInstanceChecker(ontology=onto,
