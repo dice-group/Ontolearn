@@ -104,7 +104,7 @@ negative_examples = {OWLNamedIndividual(IRI.create(NS, 'heinz')),
 
 # Only the class of the learning algorithm is specified
 model = ModelAdapter(learner_type=CELOE,
-                     reasoner=OWLReasoner_Owlready2_ComplexCEInstances,
+                     reasoner_type=OWLReasoner_Owlready2_ComplexCEInstances,
                      path="KGs/father.owl")
 
 model.fit(pos=positive_examples,
