@@ -12,7 +12,7 @@ One such system for virtual python environments is
 We have good experience with it and make use of conda in the
 [Installation from source](#installation-from-source) step.
 
-## Installation from source
+## Installation From Source
 
 To download the Ontolearn source code, you will also need to have a
 copy of the [Git](https://git-scm.com/) version control system.
@@ -76,7 +76,7 @@ pytest
 ```
 
 
-## Installation via pip
+## Installation via _pip_
 
 Released versions of Ontolearn can also be installed using `pip`, the
 Package Installer for Python. It comes as part of Python. Please
@@ -90,7 +90,7 @@ pip install ontolearn
 This will download and install the latest release version of Ontolearn
 and all its dependencies from <https://pypi.org/project/ontolearn/>.
 
-## Download external files (.link files)
+## Download External Files (.link files)
 
 Some resources like pre-calculated embeddings or `pre_trained_agents`
 are not included in the Git repository directly. Use the following
@@ -137,12 +137,7 @@ be installed:
 tox -e docs latexpdf
 ```
 
-## Contribution
+----------------------------------------------------------------------
 
-Feel free to create a pull request.
-
-## Questions
-
-For any further questions, please contact: ```onto-learn@lists.uni-paderborn.de```
-or open an issue on our [GitHub issues
-page](https://github.com/dice-group/Ontolearn/issues).
+In the next guide, we explore about ontologies in Ontolearn and how you can modify them
+using axioms.

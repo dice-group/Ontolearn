@@ -1,7 +1,8 @@
 # Ontolearn
 
 *Ontolearn* is an open-source software library for explainable structured machine learning in Python.
-It contains the following (ready-to-apply) algorithms that learn OWL class expressions from positive and negative examples:
+It contains the following (ready-to-apply) algorithms that learn OWL class expressions from positive and negative examples
+(aka a learning problem):
 - **NCES2** &rarr; (soon) [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
 - **Drill** &rarr; [Deep Reinforcement Learning for Refinement Operators in ALC](https://arxiv.org/pdf/2106.15373.pdf)
 - **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13)
@@ -15,8 +16,10 @@ You can find more details about *Ontolearn* and these algorithms and their varia
 
 Quick navigation: 
 - [Installation](#installation)
+- [Quick try-out](#quick-try-out)
 - [Usage](#usage)
 - [Relevant Papers](#relevant-papers)
+
 ## Installation
 For detailed instructions please refer to the [installation guide](https://ontolearn-docs-dice-group.netlify.app/usage/installation.html) in the documentation.
 
@@ -51,6 +54,27 @@ tox  # full test with tox
 ```shell
 pip install ontolearn  # more on https://pypi.org/project/ontolearn/
 ```
+
+## Quick try-out
+
+You can execute the script `deploy_cl.py` to deploy the concept learners in a local web server and try
+the algorithms using an interactive interface made possible by [gradio](https://www.gradio.app/). Currently, 
+you can only deploy the following concept learners: NCES, EvoLearner, CELOE and OCEL.
+
+For example the command below will launch an interface using EvoLearner as the model on 
+the Family dataset:
+
+```shell
+python deploy_cl.py --model evolearner --path_knowledge_base KGs/Family/family-benchmark_rich_background.owl
+```
+
+Once you run this command, a local URL where our model is deployed will be provided to you.
+
+In the interface you need to enter the positive and the negative examples. For a quick run you can
+click on the **Random Examples** checkbox, but you may as well enter some real examples which
+you can find in the folder `examples/synthetic_problems.json`. Just copy and paste them directly
+in the respective fields.
+
 ## Usage
 
 In the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder, you can find examples on how to use
@@ -66,10 +90,11 @@ from ontolearn.model_adapter import ModelAdapter
 from ontolearn.owlapy.model import OWLNamedIndividual, IRI
 from ontolearn.owlapy.namespaces import Namespaces
 from ontolearn.owlapy.render import DLSyntaxObjectRenderer
-from examples.experiments_standard import ClosedWorld_ReasonerFactory
+from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
 
 NS = Namespaces('ex', 'http://example.com/father#')
 
+# Defining the learning problem
 positive_examples = {OWLNamedIndividual(IRI.create(NS, 'stefan')),
                      OWLNamedIndividual(IRI.create(NS, 'markus')),
                      OWLNamedIndividual(IRI.create(NS, 'martin'))}
@@ -79,16 +104,16 @@ negative_examples = {OWLNamedIndividual(IRI.create(NS, 'heinz')),
 
 # Only the class of the learning algorithm is specified
 model = ModelAdapter(learner_type=CELOE,
-                     reasoner_factory=ClosedWorld_ReasonerFactory,
+                     reasoner=OWLReasoner_Owlready2_ComplexCEInstances,
                      path="KGs/father.owl")
 
 model.fit(pos=positive_examples,
           neg=negative_examples)
 
-dlsr = DLSyntaxObjectRenderer()
+renderer = DLSyntaxObjectRenderer()
 
 for desc in model.best_hypotheses(1):
-    print('The result:', dlsr.render(desc.concept), 'has quality', desc.quality)
+    print('The result:', renderer.render(desc.concept), 'has quality', desc.quality)
 ```
 The goal in this example is to learn a class expression for the concept "father". 
 The output is as follows:
@@ -154,7 +179,7 @@ tox -e lint --
 Feel free to create a pull request!
 
 
-## Relevant papers
+## Relevant Papers
 
 - [NCES2](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf): Neural Class Expression Synthesis in ALCHIQ(D)
 - [NCES](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13): Neural Class Expression Synthesis
@@ -207,4 +232,4 @@ address="Cham"
 }
 ```
 
-For any further questions, please contact:  ```onto-learn@lists.uni-paderborn.de```
+In case you have any question, please contact:  ```onto-learn@lists.uni-paderborn.de```
