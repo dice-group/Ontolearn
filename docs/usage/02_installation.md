@@ -62,13 +62,7 @@ python -c "import ontolearn"
 
 ### Tests
 
-In order to run our test suite, type:
-
-```shell
-tox
-```
-
-You can also run the tests directly as follows but make sure you have installed 
+You can run the tests as follows but make sure you have installed 
 the external files using the commands described [here](#download-external-files-link-files)
 to successfully pass all the tests:
 ```shell
@@ -90,24 +84,29 @@ pip install ontolearn
 This will download and install the latest release version of Ontolearn
 and all its dependencies from <https://pypi.org/project/ontolearn/>.
 
-## Download External Files (.link files)
+## Download External Files
 
-Some resources like pre-calculated embeddings or `pre_trained_agents`
+Some resources like pre-calculated embeddings or `pre_trained_agents` and large datasets
 are not included in the Git repository directly. Use the following
 command to download them from our data server.
 
-```shell
-./big_gitext/download_big.sh pre_trained_agents.zip.link
-./big_gitext/download_big.sh -A  # to download them all
-```
-
-To update or upload resource files, follow the instructions
-[here](https://github.com/dice-group/Ontolearn-internal/wiki/Upload-big-data-to-hobbitdata)
-and use the following command.
+For example to get all the datasets:
 
 ```shell
-./big_gitext/upload_big.sh pre_trained_agents.zip
+wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip
 ```
+
+Then depending on your operating system, use the appropriate command to unzip the files:
+
+```shell
+# Windows
+tar -xf KGs.zip
+
+# macOS and Linux
+unzip KGs.zip
+```
+
+All available files can be found [here](https://files.dice-research.org/projects/Ontolearn/).
 
 ## Building (sdist and bdist_wheel)
 
@@ -136,6 +135,16 @@ be installed:
 ```shell
 tox -e docs latexpdf
 ```
+
+## Simple Linting
+
+Using the following command will run the linting tool [flake8](https://flake8.pycqa.org/) on the source code.
+```shell
+flake8
+```
+
+Additionally, you can specify the path where you want to flake8 to run.
+
 
 ----------------------------------------------------------------------
 

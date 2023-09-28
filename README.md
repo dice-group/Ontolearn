@@ -125,32 +125,37 @@ For a quick start on how to use NCES, please refer to the notebook [simple usage
 
 ----------------------------------------------------------------------------
 
-#### Download external files (.link files)
+#### Download external files
 
-Some resources like pre-calculated embeddings or `pre_trained_agents`
-are not included in the Git repository directly. Use the following
+Some resources like pre-calculated embeddings or `pre_trained_agents` and large datasets
+are not included in the Git repository directly. Use `wget`
 command to download them from our data server.
 
-For Drill:
-```shell
-./big_gitext/download_big.sh examples/pre_trained_agents.zip.link
-./big_gitext/download_big.sh -A  # to download them all into examples folder
-```
-
-For NCES:
-```shell
-./big_gitext/download_nces_data
-```
-
-To update or upload resource files, follow the instructions
-[here](https://github.com/dice-group/Ontolearn-internal/wiki/Upload-big-data-to-hobbitdata)
-and use the following command (only for Drill):
+For example to download the datasets:
 
 ```shell
-./big_gitext/upload_big.sh pre_trained_agents.zip
+wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip
 ```
+
+Then depending on your operating system, use the appropriate command to unzip the files:
+
+```shell
+# Windows
+tar -xf KGs.zip
+
+# or
+
+# macOS and Linux
+unzip KGs.zip
+```
+
+All available files can be found [here](https://files.dice-research.org/projects/Ontolearn/).
+
+
 ----------------------------------------------------------------------------
+
 #### Building (sdist and bdist_wheel)
+
 You can use <code>tox</code> to build sdist and bdist_wheel packages for Ontolearn.
 - "sdist" is short for "source distribution" and is useful for distribution of packages that will be installed from source.
 - "bdist_wheel" is short for "built distribution wheel" and is useful for distributing packages that include large amounts of compiled code, as well as for distributing packages that have complex dependencies.
@@ -171,8 +176,9 @@ tox -e docs
 
 Using the following command will run the linting tool [flake8](https://flake8.pycqa.org/) on the source code.
 ```shell
-tox -e lint --
+flake8
 ```
+
 ----------------------------------------------------------------------------
 
 #### Contribution
