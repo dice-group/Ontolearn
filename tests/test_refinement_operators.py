@@ -11,9 +11,10 @@ from ontolearn.core.owl.utils import ConceptOperandSorter
 from ontolearn.utils import setup_logging
 from ontolearn.owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction
 from ontolearn.owlapy.render import DLSyntaxObjectRenderer
-from ontolearn.owlapy.model import OWLObjectMinCardinality, OWLObjectProperty, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
+from ontolearn.owlapy.model import OWLObjectMinCardinality, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLClass, IRI, OWLDataHasValue, OWLDataProperty, OWLDataSomeValuesFrom, OWLLiteral, OWLObjectAllValuesFrom, \
-    OWLObjectCardinalityRestriction, OWLObjectComplementOf, OWLObjectIntersectionOf, OWLObjectMaxCardinality
+    OWLObjectCardinalityRestriction, OWLObjectComplementOf, OWLObjectIntersectionOf, OWLObjectMaxCardinality, \
+    OWLObjectUnionOf
 from ontolearn.refinement_operators import ModifiedCELOERefinement, LengthBasedRefinement, \
     ExpressRefinement
 
@@ -188,10 +189,12 @@ class ModifiedCELOERefinementTest(unittest.TestCase):
 
     def test_complement_of_refinements(self):
         rho = ModifiedCELOERefinement(self.kb, use_negation=True)
-        bond_refs = set(rho.refine(OWLObjectComplementOf(self.bond1), max_length=3, current_domain=self.generator.thing))
+        bond_refs = set(rho.refine(OWLObjectComplementOf(self.bond1), max_length=3,
+                                   current_domain=self.generator.thing))
         self.assertEqual({OWLObjectComplementOf(self.bond)}, bond_refs)
 
-        ball3_refs = set(rho.refine(OWLObjectComplementOf(self.ball3), max_length=3, current_domain=self.generator.thing))
+        ball3_refs = set(rho.refine(OWLObjectComplementOf(self.ball3), max_length=3,
+                                    current_domain=self.generator.thing))
         self.assertEqual({OWLObjectComplementOf(self.ring_structure)}, ball3_refs)
 
     def test_object_some_values_from_refinements(self):
@@ -223,7 +226,8 @@ class ModifiedCELOERefinementTest(unittest.TestCase):
     def test_union_refinements(self):
         rho = ModifiedCELOERefinement(self.kb)
         true_refs = set(map(OWLObjectUnionOf, zip(self.all_bond_classes, repeat(self.ball3))))
-        refs = set(rho.refine(OWLObjectUnionOf([self.bond, self.ball3]), max_length=3, current_domain=self.generator.thing))
+        refs = set(rho.refine(OWLObjectUnionOf([self.bond, self.ball3]), max_length=3,
+                              current_domain=self.generator.thing))
         self.assertEqual(refs, true_refs)
 
     def test_data_some_values_from_refinements(self):

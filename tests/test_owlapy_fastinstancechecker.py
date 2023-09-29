@@ -13,8 +13,9 @@ from ontolearn.owlapy.model import OWLObjectInverseOf, OWLObjectOneOf, OWLObject
     OWLObjectIntersectionOf, OWLSubDataPropertyOfAxiom, OWLSubObjectPropertyOfAxiom, OWLInverseObjectPropertiesAxiom, \
     DurationOWLDatatype
 
-from ontolearn.owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, OWLDatatypeMinMaxInclusiveRestriction, \
-    OWLDatatypeMinMaxExclusiveRestriction, OWLDatatypeMaxExclusiveRestriction, OWLDatatypeMaxInclusiveRestriction
+from ontolearn.owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, \
+    OWLDatatypeMinMaxInclusiveRestriction, OWLDatatypeMinMaxExclusiveRestriction, OWLDatatypeMaxExclusiveRestriction, \
+    OWLDatatypeMaxInclusiveRestriction
 from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 
 

@@ -1,7 +1,6 @@
 from typing import Final, Tuple
 
 from .abstracts import AbstractScorer
-from .learning_problem import EncodedPosNegLPStandard
 
 
 class Recall(AbstractScorer):

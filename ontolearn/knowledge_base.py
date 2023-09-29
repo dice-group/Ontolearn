@@ -4,10 +4,10 @@ from functools import singledispatchmethod
 from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict
 from ontolearn.owlapy.owlready2 import OWLOntology_Owlready2, OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from ontolearn.owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, OWLNamedIndividual, \
-    OWLObjectProperty, OWLClass, OWLDataProperty, IRI, OWLDataRange, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
-    OWLDatatype, BooleanOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, OWLThing, OWLObjectPropertyExpression, \
-    OWLLiteral, OWLDataPropertyExpression
+from ontolearn.owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, \
+    OWLNamedIndividual, OWLObjectProperty, OWLClass, OWLDataProperty, IRI, OWLDataRange, OWLObjectSomeValuesFrom, \
+    OWLObjectAllValuesFrom, OWLDatatype, BooleanOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, OWLThing, \
+    OWLObjectPropertyExpression, OWLLiteral, OWLDataPropertyExpression
 from ontolearn.owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.owlapy.util import iter_count, LRUCache
 from .abstracts import AbstractKnowledgeBase, AbstractScorer, EncodedLearningProblem, AbstractLearningProblem
@@ -274,7 +274,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
             new._object_property_hierarchy = self._object_property_hierarchy
 
         if ignored_data_properties is not None:
-            new._data_property_hierarchy = self._data_property_hierarchy.restrict_and_copy(remove=ignored_data_properties)
+            new._data_property_hierarchy = self._data_property_hierarchy.restrict_and_copy(
+                remove=ignored_data_properties)
         else:
             new._data_property_hierarchy = self._data_property_hierarchy
 
@@ -937,4 +938,3 @@ class KnowledgeBase(AbstractKnowledgeBase):
             data property hierarchy
         """
         return self._data_property_hierarchy
-

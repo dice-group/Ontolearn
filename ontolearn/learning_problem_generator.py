@@ -4,9 +4,9 @@ from typing import Literal, Iterable, Set, Tuple, Dict, List, Final, Generator
 
 import numpy as np
 
-from ontolearn.owlapy.model import OWLClassExpression, OWLOntologyManager, OWLOntology, AddImport, OWLImportsDeclaration, \
-    OWLClass, OWLEquivalentClassesAxiom, IRI, OWLNamedIndividual, OWLAnnotationAssertionAxiom, OWLAnnotation, \
-    OWLAnnotationProperty, OWLLiteral
+from ontolearn.owlapy.model import OWLClassExpression, OWLOntologyManager, OWLOntology, AddImport, \
+    OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, IRI, OWLNamedIndividual, OWLAnnotationAssertionAxiom, \
+    OWLAnnotation, OWLAnnotationProperty, OWLLiteral
 from ontolearn.knowledge_base import KnowledgeBase
 from .refinement_operators import LengthBasedRefinement
 from .search import Node, RL_State

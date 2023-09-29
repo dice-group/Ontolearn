@@ -1,12 +1,12 @@
-""" 
+"""
 (1) To get the data: wget https://hobbitdata.informatik.uni-leipzig.de/NCES_Ontolearn_Data/NCESData.zip
 (2) pip install ontolearn
 """
 
 
-import os
 from ontolearn.concept_learner import NCES
-import argparse, json
+import argparse
+import json
 
 
 def str2bool(v):
@@ -18,7 +18,8 @@ def str2bool(v):
         return False
     else:
         raise ValueError('Invalid boolean value.')
-        
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--kbs', type=str, nargs='+', default=['carcinogenesis'], help='Knowledge base name(s)')
 parser.add_argument('--models', type=str, nargs='+', default=['SetTransformer', 'LSTM', 'GRU'], help='Neural models')
@@ -34,7 +35,8 @@ for kb in args.kbs:
         training_data = list(json.load(file).items())
 
     nces = NCES(knowledge_base_path=knowledge_base_path, learner_name="SetTransformer",
-         path_of_embeddings=path_of_embeddings, max_length=48, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, num_inds=32, load_pretrained=args.load_pretrained)
+                path_of_embeddings=path_of_embeddings, max_length=48, proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
+                num_heads=4, num_seeds=1, num_inds=32, load_pretrained=args.load_pretrained)
 
     for model in args.models:
         nces.learner_name = model

@@ -12,9 +12,9 @@ from ontolearn.knowledge_base import EvaluatedConcept, Factory, _Default_ClassEx
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.utils import oplogging
 from ontolearn.owlapy.ext import OWLReasonerEx
-from ontolearn.owlapy.model import OWLClassAxiom, OWLClassExpression, OWLEntity, OWLOntology, OWLClass, OWLNamedIndividual, \
+from ontolearn.owlapy.model import OWLClassAxiom, OWLClassExpression, OWLEntity, OWLOntology, OWLClass, \
     OWLObjectPropertyExpression, OWLDataProperty, OWLObjectProperty, OWLOntologyID, _M, OWLDataPropertyRangeAxiom, \
-    IRI, OWLLiteral, OWLDatatype, OWLDataPropertyDomainAxiom, OWLObjectPropertyDomainAxiom, \
+    IRI, OWLLiteral, OWLDatatype, OWLDataPropertyDomainAxiom, OWLObjectPropertyDomainAxiom, OWLNamedIndividual, \
     OWLObjectPropertyRangeAxiom
 from ontolearn.owlapy.owl2sparql.converter import Owl2SparqlConverter
 from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2

@@ -8,8 +8,9 @@ import random
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
+
 class SimpleSolution:
-    
+
     def __init__(self, vocab, atomic_concept_names):
         self.name = 'SimpleSolution'
         self.atomic_concept_names = atomic_concept_names
@@ -19,7 +20,7 @@ class SimpleSolution:
         tokenizer.train_from_iterator(vocab, trainer)
         self.tokenizer = PreTrainedTokenizerFast(tokenizer_object=tokenizer)
         self.tokenizer.pad_token = "[PAD]"
-            
+
     def predict(self, expression: str):
         atomic_classes = [atm for atm in self.tokenizer.tokenize(expression) if atm in self.atomic_concept_names]
         if atomic_classes == []:
@@ -27,4 +28,3 @@ class SimpleSolution:
             random.shuffle(self.atomic_concept_names)
             atomic_classes = self.atomic_concept_names[:3]
         return " ⊔ ".join(atomic_classes)
-    

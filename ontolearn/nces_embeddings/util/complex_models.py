@@ -1,9 +1,9 @@
 import torch
-from torch.nn import functional as F, Parameter
+from torch.nn import functional as F
 import numpy as np
 from torch.nn.init import xavier_normal_
 import torch.nn as nn
-import torch.optim as optim
+
 
 torch.backends.cudnn.deterministic = True
 seed = 1
@@ -105,7 +105,8 @@ class ConEx(torch.nn.Module):
         self.conv1 = torch.nn.Conv2d(in_channels=1, out_channels=self.num_of_output_channels,
                                      kernel_size=(self.kernel_size, self.kernel_size), stride=1, padding=1, bias=True)
         # Formula for convolution output shape: (input_dim + 2* padding - kernel_size) / (stride) + 1
-        self.fc_num_input = ((self.embedding_dim+2-self.kernel_size)+1) * (4+2-self.kernel_size+1) * self.num_of_output_channels
+        self.fc_num_input = ((self.embedding_dim+2-self.kernel_size)+1) * \
+                            (4+2-self.kernel_size+1) * self.num_of_output_channels
         self.fc = torch.nn.Linear(self.fc_num_input, self.embedding_dim * 2)
 
         self.bn_conv1 = torch.nn.BatchNorm2d(self.num_of_output_channels)
@@ -131,7 +132,7 @@ class ConEx(torch.nn.Module):
     def forward_head_batch(self, *, e1_idx, rel_idx):
         """
         Given a head entity and a relation (h,r), we compute scores for all entities.
-        [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
+        [score(h,r,x)|x \\in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
         Given a batch of head entities and relations => shape (size of batch,| Entities|)
         """
         # (1)

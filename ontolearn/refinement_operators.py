@@ -48,8 +48,10 @@ class LengthBasedRefinement(BaseRefinement):
         """ (3) Add Nothing """
         iterable_container.append([self.kb.generator.nothing])
         """ (4) Get all most general restrictions and store them forall r. T, \\exist r. T """
-        iterable_container.append(self.kb.most_general_universal_restrictions(domain=self.kb.generator.thing, filler=None))
-        iterable_container.append(self.kb.most_general_existential_restrictions(domain=self.kb.generator.thing, filler=None))
+        iterable_container.append(self.kb.most_general_universal_restrictions(domain=self.kb.generator.thing,
+                                                                              filler=None))
+        iterable_container.append(self.kb.most_general_existential_restrictions(domain=self.kb.generator.thing,
+                                                                                filler=None))
         """ (5) Generate all refinements of given concept that have length less or equal to the maximum refinement
          length constraint """
         yield from self.apply_union_and_intersection_from_iterable(iterable_container)
@@ -134,7 +136,8 @@ class LengthBasedRefinement(BaseRefinement):
         3- Intersection with T
         """
         assert isinstance(class_expression, OWLObjectComplementOf)
-        yield from self.kb.generator.negation_from_iterables(self.kb.get_direct_parents(self.kb.negation(class_expression)))
+        yield from self.kb.generator.negation_from_iterables(self.kb.get_direct_parents(
+            self.kb.negation(class_expression)))
         yield self.kb.generator.intersection((class_expression, self.kb.generator.thing))
 
     def refine_object_some_values_from(self, class_expression: OWLObjectSomeValuesFrom) -> Iterable[OWLClassExpression]:
@@ -389,7 +392,8 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
                 bool_res = []
                 for bool_dp in self.kb.most_general_boolean_data_properties(domain=current_domain):
                     bool_res.append(self.generator.data_has_value_restriction(value=OWLLiteral(True), property=bool_dp))
-                    bool_res.append(self.generator.data_has_value_restriction(value=OWLLiteral(False), property=bool_dp))
+                    bool_res.append(self.generator.data_has_value_restriction(value=OWLLiteral(False),
+                                                                              property=bool_dp))
                 iter_container.append(bool_res)
             # yield self.kb.intersection((ce, ce))
             # yield self.kb.union((ce, ce))
@@ -506,7 +510,8 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
                 yield self.generator.min_cardinality_restriction(i, ce.get_property(), ce.get_cardinality())
 
         if ce.get_cardinality() < self.max_nr_fillers[ce.get_property()]:
-            yield self.generator.min_cardinality_restriction(ce.get_filler(), ce.get_property(), ce.get_cardinality() + 1)
+            yield self.generator.min_cardinality_restriction(ce.get_filler(), ce.get_property(),
+                                                             ce.get_cardinality() + 1)
 
     def refine_object_max_card_restriction(self, ce: OWLObjectMaxCardinality, max_length: int) \
             -> Iterable[OWLObjectMaxCardinality]:
@@ -519,7 +524,8 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
                 yield self.generator.max_cardinality_restriction(i, ce.get_property(), ce.get_cardinality())
 
         if ce.get_cardinality() > 1 or (self.use_negation and ce.get_cardinality() > 0):
-            yield self.generator.max_cardinality_restriction(ce.get_filler(), ce.get_property(), ce.get_cardinality() - 1)
+            yield self.generator.max_cardinality_restriction(ce.get_filler(), ce.get_property(),
+                                                             ce.get_cardinality() - 1)
 
     def refine_object_union_of(self, ce: OWLObjectUnionOf, max_length: int,
                                current_domain: Optional[OWLClassExpression]) -> Iterable[OWLObjectUnionOf]:
@@ -582,11 +588,11 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
                 idx = splits.index(val)
 
                 if facet_res.get_facet() == OWLFacet.MIN_INCLUSIVE and (next_idx := idx + 1) < len(splits):
-                    yield self.generator.data_existential_restriction(OWLDatatypeMinInclusiveRestriction(splits[next_idx]),
-                                                               ce.get_property())
+                    yield self.generator.data_existential_restriction(
+                        OWLDatatypeMinInclusiveRestriction(splits[next_idx]), ce.get_property())
                 elif facet_res.get_facet() == OWLFacet.MAX_INCLUSIVE and (next_idx := idx - 1) >= 0:
-                    yield self.generator.data_existential_restriction(OWLDatatypeMaxInclusiveRestriction(splits[next_idx]),
-                                                               ce.get_property())
+                    yield self.generator.data_existential_restriction(
+                        OWLDatatypeMaxInclusiveRestriction(splits[next_idx]), ce.get_property())
 
     def refine_data_has_value(self, ce: OWLDataHasValue) -> Iterable[OWLDataHasValue]:
         assert isinstance(ce, OWLDataHasValue)
@@ -707,7 +713,8 @@ class ExpressRefinement(ModifiedCELOERefinement):
                 bool_res = []
                 for bool_dp in self.kb.most_general_boolean_data_properties(domain=ce):
                     bool_res.append(self.generator.data_has_value_restriction(value=OWLLiteral(True), property=bool_dp))
-                    bool_res.append(self.generator.data_has_value_restriction(value=OWLLiteral(False), property=bool_dp))
+                    bool_res.append(self.generator.data_has_value_restriction(value=OWLLiteral(False),
+                                                                              property=bool_dp))
                 iter_container_restrict.append(set(bool_res))
 
             if self.use_card_restrictions and (self.max_child_length >= self.len(ce) + 3):
@@ -715,7 +722,8 @@ class ExpressRefinement(ModifiedCELOERefinement):
                 for prop in self.kb.most_general_object_properties(domain=ce):
                     max_ = self.max_nr_fillers[prop]
                     if max_ > 1:
-                        card_res.append(self.generator.max_cardinality_restriction(self.generator.thing, prop, max_ - 1))
+                        card_res.append(self.generator.max_cardinality_restriction(self.generator.thing,
+                                                                                   prop, max_ - 1))
                 iter_container_restrict.append(set(card_res))
 
             iter_container_restrict = list(set(chain.from_iterable(iter_container_restrict)))
@@ -786,7 +794,8 @@ class ExpressRefinement(ModifiedCELOERefinement):
                 yield self.generator.existential_restriction(ce.get_filler(), more_special_op)
                 any_refinement = True
 
-        if self.use_card_restrictions and self.len(ce) <= self.max_child_length and self.max_nr_fillers[ce.get_property()] > 1:
+        if self.use_card_restrictions and self.len(ce) <= self.max_child_length and \
+                self.max_nr_fillers[ce.get_property()] > 1:
             yield self.generator.min_cardinality_restriction(ce.get_filler(), ce.get_property(), 2)
             any_refinement = True
         if not any_refinement:
@@ -821,7 +830,8 @@ class ExpressRefinement(ModifiedCELOERefinement):
                 yield self.generator.min_cardinality_restriction(ref, ce.get_property(), ce.get_cardinality())
 
         if self.use_card_restrictions and ce.get_cardinality() < self.max_nr_fillers[ce.get_property()]:
-            yield self.generator.min_cardinality_restriction(ce.get_filler(), ce.get_property(), ce.get_cardinality() + 1)
+            yield self.generator.min_cardinality_restriction(ce.get_filler(), ce.get_property(),
+                                                             ce.get_cardinality() + 1)
 
     def refine_object_max_card_restriction(self, ce: OWLObjectMaxCardinality) \
             -> Iterable[OWLObjectMaxCardinality]:
@@ -833,7 +843,8 @@ class ExpressRefinement(ModifiedCELOERefinement):
                 yield self.generator.max_cardinality_restriction(ref, ce.get_property(), ce.get_cardinality())
 
         if ce.get_cardinality() > 1:
-            yield self.generator.max_cardinality_restriction(ce.get_filler(), ce.get_property(), ce.get_cardinality() - 1)
+            yield self.generator.max_cardinality_restriction(ce.get_filler(), ce.get_property(),
+                                                             ce.get_cardinality() - 1)
 
     def refine_object_union_of(self, ce: OWLObjectUnionOf) -> Iterable[OWLClassExpression]:
         assert isinstance(ce, OWLObjectUnionOf)
@@ -879,12 +890,12 @@ class ExpressRefinement(ModifiedCELOERefinement):
                 idx = splits.index(val)
 
                 if facet_res.get_facet() == OWLFacet.MIN_INCLUSIVE and (next_idx := idx + 1) < len(splits):
-                    yield self.generator.data_existential_restriction(OWLDatatypeMinInclusiveRestriction(splits[next_idx]),
-                                                               ce.get_property())
+                    yield self.generator.data_existential_restriction(
+                        OWLDatatypeMinInclusiveRestriction(splits[next_idx]), ce.get_property())
                     any_refinement = True
                 elif facet_res.get_facet() == OWLFacet.MAX_INCLUSIVE and (next_idx := idx - 1) >= 0:
-                    yield self.generator.data_existential_restriction(OWLDatatypeMaxInclusiveRestriction(splits[next_idx]),
-                                                               ce.get_property())
+                    yield self.generator.data_existential_restriction(
+                        OWLDatatypeMaxInclusiveRestriction(splits[next_idx]), ce.get_property())
                     any_refinement = True
         if not any_refinement:
             yield ce

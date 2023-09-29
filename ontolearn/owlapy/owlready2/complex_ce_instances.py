@@ -89,4 +89,4 @@ class OWLReasoner_Owlready2_ComplexCEInstances(OWLReasoner_Owlready2):
             try:
                 os.remove(file_path)
             except OSError as e:
-                logger.warning(f"Error deleting {file_path}")
+                logger.warning(f"Error deleting {file_path}: {e}")

@@ -121,6 +121,7 @@ class TransE(torch.nn.Module):
     def forward_head_and_loss(self, *args, **kwargs):
         raise NotImplementedError('KvsAll is not implemented for TransE')
 
+
 class Tucker(torch.nn.Module):
     def __init__(self, param):
         super(Tucker, self).__init__()
@@ -173,8 +174,8 @@ class Tucker(torch.nn.Module):
     def get_embeddings(self):
         return self.E.weight.data, self.R.weight.data
 
-    def forward_triples(self, *args,**kwargs):
+    def forward_triples(self, *args, **kwargs):
         raise NotImplementedError('Negative Sampling is not implemented for Tucker')
 
-    def forward_triples_and_loss(self, *args,**kwargs):
+    def forward_triples_and_loss(self, *args, **kwargs):
         raise NotImplementedError('Negative Sampling is not implemented for Tucker')

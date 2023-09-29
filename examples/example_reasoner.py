@@ -1,4 +1,5 @@
-from ontolearn.owlapy.model import OWLSubClassOfAxiom, OWLEquivalentObjectPropertiesAxiom, OWLObjectPropertyDomainAxiom, OWLDataProperty
+from ontolearn.owlapy.model import OWLSubClassOfAxiom, OWLEquivalentObjectPropertiesAxiom, \
+    OWLObjectPropertyDomainAxiom, OWLDataProperty
 from ontolearn.owlapy.owlready2 import OWLReasoner_Owlready2, BaseReasoner_Owlready2
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.owlapy.model import OWLObjectProperty, IRI, OWLObjectSomeValuesFrom, \
@@ -9,8 +10,7 @@ data_file = '../KGs/test_ontology.owl'
 NS = 'http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#'
 
 """
----------Object Properties--------- 
-
+---------Object Properties---------
 Domain(r1) = S ⊓ T, Range(r1) = G
 r2 ⊑ r1
 r3 ⊑ r4
@@ -18,12 +18,11 @@ r7
 r5 ⊓ r1 = ∅
 r5 ≡ r6
 
----------Data Properties--------- 
+---------Data Properties---------
 dp2 ⊑ dp1
 dp3 ⊓ dp1 = ∅
 
 ---------Classes-----------
-
 AB ≡ (A ⊓ B), AB ⊑ C
 D ⊑ (r7.E ⊓ B)
 F ≡ r2.G, F ⊑ H
@@ -35,7 +34,6 @@ R ⊑ r5.Q
 (S ⊓ T) ⊑ U
 
 ---------Individuals-----------
-
 o is O
 p is P
 a is A ^ B
@@ -53,7 +51,6 @@ q is Q
 ind1 has r5.q, r2.g, r6.(S ⊓ T)
 r is R
 s is S ^ T
-
 """
 
 a = OWLNamedIndividual(IRI(NS, "a"))
@@ -287,13 +284,3 @@ t157 = list(reasoner.sub_data_properties(dp2))
 
 
 debug_breakpoint = "Place a breakpoint at this line"
-
-
-
-
-
-
-
-
-
-

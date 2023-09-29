@@ -6,12 +6,12 @@ from typing import Set, List, Dict, Optional, Iterable
 
 from rdflib.plugins.sparql.parser import parseQuery
 
-from ontolearn.owlapy.model import OWLClassExpression, OWLClass, OWLEntity, OWLObjectProperty, OWLObjectIntersectionOf, \
+from ontolearn.owlapy.model import OWLClassExpression, OWLClass, OWLEntity, OWLObjectProperty, \
     OWLObjectUnionOf, OWLObjectComplementOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, OWLObjectHasValue, \
     OWLNamedIndividual, OWLObjectCardinalityRestriction, OWLObjectMinCardinality, OWLObjectExactCardinality, \
     OWLObjectMaxCardinality, OWLDataCardinalityRestriction, OWLDataProperty, OWLObjectHasSelf, OWLObjectOneOf, \
     OWLDataSomeValuesFrom, OWLDataAllValuesFrom, OWLDataHasValue, OWLDatatype, TopOWLDatatype, OWLDataOneOf, \
-    OWLLiteral, OWLDatatypeRestriction
+    OWLLiteral, OWLDatatypeRestriction, OWLObjectIntersectionOf
 from ontolearn.owlapy.vocab import OWLFacet, OWLRDFVocabulary
 
 _Variable_facet_comp = MappingProxyType({
@@ -361,7 +361,7 @@ class Owl2SparqlConverter:
             self.append_triple(self.current_variable, property_expression.get_named_property(), value)
 
     # an overload of process function
-    # this overload is responsible for handling the exists operator combined with an individual (e.g., >=3 hasChild.Male)
+    # this overload is responsible for handling the exists operator combined with an individual(e.g., >=3 hasChild.Male)
     # general case: \theta n r.C
     @process.register
     def _(self, ce: OWLObjectCardinalityRestriction):
@@ -380,7 +380,8 @@ class Owl2SparqlConverter:
             raise ValueError(ce)
 
         # if the comparator is ≤ or the cardinality is 0, we need an additional group graph pattern
-        # the additional group graph pattern will take care the cases where an individual is not associated with the property expression
+        # the additional group graph pattern will take care the cases where an individual is not associated with the
+        # property expression
         if comparator == "<=" or cardinality == 0:
             self.append("{")
 
@@ -401,7 +402,8 @@ class Owl2SparqlConverter:
         # here, the second group graph pattern starts
         if comparator == "<=" or cardinality == 0:
             self.append("} UNION {")
-            self.append_triple(subject_variable, self.mapping.new_individual_variable(), self.mapping.new_individual_variable())
+            self.append_triple(subject_variable, self.mapping.new_individual_variable(),
+                               self.mapping.new_individual_variable())
             self.append("FILTER NOT EXISTS { ")
             object_variable = self.mapping.new_individual_variable()
             if property_expression.is_anonymous():
@@ -467,8 +469,7 @@ class Owl2SparqlConverter:
                 self.append(",")
             assert isinstance(ind, OWLNamedIndividual)
             self.append(f"<{ind.to_string_id()}>")
-        self.append(f" )")
-
+        self.append(" )")
 
     @process.register
     def _(self, ce: OWLDataSomeValuesFrom):
@@ -533,7 +534,7 @@ class Owl2SparqlConverter:
                 self.append(",")
             if value:
                 self.append(self.render(value))
-        self.append(f" ) ) ")
+        self.append(" ) ) ")
 
     @process.register
     def _(self, node: OWLDatatypeRestriction):
@@ -563,7 +564,7 @@ class Owl2SparqlConverter:
     def as_query(self,
                  root_variable: str,
                  ce: OWLClassExpression,
-                 count: bool=False,
+                 count: bool = False,
                  values: Optional[Iterable[OWLNamedIndividual]] = None,
                  named_individuals: bool = False):
         # root variable: the variable that will be projected
@@ -582,10 +583,10 @@ class Owl2SparqlConverter:
             q = [f"VALUES {root_variable} {{ "]
             for x in values:
                 q.append(f"<{x.to_string_id()}>")
-            q.append(f"}} . ")
+            q.append("}} . ")
             qs.extend(q)
         qs.extend(tp)
-        qs.append(f" }}")
+        qs.append(" }}")
 
         # group_by_vars = self.grouping_vars[ce]
         # if group_by_vars:
@@ -599,4 +600,3 @@ class Owl2SparqlConverter:
         query = "\n".join(qs)
         parseQuery(query)
         return query
-

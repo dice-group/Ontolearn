@@ -5,6 +5,7 @@ import random
 
 # @Todo CD:Could we combine PrepareBatchOfPrediction and PrepareBatchOfTraining?
 
+
 class PrepareBatchOfPrediction(torch.utils.data.Dataset):
 
     def __init__(self, current_state: torch.FloatTensor, next_state_batch: torch.Tensor, p: torch.FloatTensor,
@@ -132,16 +133,15 @@ class Experience:
         self.next_states.clear()
         self.rewards.clear()
 
-        
 
 class BaseDataLoader:
-    
+
     def __init__(self, vocab, inv_vocab):
-        
+
         self.vocab = vocab
         self.inv_vocab = inv_vocab
         self.vocab_df = pd.DataFrame(self.vocab.values(), index=self.vocab.keys())
-        
+
     @staticmethod
     def decompose(concept_name: str) -> list:
         list_ordered_pieces = []
@@ -159,16 +159,17 @@ class BaseDataLoader:
                 list_ordered_pieces.append(concept_name[i])
             i += 1
         return list_ordered_pieces
-    
+
     def get_labels(self, target):
         target = self.decompose(target)
         labels = [self.vocab[atm] for atm in target]
         return labels, len(target)
-    
+
 
 class NCESDataLoader(BaseDataLoader, torch.utils.data.Dataset):
-    
-    def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, max_length, example_sizes=None, sorted_examples=True):
+
+    def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, max_length, example_sizes=None,
+                 sorted_examples=True):
         self.data_raw = data
         self.embeddings = embeddings
         self.max_length = max_length
@@ -179,7 +180,7 @@ class NCESDataLoader(BaseDataLoader, torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.data_raw)
-    
+
     def __getitem__(self, idx):
         key, value = self.data_raw[idx]
         pos = value['positive examples']
@@ -196,10 +197,12 @@ class NCESDataLoader(BaseDataLoader, torch.utils.data.Dataset):
         datapoint_pos = torch.FloatTensor(self.embeddings.loc[selected_pos].values.squeeze())
         datapoint_neg = torch.FloatTensor(self.embeddings.loc[selected_neg].values.squeeze())
         labels, length = self.get_labels(key)
-        return datapoint_pos, datapoint_neg, torch.cat([torch.tensor(labels), self.vocab['PAD']*torch.ones(self.max_length-length)]).long()
-    
+        return datapoint_pos, datapoint_neg, torch.cat([torch.tensor(labels),
+                                                        self.vocab['PAD']*torch.ones(self.max_length-length)]).long()
+
+
 class NCESDataLoaderInference(BaseDataLoader, torch.utils.data.Dataset):
-    
+
     def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, sorted_examples=True):
         self.data_raw = data
         self.embeddings = embeddings
@@ -209,7 +212,7 @@ class NCESDataLoaderInference(BaseDataLoader, torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.data_raw)
-    
+
     def __getitem__(self, idx):
         _, pos, neg = self.data_raw[idx]
         if self.sorted_examples:

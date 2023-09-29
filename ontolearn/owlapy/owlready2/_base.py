@@ -12,12 +12,12 @@ from pandas import Timedelta
 from ontolearn.owlapy.owlready2 import axioms
 from ontolearn.owlapy import namespaces
 from ontolearn.owlapy.ext import OWLReasonerEx
-from ontolearn.owlapy.model import OWLObjectPropertyRangeAxiom, OWLOntologyManager, OWLDataProperty, OWLObjectProperty, \
+from ontolearn.owlapy.model import OWLObjectPropertyRangeAxiom, OWLOntologyManager, OWLDataProperty, \
     OWLNamedIndividual, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, OWLOntology, \
     OWLOntologyChange, AddImport, OWLThing, DoubleOWLDatatype, OWLObjectPropertyDomainAxiom, OWLLiteral, \
     OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, DateOWLDatatype, DateTimeOWLDatatype, OWLClass, \
     DurationOWLDatatype, StringOWLDatatype, IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLClassAxiom, \
-    OWLSubClassOfAxiom, OWLEquivalentClassesAxiom, OWLObjectSomeValuesFrom
+    OWLSubClassOfAxiom, OWLEquivalentClassesAxiom, OWLObjectSomeValuesFrom, OWLObjectProperty
 from ontolearn.owlapy.owlready2.utils import FromOwlready2
 
 logger = logging.getLogger(__name__)

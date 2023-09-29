@@ -13,7 +13,7 @@ class Data:
         Use the union of training and validation split during training phase.
 
         ****** out_of_vocab_flag=True
-        Remove all triples from validation and test that contain at least one entity that did not occurred during training.
+        Remove all triples from validation and test that contain at least one entity that did not occur during training.
 
         """
         self.info = {'dataset': data_dir,
@@ -34,9 +34,8 @@ class Data:
         self.valid_relations = self.get_relations(self.valid_data)
         self.test_relations = self.get_relations(self.test_data)
         # The order of entities is important
-        self.relations = self.train_relations + [i for i in self.valid_relations \
-                                                 if i not in self.train_relations] + [i for i in self.test_relations \
-                                                                                      if i not in self.train_relations]
+        self.relations = self.train_relations + [i for i in self.valid_relations if i not in self.train_relations] + \
+                                                [i for i in self.test_relations if i not in self.train_relations]
         # Sanity checking on the framework.
         assert set(self.relations) == set(self.train_relations).union(
             set(self.valid_relations).union(set(self.test_relations)))
@@ -58,7 +57,7 @@ class Data:
         try:
             with open("%s%s.txt" % (data_dir, data_type), "r") as f:
                 data = f.read().strip().split("\n")
-                data = [i.split("\t") for i in data if len(i.split("\t"))==3]
+                data = [i.split("\t") for i in data if len(i.split("\t")) == 3]
                 if add_reciprical:
                     data += [[i[2], i[1] + "_reverse", i[0]] for i in data]
         except FileNotFoundError as e:
