@@ -1,15 +1,16 @@
 import inspect
 import logging
-from typing import TypeVar
+from typing import TypeVar, List, Optional, Union
 
 from ontolearn.abstracts import AbstractHeuristic, AbstractScorer, BaseRefinement, AbstractKnowledgeBase, \
     AbstractNode
 from ontolearn.base_concept_learner import BaseConceptLearner
-from ontolearn.owlapy.model import OWLReasoner
+from ontolearn.owlapy.model import OWLReasoner, OWLNamedIndividual, OWLClassExpression, OWLAxiom
 from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
 
 logger = logging.getLogger(__name__)
 # TODO:CD: Move all imports to the top of the file
+
 
 def _get_matching_opts(_Type, optargs, kwargs, *, prefix=None):
     """find the keys in kwargs that are parameters of _Type
@@ -205,3 +206,32 @@ def ModelAdapter(*args, **kwargs):  # noqa: C901
         ))
 
     return learner
+
+
+class Trainer:
+    def __init__(self, learner: BaseConceptLearner, reasoner: OWLReasoner):
+        """
+        Purpose: To disentangle the learner from its training.
+        @param learner: The concept learner
+        @param reasoner: The reasoner to use (should have the same ontology as the kb arg of the learner)
+        """
+        assert reasoner.get_root_ontology().get_ontology_id().get_ontology_iri().as_str() == \
+               learner.kb.ontology().get_ontology_id().get_ontology_iri().as_str(), "New reasoner does not have " + \
+                                                                                    "the same ontology as the learner!"
+        learner.reasoner = reasoner
+        self.learner = learner
+        self.reasoner = reasoner
+
+    def fit(self, *args, **kwargs):
+        self.learner.fit(*args, **kwargs)
+
+    def best_hypotheses(self, n):
+        return self.learner.best_hypotheses(n)
+
+    def predict(self, individuals: List[OWLNamedIndividual],
+                hypotheses: Optional[List[Union[_N, OWLClassExpression]]] = None,
+                axioms: Optional[List[OWLAxiom]] = None, n: int = 10):
+        return self.learner.predict(individuals, hypotheses, axioms, n)
+
+    def save_best_hypothesis(self, n: int = 10, path: str = 'Predictions', rdf_format: str = 'rdfxml') -> None:
+        self.learner.save_best_hypothesis(n, path, rdf_format)
