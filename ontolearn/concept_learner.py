@@ -1811,7 +1811,7 @@ class NCES(BaseNCES):
 
     def train(self, data: Iterable[List[Tuple]], epochs=300, batch_size=None, learning_rate=1e-4, decay_rate=0.0,
               clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True,
-              example_sizes=[], shuffle_examples=False):
+              example_sizes=None, shuffle_examples=False):
         if batch_size is None:
             batch_size = self.batch_size
         train_dataset = NCESDataLoader(data, self.instance_embeddings, self.vocab, self.inv_vocab,

@@ -655,6 +655,6 @@ if __name__ == '__main__':
     if not os.path.exists("NCESData/"):
         print("\nDownloading data")
         import subprocess
-        subprocess.run("./big_gitext/download_nces_data", shell=True)
+        subprocess.run("./examples/download_nces_data", shell=True)
         print("Done!")
     run(parser.parse_args())
