@@ -657,7 +657,7 @@ if __name__ == '__main__':
     if not os.path.exists("NCESData/") and args.model == "nces":
         print("\nWarning! You are trying to deploy NCES without the NCES data!")
         print(f"Please download the necessary files first: see ./download_external_resources.sh\n")
-    elif not os.path.exists("KGsi") and "KGs/" in args.path_knowledge_base:
+    elif not os.path.exists("KGs") and "KGs/" in args.path_knowledge_base:
         print("\nWarning! There is no 'KGs' folder!")
         print(f"Please download the datasets first: see ./download_external_resources.sh\n")
     else:
