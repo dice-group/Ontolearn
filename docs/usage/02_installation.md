@@ -86,11 +86,14 @@ and all its dependencies from <https://pypi.org/project/ontolearn/>.
 
 ## Download External Files
 
-Some resources like pre-calculated embeddings or `pre_trained_agents` and large datasets
-are not included in the Git repository directly. Use the following
-command to download them from our data server.
+Some resources like pre-calculated embeddings or `pre_trained_agents` and datasets (ontologies)
+are not included in the repository directly. Use the command line command `wget`
+ to download them from our data server.
 
-For example to get all the datasets:
+> **NOTE: Before you run this commands in your terminal, make sure you are 
+in the root directory of the project!**
+
+To download the datasets:
 
 ```shell
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip
@@ -102,11 +105,32 @@ Then depending on your operating system, use the appropriate command to unzip th
 # Windows
 tar -xf KGs.zip
 
+# or
+
 # macOS and Linux
 unzip KGs.zip
 ```
 
-All available files can be found [here](https://files.dice-research.org/projects/Ontolearn/).
+Finally, remove the _.zip_ file:
+
+```shell
+rm KGs.zip
+```
+
+And for NCES data: 
+
+```shell
+wget https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip -O ./NCESData.zip
+unzip NCESData.zip
+rm NCESData.zip
+```
+
+If you are getting any error check if the following flags can help:
+
+```shell
+unzip -o NCESData.zip
+rm -f NCESData.zip
+```
 
 ## Building (sdist and bdist_wheel)
 

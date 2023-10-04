@@ -652,9 +652,13 @@ if __name__ == '__main__':
     #                     default='pre_trained_agents/DrillHeuristic_averaging/DrillHeuristic_averaging.pth',
     #                     help='*Only for DRILL* Provide a path of .pth file')
 
-    if not os.path.exists("NCESData/"):
-        print("\nDownloading data")
-        import subprocess
-        subprocess.run("./examples/download_nces_data", shell=True)
-        print("Done!")
-    run(parser.parse_args())
+    args = parser.parse_args()
+
+    if not os.path.exists("NCESData/") and args.model == "nces":
+        print("\nWarning! You are trying to deploy NCES without the NCES data!")
+        print(f"Please download the necessary files first: see ./download_external_resources.sh\n")
+    elif not os.path.exists("KGsi") and "KGs/" in args.path_knowledge_base:
+        print("\nWarning! There is no 'KGs' folder!")
+        print(f"Please download the datasets first: see ./download_external_resources.sh\n")
+    else:
+        run(args)

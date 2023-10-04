@@ -30,8 +30,8 @@ before continuing with the installation.
 
 
 To successfully pass all the tests you need to download some external resources in advance 
-(see [_Download external files_](#download-external-files-link-files)). We recommend to
-download them all. Also, install _java_ and _curl_ if you don't have them in your system:
+(see [_Download external files_](#download-external-files)). You will need
+at least to download the datasets. Also, install _java_ and _curl_ if you don't have them in your system already:
 
 ```commandline
 sudo apt install openjdk-11-jdk
@@ -58,11 +58,14 @@ pip install ontolearn  # more on https://pypi.org/project/ontolearn/
 ## Quick try-out
 
 You can execute the script `deploy_cl.py` to deploy the concept learners in a local web server and try
-the algorithms using an interactive interface made possible by [gradio](https://www.gradio.app/). Currently, 
-you can only deploy the following concept learners: NCES, EvoLearner, CELOE and OCEL.
+the algorithms using an interactive interface made possible by [Gradio](https://www.gradio.app/). Currently, 
+you can only deploy the following concept learners: **NCES**, **EvoLearner**, **CELOE** and **OCEL**.
 
-For example the command below will launch an interface using EvoLearner as the model on 
-the Family dataset:
+> **NOTE: In case you don't have a dataset, don't worry, you can use
+> the datasets we store in our data server. See _[Download external files](#download-external-files)_.**
+
+For example the command below will launch an interface using **EvoLearner** as the model on 
+the **Family** dataset which is a simple dataset with 202 individuals:
 
 ```shell
 python deploy_cl.py --model evolearner --path_knowledge_base KGs/Family/family-benchmark_rich_background.owl
@@ -70,17 +73,26 @@ python deploy_cl.py --model evolearner --path_knowledge_base KGs/Family/family-b
 
 Once you run this command, a local URL where our model is deployed will be provided to you.
 
+
 In the interface you need to enter the positive and the negative examples. For a quick run you can
-click on the **Random Examples** checkbox, but you may as well enter some real examples which
-you can find in the folder `examples/synthetic_problems.json`. Just copy and paste them directly
-in the respective fields.
+click on the **Random Examples** checkbox, but you may as well enter some real examples for
+the learning problem of **Aunt**, **Brother**, **Cousin**, etc. which
+you can find in the folder `examples/synthetic_problems.json`. Just copy and paste the IRIs of
+positive and negative examples for a certain learning problem directly
+in their respective fields.
+
+Run the help command to see the description on this script usage:
+
+```shell
+python deploy_cl.py --help
+```
 
 ## Usage
 
 In the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder, you can find examples on how to use
 the learning algorithms. Also in the [tests](https://github.com/dice-group/Ontolearn/tree/develop/tests) folder we have added some test cases.
 
-For more detailed instructions we suggest to follow the [guides](https://ontolearn-docs-dice-group.netlify.app/usage/03_algorithm.html) in the documentation.
+For more detailed instructions we suggest to follow the [guides](https://ontolearn-docs-dice-group.netlify.app/usage/06_concept_learners) in the documentation.
 
 Below we give a simple example on using CELOE to learn class expressions for a small dataset.
 
@@ -127,11 +139,14 @@ For a quick start on how to use NCES, please refer to the notebook [simple usage
 
 #### Download external files
 
-Some resources like pre-calculated embeddings or `pre_trained_agents` and large datasets
-are not included in the Git repository directly. Use `wget`
-command to download them from our data server.
+Some resources like pre-calculated embeddings or `pre_trained_agents` and datasets (ontologies)
+are not included in the repository directly. Use the command line command `wget`
+ to download them from our data server.
 
-For example to download the datasets:
+> **NOTE: Before you run this commands in your terminal, make sure you are 
+in the root directory of the project!**
+
+To download the datasets:
 
 ```shell
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip
@@ -149,7 +164,19 @@ tar -xf KGs.zip
 unzip KGs.zip
 ```
 
-All available files can be found [here](https://files.dice-research.org/projects/Ontolearn/).
+Finally, remove the _.zip_ file:
+
+```shell
+rm KGs.zip
+```
+
+And for NCES data: 
+
+```shell
+wget https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip -O ./NCESData.zip
+unzip NCESData.zip
+rm NCESData.zip
+```
 
 
 ----------------------------------------------------------------------------
