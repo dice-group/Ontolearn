@@ -23,7 +23,7 @@ from. Currently, there are the following reasoners available:
     it has no support for instances of complex class expressions, which is covered by the
     other reasoners (CCEI and FIC). We recommend to use the other reasoners for any reasoning tasks.
 
-    #### Initialization:
+    **Initialization:**
 
     ```python
     from ontolearn.owlapy.owlready2 import OWLReasoner_Owlready2
@@ -42,7 +42,8 @@ from. Currently, there are the following reasoners available:
     complex class expression instances (when using the method `instances`). CCEI is more useful when 
     your main goal is reasoning over the ontology.
 
-    #### Initialization:
+    **Initialization:**
+
     ```python
     from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
     from ontolearn.owlapy.owlready2 import BaseReasoner_Owlready2
@@ -63,8 +64,10 @@ from. Currently, there are the following reasoners available:
     FIC also provides support for complex class expression but the rest of the methods are the same as in 
     the base reasoner.
     It has a cache storing system that allows for faster execution of some reasoning functionalities. Due to this 
-    feature, FIC is more appropriate to be used in concept learning
-    #### Initialization:
+    feature, FIC is more appropriate to be used in concept learning.
+
+    **Initialization:**
+
     ```python
     from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
     
