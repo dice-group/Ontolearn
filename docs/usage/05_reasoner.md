@@ -16,7 +16,8 @@ onto = manager.load_ontology(IRI.create("KGs/father.owl"))
 In our Ontolearn library, we provide several **reasoners** to choose
 from. Currently, there are the following reasoners available: 
 
-- ### [OWLReasoner_Owlready2](ontolearn.owlapy.owlready2.OWLReasoner_Owlready2)
+-  [**OWLReasoner_Owlready2**](ontolearn.owlapy.owlready2.OWLReasoner_Owlready2)
+
     Or differently Structural Owlready2 Reasoner, is the base reasoner in Ontolearn. The functionalities
     of this reasoner are limited. It does not provide full reasoning in _ALCH_. Furthermore,
     it has no support for instances of complex class expressions, which is covered by the
@@ -35,7 +36,8 @@ from. Currently, there are the following reasoners available:
     reasoning. More on that on _[Reasoning Details](07_reasoning_details.md#isolated-world)_.
 
 
-- ### [OWLReasoner_Owlready2_ComplexCEInstances](ontolearn.owlapy.owlready2.complex_ce_instances.OWLReasoner_Owlready2_ComplexCEInstances) (CCEI)
+- [**OWLReasoner_Owlready2_ComplexCEInstances**](ontolearn.owlapy.owlready2.complex_ce_instances.OWLReasoner_Owlready2_ComplexCEInstances) **(CCEI)**
+
     Can perform full reasoning in _ALCH_ due to the use of HermiT/Pellet and provides support for
     complex class expression instances (when using the method `instances`). CCEI is more useful when 
     your main goal is reasoning over the ontology.
@@ -56,7 +58,8 @@ from. Currently, there are the following reasoners available:
     `BaseReasoner_Owlready2.PELLET`.
 
 
-- ### [OWLReasoner_FastInstanceChecker](ontolearn.owlapy.fast_instance_checker.OWLReasoner_FastInstanceChecker) (FIC)
+- [**OWLReasoner_FastInstanceChecker**](ontolearn.owlapy.fast_instance_checker.OWLReasoner_FastInstanceChecker) **(FIC)**
+
     FIC also provides support for complex class expression but the rest of the methods are the same as in 
     the base reasoner.
     It has a cache storing system that allows for faster execution of some reasoning functionalities. Due to this 
