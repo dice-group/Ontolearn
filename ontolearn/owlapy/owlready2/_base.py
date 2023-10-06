@@ -277,7 +277,8 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         """
         if self._isolated:
             if axioms_to_add is None and axioms_to_remove is None:
-                raise ValueError("At least one argument should be specified.")
+                raise ValueError(f"At least one argument should be specified in method: "
+                                 f"{self.update_isolated_ontology.__name__}")
             manager = self._ontology.get_owl_ontology_manager()
             if axioms_to_add is not None:
                 for axiom in axioms_to_add:
@@ -286,7 +287,8 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                 for axiom in axioms_to_remove:
                     manager.remove_axiom(self._ontology, axiom)
         else:
-            raise AssertionError("The reasoner is not using an isolated ontology.")
+            raise AssertionError(f"Misuse of method '{self.update_isolated_ontology.__name__}'. The reasoner is not "
+                                 f"using an isolated ontology.")
 
     def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
         domains = {d.get_domain() for d in self.get_root_ontology().data_property_domain_axioms(pe)}

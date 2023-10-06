@@ -22,6 +22,7 @@ class OWLReasoner_Owlready2_ComplexCEInstances(OWLReasoner_Owlready2):
     def __init__(self, ontology: OWLOntology_Owlready2, base_reasoner: Optional[BaseReasoner_Owlready2] = None,
                  infer_property_values: bool = True, infer_data_property_values: bool = True, isolate: bool = False):
         """
+        OWL Reasoner with support for Complex Class Expresion Instances + sync_reasoner
         Args:
             ontology: the ontology that should be used by the reasoner
             base_reasoner: set to BaseReasoner.PELLET (default) or BaseReasoner.HERMIT
@@ -47,6 +48,9 @@ class OWLReasoner_Owlready2_ComplexCEInstances(OWLReasoner_Owlready2):
     def update_isolated_ontology(self, axioms_to_add: List[OWLAxiom] = None,
                                  axioms_to_remove: List[OWLAxiom] = None):
         if self._isolated:
+            if axioms_to_add is None and axioms_to_remove is None:
+                raise ValueError(f"At least one argument should be specified in method: "
+                                 f"{self.update_isolated_ontology.__name__}")
             self._ontology = self.reference_ontology
             super().update_isolated_ontology(axioms_to_add, axioms_to_remove)
             self.reference_ontology.get_owl_ontology_manager().save_ontology(self._ontology, self.reference_iri)
@@ -56,7 +60,8 @@ class OWLReasoner_Owlready2_ComplexCEInstances(OWLReasoner_Owlready2):
             self._world = new_manager._world
             self._sync_reasoner(self._base_reasoner, self.infer_property_values, self.infer_data_property_values)
         else:
-            raise AssertionError("The reasoner is not using an isolated ontology.")
+            raise AssertionError(f"Misuse of method '{self.update_isolated_ontology.__name__}'. The reasoner is not "
+                                 f"using an isolated ontology.")
 
     def instances(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLNamedIndividual]:
         if isinstance(ce, OWLClass):
