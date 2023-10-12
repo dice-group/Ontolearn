@@ -23,7 +23,7 @@ _P = TypeVar('_P', bound=OWLPropertyExpression)
 
 
 class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
-    """Tries to check instances fast (but maybe incomplete)"""
+    """Tries to check instances fast (but maybe incomplete)."""
     __slots__ = '_ontology', '_base_reasoner', \
                 '_ind_set', '_cls_to_ind', \
                 '_has_prop', \

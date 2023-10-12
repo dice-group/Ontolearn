@@ -51,6 +51,12 @@ declare_datatype(Timedelta, IRI.create(namespaces.XSD, "duration").as_str(),
 
 
 class BaseReasoner_Owlready2(Enum):
+    """Enumeration class for base reasoner when calling sync_reasoner.
+
+    Attributes:
+        PELLET: Pellet base reasoner.
+        HERMIT: HermiT base reasoner.
+    """
     PELLET = auto()
     HERMIT = auto()
 
@@ -61,6 +67,13 @@ class OWLOntologyManager_Owlready2(OWLOntologyManager):
     _world: owlready2.namespace.World
 
     def __init__(self, world_store=None):
+        """Ontology manager in Ontolearn.
+        Creates a world where ontology is loaded.
+        Used to make changes in the ontology.
+
+        Args:
+            world_store: The file name of the world store. Leave to default value to create a new world.
+        """
         if world_store is None:
             self._world = owlready2.World()
         else:
@@ -100,7 +113,7 @@ class OWLOntologyManager_Owlready2(OWLOntologyManager):
             raise NotImplementedError
 
     def save_world(self):
-        """saves the actual state of the quadstore in the SQLite3 file
+        """Saves the actual state of the quadstore in the SQLite3 file.
         """
         self._world.save()
 
@@ -113,6 +126,13 @@ class OWLOntology_Owlready2(OWLOntology):
     _world: owlready2.World
 
     def __init__(self, manager: OWLOntologyManager_Owlready2, ontology_iri: IRI, load: bool):
+        """Represents an Ontology in Ontolearn.
+
+        Args:
+            manager: Ontology manager.
+            ontology_iri: IRI of the ontology.
+            load: Whether to load the ontology or not.
+        """
         self._manager = manager
         self._iri = ontology_iri
         self._world = manager._world
@@ -221,6 +241,7 @@ class OWLOntology_Owlready2(OWLOntology):
                     pass  # XXX TODO
 
     def get_original_iri(self):
+        """Get the IRI argument that was used to create this ontology."""
         return self._iri
 
     def __eq__(self, other):
@@ -246,7 +267,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         Base reasoner in Ontolearn, used to reason in the given ontology.
 
         Args:
-            ontology: the ontology that should be used by the reasoner
+            ontology: The ontology that should be used by the reasoner.
             isolate: Whether to isolate the reasoner in a new world + copy of the original ontology.
                      Useful if you create multiple reasoner instances in the same script.
         """
@@ -269,11 +290,11 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
     def update_isolated_ontology(self, axioms_to_add: List[OWLAxiom] = None,
                                  axioms_to_remove: List[OWLAxiom] = None):
         """
-        Make changes to the isolated ontology that the reasoner is using.
+        Add or remove axioms to the isolated ontology that the reasoner is using.
 
         Args:
-            axioms_to_add: Axioms to add to the isolated ontology
-            axioms_to_remove: Axioms to remove from the isolated ontology
+            axioms_to_add (List[OWLAxiom]): Axioms to add to the isolated ontology.
+            axioms_to_remove (List[OWLAxiom]): Axioms to remove from the isolated ontology.
         """
         if self._isolated:
             if axioms_to_add is None and axioms_to_remove is None:
@@ -673,7 +694,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             if d != OWLDataProperty(IRI('http://www.w3.org/2002/07/owl#', 'DatatypeProperty')):
                 yield from self._find_disjoint_data_properties(d, seen_set=seen_set)
 
-    def _sup_or_sup_data_properties_recursive(self, dp: OWLDataProperty, seen_set: Set, super_or_sub="") \
+    def _sup_or_sub_data_properties_recursive(self, dp: OWLDataProperty, seen_set: Set, super_or_sub="") \
             -> Iterable[OWLDataProperty]:
         for d in self.equivalent_data_properties(dp):
             if d not in seen_set:
@@ -691,9 +712,9 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                 if sp not in seen_set:
                     seen_set.add(sp)
                     yield sp
-                    yield from self._sup_or_sup_data_properties_recursive(sp, seen_set, super_or_sub)
+                    yield from self._sup_or_sub_data_properties_recursive(sp, seen_set, super_or_sub)
 
-    def _sup_or_sup_data_properties(self, dp: OWLDataProperty, direct: bool = False, super_or_sub=""):
+    def _sup_or_sub_data_properties(self, dp: OWLDataProperty, direct: bool = False, super_or_sub=""):
         assert isinstance(dp, OWLDataProperty)
         if direct:
             p_x: owlready2.DataPropertyClass = self._world[dp.get_iri().as_str()]
@@ -706,13 +727,24 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                     yield OWLDataProperty(IRI.create(sp.iri))
         else:
             seen_set = set()
-            yield from self._sup_or_sup_data_properties_recursive(dp, seen_set, super_or_sub)
+            yield from self._sup_or_sub_data_properties_recursive(dp, seen_set, super_or_sub)
 
     def super_data_properties(self, dp: OWLDataProperty, direct: bool = False) -> Iterable[OWLDataProperty]:
-        yield from self._sup_or_sup_data_properties(dp, direct, "super")
+        """Gets the stream of data properties that are the strict (potentially direct) super properties of the
+         specified data property with respect to the imports closure of the root ontology.
+
+         Args:
+             dp (OWLDataProperty): The data property whose super properties are to be retrieved.
+             direct (bool): Specifies if the direct super properties should be retrieved (True) or if the all
+                            super properties (ancestors) should be retrieved (False).
+
+         Returns:
+             Iterable of super properties.
+         """
+        yield from self._sup_or_sub_data_properties(dp, direct, "super")
 
     def sub_data_properties(self, dp: OWLDataProperty, direct: bool = False) -> Iterable[OWLDataProperty]:
-        yield from self._sup_or_sup_data_properties(dp, direct, "sub")
+        yield from self._sup_or_sub_data_properties(dp, direct, "sub")
 
     def _sup_or_sub_object_properties_recursive(self, op: OWLObjectProperty, seen_set: Set, super_or_sub=""):
         for o in self.equivalent_object_properties(op):
@@ -763,6 +795,18 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
 
     def super_object_properties(self, op: OWLObjectPropertyExpression, direct: bool = False) \
             -> Iterable[OWLObjectPropertyExpression]:
+        """Gets the stream of object properties that are the strict (potentially direct) super properties of the
+         specified object property with respect to the imports closure of the root ontology.
+
+         Args:
+             op (OWLObjectPropertyExpression): The object property expression whose super properties are to be
+                                                retrieved.
+             direct (bool): Specifies if the direct super properties should be retrieved (True) or if the all
+                            super properties (ancestors) should be retrieved (False).
+
+         Returns:
+             Iterable of super properties.
+         """
         yield from self._sup_or_sub_object_properties(op, direct, "super")
 
     def sub_object_properties(self, op: OWLObjectPropertyExpression, direct: bool = False) \
@@ -785,12 +829,12 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
     def _sync_reasoner(self, other_reasoner: BaseReasoner_Owlready2 = None,
                        infer_property_values: bool = True,
                        infer_data_property_values: bool = True, debug: bool = False) -> None:
-        """Call Owlready2's sync_reasoner method, which spawns a Java process on a temp file to infer more
+        """Call Owlready2's sync_reasoner method, which spawns a Java process on a temp file to infer more.
 
         Args:
-            other_reasoner: set to BaseReasoner.PELLET (default) or BaseReasoner.HERMIT
-            infer_property_values: whether to infer property values
-            infer_data_property_values: whether to infer data property values (only for PELLET)
+            other_reasoner: Set to BaseReasoner.PELLET (default) or BaseReasoner.HERMIT.
+            infer_property_values: Whether to infer property values.
+            infer_data_property_values: Whether to infer data property values (only for PELLET).
         """
         assert other_reasoner is None or isinstance(other_reasoner, BaseReasoner_Owlready2)
         with self.get_root_ontology()._onto:
@@ -806,4 +850,5 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         return self._ontology
 
     def is_isolated(self):
+        """Return True if this reasoner is using an isolated ontology."""
         return self._isolated

@@ -1,3 +1,4 @@
+"""SPARQL representations."""
 import logging
 from functools import singledispatchmethod
 from typing import Optional, Iterable, FrozenSet

@@ -1,3 +1,4 @@
+"""String to OWL parsers."""
 from types import MappingProxyType
 from typing import Final, List, Optional, Union
 from parsimonious.grammar import Grammar
@@ -176,8 +177,8 @@ class _ManchesterOWLSyntaxParserMeta(type(NodeVisitor), type(OWLObjectParser)):
 
 
 class ManchesterOWLSyntaxParser(NodeVisitor, OWLObjectParser, metaclass=_ManchesterOWLSyntaxParserMeta):
-    """Manchester Syntax parser to parse strings to OWLClassExpressions
-       Following: https://www.w3.org/TR/owl2-manchester-syntax"""
+    """Manchester Syntax parser to parse strings to OWLClassExpressions.
+       Following: https://www.w3.org/TR/owl2-manchester-syntax."""
 
     slots = 'ns', 'grammar'
 
@@ -191,8 +192,8 @@ class ManchesterOWLSyntaxParser(NodeVisitor, OWLObjectParser, metaclass=_Manches
            Prefixes are currently not supported, except for datatypes.
 
         Args:
-            namespace: Namespace to resolve names that were given without one
-            grammar: Grammar (defaults to MANCHESTERGRAMMAR)
+            namespace: Namespace to resolve names that were given without one.
+            grammar: Grammar (defaults to MANCHESTERGRAMMAR).
         """
         self.ns = namespace
         self.grammar = grammar
@@ -520,7 +521,7 @@ class _DLSyntaxParserMeta(type(NodeVisitor), type(OWLObjectParser)):
 
 
 class DLSyntaxParser(NodeVisitor, OWLObjectParser, metaclass=_DLSyntaxParserMeta):
-    """Description Logic Syntax parser to parse strings to OWLClassExpressions"""
+    """Description Logic Syntax parser to parse strings to OWLClassExpressions."""
 
     slots = 'ns', 'grammar'
 
@@ -532,8 +533,8 @@ class DLSyntaxParser(NodeVisitor, OWLObjectParser, metaclass=_DLSyntaxParserMeta
            Prefixes are currently not supported, except for datatypes.
 
         Args:
-            namespace: Namespace to resolve names that were given without one
-            grammar: Grammar (defaults to DL_GRAMMAR)
+            namespace: Namespace to resolve names that were given without one.
+            grammar: Grammar (defaults to DL_GRAMMAR).
         """
         self.ns = namespace
         self.grammar = grammar

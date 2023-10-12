@@ -1,3 +1,4 @@
+"""NCES modules."""
 # From https://github.com/juho-lee/set_transformer
 
 import torch
@@ -7,6 +8,7 @@ import math
 
 
 class MAB(nn.Module):
+    """MAB module."""
     def __init__(self, dim_Q, dim_K, dim_V, num_heads, ln=False):
         super(MAB, self).__init__()
         self.dim_V = dim_V
@@ -37,6 +39,7 @@ class MAB(nn.Module):
 
 
 class SAB(nn.Module):
+    """SAB module."""
     def __init__(self, dim_in, dim_out, num_heads, ln=False):
         super(SAB, self).__init__()
         self.mab = MAB(dim_in, dim_in, dim_out, num_heads, ln=ln)
@@ -46,6 +49,7 @@ class SAB(nn.Module):
 
 
 class ISAB(nn.Module):
+    """ISAB module."""
     def __init__(self, dim_in, dim_out, num_heads, num_inds, ln=False):
         super(ISAB, self).__init__()
         self.I = nn.Parameter(torch.Tensor(1, num_inds, dim_out))
@@ -59,6 +63,7 @@ class ISAB(nn.Module):
 
 
 class PMA(nn.Module):
+    """PMA module."""
     def __init__(self, dim, num_heads, num_seeds, ln=False):
         super(PMA, self).__init__()
         self.S = nn.Parameter(torch.Tensor(1, num_seeds, dim))

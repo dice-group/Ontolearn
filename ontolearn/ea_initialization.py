@@ -1,3 +1,5 @@
+"""Initialization for evolutionary algorithms."""
+
 from dataclasses import dataclass
 from functools import lru_cache
 from enum import Enum, auto
@@ -51,9 +53,9 @@ class EARandomInitialization(AbstractEAInitialization):
                  method: RandomInitMethod = RandomInitMethod.RAMPED_HALF_HALF):
         """
         Args:
-            min_height: minimum height of trees
-            max_height: maximum height of trees
-            method: random initialization method possible values: rhh, grow, full
+            min_height: Minimum height of trees.
+            max_height: Maximum height of trees.
+            method: Random initialization method possible values: rhh, grow, full.
         """
         self.min_height = min_height
         self.max_height = max_height
@@ -127,9 +129,10 @@ class EARandomWalkInitialization(AbstractEAInitialization):
 
     def __init__(self, max_t: int = 2, jump_pr: float = 0.5):
         """
+        Random walk initialization for description logic learning.
         Args:
-            max_t: number of paths
-            jump_pr: probability to explore paths of length 2
+            max_t: Number of paths.
+            jump_pr: Probability to explore paths of length 2.
         """
         self.max_t = max_t
         self.jump_pr = jump_pr

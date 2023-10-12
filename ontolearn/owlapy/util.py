@@ -1,3 +1,4 @@
+"""Owlapy utils."""
 from functools import singledispatchmethod, total_ordering
 from typing import Iterable, List, Type, TypeVar, Generic, Tuple, cast, Optional, Union, overload
 
@@ -23,10 +24,13 @@ _V = TypeVar('_V')
 
 @total_ordering
 class OrderedOWLObject:
-    """Holder of OWL Objects that can be used for Python sorted
+    """Holder of OWL Objects that can be used for Python sorted.
 
     The Ordering is dependent on the type_index of the impl. classes recursively followed by all components of the
     OWL Object.
+
+    Attributes:
+        o: OWL object.
     """
     __slots__ = 'o', '_chain'
 
@@ -35,10 +39,10 @@ class OrderedOWLObject:
 
     # we are limited by https://github.com/python/typing/issues/213 # o: Intersection[OWLObject, HasIndex]
     def __init__(self, o: _HasIndex):
-        """OWL Object holder with a defined sort order
+        """OWL Object holder with a defined sort order.
 
         Args:
-            o: OWL Object
+            o: OWL Object.
         """
         self.o = o
         self._chain = None
@@ -92,17 +96,17 @@ def _sort_by_ordered_owl_object(i: Iterable[_O]) -> Iterable[_O]:
 
 
 class NNF:
-    """This class contains functions to transform a Class Expression into Negation Normal Form"""
+    """This class contains functions to transform a Class Expression into Negation Normal Form."""
     @singledispatchmethod
     def get_class_nnf(self, ce: OWLClassExpression, negated: bool = False) -> OWLClassExpression:
         """Convert a Class Expression to Negation Normal Form. Operands will be sorted.
 
         Args:
-            ce: Class Expression
-            negated: whether the result should be negated
+            ce: Class Expression.
+            negated: Whether the result should be negated.
 
         Returns:
-            Class Expression in Negation Normal Form
+            Class Expression in Negation Normal Form.
             """
         raise NotImplementedError
 
@@ -280,32 +284,32 @@ class NNF:
 # OWL-APy custom util start
 
 class TopLevelCNF:
-    """This class contains functions to transform a class expression into Top-Level Conjunctive Normal Form"""
+    """This class contains functions to transform a class expression into Top-Level Conjunctive Normal Form."""
 
     def get_top_level_cnf(self, ce: OWLClassExpression) -> OWLClassExpression:
         """Convert a class expression into Top-Level Conjunctive Normal Form. Operands will be sorted.
 
         Args:
-            ce: Class Expression
+            ce: Class Expression.
 
         Returns:
-            Class Expression in Top-Level Conjunctive Normal Form
+            Class Expression in Top-Level Conjunctive Normal Form.
             """
         c = _get_top_level_form(ce.get_nnf(), OWLObjectUnionOf, OWLObjectIntersectionOf)
         return combine_nary_expressions(c)
 
 
 class TopLevelDNF:
-    """This class contains functions to transform a class expression into Top-Level Disjunctive Normal Form"""
+    """This class contains functions to transform a class expression into Top-Level Disjunctive Normal Form."""
 
     def get_top_level_dnf(self, ce: OWLClassExpression) -> OWLClassExpression:
         """Convert a class expression into Top-Level Disjunctive Normal Form. Operands will be sorted.
 
         Args:
-            ce: Class Expression
+            ce: Class Expression.
 
         Returns:
-            Class Expression in Top-Level Disjunctive Normal Form
+            Class Expression in Top-Level Disjunctive Normal Form.
             """
         c = _get_top_level_form(ce.get_nnf(), OWLObjectIntersectionOf, OWLObjectUnionOf)
         return combine_nary_expressions(c)
@@ -367,11 +371,11 @@ def combine_nary_expressions(ce: OWLDataRange) -> OWLDataRange:
 
 
 def combine_nary_expressions(ce: OWLPropertyRange) -> OWLPropertyRange:
-    ''' Shortens an OWLClassExpression or OWLDataRange by combining all nested nary expressions of the same type.
+    """ Shortens an OWLClassExpression or OWLDataRange by combining all nested nary expressions of the same type.
     Operands will be sorted.
 
-    E.g. OWLObjectUnionOf(A, OWLObjectUnionOf(C, B)) -> OWLObjectUnionOf(A, B, C)
-    '''
+    E.g. OWLObjectUnionOf(A, OWLObjectUnionOf(C, B)) -> OWLObjectUnionOf(A, B, C).
+    """
     if isinstance(ce, (OWLNaryBooleanClassExpression, OWLNaryDataRange)):
         expressions: List[OWLPropertyRange] = []
         for op in ce.operands():
@@ -405,21 +409,31 @@ def combine_nary_expressions(ce: OWLPropertyRange) -> OWLPropertyRange:
 
 
 def iter_count(i: Iterable) -> int:
-    """Count the number of elements in an iterable"""
+    """Count the number of elements in an iterable."""
     return sum(1 for _ in i)
 
 
 def as_index(o: OWLObject) -> HasIndex:
-    """Cast OWL Object to HasIndex"""
+    """Cast OWL Object to HasIndex."""
     i = cast(HasIndex, o)
     assert type(i).type_index
     return i
 
 
-# adapted from functools.lru_cache
 class LRUCache(Generic[_K, _V]):
-    # Constants shared by all lru cache instances:
-    sentinel = object()  # unique object used to signal cache misses
+    """Constants shares by all lru cache instances.
+
+    Adapted from functools.lru_cache.
+
+    Attributes:
+        sentinel: Unique object used to signal cache misses.
+        PREV: Name for the link field 0.
+        NEXT: Name for the link field 1.
+        KEY: Name for the link field 2.
+        RESULT: Name for the link field 3.
+    """
+
+    sentinel = object()
     PREV, NEXT, KEY, RESULT = 0, 1, 2, 3  # names for the link fields
 
     def __init__(self, maxsize: Optional[int] = None):
@@ -498,14 +512,14 @@ class LRUCache(Generic[_K, _V]):
                     self.full = (self.cache_len() >= self.maxsize)
 
     def cache_info(self):
-        """Report cache statistics"""
+        """Report cache statistics."""
         with self.lock:
             from collections import namedtuple
             return namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])(
                 self.hits, self.misses, self.maxsize, self.cache_len())
 
     def cache_clear(self):
-        """Clear the cache and cache statistics"""
+        """Clear the cache and cache statistics."""
         with self.lock:
             self.cache.clear()
             self.root[:] = [self.root, self.root, None, None]

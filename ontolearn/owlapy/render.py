@@ -1,3 +1,4 @@
+"""Renderers for different syntax."""
 # -*- coding: utf-8 -*-
 
 import types
@@ -53,16 +54,16 @@ def _simple_short_form_provider(e: OWLEntity) -> str:
 
 
 class DLSyntaxObjectRenderer(OWLObjectRenderer):
-    """DL Syntax renderer for OWL Objects"""
+    """DL Syntax renderer for OWL Objects."""
     __slots__ = '_sfp'
 
     _sfp: Callable[[OWLEntity], str]
 
     def __init__(self, short_form_provider: Callable[[OWLEntity], str] = _simple_short_form_provider):
-        """Create a new DL Syntax renderer
+        """Create a new DL Syntax renderer.
 
         Args:
-            short_form_provider: custom short form provider
+            short_form_provider: Custom short form provider.
         """
         self._sfp = short_form_provider
 

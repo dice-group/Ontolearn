@@ -1,3 +1,5 @@
+"""Utils for evolutionary algorithms."""
+
 from enum import Enum
 from typing import Callable, Final, List, Optional, Tuple, Union
 

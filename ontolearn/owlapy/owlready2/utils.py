@@ -1,3 +1,4 @@
+"""Utils for mapping to and from owlready2."""
 from datetime import date, datetime
 from functools import singledispatchmethod
 from types import MappingProxyType
@@ -35,15 +36,22 @@ OWLREADY2_FACET_KEYS = MappingProxyType({
 
 
 class ToOwlready2:
+
     __slots__ = '_world'
 
     _world: owlready2.World
 
     def __init__(self, world: owlready2.World):
+        """Map owlapy model classes to owlready2.
+
+        Args:
+            world: Owlready2 World to use for mapping.
+        """
         self._world = world
 
     @singledispatchmethod
     def map_object(self, o: OWLObject):
+        """Map owlapy object classes."""
         raise NotImplementedError(f'don\'t know how to map {o}')
 
     @map_object.register
@@ -64,6 +72,7 @@ class ToOwlready2:
     @singledispatchmethod
     def map_concept(self, o: OWLClassExpression) \
             -> Union[owlready2.ClassConstruct, owlready2.ThingClass]:
+        """Map owlapy concept classes."""
         raise NotImplementedError(o)
 
     @singledispatchmethod
@@ -173,6 +182,7 @@ class ToOwlready2:
 
     @singledispatchmethod
     def map_datarange(self, p: OWLDataRange) -> Union[owlready2.ClassConstruct, type]:
+        """Map owlapy data range classes."""
         raise NotImplementedError(p)
 
     @map_datarange.register
@@ -221,10 +231,12 @@ class ToOwlready2:
 
 
 class FromOwlready2:
+    """Map owlready2 classes to owlapy model classes."""
     __slots__ = ()
 
     @singledispatchmethod
     def map_concept(self, c: Union[owlready2.ClassConstruct, owlready2.ThingClass]) -> OWLClassExpression:
+        """Map concept classes."""
         raise NotImplementedError(c)
 
     @singledispatchmethod
@@ -317,6 +329,7 @@ class FromOwlready2:
 
     @singledispatchmethod
     def map_datarange(self, p: owlready2.ClassConstruct) -> OWLDataRange:
+        """Map data range classes."""
         raise NotImplementedError(p)
 
     @map_datarange.register

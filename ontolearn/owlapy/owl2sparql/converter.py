@@ -1,3 +1,4 @@
+"""Format converter."""
 from collections import defaultdict
 from contextlib import contextmanager
 from functools import singledispatchmethod
@@ -23,10 +24,17 @@ _Variable_facet_comp = MappingProxyType({
 
 
 def peek(x):
+    """Peek the last element of an array.
+
+    Returns:
+        The last element arr[-1].
+
+    """
     return x[-1]
 
 
 class VariablesMapping:
+    """Helper class for owl-to-sparql conversion."""
     __slots__ = 'class_cnt', 'prop_cnt', 'ind_cnt', 'dict'
 
     def __init__(self):
@@ -70,6 +78,7 @@ class VariablesMapping:
 
 
 class Owl2SparqlConverter:
+    """Convert owl (owlapy model class expressions) to SPARQL."""
     __slots__ = 'ce', 'sparql', 'variables', 'parent', 'parent_var', 'properties', 'variable_entities', 'cnt', \
                 'mapping', 'grouping_vars', 'having_conditions', '_intersection'
 
@@ -87,6 +96,16 @@ class Owl2SparqlConverter:
     cnt: int
 
     def convert(self, root_variable: str, ce: OWLClassExpression, named_individuals: bool = False):
+        """Used to convert owl class expression to SPARQL syntax.
+
+        Args:
+            root_variable (str): Root variable name that will be used in SPARQL query.
+            ce (OWLClassExpression): The owl class expression to convert.
+            named_individuals (bool): If 'True' return only entities that are instances of owl:NamedIndividual.
+
+        Returns:
+            list[str]: The SPARQL query.
+        """
         self.ce = ce
         self.sparql = []
         self.variables = []

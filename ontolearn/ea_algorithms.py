@@ -1,3 +1,5 @@
+"""Evolutionary algorithms (for Evolearner)."""
+
 from abc import ABCMeta, abstractmethod
 from typing import ClassVar, Final, List, Optional, Tuple
 from deap.algorithms import varAnd
@@ -22,7 +24,7 @@ class AbstractEvolutionaryAlgorithm(metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self):
-        """Create a new evolutionary algorithm"""
+        """Create a new evolutionary algorithm."""
         pass
 
     @abstractmethod

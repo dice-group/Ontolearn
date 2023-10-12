@@ -1,3 +1,4 @@
+"""NCES trainer."""
 import numpy as np
 import copy
 import torch
@@ -25,7 +26,7 @@ def before_pad(arg):
 
 
 class NCESTrainer:
-
+    """NCES trainer."""
     def __init__(self, nces, epochs=300, learning_rate=1e-4, decay_rate=0, clip_value=5.0, num_workers=8,
                  storage_path="./"):
         self.nces = nces

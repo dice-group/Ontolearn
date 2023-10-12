@@ -1,7 +1,7 @@
-"""Structured Machine learning modules for Python
+"""Structured Machine learning modules for Python.
 
-Ontolearn is an open-source software library for structured machine learning in Python
-The goal of ontolearn is to provide efficient solutions for concept learning on RDF knowledge bases
+Ontolearn is an open-source software library for structured machine learning in Python.
+The goal of ontolearn is to provide efficient solutions for concept learning on RDF knowledge bases.
 
 
 Author:

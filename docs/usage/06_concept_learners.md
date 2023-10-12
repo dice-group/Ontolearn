@@ -8,6 +8,12 @@ of Ontolearn library:
 - [CELOE](ontolearn.concept_learner.CELOE)
 - [OCEL](ontolearn.concept_learner.OCEL)
 
+> **IMPORTANT**!
+> - _DRILL_ is not fully implemented in Ontolear. In the meantime you can refer to 
+> [_DRILL's_ GitHub repo](https://github.com/dice-group/drill). 
+> - Documentation for _NCES_ coming soon. In the meantime visit _NCES_ jupyter notebooks
+> inside [examples folder](https://github.com/dice-group/Ontolearn/tree/develop/examples).
+
 These algorithms are similar in execution, for that reason, we are 
 describing them in a general manner. To test them separately see [_Quick try-out_](#quick-try-out).
 Each algorithm may have different available configuration. However, at

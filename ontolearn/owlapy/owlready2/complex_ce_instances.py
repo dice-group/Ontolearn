@@ -1,3 +1,4 @@
+"""OWL Reasoner - Complex Class Expression Instances (CCEI)."""
 import logging
 import types
 from logging import warning
@@ -22,12 +23,13 @@ class OWLReasoner_Owlready2_ComplexCEInstances(OWLReasoner_Owlready2):
     def __init__(self, ontology: OWLOntology_Owlready2, base_reasoner: Optional[BaseReasoner_Owlready2] = None,
                  infer_property_values: bool = True, infer_data_property_values: bool = True, isolate: bool = False):
         """
-        OWL Reasoner with support for Complex Class Expresion Instances + sync_reasoner
+        OWL Reasoner with support for Complex Class Expression Instances + sync_reasoner.
+
         Args:
-            ontology: the ontology that should be used by the reasoner
-            base_reasoner: set to BaseReasoner.PELLET (default) or BaseReasoner.HERMIT
-            infer_property_values: whether to infer property values
-            infer_data_property_values: whether to infer data property values (only for PELLET)
+            ontology: The ontology that should be used by the reasoner.
+            base_reasoner: Set to BaseReasoner.PELLET (default) or BaseReasoner.HERMIT.
+            infer_property_values: Whether to infer property values.
+            infer_data_property_values: Whether to infer data property values (only for PELLET).
             isolate: Whether to isolate the reasoner in a new world + copy of the original ontology.
                      Useful if you create multiple reasoner instances in the same script.
         """

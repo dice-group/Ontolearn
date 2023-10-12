@@ -828,7 +828,7 @@ class Owlapy_Owlready2_ComplexCEInstances_Test(unittest.TestCase):
 
         ns = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("../KGs/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
 
         reasoner1 = OWLReasoner_Owlready2(onto)
         ccei_reasoner = OWLReasoner_Owlready2_ComplexCEInstances(onto, isolate=True)

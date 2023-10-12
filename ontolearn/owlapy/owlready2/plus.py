@@ -1,3 +1,4 @@
+"""OWL Reasoner Plus."""
 from typing import Iterable, Set
 
 import owlready2
@@ -9,9 +10,9 @@ from ontolearn.owlapy.owlready2 import OWLReasoner_Owlready2
 
 
 class OWLReasoner_Owlready2_Plus(OWLReasoner_Owlready2):
-    """OWL Reasoner based on owlready2
+    """OWL Reasoner based on owlready2.
 
-    contains some behavioural fixes"""
+    Contains some behavioural fixes."""
     def sub_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
         if isinstance(ce, OWLClass):
             if direct:

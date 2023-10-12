@@ -1,3 +1,5 @@
+"""The main abstract classes."""
+
 import logging
 from abc import ABCMeta, abstractmethod
 from typing import Set, List, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional
@@ -17,11 +19,12 @@ logger = logging.getLogger(__name__)
 
 
 class EncodedLearningProblem(metaclass=ABCMeta):
-    """Encoded Abstract learning problem for use in Scorers"""
+    """Encoded Abstract learning problem for use in Scorers."""
     __slots__ = ()
 
 
 class EncodedPosNegLPStandardKind(EncodedLearningProblem, metaclass=ABCMeta):
+    """Encoded Abstract learning problem following pos-neg lp standard."""
     __slots__ = ()
 
 
@@ -35,19 +38,19 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
     name: ClassVar[str]
 
     def __init__(self, *args, **kwargs):
-        """Create a new quality function"""
+        """Create a new quality function."""
         pass
 
     def score_elp(self, instances: set, learning_problem: EncodedLearningProblem) -> Tuple[bool, Optional[float]]:
-        """Quality score for a set of instances with regard to the learning problem
+        """Quality score for a set of instances with regard to the learning problem.
 
         Args:
-            instances (set): instances to calculate a quality score for
-            learning_problem: underlying learning problem to compare the quality to
+            instances (set): Instances to calculate a quality score for.
+            learning_problem: Underlying learning problem to compare the quality to.
 
         Returns:
              Tuple, first position indicating if the function could be applied, second position the quality value
-                in the range 0.0--1.0
+                in the range 0.0--1.0.
         """
         if len(instances) == 0:
             return False, 0
@@ -66,28 +69,28 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
 
     @abstractmethod
     def score2(self, tp: int, fn: int, fp: int, tn: int) -> Tuple[bool, Optional[float]]:
-        """Quality score for a coverage count
+        """Quality score for a coverage count.
 
         Args:
-            tp: true positive count
-            fn: false negative count
-            fp: false positive count
-            tn: true negative count
+            tp: True positive count.
+            fn: False negative count.
+            fp: False positive count.
+            tn: True negative count.
 
         Returns:
              Tuple, first position indicating if the function could be applied, second position the quality value
-                in the range 0.0--1.0
+                in the range 0.0--1.0.
         """
         pass
 
     # @TODO:CD: Why there is '..' in AbstractNode
     def apply(self, node: 'AbstractNode', instances, learning_problem: EncodedLearningProblem) -> bool:
-        """Apply the quality function to a search tree node after calculating the quality score on the given instances
+        """Apply the quality function to a search tree node after calculating the quality score on the given instances.
 
         Args:
-            node: search tree node to set the quality on
-            instances (set): instances to calculate the quality for
-            learning_problem: underlying learning problem to compare the quality to
+            node: search tree node to set the quality on.
+            instances (set): Instances to calculate the quality for.
+            learning_problem: Underlying learning problem to compare the quality to.
 
         Returns:
             True if the quality function was applied successfully
@@ -114,17 +117,17 @@ class AbstractHeuristic(Generic[_N], metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self):
-        """Create a new heuristic function"""
+        """Create a new heuristic function."""
         pass
 
     @abstractmethod
     def apply(self, node: _N, instances, learning_problem: EncodedLearningProblem):
-        """Apply the heuristic on a search tree node and set its heuristic property to the calculated value
+        """Apply the heuristic on a search tree node and set its heuristic property to the calculated value.
 
         Args:
-            node: node to set the heuristic on
-            instances (set, optional): set of instances covered by this node
-            learning_problem: underlying learning problem to compare the heuristic to
+            node: Node to set the heuristic on.
+            instances (set, optional): Set of instances covered by this node.
+            learning_problem: Underlying learning problem to compare the heuristic to.
         """
         pass
 
@@ -139,15 +142,15 @@ class AbstractFitness(metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self):
-        """Create a new fitness function"""
+        """Create a new fitness function."""
         pass
 
     @abstractmethod
     def apply(self, individual):
-        """Apply the fitness function on an individual and set its fitness attribute to the calculated value
+        """Apply the fitness function on an individual and set its fitness attribute to the calculated value.
 
         Args:
-            individual: individual to set the fitness on
+            individual: Individual to set the fitness on.
         """
         pass
 
@@ -170,9 +173,12 @@ class BaseRefinement(Generic[_N], metaclass=ABCMeta):
 
     *) Defining a top-down refimenent operator that is a proper is crutial.
         4.1.3 Achieving Properness [1]
-    *) Figure 4.1 [1] defines of the refinement operator
+    *) Figure 4.1 [1] defines of the refinement operator.
 
-    [1] Learning OWL Class Expressions
+    [1] Learning OWL Class Expressions.
+
+    Attributes:
+        kb (AbstractKnowledgeBase): The knowledge base used by this refinement operator.
     """
     __slots__ = 'kb'
 
@@ -180,117 +186,153 @@ class BaseRefinement(Generic[_N], metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, knowledge_base: _KB):
-        """Construct a new base refinement operator
+        """Construct a new base refinement operator.
 
         Args:
-            knowledge_base: knowledge base to operate on
+            knowledge_base: Knowledge base to operate on.
         """
         self.kb = knowledge_base
 
     @abstractmethod
     def refine(self, *args, **kwargs) -> Iterable[OWLClassExpression]:
-        """Refine a given concept
+        """Refine a given concept.
 
         Args:
-            ce (OWLClassExpression): concept to refine
+            ce (OWLClassExpression): Concept to refine.
 
         Returns:
-            new refined concepts
+            New refined concepts.
         """
         pass
 
     def len(self, concept: OWLClassExpression) -> int:
-        """The length of a concept
+        """The length of a concept.
 
         Args:
-            concept: concept
+            concept: The concept to measure the length for.
 
         Returns:
-            length of concept according to some metric configured in the knowledge base
+            Length of concept according to some metric configured in the knowledge base.
         """
         return self.kb.concept_len(concept)
 
 
 class AbstractNode(metaclass=ABCMeta):
-    """Abstract search tree node"""
+    """Abstract search tree node."""
     __slots__ = ()
 
     @abstractmethod
     def __init__(self):
-        """Create an abstract search tree node"""
+        """Create an abstract search tree node."""
         pass
 
     def __str__(self):
-        """string representation of node, by default its internal memory address"""
+        """String representation of node, by default its internal memory address."""
         addr = hex(id(self))
         addr = addr[0:2] + addr[6:-1]
         return f'{type(self)} at {addr}'
 
 
 class AbstractOEHeuristicNode(metaclass=ABCMeta):
-    """Abstract Node for the CELOEHeuristic heuristic function
+    """Abstract Node for the CELOEHeuristic heuristic function.
 
-    This node must support quality, horizontal expansion (h_exp), is_root, parent_node and refinement_count
+    This node must support quality, horizontal expansion (h_exp), is_root, parent_node and refinement_count.
     """
     __slots__ = ()
 
     @property
     @abstractmethod
     def quality(self) -> Optional[float]:
+        """Get the quality of the node.
+
+        Returns:
+            Quality of the node.
+        """
         pass
 
     @property
     @abstractmethod
     def h_exp(self) -> int:
+        """Get horizontal expansion.
+
+        Returns:
+            Horizontal expansion.
+        """
         pass
 
     @property
     @abstractmethod
     def is_root(self) -> bool:
+        """Is this the root node?
+
+        Returns:
+            True if this is the root node, otherwise False.
+        """
         pass
 
     @property
     @abstractmethod
     def parent_node(self: _N) -> Optional[_N]:
+        """Get the parent node.
+
+        Returns:
+            Parent node.
+        """
         pass
 
     @property
     @abstractmethod
     def refinement_count(self) -> int:
+        """Get the refinement count for this node.
+
+        Returns:
+            Refinement count.
+        """
         pass
 
     @property
     @abstractmethod
     def heuristic(self) -> Optional[float]:
+        """Get the heuristic value.
+
+        Returns:
+            Heuristic value.
+        """
         pass
 
     @heuristic.setter
     @abstractmethod
     def heuristic(self, v: float):
+        """Set the heuristic value."""
         pass
 
 
 class AbstractConceptNode(metaclass=ABCMeta):
-    """Abstract search tree node which has a concept"""
+    """Abstract search tree node which has a concept."""
     __slots__ = ()
 
     @property
     @abstractmethod
     def concept(self) -> OWLClassExpression:
+        """Get the concept representing this node.
+
+        Returns:
+            The concept representing this node.
+        """
         pass
 
 
 class AbstractKnowledgeBase(metaclass=ABCMeta):
-    """Abstract knowledge base"""
+    """Abstract knowledge base."""
     __slots__ = ()
 
     @abstractmethod
     def ontology(self) -> OWLOntology:
-        """The base ontology of this knowledge base"""
+        """The base ontology of this knowledge base."""
         pass
 
     def describe(self) -> None:
-        """Print a short description of the Knowledge Base to the info logger output"""
+        """Print a short description of the Knowledge Base to the info logger output."""
         properties_count = iter_count(self.ontology().object_properties_in_signature()) + iter_count(
             self.ontology().data_properties_in_signature())
         logger.info(f'Number of named classes: {iter_count(self.ontology().classes_in_signature())}\n'
@@ -299,12 +341,12 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
 
     @abstractmethod
     def clean(self) -> None:
-        """This method should reset any caches and statistics in the knowledge base"""
+        """This method should reset any caches and statistics in the knowledge base."""
         raise NotImplementedError
 
     @abstractmethod
     def individuals_count(self) -> int:
-        """Total number of individuals in this knowledge base"""
+        """Total number of individuals in this knowledge base."""
         pass
 
     @abstractmethod
@@ -313,107 +355,107 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
         into a set.
 
         Args:
-            arg (OWLNamedIndividual): individual to encode
-            arg (Iterable[OWLNamedIndividual]): individuals to encode
-            arg (OWLClassExpression): encode individuals that are instances of this concept
+            arg (OWLNamedIndividual): Individual to encode.
+            arg (Iterable[OWLNamedIndividual]): Individuals to encode.
+            arg (OWLClassExpression): Encode individuals that are instances of this concept.
 
         Returns:
-            encoded set representation of individual(s)
+            Encoded set representation of individual(s).
         """
         pass
 
     @abstractmethod
     def concept_len(self, ce: OWLClassExpression) -> int:
-        """Calculate the length of a concept
+        """Calculate the length of a concept.
 
         Args:
-            ce: concept
+            ce: The concept to measure the length for.
 
         Returns:
-            length of the concept
+            Length of concept.
         """
         pass
 
 
 class AbstractLearningProblem(metaclass=ABCMeta):
-    """Abstract learning problem"""
+    """Abstract learning problem."""
     __slots__ = ()
 
     @abstractmethod
     def __init__(self, *args, **kwargs):
-        """create a new abstract learning problem"""
+        """Create a new abstract learning problem."""
         pass
 
     @abstractmethod
     def encode_kb(self, knowledge_base: AbstractKnowledgeBase) -> 'EncodedLearningProblem':
-        """encode the learning problem into the knowledge base"""
+        """Encode the learning problem into the knowledge base."""
         pass
 
 
 class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
-    """Abstract search tree for the Length based learner"""
+    """Abstract search tree for the Length based learner."""
 
     @abstractmethod
     def get_most_promising(self) -> _N:
-        """Find most "promising" node in the search tree that should be refined next
+        """Find most "promising" node in the search tree that should be refined next.
 
         Returns:
-            most promising search tree node
+            Most promising search tree node.
         """
         pass
 
     @abstractmethod
     def add_node(self, node: _N, parent_node: _N, kb_learning_problem: EncodedLearningProblem):
-        """Add a node to the search tree
+        """Add a node to the search tree.
 
         Args:
-            node: node to add
-            parent_node: parent of that node
-            kb_learning_problem: underlying learning problem to compare the quality to
+            node: Node to add.
+            parent_node: Parent of that node.
+            kb_learning_problem: Underlying learning problem to compare the quality to.
         """
         pass
 
     @abstractmethod
     def clean(self):
-        """Reset the search tree state"""
+        """Reset the search tree state."""
         pass
 
     @abstractmethod
     def get_top_n(self, n: int) -> List[_N]:
-        """Retrieve the best n search tree nodes
+        """Retrieve the best n search tree nodes.
 
         Args:
-            n: maximum number of nodes
+            n: Maximum number of nodes.
 
         Returns:
-            list of top n search tree nodes
+            List of top n search tree nodes.
         """
         pass
 
     @abstractmethod
     def show_search_tree(self, root_concept: OWLClassExpression, heading_step: str):
-        """Debugging function to print the search tree to standard output
+        """Debugging function to print the search tree to standard output.
 
         Args:
-            root_concept: the tree is printed starting from this search tree node
-            heading_step: message to print at top of the output
+            root_concept: The tree is printed starting from this search tree node.
+            heading_step: Message to print at top of the output.
         """
         pass
 
     @abstractmethod
     def add_root(self, node: _N, kb_learning_problem: EncodedLearningProblem):
-        """Add the root node to the search tree
+        """Add the root node to the search tree.
 
         Args:
-            node: root node to add
-            kb_learning_problem: underlying learning problem to compare the quality to
+            node: Root node to add.
+            kb_learning_problem: Underlying learning problem to compare the quality to.
         """
         pass
 
 
 class AbstractDrill:
     """
-    Abstract class for Convolutional DQL concept learning
+    Abstract class for Convolutional DQL concept learning.
     """
 
     def __init__(self, path_of_embeddings, reward_func, learning_rate=None,
@@ -484,20 +526,17 @@ class AbstractDrill:
     def init_training(self, *args, **kwargs):
         """
         Initialize training for a given E+,E- and K.
-        @param args:
-        @param kwargs:
-        @return:
         """
 
     @abstractmethod
     def terminate_training(self):
         """
         Save weights and training data after training phase.
-        @return:
         """
 
 
 class DRILLAbstractTree:
+    """Abstract Tree for DRILL."""
     @abstractmethod
     def __init__(self):
         self._nodes = dict()
@@ -571,9 +610,8 @@ class DRILLAbstractTree:
 
     @staticmethod
     def save_current_top_n_nodes(key=None, n=10, path=None):
-
         """
-        Save current top_n nodes
+        Save current top_n nodes.
         """
         assert path
         assert key

@@ -1,3 +1,5 @@
+"""The base class of NCES."""
+
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.owlapy.render import DLSyntaxObjectRenderer
 import numpy as np

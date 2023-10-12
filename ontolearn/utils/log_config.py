@@ -1,3 +1,4 @@
+"""Logger configuration."""
 import os
 import sys
 from datetime import datetime
@@ -30,6 +31,11 @@ log_dirs = []
 
 
 def setup_logging(config_file="ontolearn/logging.conf"):
+    """Setup logging.
+
+    Args:
+        config_file (str): Filepath for logs.
+    """
     logging.x = SimpleNamespace(log_file=_log_file)
     logging.TRACE = oplogging.TRACE
 

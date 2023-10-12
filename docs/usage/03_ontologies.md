@@ -206,7 +206,7 @@ created in the same directory as the file you are running this code.
 
 ## Worlds
 
-Owlready2 stores every triples in a ‘World’ object, and it can handle several Worlds in parallel.
+Owlready2 stores every triple in a ‘World’ object, and it can handle several Worlds in parallel.
 Owlready2 uses an optimized quadstore to store the world. Each world object is stored in a separate quadstore and 
 by default the quadstore is stored in memory,
 but it can also be stored in an SQLite3 file. The method `save_world()` of the ontology manager does the latter.

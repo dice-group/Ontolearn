@@ -9,6 +9,7 @@ from ontolearn.owlapy.namespaces import Namespaces
 
 
 class HasIRI(metaclass=ABCMeta):
+    """Simple class to access the IRI."""
     __slots__ = ()
 
     @abstractmethod
@@ -16,7 +17,7 @@ class HasIRI(metaclass=ABCMeta):
         """Gets the IRI of this object.
 
         Returns:
-            The IRI of this object
+            The IRI of this object.
         """
         pass
 
@@ -44,7 +45,7 @@ class _meta_IRI(ABCMeta, _WeakCached):
 
 
 class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
-    """An IRI, consisting of a namespace and a remainder"""
+    """An IRI, consisting of a namespace and a remainder."""
     __slots__ = '_namespace', '_remainder', '__weakref__'
     type_index: Final = 0
 
@@ -72,8 +73,8 @@ class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
         namespace + remainder.
 
         Args:
-            namespace: The first string
-            remainder: The second string
+            namespace: The first string.
+            remainder: The second string.
 
         Returns:
             An IRI whose characters consist of prefix + suffix.
@@ -86,7 +87,7 @@ class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
         """Creates an IRI from the specified String.
 
         Args:
-            string: The String that specifies the IRI
+            string: The String that specifies the IRI.
 
         Returns:
             The IRI that has the specified string representation.
@@ -115,7 +116,7 @@ class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
         """Determines if this IRI is equal to the IRI that owl:Nothing is named with.
 
         Returns:
-            :True if this IRI is equal to <http://www.w3.org/2002/07/owl#Nothing> and otherwise False
+            :True if this IRI is equal to <http://www.w3.org/2002/07/owl#Nothing> and otherwise False.
         """
         from ontolearn.owlapy.vocab import OWLRDFVocabulary
         return self == OWLRDFVocabulary.OWL_NOTHING.get_iri()
@@ -124,7 +125,7 @@ class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
         """Determines if this IRI is equal to the IRI that owl:Thing is named with.
 
         Returns:
-            :True if this IRI is equal to <http://www.w3.org/2002/07/owl#Thing> and otherwise False
+            :True if this IRI is equal to <http://www.w3.org/2002/07/owl#Thing> and otherwise False.
         """
         from ontolearn.owlapy.vocab import OWLRDFVocabulary
         return self == OWLRDFVocabulary.OWL_THING.get_iri()
@@ -132,7 +133,7 @@ class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
     def is_reserved_vocabulary(self) -> bool:
         """Determines if this IRI is in the reserved vocabulary. An IRI is in the reserved vocabulary if it starts with
         <http://www.w3.org/1999/02/22-rdf-syntax-ns#> or <http://www.w3.org/2000/01/rdf-schema#> or
-        <http://www.w3.org/2001/XMLSchema#> or <http://www.w3.org/2002/07/owl#>
+        <http://www.w3.org/2001/XMLSchema#> or <http://www.w3.org/2002/07/owl#>.
 
         Returns:
             True if the IRI is in the reserved vocabulary, otherwise False.
@@ -147,7 +148,7 @@ class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
     def as_str(self) -> str:
         """
         Returns:
-            the string that specifies the IRI
+            The string that specifies the IRI.
         """
         return self._namespace + self._remainder
 
@@ -162,13 +163,13 @@ class IRI(OWLAnnotationSubject, OWLAnnotationValue, metaclass=_meta_IRI):
     def get_namespace(self) -> str:
         """
         Returns:
-            the namespace as string
+            The namespace as string.
         """
         return self._namespace
 
     def get_remainder(self) -> str:
         """
         Returns:
-            the remainder (coincident with NCName usually) for this IRI.
+            The remainder (coincident with NCName usually) for this IRI.
         """
         return self._remainder

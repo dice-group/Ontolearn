@@ -1,3 +1,5 @@
+"""Data structures."""
+
 import torch
 from collections import deque
 import pandas as pd
@@ -11,6 +13,8 @@ class PrepareBatchOfPrediction(torch.utils.data.Dataset):
     def __init__(self, current_state: torch.FloatTensor, next_state_batch: torch.Tensor, p: torch.FloatTensor,
                  n: torch.FloatTensor):
         """
+        Batch of prediction preparation class.
+
         Args:
             current_state: a Tensor of torch.Size([1, 1, dim]) corresponds to embeddings of current_state
             next_state_batch: a Tensor of torch.Size([n, 1, dim]) corresponds to embeddings of next_states, i.e.
@@ -113,10 +117,10 @@ class Experience:
 
     def append(self, e):
         """
+        Append.
         Args:
-            e: a tuple of s_i, s_j and reward, where s_i and s_j represent refining s_i and reaching s_j.
+            e: A tuple of s_i, s_j and reward, where s_i and s_j represent refining s_i and reaching s_j.
 
-        Returns:
         """
         assert len(self.current_states) == len(self.next_states) == len(self.rewards)
         s_i, s_j, r = e

@@ -1,3 +1,4 @@
+"""Tentris representations."""
 import logging
 from functools import singledispatchmethod
 from types import MappingProxyType

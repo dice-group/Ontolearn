@@ -1,7 +1,9 @@
+"""NCES architectures."""
 from ontolearn.nces_modules import *
 
 
 class LSTM(nn.Module):
+    """LSTM module."""
     def __init__(self, knowledge_base_path, vocab, inv_vocab, max_length, input_size, proj_dim, rnn_n_layers,
                  drop_prob):
         super().__init__()
@@ -33,6 +35,7 @@ class LSTM(nn.Module):
 
 
 class GRU(nn.Module):
+    """GRU module."""
     def __init__(self, knowledge_base_path, vocab, inv_vocab, max_length, input_size, proj_dim, rnn_n_layers,
                  drop_prob):
         super().__init__()
@@ -64,6 +67,7 @@ class GRU(nn.Module):
 
 
 class SetTransformer(nn.Module):
+    """SetTransformer module."""
     def __init__(self, knowledge_base_path, vocab, inv_vocab, max_length, input_size, proj_dim, num_heads, num_seeds,
                  num_inds, ln):
         super(SetTransformer, self).__init__()

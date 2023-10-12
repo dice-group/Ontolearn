@@ -1,3 +1,4 @@
+"""Pyhon binders of other concept learners."""
 import subprocess
 from datetime import datetime
 from typing import List, Dict
@@ -28,11 +29,14 @@ class DLLearnerBinder:
         self.config_name_identifier = None
 
     def write_dl_learner_config(self, pos: List[str], neg: List[str]) -> str:
-        """
-        Writes config file for dl-learner.
-        @param pos: A list of URIs of individuals indicating positive examples in concept learning problem.
-        @param neg: A list of URIs of individuals indicating negatives examples in concept learning problem.
-        @return: path of generated config file.
+        """Writes config file for dl-learner.
+
+        Args:
+            pos: A list of URIs of individuals indicating positive examples in concept learning problem.
+            neg: A list of URIs of individuals indicating negatives examples in concept learning problem.
+
+        Returns:
+            str: Path of generated config file.
         """
         assert len(pos) > 0
         assert len(neg) > 0
@@ -106,12 +110,15 @@ class DLLearnerBinder:
         return pathToConfig
 
     def fit(self, pos: List[str], neg: List[str], max_runtime: int = None):
-        """
-        Fit dl-learner model on a given positive and negative examples.
-        @param pos: A list of URIs of individuals indicating positive examples in concept learning problem
-        @param neg: A list of URIs of individuals indicating negatives examples in concept learning problem.
-        @param max_runtime:
-        @return: self.
+        """Fit dl-learner model on a given positive and negative examples.
+
+        Args:
+            pos: A list of URIs of individuals indicating positive examples in concept learning problem.
+            neg: A list of URIs of individuals indicating negatives examples in concept learning problem.
+            max_runtime: Limit to stop the algorithm after n seconds.
+
+        Returns:
+            self.
         """
         try:
             assert len(pos) > 0
@@ -131,18 +138,25 @@ class DLLearnerBinder:
         return self
 
     def best_hypothesis(self):
-        """
-        return predictions if exists.
+        """ Return predictions if exists.
+
+        Returns:
+            The prediction or the string 'No prediction found.'
         """
         if self.best_predictions:
             return self.best_predictions
         else:
-            print('Not prediction found.')
+            print('No prediction found.')
 
-    def parse_dl_learner_output(self, output_of_dl_learner, file_path) -> Dict:
-        """
-        Parse the output received from executing dl-learner.
-        @return: A dictionary of {'Prediction': ..., 'Accuracy': ..., 'F-measure': ...}
+    def parse_dl_learner_output(self, output_of_dl_learner: List[str], file_path: str) -> Dict:
+        """Parse the output received from executing dl-learner.
+
+        Args:
+            output_of_dl_learner: The output of dl-learner to parse.
+            file_path: The file path to store the output.
+
+        Returns:
+            A dictionary of {'Prediction': ..., 'Accuracy': ..., 'F-measure': ...}.
         """
         solutions = None
         best_concept_str = None
@@ -275,17 +289,20 @@ class DLLearnerBinder:
 
     @staticmethod
     def train(dataset: List = None) -> None:
-        """ do nothing """
+        """ Dummy method, currently it does nothing."""
 
     def fit_from_iterable(self, dataset: List = None, max_runtime=None) -> List[Dict]:
-        """
-        Fit dl-learner model on a list of given positive and negative examples.
-        @param dataset:A list of tuple (s,p,n) where
-        s => string representation of target concept
-        p => positive examples, i.e. s(p)=1.
-        n => negative examples, i.e. s(n)=0.
-        @param max_runtime:
-        @return:
+        """Fit dl-learner model on a list of given positive and negative examples.
+
+        Args:
+            dataset: A list of tuple (s,p,n) where
+                s => string representation of target concept,
+                p => positive examples, i.e. s(p)=1 and
+                n => negative examples, i.e. s(n)=0.
+            max_runtime: Limit to stop the algorithm after n seconds.
+
+        Returns:
+            self.
         """
         assert len(dataset) > 0
         if max_runtime:

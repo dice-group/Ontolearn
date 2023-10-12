@@ -1,3 +1,4 @@
+"""Extra classes."""
 import logging
 from abc import ABCMeta
 from typing import Iterable

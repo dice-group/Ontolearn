@@ -1,3 +1,4 @@
+"""Logging shortcuts."""
 import logging
 
 CRITICAL = logging.CRITICAL

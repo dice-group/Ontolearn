@@ -1,3 +1,4 @@
+"""Refinement Operators for refinement-based concept learners."""
 from collections import defaultdict
 from itertools import chain
 import random
@@ -20,7 +21,7 @@ from .search import OENode
 # TODO: 23 Warnings need to be fixed here to avoid runtime errors
 
 class LengthBasedRefinement(BaseRefinement):
-    """ A top down refinement operator refinement operator in ALC."""
+    """ A top-down refinement operator in ALC."""
 
     def __init__(self, knowledge_base: KnowledgeBase):
         super().__init__(knowledge_base)
@@ -57,10 +58,10 @@ class LengthBasedRefinement(BaseRefinement):
         yield from self.apply_union_and_intersection_from_iterable(iterable_container)
 
     def apply_union_and_intersection_from_iterable(self, cont: Iterable[Generator]) -> Iterable:
-        """ Create Union and Intersection OWL Class Expressions
-        1. Create OWLObjectIntersectionOf via logical conjunction of cartesian product of input owl class expressions
+        """ Create Union and Intersection OWL Class Expressions.
+        1. Create OWLObjectIntersectionOf via logical conjunction of cartesian product of input owl class expressions.
         2. Create OWLObjectUnionOf class expression via logical disjunction pf cartesian product of input owl class
-         expressions
+         expressions.
         Repeat 1 and 2 until all concepts having max_len_refinement_top reached.
         """
         cumulative_refinements = dict()
@@ -118,7 +119,7 @@ class LengthBasedRefinement(BaseRefinement):
 
     def refine_atomic_concept(self, class_expression: OWLClassExpression) -> Iterable[OWLClassExpression]:
         """
-        Refine an atomic class expressions, i.e,. length 1
+        Refine an atomic class expressions, i.e,. length 1.
         """
         assert isinstance(class_expression, OWLClassExpression)
         for i in self.top_refinements:
@@ -131,9 +132,9 @@ class LengthBasedRefinement(BaseRefinement):
     def refine_complement_of(self, class_expression: OWLObjectComplementOf) -> Iterable[OWLClassExpression]:
         """
         Refine OWLObjectComplementOf
-        1- Get All direct parents
-        2- Negate (1)
-        3- Intersection with T
+        1- Get All direct parents,
+        2- Negate (1),
+        3- Intersection with T.
         """
         assert isinstance(class_expression, OWLObjectComplementOf)
         yield from self.kb.generator.negation_from_iterables(self.kb.get_direct_parents(
@@ -158,7 +159,7 @@ class LengthBasedRefinement(BaseRefinement):
 
     def refine_object_union_of(self, class_expression: OWLObjectUnionOf) -> Iterable[OWLClassExpression]:
         """
-        Refine C =A AND B
+        Refine C =A AND B.
         """
         assert isinstance(class_expression, OWLObjectUnionOf)
         operands: List[OWLClassExpression] = list(class_expression.operands())
@@ -171,7 +172,7 @@ class LengthBasedRefinement(BaseRefinement):
 
     def refine_object_intersection_of(self, class_expression: OWLClassExpression) -> Iterable[OWLClassExpression]:
         """
-        Refine C =A AND B
+        Refine C =A AND B.
         """
         assert isinstance(class_expression, OWLObjectIntersectionOf)
         operands: List[OWLClassExpression] = list(class_expression.operands())
@@ -207,7 +208,7 @@ class LengthBasedRefinement(BaseRefinement):
 
 class ModifiedCELOERefinement(BaseRefinement[OENode]):
     """
-     A top down/downward refinement operator refinement operator in SHIQ(D).
+     A top down/downward refinement operator in SHIQ(D).
     """
     __slots__ = 'max_child_length', 'use_negation', 'use_all_constructor', 'use_inverse', 'use_card_restrictions', \
                 'max_nr_fillers', 'card_limit', 'use_numeric_datatypes', 'use_boolean_datatype', 'dp_splits', \
@@ -290,14 +291,14 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
     def _operands_len(self, _Type: Type[OWLNaryBooleanClassExpression],
                       ops: List[OWLClassExpression]) -> int:
-        """Calculate the length of a OWL Union or Intersection with operands ops
+        """Calculate the length of a OWL Union or Intersection with operands ops.
 
         Args:
-            _Type: type of class expression (OWLObjectUnionOf or OWLObjectIntersectionOf)
-            ops: list of operands
+            _Type: Type of class expression (OWLObjectUnionOf or OWLObjectIntersectionOf)
+            ops: list of operands.
 
         Returns:
-            length of expression
+            Length of expression.
         """
         length = 0
         if len(ops) == 1:
@@ -328,23 +329,23 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         distinguishes the refinement of atomic concepts and start concept(they called Top concept).
         [1] Concept learning, Lehmann et. al
 
-            (1) Generate all subconcepts given C, Denoted by (SH_down(C))
-            (2) Generate {A AND C | A \\in SH_down(C)}
-            (2) Generate {A OR C | A \\in SH_down(C)}
-            (3) Generate {\\not A | A \\in SH_down(C) AND_logical \\not \\exist B in T : B \\sqsubset A}
-            (4) Generate restrictions.
-            (5) Intersect and union (1),(2),(3),(4)
-            (6) Create negation of all leaf_concepts
+            (1) Generate all subconcepts given C, Denoted by (SH_down(C)),
+            (2) Generate {A AND C | A \\in SH_down(C)},
+            (2) Generate {A OR C | A \\in SH_down(C)},
+            (3) Generate {\\not A | A \\in SH_down(C) AND_logical \\not \\exist B in T : B \\sqsubset A},
+            (4) Generate restrictions,
+            (5) Intersect and union (1),(2),(3),(4),
+            (6) Create negation of all leaf_concepts.
 
                         (***) The most general relation is not available.
 
         Args:
-            ce:
-            max_length:
-            current_domain:
+            ce: Atomic concept to refine.
+            max_length: Refine up to this concept length.
+            current_domain: Domain.
 
         Returns:
-            ?
+            Iterable of refined concepts.
         """
         assert isinstance(ce, OWLClass)
 
@@ -449,6 +450,14 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
                         # if self.kb.individuals_count(temp_intersection) > 0:
 
     def refine_complement_of(self, ce: OWLObjectComplementOf) -> Iterable[OWLClassExpression]:
+        """ Refine owl:complementOf.
+
+        Args:
+            ce (OWLObjectComplementOf): owl:complementOf - class expression.
+
+        Returns:
+            Iterable of refined concepts.
+        """
         assert isinstance(ce, OWLObjectComplementOf)
 
         if self.use_negation:
@@ -459,6 +468,15 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
     def refine_object_some_values_from(self, ce: OWLObjectSomeValuesFrom, max_length: int) \
             -> Iterable[OWLClassExpression]:
+        """ Refine owl:someValuesFrom.
+
+        Args:
+            ce (OWLObjectSomeValuesFrom): owl:someValuesFrom class expression.
+            max_length (int): Refine up to this concept length.
+
+        Returns:
+            Iterable of refined concepts.
+        """
         assert isinstance(ce, OWLObjectSomeValuesFrom)
         assert isinstance(ce.get_filler(), OWLClassExpression)
 
@@ -482,6 +500,15 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
     def refine_object_all_values_from(self, ce: OWLObjectAllValuesFrom, max_length: int) \
             -> Iterable[OWLObjectAllValuesFrom]:
+        """Refine owl:allValuesFrom.
+
+        Args:
+            ce (OWLObjectAllValuesFrom): owl:allValuesFrom - class expression.
+            max_length (int): Refine up to this concept length.
+
+        Returns:
+            Iterable of refined concepts.
+        """
         assert isinstance(ce, OWLObjectAllValuesFrom)
 
         if self.use_all_constructor:
@@ -501,6 +528,15 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
     def refine_object_min_card_restriction(self, ce: OWLObjectMinCardinality, max_length: int) \
             -> Iterable[OWLObjectMinCardinality]:
+        """Refine owl:minCardinality.
+
+        Args:
+            ce (OWLObjectMinCardinality): owl:minCardinality - class expression.
+            max_length (int): Refine up to this concept length.
+
+        Returns:
+            Iterable of refined concepts.
+        """
         assert isinstance(ce, OWLObjectMinCardinality)
         assert ce.get_cardinality() >= 0
 
@@ -515,6 +551,15 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
     def refine_object_max_card_restriction(self, ce: OWLObjectMaxCardinality, max_length: int) \
             -> Iterable[OWLObjectMaxCardinality]:
+        """Refine owl:maxCardinality.
+
+        Args:
+            ce (OWLObjectMaxCardinality): owl:maxCardinality - class expression.
+            max_length (int): Refine up to this concept length.
+
+        Returns:
+            Iterable of refined concepts.
+        """
         assert isinstance(ce, OWLObjectMaxCardinality)
         assert ce.get_cardinality() >= 0
 
@@ -529,18 +574,20 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
     def refine_object_union_of(self, ce: OWLObjectUnionOf, max_length: int,
                                current_domain: Optional[OWLClassExpression]) -> Iterable[OWLObjectUnionOf]:
-        """Given a node corresponding a concepts that comprises union operation.
-        1) Obtain two concepts A, B
-        2) Refine A and union refiements with B.
+        """Refine owl:unionOf.
+
+        Given a node corresponding a concepts that comprises union operation:
+        1) Obtain two concepts A, B,
+        2) Refine A and union refinements with B,
         3) Repeat (2) for B.
 
         Args:
-            current_domain:
-            node:
-            max_length:
+            ce (OWLObjectUnionOf): owl:unionOf - class expression.
+            current_domain (OWLClassExpression): Domain.
+            max_length (int): Refine up to this concept length.
 
         Returns:
-            ?
+            Iterable of refined concepts.
         """
         assert isinstance(ce, OWLObjectUnionOf)
 
@@ -559,6 +606,15 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
     def refine_object_intersection_of(self, ce: OWLObjectIntersectionOf, max_length: int,
                                       current_domain: Optional[OWLClassExpression]) \
             -> Iterable[OWLObjectIntersectionOf]:
+        """Refine owl:intersectionOf.
+
+        Args:
+            ce (OWLObjectIntersectionOf): owl:intersectionOf - class expression.
+            current_domain (int): Domain.
+
+        Returns:
+            Iterable of refined concepts.
+        """
         assert isinstance(ce, OWLObjectIntersectionOf)
         # TODO: Add sanity check method for intersections as in DL-Learner?
 
@@ -577,8 +633,15 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
                     yield intersection
 
     def refine_data_some_values_from(self, ce: OWLDataSomeValuesFrom) -> Iterable[OWLDataSomeValuesFrom]:
-        assert isinstance(ce, OWLDataSomeValuesFrom)
+        """Refine owl:someValuesFrom for data properties.
 
+        Args:
+            ce (OWLDataSomeValuesFrom): owl:someValuesFrom - class expression.
+
+        Returns:
+            Iterable of refined concepts.
+        """
+        assert isinstance(ce, OWLDataSomeValuesFrom)
         datarange = ce.get_filler()
         if isinstance(datarange, OWLDatatypeRestriction) and ce.get_property() in self.dp_splits:
             splits = self.dp_splits[ce.get_property()]
@@ -595,6 +658,14 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
                         OWLDatatypeMaxInclusiveRestriction(splits[next_idx]), ce.get_property())
 
     def refine_data_has_value(self, ce: OWLDataHasValue) -> Iterable[OWLDataHasValue]:
+        """ Refine owl:hasValue.
+
+        Args:
+            ce (OWLDataHasValue): owl:hasValue - class expression.
+
+        Returns:
+            Iterable of refined concepts.
+        """
         assert isinstance(ce, OWLDataHasValue)
 
         for more_special_dp in self.kb.data_property_hierarchy().more_special_roles(ce.get_property()):
@@ -602,15 +673,15 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
     def refine(self, ce: OWLClassExpression, max_length: int, current_domain: Optional[OWLClassExpression] = None) \
             -> Iterable[OWLClassExpression]:
-        """Refine a given concept
+        """Refine a given concept.
 
         Args:
-            ce: concept to refine
-            max_length: refine up to this concept length
-            current_domain:
+            ce: Concept to refine.
+            max_length: Refine up to this concept length.
+            current_domain: Domain.
 
         Returns:
-            iterable of refined concepts
+            Iterable of refined concepts.
         """
         assert isinstance(ce, OWLClassExpression)
         if isinstance(ce, OWLClass):
@@ -638,7 +709,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
 
 class ExpressRefinement(ModifiedCELOERefinement):
-    """ A top down refinement operator refinement operator in ALCHIQ(D)."""
+    """ A top-down refinement operator in ALCHIQ(D)."""
 
     __slots__ = 'expressivity', 'downsample', 'sample_fillers_count', 'generator'
 
@@ -675,6 +746,13 @@ class ExpressRefinement(ModifiedCELOERefinement):
         self._setup()
 
     def refine_atomic_concept(self, ce: OWLClass) -> Iterable[OWLClassExpression]:
+        """Refine atomic concept.
+        Args:
+            ce: Atomic concept to refine.
+
+        Returns:
+            Iterable of refined concepts.
+        """
         if ce.is_owl_nothing():
             yield OWLNothing
         else:
@@ -764,6 +842,14 @@ class ExpressRefinement(ModifiedCELOERefinement):
                 yield ce
 
     def refine_complement_of(self, ce: OWLObjectComplementOf) -> Iterable[OWLClassExpression]:
+        """ Refine owl:complementOf.
+
+        Args:
+            ce (OWLObjectComplementOf): owl:complementOf - class expression.
+
+        Returns:
+            Iterable of refined concepts.
+        """
         assert isinstance(ce, OWLObjectComplementOf)
         any_refinement = False
         parents = self.kb.get_direct_parents(self.generator.negation(ce))
@@ -775,6 +861,14 @@ class ExpressRefinement(ModifiedCELOERefinement):
             yield ce
 
     def refine_object_some_values_from(self, ce: OWLObjectSomeValuesFrom) -> Iterable[OWLClassExpression]:
+        """ Refine owl:someValuesFrom.
+
+        Args:
+            ce (OWLObjectSomeValuesFrom): owl:someValuesFrom class expression.
+
+        Returns:
+            Iterable of refined concepts.
+        """
         assert isinstance(ce, OWLObjectSomeValuesFrom)
         assert isinstance(ce.get_filler(), OWLClassExpression)
         any_refinement = False
@@ -802,6 +896,14 @@ class ExpressRefinement(ModifiedCELOERefinement):
             yield ce
 
     def refine_object_all_values_from(self, ce: OWLObjectAllValuesFrom) -> Iterable[OWLClassExpression]:
+        """Refine owl:allValuesFrom.
+
+        Args:
+            ce (OWLObjectAllValuesFrom): owl:allValuesFrom - class expression.
+
+        Returns:
+            Iterable of refined concepts.
+        """
         assert isinstance(ce, OWLObjectAllValuesFrom)
         assert isinstance(ce.get_filler(), OWLClassExpression)
         any_refinement = False
@@ -822,6 +924,14 @@ class ExpressRefinement(ModifiedCELOERefinement):
 
     def refine_object_min_card_restriction(self, ce: OWLObjectMinCardinality) \
             -> Iterable[OWLObjectMinCardinality]:
+        """Refine owl:allValuesFrom.
+
+        Args:
+            ce (OWLObjectAllValuesFrom): owl:allValuesFrom - class expression.
+
+        Returns:
+            Iterable of refined concepts.
+        """
         assert isinstance(ce, OWLObjectMinCardinality)
         assert ce.get_cardinality() >= 0
 
@@ -835,6 +945,14 @@ class ExpressRefinement(ModifiedCELOERefinement):
 
     def refine_object_max_card_restriction(self, ce: OWLObjectMaxCardinality) \
             -> Iterable[OWLObjectMaxCardinality]:
+        """Refine owl:maxCardinality.
+
+        Args:
+            ce (OWLObjectMaxCardinality): owl:maxCardinality - class expression.
+
+        Returns:
+            Iterable of refined concepts.
+        """
         assert isinstance(ce, OWLObjectMaxCardinality)
         assert ce.get_cardinality() >= 0
 
@@ -847,6 +965,14 @@ class ExpressRefinement(ModifiedCELOERefinement):
                                                              ce.get_cardinality() - 1)
 
     def refine_object_union_of(self, ce: OWLObjectUnionOf) -> Iterable[OWLClassExpression]:
+        """Refine owl:unionOf.
+
+        Args:
+            ce (OWLObjectUnionOf): owl:unionOf - class expression.
+
+        Returns:
+            Iterable of refined concepts.
+        """
         assert isinstance(ce, OWLObjectUnionOf)
         any_refinement = False
         for op in ce.operands():
@@ -865,6 +991,14 @@ class ExpressRefinement(ModifiedCELOERefinement):
             yield ce
 
     def refine_object_intersection_of(self, ce: OWLObjectIntersectionOf) -> Iterable[OWLClassExpression]:
+        """Refine owl:intersectionOf.
+
+        Args:
+            ce (OWLObjectIntersectionOf): owl:intersectionOf - class expression.
+
+        Returns:
+            Iterable of refined concepts.
+        """
         assert isinstance(ce, OWLObjectIntersectionOf)
         any_refinement = False
         operands = list(ce.operands())
@@ -879,6 +1013,14 @@ class ExpressRefinement(ModifiedCELOERefinement):
             yield ce
 
     def refine_data_some_values_from(self, ce: OWLDataSomeValuesFrom) -> Iterable[OWLDataSomeValuesFrom]:
+        """Refine owl:someValuesFrom for data properties.
+
+        Args:
+            ce (OWLDataSomeValuesFrom): owl:someValuesFrom - class expression.
+
+        Returns:
+            Iterable of refined concepts.
+        """
         assert isinstance(ce, OWLDataSomeValuesFrom)
         any_refinement = False
         datarange = ce.get_filler()
@@ -901,6 +1043,14 @@ class ExpressRefinement(ModifiedCELOERefinement):
             yield ce
 
     def refine_data_has_value(self, ce: OWLDataHasValue) -> Iterable[OWLDataHasValue]:
+        """ Refine owl:hasValue.
+
+        Args:
+            ce (OWLDataHasValue): owl:hasValue - class expression.
+
+        Returns:
+            Iterable of refined concepts.
+        """
         assert isinstance(ce, OWLDataHasValue)
         any_refinement = False
         for more_special_dp in self.kb.data_property_hierarchy().more_special_roles(ce.get_property()):
@@ -911,13 +1061,13 @@ class ExpressRefinement(ModifiedCELOERefinement):
             yield ce
 
     def refine(self, ce, **kwargs) -> Iterable[OWLClassExpression]:
-        """Refine a given concept
+        """Refine a given concept.
 
         Args:
-            ce: concept to refine
+            ce: Concept to refine
 
         Returns:
-            iterable of refined concepts
+            Iterable of refined concepts.
         """
         # we ignore additional arguments like "max_length" or "current_domain" that might be supplied by the learning
         # algorithm by using **kwargs

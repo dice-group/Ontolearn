@@ -1,3 +1,4 @@
+"""Logic behind adding and removing axioms."""
 from functools import singledispatch
 from itertools import islice, combinations
 import types
