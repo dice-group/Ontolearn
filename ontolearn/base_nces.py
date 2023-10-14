@@ -1,3 +1,5 @@
+"""The base class of NCES."""
+
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.owlapy.render import DLSyntaxObjectRenderer
 import numpy as np
@@ -6,9 +8,11 @@ from torch.nn.utils.rnn import pad_sequence
 from .utils import read_csv
 from abc import abstractmethod
 
+
 class BaseNCES:
-    
-    def __init__(self, knowledge_base_path, learner_name, path_of_embeddings, batch_size=256, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, num_workers=8):
+
+    def __init__(self, knowledge_base_path, learner_name, path_of_embeddings, batch_size=256, learning_rate=1e-4,
+                 decay_rate=0.0, clip_value=5.0, num_workers=8):
         self.name = "NCES"
         kb = KnowledgeBase(path=knowledge_base_path)
         self.kb_namespace = list(kb.ontology().classes_in_signature())[0].get_iri().get_namespace()
@@ -23,7 +27,7 @@ class BaseNCES:
         self.kb = kb
         self.all_individuals = set([ind.get_iri().as_str().split("/")[-1] for ind in kb.individuals()])
         self.inv_vocab = np.array(vocab, dtype='object')
-        self.vocab = {vocab[i]:i for i in range(len(vocab))}
+        self.vocab = {vocab[i]: i for i in range(len(vocab))}
         self.learner_name = learner_name
         self.num_examples = self.find_optimal_number_of_examples(kb)
         self.batch_size = batch_size
@@ -33,13 +37,13 @@ class BaseNCES:
         self.num_workers = num_workers
         self.instance_embeddings = read_csv(path_of_embeddings)
         self.input_size = self.instance_embeddings.shape[1]
-        
-    @staticmethod   
+
+    @staticmethod
     def find_optimal_number_of_examples(kb):
         if kb.individuals_count() >= 600:
             return min(kb.individuals_count()//2, 1000)
         return kb.individuals_count()
-    
+
     def collate_batch(self, batch):
         pos_emb_list = []
         neg_emb_list = []
@@ -58,7 +62,7 @@ class BaseNCES:
         neg_emb_list = pad_sequence(neg_emb_list, batch_first=True, padding_value=0)
         target_labels = pad_sequence(target_labels, batch_first=True, padding_value=-100)
         return pos_emb_list, neg_emb_list, target_labels
-    
+
     def collate_batch_inference(self, batch):
         pos_emb_list = []
         neg_emb_list = []
@@ -74,11 +78,11 @@ class BaseNCES:
         neg_emb_list[0] = F.pad(neg_emb_list[0], (0, 0, 0, self.num_examples - neg_emb_list[0].shape[0]), "constant", 0)
         neg_emb_list = pad_sequence(neg_emb_list, batch_first=True, padding_value=0)
         return pos_emb_list, neg_emb_list
-        
-    @abstractmethod    
+
+    @abstractmethod
     def get_synthesizer(self):
         pass
-    
+
     @abstractmethod
     def load_pretrained(self):
         pass

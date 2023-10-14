@@ -1,19 +1,20 @@
+"""Namespaces."""
 from typing import Final
 
 
 class Namespaces:
-    """A Namespace and its prefix"""
+    """A Namespace and its prefix."""
     __slots__ = '_prefix', '_ns'
 
     _prefix: str
     _ns: str
 
     def __init__(self, prefix: str, ns: str):
-        """Create a new namespace
+        """Create a new namespace.
 
         Args:
-            prefix: typical prefix associated with this namespace
-            ns: namespace IRI as string
+            prefix: Typical prefix associated with this namespace.
+            ns: Namespace IRI as string.
         """
         assert ns[-1] in ("/", ":", "#")
         self._prefix = prefix

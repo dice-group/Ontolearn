@@ -1,5 +1,5 @@
-import torch
 from torch import nn
+
 
 class Ensemble(nn.Module):
     """ ensemble through model averaging.

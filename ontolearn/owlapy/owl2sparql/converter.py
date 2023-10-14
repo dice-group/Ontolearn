@@ -1,3 +1,4 @@
+"""Format converter."""
 from collections import defaultdict
 from contextlib import contextmanager
 from functools import singledispatchmethod
@@ -6,12 +7,12 @@ from typing import Set, List, Dict, Optional, Iterable
 
 from rdflib.plugins.sparql.parser import parseQuery
 
-from ontolearn.owlapy.model import OWLClassExpression, OWLClass, OWLEntity, OWLObjectProperty, OWLObjectIntersectionOf, \
+from ontolearn.owlapy.model import OWLClassExpression, OWLClass, OWLEntity, OWLObjectProperty, \
     OWLObjectUnionOf, OWLObjectComplementOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, OWLObjectHasValue, \
     OWLNamedIndividual, OWLObjectCardinalityRestriction, OWLObjectMinCardinality, OWLObjectExactCardinality, \
     OWLObjectMaxCardinality, OWLDataCardinalityRestriction, OWLDataProperty, OWLObjectHasSelf, OWLObjectOneOf, \
     OWLDataSomeValuesFrom, OWLDataAllValuesFrom, OWLDataHasValue, OWLDatatype, TopOWLDatatype, OWLDataOneOf, \
-    OWLLiteral, OWLDatatypeRestriction
+    OWLLiteral, OWLDatatypeRestriction, OWLObjectIntersectionOf
 from ontolearn.owlapy.vocab import OWLFacet, OWLRDFVocabulary
 
 _Variable_facet_comp = MappingProxyType({
@@ -23,10 +24,17 @@ _Variable_facet_comp = MappingProxyType({
 
 
 def peek(x):
+    """Peek the last element of an array.
+
+    Returns:
+        The last element arr[-1].
+
+    """
     return x[-1]
 
 
 class VariablesMapping:
+    """Helper class for owl-to-sparql conversion."""
     __slots__ = 'class_cnt', 'prop_cnt', 'ind_cnt', 'dict'
 
     def __init__(self):
@@ -70,6 +78,7 @@ class VariablesMapping:
 
 
 class Owl2SparqlConverter:
+    """Convert owl (owlapy model class expressions) to SPARQL."""
     __slots__ = 'ce', 'sparql', 'variables', 'parent', 'parent_var', 'properties', 'variable_entities', 'cnt', \
                 'mapping', 'grouping_vars', 'having_conditions', '_intersection'
 
@@ -87,6 +96,16 @@ class Owl2SparqlConverter:
     cnt: int
 
     def convert(self, root_variable: str, ce: OWLClassExpression, named_individuals: bool = False):
+        """Used to convert owl class expression to SPARQL syntax.
+
+        Args:
+            root_variable (str): Root variable name that will be used in SPARQL query.
+            ce (OWLClassExpression): The owl class expression to convert.
+            named_individuals (bool): If 'True' return only entities that are instances of owl:NamedIndividual.
+
+        Returns:
+            list[str]: The SPARQL query.
+        """
         self.ce = ce
         self.sparql = []
         self.variables = []
@@ -361,7 +380,7 @@ class Owl2SparqlConverter:
             self.append_triple(self.current_variable, property_expression.get_named_property(), value)
 
     # an overload of process function
-    # this overload is responsible for handling the exists operator combined with an individual (e.g., >=3 hasChild.Male)
+    # this overload is responsible for handling the exists operator combined with an individual(e.g., >=3 hasChild.Male)
     # general case: \theta n r.C
     @process.register
     def _(self, ce: OWLObjectCardinalityRestriction):
@@ -380,7 +399,8 @@ class Owl2SparqlConverter:
             raise ValueError(ce)
 
         # if the comparator is ≤ or the cardinality is 0, we need an additional group graph pattern
-        # the additional group graph pattern will take care the cases where an individual is not associated with the property expression
+        # the additional group graph pattern will take care the cases where an individual is not associated with the
+        # property expression
         if comparator == "<=" or cardinality == 0:
             self.append("{")
 
@@ -401,7 +421,8 @@ class Owl2SparqlConverter:
         # here, the second group graph pattern starts
         if comparator == "<=" or cardinality == 0:
             self.append("} UNION {")
-            self.append_triple(subject_variable, self.mapping.new_individual_variable(), self.mapping.new_individual_variable())
+            self.append_triple(subject_variable, self.mapping.new_individual_variable(),
+                               self.mapping.new_individual_variable())
             self.append("FILTER NOT EXISTS { ")
             object_variable = self.mapping.new_individual_variable()
             if property_expression.is_anonymous():
@@ -468,7 +489,6 @@ class Owl2SparqlConverter:
             assert isinstance(ind, OWLNamedIndividual)
             self.append(f"<{ind.to_string_id()}>")
         self.append(f" )")
-
 
     @process.register
     def _(self, ce: OWLDataSomeValuesFrom):
@@ -563,7 +583,7 @@ class Owl2SparqlConverter:
     def as_query(self,
                  root_variable: str,
                  ce: OWLClassExpression,
-                 count: bool=False,
+                 count: bool = False,
                  values: Optional[Iterable[OWLNamedIndividual]] = None,
                  named_individuals: bool = False):
         # root variable: the variable that will be projected
@@ -599,4 +619,3 @@ class Owl2SparqlConverter:
         query = "\n".join(qs)
         parseQuery(query)
         return query
-

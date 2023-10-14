@@ -1,3 +1,5 @@
+"""Base classes of concept learners."""
+
 import logging
 import time
 from abc import ABCMeta, abstractmethod
@@ -12,7 +14,7 @@ from ontolearn.metrics import F1, Accuracy
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.search import _NodeQuality
 
-from ontolearn.owlapy.model import OWLDeclarationAxiom, OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
+from ontolearn.owlapy.model import OWLDeclarationAxiom, OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport,\
     OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, OWLAnnotationAssertionAxiom, OWLAnnotation, \
     OWLAnnotationProperty, OWLLiteral, IRI, OWLClassExpression, OWLReasoner, OWLAxiom, OWLThing
 from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLOntology_Owlready2
@@ -31,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     """
-    Base class for Concept Learning approaches
+    Base class for Concept Learning approaches.
 
     Learning problem definition, Let
         * K = (TBOX, ABOX) be a knowledge base.
@@ -49,6 +51,16 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     The goal is to learn a set of concepts $\\hypotheses \\subseteq \\ALCConcepts$ such that
           ∀  H \\in \\hypotheses: { (K \\wedge H \\models E^+) \\wedge  \\neg( K \\wedge H \\models E^-) }.
 
+    Attributes:
+        kb (KnowledgeBase): The knowledge base that the concept learner is using.
+        quality_func (AbstractScorer) The quality function to be used.
+        max_num_of_concepts_tested (int) Limit to stop the algorithm after n concepts tested.
+        terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found.
+        max_runtime (int): Limit to stop the algorithm after n seconds.
+        _number_of_tested_concepts (int): Yes, you got it. This stores the number of tested concepts.
+        reasoner (OWLReasoner): The reasoner that this model is using.
+        start_time (float): The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
+                            takes to execute.
     """
     __slots__ = 'kb', 'reasoner', 'quality_func', 'max_num_of_concepts_tested', 'terminate_on_goal', 'max_runtime', \
                 'start_time', '_goal_found', '_number_of_tested_concepts'
@@ -75,14 +87,14 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         """Create a new base concept learner
 
         Args:
-            knowledge_base: knowledge base which is used to learn and test concepts. required, but can be taken
-                from the learning problem if not specified
-            quality_func: function to evaluate the quality of solution concepts. defaults to `F1`
-            max_num_of_concepts_tested: limit to stop the algorithm after n concepts tested. defaults to 10_000
-            max_runtime: limit to stop the algorithm after n seconds. defaults to 5
-            terminate_on_goal: whether to stop the algorithm if a perfect solution is found. defaults to True
-            reasoner: Optionally use a different reasoner. If reasoner=None, the knowledge base of the concept
-                      learner is used.
+            knowledge_base: Knowledge base which is used to learn and test concepts. required, but can be taken
+                from the learning problem if not specified.
+            quality_func: Function to evaluate the quality of solution concepts. Defaults to `F1`.
+            max_num_of_concepts_tested: Limit to stop the algorithm after n concepts tested. Defaults to 10'000.
+            max_runtime: Limit to stop the algorithm after n seconds. Defaults to 5.
+            terminate_on_goal: Whether to stop the algorithm if a perfect solution is found. Defaults to True.
+            reasoner: Optionally use a different reasoner. If reasoner=None, the reasoner of the :attr:`knowledge_base`
+                is used.
         """
         self.kb = knowledge_base
         self.reasoner = reasoner
@@ -120,22 +132,27 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     @abstractmethod
     def clean(self):
         """
-        Clear all states of the concept learner
+        Clear all states of the concept learner.
         """
         self._number_of_tested_concepts = 0
         self._goal_found = False
         self.start_time = None
 
     def train(self, *args, **kwargs):
+        """Train RL agent on learning problems.
+
+        Returns:
+            self.
+        """
         pass
 
     def terminate(self):
-        """This method is called when the search algorithm terminates
+        """This method is called when the search algorithm terminates.
 
-        If INFO log level is enabled, it prints out some statistics like runtime and concept tests to the logger
+        If INFO log level is enabled, it prints out some statistics like runtime and concept tests to the logger.
 
         Returns:
-            the concept learner object itself
+            The concept learner object itself.
         """
         # if self.store_onto_flag:
         #     self.store_ontology()
@@ -157,12 +174,12 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         with args and kwargs as parameters.
 
         Args:
-            type_: type of the learning problem
-            xargs: the positional arguments
-            xkwargs: the keyword arguments
+            type_: Type of the learning problem.
+            xargs: The positional arguments.
+            xkwargs: The keyword arguments.
 
         Returns:
-            the learning problem
+            The learning problem.
         """
         learning_problem = xkwargs.pop("learning_problem", None)
         if learning_problem is None and xargs and isinstance(xargs[0], AbstractLearningProblem):
@@ -175,20 +192,20 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
     @abstractmethod
     def fit(self, *args, **kwargs):
-        """Run the concept learning algorithm according to its configuration
+        """Run the concept learning algorithm according to its configuration.
 
-        Once finished, the results can be queried with the `best_hypotheses` function"""
+        Once finished, the results can be queried with the `best_hypotheses` function."""
         pass
 
     @abstractmethod
     def best_hypotheses(self, n=10) -> Iterable[_N]:
-        """Get the current best found hypotheses according to the quality
+        """Get the current best found hypotheses according to the quality.
 
         Args:
-            n: Maximum number of results
+            n: Maximum number of results.
 
         Returns:
-            iterable with hypotheses in form of search tree nodes
+            Iterable with hypotheses in form of search tree nodes.
         """
         pass
 
@@ -204,7 +221,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             hypotheses: A list of class expressions.
 
         Returns:
-            matrix of \\|individuals\\| x \\|hypotheses\\|
+            Matrix of \\|individuals\\| x \\|hypotheses\\|.
         """
         retrieval_func = self.kb.individuals_set if reasoner is None else reasoner.instances
 
@@ -238,7 +255,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         Returns:
             Pandas data frame with dimensions |individuals|*|hypotheses| indicating for each individual and each
-            hypothesis whether the individual is entailed in the hypothesis
+            hypothesis whether the individual is entailed in the hypothesis.
         """
         reasoner = self.reasoner
         new_individuals = set(individuals) - self.kb.individuals_set(OWLThing)
@@ -279,12 +296,12 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         return self._number_of_tested_concepts
 
     def save_best_hypothesis(self, n: int = 10, path: str = 'Predictions', rdf_format: str = 'rdfxml') -> None:
-        """Serialise the best hypotheses to a file
+        """Serialise the best hypotheses to a file.
 
         Args:
-            n: maximum number of hypotheses to save
-            path: filename base (extension will be added automatically)
-            rdf_format: serialisation format. currently supported: "rdfxml"
+            n: Maximum number of hypotheses to save.
+            path: Filename base (extension will be added automatically).
+            rdf_format: Serialisation format. currently supported: "rdfxml".
         """
         SNS: Final = 'https://dice-research.org/predictions-schema/'
         NS: Final = 'https://dice-research.org/predictions/' + str(time.time()) + '#'
@@ -328,10 +345,10 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))
 
     def load_hypotheses(self, path: str) -> Iterable[OWLClassExpression]:
-        """Loads hypotheses (class expressions) from a file saved by :func:`BaseConceptLearner.save_best_hypothesis`
+        """Loads hypotheses (class expressions) from a file saved by :func:`BaseConceptLearner.save_best_hypothesis`.
 
         Args:
-            path: Path to the file containing hypotheses
+            path: Path to the file containing hypotheses.
         """
         manager: OWLOntologyManager_Owlready2 = OWLOntologyManager_Owlready2()
         ontology: OWLOntology_Owlready2 = manager.load_ontology(IRI.create('file://' + path))
@@ -344,7 +361,24 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
 class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
     """
-    Base class for refinement based Concept Learning approaches
+    Base class for refinement based Concept Learning approaches.
+
+    Attributes:
+        kb (KnowledgeBase): The knowledge base that the concept learner is using.
+        quality_func (AbstractScorer) The quality function to be used.
+        max_num_of_concepts_tested (int) Limit to stop the algorithm after n concepts tested.
+        terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found.
+        max_runtime (int): Limit to stop the algorithm after n seconds.
+        _number_of_tested_concepts (int): Yes, you got it. This stores the number of tested concepts.
+        reasoner (OWLReasoner): The reasoner that this model is using.
+        start_time (float): The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
+                            takes to execute.
+        iter_bound (int): Limit to stop the algorithm after n refinement steps are done.
+        heuristic_func (AbstractHeuristic): Function to guide the search heuristic.
+        operator (BaseRefinement): Operator used to generate refinements.
+        start_class (OWLClassExpression): The starting class expression for the refinement operation.
+        max_child_length (int): Limit the length of concepts generated by the refinement operator.
+
 
     """
     __slots__ = 'operator', 'heuristic_func', 'max_child_length', 'start_class', 'iter_bound'
@@ -368,21 +402,21 @@ class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
                  iter_bound: Optional[int] = None,
                  max_child_length: Optional[int] = None,
                  root_concept: Optional[OWLClassExpression] = None):
-        """Create a new base concept learner
+        """Create a new base concept learner.
 
         Args:
-            knowledge_base: knowledge base which is used to learn and test concepts. required, but can be taken
-                from the learning problem if not specified
-            refinement_operator: operator used to generate refinements. defaults to `ModifiedCELOERefinement`
-            heuristic_func: function to guide the search heuristic. defaults to `CELOEHeuristic`
-            quality_func: function to evaluate the quality of solution concepts. defaults to `F1`
-            max_num_of_concepts_tested: limit to stop the algorithm after n concepts tested. defaults to 10_000
-            max_runtime: limit to stop the algorithm after n seconds. defaults to 5
-            terminate_on_goal: whether to stop the algorithm if a perfect solution is found. defaults to True
-            iter_bound: limit to stop the algorithm after n refinement steps were done. defaults to 10_000
-            max_child_length: limit the length of concepts generated by the refinement operator. defaults to 10.
-                only used if refinement_operator is not specified.
-            root_concept: the start concept to begin the search from. defaults to OWL Thing
+            knowledge_base: Knowledge base which is used to learn and test concepts. required, but can be taken
+                from the learning problem if not specified.
+            refinement_operator: Operator used to generate refinements. Defaults to `ModifiedCELOERefinement`.
+            heuristic_func: Function to guide the search heuristic. Defaults to `CELOEHeuristic`.
+            quality_func: Function to evaluate the quality of solution concepts. Defaults to `F1`.
+            max_num_of_concepts_tested: Limit to stop the algorithm after n concepts tested. Defaults to 10_000.
+            max_runtime: Limit to stop the algorithm after n seconds. Defaults to 5.
+            terminate_on_goal: Whether to stop the algorithm if a perfect solution is found. Defaults to True.
+            iter_bound: Limit to stop the algorithm after n refinement steps are done. Defaults to 10_000.
+            max_child_length: Limit the length of concepts generated by the refinement operator. defaults to 10.
+                Only used if refinement_operator is not specified.
+            root_concept: The start concept to begin the search from. Defaults to OWL Thing.
         """
         super().__init__(knowledge_base=knowledge_base,
                          reasoner=reasoner,
@@ -431,32 +465,32 @@ class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
     @abstractmethod
     def next_node_to_expand(self, *args, **kwargs):
         """
-        Return from the search tree the most promising search tree node to use for the next refinement step
+        Return from the search tree the most promising search tree node to use for the next refinement step.
 
         Returns:
-            _N: next search tree node to refine
+            _N: Next search tree node to refine.
         """
         pass
 
     @abstractmethod
     def downward_refinement(self, *args, **kwargs):
-        """execute one refinement step of a refinement based learning algorithm
+        """Execute one refinement step of a refinement based learning algorithm.
 
         Args:
-            node (_N): the search tree node on which to refine
+            node (_N): the search tree node on which to refine.
 
         Returns:
-            Iterable[_N]: refinement results as new search tree nodes (they still need to be added to the tree)
+            Iterable[_N]: Refinement results as new search tree nodes (they still need to be added to the tree).
         """
         pass
 
     @abstractmethod
     def show_search_tree(self, heading_step: str, top_n: int = 10) -> None:
         """A debugging function to print out the current search tree and the current n best found hypotheses to
-        standard output
+        standard output.
 
         Args:
-            heading_step: a message to display at the beginning of the output
-            top_n: the number of currently best hypotheses to print out
+            heading_step: A message to display at the beginning of the output.
+            top_n: The number of current best hypotheses to print out.
         """
         pass

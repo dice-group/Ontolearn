@@ -1,12 +1,13 @@
+"""Learning problem generator."""
 import sys
 import time
 from typing import Literal, Iterable, Set, Tuple, Dict, List, Final, Generator
 
 import numpy as np
 
-from ontolearn.owlapy.model import OWLClassExpression, OWLOntologyManager, OWLOntology, AddImport, OWLImportsDeclaration, \
-    OWLClass, OWLEquivalentClassesAxiom, IRI, OWLNamedIndividual, OWLAnnotationAssertionAxiom, OWLAnnotation, \
-    OWLAnnotationProperty, OWLLiteral
+from ontolearn.owlapy.model import OWLClassExpression, OWLOntologyManager, OWLOntology, AddImport, \
+    OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, IRI, OWLNamedIndividual, OWLAnnotationAssertionAxiom, \
+    OWLAnnotation, OWLAnnotationProperty, OWLLiteral
 from ontolearn.knowledge_base import KnowledgeBase
 from .refinement_operators import LengthBasedRefinement
 from .search import Node, RL_State
@@ -16,15 +17,15 @@ SearchAlgos = Literal['dfs', 'strict-dfs']
 
 
 class LearningProblemGenerator:
-    """ Learning problem generator. """
+    """Learning problem generator."""
 
     def __init__(self, knowledge_base: KnowledgeBase, refinement_operator=None, num_problems=10_000, num_diff_runs=100,
                  min_num_instances=None, max_num_instances=sys.maxsize, min_length=3, max_length=5, depth=3,
                  search_algo='strict-dfs'):
         """
         Generate concepts via search algorithm to satisfy constraints.
-         strict-dfs considers (min_length, max_length, min_num_ind, num_problems) as hard constraints.
-         dfs- considers (min_length, max_length, min_num_ind) as hard constraints and soft (>=num_problems).
+         'strict-dfs' considers (min_length, max_length, min_num_ind, num_problems) as hard constraints.
+         'dfs' considers (min_length, max_length, min_num_ind) as hard constraints and soft (>=num_problems).
 
          Trade-off between num_diff_runs and num_problems.
         """
@@ -54,11 +55,11 @@ class LearningProblemGenerator:
         self.num_problems = num_problems // self.num_diff_runs
 
     def export_concepts(self, concepts: List[Node], path: str):
-        """Serialise the given concepts to a file
+        """Serialise the given concepts to a file.
 
         Args:
-            concepts: list of Node objects
-            path: filename base (extension will be added automatically)
+            concepts (list): Node objects.
+            path (str): Filename base (extension will be added automatically).
         """
         SNS: Final = 'https://dice-research.org/predictions-schema/'
         NS: Final = 'https://dice-research.org/predictions/' + str(time.time()) + '#'
@@ -120,17 +121,10 @@ class LearningProblemGenerator:
                                             search_algo='strict-dfs') \
             -> Iterable[Tuple[RL_State, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]]:
         """
-        1. We generate min_num_problems number of concepts
-        2. For each concept, we generate n number of positive and negative examples
-        3. Each example contains
-        @param n:
-        @param min_num_problems:
-        @param max_length:
-        @param min_length:
-        @param num_diff_runs:
-        @param min_num_instances:
-        @param search_algo:
-        @return:
+
+        1. We generate min_num_problems number of concepts.
+        2. For each concept, we generate n number of positive and negative examples.
+        3. Each example contains n samples.
         """
         assert max_length >= min_length
 
@@ -185,21 +179,17 @@ class LearningProblemGenerator:
 
     def get_balanced_examples(self, *, min_num_problems=None, max_length=None, min_length=None,
                               num_diff_runs=None, min_num_instances=None, search_algo='strict-dfs') -> list:
+
         """
         (1) Generate valid examples with input search algorithm.
         (2) Balance valid examples.
 
-        @param min_num_problems:
-        @param max_length:
-        @param min_length:
-        @param num_diff_runs:
-        @param min_num_instances:
-        @param search_algo: 'dfs' or 'strict-'dfs=> strict-dfs considers num_problems as a hard constrain.
-        @return: A list of tuples (s,p,n) where s denotes the string representation of a concept,
-        p and n denote a set of URIs of individuals indicating positive and negative examples.
+        Returns:
+            A list of balanced tuples (s,p,n) where s denotes the string representation of a concept, p and n denote
+            a set of URIs of individuals indicating positive and negative examples.
 
         """
-
+        # @param search_algo: 'dfs' or 'strict-dfs'=> strict-dfs considers num_problems as a hard constraint.
         def output_sanity_check(y):
             try:
                 assert len(y) >= min_num_problems
@@ -229,14 +219,9 @@ class LearningProblemGenerator:
         """
         (1) Get valid examples with input search algorithm.
 
-        @param num_problems:
-        @param max_length:
-        @param min_length:
-        @param num_diff_runs:
-        @param min_num_ind:
-        @param search_algo: 'dfs' or 'strict-'dfs=> strict-dfs considers num_problems as hard constriant.
-        @return: A list of tuples (s,p,n) where s denotes the string representation of a concept,
-        p and n denote a set of URIs of individuals indicating positive and negative examples.
+        Returns:
+            A list of tuples (s,p,n) where s denotes the string representation of a concept, p and n denote
+            a set of URIs of individuals indicating positive and negative examples.
 
         """
         res = []
@@ -256,17 +241,7 @@ class LearningProblemGenerator:
 
     def get_concepts(self, *, num_problems=None, max_length=None, min_length=None,
                      max_num_instances=None, num_diff_runs=None, min_num_instances=None, search_algo=None) -> Generator:
-        """
-        @param max_num_instances:
-        @param num_problems:
-        @param max_length:
-        @param min_length:
-        @param num_diff_runs:
-        @param min_num_instances:
-        @param search_algo: 'dfs' or 'strict-'dfs=> strict-dfs considers num_problems as hard constriant.
-        @return: A list of tuples (s,p,n) where s denotes the string representation of a concept,
-        p and n denote a set of URIs of individuals indicating positive and negative examples.
-        """
+        """Calls `generate_examples` """
         return self.generate_examples(num_problems=num_problems,
                                       max_length=max_length, min_length=min_length,
                                       num_diff_runs=num_diff_runs,
@@ -278,16 +253,10 @@ class LearningProblemGenerator:
                           num_diff_runs=None, max_num_instances=None, min_num_instances=None,
                           search_algo=None) -> Generator:
         """
-        Generate examples via search algorithm that are valid examples w.r.t. given constraints
+        Generate examples via search algorithm that are valid examples w.r.t. given constraints.
 
-        @param num_diff_runs:
-        @param num_problems:
-        @param max_length:
-        @param min_length:
-        @param min_num_instances:
-        @param max_num_instances:
-        @param search_algo:
-        @return:
+        Returns:
+            Valid examples
         """
         if num_problems and num_diff_runs:
             assert isinstance(num_problems, int)
@@ -340,8 +309,6 @@ class LearningProblemGenerator:
     def _apply_dfs(self, strict=False) -> Generator:
         """
         Apply depth first search with backtracking to generate concepts.
-
-        @return:
         """
 
         def f1(x):
@@ -415,13 +382,6 @@ class LearningProblemGenerator:
     @staticmethod
     # @performance_debugger('_apply_dfs_on_state')
     def _apply_dfs_on_state(state, depth, apply_rho, constrain_func=None, patience_per_depth=None) -> set:
-        """
-
-        @param state:
-        @param depth:
-        @param apply_rho:
-        @return:
-        """
 
         valid_examples = set()
         invalid_examples = set()

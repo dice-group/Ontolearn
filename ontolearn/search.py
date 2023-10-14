@@ -1,3 +1,4 @@
+"""Node representation."""
 import weakref
 from _weakref import ReferenceType
 from abc import abstractmethod, ABCMeta
@@ -172,6 +173,8 @@ class _NodeQuality(metaclass=ABCMeta):
 
 
 class Node(_NodeConcept, _NodeLen, _NodeIndividualsCount, AbstractNode):
+    """ Simple node.
+    """
     __slots__ = '_concept', '_len', '_individuals_count'
 
     def __init__(self, concept: OWLClassExpression, length: int):
@@ -190,6 +193,7 @@ class Node(_NodeConcept, _NodeLen, _NodeIndividualsCount, AbstractNode):
 
 class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeHeuristic,
              _NodeParentRef['OENode'], AbstractNode, AbstractConceptNode, AbstractOEHeuristicNode):
+    """OENode search tree node."""
     __slots__ = '_concept', '_len', '_individuals_count', '_quality', '_heuristic', \
                 '_parent_ref', '_horizontal_expansion', \
                 '_refinement_count', '__weakref__'
@@ -242,6 +246,9 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
 
 
 class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, AbstractNode, AbstractConceptNode):
+    """
+    EvoLearner search tree node.
+    """
     __slots__ = '_concept', '_len', '_individuals_count', '_quality', '_tree_length', '_tree_depth'
 
     _tree_length: int
@@ -284,6 +291,7 @@ class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality
 
 class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodeParentRef['RL_State']):
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
+    """RL_State node."""
     __slots__ = '_concept', '_quality', '_heuristic', \
                 'embeddings', 'individuals', \
                 'instances_bitset', 'length', 'instances', 'parent_node', 'is_root', '_parent_ref', '__weakref__'
@@ -356,6 +364,7 @@ class _NodeIndividuals(metaclass=ABCMeta):
 
 
 class LBLNode(_NodeIndividuals, OENode):
+    """ LBL search tree node."""
     __slots__ = '_children', '_individuals'
 
     def __init__(self, concept: OWLClassExpression, length: int, individuals, parent_node: Optional['LBLNode'] = None,
@@ -438,6 +447,7 @@ class HeuristicOrderedNode(Generic[_N]):
 
 @total_ordering
 class QualityOrderedNode:
+    """QualityOrderedNode search tree node."""
     __slots__ = 'node'
 
     node: Final[OENode]
@@ -632,6 +642,7 @@ _TN = TypeVar('_TN', bound='TreeNode')  #:
 
 
 class TreeNode(Generic[_N]):
+    """ Simple search tree node."""
     __slots__ = 'children', 'node'
 
     node: Final[_N]

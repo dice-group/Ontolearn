@@ -1,3 +1,0 @@
-! wget https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip -O ./NCESData.zip
-! unzip -o ./NCESData.zip
-! rm -f ./NCESData.zip

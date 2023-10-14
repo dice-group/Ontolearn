@@ -1,3 +1,4 @@
+"""Enumerations."""
 from abc import ABCMeta
 from enum import Enum, EnumMeta
 from typing import Final, Callable, TypeVar
@@ -37,6 +38,7 @@ class _meta_Enum(ABCMeta, EnumMeta):
 
 
 class OWLRDFVocabulary(_Vocabulary, Enum, metaclass=_meta_Enum):
+    """Enumerations for OWL/RDF vocabulary."""
     def __new__(cls, namespace: Namespaces, remainder: str, *args):
         obj = object.__new__(cls)
         obj._value_ = f"{namespace.prefix}:{remainder}"
@@ -53,6 +55,7 @@ class OWLRDFVocabulary(_Vocabulary, Enum, metaclass=_meta_Enum):
 
 
 class XSDVocabulary(_Vocabulary, Enum, metaclass=_meta_Enum):
+    """Enumerations for XSD vocabulary."""
     def __new__(cls, remainder: str, *args):
         obj = object.__new__(cls)
         obj._value_ = f"{namespaces.XSD.prefix}:{remainder}"
@@ -78,6 +81,7 @@ _X = TypeVar('_X')
 
 # TODO: Add langRange facet
 class OWLFacet(_Vocabulary, Enum, metaclass=_meta_Enum):
+    """Enumerations for OWL facets."""
     def __new__(cls, remainder: str, *args):
         obj = object.__new__(cls)
         obj._value_ = f"{namespaces.XSD.prefix}:{remainder}"

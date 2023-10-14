@@ -1,7 +1,7 @@
 # Model Adaptor
 
 To simplify the connection between all the
-[Components](08_architecture.md#component-architecture), there is a
+components, there is a
 model adaptor available that automatically constructs and connects them.
 Here is how to implement the previous example using the Model Adaptor:
 

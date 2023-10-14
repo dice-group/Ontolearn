@@ -1,10 +1,15 @@
+"""Quality metrics for concept learners."""
 from typing import Final, Tuple
 
 from .abstracts import AbstractScorer
-from .learning_problem import EncodedPosNegLPStandard
 
 
 class Recall(AbstractScorer):
+    """Recall quality function.
+
+    Attribute:
+        name: name of the metric = 'Recall'.
+    """
     __slots__ = ()
 
     name: Final = 'Recall'
@@ -18,6 +23,11 @@ class Recall(AbstractScorer):
 
 
 class Precision(AbstractScorer):
+    """Precision quality function.
+
+    Attribute:
+        name: name of the metric = 'Precision'.
+    """
     __slots__ = ()
 
     name: Final = 'Precision'
@@ -31,6 +41,11 @@ class Precision(AbstractScorer):
 
 
 class F1(AbstractScorer):
+    """F1-score quality function.
+
+    Attribute:
+        name: name of the metric = 'F1'.
+    """
     __slots__ = ()
 
     name: Final = 'F1'
@@ -55,19 +70,23 @@ class F1(AbstractScorer):
 
 class Accuracy(AbstractScorer):
     """
-    Accuracy is          acc = (tp + tn) / (tp + tn + fp+ fn). However,
-    Concept learning papers (e.g. Learning OWL Class expression) appear to invernt their own accuracy metrics.
+    Accuracy quality function.
+    Accuracy is acc = (tp + tn) / (tp + tn + fp+ fn).
+    However, Concept learning papers (e.g. Learning OWL Class expression) appear to invent their own accuracy metrics.
 
-    In OCEL =>    Accuracy of a concept = 1 - ( \\|E^+ \\ R(C)\\|+ \\|E^- AND R(C)\\|) / \\|E\\|)
+    In OCEL =>    Accuracy of a concept = 1 - ( \\|E^+ \\ R(C)\\|+ \\|E^- AND R(C)\\|) / \\|E\\|).
 
 
-    In CELOE  =>    Accuracy of a concept C = 1 - ( \\|R(A) \\ R(C)\\| + \\|R(C) \\ R(A)\\|)/n
+    In CELOE  =>    Accuracy of a concept C = 1 - ( \\|R(A) \\ R(C)\\| + \\|R(C) \\ R(A)\\|)/n.
 
 
 
     1) R(.) is the retrieval function, A is the class to describe and C in CELOE.
 
     2) E^+ and E^- are the positive and negative examples probided. E = E^+ OR E^- .
+
+    Attribute:
+        name: name of the metric = 'Accuracy'.
     """
     __slots__ = ()
 
@@ -81,6 +100,12 @@ class Accuracy(AbstractScorer):
 
 
 class WeightedAccuracy(AbstractScorer):
+    """
+    WeightedAccuracy quality function.
+
+    Attribute:
+        name: name of the metric = 'WeightedAccuracy'.
+    """
     __slots__ = ()
 
     name: Final = 'WeightedAccuracy'

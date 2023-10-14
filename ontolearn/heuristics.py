@@ -1,3 +1,5 @@
+"""Heuristic functions."""
+
 from typing import Final
 
 import numpy as np
@@ -9,7 +11,7 @@ from .search import LBLNode, RL_State
 
 
 class CELOEHeuristic(AbstractHeuristic[AbstractOEHeuristicNode]):
-    """Heuristic like the CELOE Heuristic in DL-Learner"""
+    """Heuristic like the CELOE Heuristic in DL-Learner."""
     __slots__ = 'gainBonusFactor', 'startNodeBonus', 'nodeRefinementPenalty', 'expansionPenaltyFactor'
 
     name: Final = 'CELOE_Heuristic'
@@ -24,14 +26,14 @@ class CELOEHeuristic(AbstractHeuristic[AbstractOEHeuristicNode]):
                  startNodeBonus: float = 0.1,
                  nodeRefinementPenalty: float = 0.001,
                  expansionPenaltyFactor: float = 0.1):
-        """Create a new CELOE Heuristic
+        """Create a new CELOE Heuristic.
 
         Args:
-            gainBonusFactor: factor that weighs the increase in quality compared to the parent node
-            startNodeBonus: special value added to the root node
-            nodeRefinementPenalty: value that is substracted from the heuristic for each refinement attempt of this node
-            expansionPenaltyFactor: value that is substracted from the heuristic for each horizontal expansion of this
-                node
+            gainBonusFactor: Factor that weighs the increase in quality compared to the parent node.
+            startNodeBonus: Special value added to the root node.
+            nodeRefinementPenalty: Value that is subtracted from the heuristic for each refinement attempt of this node.
+            expansionPenaltyFactor: Value that is subtracted from the heuristic for each horizontal expansion of this
+                node.
         """
         self.gainBonusFactor = gainBonusFactor
         self.startNodeBonus = startNodeBonus
@@ -55,6 +57,7 @@ class CELOEHeuristic(AbstractHeuristic[AbstractOEHeuristicNode]):
 
 
 class DLFOILHeuristic(AbstractHeuristic):
+    """DLFOIL Heuristic."""
     __slots__ = ()
 
     name: Final = 'custom_dl_foil'
@@ -91,6 +94,7 @@ class DLFOILHeuristic(AbstractHeuristic):
 
 
 class OCELHeuristic(AbstractHeuristic):
+    """OCEL Heuristic."""
     __slots__ = 'accuracy_method', 'gainBonusFactor', 'expansionPenaltyFactor'
 
     name: Final = 'OCEL_Heuristic'
@@ -119,6 +123,7 @@ class OCELHeuristic(AbstractHeuristic):
 
 
 class Reward:
+    """Reward function for DRILL."""
     def __init__(self, reward_of_goal=5.0, beta=.04, alpha=.5):
         self.name = 'DRILL_Reward'
         self.lp = None

@@ -1,8 +1,10 @@
-"""The OWL-APy Model class and method names should match those of OWL API [1]
+"""The OWL-APy Model classes and methods.
+
+Their names should match those of OWL API [1].
 
 If OWL API has streaming and getter API, it is enough to provide the streaming API only.
 
-many help texts copied from OWL API
+Many help texts copied from OWL API.
 
 [1] https://github.com/owlcs/owlapi"""
 
@@ -38,7 +40,7 @@ class HasOperands(Generic[_T], metaclass=ABCMeta):
     """An interface to objects that have a collection of operands.
 
     Args:
-        _T: operand type
+        _T: Operand type.
     """
     __slots__ = ()
 
@@ -54,15 +56,15 @@ class HasOperands(Generic[_T], metaclass=ABCMeta):
 
 
 class OWLPropertyRange(OWLObject, metaclass=ABCMeta):
-    """OWL Objects that can be the ranges of properties"""
+    """OWL Objects that can be the ranges of properties."""
 
 
 class OWLDataRange(OWLPropertyRange, metaclass=ABCMeta):
-    """Represents a DataRange in the OWL 2 Specification"""
+    """Represents a DataRange in the OWL 2 Specification."""
 
 
 class OWLClassExpression(OWLPropertyRange):
-    """An OWL 2 Class Expression"""
+    """An OWL 2 Class Expression."""
     __slots__ = ()
 
     @abstractmethod
@@ -71,7 +73,7 @@ class OWLClassExpression(OWLPropertyRange):
         is equivalent to owl:Thing.
 
         Returns:
-            :True if this expression is owl:Thing
+            True if this expression is owl:Thing.
         """
         pass
 
@@ -84,7 +86,7 @@ class OWLClassExpression(OWLPropertyRange):
 
     @abstractmethod
     def get_object_complement_of(self) -> 'OWLObjectComplementOf':
-        """Gets the object complement of this class expression
+        """Gets the object complement of this class expression.
 
         Returns:
             A class expression that is the complement of this class expression.
@@ -102,7 +104,7 @@ class OWLClassExpression(OWLPropertyRange):
 
 
 class OWLAnonymousClassExpression(OWLClassExpression, metaclass=ABCMeta):
-    """A Class Expression which is not a named Class"""
+    """A Class Expression which is not a named Class."""
 
     def is_owl_nothing(self) -> bool:
         # documented in parent
@@ -123,6 +125,7 @@ class OWLAnonymousClassExpression(OWLClassExpression, metaclass=ABCMeta):
 
 
 class OWLBooleanClassExpression(OWLAnonymousClassExpression, metaclass=ABCMeta):
+    """Represent an anonymous boolean class expression."""
     __slots__ = ()
     pass
 
@@ -137,14 +140,14 @@ class OWLObjectComplementOf(OWLBooleanClassExpression, HasOperands[OWLClassExpre
     def __init__(self, op: OWLClassExpression):
         """
         Args:
-            op: class expression to complement
+            op: Class expression to complement.
         """
         self._operand = op
 
     def get_operand(self) -> OWLClassExpression:
         """
         Returns:
-            the wrapped expression
+            The wrapped expression.
         """
         return self._operand
 
@@ -250,14 +253,14 @@ class OWLPropertyExpression(OWLObject, metaclass=ABCMeta):
     def is_data_property_expression(self) -> bool:
         """
         Returns:
-            True if this is a data property
+            True if this is a data property.
         """
         return False
 
     def is_object_property_expression(self) -> bool:
         """
         Returns:
-            True if this is an object property
+            True if this is an object property.
         """
         return False
 
@@ -265,7 +268,7 @@ class OWLPropertyExpression(OWLObject, metaclass=ABCMeta):
         """Determines if this is the owl:topObjectProperty.
 
         Returns:
-            :True if this property is the owl:topObjectProperty
+            True if this property is the owl:topObjectProperty.
         """
         return False
 
@@ -273,41 +276,42 @@ class OWLPropertyExpression(OWLObject, metaclass=ABCMeta):
         """Determines if this is the owl:topDataProperty.
 
         Returns:
-            :True if this property is the owl:topDataProperty
+            True if this property is the owl:topDataProperty.
         """
         return False
 
 
 class OWLRestriction(OWLAnonymousClassExpression):
-    """Represents a Object Property Restriction or Data Property Restriction in the OWL 2 specification."""
+    """Represents an Object Property Restriction or Data Property Restriction in the OWL 2 specification."""
     __slots__ = ()
 
     @abstractmethod
     def get_property(self) -> OWLPropertyExpression:
         """
         Returns:
-            property being restricted
+            Property being restricted.
         """
         pass
 
     def is_data_restriction(self) -> bool:
-        """Determines if this is a data restriction
+        """Determines if this is a data restriction.
 
         Returns:
-            True if this is a data restriction
+            True if this is a data restriction.
         """
         return False
 
     def is_object_restriction(self) -> bool:
-        """Determines if this is an object restriction
+        """Determines if this is an object restriction.
 
         Returns:
-            True if this is an object restriction
+            True if this is an object restriction.
         """
         return False
 
 
 class OWLObjectPropertyExpression(OWLPropertyExpression):
+    """A high level interface to describe different types of object properties."""
     __slots__ = ()
 
     @abstractmethod
@@ -419,7 +423,7 @@ class OWLObjectInverseOf(OWLObjectPropertyExpression):
         """Gets the inverse of an object property.
 
         Args:
-            property: The property of which the inverse will be returned
+            property: The property of which the inverse will be returned.
         """
         self._inverse_property = property
 
@@ -480,7 +484,7 @@ class HasFiller(Generic[_T], metaclass=ABCMeta):
     """An interface to objects that have a filler.
 
     Args:
-        _T: filler type
+        _T: Filler type.
     """
     __slots__ = ()
 
@@ -500,7 +504,7 @@ class OWLHasValueRestriction(Generic[_T], OWLRestriction, HasFiller[_T], metacla
     """OWLHasValueRestriction.
 
     Args:
-        _T: the value type
+        _T: The value type.
     """
     __slots__ = ()
 
@@ -523,7 +527,7 @@ class OWLHasValueRestriction(Generic[_T], OWLRestriction, HasFiller[_T], metacla
 
 
 class OWLQuantifiedRestriction(Generic[_T], OWLRestriction, HasFiller[_T], metaclass=ABCMeta):
-    """A quantified restriction.
+    """Represents a quantified restriction.
 
     Args:
         _T: value type
@@ -534,7 +538,7 @@ class OWLQuantifiedRestriction(Generic[_T], OWLRestriction, HasFiller[_T], metac
 
 class OWLQuantifiedObjectRestriction(OWLQuantifiedRestriction[OWLClassExpression], OWLObjectRestriction,
                                      metaclass=ABCMeta):
-    """A quantified object restriction."""
+    """Represents a quantified object restriction."""
     __slots__ = ()
 
     _filler: OWLClassExpression
@@ -553,14 +557,14 @@ class OWLObjectSomeValuesFrom(OWLQuantifiedObjectRestriction):
     type_index: Final = 3005
 
     def __init__(self, property: OWLObjectPropertyExpression, filler: OWLClassExpression):
-        """Gets an OWLObjectSomeValuesFrom restriction
+        """Gets an OWLObjectSomeValuesFrom restriction.
 
         Args:
             property: The object property that the restriction acts along.
             filler: The class expression that is the filler.
 
         Returns:
-            An OWLObjectSomeValuesFrom restriction along the specified property with the specified filler
+            An OWLObjectSomeValuesFrom restriction along the specified property with the specified filler.
         """
         super().__init__(filler)
         self._property = property
@@ -615,7 +619,7 @@ class OWLNaryBooleanClassExpression(OWLBooleanClassExpression, HasOperands[OWLCl
     def __init__(self, operands: Iterable[OWLClassExpression]):
         """
         Args:
-            operands: class expressions
+            operands: Class expressions.
         """
         self._operands = tuple(operands)
 
@@ -669,10 +673,10 @@ _F = TypeVar('_F', bound=OWLPropertyRange)  #:
 
 
 class OWLCardinalityRestriction(Generic[_F], OWLQuantifiedRestriction[_F], HasCardinality, metaclass=ABCMeta):
-    """.
+    """Base interface for owl min and max cardinality restriction.
 
     Args:
-        _F: type of filler
+        _F: Type of filler.
     """
     __slots__ = ()
 
@@ -693,6 +697,7 @@ class OWLCardinalityRestriction(Generic[_F], OWLQuantifiedRestriction[_F], HasCa
 
 
 class OWLObjectCardinalityRestriction(OWLCardinalityRestriction[OWLClassExpression], OWLQuantifiedObjectRestriction):
+    """Represents Object Property Cardinality Restrictions in the OWL 2 specification."""
     __slots__ = ()
 
     _property: OWLObjectPropertyExpression
@@ -731,10 +736,10 @@ class OWLObjectMinCardinality(OWLObjectCardinalityRestriction):
         Args:
             cardinality: Cannot be negative.
             property: The property that the restriction acts along.
-            filler: class expression for restriction
+            filler: Class expression for restriction.
 
         Returns:
-            an ObjectMinCardinality on the specified property
+            An ObjectMinCardinality on the specified property.
         """
         super().__init__(cardinality, property, filler)
 
@@ -749,10 +754,10 @@ class OWLObjectMaxCardinality(OWLObjectCardinalityRestriction):
         Args:
             cardinality: Cannot be negative.
             property: The property that the restriction acts along.
-            filler: class expression for restriction
+            filler: Class expression for restriction.
 
         Returns:
-            an ObjectMaxCardinality on the specified property
+            An ObjectMaxCardinality on the specified property.
         """
         super().__init__(cardinality, property, filler)
 
@@ -767,10 +772,10 @@ class OWLObjectExactCardinality(OWLObjectCardinalityRestriction):
         Args:
             cardinality: Cannot be negative.
             property: The property that the restriction acts along.
-            filler: class expression for restriction
+            filler: Class expression for restriction.
 
         Returns:
-            an ObjectExactCardinality on the specified property
+            An ObjectExactCardinality on the specified property.
         """
         super().__init__(cardinality, property, filler)
 
@@ -778,7 +783,7 @@ class OWLObjectExactCardinality(OWLObjectCardinalityRestriction):
         """Obtains an equivalent form that is a conjunction of a min cardinality and max cardinality restriction.
 
         Returns:
-            The semantically equivalent but structurally simpler form (= 1 R C) = >= 1 R C and <= 1 R C
+            The semantically equivalent but structurally simpler form (= 1 R C) = >= 1 R C and <= 1 R C.
         """
         args = self.get_cardinality(), self.get_property(), self.get_filler()
         return OWLObjectIntersectionOf((OWLObjectMinCardinality(*args), OWLObjectMaxCardinality(*args)))
@@ -798,7 +803,7 @@ class OWLObjectHasSelf(OWLObjectRestriction):
             property: The property that the restriction acts along.
 
         Returns:
-            a ObjectHasSelf class expression on the specified property
+            A ObjectHasSelf class expression on the specified property.
         """
         self._property = property
 
@@ -836,10 +841,10 @@ class OWLObjectHasValue(OWLHasValueRestriction[OWLIndividual], OWLObjectRestrict
         """
         Args:
             property: The property that the restriction acts along.
-            individual: individual for restriction
+            individual: Individual for restriction.
 
         Returns:
-            a HasValue restriction with specified property and value
+            A HasValue restriction with specified property and value
         """
         super().__init__(individual)
         self._property = property
@@ -852,7 +857,7 @@ class OWLObjectHasValue(OWLHasValueRestriction[OWLIndividual], OWLObjectRestrict
         """A convenience method that obtains this restriction as an existential restriction with a nominal filler.
 
         Returns:
-            The existential equivalent of this value restriction. simp(HasValue(p a)) = some(p {a})
+            The existential equivalent of this value restriction. simp(HasValue(p a)) = some(p {a}).
         """
         return OWLObjectSomeValuesFrom(self.get_property(), OWLObjectOneOf(self.get_filler()))
 
@@ -950,8 +955,8 @@ class OWLOntologyID:
         """Constructs an ontology identifier specifying the ontology IRI and version IRI.
 
         Args:
-            ontology_iri: The ontology IRI (optional)
-            version_iri: The version IRI (must be None if no ontology_iri is provided)
+            ontology_iri: The ontology IRI (optional).
+            version_iri: The version IRI (must be None if no ontology_iri is provided).
         """
         self._ontology_iri = ontology_iri
         self._version_iri = version_iri
@@ -960,7 +965,7 @@ class OWLOntologyID:
         """Gets the ontology IRI.
 
         Returns:
-            Ontology IRI. If the ontology is anonymous, it will return None
+            Ontology IRI. If the ontology is anonymous, it will return None.
         """
         return self._ontology_iri
 
@@ -968,7 +973,7 @@ class OWLOntologyID:
         """Gets the version IRI.
 
         Returns:
-            Version IRI or None
+            Version IRI or None.
         """
         return self._version_iri
 
@@ -1002,7 +1007,7 @@ class OWLAxiom(OWLObject, metaclass=ABCMeta):
     """Represents Axioms in the OWL 2 Specification.
 
     An OWL ontology contains a set of axioms. These axioms can be annotation axioms, declaration axioms, imports axioms
-    or logical axioms
+    or logical axioms.
     """
     __slots__ = '_annotations'
 
@@ -1127,11 +1132,11 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
     type_index: Final = 4008
 
     def __new__(cls, value, type_: Optional[OWLDatatype] = None):
-        """Convenience method that obtains a literal
+        """Convenience method that obtains a literal.
 
         Args:
-            value: The value of the literal
-            type_: the datatype of the literal
+            value: The value of the literal.
+            type_: The datatype of the literal.
         """
         if type_ is not None:
             if type_ == BooleanOWLDatatype:
@@ -1176,7 +1181,7 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
         return str(self._v)
 
     def is_boolean(self) -> bool:
-        """Whether this literal is typed as boolean"""
+        """Whether this literal is typed as boolean."""
         return False
 
     def parse_boolean(self) -> bool:
@@ -1189,7 +1194,7 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
         raise ValueError
 
     def is_double(self) -> bool:
-        """Whether this literal is typed as double"""
+        """Whether this literal is typed as double."""
         return False
 
     def parse_double(self) -> float:
@@ -1202,7 +1207,7 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
         raise ValueError
 
     def is_integer(self) -> bool:
-        """Whether this literal is typed as integer"""
+        """Whether this literal is typed as integer."""
         return False
 
     def parse_integer(self) -> int:
@@ -1215,7 +1220,7 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
         raise ValueError
 
     def is_string(self) -> bool:
-        """Whether this literal is typed as string"""
+        """Whether this literal is typed as string."""
         return False
 
     def parse_string(self) -> str:
@@ -1228,7 +1233,7 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
         raise ValueError
 
     def is_date(self) -> bool:
-        """Whether this literal is typed as date"""
+        """Whether this literal is typed as date."""
         return False
 
     def parse_date(self) -> date:
@@ -1241,7 +1246,7 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
         raise ValueError
 
     def is_datetime(self) -> bool:
-        """Whether this literal is typed as dateTime"""
+        """Whether this literal is typed as dateTime."""
         return False
 
     def parse_datetime(self) -> datetime:
@@ -1254,7 +1259,7 @@ class OWLLiteral(OWLAnnotationValue, metaclass=ABCMeta):
         raise ValueError
 
     def is_duration(self) -> bool:
-        """Whether this literal is typed as duration"""
+        """Whether this literal is typed as duration."""
         return False
 
     def parse_duration(self) -> Timedelta:
@@ -1602,7 +1607,7 @@ class _OWLLiteralImpl(OWLLiteral):
 
 class OWLQuantifiedDataRestriction(OWLQuantifiedRestriction[OWLDataRange],
                                    OWLDataRestriction, metaclass=ABCMeta):
-    """A quantified data restriction."""
+    """Represents a quantified data restriction."""
     __slots__ = ()
 
     _filler: OWLDataRange
@@ -1618,7 +1623,7 @@ class OWLQuantifiedDataRestriction(OWLQuantifiedRestriction[OWLDataRange],
 class OWLDataCardinalityRestriction(OWLCardinalityRestriction[OWLDataRange],
                                     OWLQuantifiedDataRestriction,
                                     OWLDataRestriction, metaclass=ABCMeta):
-    """Represents Data Property Cardinality Restrictions in the OWL 2 specification"""
+    """Represents Data Property Cardinality Restrictions in the OWL 2 specification."""
     __slots__ = ()
 
     _property: OWLDataPropertyExpression
@@ -1656,14 +1661,14 @@ class OWLDataAllValuesFrom(OWLQuantifiedDataRestriction):
     _property: OWLDataPropertyExpression
 
     def __init__(self, property: OWLDataPropertyExpression, filler: OWLDataRange):
-        """Gets an OWLDataAllValuesFrom restriction
+        """Gets an OWLDataAllValuesFrom restriction.
 
         Args:
             property: The data property that the restriction acts along.
             filler: The data range that is the filler.
 
         Returns:
-            An OWLDataAllValuesFrom restriction along the specified property with the specified filler
+            An OWLDataAllValuesFrom restriction along the specified property with the specified filler.
         """
         super().__init__(filler)
         self._property = property
@@ -1693,14 +1698,14 @@ class OWLDataComplementOf(OWLDataRange):
     def __init__(self, data_range: OWLDataRange):
         """
         Args:
-            data_range: data range to complement
+            data_range: Data range to complement.
         """
         self._data_range = data_range
 
     def get_data_range(self) -> OWLDataRange:
         """
         Returns:
-            the wrapped data range
+            The wrapped data range.
         """
         return self._data_range
 
@@ -1727,10 +1732,10 @@ class OWLDataExactCardinality(OWLDataCardinalityRestriction):
         Args:
             cardinality: Cannot be negative.
             property: The property that the restriction acts along.
-            filler: data range for restriction
+            filler: Data range for restriction
 
         Returns:
-            a DataExactCardinality on the specified property
+            A DataExactCardinality on the specified property.
         """
         super().__init__(cardinality, property, filler)
 
@@ -1738,7 +1743,7 @@ class OWLDataExactCardinality(OWLDataCardinalityRestriction):
         """Obtains an equivalent form that is a conjunction of a min cardinality and max cardinality restriction.
 
         Returns:
-            The semantically equivalent but structurally simpler form (= 1 R D) = >= 1 R D and <= 1 R D
+            The semantically equivalent but structurally simpler form (= 1 R D) = >= 1 R D and <= 1 R D.
         """
         args = self.get_cardinality(), self.get_property(), self.get_filler()
         return OWLObjectIntersectionOf((OWLDataMinCardinality(*args), OWLDataMaxCardinality(*args)))
@@ -1753,14 +1758,14 @@ class OWLDataHasValue(OWLHasValueRestriction[OWLLiteral], OWLDataRestriction):
     _property: OWLDataPropertyExpression
 
     def __init__(self, property: OWLDataPropertyExpression, value: OWLLiteral):
-        """Gets an OWLDataHasValue restriction
+        """Gets an OWLDataHasValue restriction.
 
         Args:
             property: The data property that the restriction acts along.
-            filler: The literal value
+            filler: The literal value.
 
         Returns:
-            An OWLDataHasValue restriction along the specified property with the specified literal
+            An OWLDataHasValue restriction along the specified property with the specified literal.
         """
         super().__init__(value)
         self._property = property
@@ -1780,7 +1785,7 @@ class OWLDataHasValue(OWLHasValueRestriction[OWLLiteral], OWLDataRestriction):
         """A convenience method that obtains this restriction as an existential restriction with a nominal filler.
 
         Returns:
-            The existential equivalent of this value restriction. simp(HasValue(p a)) = some(p {a})
+            The existential equivalent of this value restriction. simp(HasValue(p a)) = some(p {a}).
         """
         return OWLDataSomeValuesFrom(self.get_property(), OWLDataOneOf(self.get_filler()))
 
@@ -1800,10 +1805,10 @@ class OWLDataMaxCardinality(OWLDataCardinalityRestriction):
         Args:
             cardinality: Cannot be negative.
             property: The property that the restriction acts along.
-            filler: data range for restriction
+            filler: Data range for restriction.
 
         Returns:
-            a DataMaxCardinality on the specified property
+            A DataMaxCardinality on the specified property.
         """
         super().__init__(cardinality, property, filler)
 
@@ -1819,10 +1824,10 @@ class OWLDataMinCardinality(OWLDataCardinalityRestriction):
         Args:
             cardinality: Cannot be negative.
             property: The property that the restriction acts along.
-            filler: data range for restriction
+            filler: Data range for restriction.
 
         Returns:
-            a DataMinCardinality on the specified property
+            A DataMinCardinality on the specified property.
         """
         super().__init__(cardinality, property, filler)
 
@@ -1874,14 +1879,14 @@ class OWLDataSomeValuesFrom(OWLQuantifiedDataRestriction):
     _property: OWLDataPropertyExpression
 
     def __init__(self, property: OWLDataPropertyExpression, filler: OWLDataRange):
-        """Gets an OWLDataSomeValuesFrom restriction
+        """Gets an OWLDataSomeValuesFrom restriction.
 
         Args:
             property: The data property that the restriction acts along.
             filler: The data range that is the filler.
 
         Returns:
-            An OWLDataSomeValuesFrom restriction along the specified property with the specified filler
+            An OWLDataSomeValuesFrom restriction along the specified property with the specified filler.
         """
         super().__init__(filler)
         self._property = property
@@ -1911,7 +1916,7 @@ class OWLNaryDataRange(OWLDataRange, HasOperands[OWLDataRange]):
     def __init__(self, operands: Iterable[OWLDataRange]):
         """
         Args:
-            operands: data ranges
+            operands: Data ranges.
         """
         self._operands = tuple(operands)
 
@@ -1954,10 +1959,10 @@ class OWLImportsDeclaration(HasIRI):
     def __init__(self, import_iri: IRI):
         """
         Args:
-            import_import_iri: imported ontology
+            import_import_iri: Imported ontology.
 
         Returns:
-            an imports declaration
+            An imports declaration.
         """
         self._iri = import_iri
 
@@ -1966,7 +1971,7 @@ class OWLImportsDeclaration(HasIRI):
 
         Returns:
             The import IRI that points to the ontology to be imported. The imported ontology might have this IRI as
-            its ontology IRI but this is not mandated. For example, an ontology with a non resolvable ontology IRI
+            its ontology IRI but this is not mandated. For example, an ontology with a non-resolvable ontology IRI
             can be deployed at a resolvable URL.
         """
         return self._iri
@@ -2020,8 +2025,8 @@ class OWLClassAxiom(OWLLogicalAxiom, metaclass=ABCMeta):
 
 
 class OWLDeclarationAxiom(OWLAxiom):
-    '''Represents a Declaration axiom in the OWL 2 Specification. A declaration axiom declares an entity in an ontology.
-       It doesn't affect the logical meaning of the ontology.'''
+    """Represents a Declaration axiom in the OWL 2 Specification. A declaration axiom declares an entity in an ontology.
+       It doesn't affect the logical meaning of the ontology."""
     __slots__ = '_entity'
 
     _entity: OWLEntity
@@ -2046,7 +2051,7 @@ class OWLDeclarationAxiom(OWLAxiom):
 
 
 class OWLDatatypeDefinitionAxiom(OWLLogicalAxiom):
-    '''Represents a DatatypeDefinition axiom in the OWL 2 Specification.'''
+    """Represents a DatatypeDefinition axiom in the OWL 2 Specification."""
     __slots__ = '_datatype', '_datarange'
 
     _datatype: OWLDatatype
@@ -2079,7 +2084,7 @@ class OWLDatatypeDefinitionAxiom(OWLLogicalAxiom):
 
 
 class OWLHasKeyAxiom(OWLLogicalAxiom, HasOperands[OWLPropertyExpression]):
-    '''Represents a HasKey axiom in the OWL 2 Specification.'''
+    """Represents a HasKey axiom in the OWL 2 Specification."""
     __slots__ = '_class_expression', '_property_expressions'
 
     _class_expression: OWLClassExpression
@@ -2120,7 +2125,7 @@ class OWLNaryAxiom(Generic[_C], OWLAxiom, metaclass=ABCMeta):
     axioms.
 
     Args:
-        _C: class of contained objects
+        _C: Class of contained objects.
     """
     __slots__ = ()
 
@@ -2132,8 +2137,9 @@ class OWLNaryAxiom(Generic[_C], OWLAxiom, metaclass=ABCMeta):
 # noinspection PyUnresolvedReferences
 # noinspection PyDunderSlots
 class OWLNaryClassAxiom(OWLClassAxiom, OWLNaryAxiom[OWLClassExpression], metaclass=ABCMeta):
+    """Represents an axiom that contains two or more operands that could also be represented with
+        multiple pairwise axioms."""
     __slots__ = '_class_expressions'
-
     _class_expressions: List[OWLClassExpression]
 
     @abstractmethod
@@ -2151,6 +2157,12 @@ class OWLNaryClassAxiom(OWLClassAxiom, OWLNaryAxiom[OWLClassExpression], metacla
         yield from self._class_expressions
 
     def as_pairwise_axioms(self) -> Iterable['OWLNaryClassAxiom']:
+        """Gets this axiom as a set of pairwise axioms; if the axiom contains only two operands,
+        the axiom itself is returned unchanged, including its annotations.
+
+        Returns:
+            This axiom as a set of pairwise axioms.
+        """
         if len(self._class_expressions) < 3:
             yield self
         else:
@@ -2199,6 +2211,8 @@ class OWLDisjointClassesAxiom(OWLNaryClassAxiom):
 
 
 class OWLNaryIndividualAxiom(OWLIndividualAxiom, OWLNaryAxiom[OWLIndividual], metaclass=ABCMeta):
+    """Represents an axiom that contains two or more operands that could also be represented with
+            multiple pairwise individual axioms."""
     __slots__ = '_individuals'
 
     _individuals: List[OWLIndividual]
@@ -2210,6 +2224,11 @@ class OWLNaryIndividualAxiom(OWLIndividualAxiom, OWLNaryAxiom[OWLIndividual], me
         super().__init__(annotations=annotations)
 
     def individuals(self) -> Iterable[OWLIndividual]:
+        """Get the individuals.
+
+        Returns:
+            Generator containing the individuals.
+        """
         yield from self._individuals
 
     def as_pairwise_axioms(self) -> Iterable['OWLNaryIndividualAxiom']:
@@ -2249,6 +2268,8 @@ class OWLSameIndividualAxiom(OWLNaryIndividualAxiom):
 
 
 class OWLNaryPropertyAxiom(Generic[_P], OWLPropertyAxiom, OWLNaryAxiom[_P], metaclass=ABCMeta):
+    """Represents an axiom that contains two or more operands that could also be represented with
+       multiple pairwise property axioms."""
     __slots__ = '_properties'
 
     _properties: List[_P]
@@ -2259,6 +2280,11 @@ class OWLNaryPropertyAxiom(Generic[_P], OWLPropertyAxiom, OWLNaryAxiom[_P], meta
         super().__init__(annotations=annotations)
 
     def properties(self) -> Iterable[_P]:
+        """Get all the properties that appear in the axiom.
+
+        Returns:
+            Generator containing the properties.
+        """
         yield from self._properties
 
     def as_pairwise_axioms(self) -> Iterable['OWLNaryPropertyAxiom']:
@@ -2348,12 +2374,12 @@ class OWLSubClassOfAxiom(OWLClassAxiom):
 
     def __init__(self, sub_class: OWLClassExpression, super_class: OWLClassExpression,
                  annotations: Optional[Iterable['OWLAnnotation']] = None):
-        """Get an equivalent classes axiom with specified operands and no annotations
+        """Get an equivalent classes axiom with specified operands and no annotations.
 
         Args:
-            sub_class: the sub class
-            super_class: the super class
-            annotations: annotations
+            sub_class: The sub-class.
+            super_class: The super class.
+            annotations: Annotations.
         """
         self._sub_class = sub_class
         self._super_class = super_class
@@ -2380,7 +2406,7 @@ class OWLSubClassOfAxiom(OWLClassAxiom):
 
 
 class OWLDisjointUnionAxiom(OWLClassAxiom):
-    '''Represents a DisjointUnion axiom in the OWL 2 Specification.'''
+    """Represents a DisjointUnion axiom in the OWL 2 Specification."""
     __slots__ = '_cls', '_class_expressions'
 
     _cls: OWLClass
@@ -2419,7 +2445,7 @@ class OWLDisjointUnionAxiom(OWLClassAxiom):
 
 
 class OWLClassAssertionAxiom(OWLIndividualAxiom):
-    '''Represents ClassAssertion axioms in the OWL 2 Specification.'''
+    """Represents ClassAssertion axioms in the OWL 2 Specification."""
     __slots__ = '_individual', '_class_expression'
 
     _individual: OWLIndividual
@@ -2427,11 +2453,11 @@ class OWLClassAssertionAxiom(OWLIndividualAxiom):
 
     def __init__(self, individual: OWLIndividual, class_expression: OWLClassExpression,
                  annotations: Optional[Iterable['OWLAnnotation']] = None):
-        """Get a ClassAssertion axiom for the specified individual and class expression
+        """Get a ClassAssertion axiom for the specified individual and class expression.
         Args:
-            individual: the individual
-            class_expression: the class the individual belongs to
-            annotations: annotations
+            individual: The individual.
+            class_expression: The class the individual belongs to.
+            annotations: Annotations.
         """
         self._individual = individual
         self._class_expression = class_expression
@@ -2472,10 +2498,10 @@ class OWLAnnotationProperty(OWLProperty):
     _iri: IRI
 
     def __init__(self, iri: IRI):
-        """Get a new OWLAnnotationProperty object
+        """Get a new OWLAnnotationProperty object.
 
         Args:
-            iri: new OWLAnnotationProperty IRI
+            iri: New OWLAnnotationProperty IRI.
         """
         self._iri = iri
 
@@ -2493,7 +2519,7 @@ class OWLAnnotation(OWLObject):
     _value: OWLAnnotationValue
 
     def __init__(self, property: OWLAnnotationProperty, value: OWLAnnotationValue):
-        """Gets an annotation
+        """Gets an annotation.
 
         Args:
             property: the annotation property.
@@ -2506,7 +2532,7 @@ class OWLAnnotation(OWLObject):
         """Gets the property that this annotation acts along.
 
         Returns:
-            The annotation property
+            The annotation property.
         """
         return self._property
 
@@ -2539,11 +2565,11 @@ class OWLAnnotationAssertionAxiom(OWLAnnotationAxiom):
     _annotation: OWLAnnotation
 
     def __init__(self, subject: OWLAnnotationSubject, annotation: OWLAnnotation):
-        """Get an annotation assertion axiom - with annotations
+        """Get an annotation assertion axiom - with annotations.
 
         Args:
-            subject: subject
-            annotation: annotation
+            subject: Subject.
+            annotation: Annotation.
         """
         assert isinstance(subject, OWLAnnotationSubject)
         assert isinstance(annotation, OWLAnnotation)
@@ -2555,7 +2581,7 @@ class OWLAnnotationAssertionAxiom(OWLAnnotationAxiom):
         """Gets the subject of this object.
 
         Returns:
-            The subject
+            The subject.
         """
         return self._subject
 
@@ -2588,7 +2614,7 @@ class OWLAnnotationAssertionAxiom(OWLAnnotationAxiom):
 
 
 class OWLSubAnnotationPropertyOfAxiom(OWLAnnotationAxiom):
-    '''Represents an SubAnnotationPropertyOf axiom in the OWL 2 specification'''
+    """Represents an SubAnnotationPropertyOf axiom in the OWL 2 specification."""
     __slots__ = '_sub_property', '_super_property'
 
     _sub_property: OWLAnnotationProperty
@@ -2621,7 +2647,7 @@ class OWLSubAnnotationPropertyOfAxiom(OWLAnnotationAxiom):
 
 
 class OWLAnnotationPropertyDomainAxiom(OWLAnnotationAxiom):
-    '''Represents an AnnotationPropertyDomain axiom in the OWL 2 specification'''
+    """Represents an AnnotationPropertyDomain axiom in the OWL 2 specification."""
     __slots__ = '_property', '_domain'
 
     _property: OWLAnnotationProperty
@@ -2654,7 +2680,7 @@ class OWLAnnotationPropertyDomainAxiom(OWLAnnotationAxiom):
 
 
 class OWLAnnotationPropertyRangeAxiom(OWLAnnotationAxiom):
-    '''Represents an AnnotationPropertyRange axiom in the OWL 2 specification'''
+    """Represents an AnnotationPropertyRange axiom in the OWL 2 specification."""
     __slots__ = '_property', '_range'
 
     _property: OWLAnnotationProperty
@@ -2687,6 +2713,9 @@ class OWLAnnotationPropertyRangeAxiom(OWLAnnotationAxiom):
 
 
 class OWLSubPropertyAxiom(Generic[_P], OWLPropertyAxiom):
+    """
+    Base interface for object and data sub-property axioms.
+    """
     __slots__ = '_sub_property', '_super_property'
 
     _sub_property: _P
@@ -2720,7 +2749,7 @@ class OWLSubPropertyAxiom(Generic[_P], OWLPropertyAxiom):
 
 
 class OWLSubObjectPropertyOfAxiom(OWLSubPropertyAxiom[OWLObjectPropertyExpression], OWLObjectPropertyAxiom):
-    '''Represents a SubObjectPropertyOf axiom in the OWL 2 specification'''
+    """Represents a SubObjectPropertyOf axiom in the OWL 2 specification."""
     __slots__ = ()
 
     def __init__(self, sub_property: OWLObjectPropertyExpression, super_property: OWLObjectPropertyExpression,
@@ -2729,7 +2758,7 @@ class OWLSubObjectPropertyOfAxiom(OWLSubPropertyAxiom[OWLObjectPropertyExpressio
 
 
 class OWLSubDataPropertyOfAxiom(OWLSubPropertyAxiom[OWLDataPropertyExpression], OWLDataPropertyAxiom):
-    '''Represents a SubDataPropertyOf axiom in the OWL 2 specification'''
+    """Represents a SubDataPropertyOf axiom in the OWL 2 specification."""
     __slots__ = ()
 
     def __init__(self, sub_property: OWLDataPropertyExpression, super_property: OWLDataPropertyExpression,
@@ -2738,7 +2767,7 @@ class OWLSubDataPropertyOfAxiom(OWLSubPropertyAxiom[OWLDataPropertyExpression], 
 
 
 class OWLPropertyAssertionAxiom(Generic[_P, _C], OWLIndividualAxiom, metaclass=ABCMeta):
-    '''Represents a PropertyAssertion axiom in the OWL 2 specification'''
+    """Represents a PropertyAssertion axiom in the OWL 2 specification."""
     __slots__ = '_subject', '_property', '_object'
 
     _subject: OWLIndividual
@@ -2748,12 +2777,12 @@ class OWLPropertyAssertionAxiom(Generic[_P, _C], OWLIndividualAxiom, metaclass=A
     @abstractmethod
     def __init__(self, subject: OWLIndividual, property_: _P, object_: _C,
                  annotations: Optional[Iterable['OWLAnnotation']] = None):
-        """Get a PropertyAssertion axiom for the specified subject, property, object
+        """Get a PropertyAssertion axiom for the specified subject, property, object.
         Args:
-            subject: the subject of the property assertion
-            property: the property of the property assertion
-            object: the object of the property assertion
-            annotations: annotations
+            subject: The subject of the property assertion.
+            property_: The property of the property assertion.
+            object_: The object of the property assertion.
+            annotations: Annotations.
         """
         assert isinstance(subject, OWLIndividual)
 
@@ -2786,7 +2815,7 @@ class OWLPropertyAssertionAxiom(Generic[_P, _C], OWLIndividualAxiom, metaclass=A
 
 
 class OWLObjectPropertyAssertionAxiom(OWLPropertyAssertionAxiom[OWLObjectPropertyExpression, OWLIndividual]):
-    '''Represents an ObjectPropertyAssertion axiom in the OWL 2 specification'''
+    """Represents an ObjectPropertyAssertion axiom in the OWL 2 specification."""
     __slots__ = ()
 
     def __init__(self, subject: OWLIndividual, property_: OWLObjectPropertyExpression, object_: OWLIndividual,
@@ -2795,7 +2824,7 @@ class OWLObjectPropertyAssertionAxiom(OWLPropertyAssertionAxiom[OWLObjectPropert
 
 
 class OWLNegativeObjectPropertyAssertionAxiom(OWLPropertyAssertionAxiom[OWLObjectPropertyExpression, OWLIndividual]):
-    '''Represents a NegativeObjectPropertyAssertion axiom in the OWL 2 specification'''
+    """Represents a NegativeObjectPropertyAssertion axiom in the OWL 2 specification."""
     __slots__ = ()
 
     def __init__(self, subject: OWLIndividual, property_: OWLObjectPropertyExpression, object_: OWLIndividual,
@@ -2804,7 +2833,7 @@ class OWLNegativeObjectPropertyAssertionAxiom(OWLPropertyAssertionAxiom[OWLObjec
 
 
 class OWLDataPropertyAssertionAxiom(OWLPropertyAssertionAxiom[OWLDataPropertyExpression, OWLLiteral]):
-    '''Represents an DataPropertyAssertion axiom in the OWL 2 specification'''
+    """Represents an DataPropertyAssertion axiom in the OWL 2 specification."""
     __slots__ = ()
 
     def __init__(self, subject: OWLIndividual, property_: OWLDataPropertyExpression, object_: OWLLiteral,
@@ -2813,7 +2842,7 @@ class OWLDataPropertyAssertionAxiom(OWLPropertyAssertionAxiom[OWLDataPropertyExp
 
 
 class OWLNegativeDataPropertyAssertionAxiom(OWLPropertyAssertionAxiom[OWLDataPropertyExpression, OWLLiteral]):
-    '''Represents an NegativeDataPropertyAssertion axiom in the OWL 2 specification'''
+    """Represents an NegativeDataPropertyAssertion axiom in the OWL 2 specification."""
     __slots__ = ()
 
     def __init__(self, subject: OWLIndividual, property_: OWLDataPropertyExpression, object_: OWLLiteral,
@@ -2822,6 +2851,7 @@ class OWLNegativeDataPropertyAssertionAxiom(OWLPropertyAssertionAxiom[OWLDataPro
 
 
 class OWLUnaryPropertyAxiom(Generic[_P], OWLPropertyAxiom, metaclass=ABCMeta):
+    """Unary property axiom."""
     __slots__ = '_property'
 
     _property: _P
@@ -2836,6 +2866,7 @@ class OWLUnaryPropertyAxiom(Generic[_P], OWLPropertyAxiom, metaclass=ABCMeta):
 
 class OWLObjectPropertyCharacteristicAxiom(OWLUnaryPropertyAxiom[OWLObjectPropertyExpression],
                                            OWLObjectPropertyAxiom, metaclass=ABCMeta):
+    """Base interface for functional object property axiom."""
     __slots__ = ()
 
     @abstractmethod
@@ -2855,7 +2886,7 @@ class OWLObjectPropertyCharacteristicAxiom(OWLUnaryPropertyAxiom[OWLObjectProper
 
 
 class OWLFunctionalObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
-    '''Represents FunctionalObjectProperty axioms in the OWL 2 specification.'''
+    """Represents FunctionalObjectProperty axioms in the OWL 2 specification."""
     __slots__ = ()
 
     def __init__(self, property_: OWLObjectPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
@@ -2863,7 +2894,7 @@ class OWLFunctionalObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
 
 
 class OWLAsymmetricObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
-    '''Represents AsymmetricObjectProperty axioms in the OWL 2 specification.'''
+    """Represents AsymmetricObjectProperty axioms in the OWL 2 specification."""
     __slots__ = ()
 
     def __init__(self, property_: OWLObjectPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
@@ -2871,7 +2902,7 @@ class OWLAsymmetricObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
 
 
 class OWLInverseFunctionalObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
-    '''Represents InverseFunctionalObjectProperty axioms in the OWL 2 specification.'''
+    """Represents InverseFunctionalObjectProperty axioms in the OWL 2 specification."""
     __slots__ = ()
 
     def __init__(self, property_: OWLObjectPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
@@ -2879,7 +2910,7 @@ class OWLInverseFunctionalObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxi
 
 
 class OWLIrreflexiveObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
-    '''Represents IrreflexiveObjectProperty axioms in the OWL 2 specification.'''
+    """Represents IrreflexiveObjectProperty axioms in the OWL 2 specification."""
     __slots__ = ()
 
     def __init__(self, property_: OWLObjectPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
@@ -2887,7 +2918,7 @@ class OWLIrreflexiveObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
 
 
 class OWLReflexiveObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
-    '''Represents ReflexiveObjectProperty axioms in the OWL 2 specification.'''
+    """Represents ReflexiveObjectProperty axioms in the OWL 2 specification."""
     __slots__ = ()
 
     def __init__(self, property_: OWLObjectPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
@@ -2895,7 +2926,7 @@ class OWLReflexiveObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
 
 
 class OWLSymmetricObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
-    '''Represents SymmetricObjectProperty axioms in the OWL 2 specification.'''
+    """Represents SymmetricObjectProperty axioms in the OWL 2 specification."""
     __slots__ = ()
 
     def __init__(self, property_: OWLObjectPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
@@ -2903,7 +2934,7 @@ class OWLSymmetricObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
 
 
 class OWLTransitiveObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
-    '''Represents TransitiveObjectProperty axioms in the OWL 2 specification.'''
+    """Represents TransitiveObjectProperty axioms in the OWL 2 specification."""
     __slots__ = ()
 
     def __init__(self, property_: OWLObjectPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
@@ -2912,6 +2943,7 @@ class OWLTransitiveObjectPropertyAxiom(OWLObjectPropertyCharacteristicAxiom):
 
 class OWLDataPropertyCharacteristicAxiom(OWLUnaryPropertyAxiom[OWLDataPropertyExpression],
                                          OWLDataPropertyAxiom, metaclass=ABCMeta):
+    """Base interface for Functional data property axiom."""
     __slots__ = ()
 
     @abstractmethod
@@ -2931,7 +2963,7 @@ class OWLDataPropertyCharacteristicAxiom(OWLUnaryPropertyAxiom[OWLDataPropertyEx
 
 
 class OWLFunctionalDataPropertyAxiom(OWLDataPropertyCharacteristicAxiom):
-    '''Represents FunctionalDataProperty axioms in the OWL 2 specification.'''
+    """Represents FunctionalDataProperty axioms in the OWL 2 specification."""
     __slots__ = ()
 
     def __init__(self, property_: OWLDataPropertyExpression, annotations: Optional[Iterable[OWLAnnotation]] = None):
@@ -3035,7 +3067,7 @@ class OWLOntology(OWLObject, metaclass=ABCMeta):
     An OWLOntology consists of a possibly empty set of OWLAxioms and a possibly empty set of OWLAnnotations.
     An ontology can have an ontology IRI which can be used to identify the ontology. If it has an ontology IRI then
     it may also have an ontology version IRI. Since OWL 2, an ontology need not have an ontology IRI. (See the OWL 2
-    Structural Specification)
+    Structural Specification).
 
     An ontology cannot be modified directly. Changes must be applied via its OWLOntologyManager.
     """
@@ -3047,7 +3079,7 @@ class OWLOntology(OWLObject, metaclass=ABCMeta):
         """Gets the classes in the signature of this object.
 
         Returns:
-            Classes in the signature of this object
+            Classes in the signature of this object.
         """
         pass
 
@@ -3056,7 +3088,7 @@ class OWLOntology(OWLObject, metaclass=ABCMeta):
         """Get the data properties that are in the signature of this object.
 
         Returns:
-            Data properties that are in the signature of this object
+            Data properties that are in the signature of this object.
         """
         pass
 
@@ -3065,7 +3097,7 @@ class OWLOntology(OWLObject, metaclass=ABCMeta):
         """A convenience method that obtains the object properties that are in the signature of this object.
 
         Returns:
-            Object properties that are in the signature of this object
+            Object properties that are in the signature of this object.
         """
         pass
 
@@ -3108,7 +3140,7 @@ class OWLOntology(OWLObject, metaclass=ABCMeta):
             property: The property which is equal to the property of the retrieved axioms.
 
         Returns:
-            the axioms matching the search.
+            The axioms matching the search.
         """
         pass
 
@@ -3120,7 +3152,7 @@ class OWLOntology(OWLObject, metaclass=ABCMeta):
             property: The property which is equal to the property of the retrieved axioms.
 
         Returns:
-            the axioms matching the search.
+            The axioms matching the search.
         """
         pass
 
@@ -3132,7 +3164,7 @@ class OWLOntology(OWLObject, metaclass=ABCMeta):
             property: The property which is equal to the property of the retrieved axioms.
 
         Returns:
-            the axioms matching the search.
+            The axioms matching the search.
         """
         pass
 
@@ -3144,13 +3176,13 @@ class OWLOntology(OWLObject, metaclass=ABCMeta):
             property: The property which is equal to the property of the retrieved axioms.
 
         Returns:
-            the axioms matching the search.
+            The axioms matching the search.
         """
         pass
 
     @abstractmethod
     def get_owl_ontology_manager(self) -> _M:
-        """Gets the manager that manages this ontology"""
+        """Gets the manager that manages this ontology."""
         pass
 
     @abstractmethod
@@ -3158,17 +3190,19 @@ class OWLOntology(OWLObject, metaclass=ABCMeta):
         """Gets the OWLOntologyID belonging to this object.
 
         Returns:
-            The OWLOntologyID
+            The OWLOntologyID.
         """
         pass
 
     def is_anonymous(self) -> bool:
+        """Check whether this ontology does contain an IRI or not."""
         return self.get_ontology_id().is_anonymous()
 
 
 # noinspection PyUnresolvedReferences
 # noinspection PyDunderSlots
 class OWLOntologyChange(metaclass=ABCMeta):
+    """Represents an ontology change."""
     __slots__ = ()
 
     _ont: OWLOntology
@@ -3181,7 +3215,7 @@ class OWLOntologyChange(metaclass=ABCMeta):
         """Gets the ontology that the change is/was applied to.
 
         Returns:
-            The ontology that the change is applicable to
+            The ontology that the change is applicable to.
         """
         return self._ont
 
@@ -3193,8 +3227,8 @@ class AddImport(OWLOntologyChange):
     def __init__(self, ontology: OWLOntology, import_declaration: OWLImportsDeclaration):
         """
         Args:
-            ontology: the ontology to which the change is to be applied
-            import_declaration: the import declaration
+            ontology: The ontology to which the change is to be applied.
+            import_declaration: The import declaration.
         """
         super().__init__(ontology)
         self._declaration = import_declaration
@@ -3203,7 +3237,7 @@ class AddImport(OWLOntologyChange):
         """Gets the import declaration that the change pertains to.
 
         Returns:
-            The import declaration
+            The import declaration.
         """
         return self._declaration
 
@@ -3232,7 +3266,7 @@ class OWLOntologyManager(metaclass=ABCMeta):
 
         Args:
             iri: The IRI that identifies the ontology. It is expected that the ontology will also have this IRI
-                (although the OWL API should tolerated situations where this is not the case).
+                (although the OWL API should tolerate situations where this is not the case).
 
         Returns:
             The OWLOntology representation of the ontology that was loaded.
@@ -3246,7 +3280,7 @@ class OWLOntologyManager(metaclass=ABCMeta):
         get_owl_ontology_manager() call.
 
         Args:
-            change: The change to be applied
+            change: The change to be applied.
 
         Raises:
             ChangeApplied.UNSUCCESSFULLY: if the change was not applied successfully.
@@ -3259,7 +3293,7 @@ class OWLOntologyManager(metaclass=ABCMeta):
 
         Args:
             ontology: The ontology to add the axiom to.
-            axiom: The axiom to be added
+            axiom: The axiom to be added.
         """
         pass
 
@@ -3269,7 +3303,7 @@ class OWLOntologyManager(metaclass=ABCMeta):
 
         Args:
             ontology: The ontology to remove the axiom from.
-            axiom: The axiom to be removed
+            axiom: The axiom to be removed.
         """
         pass
 
@@ -3280,7 +3314,7 @@ class OWLOntologyManager(metaclass=ABCMeta):
 
         Args:
             ontology: The ontology to be saved.
-            document_iri: The document IRI where the ontology should be saved to
+            document_iri: The document IRI where the ontology should be saved to.
         """
         pass
 
@@ -3444,8 +3478,8 @@ class OWLReasoner(metaclass=ABCMeta):
         """Gets the data property values for the specified individual and data property expression.
 
         Args:
-            ind: The individual that is the subject of the data property values
-            pe: The data property expression whose values are to be retrieved for the specified individual
+            ind: The individual that is the subject of the data property values.
+            pe: The data property expression whose values are to be retrieved for the specified individual.
             direct: Specifies if the direct values should be retrieved (True), or if all values should be retrieved
                 (False), so that sub properties are taken into account.
 
@@ -3461,8 +3495,8 @@ class OWLReasoner(metaclass=ABCMeta):
         """Gets the object property values for the specified individual and object property expression.
 
         Args:
-            ind: The individual that is the subject of the object property values
-            pe: The object property expression whose values are to be retrieved for the specified individual
+            ind: The individual that is the subject of the object property values.
+            pe: The object property expression whose values are to be retrieved for the specified individual.
             direct: Specifies if the direct values should be retrieved (True), or if all values should be retrieved
                 (False), so that sub properties are taken into account.
 
@@ -3475,7 +3509,7 @@ class OWLReasoner(metaclass=ABCMeta):
     @abstractmethod
     def flush(self) -> None:
         """Flushes any changes stored in the buffer, which causes the reasoner to take into consideration the changes
-        the current root ontology specified by the changes"""
+        the current root ontology specified by the changes."""
         pass
 
     @abstractmethod
@@ -3505,7 +3539,7 @@ class OWLReasoner(metaclass=ABCMeta):
             ce: The class expression whose strict (direct) subclasses are to be retrieved.
             direct: Specifies if the direct subclasses should be retrieved (True) or if the all subclasses
                 (descendant) classes should be retrieved (False).
-            only_named: Whether to only retrieve named sub classes or also complex class expressions.
+            only_named: Whether to only retrieve named sub-classes or also complex class expressions.
 
         Returns:
             If direct is True, each class C where reasoner axioms entails DirectSubClassOf(C, ce). If direct is False,
@@ -3602,7 +3636,7 @@ class OWLReasoner(metaclass=ABCMeta):
     @abstractmethod
     def get_root_ontology(self) -> OWLOntology:
         """Gets the "root" ontology that is loaded into this reasoner. The reasoner takes into account the axioms in
-        this ontology and its imports closure."""
+        this ontology and its import's closure."""
         pass
 
     @abstractmethod

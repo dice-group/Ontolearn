@@ -7,16 +7,15 @@ Ontolearn is an open-source software library for explainable structured machine 
    :maxdepth: 2
    :caption: Contents:
 
-   usage/installation
-   usage/01_knowledge_base
-   usage/02_learning_problem
+   usage/01_introduction
+   usage/02_installation
    usage/03_ontologies
-   usage/04_reasoner
-   usage/05_concept_learners
-   usage/06_reasoning_details
-   usage/08_architecture
-   usage/09_model_adapter
-   usage/see_examples
+   usage/04_knowledge_base
+   usage/05_reasoner
+   usage/06_concept_learners
+   usage/07_reasoning_details
+   usage/08_model_adapter
+   usage/09_further_resources
    api
 
 

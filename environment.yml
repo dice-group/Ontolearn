@@ -32,6 +32,8 @@ dependencies:
   # PIP
   - pip=21.0.1
   - pip:
+    - tokenizers==0.12.1
+    - transformers==4.19.2
     # testing
     - tox-run-before==0.1
     # docs

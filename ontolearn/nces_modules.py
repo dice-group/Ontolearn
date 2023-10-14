@@ -1,11 +1,14 @@
-## From https://github.com/juho-lee/set_transformer
+"""NCES modules."""
+# From https://github.com/juho-lee/set_transformer
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
 
+
 class MAB(nn.Module):
+    """MAB module."""
     def __init__(self, dim_Q, dim_K, dim_V, num_heads, ln=False):
         super(MAB, self).__init__()
         self.dim_V = dim_V
@@ -27,14 +30,16 @@ class MAB(nn.Module):
         K_ = torch.cat(K.split(dim_split, 2), 0)
         V_ = torch.cat(V.split(dim_split, 2), 0)
 
-        A = torch.softmax(Q_.bmm(K_.transpose(1,2))/math.sqrt(self.dim_V), 2)
+        A = torch.softmax(Q_.bmm(K_.transpose(1, 2))/math.sqrt(self.dim_V), 2)
         O = torch.cat((Q_ + A.bmm(V_)).split(Q.size(0), 0), 2)
         O = O if getattr(self, 'ln0', None) is None else self.ln0(O)
         O = O + F.relu(self.fc_o(O))
         O = O if getattr(self, 'ln1', None) is None else self.ln1(O)
         return O
 
+
 class SAB(nn.Module):
+    """SAB module."""
     def __init__(self, dim_in, dim_out, num_heads, ln=False):
         super(SAB, self).__init__()
         self.mab = MAB(dim_in, dim_in, dim_out, num_heads, ln=ln)
@@ -42,7 +47,9 @@ class SAB(nn.Module):
     def forward(self, X):
         return self.mab(X, X)
 
+
 class ISAB(nn.Module):
+    """ISAB module."""
     def __init__(self, dim_in, dim_out, num_heads, num_inds, ln=False):
         super(ISAB, self).__init__()
         self.I = nn.Parameter(torch.Tensor(1, num_inds, dim_out))
@@ -54,7 +61,9 @@ class ISAB(nn.Module):
         H = self.mab0(self.I.repeat(X.size(0), 1, 1), X)
         return self.mab1(X, H)
 
+
 class PMA(nn.Module):
+    """PMA module."""
     def __init__(self, dim, num_heads, num_seeds, ln=False):
         super(PMA, self).__init__()
         self.S = nn.Parameter(torch.Tensor(1, num_seeds, dim))

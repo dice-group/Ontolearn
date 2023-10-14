@@ -307,12 +307,13 @@ FILTER NOT EXISTS {
         actual_query = Owl2SparqlConverter().as_query(root_variable=self._root_var_, ce=ce_parsed, count=False,
                                                       values=None, named_individuals=True)
         ce_str_neg = "¬∃hasChild.¬Male"
-        ce_parsed_neg = DLSyntaxParser(namespace="http://www.benchmark.org/family#").parse_expression(expression_str=ce_str_neg)
-        actual_query_neg = Owl2SparqlConverter().as_query(root_variable=self._root_var_, ce=ce_parsed_neg, count=False,
-                                                          values=None, named_individuals=True)
+        ce_parsed_neg = DLSyntaxParser(namespace="http://www.benchmark.org/family#").parse_expression(
+            expression_str=ce_str_neg)
+        # actual_query_neg = Owl2SparqlConverter().as_query(root_variable=self._root_var_, ce=ce_parsed_neg,
+        #                                                   count=False, values=None, named_individuals=True)
 
         sparql_results = family_rdf_graph.query(actual_query)
-        sparql_results_neg = family_rdf_graph.query(actual_query_neg)
+        # sparql_results_neg = family_rdf_graph.query(actual_query_neg)
         reasoner_results = set(family_kb_reasoner.instances(ce_parsed))
         reasoner_results_neg = set(family_kb_reasoner.instances(ce_parsed_neg))
 
@@ -346,16 +347,16 @@ FILTER NOT EXISTS {
         ]
 
         for ce_str in concepts:
-            ce_parsed = DLSyntaxParser(namespace="http://www.benchmark.org/family#").parse_expression(expression_str=ce_str)
+            ce_parsed = DLSyntaxParser(namespace="http://www.benchmark.org/family#").parse_expression(
+                expression_str=ce_str)
             actual_query = Owl2SparqlConverter().as_query(root_variable=self._root_var_, ce=ce_parsed, count=False,
-                                                      values=None, named_individuals=True)
+                                                          values=None, named_individuals=True)
 
             sparql_results_actual = family_rdf_graph.query(actual_query)
             reasoner_results = set(family_kb_reasoner.instances(ce_parsed))
 
             self.assertEqual(len(sparql_results_actual), len(reasoner_results), ce_str)
             self.assertTrue(check_reasoner_instances_in_sparql_results(sparql_results_actual, reasoner_results), ce_str)
-
 
     def test_QualifiedCardinalityRestriction(self):
         # rdf graph - using rdflib
@@ -374,9 +375,10 @@ FILTER NOT EXISTS {
         ]
 
         for ce_str in concepts:
-            ce_parsed = DLSyntaxParser(namespace="http://www.benchmark.org/family#").parse_expression(expression_str=ce_str)
+            ce_parsed = DLSyntaxParser(namespace="http://www.benchmark.org/family#").parse_expression(
+                expression_str=ce_str)
             actual_query = Owl2SparqlConverter().as_query(root_variable=self._root_var_, ce=ce_parsed, count=False,
-                                                      values=None, named_individuals=True)
+                                                          values=None, named_individuals=True)
 
             sparql_results_actual = family_rdf_graph.query(actual_query)
             reasoner_results = set(family_kb_reasoner.instances(ce_parsed))
@@ -386,7 +388,8 @@ FILTER NOT EXISTS {
 
         # need to further investigate the case for 0
         # ce_str = "≥ 0 hasChild.Male"
-        # ce_parsed = DLSyntaxParser(namespace="http://www.benchmark.org/family#").parse_expression(expression_str=ce_str)
+        # ce_parsed = DLSyntaxParser(namespace="http://www.benchmark.org/family#").parse_expression(expression_str=
+        #                                                                                           ce_str)
         # actual_query = Owl2SparqlConverter().as_query(root_variable=self._root_var_, ce=ce_parsed, count=False,
         #                                               values=None, named_individuals=True)
         #

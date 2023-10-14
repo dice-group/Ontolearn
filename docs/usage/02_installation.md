@@ -12,7 +12,7 @@ One such system for virtual python environments is
 We have good experience with it and make use of conda in the
 [Installation from source](#installation-from-source) step.
 
-## Installation from source
+## Installation From Source
 
 To download the Ontolearn source code, you will also need to have a
 copy of the [Git](https://git-scm.com/) version control system.
@@ -62,13 +62,7 @@ python -c "import ontolearn"
 
 ### Tests
 
-In order to run our test suite, type:
-
-```shell
-tox
-```
-
-You can also run the tests directly as follows but make sure you have installed 
+You can run the tests as follows but make sure you have installed 
 the external files using the commands described [here](#download-external-files-link-files)
 to successfully pass all the tests:
 ```shell
@@ -76,7 +70,7 @@ pytest
 ```
 
 
-## Installation via pip
+## Installation via _pip_
 
 Released versions of Ontolearn can also be installed using `pip`, the
 Package Installer for Python. It comes as part of Python. Please
@@ -90,23 +84,52 @@ pip install ontolearn
 This will download and install the latest release version of Ontolearn
 and all its dependencies from <https://pypi.org/project/ontolearn/>.
 
-## Download external files (.link files)
+## Download External Files
 
-Some resources like pre-calculated embeddings or `pre_trained_agents`
-are not included in the Git repository directly. Use the following
-command to download them from our data server.
+Some resources like pre-calculated embeddings or `pre_trained_agents` and datasets (ontologies)
+are not included in the repository directly. Use the command line command `wget`
+ to download them from our data server.
+
+> **NOTE: Before you run this commands in your terminal, make sure you are 
+in the root directory of the project!**
+
+To download the datasets:
 
 ```shell
-./big_gitext/download_big.sh pre_trained_agents.zip.link
-./big_gitext/download_big.sh -A  # to download them all
+wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip
 ```
 
-To update or upload resource files, follow the instructions
-[here](https://github.com/dice-group/Ontolearn-internal/wiki/Upload-big-data-to-hobbitdata)
-and use the following command.
+Then depending on your operating system, use the appropriate command to unzip the files:
 
 ```shell
-./big_gitext/upload_big.sh pre_trained_agents.zip
+# Windows
+tar -xf KGs.zip
+
+# or
+
+# macOS and Linux
+unzip KGs.zip
+```
+
+Finally, remove the _.zip_ file:
+
+```shell
+rm KGs.zip
+```
+
+And for NCES data: 
+
+```shell
+wget https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip -O ./NCESData.zip
+unzip NCESData.zip
+rm NCESData.zip
+```
+
+If you are getting any error check if the following flags can help:
+
+```shell
+unzip -o NCESData.zip
+rm -f NCESData.zip
 ```
 
 ## Building (sdist and bdist_wheel)
@@ -137,12 +160,17 @@ be installed:
 tox -e docs latexpdf
 ```
 
-## Contribution
+## Simple Linting
 
-Feel free to create a pull request.
+Using the following command will run the linting tool [flake8](https://flake8.pycqa.org/) on the source code.
+```shell
+flake8
+```
 
-## Questions
+Additionally, you can specify the path where you want to flake8 to run.
 
-For any further questions, please contact: ```onto-learn@lists.uni-paderborn.de```
-or open an issue on our [GitHub issues
-page](https://github.com/dice-group/Ontolearn/issues).
+
+----------------------------------------------------------------------
+
+In the next guide, we explore about ontologies in Ontolearn and how you can modify them
+using axioms.

@@ -26,16 +26,18 @@ metrics = {'F1': F1,
            }
 renderer = DLSyntaxObjectRenderer()
 
+
 def compute_quality(KB, solution, pos, neg, qulaity_func="F1"):
     func = metrics[qulaity_func]().score2
     instances = set(KB.individuals(solution))
     if isinstance(list(pos)[0], str):
         instances = {ind.get_iri().as_str().split("/")[-1] for ind in instances}
-    tp=len(pos.intersection(instances))
-    fn=len(pos.difference(instances))
-    fp=len(neg.intersection(instances))
-    tn=len(neg.difference(instances))
+    tp = len(pos.intersection(instances))
+    fn = len(pos.difference(instances))
+    fp = len(neg.intersection(instances))
+    tn = len(neg.difference(instances))
     return func(tp=tp, fn=fn, fp=fp, tn=tn)[-1]
+
 
 def setup_prerequisites(individuals, pos_ex, neg_ex, random_ex: bool, size_of_ex):
 
@@ -46,7 +48,7 @@ def setup_prerequisites(individuals, pos_ex, neg_ex, random_ex: bool, size_of_ex
     if random_ex:
         typed_pos = set(random.sample(individuals, int(size_of_ex)))
         remaining = list(set(individuals)-typed_pos)
-        typed_neg = set(random.sample(remaining, min(len(remaining), int(size_of_ex))))#set(random.sample(individuals, int(size_of_ex)))
+        typed_neg = set(random.sample(remaining, min(len(remaining), int(size_of_ex))))
         pos_str = [pos_ind.get_iri().as_str() for pos_ind in typed_pos]
         neg_str = [neg_ind.get_iri().as_str() for neg_ind in typed_neg]
     else:
@@ -432,10 +434,10 @@ def launch_nces(args):
     individuals = list(kb.individuals())
     # kb_display_value = args.path_knowledge_base.split("/")[-1]
 
-    def predict(positive_examples, negative_examples, random_examples: bool, size_of_examples, quality_func, learner_name,
-                proj_dim, rnn_n_layers, drop_prob, num_heads, num_seeds, num_inds, ln, learning_rate, decay_rate,
-                clip_value, batch_size, num_workers, max_length, load_pretrained, sorted_examples, pretrained_model_name
-                ):
+    def predict(positive_examples, negative_examples, random_examples: bool, size_of_examples, quality_func,
+                learner_name, proj_dim, rnn_n_layers, drop_prob, num_heads, num_seeds, num_inds, ln, learning_rate,
+                decay_rate, clip_value, batch_size, num_workers, max_length, load_pretrained, sorted_examples,
+                pretrained_model_name):
 
         lp, s = setup_prerequisites(individuals, positive_examples, negative_examples, random_examples,
                                     size_of_examples)
@@ -452,8 +454,9 @@ def launch_nces(args):
 
         with torch.no_grad():
             hypotheses = model.fit(lp.pos, lp.neg)
-            report = {'Prediction': renderer.render(hypotheses), f'Quality({quality_func})': compute_quality(kb, hypotheses, lp.pos,\
-                                    lp.neg, quality_func), 'Individuals': kb.individuals_count(hypotheses)}
+            report = {'Prediction': renderer.render(hypotheses),
+                      f'Quality({quality_func})': compute_quality(kb, hypotheses, lp.pos, lp.neg, quality_func),
+                      'Individuals': kb.individuals_count(hypotheses)}
 
         return s, pd.DataFrame([report])
 
@@ -648,10 +651,14 @@ if __name__ == '__main__':
     #                     type=str,
     #                     default='pre_trained_agents/DrillHeuristic_averaging/DrillHeuristic_averaging.pth',
     #                     help='*Only for DRILL* Provide a path of .pth file')
-    
-    if not os.path.exists("NCESData/"):
-        print("\nDownloading data")
-        import subprocess
-        subprocess.run("./big_gitext/download_nces_data", shell=True)
-        print("Done!")
-    run(parser.parse_args())
+
+    args = parser.parse_args()
+
+    if not os.path.exists("NCESData/") and args.model == "nces":
+        print("\nWarning! You are trying to deploy NCES without the NCES data!")
+        print(f"Please download the necessary files first: see ./download_external_resources.sh\n")
+    elif not os.path.exists("KGs") and "KGs/" in args.path_knowledge_base:
+        print("\nWarning! There is no 'KGs' folder!")
+        print(f"Please download the datasets first: see ./download_external_resources.sh\n")
+    else:
+        run(args)
