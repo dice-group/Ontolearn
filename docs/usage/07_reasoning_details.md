@@ -124,8 +124,8 @@ functionality of our reasoner:
 
 ## Concrete Example
 
-You can find the associated [code](https://github.com/dice-group/Ontolearn/blob/develop/examples/example_reasone∃r.Py)  
-for the following examples inside `examples/example_reasone∃r.Py`
+You can find the associated [code](https://github.com/dice-group/Ontolearn/blob/develop/examples/example_reasone∃r.Py) 
+for the following examples inside `examples/example_reasoner`
 (note that the naming of the classes/relations/individuals may change from the table below). 
 We constructed an ontology for testing purposes. On the table we show for
 each **method** of the reasoner _OWLReasoner_Owlready2_ComplexCEInstances_ the results

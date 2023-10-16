@@ -3,7 +3,7 @@
 To simplify the connection between all the
 components, there is a
 model adaptor available that automatically constructs and connects them.
-Here is how to implement the previous example using the Model Adaptor:
+Here is how to implement the previous example using the [ModelAdapter](ontolearn.mode_adapter.ModelAdapter):
 
 ```python
 from ontolearn.concept_learner import CELOE
@@ -52,4 +52,4 @@ for desc in model.best_hypotheses(1):
 ```
 
 Lines marked with `(*)` are not strictly required as they happen to be
-the default choices. For now, you can use ModelAdaptor only for EvoLearner, CELOE and OCEL.
+the default choices. For now, you can use ModelAdapter only for EvoLearner, CELOE and OCEL.
