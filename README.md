@@ -77,8 +77,8 @@ Once you run this command, a local URL where our model is deployed will be provi
 In the interface you need to enter the positive and the negative examples. For a quick run you can
 click on the **Random Examples** checkbox, but you may as well enter some real examples for
 the learning problem of **Aunt**, **Brother**, **Cousin**, etc. which
-you can find in the folder `examples/synthetic_problems.json`. Just copy and paste the IRIs of
-positive and negative examples for a certain learning problem directly
+you can find in the file `examples/synthetic_problems.json`. Just copy and paste the IRIs of
+positive and negative examples for a specific learning problem directly
 in their respective fields.
 
 Run the help command to see the description on this script usage:
