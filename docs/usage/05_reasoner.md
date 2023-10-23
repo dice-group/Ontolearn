@@ -32,8 +32,12 @@ from. Currently, there are the following reasoners available:
     ```
 
     The structural reasoner requires an ontology ([OWLOntology](ontolearn.owlapy.model.OWLOntology)).
-    There is also the `isolate` argument which isolates the world the reasoner is performing the
-    reasoning. More on that on _[Reasoning Details](07_reasoning_details.md#isolated-world)_.
+    The second argument is `isolate` argument which isolates the world (therefore the ontology) where the reasoner is 
+    performing the reasoning. More on that on _[Reasoning Details](07_reasoning_details.md#isolated-world)_. 
+    The rest of the arguments `use_triplestore` and `triplestore_address` are used in case you want to
+    retrieve instances from a triplestore (go to 
+    [#use-triplestore-to-retrieve-instances](05_reasoner.md#use-triplestore-to-retrieve-instances) for details).
+    
 
 
 - [**OWLReasoner_Owlready2_ComplexCEInstances**](ontolearn.owlapy.owlready2.complex_ce_instances.OWLReasoner_Owlready2_ComplexCEInstances) **(CCEI)**
@@ -56,7 +60,8 @@ from. Currently, there are the following reasoners available:
     which is just an enumeration with two possible values: `BaseReasoner_Owlready2.HERMIT` and `BaseReasoner_Owlready2.PELLET`.
     You can set the `infer_property_values` argument to `True` if you want the reasoner to infer
     property values. `infer_data_property_values` is an additional argument when the base reasoner is set to 
-    `BaseReasoner_Owlready2.PELLET`.
+    `BaseReasoner_Owlready2.PELLET`. The rest of the arguments `isolated`, `use_triplestore` and `triplestore_address` 
+    are inherited from the base class.
 
 
 - [**OWLReasoner_FastInstanceChecker**](ontolearn.owlapy.fast_instance_checker.OWLReasoner_FastInstanceChecker) **(FIC)**
@@ -222,6 +227,104 @@ Let us now show a simple example by finding the instances of the class _male_ an
 male_individuals = ccei_reasoner.instances(male)
 for ind in male_individuals:
     print(ind)
+```
+
+### Use triplestore to retrieve instances
+
+Instead of going through nodes using expensive computation resources why not just make use of the
+efficient approach of querying a triplestore using SPARQL queries. We have brought this 
+functionality to Ontolearn, and we take care of the conversion part behind the scene. You can use the `instances` 
+method as usual. Let's see what it takes to make use of it.
+
+First of all you need a server which should host the triplestore for your ontology. If you don't
+already have one, see [Loading and launching a triplestore](#loading-and-launching-a-triplestore) below.
+
+As we mentioned earlier, OWLReasoner has two arguments for enabling triplestore 
+retrieval: 
+- `use_triplestore` is a boolean argument. Setting this to True tells `instances` that it
+should query the triplestore hosted on the server address specified by the following argument:
+- `triplestore_address` is a string that contains the URL of the triplestore host.
+
+For example below we are initializing a reasoner that uses the triplestore in the address
+`http://localhost:3030/path/` and retrieving the male instances.
+```python
+reasoner = OWLReasoner_Owlready2(onto,use_triplestore=True, triplestore_address="http://localhost:3030/path/sparql")
+males = reasoner.instances(male, direct=False)
+```
+
+> :warning: **You have to make sure** that the ontology that is loaded in the triplestore is
+> exactly the same as the ontology that is being used by the reasoner, otherwise you may
+> encounter inconsistent results.
+
+> :warning: When using triplestore the `instances` method **will default to the base
+> implementation**. This means that no matter which type of reasoner you are using,
+> the results will be always the same for a given class expression.
+
+> :warning: **You cannot pass these arguments directly to FIC constructor.** 
+> Because of the way it is implemented, if the base reasoner is set to use triplestore,
+> then FIC's `instances` method will default to the base reasoners implementation that uses 
+> triplestore for instance retrieval.
+
+#### Loading and launching a triplestore
+
+We will provide a simple approach to load and launch a triplestore in a local server. For this,
+we will be using _apache-jena_ and _apache-jena-fuseki_. As a prerequisite you need
+JDK 11 or higher and if you are on Windows, you need [Cygwin](https://www.cygwin.com/). In case of
+issues or any further reference please visit the official page of [Apache Jena](https://jena.apache.org/index.html) 
+and check the documentation under "Triple Store".
+
+Having that said, let us now load and launch a triplestore on the "Father" ontology:
+
+Open a terminal window and make sure you are in the root directory. Create a directory to 
+store the files for Fuseki server:
+
+```shell
+mkdir Fuseki && cd Fuseki
+```
+Install _apache-jena_ and _apache-jena-fuseki_. We will use version 4.7.0.
+
+```shell
+# install Jena
+wget https://archive.apache.org/dist/jena/binaries/apache-jena-4.7.0.tar.gz
+#install Jena-Fuseki
+wget https://archive.apache.org/dist/jena/binaries/apache-jena-fuseki-4.7.0.tar.gz
+```
+
+Unzip the files:
+
+```shell
+tar -xzf apache-jena-fuseki-4.7.0.tar.gz
+tar -xzf apache-jena-4.7.0.tar.gz
+```
+
+Make a directory for our 'father' database inside jena-fuseki:
+
+```shell
+mkdir -p apache-jena-fuseki-4.7.0/databases/father/
+```
+
+Now just load the 'father' ontology using the following command:
+
+```shell
+cd .. && Fuseki/apache-jena-4.7.0/bin/tdb2.tdbloader --loader=parallel --loc Fuseki/apache-jena-fuseki-4.7.0/databases/father/ KGs/father.owl
+```
+
+Launch the server, and it will be waiting eagerly for your queries.
+
+```shell
+cd Fuseki/apache-jena-fuseki-4.7.0 && java -Xmx4G -jar fuseki-server.jar --tdb2 --loc=databases/father /father
+```
+
+Notice that we launched the database found in `Fuseki/apache-jena-fuseki-4.7.0/databases/father` to the path `/father`.
+By default, jena-fuseki runs on port 3030 so the full URL would be: `http://localhost:3030/father`. When 
+you pass this url to `triplestore_address` argument of the reasoner, you have to add the
+`/sparql` sub-path indicating to the server that we are querying via SPARQL queries. Full path now should look like:
+`http://localhost:3030/father/sparql`.
+
+Create a reasoner that uses this URL and retrieve the desired instances:
+
+```python
+father_reasoner = OWLReasoner_Owlready2(onto, use_triplestore=True, triplestore_address="http://localhost:3030/father/sparql")
 ```
 
 -----------------------------------------------------------------------
