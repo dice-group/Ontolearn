@@ -6,14 +6,19 @@ import owlready2
 from ontolearn.owlapy import namespaces
 from ontolearn.owlapy.model import OWLObjectPropertyExpression, OWLObjectProperty, OWLClassExpression, OWLClass, \
     OWLThing, IRI
-from ontolearn.owlapy.owlready2 import OWLReasoner_Owlready2
+from ontolearn.owlapy.owlready2 import OWLReasoner_Owlready2, OWLOntology_Owlready2
 
 
 class OWLReasoner_Owlready2_Plus(OWLReasoner_Owlready2):
     """OWL Reasoner based on owlready2.
 
     Contains some behavioural fixes."""
-    def sub_classes(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLClass]:
+
+    def __init__(self, ontology: OWLOntology_Owlready2, isolate: bool = False, use_triplestore: bool = False,
+                 triplestore_address: str = None):
+        super().__init__(ontology, isolate, use_triplestore, triplestore_address)
+
+    def sub_classes(self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True) -> Iterable[OWLClass]:
         if isinstance(ce, OWLClass):
             if direct:
                 if ce.is_owl_thing():
@@ -34,7 +39,7 @@ class OWLReasoner_Owlready2_Plus(OWLReasoner_Owlready2):
                         if isinstance(sc_x, owlready2.ThingClass):
                             if sc_x != c_x:
                                 sub_classes_x.add(sc_x)
-                    # filter out indirect sub classes
+                    # filter out indirect sub-classes
                     for sc_x in sub_classes_x.copy():
                         for ssc_x in sc_x.subclasses(world=self._world):
                             if sc_x != ssc_x:
@@ -45,7 +50,7 @@ class OWLReasoner_Owlready2_Plus(OWLReasoner_Owlready2):
             else:
                 # indirect
                 seen_set = set()
-                yield from self._named_sub_classes_recursive(ce, seen_set)
+                yield from self._sub_classes_recursive(ce, seen_set, only_named=only_named)
         else:
             raise NotImplementedError("sub classes for complex class expressions not implemented", ce)
 
@@ -53,7 +58,7 @@ class OWLReasoner_Owlready2_Plus(OWLReasoner_Owlready2):
         if op.is_owl_top_object_property():
             yield from self._ontology.object_properties_in_signature()
         else:
-            yield from super()._sub_object_properties_recursive(op, seen_set)
+            yield from super()._sup_or_sub_object_properties_recursive(op, seen_set, "sub")
 
     def sub_object_properties(self, op: OWLObjectPropertyExpression, direct: bool = False) -> Iterable[
             OWLObjectPropertyExpression]:

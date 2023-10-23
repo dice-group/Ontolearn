@@ -6,9 +6,12 @@ from types import MappingProxyType
 from typing import Iterable, Set, Final, List
 
 import owlready2
+import requests
 from owlready2 import declare_datatype
 from pandas import Timedelta
+from requests.exceptions import RequestException
 
+from ontolearn.owlapy.owl2sparql.converter import Owl2SparqlConverter
 from ontolearn.owlapy.owlready2 import axioms
 from ontolearn.owlapy import namespaces
 from ontolearn.owlapy.ext import OWLReasonerEx
@@ -262,7 +265,8 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
     _ontology: OWLOntology_Owlready2
     _world: owlready2.World
 
-    def __init__(self, ontology: OWLOntology_Owlready2, isolate: bool = False):
+    def __init__(self, ontology: OWLOntology_Owlready2, isolate: bool = False, use_triplestore: bool = False,
+                 triplestore_address: str = None):
         """
         Base reasoner in Ontolearn, used to reason in the given ontology.
 
@@ -270,17 +274,32 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             ontology: The ontology that should be used by the reasoner.
             isolate: Whether to isolate the reasoner in a new world + copy of the original ontology.
                      Useful if you create multiple reasoner instances in the same script.
+            use_triplestore: Whether to use triplestore to retrieve instances. This only affects 'instances' method.
+            triplestore_address: The address that hosts the triplestore. Required if use_triplestore = True.
         """
         super().__init__(ontology)
         assert isinstance(ontology, OWLOntology_Owlready2)
+        self._use_triplestore = use_triplestore
+        self._triplestore_address = triplestore_address
+        self._owl2sparql_converter = Owl2SparqlConverter()
+        if use_triplestore:
+            assert (triplestore_address is not None), "You should specify the following argument:" \
+                                                       " 'triplestore_address'"
+            print(f"INFO  OWLReasoner    :: Make sure the ontology loaded in the triplestore address: "
+                  f"{triplestore_address} is the same as the ontology located in: "
+                  f"{ontology.get_original_iri().as_str()}\n"
+                  f"INFO  OWLReasoner    :: Changes made during runtime will not be reflected in the triplestore")
+
         if isolate:
             self._isolated = True
             new_manager = OWLOntologyManager_Owlready2()
             self._ontology = new_manager.load_ontology(ontology.get_original_iri())
             self._world = new_manager._world
-            logger.info("'isolated' is set to True. Changes you make in the original ontology wont be reflected to the "
-                        "isolated ontology. \nTo make changes on the isolated ontology use the method "
-                        "'update_isolated_ontology()'.")
+            print("INFO  OWLReasoner    :: Using isolated ontology\n"
+                  "INFO  OWLReasoner    :: Changes you make in the original ontology won't be reflected to the isolated"
+                  " ontology\n"
+                  "INFO  OWLReasoner    :: To make changes on the isolated ontology use the method "
+                  "`update_isolated_ontology()`")
 
         else:
             self._isolated = False
@@ -459,32 +478,51 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         pass
 
     def instances(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLNamedIndividual]:
-        if direct:
-            if isinstance(ce, OWLClass):
-                c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
-                for i in self._ontology._onto.get_instances_of(c_x):
-                    if isinstance(i, owlready2.Thing):
-                        yield OWLNamedIndividual(IRI.create(i.iri))
+        if not self._use_triplestore:
+            if direct:
+                if isinstance(ce, OWLClass):
+                    c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
+                    for i in self._ontology._onto.get_instances_of(c_x):
+                        if isinstance(i, owlready2.Thing):
+                            yield OWLNamedIndividual(IRI.create(i.iri))
+                else:
+                    raise NotImplementedError("instances for complex class expressions not implemented", ce)
             else:
-                raise NotImplementedError("instances for complex class expressions not implemented", ce)
+                if ce.is_owl_thing():
+                    yield from self._ontology.individuals_in_signature()
+                elif isinstance(ce, OWLClass):
+                    c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
+                    for i in c_x.instances(world=self._world):
+                        if isinstance(i, owlready2.Thing):
+                            yield OWLNamedIndividual(IRI.create(i.iri))
+                # elif isinstance(ce, OWLObjectSomeValuesFrom) and ce.get_filler().is_owl_thing()\
+                #         and isinstance(ce.get_property(), OWLProperty):
+                #     seen_set = set()
+                #     p_x: owlready2.ObjectProperty = self._world[ce.get_property().get_named_property().get_iri().as_str()]
+                #     for i, _ in p_x.get_relations():
+                #         if isinstance(i, owlready2.Thing) and i not in seen_set:
+                #             seen_set.add(i)
+                #             yield OWLNamedIndividual(IRI.create(i.iri))
+                else:
+                    raise NotImplementedError("instances for complex class expressions not implemented", ce)
         else:
-            if ce.is_owl_thing():
-                yield from self._ontology.individuals_in_signature()
-            elif isinstance(ce, OWLClass):
-                c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
-                for i in c_x.instances(world=self._world):
-                    if isinstance(i, owlready2.Thing):
-                        yield OWLNamedIndividual(IRI.create(i.iri))
-            # elif isinstance(ce, OWLObjectSomeValuesFrom) and ce.get_filler().is_owl_thing()\
-            #         and isinstance(ce.get_property(), OWLProperty):
-            #     seen_set = set()
-            #     p_x: owlready2.ObjectProperty = self._world[ce.get_property().get_named_property().get_iri().as_str()]
-            #     for i, _ in p_x.get_relations():
-            #         if isinstance(i, owlready2.Thing) and i not in seen_set:
-            #             seen_set.add(i)
-            #             yield OWLNamedIndividual(IRI.create(i.iri))
-            else:
-                raise NotImplementedError("instances for complex class expressions not implemented", ce)
+            try:
+                ce_to_sparql = self._owl2sparql_converter.as_query("?x", ce)
+
+                response = requests.post(self._triplestore_address, data={'query': ce_to_sparql})
+                yield from [OWLNamedIndividual(IRI.create(i['x']['value'])) for i in
+                            response.json()['results']['bindings']]
+                if not direct:
+                    ce_sub_classes = self.sub_classes(ce, False, False)
+                    for ce_sub_class in ce_sub_classes:
+                        ce_to_sparql = self._owl2sparql_converter.as_query("?x", ce_sub_class)
+                        response = requests.post(self._triplestore_address, data={'query': ce_to_sparql})
+                        yield from [OWLNamedIndividual(IRI.create(i['x']['value'])) for i in
+                                    response.json()['results']['bindings']]
+            except RequestException as e:
+                raise RequestException(f"Invalid address '{self._triplestore_address}': Please make sure the "
+                                       f"`triplestore_address` is a valid address! Example: "
+                                       f"http://localhost:3030/path/sparql\n -->Error: {e}")
 
     def _sub_classes_recursive(self, ce: OWLClassExpression, seen_set: Set, only_named: bool = True) \
             -> Iterable[OWLClassExpression]:
@@ -852,3 +890,6 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
     def is_isolated(self):
         """Return True if this reasoner is using an isolated ontology."""
         return self._isolated
+
+    def is_using_triplestore(self):
+        return self._use_triplestore

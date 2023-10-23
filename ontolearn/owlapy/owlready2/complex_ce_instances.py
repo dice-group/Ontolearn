@@ -21,7 +21,8 @@ class OWLReasoner_Owlready2_ComplexCEInstances(OWLReasoner_Owlready2):
     _base_reasoner: BaseReasoner_Owlready2
 
     def __init__(self, ontology: OWLOntology_Owlready2, base_reasoner: Optional[BaseReasoner_Owlready2] = None,
-                 infer_property_values: bool = True, infer_data_property_values: bool = True, isolate: bool = False):
+                 infer_property_values: bool = True, infer_data_property_values: bool = True, isolate: bool = False,
+                 use_triplestore: bool = False, triplestore_address: str = None):
         """
         OWL Reasoner with support for Complex Class Expression Instances + sync_reasoner.
 
@@ -32,8 +33,16 @@ class OWLReasoner_Owlready2_ComplexCEInstances(OWLReasoner_Owlready2):
             infer_data_property_values: Whether to infer data property values (only for PELLET).
             isolate: Whether to isolate the reasoner in a new world + copy of the original ontology.
                      Useful if you create multiple reasoner instances in the same script.
+            use_triplestore: Whether to use triplestore to retrieve instances. This only affects 'instances' method.
+            triplestore_address: The address that hosts the triplestore. Required if use_triplestore = True.
         """
-        super().__init__(ontology, isolate)
+
+        super().__init__(ontology, isolate, use_triplestore, triplestore_address)
+        if use_triplestore:
+            print("WARN  OWLReasoner    :: Instance retrieval will be performed via triplestore using SPARQL query "
+                  "because `use_triplestore` is set to True. The `instances` method will default to the implementation"
+                  " in the base class and every functionality offered by OWLReasoner_Owlready2_ComplexCEInstances will "
+                  "be irrelevant to this method ")
         if isolate:
             new_manager = OWLOntologyManager_Owlready2()
             self.reference_ontology = new_manager.load_ontology(ontology.get_original_iri())
@@ -66,7 +75,7 @@ class OWLReasoner_Owlready2_ComplexCEInstances(OWLReasoner_Owlready2):
                                  f"using an isolated ontology.")
 
     def instances(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLNamedIndividual]:
-        if isinstance(ce, OWLClass):
+        if isinstance(ce, OWLClass) or self.is_using_triplestore():
             yield from super().instances(ce, direct=direct)
         else:
             if direct:
