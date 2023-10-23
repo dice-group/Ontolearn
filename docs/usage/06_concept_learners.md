@@ -8,11 +8,15 @@ of Ontolearn library:
 - [CELOE](ontolearn.concept_learner.CELOE)
 - [OCEL](ontolearn.concept_learner.OCEL)
 
-> **IMPORTANT**!
-> - _DRILL_ is not fully implemented in Ontolear. In the meantime you can refer to 
+>
+> **IMPORTANT**! 
+> 
+> **_DRILL_ is not fully implemented in Ontolearn**. In the meantime you can refer to 
 > [_DRILL's_ GitHub repo](https://github.com/dice-group/drill). 
-> - Documentation for _NCES_ coming soon. In the meantime visit _NCES_ jupyter notebooks
+> 
+> **Documentation for _NCES_ coming soon**. In the meantime visit _NCES_ jupyter notebooks
 > inside [examples folder](https://github.com/dice-group/Ontolearn/tree/develop/examples).
+>
 
 These algorithms are similar in execution, for that reason, we are 
 describing them in a general manner. To test them separately see [_Quick try-out_](#quick-try-out).
@@ -280,7 +284,7 @@ how to configure it's input properties and how to run it to successfully
 learn class expressions for learning problems in an ontology. There is also a jupyter 
 notebook for each of these concept learners:
 
-- [NCES notebook](../../examples/simple-usage-NCES.ipynb)
-- [EvoLearner notebook](../../examples/evolearner_notebook.ipynb)
-- [CELOE notebook](../../examples/celoe_notebook.ipynb)
-- [OCEL notebook](../../examples/ocel_notebook.ipynb)
+- [NCES notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/simple-usage-NCES.ipynb)
+- [EvoLearner notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/evolearner_notebook.ipynb)
+- [CELOE notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/celoe_notebook.ipynb)
+- [OCEL notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/ocel_notebook.ipynb)

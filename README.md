@@ -12,7 +12,7 @@ It contains the following (ready-to-apply) algorithms that learn OWL class expre
 - **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
 - **OCEL** &rarr; A limited version of CELOE
 
-You can find more details about *Ontolearn* and these algorithms and their variations in the [documentation](https://ontolearn-docs-dice-group.netlify.app/index.html).
+You can find more details about these algorithms and what *Ontolearn* has to offer in the [documentation](https://ontolearn-docs-dice-group.netlify.app/index.html).
 
 Quick navigation: 
 - [Installation](#installation)
@@ -47,7 +47,7 @@ git clone https://github.com/dice-group/Ontolearn.git && conda create --name ont
 python -c 'from setuptools import setup; setup()' develop
 python -c "import ontolearn"
 python -m pytest tests # Partial test with pytest
-tox  # full test with tox
+pytest  # test to ensure everything is working as expected
 ```
 #### Installation via pip
 
@@ -71,7 +71,7 @@ the **Family** dataset which is a simple dataset with 202 individuals:
 python deploy_cl.py --model evolearner --path_knowledge_base KGs/Family/family-benchmark_rich_background.owl
 ```
 
-Once you run this command, a local URL where our model is deployed will be provided to you.
+Once you run this command, a local URL where the model is deployed will be provided to you.
 
 
 In the interface you need to enter the positive and the negative examples. For a quick run you can
@@ -90,7 +90,7 @@ python deploy_cl.py --help
 ## Usage
 
 In the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder, you can find examples on how to use
-the learning algorithms. Also in the [tests](https://github.com/dice-group/Ontolearn/tree/develop/tests) folder we have added some test cases.
+the learning algorithms. Also in the [tests](https://github.com/dice-group/Ontolearn/tree/develop/tests) folder you can find the test cases.
 
 For more detailed instructions we suggest to follow the [guides](https://ontolearn-docs-dice-group.netlify.app/usage/06_concept_learners) in the documentation.
 
@@ -114,16 +114,20 @@ negative_examples = {OWLNamedIndividual(IRI.create(NS, 'heinz')),
                      OWLNamedIndividual(IRI.create(NS, 'anna')),
                      OWLNamedIndividual(IRI.create(NS, 'michelle'))}
 
-# Only the class of the learning algorithm is specified
+# Create a model of CELOE using ModelAdapter
+# Only the class of the learning algorithm is specified 
 model = ModelAdapter(learner_type=CELOE,
                      reasoner_type=OWLReasoner_Owlready2_ComplexCEInstances,
                      path="KGs/father.owl")
 
+# Fit the learning problem to the model
 model.fit(pos=positive_examples,
           neg=negative_examples)
 
+# Used to render to description logics syntax
 renderer = DLSyntaxObjectRenderer()
 
+# Print the rendered top best hypothesis
 for desc in model.best_hypotheses(1):
     print('The result:', renderer.render(desc.concept), 'has quality', desc.quality)
 ```
@@ -133,7 +137,8 @@ The output is as follows:
 The result: (¬female) ⊓ (∃ hasChild.⊤) has quality 1.0
 ```
 
-For a quick start on how to use NCES, please refer to the notebook [simple usage NCES](examples/simple-usage-NCES.ipynb)
+NCES is a powerful algorithm implemented recently.
+For a quick start on how to use it, please refer to the notebook [simple usage NCES](examples/simple-usage-NCES.ipynb).
 
 ----------------------------------------------------------------------------
 
