@@ -66,7 +66,7 @@ def fit(knowledge_base, learning_problems, runtimes: int, topk: int):
         model.fit(lp)
         best_fit = list(model.best_hypotheses(n=topk))[0]
         print(f"Best prediction:{best_fit}")
-
+        # @TODO: Compute F1 score on positive and negative examples that haven't given to model
 
 def main(args):
     kb, lps = loading(args)
