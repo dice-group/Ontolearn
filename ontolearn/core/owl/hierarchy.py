@@ -1,9 +1,11 @@
+"""Classes representing hierarchy in OWL."""
+
 import operator
 from abc import ABCMeta, abstractmethod
 from functools import reduce
 from typing import Dict, Iterable, Tuple, overload, TypeVar, Generic, Type, cast, Optional, FrozenSet, Set
 
-from owlapy.model import OWLClass, OWLReasoner, OWLObjectProperty, OWLDataProperty, OWLTopObjectProperty, \
+from ontolearn.owlapy.model import OWLClass, OWLReasoner, OWLObjectProperty, OWLDataProperty, OWLTopObjectProperty, \
     OWLBottomObjectProperty, OWLTopDataProperty, OWLBottomDataProperty, OWLThing, OWLNothing, HasIRI
 
 _S = TypeVar('_S', bound=HasIRI)  #:
@@ -11,11 +13,11 @@ _U = TypeVar('_U', bound='AbstractHierarchy')  #:
 
 
 class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
-    """Representation of an abstract hierarchy which can be used for classes or properties
+    """Representation of an abstract hierarchy which can be used for classes or properties.
 
     Args:
-        hierarchy_down: a downwards hierarchy given as a mapping of Entities to sub-entities
-        reasoner: alternatively, a reasoner whose root_ontology is queried for entities
+        hierarchy_down: A downwards hierarchy given as a mapping of Entities to sub-entities.
+        reasoner: Alternatively, a reasoner whose root_ontology is queried for entities.
         """
     __slots__ = '_Type', '_ent_set', '_parents_map', '_parents_map_trans', '_children_map', '_children_map_trans', \
                 '_leaf_set', '_root_set', \
@@ -49,33 +51,33 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
 
     @abstractmethod
     def _hierarchy_down_generator(self, reasoner: OWLReasoner) -> Iterable[Tuple[_S, Iterable[_S]]]:
-        """Generate the suitable downwards hierarchy based on the reasoner"""
+        """Generate the suitable downwards hierarchy based on the reasoner."""
         pass
 
     @classmethod
     @abstractmethod
     def get_top_entity(cls) -> _S:
-        """The most general entity in this hierarchy, which contains all the entities"""
+        """The most general entity in this hierarchy, which contains all the entities."""
         pass
 
     @classmethod
     @abstractmethod
     def get_bottom_entity(cls) -> _S:
-        """The most specific entity in this hierarchy, which contains none of the entities"""
+        """The most specific entity in this hierarchy, which contains none of the entities."""
         pass
 
     @staticmethod
     def restrict(hierarchy: _U, *, remove: Iterable[_S] = None, allow: Iterable[_S] = None) \
             -> _U:
-        """Restrict a given hierarchy to a set of allowed/removed entities
+        """Restrict a given hierarchy to a set of allowed/removed entities.
 
         Args:
-            hierarchy: an existing Entity hierarchy to restrict
-            remove: set of entities which should be ignored
-            allow: set of entities which should be used
+            hierarchy: An existing Entity hierarchy to restrict.
+            remove: Set of entities which should be ignored.
+            allow: Set of entities which should be used.
 
         Returns:
-            the restricted hierarchy
+            The restricted hierarchy.
 
         """
         remove_set = frozenset(remove) if remove is not None else None
@@ -94,9 +96,9 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
 
     def restrict_and_copy(self: _U, *, remove: Iterable[_S] = None, allow: Iterable[_S] = None) \
             -> _U:
-        """Restrict this hierarchy
+        """Restrict this hierarchy.
 
-        See restrict for more info
+        See restrict for more info.
         """
         return type(self).restrict(self, remove=remove, allow=allow)
 
@@ -139,14 +141,14 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
         self._parents_map, self._root_set = _reduce_transitive(self._parents_map_trans, self._children_map_trans)
 
     def parents(self, entity: _S, direct: bool = True) -> Iterable[_S]:
-        """Parents of an entity
+        """Parents of an entity.
 
         Args:
-            entity: entity for which to query parent entities
-            direct: False to return transitive parents
+            entity: Entity for which to query parent entities.
+            direct: False to return transitive parents.
 
         Returns:
-            super-entities
+            Super-entities.
 
         """
         if entity == type(self).get_bottom_entity():
@@ -166,7 +168,7 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
         """if A is a parent of B.
 
         Note:
-              A is always a parent of A"""
+              A is always a parent of A."""
         if a == b:
             return True
         if a == type(self).get_top_entity():
@@ -179,7 +181,7 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
         """If A is a child of B.
 
         Note:
-              A is always a child of A"""
+              A is always a child of A."""
         if a == b:
             return True
         if a == type(self).get_bottom_entity():
@@ -189,14 +191,14 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
         return False
 
     def children(self, entity: _S, direct: bool = True) -> Iterable[_S]:
-        """Children of an entitiy
+        """Children of an entity.
 
         Args:
-            entity: entity for which to query child entities
-            direct: False to return transitive children
+            entity: Entity for which to query child entities.
+            direct: False to return transitive children.
 
         Returns:
-            sub-entities
+            Sub-entities.
 
         """
         if entity == type(self).get_top_entity():
@@ -243,11 +245,11 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
 
 
 class ClassHierarchy(AbstractHierarchy[OWLClass]):
-    """Representation of a class hierarchy
+    """Representation of a class hierarchy.
 
     Args:
-        hierarchy_down: a downwards hierarchy given as a mapping of Class to sub-classes
-        reasoner: alternatively, a reasoner whose root_ontology is queried for classes and sub-classes
+        hierarchy_down: A downwards hierarchy given as a mapping of Class to sub-classes.
+        reasoner: Alternatively, a reasoner whose root_ontology is queried for classes and sub-classes.
         """
 
     @classmethod
@@ -282,6 +284,7 @@ class ClassHierarchy(AbstractHierarchy[OWLClass]):
 
 
 class ObjectPropertyHierarchy(AbstractHierarchy[OWLObjectProperty]):
+    """Representation of an objet property hierarchy."""
     @classmethod
     def get_top_entity(cls) -> OWLObjectProperty:
         return OWLTopObjectProperty
@@ -329,6 +332,7 @@ class ObjectPropertyHierarchy(AbstractHierarchy[OWLObjectProperty]):
 
 
 class DatatypePropertyHierarchy(AbstractHierarchy[OWLDataProperty]):
+    """Representation of a data property hierarchy."""
     @classmethod
     def get_top_entity(cls) -> OWLDataProperty:
         return OWLTopDataProperty
@@ -374,14 +378,14 @@ class DatatypePropertyHierarchy(AbstractHierarchy[OWLDataProperty]):
 
 
 def _children_transitive(hier_trans: Dict[_S, Set[_S]], ent: _S, seen_set: Set[_S]):
-    """add transitive links to map_trans
+    """Add transitive links to map_trans.
 
     Note:
-        changes map_trans
+        Changes map_trans.
 
     Args:
-        hier_trans: map to which transitive links are added
-        ent: class in map_trans for which to add transitive sub-classes
+        hier_trans: Map to which transitive links are added.
+        ent: Class in map_trans for which to add transitive sub-classes.
 
     """
     sub_classes_ent = frozenset(hier_trans[ent])
@@ -394,18 +398,18 @@ def _children_transitive(hier_trans: Dict[_S, Set[_S]], ent: _S, seen_set: Set[_
 
 def _reduce_transitive(hier: Dict[_S, Set[_S]], hier_inverse: Dict[_S, Set[_S]]) \
         -> Tuple[Dict[_S, Set[_S]], FrozenSet[_S]]:
-    """Remove all transitive links
+    """Remove all transitive links.
 
     Takes a downward hierarchy and an upward hierarchy with transitive links, and removes all links that can be
-    implicitly detected since they are transitive
+    implicitly detected since they are transitive.
 
     Args:
-         hier: downward hierarchy with all transitive links, from Class => sub-classes
-         hier_inverse: upward hierarchy with all transitive links, from Class => super-classes
+         hier: downward hierarchy with all transitive links, from Class => sub-classes.
+         hier_inverse: upward hierarchy with all transitive links, from Class => super-classes.
 
     Returns:
-        thin map with only direct sub-classes
-        set of classes without sub-classes
+        Thin map with only direct sub-classes.
+        Set of classes without sub-classes.
 
     """
     result_hier: Dict[_S, Set[_S]] = dict()
@@ -422,13 +426,13 @@ def _reduce_transitive(hier: Dict[_S, Set[_S]], hier_inverse: Dict[_S, Set[_S]])
 
 
 def _strongly_connected_components(graph: Dict[_S, Set[_S]]) -> Iterable[FrozenSet[_S]]:
-    """Strongly connected component algorithm
+    """Strongly connected component algorithm.
 
     Args:
-        graph: Directed Graph dictionary, vertex => set of vertices (there is an edge from v to each V)
+        graph: Directed Graph dictionary, vertex => set of vertices (there is an edge from v to each V).
 
     Returns:
-        the strongly connected components
+        The strongly connected components.
 
     Author: Mario Alviano
     Source: https://github.com/alviano/python/blob/master/rewrite_aggregates/scc.py

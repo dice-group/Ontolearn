@@ -2,13 +2,12 @@ from datetime import date, datetime
 import unittest
 
 from pandas import Timedelta
-from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
+from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
+from ontolearn.owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
     OWLDatatypeMinMaxExclusiveRestriction, OWLDatatypeMinMaxInclusiveRestriction
 
 import owlready2
-import owlapy.owlready2.utils
-from owlapy.model import OWLObjectInverseOf, OWLObjectPropertyRangeAxiom, OWLSameIndividualAxiom, OWLClass, \
+from ontolearn.owlapy.model import OWLObjectInverseOf, OWLObjectPropertyRangeAxiom, OWLSameIndividualAxiom, OWLClass, \
     OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectComplementOf, IRI, OWLDataAllValuesFrom, \
     OWLDataComplementOf, OWLDataHasValue, OWLDataIntersectionOf, OWLDataProperty, OWLDataSomeValuesFrom, \
     OWLDataUnionOf, OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLDataOneOf, \
@@ -19,10 +18,12 @@ from owlapy.model import OWLObjectInverseOf, OWLObjectPropertyRangeAxiom, OWLSam
     OWLDifferentIndividualsAxiom, OWLDisjointClassesAxiom, OWLDisjointDataPropertiesAxiom, OWLObjectUnionOf, \
     OWLDisjointObjectPropertiesAxiom, OWLEquivalentDataPropertiesAxiom, OWLEquivalentObjectPropertiesAxiom, \
     OWLDataPropertyAssertionAxiom, OWLObjectProperty, OWLDataPropertyDomainAxiom, OWLDataPropertyRangeAxiom, \
-    OWLObjectPropertyAssertionAxiom, OWLObjectPropertyDomainAxiom, OWLInverseObjectPropertiesAxiom, OWLSubClassOfAxiom
+    OWLObjectPropertyAssertionAxiom, OWLObjectPropertyDomainAxiom, OWLInverseObjectPropertiesAxiom, OWLSubClassOfAxiom, \
+    OWLDeclarationAxiom
 
-from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
+from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
+from ontolearn.owlapy.owlready2.utils import ToOwlready2, FromOwlready2
 
 
 class Owlapy_Owlready2_Test(unittest.TestCase):
@@ -583,7 +584,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         female = OWLClass(IRI.create(ns, 'female'))
         has_child = OWLObjectProperty(IRI(ns, 'hasChild'))
 
-        to_owlready = owlapy.owlready2.utils.ToOwlready2(world=onto._world)
+        to_owlready = ToOwlready2(world=onto._world)
 
         ce = male
         owlready_ce = onto._onto.male
@@ -638,7 +639,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         act = OWLDataProperty(IRI(ns, 'act'))
         charge = OWLDataProperty(IRI(ns, 'charge'))
 
-        to_owlready = owlapy.owlready2.utils.ToOwlready2(world=onto._world)
+        to_owlready = ToOwlready2(world=onto._world)
 
         # owlready2 defines no equal or hash method for ConstrainedDatatype, just using the __dict__ attribute
         # should be sufficient for the purpose of these tests
@@ -696,7 +697,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         female = onto._onto.female
         has_child = onto._onto.hasChild
 
-        from_owlready = owlapy.owlready2.utils.FromOwlready2()
+        from_owlready = FromOwlready2()
 
         ce = male | female
         owl_ce = OWLObjectUnionOf((OWLClass(IRI.create(ns, 'male')), OWLClass(IRI.create(ns, 'female'))))
@@ -747,7 +748,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         act = onto._onto.act
         charge = onto._onto.charge
 
-        from_owlready = owlapy.owlready2.utils.FromOwlready2()
+        from_owlready = FromOwlready2()
 
         ce = act.some(float)
         owl_ce = OWLDataSomeValuesFrom(OWLDataProperty(IRI(ns, 'act')), DoubleOWLDatatype)
@@ -794,7 +795,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
 
-class Owlapy_Owlready2_TempClasses_Test(unittest.TestCase):
+class Owlapy_Owlready2_ComplexCEInstances_Test(unittest.TestCase):
     # noinspection DuplicatedCode
     def test_instances(self):
         ns = "http://example.com/father#"
@@ -822,6 +823,34 @@ class Owlapy_Owlready2_TempClasses_Test(unittest.TestCase):
             OWLObjectIntersectionOf((female, OWLObjectSomeValuesFrom(property=has_child, filler=OWLThing)))))
         target_inst = frozenset({OWLNamedIndividual(IRI(ns, 'anna'))})
         self.assertEqual(inst, target_inst)
+
+    def test_isolated_ontology(self):
+
+        ns = "http://example.com/father#"
+        mgr = OWLOntologyManager_Owlready2()
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
+
+        reasoner1 = OWLReasoner_Owlready2(onto)
+        ccei_reasoner = OWLReasoner_Owlready2_ComplexCEInstances(onto, isolate=True)
+
+        new_individual = OWLNamedIndividual(IRI(ns, 'bob'))
+        male_ce = OWLClass(IRI(ns, "male"))
+        axiom1 = OWLDeclarationAxiom(new_individual)
+        axiom2 = OWLClassAssertionAxiom(new_individual, male_ce)
+        mgr.add_axiom(onto, axiom1)
+        mgr.add_axiom(onto, axiom2)
+
+        self.assertIn(new_individual, reasoner1.instances(male_ce))
+        self.assertNotIn(new_individual, ccei_reasoner.instances(male_ce))
+
+        ccei_reasoner.update_isolated_ontology(axioms_to_add=[axiom1, axiom2])
+
+        self.assertIn(new_individual, ccei_reasoner.instances(male_ce))
+
+        ccei_reasoner.update_isolated_ontology(axioms_to_remove=[axiom2, axiom1])
+
+        self.assertIn(new_individual, reasoner1.instances(male_ce))
+        self.assertNotIn(new_individual, ccei_reasoner.instances(male_ce))
 
 
 if __name__ == '__main__':

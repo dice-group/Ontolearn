@@ -8,7 +8,7 @@ from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric  # noqa: F40
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import Accuracy
-from owlapy.model import OWLClass, OWLNamedIndividual, IRI
+from ontolearn.owlapy.model import OWLClass, OWLNamedIndividual, IRI
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.utils import setup_logging
 

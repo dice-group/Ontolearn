@@ -1,27 +1,27 @@
+"""SPARQL representations."""
 import logging
 from functools import singledispatchmethod
 from typing import Optional, Iterable, FrozenSet
 
 import httpx as httpx
 
-from ontolearn import KnowledgeBase
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.abstracts import AbstractScorer, AbstractLearningProblem, AbstractKnowledgeBase, \
     EncodedPosNegLPStandardKind
-from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric
 from ontolearn.knowledge_base import EvaluatedConcept, Factory, _Default_ClassExpressionLengthMetricFactory
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.utils import oplogging
-from owlapy.ext import OWLReasonerEx
-from owlapy.model import OWLClassAxiom, OWLClassExpression, OWLEntity, OWLOntology, OWLClass, OWLNamedIndividual, \
+from ontolearn.owlapy.ext import OWLReasonerEx
+from ontolearn.owlapy.model import OWLClassAxiom, OWLClassExpression, OWLEntity, OWLOntology, OWLClass, \
     OWLObjectPropertyExpression, OWLDataProperty, OWLObjectProperty, OWLOntologyID, _M, OWLDataPropertyRangeAxiom, \
-    IRI, OWLLiteral, OWLDatatype, OWLDataPropertyDomainAxiom, OWLObjectPropertyDomainAxiom, \
+    IRI, OWLLiteral, OWLDatatype, OWLDataPropertyDomainAxiom, OWLObjectPropertyDomainAxiom, OWLNamedIndividual, \
     OWLObjectPropertyRangeAxiom
-from owlapy.owl2sparql.converter import Owl2SparqlConverter
-from owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from owlapy.render import DLSyntaxObjectRenderer
-from owlapy.util import LRUCache
-from owlapy.vocab import OWLRDFVocabulary
+from ontolearn.owlapy.owl2sparql.converter import Owl2SparqlConverter
+from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from ontolearn.owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.owlapy.util import LRUCache
+from ontolearn.owlapy.vocab import OWLRDFVocabulary
 
 logger = logging.getLogger(__name__)
 
@@ -293,7 +293,7 @@ class SparqlKnowledgeBase(KnowledgeBase):
         else:
             self._length_metric = _Default_ClassExpressionLengthMetricFactory()
 
-        ConceptGenerator.__init__(self, reasoner=self._reasoner)
+        # ConceptGenerator.__init__(self, reasoner=self._reasoner)
 
         individuals = self._ontology.individuals_in_signature()
         self._ind_set = frozenset(individuals)

@@ -1,5 +1,5 @@
 {
-  "data_path": "../../KGs/Family/family-benchmark_rich_background.owl",
+  "data_path": "../KGs/Family/family-benchmark_rich_background.owl",
     "Uncle": {
       "positive_examples": ["http://www.benchmark.org/family#F2M13"
 ,"http://www.benchmark.org/family#F2M11"

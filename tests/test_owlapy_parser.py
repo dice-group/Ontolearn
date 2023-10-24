@@ -2,18 +2,18 @@ import unittest
 from datetime import date, datetime, timedelta, timezone
 
 from pandas import Timedelta
-from owlapy.model import OWLObjectInverseOf, OWLObjectMinCardinality, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
-    DoubleOWLDatatype, IntegerOWLDatatype, OWLClass, IRI, OWLDataAllValuesFrom, OWLDataIntersectionOf, \
-    OWLDataOneOf, OWLDataProperty, OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLFacetRestriction, \
+from ontolearn.owlapy.model import OWLObjectInverseOf, OWLObjectMinCardinality, OWLObjectSomeValuesFrom, \
+    OWLObjectUnionOf, DoubleOWLDatatype, IntegerOWLDatatype, OWLClass, IRI, OWLDataAllValuesFrom, \
+    OWLDataIntersectionOf, OWLDataOneOf, OWLDataProperty, OWLDataSomeValuesFrom, OWLDatatypeRestriction,  \
     OWLLiteral, OWLNamedIndividual, OWLObjectAllValuesFrom, OWLObjectComplementOf, OWLObjectExactCardinality, \
     OWLObjectHasSelf, OWLObjectHasValue, OWLObjectIntersectionOf, OWLObjectMaxCardinality, OWLObjectOneOf, \
     OWLObjectProperty, OWLDataComplementOf, OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataUnionOf, \
-    OWLDataMinCardinality, OWLDataHasValue, OWLThing, OWLNothing
+    OWLDataMinCardinality, OWLDataHasValue, OWLThing, OWLNothing, OWLFacetRestriction
 
-from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, OWLDatatypeMinMaxExclusiveRestriction, \
-    OWLDatatypeMaxExclusiveRestriction
-from owlapy.parser import DLSyntaxParser, ManchesterOWLSyntaxParser
-from owlapy.vocab import OWLFacet
+from ontolearn.owlapy.model.providers import OWLDatatypeMinExclusiveRestriction,\
+    OWLDatatypeMinMaxExclusiveRestriction, OWLDatatypeMaxExclusiveRestriction
+from ontolearn.owlapy.parser import DLSyntaxParser, ManchesterOWLSyntaxParser
+from ontolearn.owlapy.vocab import OWLFacet
 
 
 class ManchesterOWLSyntaxParserTest(unittest.TestCase):

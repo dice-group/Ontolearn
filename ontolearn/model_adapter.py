@@ -1,21 +1,22 @@
+"""Model adaptors."""
 import inspect
 import logging
-from typing import TypeVar
+from typing import TypeVar, List, Optional, Union
 
 from ontolearn.abstracts import AbstractHeuristic, AbstractScorer, BaseRefinement, AbstractKnowledgeBase, \
     AbstractNode
 from ontolearn.base_concept_learner import BaseConceptLearner
-from owlapy.model import OWLReasoner
-from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
-from owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
+from ontolearn.owlapy.model import OWLReasoner, OWLNamedIndividual, OWLClassExpression, OWLAxiom
+from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
 
 logger = logging.getLogger(__name__)
 # TODO:CD: Move all imports to the top of the file
 
-def _get_matching_opts(_Type, optargs, kwargs, *, prefix=None):
-    """find the keys in kwargs that are parameters of _Type
 
-    if prefix is specified, the keys in kwargs need to be prefixed with prefix_
+def _get_matching_opts(_Type, optargs, kwargs, *, prefix=None):
+    """Find the keys in kwargs that are parameters of _Type.
+
+    If prefix is specified, the keys in kwargs need to be prefixed with prefix_.
     """
     opts = {}
     if prefix is None:
@@ -45,21 +46,34 @@ _N = TypeVar('_N', bound=AbstractNode)  #:
 
 
 def ModelAdapter(*args, **kwargs):  # noqa: C901
-    """Create a new Concept learner through the model adapter
+    """Instantiate a model through the model adapter.
+
+    .. warning ::
+        You should not specify both: the _type and the object. For
+        example, you should not give both 'reasoner' and 'reasoner_type' because the ModelAdaptor cant decide
+        which one to use, the reasoner object or create a new reasoner instance using 'reasoner_type'.
+
+    Note:
+        If you give `_type` for an argument you can pass further arguments to construct the instance of that
+        class. The model adapter will arrange every argument automatically and use them to construct an object
+        for that certain class type.
 
     Args:
-        knowledge_base (AbstractKnowledgeBase): a knowledge base
-        knowledge_base_type: a knowledge base type
-        ...: knowledge base arguments
-        refinement_operator_type: a refinement operator type
-        ...: refinement operator arguments
-        quality_type: an Abstract Scorer type
-        ...: quality arguments
-        heuristic_func (AbstractHeuristic): a heuristic
-        heuristic_type: an Abstract Heuristic type
-        ...: arguments for the heuristic type
-        learner_type: a Base Concept Learner type
-        ...: arguments for the learning algorithm
+        knowledge_base (AbstractKnowledgeBase): A knowledge base.
+        knowledge_base_type: A knowledge base type.
+        ...: Knowledge base arguments.
+        reasoner: A reasoner.
+        reasoner_type: A reasoner type.
+        ...: Reasoner constructor arguments.
+        refinement_operator_type: A refinement operator type.
+        ...: Refinement operator arguments.
+        quality_type: An Abstract Scorer type.
+        ...: Quality arguments.
+        heuristic_func (AbstractHeuristic): A heuristic.
+        heuristic_type: An Abstract Heuristic type.
+        ...: arguments For the heuristic type.
+        learner_type: A Base Concept Learner type.
+        ...: Arguments for the learning algorithm.
     """
     if "knowledge_base" in kwargs:
         kb = kwargs.pop("knowledge_base")
@@ -206,3 +220,72 @@ def ModelAdapter(*args, **kwargs):  # noqa: C901
         ))
 
     return learner
+
+
+class Trainer:
+    def __init__(self, learner: BaseConceptLearner, reasoner: OWLReasoner):
+        """
+        A class to disentangle the learner from its training.
+
+        Args:
+            learner: The concept learner.
+            reasoner: The reasoner to use (should have the same ontology as the `kb` argument of the learner).
+        """
+        assert reasoner.get_root_ontology().get_ontology_id().get_ontology_iri().as_str() == \
+               learner.kb.ontology().get_ontology_id().get_ontology_iri().as_str(), "New reasoner does not have " + \
+                                                                                    "the same ontology as the learner!"
+        learner.reasoner = reasoner
+        self.learner = learner
+        self.reasoner = reasoner
+
+    def fit(self, *args, **kwargs):
+        """Run the concept learning algorithm according to its configuration.
+
+        Once finished, the results can be queried with the `best_hypotheses` function."""
+        self.learner.fit(*args, **kwargs)
+
+    def best_hypotheses(self, n):
+        """Get the current best found hypotheses according to the quality.
+
+        Args:
+            n: Maximum number of results.
+
+        Returns:
+            Iterable with hypotheses in form of search tree nodes.
+        """
+        return self.learner.best_hypotheses(n)
+
+    def predict(self, individuals: List[OWLNamedIndividual],
+                hypotheses: Optional[List[Union[_N, OWLClassExpression]]] = None,
+                axioms: Optional[List[OWLAxiom]] = None, n: int = 10):
+        """Creates a binary data frame showing for each individual whether it is entailed in the given hypotheses
+                (class expressions). The individuals do not have to be in the ontology/knowledge base yet. In that case,
+                axioms describing these individuals must be provided.
+
+        The state of the knowledge base/ontology is not changed, any provided axioms will be removed again.
+
+        Args:
+            individuals: A list of individuals/instances.
+            hypotheses: (Optional) A list of search tree nodes or class expressions. If not provided, the
+                        current :func:`BaseConceptLearner.best_hypothesis` of the concept learner are used.
+            axioms: (Optional) A list of axioms that are not in the current knowledge base/ontology.
+                    If the individual list contains individuals that are not in the ontology yet, axioms
+                    describing these individuals must be provided. The argument can also be used to add
+                    arbitrary axioms to the ontology for the prediction.
+            n: Integer denoting number of ALC concepts to extract from search tree if hypotheses=None.
+
+        Returns:
+            Pandas data frame with dimensions |individuals|*|hypotheses| indicating for each individual and each
+            hypothesis whether the individual is entailed in the hypothesis.
+        """
+        return self.learner.predict(individuals, hypotheses, axioms, n)
+
+    def save_best_hypothesis(self, n: int = 10, path: str = 'Predictions', rdf_format: str = 'rdfxml') -> None:
+        """Serialise the best hypotheses to a file.
+
+        Args:
+            n: Maximum number of hypotheses to save.
+            path: Filename base (extension will be added automatically).
+            rdf_format: Serialisation format. currently supported: "rdfxml".
+        """
+        self.learner.save_best_hypothesis(n, path, rdf_format)

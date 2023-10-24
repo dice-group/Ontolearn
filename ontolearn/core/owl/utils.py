@@ -2,15 +2,15 @@ from collections import Counter
 from functools import singledispatchmethod
 from typing import Iterable, Generic, TypeVar, Callable, List
 
-from owlapy.model import OWLDataRange, OWLLiteral, OWLObject, OWLClass, OWLObjectProperty, OWLObjectSomeValuesFrom, \
+from ontolearn.owlapy.model import OWLDataRange, OWLLiteral, OWLObject, OWLClass, OWLObjectProperty, \
     OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, \
     OWLObjectCardinalityRestriction, OWLObjectHasSelf, OWLObjectHasValue, OWLObjectOneOf, OWLNamedIndividual, \
     OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLClassExpression, OWLThing, \
     OWLDataSomeValuesFrom, OWLDataOneOf, OWLDatatypeRestriction, OWLDataComplementOf, OWLDataAllValuesFrom, \
     OWLDataCardinalityRestriction, OWLDatatype, OWLDataHasValue, OWLDataUnionOf, OWLDataIntersectionOf, \
-    OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataProperty
+    OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataProperty, OWLObjectSomeValuesFrom
 
-from owlapy.util import OrderedOWLObject, iter_count
+from ontolearn.owlapy.util import OrderedOWLObject, iter_count
 from sortedcontainers import SortedSet
 
 

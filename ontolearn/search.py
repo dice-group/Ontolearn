@@ -1,3 +1,4 @@
+"""Node representation."""
 import weakref
 from _weakref import ReferenceType
 from abc import abstractmethod, ABCMeta
@@ -5,11 +6,10 @@ from functools import total_ordering
 from queue import PriorityQueue
 from typing import List, Optional, ClassVar, Final, Iterable, TypeVar, Generic, Set, Tuple, Dict
 
-from owlapy.io import OWLObjectRenderer
-from owlapy.model import OWLClassExpression
-from owlapy.render import DLSyntaxObjectRenderer
-from owlapy.util import as_index, OrderedOWLObject
-from superprop import super_prop
+from ontolearn.owlapy.io import OWLObjectRenderer
+from ontolearn.owlapy.model import OWLClassExpression
+from ontolearn.owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.owlapy.util import as_index, OrderedOWLObject
 from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree, \
     AbstractConceptNode, EncodedLearningProblem, DRILLAbstractTree
 
@@ -173,6 +173,8 @@ class _NodeQuality(metaclass=ABCMeta):
 
 
 class Node(_NodeConcept, _NodeLen, _NodeIndividualsCount, AbstractNode):
+    """ Simple node.
+    """
     __slots__ = '_concept', '_len', '_individuals_count'
 
     def __init__(self, concept: OWLClassExpression, length: int):
@@ -191,6 +193,7 @@ class Node(_NodeConcept, _NodeLen, _NodeIndividualsCount, AbstractNode):
 
 class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeHeuristic,
              _NodeParentRef['OENode'], AbstractNode, AbstractConceptNode, AbstractOEHeuristicNode):
+    """OENode search tree node."""
     __slots__ = '_concept', '_len', '_individuals_count', '_quality', '_heuristic', \
                 '_parent_ref', '_horizontal_expansion', \
                 '_refinement_count', '__weakref__'
@@ -243,6 +246,9 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
 
 
 class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, AbstractNode, AbstractConceptNode):
+    """
+    EvoLearner search tree node.
+    """
     __slots__ = '_concept', '_len', '_individuals_count', '_quality', '_tree_length', '_tree_depth'
 
     _tree_length: int
@@ -285,6 +291,7 @@ class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality
 
 class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodeParentRef['RL_State']):
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
+    """RL_State node."""
     __slots__ = '_concept', '_quality', '_heuristic', \
                 'embeddings', 'individuals', \
                 'instances_bitset', 'length', 'instances', 'parent_node', 'is_root', '_parent_ref', '__weakref__'
@@ -357,6 +364,7 @@ class _NodeIndividuals(metaclass=ABCMeta):
 
 
 class LBLNode(_NodeIndividuals, OENode):
+    """ LBL search tree node."""
     __slots__ = '_children', '_individuals'
 
     def __init__(self, concept: OWLClassExpression, length: int, individuals, parent_node: Optional['LBLNode'] = None,
@@ -377,7 +385,7 @@ class LBLNode(_NodeIndividuals, OENode):
 
     @property
     def parent_node(self) -> Optional['LBLNode']:
-        return super_prop(super()).parent_node
+        return SuperProp(super()).parent_node
 
     @parent_node.setter
     def parent_node(self, parent_node: Optional['LBLNode']):
@@ -439,6 +447,7 @@ class HeuristicOrderedNode(Generic[_N]):
 
 @total_ordering
 class QualityOrderedNode:
+    """QualityOrderedNode search tree node."""
     __slots__ = 'node'
 
     node: Final[OENode]
@@ -633,6 +642,7 @@ _TN = TypeVar('_TN', bound='TreeNode')  #:
 
 
 class TreeNode(Generic[_N]):
+    """ Simple search tree node."""
     __slots__ = 'children', 'node'
 
     node: Final[_N]
@@ -732,3 +742,47 @@ class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
     def clean(self):
         self.items_in_queue = PriorityQueue()
         self._nodes.clear()
+
+
+class SuperProp:
+    """
+    Super wrapper which allows property setting & deletion. Super can't be subclassed with empty __init__ arguments.
+    """
+
+    def __init__(self, super_obj):
+        object.__setattr__(self, 'super_obj', super_obj)
+
+    def _find_desc(self, name):
+        super_obj = object.__getattribute__(self, 'super_obj')
+        if name != '__class__':
+            mro = iter(super_obj.__thisclass__.__mro__)
+            for cls in mro:
+                if cls == super_obj.__thisclass__:
+                    break
+            for cls in mro:
+                if isinstance(cls, type):
+                    try:
+                        # don't lookup further up the chain
+                        return object.__getattribute__(cls, name)
+                    except AttributeError:
+                        continue
+                    except KeyError:
+                        return None
+        return None
+
+    def __getattr__(self, name):
+        return getattr(object.__getattribute__(self, 'super_obj'), name)
+
+    def __setattr__(self, name, value):
+        super_obj = object.__getattribute__(self, 'super_obj')
+        desc = object.__getattribute__(self, '_find_desc')(name)
+        if hasattr(desc, '__set__'):
+            return desc.__set__(super_obj.__self__, value)
+        return setattr(super_obj, name, value)
+
+    def __delattr__(self, name):
+        super_obj = object.__getattribute__(self, 'super_obj')
+        desc = object.__getattribute__(self, '_find_desc')(name)
+        if hasattr(desc, '__delete__'):
+            return desc.__delete__(super_obj.__self__)
+        return delattr(super_obj, name)

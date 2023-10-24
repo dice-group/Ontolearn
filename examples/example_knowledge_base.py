@@ -1,3 +1,4 @@
+from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.knowledge_base import KnowledgeBase
 import os
 
@@ -8,7 +9,7 @@ except FileNotFoundError:
 
 kb_path = '../KGs/Family/family-benchmark_rich_background.owl'
 kb = KnowledgeBase(path=kb_path)
-
+generator = ConceptGenerator()
 
 # All concepts.
 for i in kb.get_concepts():
@@ -42,23 +43,23 @@ for concept in kb.class_hierarchy().items():
 print('*' * 100)
 
 
-for concept in kb.most_general_existential_restrictions(domain=kb.thing):
+for concept in kb.most_general_existential_restrictions(domain=generator.thing):
     print(concept)
 
 print('*' * 100)
-for concept in kb.most_general_universal_restrictions(domain=kb.thing):
+for concept in kb.most_general_universal_restrictions(domain=generator.thing):
     print(concept)
 
 print('*' * 100)
-for concept in kb.most_general_existential_restrictions(domain=kb.nothing):
+for concept in kb.most_general_existential_restrictions(domain=generator.nothing):
     print(concept)
 
 print('*' * 100)
-for concept in kb.most_general_universal_restrictions(domain=kb.nothing):
+for concept in kb.most_general_universal_restrictions(domain=generator.nothing):
     print(concept)
 
 print('*' * 100)
 for c in kb.get_concepts():
-    neg_c = kb.negation(c)
-    neg_neg_c = kb.negation(neg_c)
+    neg_c = generator.negation(c)
+    neg_neg_c = generator.negation(neg_c)
     assert neg_neg_c == c

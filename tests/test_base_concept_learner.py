@@ -6,9 +6,9 @@ from ontolearn.concept_learner import CELOE
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.search import EvoLearnerNode
-from owlapy.model import OWLClass, OWLClassAssertionAxiom, OWLNamedIndividual, IRI, OWLObjectIntersectionOf, \
+from ontolearn.owlapy.model import OWLClass, OWLClassAssertionAxiom, OWLNamedIndividual, IRI, OWLObjectIntersectionOf, \
                          OWLObjectProperty, OWLObjectPropertyAssertionAxiom, OWLObjectSomeValuesFrom, OWLThing
-from owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.owlapy.render import DLSyntaxObjectRenderer
 
 
 class BaseConceptLearnerTest(unittest.TestCase):

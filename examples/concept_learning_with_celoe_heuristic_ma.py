@@ -4,11 +4,11 @@ import random
 
 from ontolearn.concept_learner import CELOE
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.model_adapter import ModelAdapter
-from owlapy.model import OWLClass, OWLNamedIndividual, IRI
+from ontolearn.model_adapter import ModelAdapter, Trainer
+from ontolearn.owlapy.model import OWLClass, OWLNamedIndividual, IRI
 from ontolearn.utils import setup_logging
-from owlapy.owlready2 import BaseReasoner_Owlready2, OWLOntology_Owlready2
-from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
+from ontolearn.owlapy.owlready2 import BaseReasoner_Owlready2, OWLOntology_Owlready2
+from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
 from typing import cast
 setup_logging()
 
@@ -61,7 +61,7 @@ for str_target_concept, examples in settings['problems'].items():
                          ignore=concepts_to_ignore,
                          reasoner=reasoner,
                          learner_type=CELOE,
-                         max_runtime=60,
+                         max_runtime=5,
                          max_num_of_concepts_tested=10_000_000_000,
                          iter_bound=10_000_000_000,
                          expansionPenaltyFactor=0.01)
@@ -76,4 +76,12 @@ for str_target_concept, examples in settings['problems'].items():
                                 hypotheses=hypotheses)
     # print(predictions)
     [print(_) for _ in hypotheses]
-    # exit(1)
+
+    # Using Trainer
+    model2 = CELOE(knowledge_base=kb, max_runtime=5)
+    trainer = Trainer(model, reasoner)
+    trainer.fit(pos=typed_pos, neg=typed_neg)
+    hypotheses = list(model2.best_hypotheses(n=3))
+    [print(_) for _ in hypotheses]
+
+

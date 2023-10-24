@@ -53,7 +53,7 @@ class Experiment:
             self.neg_sample_ratio = None
 
         self.storage_path = storage_path
-        #self.logger = create_logger(name=self.model + ith_logger, p=self.storage_path)
+        # self.logger = create_logger(name=self.model + ith_logger, p=self.storage_path)
 
         print('Cuda available:{0}'.format(self.cuda))
         if 'norm_flag' not in self.kwargs:
@@ -94,7 +94,7 @@ class Experiment:
         print("Number of triples in testing data:{0}".format(len(self.dataset.test_data)))
         print("Number of entities:{0}".format(len(self.entity_idxs)))
         print("Number of relations:{0}".format(len(self.relation_idxs)))
-        #print("HyperParameter Settings:{0}".format(self.kwargs))
+        # print("HyperParameter Settings:{0}".format(self.kwargs))
 
     def evaluate_one_to_n(self, model, data, log_info='Evaluate one to N.'):
         """
@@ -284,11 +284,12 @@ class Experiment:
             s = self.kwargs["scoring_technique"]
             raise ValueError(f'scoring_technique is not valid ***{s}**')
         # Save the trained model.
-        #torch.save(model.state_dict(), self.storage_path + '/model.pt')
+        # torch.save(model.state_dict(), self.storage_path + '/model.pt')
         # Save embeddings of entities and relations in csv file.
         if self.store_emb_dataframe:
             entity_emb, emb_rel = model.get_embeddings()
-            # pd.DataFrame(index=self.dataset.entities, data=entity_emb.numpy()).to_csv(TypeError: can't convert CUDA tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first.
+            # pd.DataFrame(index=self.dataset.entities, data=entity_emb.numpy()).to_csv(TypeError:
+            # can't convert CUDA tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first.
             print("Storing embeddings at ", self.storage_path)
             pd.DataFrame(index=self.dataset.entities, data=entity_emb.cpu().numpy()).to_csv(
                 '{0}/{1}_entity_embeddings.csv'.format(self.storage_path, model.name))
@@ -320,9 +321,9 @@ class Experiment:
         else:
             print(self.model, ' is not valid name')
             raise ValueError
-            
+
         self.train(model)
-        if not 'vicodi' in self.dataset.info['dataset'] and not 'carcinogenesis' in self.dataset.info['dataset']:
+        if 'vicodi'not in self.dataset.info['dataset'] and 'carcinogenesis' not in self.dataset.info['dataset']:
             self.eval(model)
         else:
             print('\n## No evaluation on large datasets, skipping ##\n')

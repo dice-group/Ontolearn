@@ -1,10 +1,12 @@
+"""Fitness functions."""
+
 from typing import Final
 from ontolearn.abstracts import AbstractFitness
 from ontolearn.ea_utils import Tree
 
 
 class LinearPressureFitness(AbstractFitness):
-    """Linear parametric parsimony pressure"""
+    """Linear parametric parsimony pressure."""
 
     __slots__ = 'gain', 'penalty'
 

@@ -8,9 +8,9 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.metrics import Accuracy
 from ontolearn.model_adapter import ModelAdapter
 from ontolearn.refinement_operators import ModifiedCELOERefinement
-from owlapy.model import IRI, OWLNamedIndividual
-from owlapy.owlready2 import OWLOntology_Owlready2, BaseReasoner_Owlready2
-from owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
+from ontolearn.owlapy.model import IRI, OWLNamedIndividual
+from ontolearn.owlapy.owlready2 import OWLOntology_Owlready2, BaseReasoner_Owlready2
+from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
 
 
 class ModelAdapterTest(unittest.TestCase):

@@ -1,9 +1,11 @@
-import torch, torch.nn as nn, numpy as np
-import torch.nn.functional as F
+"""NCES architectures."""
 from ontolearn.nces_modules import *
 
+
 class LSTM(nn.Module):
-    def __init__(self, knowledge_base_path, vocab, inv_vocab, max_length, input_size, proj_dim, rnn_n_layers, drop_prob):
+    """LSTM module."""
+    def __init__(self, knowledge_base_path, vocab, inv_vocab, max_length, input_size, proj_dim, rnn_n_layers,
+                 drop_prob):
         super().__init__()
         self.name = 'LSTM'
         self.max_len = max_length
@@ -16,13 +18,13 @@ class LSTM(nn.Module):
         self.fc1 = nn.Linear(2*proj_dim, proj_dim)
         self.fc2 = nn.Linear(proj_dim, proj_dim)
         self.fc3 = nn.Linear(proj_dim, len(self.vocab)*max_length)
-        
+
     def forward(self, x1, x2, target_scores=None):
         seq1, _ = self.lstm(x1)
         seq2, _ = self.lstm(x2)
         out1 = seq1.sum(1).view(-1, self.proj_dim)
         out2 = seq2.sum(1).view(-1, self.proj_dim)
-        x = torch.cat([out1,out2], 1)
+        x = torch.cat([out1, out2], 1)
         x = F.gelu(self.fc1(x))
         x = x + F.relu(self.fc2(x))
         x = self.bn(x)
@@ -31,9 +33,11 @@ class LSTM(nn.Module):
         aligned_chars = self.inv_vocab[x.argmax(1).cpu()]
         return aligned_chars, x
 
-        
+
 class GRU(nn.Module):
-    def __init__(self, knowledge_base_path, vocab, inv_vocab, max_length, input_size, proj_dim, rnn_n_layers, drop_prob):
+    """GRU module."""
+    def __init__(self, knowledge_base_path, vocab, inv_vocab, max_length, input_size, proj_dim, rnn_n_layers,
+                 drop_prob):
         super().__init__()
         self.name = 'GRU'
         self.max_len = max_length
@@ -46,13 +50,13 @@ class GRU(nn.Module):
         self.fc1 = nn.Linear(2*proj_dim, proj_dim)
         self.fc2 = nn.Linear(proj_dim, proj_dim)
         self.fc3 = nn.Linear(proj_dim, len(self.vocab)*max_length)
-    
+
     def forward(self, x1, x2, target_scores=None):
         seq1, _ = self.gru(x1)
         seq2, _ = self.gru(x2)
         out1 = seq1.sum(1).view(-1, self.proj_dim)
         out2 = seq2.sum(1).view(-1, self.proj_dim)
-        x = torch.cat([out1,out2], 1)
+        x = torch.cat([out1, out2], 1)
         x = F.gelu(self.fc1(x))
         x = x + F.relu(self.fc2(x))
         x = self.bn(x)
@@ -61,9 +65,11 @@ class GRU(nn.Module):
         aligned_chars = self.inv_vocab[x.argmax(1).cpu()]
         return aligned_chars, x
 
-    
+
 class SetTransformer(nn.Module):
-    def __init__(self, knowledge_base_path, vocab, inv_vocab, max_length, input_size, proj_dim, num_heads, num_seeds, num_inds, ln):
+    """SetTransformer module."""
+    def __init__(self, knowledge_base_path, vocab, inv_vocab, max_length, input_size, proj_dim, num_heads, num_seeds,
+                 num_inds, ln):
         super(SetTransformer, self).__init__()
         self.name = 'SetTransformer'
         self.max_len = max_length
@@ -80,7 +86,7 @@ class SetTransformer(nn.Module):
     def forward(self, x1, x2):
         x1 = self.enc(x1)
         x2 = self.enc(x2)
-        x = torch.cat([x1,x2], -2)
+        x = torch.cat([x1, x2], -2)
         x = self.dec(x).reshape(-1, len(self.vocab), self.max_len)
         aligned_chars = self.inv_vocab[x.argmax(1).cpu()]
         return aligned_chars, x

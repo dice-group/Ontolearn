@@ -1,3 +1,5 @@
+"""Experiments to validate a concept learning model."""
+
 import json
 import time
 from random import shuffle
@@ -6,7 +8,7 @@ from typing import List, Tuple, Set, Dict, Any, Iterable
 import numpy as np
 from sklearn.model_selection import KFold
 
-from owlapy.model import OWLNamedIndividual, IRI
+from ontolearn.owlapy.model import OWLNamedIndividual, IRI
 
 
 class Experiments:
@@ -17,13 +19,16 @@ class Experiments:
     @staticmethod
     def store_report(model, learning_problems: List[Iterable], test_report: List[dict]) -> Tuple[str, Dict[str, Any]]:
         """
+        Create a report for concepts generated for a particular learning problem.
+        Args:
+            model: Concept learner.
+            learning_problems: A list of learning problems (lps) where lp corresponds to target concept, positive and
+                                negative examples, respectively.
+            test_report: A list of predictions (preds) where test_report => { 'Prediction': str, 'F-measure': float,
+                            'Accuracy', 'Runtime':float}.
+        Returns:
+            Both report as string and report as dictionary.
 
-        @param model: concept learner
-        @param learning_problems: A list of learning problems (lps) where lp corresponds to [target concept, positive
-        and negative examples, respectively.
-        @param test_report: A list of predictions (preds) where
-        test_report => { 'Prediction': str, 'F-measure': float, 'Accuracy', 'Runtime':float}
-        @return:
         """
         assert len(learning_problems) == len(test_report)
         assert isinstance(learning_problems, list)  # and isinstance(learning_problems[0], list)
@@ -68,12 +73,15 @@ class Experiments:
 
     def start_KFold(self, k=None, dataset: List[Tuple[str, Set, Set]] = None, models: Iterable = None):
         """
-        Perform KFold cross validation
-        @param models:
-        @param k:
-        @param dataset: A list of tuples where a tuple (i,j,k) where i denotes the target concept
-        j denotes the set of positive examples and k denotes the set of negative examples.
-        @return:
+        Perform KFold cross validation.
+
+        Args:
+            models: concept learners.
+            k: k value of k-fold.
+            dataset: A list of tuples where a tuple (i,j,k) where i denotes the target concept j denotes the set of
+                    positive examples and k denotes the set of negative examples.
+        Note:
+            This method returns nothing. It just prints the report results.
         """
         models = {i for i in models}
         assert len(models) > 0
@@ -102,14 +110,6 @@ class Experiments:
         self.report_results(results)
 
     def start(self, dataset: List[Tuple[str, Set, Set]] = None, models: List = None):
-        """
-        Perform KFold cross validation
-        @param models:
-        @param k:
-        @param dataset: A list of tuples where a tuple (i,j,k) where i denotes the target concept
-        j denotes the set of positive examples and k denotes the set of negative examples.
-        @return:
-        """
         assert len(models) > 0
         assert len(dataset) > 0
         assert isinstance(dataset[0], tuple)
@@ -136,6 +136,8 @@ class Experiments:
 
     @staticmethod
     def report_results(results, num_problems):
+        """Prints the result generated from validations.
+        """
         print(f'\n##### RESULTS on {num_problems} number of learning problems#####')
         for learner_name, v in results.items():
             r = np.array([[report['F-measure'], report['Accuracy'], report['NumClassTested'], report['Runtime']] for

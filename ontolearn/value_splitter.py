@@ -1,3 +1,4 @@
+"""Value splitters."""
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass
@@ -9,7 +10,7 @@ from scipy.stats import entropy
 from sortedcontainers import SortedDict
 from typing import Dict, List, Optional, Set, Tuple, Union
 
-from owlapy.model import OWLDataProperty, OWLLiteral, OWLNamedIndividual, OWLReasoner
+from ontolearn.owlapy.model import OWLDataProperty, OWLLiteral, OWLNamedIndividual, OWLReasoner
 
 import math
 
