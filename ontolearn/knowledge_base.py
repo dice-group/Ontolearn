@@ -28,13 +28,16 @@ def _Default_OntologyManagerFactory(world_store=None) -> OWLOntologyManager:
     return OWLOntologyManager_Owlready2(world_store=world_store)
 
 
-def _Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
+def _Default_ReasonerFactory(onto: OWLOntology, use_triplestore: bool, triplestore_address: str) -> OWLReasoner:
 
     assert isinstance(onto, OWLOntology_Owlready2)
-    base_reasoner = OWLReasoner_Owlready2(ontology=onto)
-    reasoner = OWLReasoner_FastInstanceChecker(ontology=onto,
-                                               base_reasoner=base_reasoner)
-    return reasoner
+    base_reasoner = OWLReasoner_Owlready2(ontology=onto, use_triplestore=use_triplestore,
+                                          triplestore_address=triplestore_address)
+
+    if use_triplestore:
+        return base_reasoner
+    else:
+        return OWLReasoner_FastInstanceChecker(ontology=onto, base_reasoner=base_reasoner)
 
 
 def _Default_ClassExpressionLengthMetricFactory() -> OWLClassExpressionLengthMetric:
@@ -67,6 +70,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
         length_metric_factory: See :attr:`length_metric`.
         length_metric: Length metric that is used in calculation of class expression lengths.
         individuals_cache_size: How many individuals of class expressions to cache.
+        backend_store: Whether to sync the world to backend store.
+        use_triplestore: Tells the reasoner to use triplestore to retrieve instances. This is set for the default
+            reasoner of this object, if you enter a reasoner using :arg:`reasoner_factory` or :arg:`reasoner`
+            argument it will override this setting.
+        triplestore_address: The address where the triplestore is hosted. This is also overrode if this object
+            is not using the default reasoner.
 
     Attributes:
         generator (ConceptGenerator): Instance of concept generator.
@@ -107,6 +116,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
                  length_metric_factory: Optional[Factory[[], OWLClassExpressionLengthMetric]] = None,
                  individuals_cache_size=128,
+                 use_triplestore: bool = False,
+                 triplestore_address: str = None,
                  backend_store: bool = False):
         ...
 
@@ -128,6 +139,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
                  ontology: Optional[OWLOntology] = None,
                  reasoner: Optional[OWLReasoner] = None,
+                 use_triplestore: bool = False,
+                 triplestore_address: str = None,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
 
                  individuals_cache_size=128,
@@ -166,7 +179,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         elif reasoner_factory is not None:
             self._reasoner = reasoner_factory(self._ontology)
         else:  # default to fast instance checker
-            self._reasoner = _Default_ReasonerFactory(self._ontology)
+            self._reasoner = _Default_ReasonerFactory(self._ontology, use_triplestore, triplestore_address)
             # raise TypeError("neither reasoner nor reasoner factory given")
 
         if length_metric is not None:
@@ -455,6 +468,20 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
     @singledispatchmethod
     def encode_learning_problem(self, lp: AbstractLearningProblem):
+        """Provides the encoded learning problem (lp), i.e. the class containing the set of OWLNamedIndividuals
+        as follows:
+            kb_pos --> the positive examples set,
+            kb_neg --> the negative examples set,
+            kb_all --> all lp individuals / all individuals set,
+            kb_diff --> kb_all - (kb_pos + kb_neg).
+        Note:
+            Simple access of the learning problem individuals divided in respective sets.
+            You will need the encoded learning problem to use the method evaluate_concept of this class.
+        Args:
+            lp (PosNegLPStandard): The learning problem.
+        Return:
+            EncodedPosNegLPStandard: The encoded learning problem.
+        """
         raise NotImplementedError(lp)
 
     @encode_learning_problem.register
