@@ -1,14 +1,12 @@
 # Ontolearn
 
-*Ontolearn* is an open-source software library for explainable structured machine learning in Python.
-It contains the following (ready-to-apply) algorithms that learn OWL class expressions from positive and negative examples
-(aka a learning problem):
-- **NCES2** &rarr; (soon) [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
-- **Drill** &rarr; [Deep Reinforcement Learning for Refinement Operators in ALC](https://arxiv.org/pdf/2106.15373.pdf)
-- **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13)
-- **NERO** &rarr; (soon) [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://github.com/dice-group/Nero)
-- **EvoLearner** &rarr; [An evolutionary approach to learn concepts in ALCQ(D)](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
-- **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
+*Ontolearn* is an open-source software library for description logic learning problem.
+- **Drill** &rarr; [Neuro-Symbolic Class Expression Learning](https://www.ijcai.org/proceedings/2023/0403.pdf) accepted in IJCAI 2023
+- **EvoLearner** &rarr; [EvoLearner: Learning Description Logics with Evolutionary Algorithms](https://dl.acm.org/doi/abs/10.1145/3485447.3511925) accepted in WWW 2022
+- **NCES2** &rarr; (soon) [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf) accepted in ECML 2023
+- **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13) accepted in ESWC 2023
+- **NERO** &rarr; [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://link.springer.com/chapter/10.1007/978-3-031-30047-9_9) accepted in IDA 2023
+- **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14) accepted ?
 - **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
 - **OCEL** &rarr; A limited version of CELOE
 
@@ -42,15 +40,11 @@ A quick start up will be as follows:
 
 ```shell
 git clone https://github.com/dice-group/Ontolearn.git && conda create --name onto python=3.8 && conda activate onto 
-# Incase needed
-# conda env update --name onto
-python -c 'from setuptools import setup; setup()' develop
-python -c "import ontolearn"
-python -m pytest tests # Partial test with pytest
-pytest  # test to ensure everything is working as expected
+pip3 install -r requirements.txt && python -c "import ontolearn"
+# wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
+# python -m pytest tests # Partial test with pytest
 ```
-#### Installation via pip
-
+or
 ```shell
 pip install ontolearn  # more on https://pypi.org/project/ontolearn/
 ```
