@@ -1,4 +1,5 @@
 import logging
+import re
 from datetime import date, datetime
 from enum import Enum, auto
 from itertools import chain
@@ -39,6 +40,27 @@ _parse_concept_to_owlapy = FromOwlready2().map_concept
 _parse_datarange_to_owlapy = FromOwlready2().map_datarange
 
 _VERSION_IRI: Final = IRI.create(namespaces.OWL, "versionIRI")
+
+
+def is_valid_url(url):
+    """
+    Check the validity of a URL.
+
+    Args:
+        url (str): The url to validate.
+
+    Return:
+        True if url is not None, and it passes the regex check.
+
+    """
+    regex = re.compile(
+        r'^https?://'  # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
+        r'localhost|'  # localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+        r'(?::\d+)?'  # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+    return url is not None and regex.search(url)
 
 
 def _parse_duration_datatype(literal: str):
@@ -283,12 +305,14 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         self._triplestore_address = triplestore_address
         self._owl2sparql_converter = Owl2SparqlConverter()
         if use_triplestore:
-            assert (triplestore_address is not None), "You should specify the following argument:" \
-                                                       " 'triplestore_address'"
+            assert(is_valid_url(triplestore_address)), "You should specify a valid URL in the following argument: " \
+                                                       "'triplestore_address'"
+
             print(f"INFO  OWLReasoner    :: Make sure the ontology loaded in the triplestore address: "
                   f"{triplestore_address} is the same as the ontology located in: "
                   f"{ontology.get_original_iri().as_str()}\n"
-                  f"INFO  OWLReasoner    :: Changes made during runtime will not be reflected in the triplestore")
+                  f"INFO  OWLReasoner    :: Keep in mind that changes made during runtime are not reflected in the "
+                  f"triplestore")
 
         if isolate:
             self._isolated = True
@@ -520,9 +544,8 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                         yield from [OWLNamedIndividual(IRI.create(i['x']['value'])) for i in
                                     response.json()['results']['bindings']]
             except RequestException as e:
-                raise RequestException(f"Invalid address '{self._triplestore_address}': Please make sure the "
-                                       f"`triplestore_address` is a valid address! Example: "
-                                       f"http://localhost:3030/path/sparql\n -->Error: {e}")
+                raise RequestException(f"Connection error: Please make sure the server is running on the "
+                                       f"`triplestore_address` = '{self._triplestore_address}'.\n -->Error: {e}")
 
     def _sub_classes_recursive(self, ce: OWLClassExpression, seen_set: Set, only_named: bool = True) \
             -> Iterable[OWLClassExpression]:
