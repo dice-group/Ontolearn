@@ -303,16 +303,20 @@ Make a directory for our 'father' database inside jena-fuseki:
 mkdir -p apache-jena-fuseki-4.7.0/databases/father/
 ```
 
-Now just load the 'father' ontology using the following command:
+Now just load the 'father' ontology using the following commands:
 
 ```shell
-cd .. && Fuseki/apache-jena-4.7.0/bin/tdb2.tdbloader --loader=parallel --loc Fuseki/apache-jena-fuseki-4.7.0/databases/father/ KGs/father.owl
+cd ..
+
+Fuseki/apache-jena-4.7.0/bin/tdb2.tdbloader --loader=parallel --loc Fuseki/apache-jena-fuseki-4.7.0/databases/father/ KGs/father.owl
 ```
 
 Launch the server, and it will be waiting eagerly for your queries.
 
 ```shell
-cd Fuseki/apache-jena-fuseki-4.7.0 && java -Xmx4G -jar fuseki-server.jar --tdb2 --loc=databases/father /father
+cd Fuseki/apache-jena-fuseki-4.7.0 
+
+java -Xmx4G -jar fuseki-server.jar --tdb2 --loc=databases/father /father
 ```
 
 Notice that we launched the database found in `Fuseki/apache-jena-fuseki-4.7.0/databases/father` to the path `/father`.
@@ -325,6 +329,7 @@ Create a reasoner that uses this URL and retrieve the desired instances:
 
 ```python
 father_reasoner = OWLReasoner_Owlready2(onto, use_triplestore=True, triplestore_address="http://localhost:3030/father/sparql")
+# ** use `instances` as you would normally do ** .
 ```
 
 -----------------------------------------------------------------------
