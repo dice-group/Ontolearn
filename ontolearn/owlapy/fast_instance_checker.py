@@ -106,6 +106,12 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
         """The reset method shall reset any cached state."""
         self._init()
 
+    def is_isolated(self):
+        return self._base_reasoner.is_isolated()
+
+    def is_using_triplestore(self):
+        return self._base_reasoner.is_using_triplestore()
+
     def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
         yield from self._base_reasoner.data_property_domains(pe, direct=direct)
 
