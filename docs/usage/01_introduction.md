@@ -2,11 +2,13 @@
 
 **Version:** ontolearn 0.5.4
 
-**GitHub repository:** https://github.com/dice-group/Ontolearn
+**GitHub repository:** [https://github.com/dice-group/Ontolearn](https://github.com/dice-group/Ontolearn)
 
 **Publisher and maintainer:** [DICE](https://dice-research.org/) - data science research group of [Paderborn University](https://www.uni-paderborn.de/en/university).
 
 **Contact**: [onto-learn@lists.uni-paderborn.de](mailto:onto-learn@lists.uni-paderborn.de)
+
+**License:** GNU Affero General Public License v3 or later (AGPLv3+)
 
 --------------------------------------------------------------------------------------------
 

@@ -1,4 +1,4 @@
-"""Model adaptors."""
+"""Model adapters."""
 import inspect
 import logging
 from typing import TypeVar, List, Optional, Union
@@ -50,7 +50,7 @@ def ModelAdapter(*args, **kwargs):  # noqa: C901
 
     .. warning ::
         You should not specify both: the _type and the object. For
-        example, you should not give both 'reasoner' and 'reasoner_type' because the ModelAdaptor cant decide
+        example, you should not give both 'reasoner' and 'reasoner_type' because the ModelAdapter cant decide
         which one to use, the reasoner object or create a new reasoner instance using 'reasoner_type'.
 
     Note:
