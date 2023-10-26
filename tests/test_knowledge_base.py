@@ -32,6 +32,19 @@ class KnowledgeBaseTest(unittest.TestCase):
         self.bond5 = OWLClass(IRI.create(self.namespace, 'Bond-5'))
         self.bond7 = OWLClass(IRI.create(self.namespace, 'Bond-7'))
 
+        self.anthracene = OWLClass(IRI.create(self.namespace, 'Anthracene'))
+        self.ball3 = OWLClass(IRI.create(self.namespace, 'Ball3'))
+        self.benzene = OWLClass(IRI.create(self.namespace, 'Benzene'))
+        self.carbon_5_aromatic_ring = OWLClass(IRI.create(self.namespace, 'Carbon_5_aromatic_ring'))
+        self.carbon_6_ring = OWLClass(IRI.create(self.namespace, 'Carbon_6_ring'))
+        self.hetero_aromatic_5_ring = OWLClass(IRI.create(self.namespace, 'Hetero_aromatic_5_ring'))
+        self.hetero_aromatic_6_ring = OWLClass(IRI.create(self.namespace, 'Hetero_aromatic_6_ring'))
+        self.methyl = OWLClass(IRI.create(self.namespace, 'Methyl'))
+        self.nitro = OWLClass(IRI.create(self.namespace, 'Nitro'))
+        self.phenanthrene = OWLClass(IRI.create(self.namespace, 'Phenanthrene'))
+        self.ring_size_5 = OWLClass(IRI.create(self.namespace, 'Ring_size_5'))
+        self.ring_size_6 = OWLClass(IRI.create(self.namespace, 'Ring_size_6'))
+
         # Object Properties
         self.in_bond = OWLObjectProperty(IRI.create(self.namespace, 'inBond'))
         self.has_bond = OWLObjectProperty(IRI.create(self.namespace, 'hasBond'))
@@ -87,6 +100,13 @@ class KnowledgeBaseTest(unittest.TestCase):
 
         classes = frozenset(self.kb.get_types(self.bond5225))
         true_classes = {self.bond, self.bond1, OWLThing}
+        self.assertEqual(true_classes, classes)
+
+        # direct sub-concepts
+        classes = frozenset(self.kb.get_all_direct_sub_concepts(self.ring_structure))
+        true_classes = {self.anthracene, self.ball3, self.benzene, self.carbon_5_aromatic_ring, self.carbon_6_ring,
+                        self.hetero_aromatic_5_ring, self.hetero_aromatic_6_ring, self.methyl, self.nitro,
+                        self.phenanthrene, self.ring_size_5, self.ring_size_6}
         self.assertEqual(true_classes, classes)
 
     def test_property_retrieval(self):
@@ -340,3 +360,8 @@ class KnowledgeBaseTest(unittest.TestCase):
 
         ce = self.generator.negation(OWLDataHasValue(self.has_three, OWLLiteral(True)))
         self.assertEqual(OWLObjectComplementOf(OWLDataHasValue(self.has_three, OWLLiteral(True))), ce)
+
+    def test_repr(self):
+        representation = repr(self.kb)
+        self.assertEqual("KnowledgeBase(path='KGs/Mutagenesis/mutagenesis.owl' <86 classes, 11 properties,"
+                         " 14145 individuals)", representation)

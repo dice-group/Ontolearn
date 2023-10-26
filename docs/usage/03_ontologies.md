@@ -5,7 +5,7 @@ required is an [Ontology](https://www.w3.org/TR/owl2-overview/) with
 In this guide we show the basics of working with ontologies in Ontolearn.
 
 We will frequently **use a sample ontology** to give examples. You can find it in  
-`KGs/father.owl`. Here is a hierarchical diagram that shows the classes and their
+`KGs/father.owl` after you [download the datasets](02_installation.md#download-external-files). Here is a hierarchical diagram that shows the classes and their
 relationships:
 
              Thing

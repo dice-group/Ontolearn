@@ -1,3 +1,4 @@
+"""Fast instance checker reasoner (FIC)."""
 from collections import defaultdict
 import logging
 import operator
@@ -56,17 +57,22 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
 
     def __init__(self, ontology: OWLOntology, base_reasoner: OWLReasoner, *,
                  property_cache: bool = True, negation_default: bool = True, sub_properties: bool = False):
-        """Fast instance checker
+        """Fast instance checker.
 
         Args:
-            ontology: Ontology to use
-            base_reasoner: Reasoner to get instances/types from
-            property_cache: Whether to cache property values
-            negation_default: Whether to assume a missing fact means it is false ("closed world view")
+            ontology: Ontology to use.
+            base_reasoner: Reasoner to get instances/types from.
+            property_cache: Whether to cache property values.
+            negation_default: Whether to assume a missing fact means it is false ("closed world view").
             sub_properties: Whether to take sub properties into account for the
-                :func:`OWLReasoner_FastInstanceChecker.instances` retrieval
+                :func:`OWLReasoner_FastInstanceChecker.instances` retrieval.
             """
         super().__init__(ontology)
+        if base_reasoner.is_using_triplestore():
+            print("WARN  OWLReasoner    :: Instance retrieval will be performed via triplestore using SPARQL query "
+                  "because `use_triplestore` is set to True for the `base_reasoner`. The `instances` method will "
+                  "default to the implementation in the base_reasoner and every functionality offered by "
+                  "OWLReasoner_FastInstanceChecker will be irrelevant to this method ")
         if base_reasoner.is_isolated():
             self._ontology = base_reasoner.get_root_ontology()
         else:
@@ -97,8 +103,14 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
             })
 
     def reset(self):
-        """The reset method shall reset any cached state"""
+        """The reset method shall reset any cached state."""
         self._init()
+
+    def is_isolated(self):
+        return self._base_reasoner.is_isolated()
+
+    def is_using_triplestore(self):
+        return self._base_reasoner.is_using_triplestore()
 
     def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
         yield from self._base_reasoner.data_property_domains(pe, direct=direct)
@@ -139,12 +151,15 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
         self._base_reasoner.flush()
 
     def instances(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLNamedIndividual]:
-        if direct:
-            if not self.__warned & 2:
-                logger.warning("direct not implemented")
-                self.__warned |= 2
-        temp = self._find_instances(ce)
-        yield from temp
+        if self._base_reasoner.is_using_triplestore():
+            yield from self._base_reasoner.instances(ce, direct)
+        else:
+            if direct:
+                if not self.__warned & 2:
+                    logger.warning("direct not implemented")
+                    self.__warned |= 2
+            temp = self._find_instances(ce)
+            yield from temp
 
     def sub_classes(self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True) \
             -> Iterable[OWLClassExpression]:
@@ -180,7 +195,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
         return self._ontology
 
     def _lazy_cache_obj_prop(self, pe: OWLObjectPropertyExpression) -> None:
-        """Get all individuals involved in this object property and put them in a Dict"""
+        """Get all individuals involved in this object property and put them in a Dict."""
         if isinstance(pe, OWLObjectInverseOf):
             inverse = True
             if pe.get_named_property() in self._obj_prop_inv:
@@ -268,7 +283,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
 
     def _find_some_values(self, pe: OWLObjectPropertyExpression, filler_inds: Set[OWLNamedIndividual],
                           min_count: int = 1, max_count: Optional[int] = None) -> FrozenSet[OWLNamedIndividual]:
-        """Get all individuals that have one of filler_inds as their object property value"""
+        """Get all individuals that have one of filler_inds as their object property value."""
         ret = set()
 
         if self._property_cache:
@@ -307,7 +322,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
         return frozenset(ret)
 
     def _lazy_cache_data_prop(self, pe: OWLDataPropertyExpression) -> None:
-        """Get all individuals and values involved in this data property and put them in a Dict"""
+        """Get all individuals and values involved in this data property and put them in a Dict."""
         assert (isinstance(pe, OWLDataProperty))
         if pe in self._data_prop:
             return
