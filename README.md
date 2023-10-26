@@ -1,12 +1,12 @@
 # Ontolearn
 
 *Ontolearn* is an open-source software library for description logic learning problem.
-- **Drill** &rarr; [Neuro-Symbolic Class Expression Learning](https://www.ijcai.org/proceedings/2023/0403.pdf) accepted in IJCAI 2023
-- **EvoLearner** &rarr; [EvoLearner: Learning Description Logics with Evolutionary Algorithms](https://dl.acm.org/doi/abs/10.1145/3485447.3511925) accepted in WWW 2022
-- **NCES2** &rarr; (soon) [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf) accepted in ECML 2023
-- **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13) accepted in ESWC 2023
-- **NERO** &rarr; [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://link.springer.com/chapter/10.1007/978-3-031-30047-9_9) accepted in IDA 2023
-- **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14) accepted ?
+- **Drill** &rarr; [Neuro-Symbolic Class Expression Learning](https://www.ijcai.org/proceedings/2023/0403.pdf)
+- **EvoLearner** &rarr; [EvoLearner: Learning Description Logics with Evolutionary Algorithms](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
+- **NCES2** &rarr; (soon) [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
+- **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13) 
+- **NERO** &rarr; [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://link.springer.com/chapter/10.1007/978-3-031-30047-9_9)
+- **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
 - **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
 - **OCEL** &rarr; A limited version of CELOE
 
@@ -23,9 +23,7 @@ For detailed instructions please refer to the [installation guide](https://ontol
 
 ### Installation from source
 
-Make sure to set up a virtual python environment like [Anaconda](https://www.anaconda.com/) 
-before continuing with the installation. 
-
+Make sure to set up a virtual python environment like [Anaconda](https://www.anaconda.com/)  before continuing with the installation. 
 
 To successfully pass all the tests you need to download some external resources in advance 
 (see [_Download external files_](#download-external-files)). You will need
@@ -207,20 +205,19 @@ flake8
 
 ----------------------------------------------------------------------------
 
-#### Contribution
-Feel free to create a pull request!
-
-
-## Relevant Papers
-
-- [NCES2](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf): Neural Class Expression Synthesis in ALCHIQ(D)
-- [NCES](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13): Neural Class Expression Synthesis
-- [Evolearner](https://doi.org/10.1145/3485447.3511925): Learning description logics with evolutionary algorithms.
-- [CLIP](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14): Learning Concept Lengths Accelerates Concept Learning in ALC.
 ### Citing
 Currently, we are working on our manuscript describing our framework. 
 If you find our work useful in your research, please consider citing the respective paper:
 ```
+# DRILL
+@inproceedings{demir2023drill,
+  added-at = {2023-08-01T11:08:41.000+0200},
+  author = {Demir, Caglar and Ngomo, Axel-Cyrille Ngonga},
+  booktitle = {The 32nd International Joint Conference on Artificial Intelligence, IJCAI 2023},
+  title = {Neuro-Symbolic Class Expression Learning},
+  url = {https://www.ijcai.org/proceedings/2023/0403.pdf},
+ year={2023}
+}
 
 # NCES2
 @inproceedings{kouagou2023nces2,
