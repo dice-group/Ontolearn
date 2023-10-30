@@ -232,6 +232,8 @@ class AbstractNode(metaclass=ABCMeta):
         addr = addr[0:2] + addr[6:-1]
         return f'{type(self)} at {addr}'
 
+    def __repr__(self):
+        return self.__str__()
 
 class AbstractOEHeuristicNode(metaclass=ABCMeta):
     """Abstract Node for the CELOEHeuristic heuristic function.
@@ -465,7 +467,11 @@ class AbstractDrill:
                  num_epochs_per_replay=None, num_workers=None, verbose=0):
         self.name = 'DRILL'
         self.instance_embeddings = read_csv(path_of_embeddings)
-        self.embedding_dim = self.instance_embeddings.shape[1]
+        if self.instance_embeddings is None:
+            print("No embeddings found")
+            self.embedding_dim = None
+        else:
+            self.embedding_dim = self.instance_embeddings.shape[1]
         self.reward_func = reward_func
         self.representation_mode = representation_mode
         assert representation_mode in ['averaging', 'sampling']
