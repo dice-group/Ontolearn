@@ -22,7 +22,7 @@ setup(
         "tqdm>=4.64.0",
         "tokenizers>=0.12.1",
         "transformers>=4.19.2",
-        "gradio>=3.50.2"
+        "gradio>=3.50.2",
         "pytest>=7.2.2"],
     author='Caglar Demir',
     author_email='caglardemir8@gmail.com',
