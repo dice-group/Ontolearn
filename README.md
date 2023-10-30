@@ -89,39 +89,36 @@ For more detailed instructions we suggest to follow the [guides](https://ontolea
 Below we give a simple example on using CELOE to learn class expressions for a small dataset.
 
 ```python
-from ontolearn.concept_learner import CELOE
-from ontolearn.model_adapter import ModelAdapter
+from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, Drill
+from ontolearn.learning_problem import PosNegLPStandard
+from ontolearn.metrics import F1
 from ontolearn.owlapy.model import OWLNamedIndividual, IRI
-from ontolearn.owlapy.namespaces import Namespaces
+from ontolearn.utils import setup_logging
 from ontolearn.owlapy.render import DLSyntaxObjectRenderer
-from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
+setup_logging()
 
-NS = Namespaces('ex', 'http://example.com/father#')
-
-# Defining the learning problem
-positive_examples = {OWLNamedIndividual(IRI.create(NS, 'stefan')),
-                     OWLNamedIndividual(IRI.create(NS, 'markus')),
-                     OWLNamedIndividual(IRI.create(NS, 'martin'))}
-negative_examples = {OWLNamedIndividual(IRI.create(NS, 'heinz')),
-                     OWLNamedIndividual(IRI.create(NS, 'anna')),
-                     OWLNamedIndividual(IRI.create(NS, 'michelle'))}
-
-# Create a model of CELOE using ModelAdapter
-# Only the class of the learning algorithm is specified 
-model = ModelAdapter(learner_type=CELOE,
-                     reasoner_type=OWLReasoner_Owlready2_ComplexCEInstances,
-                     path="KGs/father.owl")
-
-# Fit the learning problem to the model
-model.fit(pos=positive_examples,
-          neg=negative_examples)
-
-# Used to render to description logics syntax
 renderer = DLSyntaxObjectRenderer()
 
-# Print the rendered top best hypothesis
-for desc in model.best_hypotheses(1):
-    print('The result:', renderer.render(desc.concept), 'has quality', desc.quality)
+
+kb = KnowledgeBase(path="../KGs/Family/family-benchmark_rich_background.owl")
+lp = PosNegLPStandard(pos={OWLNamedIndividual(IRI.create(p)) for p in
+                           {"http://www.benchmark.org/family#F10F175",
+                            "http://www.benchmark.org/family#F10F177"}},
+                      neg={OWLNamedIndividual(IRI.create("http://www.benchmark.org/family#F9M142"))})
+
+max_runtime, topk=1, 3
+preds_evo = list(EvoLearner(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime).fit(lp).best_hypotheses(n=topk))
+preds_celoe = list(CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime).fit(lp).best_hypotheses(n=topk))
+preds_ocel = list(OCEL(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime).fit(lp).best_hypotheses(n=topk))
+preds_drill = list(Drill(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime).fit(lp).best_hypotheses(n=topk))
+
+for i in range(3):
+    print(f"{i+1}.Pred:\n"
+          f"DRILL:{renderer.render(preds_drill[i].concept)}\n"
+          f"EvoLearner:{renderer.render(preds_celoe[i].concept)}\n"
+          f"CELOE:{renderer.render(preds_celoe[i].concept)}\nOCEL:{renderer.render(preds_ocel[i].concept)}\n")
+
 ```
 The goal in this example is to learn a class expression for the concept "father". 
 The output is as follows:

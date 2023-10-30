@@ -288,8 +288,6 @@ class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality
             _NodeIndividualsCount.__str__(self),
         ))
 
-    def __repr__(self):
-        return self.__str__()
 
 
 class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodeParentRef['RL_State']):
