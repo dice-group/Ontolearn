@@ -161,7 +161,7 @@ class Owl2SparqlConverter:
 
     def _maybe_quote_p(self, p):
         if isinstance(p, str):
-            if p.startswith("?") or p == "a":
+            if p.startswith("?") or p == "a" or p.startswith("<"):
                 return p
             else:
                 return f"<{p}>"
@@ -219,6 +219,13 @@ class Owl2SparqlConverter:
     def _(self, ce: OWLClass):
         if self.ce == ce or not ce.is_owl_thing():
             self.append_triple(self.current_variable, "a", self.render(ce))
+            # old_var = self.current_variable
+            # new_var = self.mapping.new_individual_variable()
+            # with self.stack_variable(new_var):
+            #     self.append_triple(old_var, "a", new_var)
+            #     self.append_triple(new_var, "<http://www.w3.org/2000/01/rdf-schema#subClassOf>*", self.render(ce))
+        elif ce.is_owl_thing():
+            self.append_triple(self.current_variable, "a", "<http://www.w3.org/2002/07/owl#Thing>")
 
     # an overload of process function
     # this overload is responsible for handling intersections of concepts (e.g., Brother ⊓ Father)
@@ -324,46 +331,46 @@ class Owl2SparqlConverter:
         # here, the first group graph pattern starts
         # the first group graph pattern ensures deals with the entities that appear in a triple with the property
         self.append("{")
-        if filler.is_owl_thing():
-            self.append_triple(self.current_variable, self.mapping.new_property_variable(), object_variable)
+        # if filler.is_owl_thing():
+        #     self.append_triple(self.current_variable, self.mapping.new_property_variable(), object_variable)
+        # else:
+        if property_expression.is_anonymous():
+            # property expression is inverse of a property
+            self.append_triple(object_variable, predicate, self.current_variable)
         else:
-            if property_expression.is_anonymous():
-                # property expression is inverse of a property
-                self.append_triple(object_variable, predicate, self.current_variable)
-            else:
-                self.append_triple(self.current_variable, predicate, object_variable)
+            self.append_triple(self.current_variable, predicate, object_variable)
 
-            # restrict filler
-            var = self.mapping.new_individual_variable()
-            cnt_var1 = self.new_count_var()
-            # the count needs to use distinct
-            self.append(f"{{ SELECT {subject} ( COUNT( DISTINCT {var} ) AS {cnt_var1} ) WHERE {{ ")
-            self.append_triple(subject, predicate, var)
-            # here, we recursively process the filler (Male in our example)
-            with self.stack_variable(var):
-                self.process(filler)
-            self.append(f" }} GROUP BY {subject} }}")
+        # restrict filler
+        var = self.mapping.new_individual_variable()
+        cnt_var1 = self.new_count_var()
+        # the count needs to use distinct
+        self.append(f"{{ SELECT {subject} ( COUNT( DISTINCT {var} ) AS {cnt_var1} ) WHERE {{ ")
+        self.append_triple(subject, predicate, var)
+        # here, we recursively process the filler (Male in our example)
+        with self.stack_variable(var):
+            self.process(filler)
+        self.append(f" }} GROUP BY {subject} }}")
 
-            var = self.mapping.new_individual_variable()
-            cnt_var2 = self.new_count_var()
-            # the count needs to use distinct
-            self.append(f"{{ SELECT {subject} ( COUNT( DISTINCT {var} ) AS {cnt_var2} ) WHERE {{ ")
-            self.append_triple(subject, predicate, var)
-            self.append(f" }} GROUP BY {subject} }}")
+        var = self.mapping.new_individual_variable()
+        cnt_var2 = self.new_count_var()
+        # the count needs to use distinct
+        self.append(f"{{ SELECT {subject} ( COUNT( DISTINCT {var} ) AS {cnt_var2} ) WHERE {{ ")
+        self.append_triple(subject, predicate, var)
+        self.append(f" }} GROUP BY {subject} }}")
 
-            self.append(f" FILTER( {cnt_var1} = {cnt_var2} )")
-            self.append("} UNION { ")
+        self.append(f" FILTER( {cnt_var1} = {cnt_var2} )")
+        self.append("} UNION { ")
 
-            # here, the second group graph pattern starts
-            # the second group graph pattern returns all those entities that do not appear in a triple with the property
-            self.append_triple(subject, self.mapping.new_individual_variable(), self.mapping.new_individual_variable())
-            self.append("FILTER NOT EXISTS { ")
-            if property_expression.is_anonymous():
-                # property expression is inverse of a property
-                self.append_triple(self.mapping.new_individual_variable(), predicate, self.current_variable)
-            else:
-                self.append_triple(self.current_variable, predicate, self.mapping.new_individual_variable())
-            self.append(" } }")
+        # here, the second group graph pattern starts
+        # the second group graph pattern returns all those entities that do not appear in a triple with the property
+        self.append_triple(subject, self.mapping.new_individual_variable(), self.mapping.new_individual_variable())
+        self.append("FILTER NOT EXISTS { ")
+        if property_expression.is_anonymous():
+            # property expression is inverse of a property
+            self.append_triple(self.mapping.new_individual_variable(), predicate, self.current_variable)
+        else:
+            self.append_triple(self.current_variable, predicate, self.mapping.new_individual_variable())
+        self.append(" } }")
 
     # an overload of process function
     # this overload is responsible for handling the exists operator combined with an individual (e.g., ∃hasChild.{john})
