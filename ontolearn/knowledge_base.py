@@ -130,6 +130,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  individuals_cache_size=128):
         ...
 
+    @overload
+    def __init__(self, *, use_triplestore: bool = False, triplestore_address: str = None):
+        ...
+
     def __init__(self, *,
                  path: Optional[str] = None,
 
@@ -165,22 +169,33 @@ class KnowledgeBase(AbstractKnowledgeBase):
             # raise TypeError("neither ontology nor manager factory given")
 
         if ontology is None:
-            if path is None:
+            if use_triplestore is True:
+                if path is None:
+                    # create a dummy ontology, so we can avoid making tons of changes.
+                    self._ontology = OWLOntology_Owlready2(self._manager, IRI.create("dummy_ontology#onto"), load=False,
+                                                           use_triplestore=True,
+                                                           triplestore_address=triplestore_address)
+                else:
+                    # why not create a real ontology if the user gives the path :) (triplestore will be used anyway)
+                    self._ontology = OWLOntology_Owlready2(self._manager, IRI.create('file://' + self.path), load=True,
+                                                           use_triplestore=True,
+                                                           triplestore_address=triplestore_address)
+            elif path is None:
                 raise TypeError("path missing")
-            self._ontology = self._manager.load_ontology(IRI.create('file://' + self.path))
+            else:
+                self._ontology = self._manager.load_ontology(IRI.create('file://' + self.path))
 
-            from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2
-            if isinstance(self._manager, OWLOntologyManager_Owlready2) and backend_store:
-                self._manager.save_world()
-                logger.debug("Synced world to backend store")
+                from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2
+                if isinstance(self._manager, OWLOntologyManager_Owlready2) and backend_store:
+                    self._manager.save_world()
+                    logger.debug("Synced world to backend store")
 
-        if reasoner is not None:
+        if reasoner is not None and reasoner.is_using_triplestore() == use_triplestore:
             self._reasoner = reasoner
-        elif reasoner_factory is not None:
+        elif reasoner_factory is not None and not use_triplestore:
             self._reasoner = reasoner_factory(self._ontology)
-        else:  # default to fast instance checker
+        else:
             self._reasoner = _Default_ReasonerFactory(self._ontology, use_triplestore, triplestore_address)
-            # raise TypeError("neither reasoner nor reasoner factory given")
 
         if length_metric is not None:
             self._length_metric = length_metric
@@ -209,7 +224,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.generator = ConceptGenerator()
 
         from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-        if isinstance(self._reasoner, OWLReasoner_FastInstanceChecker):
+        if isinstance(self._reasoner, OWLReasoner_FastInstanceChecker) and not use_triplestore:
             self._ind_set = self._reasoner._ind_set  # performance hack
         else:
             individuals = self._ontology.individuals_in_signature()
