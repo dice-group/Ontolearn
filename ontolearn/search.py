@@ -745,6 +745,16 @@ class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
         self._nodes.clear()
 
 
+class EvaluatedConcept:
+    """Explicitly declare the attributes that should be returned by the evaluate_concept method of a KnowledgeBase.
+
+    This way, Python uses a more efficient way to store the instance attributes, which can significantly reduce the
+    memory usage.
+    """
+    __slots__ = 'q', 'inds', 'ic'
+    pass
+
+
 class SuperProp:
     """
     Super wrapper which allows property setting & deletion. Super can't be subclassed with empty __init__ arguments.

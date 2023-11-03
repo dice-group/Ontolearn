@@ -9,7 +9,8 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.abstracts import AbstractScorer, AbstractLearningProblem, AbstractKnowledgeBase, \
     EncodedPosNegLPStandardKind
 from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric
-from ontolearn.knowledge_base import EvaluatedConcept, Factory, _Default_ClassExpressionLengthMetricFactory
+from ontolearn.knowledge_base import Factory, _Default_ClassExpressionLengthMetricFactory
+from ontolearn.search import EvaluatedConcept
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.utils import oplogging
 from ontolearn.owlapy.ext import OWLReasonerEx

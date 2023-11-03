@@ -30,12 +30,11 @@ from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVoca
     owlliteral_to_primitive_string
 from ontolearn.fitness_functions import LinearPressureFitness
 from ontolearn.heuristics import OCELHeuristic
-from ontolearn.knowledge_base import EvaluatedConcept
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from ontolearn.metrics import Accuracy, F1
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.search import EvoLearnerNode, HeuristicOrderedNode, LBLNode, OENode, TreeNode, LengthOrderedNode, \
-    QualityOrderedNode, RL_State, DRILLSearchTreePriorityQueue
+    QualityOrderedNode, RL_State, DRILLSearchTreePriorityQueue, EvaluatedConcept
 from ontolearn.utils import oplogging, create_experiment_folder
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter, EntropyValueSplitter
 from ontolearn.base_nces import BaseNCES
