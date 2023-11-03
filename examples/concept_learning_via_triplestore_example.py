@@ -8,38 +8,39 @@ from ontolearn.owlapy.model import IRI, OWLNamedIndividual
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 
 """
-This is an example to show how simply you can execute a learning algorithm having a kb that uses a triplestore.
+
+This is an example to show how simply you can execute a learning algorithm having a knowledge base that uses a 
+triplestore.
 
 Prerequisite:
 - Server hosting the dataset as a triplestore
 
 For this example you can fulfill the prerequisites as follows:
-- Load and launch the triplestore server. See https://ontolearn-docs-dice-group.netlify.app/usage/05_reasoner#loading-and-launching-a-triplestore
-- Note: The example in this script is for 'family' dataset, make the changes accordingly when setting up the triplestore server.
-
+- Load and launch the triplestore server following our guide.
+  See https://ontolearn-docs-dice-group.netlify.app/usage/05_reasoner#loading-and-launching-a-triplestore
+- Note: The example in this script is for 'family' dataset, make the changes accordingly when setting up the triplestore 
+  server.
+  
 """
 
-with open('synthetic_problems.json') as json_file:
-    settings = json.load(json_file)
-
-
-# Create a knowledge base object for the Family benchmark using by specifying URL address of the triplestore host
+# Create a knowledge base object for the Family dataset using the URL address of the triplestore host only
 kb = KnowledgeBase(use_triplestore=True, triplestore_address="http://localhost:3030/family/sparql")
-
 
 # Define the model
 heur = CELOEHeuristic(expansionPenaltyFactor=0.05, startNodeBonus=1.0, nodeRefinementPenalty=0.01)
 op = ModifiedCELOERefinement(knowledge_base=kb, use_negation=False, use_all_constructor=False)
 model = CELOE(knowledge_base=kb, refinement_operator=op, heuristic_func=heur)
 
-# Define learning problem
+# Define a learning problem
+with open('synthetic_problems.json') as json_file:
+    settings = json.load(json_file)
 p = set(settings['problems']['Uncle']['positive_examples'])
 n = set(settings['problems']['Uncle']['negative_examples'])
 typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
 typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
 lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
 
-# Fit the lp to the model
+# Fit the learning problem to the model
 model.fit(lp)
 
 # Retrieve and print top hypotheses

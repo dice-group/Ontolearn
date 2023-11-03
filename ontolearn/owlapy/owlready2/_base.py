@@ -10,7 +10,7 @@ import owlready2
 import requests
 from owlready2 import declare_datatype
 from pandas import Timedelta
-from requests.exceptions import RequestException
+from requests.exceptions import RequestException, JSONDecodeError
 
 from ontolearn.owlapy.owl2sparql.converter import Owl2SparqlConverter
 from ontolearn.owlapy.owlready2 import axioms
@@ -75,9 +75,19 @@ def get_results_from_ts(triplestore_address: str, query: str, return_type: type)
     Returns:
         Generator containing the results of the query as the given type.
     """
-    response = requests.post(triplestore_address, data={'query': query})
-    return [return_type(IRI.create(i['x']['value'])) for i in
-            response.json()['results']['bindings']]
+    try:
+        response = requests.post(triplestore_address, data={'query': query})
+    except RequestException as e:
+        raise RequestException(f"Make sure the server is running on the `triplestore_address` = '{triplestore_address}'"
+                               f". Check the error below:"
+                               f"\n  -->Error: {e}")
+    try:
+        return [return_type(IRI.create(i['x']['value'])) for i in
+                response.json()['results']['bindings']]
+    except JSONDecodeError as e:
+        raise JSONDecodeError(f"Something went wrong with decoding JSON from the response. Check for typos in "
+                              f"the `triplestore_address` = '{triplestore_address}' otherwise the error is likely "
+                              f"caused by an internal issue. \n  -->Error: {e}")
 
 
 def create_op_str(op: OWLObjectPropertyExpression) -> str:
@@ -89,7 +99,7 @@ def create_op_str(op: OWLObjectPropertyExpression) -> str:
 
 
 def suf(direct: bool):
-    """Put the start for rdfs properties depending on direct param"""
+    """Put the star for rdfs properties depending on direct param"""
     suffix = " "
     if not direct:
         suffix = "* "
@@ -356,11 +366,13 @@ class OWLOntology_Owlready2(OWLOntology):
                         pass  # XXX TODO
 
     def _get_property_domains(self, pe: OWLProperty):
-        if isinstance(pe, OWLObjectProperty) or isinstance(pe,OWLDataProperty):
+        if isinstance(pe, OWLObjectProperty) or isinstance(pe, OWLDataProperty):
             query = "PREFIX  rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" \
                     "SELECT ?x WHERE { " + f"<{pe.get_iri().as_str()}>" + " rdfs:domain ?x. }"
             domains = set(get_results_from_ts(self._triplestore_address, query, OWLClass))
             return domains
+        else:
+            raise NotImplementedError
 
     def get_original_iri(self):
         """Get the IRI argument that was used to create this ontology."""
@@ -402,6 +414,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         self._triplestore_address = triplestore_address
         self._owl2sparql_converter = Owl2SparqlConverter()
         if use_triplestore:
+            # is triplestore_address valid ?
             assert(is_valid_url(triplestore_address)), "You should specify a valid URL in the following argument: " \
                                                        "'triplestore_address'"
         if isolate:
@@ -605,16 +618,11 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
 
     def instances(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLNamedIndividual]:
         if self._use_triplestore:
-            try:
-                ce_to_sparql = self._owl2sparql_converter.as_query("?x", ce)
-                if not direct:
-                    ce_to_sparql = ce_to_sparql.replace("?x a ", "?x a ?some_cls. \n ?some_cls "
-                                                                 "<http://www.w3.org/2000/01/rdf-schema#subClassOf>* ")
-                yield from get_results_from_ts(self._triplestore_address, ce_to_sparql, OWLNamedIndividual)
-            except RequestException as e:
-                raise RequestException(f"Request Exception: Make sure the server is running on the "
-                                       f"`triplestore_address` = '{self._triplestore_address}'. Check the error below:"
-                                       f"\n  -->Error: {e}")
+            ce_to_sparql = self._owl2sparql_converter.as_query("?x", ce)
+            if not direct:
+                ce_to_sparql = ce_to_sparql.replace("?x a ", "?x a ?some_cls. \n ?some_cls "
+                                                             "<http://www.w3.org/2000/01/rdf-schema#subClassOf>* ")
+            yield from get_results_from_ts(self._triplestore_address, ce_to_sparql, OWLNamedIndividual)
 
         else:
             if direct:
