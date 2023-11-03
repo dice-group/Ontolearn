@@ -17,7 +17,7 @@ Prerequisite:
 
 For this example you can fulfill the prerequisites as follows:
 - Load and launch the triplestore server following our guide.
-  See https://ontolearn-docs-dice-group.netlify.app/usage/05_reasoner#loading-and-launching-a-triplestore
+  See https://ontolearn-docs-dice-group.netlify.app/usage/06_concept_learners#loading-and-launching-a-triplestore
 - Note: The example in this script is for 'family' dataset, make the changes accordingly when setting up the triplestore 
   server.
   

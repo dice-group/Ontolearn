@@ -9,10 +9,12 @@ of Ontolearn library:
 - [OCEL](ontolearn.concept_learner.OCEL)
 
 
-> :warning: **_DRILL_ is not fully implemented in Ontolearn**. In the meantime you can refer to 
+> **Important Notice**: 
+> 
+> **_DRILL_ is not fully implemented in Ontolearn**. In the meantime you can refer to 
 > [_DRILL's_ GitHub repo](https://github.com/dice-group/drill). 
->
-> :warning: **Documentation for _NCES_ coming soon**. In the meantime visit _NCES_ jupyter notebooks
+> 
+> **Documentation for _NCES_ coming soon**. In the meantime visit _NCES_ jupyter notebooks
 > inside [examples folder](https://github.com/dice-group/Ontolearn/tree/develop/examples).
 
 These algorithms are similar in execution, for that reason, we are 
@@ -275,6 +277,107 @@ python deploy_cl.py --help
 ```
 
 ---------------------------------------------------------------------------------------
+## Use Triplestore Knowledge Base
+
+Instead of going through nodes using expensive computation resources why not just make use of the
+efficient approach of querying a triplestore using SPARQL queries. We have brought this 
+functionality to Ontolearn for our learning algorithms, and we take care of the conversion part behind the scene.
+Let's see what it takes to make use of it.
+
+First of all you need a server which should host the triplestore for your ontology. If you don't
+already have one, see [Loading and Launching a Triplestore](#loading-and-launching-a-triplestore) below.
+
+Now you can simply initialize the `KnowledgeBase` object that will server as an input for your desired 
+concept learner as follows:
+
+```python
+from ontolearn.knowledge_base import KnowledgeBase
+
+kb = KnowledgeBase(use_triplestore=True, triplestore_address="http://your_domain/some_path/sparql")
+```
+
+Notice that we did not provide a value for the `path` argument. When using triplestore, it is not required. Keep
+in mind that the `kb` will create a default reasoner that uses the triplestore. Passing a custom
+reasoner will not make any difference, because they all behave the same when `use_triplestore=True`.
+You may wonder what happens to the `Ontology` object of the `kb` since no path was given. A default ontology 
+object is created that will also use the triplestore for its processes. Basically every querying process concerning
+concept learning is now using the triplestore.
+
+> **Important notice:** The performance of a concept learner may differentiate when using triplestore. This 
+> differences will be flattened soon.
+
+## Loading and Launching a Triplestore
+
+We will provide a simple approach to load and launch a triplestore in a local server. For this,
+we will be using _apache-jena_ and _apache-jena-fuseki_. As a prerequisite you need
+JDK 11 or higher and if you are on Windows, you need [Cygwin](https://www.cygwin.com/). In case of
+issues or any further reference please visit the official page of [Apache Jena](https://jena.apache.org/index.html) 
+and check the documentation under "Triple Store".
+
+Having that said, let us now load and launch a triplestore on the "Father" ontology:
+
+Open a terminal window and make sure you are in the root directory. Create a directory to 
+store the files for Fuseki server:
+
+```shell
+mkdir Fuseki && cd Fuseki
+```
+Install _apache-jena_ and _apache-jena-fuseki_. We will use version 4.7.0.
+
+```shell
+# install Jena
+wget https://archive.apache.org/dist/jena/binaries/apache-jena-4.7.0.tar.gz
+#install Jena-Fuseki
+wget https://archive.apache.org/dist/jena/binaries/apache-jena-fuseki-4.7.0.tar.gz
+```
+
+Unzip the files:
+
+```shell
+tar -xzf apache-jena-fuseki-4.7.0.tar.gz
+tar -xzf apache-jena-4.7.0.tar.gz
+```
+
+Make a directory for our 'father' database inside jena-fuseki:
+
+```shell
+mkdir -p apache-jena-fuseki-4.7.0/databases/father/
+```
+
+Now just load the 'father' ontology using the following commands:
+
+```shell
+cd ..
+
+Fuseki/apache-jena-4.7.0/bin/tdb2.tdbloader --loader=parallel --loc Fuseki/apache-jena-fuseki-4.7.0/databases/father/ KGs/father.owl
+```
+
+Launch the server, and it will be waiting eagerly for your queries.
+
+```shell
+cd Fuseki/apache-jena-fuseki-4.7.0 
+
+java -Xmx4G -jar fuseki-server.jar --tdb2 --loc=databases/father /father
+```
+
+Notice that we launched the database found in `Fuseki/apache-jena-fuseki-4.7.0/databases/father` to the path `/father`.
+By default, jena-fuseki runs on port 3030 so the full URL would be: `http://localhost:3030/father`. When 
+you pass this url to `triplestore_address` argument of the reasoner, you have to add the
+`/sparql` sub-path indicating to the server that we are querying via SPARQL queries. Full path now should look like:
+`http://localhost:3030/father/sparql`.
+
+You can now create a knowledge base or a reasoner object that uses this URL for their 
+operations:
+
+```python
+from ontolearn.knowledge_base import KnowledgeBase
+
+father_kb = KnowledgeBase(use_triplestore=True, triplestore_address="http://localhost:3030/father/sparql")
+# ** Execute the learning algorithm as you normally would. ** .
+```
+
+-------------------------------------------------------------------
+
 
 In this guide, we have shown the prerequisites of running a concept learner,
 how to configure it's input properties and how to run it to successfully
