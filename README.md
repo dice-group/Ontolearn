@@ -1,6 +1,9 @@
 # Ontolearn
 
 *Ontolearn* is an open-source software library for description logic learning problem.
+Find more in the [Documentation](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction).
+
+Learning algorithms: 
 - **Drill** &rarr; [Neuro-Symbolic Class Expression Learning](https://www.ijcai.org/proceedings/2023/0403.pdf)
 - **EvoLearner** &rarr; [EvoLearner: Learning Description Logics with Evolutionary Algorithms](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
 - **NCES2** &rarr; (soon) [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
@@ -55,7 +58,7 @@ for i in range(3):
           f"CELOE:{renderer.render(preds_celoe[i].concept)}\nOCEL:{renderer.render(preds_ocel[i].concept)}\n")
 ```
 
-Fore more please refer to  the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder,
+Fore more please refer to  the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder.
 
 
 ## Deployment 

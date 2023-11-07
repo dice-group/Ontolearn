@@ -56,20 +56,24 @@ class Test_Owl2SparqlConverter(unittest.TestCase):
         cnv = Owl2SparqlConverter()
         root_var = "?x"
         query = cnv.as_query(root_var, ce, False)
+        print(query)
         query_t = """SELECT
  DISTINCT ?x WHERE { 
 ?x <http://dl-learner.org/carcinogenesis#hasBond> ?s_1 . 
 {
 { SELECT ?s_1 WHERE { 
 ?s_1 <http://dl-learner.org/carcinogenesis#hasAtom> ?s_2 . 
+?s_2 a <http://www.w3.org/2002/07/owl#Thing> . 
  } GROUP BY ?s_1 HAVING ( COUNT ( ?s_2 ) <= 4 ) }
 } UNION {
 ?s_1 ?s_3 ?s_4 . 
 FILTER NOT EXISTS { 
 ?s_1 <http://dl-learner.org/carcinogenesis#hasAtom> ?s_5 . 
+?s_5 a <http://www.w3.org/2002/07/owl#Thing> . 
  } }
 { SELECT ?s_1 WHERE { 
 ?s_1 <http://dl-learner.org/carcinogenesis#hasAtom> ?s_6 . 
+?s_6 a <http://www.w3.org/2002/07/owl#Thing> . 
  } GROUP BY ?s_1 HAVING ( COUNT ( ?s_6 ) >= 1 ) }
  }"""
 #         query_t = """SELECT

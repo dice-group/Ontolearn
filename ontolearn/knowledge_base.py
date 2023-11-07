@@ -2,7 +2,6 @@
 
 import logging
 import random
-from functools import singledispatchmethod
 from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict
 from ontolearn.owlapy.owlready2 import OWLOntology_Owlready2, OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
@@ -11,8 +10,9 @@ from ontolearn.owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner,
     OWLObjectAllValuesFrom, OWLDatatype, BooleanOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, OWLThing, \
     OWLObjectPropertyExpression, OWLLiteral, OWLDataPropertyExpression
 from ontolearn.owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.search import EvaluatedConcept
 from ontolearn.owlapy.util import iter_count, LRUCache
-from .abstracts import AbstractKnowledgeBase, AbstractScorer, EncodedLearningProblem, AbstractLearningProblem
+from .abstracts import AbstractKnowledgeBase, AbstractScorer, EncodedLearningProblem
 from .concept_generator import ConceptGenerator
 from .core.owl.utils import OWLClassExpressionLengthMetric
 from .learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
@@ -42,16 +42,6 @@ def _Default_ReasonerFactory(onto: OWLOntology, use_triplestore: bool, triplesto
 
 def _Default_ClassExpressionLengthMetricFactory() -> OWLClassExpressionLengthMetric:
     return OWLClassExpressionLengthMetric.get_default()
-
-
-class EvaluatedConcept:
-    """Explicitly declare the attributes that should be returned by the evaluate_concept method.
-
-    This way, Python uses a more efficient way to store the instance attributes, which can significantly reduce the
-    memory usage.
-    """
-    __slots__ = 'q', 'inds', 'ic'
-    pass
 
 # TODO:CD: __init__ is overcrowded. This bit can/should be simplified to few lines
 # TODO:CD: Namings are not self-explanatory: User does not need to know
@@ -130,6 +120,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  individuals_cache_size=128):
         ...
 
+    @overload
+    def __init__(self, *, use_triplestore: bool = False, triplestore_address: str = None):
+        ...
+
     def __init__(self, *,
                  path: Optional[str] = None,
 
@@ -165,22 +159,31 @@ class KnowledgeBase(AbstractKnowledgeBase):
             # raise TypeError("neither ontology nor manager factory given")
 
         if ontology is None:
-            if path is None:
+            if use_triplestore is True:
+                if path is None:
+                    # create a dummy ontology, so we can avoid making tons of changes.
+                    self._ontology = OWLOntology_Owlready2(self._manager, IRI.create("dummy_ontology#onto"), load=False,
+                                                           use_triplestore=True,
+                                                           triplestore_address=triplestore_address)
+                else:
+                    # why not create a real ontology if the user gives the path :) (triplestore will be used anyway)
+                    self._ontology = OWLOntology_Owlready2(self._manager, IRI.create('file://' + self.path), load=True,
+                                                           use_triplestore=True,
+                                                           triplestore_address=triplestore_address)
+            elif path is None:
                 raise TypeError("path missing")
-            self._ontology = self._manager.load_ontology(IRI.create('file://' + self.path))
+            else:
+                self._ontology = self._manager.load_ontology(IRI.create('file://' + self.path))
+                if isinstance(self._manager, OWLOntologyManager_Owlready2) and backend_store:
+                    self._manager.save_world()
+                    logger.debug("Synced world to backend store")
 
-            from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2
-            if isinstance(self._manager, OWLOntologyManager_Owlready2) and backend_store:
-                self._manager.save_world()
-                logger.debug("Synced world to backend store")
-
-        if reasoner is not None:
+        if reasoner is not None and reasoner.is_using_triplestore() == use_triplestore:
             self._reasoner = reasoner
-        elif reasoner_factory is not None:
+        elif reasoner_factory is not None and not use_triplestore:
             self._reasoner = reasoner_factory(self._ontology)
-        else:  # default to fast instance checker
+        else:
             self._reasoner = _Default_ReasonerFactory(self._ontology, use_triplestore, triplestore_address)
-            # raise TypeError("neither reasoner nor reasoner factory given")
 
         if length_metric is not None:
             self._length_metric = length_metric
@@ -208,8 +211,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self._dp_ranges = dict()
         self.generator = ConceptGenerator()
 
-        from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-        if isinstance(self._reasoner, OWLReasoner_FastInstanceChecker):
+        if isinstance(self._reasoner, OWLReasoner_FastInstanceChecker) and not use_triplestore:
             self._ind_set = self._reasoner._ind_set  # performance hack
         else:
             individuals = self._ontology.individuals_in_signature()
@@ -333,7 +335,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
             raise TypeError
         if ce in self._ind_cache:
             return
-        from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
         if isinstance(self._reasoner, OWLReasoner_FastInstanceChecker):
             self._ind_cache[ce] = self._reasoner._find_instances(ce)  # performance hack
         else:
@@ -466,26 +467,13 @@ class KnowledgeBase(AbstractKnowledgeBase):
         return f'KnowledgeBase(path={repr(self.path)} <{class_count} classes, {properties_count} properties, ' \
                f'{individuals_count} individuals)'
 
-    @singledispatchmethod
-    def encode_learning_problem(self, lp: AbstractLearningProblem):
-        """Provides the encoded learning problem (lp), i.e. the class containing the set of OWLNamedIndividuals
-        as follows:
-            kb_pos --> the positive examples set,
-            kb_neg --> the negative examples set,
-            kb_all --> all lp individuals / all individuals set,
-            kb_diff --> kb_all - (kb_pos + kb_neg).
-        Note:
-            Simple access of the learning problem individuals divided in respective sets.
-            You will need the encoded learning problem to use the method evaluate_concept of this class.
-        Args:
-            lp (PosNegLPStandard): The learning problem.
-        Return:
-            EncodedPosNegLPStandard: The encoded learning problem.
-        """
-        raise NotImplementedError(lp)
+    # in case more types of AbstractLearningProblem are introduced to the project uncomment the method below and use
+    # decorators
+    # @singledispatchmethod
+    # def encode_learning_problem(self, lp: AbstractLearningProblem):
+    #     raise NotImplementedError(lp)
 
-    @encode_learning_problem.register
-    def _(self, lp: PosNegLPStandard):
+    def encode_learning_problem(self, lp: PosNegLPStandard):
         """Provides the encoded learning problem (lp), i.e. the class containing the set of OWLNamedIndividuals
         as follows:
             kb_pos --> the positive examples set,

@@ -1,6 +1,6 @@
 # Ontolearn
 
-**Version:** ontolearn 0.5.4
+**Version:** ontolearn 0.6.0
 
 **GitHub repository:** [https://github.com/dice-group/Ontolearn](https://github.com/dice-group/Ontolearn)
 
@@ -26,16 +26,17 @@ exactly what our library offers. The main contribution are the exclusive concept
 algorithms that are part of this library. Currently, we have 4 fully functioning algorithms that 
 learn concept in description logics. Papers can be found [here](09_further_resources.md).
 
-Ontolearn can do the following: 
+Ontolearn can do the following:
 
-- Load/save ontologies in RDF/XML, OWL/XML
-- Modify ontologies by adding/removing axioms
-- Access individuals/classes/properties of an ontology (and a lot more)
-- Define learning problems
-- Construct class expressions
-- Use concept learning algorithms to classify positive examples in a learning problem
+- Load/save ontologies in RDF/XML, OWL/XML.
+- Modify ontologies by adding/removing axioms.
+- Access individuals/classes/properties of an ontology (and a lot more).
+- Define learning problems.
+- Construct class expressions.
+- Use concept learning algorithms to classify positive examples in a learning problem.
+- Use local datasets or datasets that are hosted on a triplestore server, for the learning task.
 - Reason over an ontology.
-- Other convenient functionalities like converting OWL class expressions to SPARQL or DL syntax
+- Other convenient functionalities like converting OWL class expressions to SPARQL or DL syntax.
 
 The rest of the content is build as a top-to-bottom guide, but nevertheless self-containing, where
 you can learn more in depth about the capabilities of Ontolearn.

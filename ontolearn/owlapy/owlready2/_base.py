@@ -10,7 +10,7 @@ import owlready2
 import requests
 from owlready2 import declare_datatype
 from pandas import Timedelta
-from requests.exceptions import RequestException
+from requests.exceptions import RequestException, JSONDecodeError
 
 from ontolearn.owlapy.owl2sparql.converter import Owl2SparqlConverter
 from ontolearn.owlapy.owlready2 import axioms
@@ -21,7 +21,7 @@ from ontolearn.owlapy.model import OWLObjectPropertyRangeAxiom, OWLOntologyManag
     OWLOntologyChange, AddImport, OWLThing, DoubleOWLDatatype, OWLObjectPropertyDomainAxiom, OWLLiteral, \
     OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, DateOWLDatatype, DateTimeOWLDatatype, OWLClass, \
     DurationOWLDatatype, StringOWLDatatype, IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLClassAxiom, \
-    OWLSubClassOfAxiom, OWLEquivalentClassesAxiom, OWLObjectSomeValuesFrom, OWLObjectProperty
+    OWLSubClassOfAxiom, OWLEquivalentClassesAxiom, OWLObjectSomeValuesFrom, OWLObjectProperty, OWLProperty
 from ontolearn.owlapy.owlready2.utils import FromOwlready2
 
 logger = logging.getLogger(__name__)
@@ -42,14 +42,14 @@ _parse_datarange_to_owlapy = FromOwlready2().map_datarange
 _VERSION_IRI: Final = IRI.create(namespaces.OWL, "versionIRI")
 
 
-def is_valid_url(url):
+def is_valid_url(url) -> bool:
     """
     Check the validity of a URL.
 
     Args:
         url (str): The url to validate.
 
-    Return:
+    Returns:
         True if url is not None, and it passes the regex check.
 
     """
@@ -61,6 +61,49 @@ def is_valid_url(url):
         r'(?::\d+)?'  # optional port
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
     return url is not None and regex.search(url)
+
+
+def get_results_from_ts(triplestore_address: str, query: str, return_type: type):
+    """
+    Execute the SPARQL query in the given triplestore_address and return the result as the given return_type.
+
+    Args:
+        triplestore_address (str): The triplestore address where the query will be executed.
+        query (str): SPARQL query where the root variable should be '?x'.
+        return_type (type): OWLAPY class as type. e.g. OWLClass, OWLNamedIndividual, etc.
+
+    Returns:
+        Generator containing the results of the query as the given type.
+    """
+    try:
+        response = requests.post(triplestore_address, data={'query': query})
+    except RequestException as e:
+        raise RequestException(f"Make sure the server is running on the `triplestore_address` = '{triplestore_address}'"
+                               f". Check the error below:"
+                               f"\n  -->Error: {e}")
+    try:
+        return [return_type(IRI.create(i['x']['value'])) for i in
+                response.json()['results']['bindings']]
+    except JSONDecodeError as e:
+        raise JSONDecodeError(f"Something went wrong with decoding JSON from the response. Check for typos in "
+                              f"the `triplestore_address` = '{triplestore_address}' otherwise the error is likely "
+                              f"caused by an internal issue. \n  -->Error: {e}")
+
+
+def create_op_str(op: OWLObjectPropertyExpression) -> str:
+    """Return the right syntax depending on type of OWLObjectPropertyExpression"""
+    if isinstance(op, OWLObjectInverseOf):
+        return f"^<{op.get_inverse().get_iri().as_str()}>"
+    elif isinstance(op, OWLObjectProperty):
+        return f"<{op.get_iri().as_str()}>"
+
+
+def suf(direct: bool):
+    """Put the star for rdfs properties depending on direct param"""
+    suffix = " "
+    if not direct:
+        suffix = "* "
+    return suffix
 
 
 def _parse_duration_datatype(literal: str):
@@ -144,19 +187,22 @@ class OWLOntologyManager_Owlready2(OWLOntologyManager):
 
 
 class OWLOntology_Owlready2(OWLOntology):
-    __slots__ = '_manager', '_iri', '_world', '_onto'
+    __slots__ = '_manager', '_iri', '_world', '_onto', '_triplestore_address', 'is_using_triplestore'
 
     _manager: OWLOntologyManager_Owlready2
     _onto: owlready2.Ontology
     _world: owlready2.World
 
-    def __init__(self, manager: OWLOntologyManager_Owlready2, ontology_iri: IRI, load: bool):
+    def __init__(self, manager: OWLOntologyManager_Owlready2, ontology_iri: IRI, load: bool,
+                 use_triplestore: bool = False, triplestore_address: str = None):
         """Represents an Ontology in Ontolearn.
 
         Args:
             manager: Ontology manager.
             ontology_iri: IRI of the ontology.
             load: Whether to load the ontology or not.
+            use_triplestore: Whether to use triplestore for retrieving signature objects.
+            triplestore_address: The address that hosts the triplestore. Required if use_triplestore = True.
         """
         self._manager = manager
         self._iri = ontology_iri
@@ -165,22 +211,50 @@ class OWLOntology_Owlready2(OWLOntology):
         if load:
             onto = onto.load()
         self._onto = onto
+        self._triplestore_address = triplestore_address
+        self.is_using_triplestore = use_triplestore
+
+        if use_triplestore:
+            assert(is_valid_url(triplestore_address)), "You should specify a valid URL in the following argument: " \
+                                                       "'triplestore_address'"
 
     def classes_in_signature(self) -> Iterable[OWLClass]:
-        for c in self._onto.classes():
-            yield OWLClass(IRI.create(c.iri))
+        if self.is_using_triplestore:
+            query = "SELECT DISTINCT ?x WHERE {?x a <http://www.w3.org/2002/07/owl#Class>.}"
+            yield from get_results_from_ts(self._triplestore_address, query, OWLClass)
+        else:
+            for c in self._onto.classes():
+                yield OWLClass(IRI.create(c.iri))
 
     def data_properties_in_signature(self) -> Iterable[OWLDataProperty]:
-        for dp in self._onto.data_properties():
-            yield OWLDataProperty(IRI.create(dp.iri))
+        if self.is_using_triplestore:
+            query = "PREFIX owl: <http://www.w3.org/2002/07/owl#>\n" \
+                    "SELECT DISTINCT ?x\n" \
+                    "WHERE {?x a owl:DatatypeProperty.}"
+            yield from get_results_from_ts(self._triplestore_address, query, OWLDataProperty)
+        else:
+            for dp in self._onto.data_properties():
+                yield OWLDataProperty(IRI.create(dp.iri))
 
     def object_properties_in_signature(self) -> Iterable[OWLObjectProperty]:
-        for op in self._onto.object_properties():
-            yield OWLObjectProperty(IRI.create(op.iri))
+        if self.is_using_triplestore:
+            query = "PREFIX owl: <http://www.w3.org/2002/07/owl#>\n" \
+                    "SELECT DISTINCT ?x\n" \
+                    "WHERE {?x a owl:ObjectProperty.}"
+            yield from get_results_from_ts(self._triplestore_address, query, OWLObjectProperty)
+        else:
+            for op in self._onto.object_properties():
+                yield OWLObjectProperty(IRI.create(op.iri))
 
     def individuals_in_signature(self) -> Iterable[OWLNamedIndividual]:
-        for i in self._onto.individuals():
-            yield OWLNamedIndividual(IRI.create(i.iri))
+        if self.is_using_triplestore:
+            query = "PREFIX owl: <http://www.w3.org/2002/07/owl#>\n" \
+                    "SELECT DISTINCT ?x\n" \
+                    "WHERE {?x a owl:NamedIndividual.}"
+            yield from get_results_from_ts(self._triplestore_address, query, OWLNamedIndividual)
+        else:
+            for i in self._onto.individuals():
+                yield OWLNamedIndividual(IRI.create(i.iri))
 
     def equivalent_classes_axioms(self, c: OWLClass) -> Iterable[OWLEquivalentClassesAxiom]:
         c_x: owlready2.ThingClass = self._world[c.get_iri().as_str()]
@@ -211,17 +285,25 @@ class OWLOntology_Owlready2(OWLOntology):
                              IRI.create(version_iri) if version_iri is not None else None)
 
     def data_property_domain_axioms(self, pe: OWLDataProperty) -> Iterable[OWLDataPropertyDomainAxiom]:
-        p_x: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
-        domains = set(p_x.domains_indirect())
-        if len(domains) == 0:
-            yield OWLDataPropertyDomainAxiom(pe, OWLThing)
+        if self.is_using_triplestore:
+            domains = self._get_property_domains(pe)
+            if len(domains) == 0:
+                yield OWLDataPropertyDomainAxiom(pe, OWLThing)
+            else:
+                for dom in domains:
+                    yield OWLDataPropertyDomainAxiom(pe, dom)
         else:
-            for dom in domains:
-                if isinstance(dom, (owlready2.ThingClass, owlready2.ClassConstruct)):
-                    yield OWLDataPropertyDomainAxiom(pe, _parse_concept_to_owlapy(dom))
-                else:
-                    logger.warning("Construct %s not implemented at %s", dom, pe)
-                    pass  # XXX TODO
+            p_x: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
+            domains = set(p_x.domains_indirect())
+            if len(domains) == 0:
+                yield OWLDataPropertyDomainAxiom(pe, OWLThing)
+            else:
+                for dom in domains:
+                    if isinstance(dom, (owlready2.ThingClass, owlready2.ClassConstruct)):
+                        yield OWLDataPropertyDomainAxiom(pe, _parse_concept_to_owlapy(dom))
+                    else:
+                        logger.warning("Construct %s not implemented at %s", dom, pe)
+                        pass  # XXX TODO
 
     def data_property_range_axioms(self, pe: OWLDataProperty) -> Iterable[OWLDataPropertyRangeAxiom]:
         p_x: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
@@ -240,30 +322,57 @@ class OWLOntology_Owlready2(OWLOntology):
                     pass  # XXX TODO
 
     def object_property_domain_axioms(self, pe: OWLObjectProperty) -> Iterable[OWLObjectPropertyDomainAxiom]:
-        p_x: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
-        domains = set(p_x.domains_indirect())
-        if len(domains) == 0:
-            yield OWLObjectPropertyDomainAxiom(pe, OWLThing)
+        if self.is_using_triplestore:
+            domains = self._get_property_domains(pe)
+            if len(domains) == 0:
+                yield OWLObjectPropertyDomainAxiom(pe, OWLThing)
+            else:
+                for dom in domains:
+                    yield OWLObjectPropertyDomainAxiom(pe, dom)
         else:
-            for dom in domains:
-                if isinstance(dom, (owlready2.ThingClass, owlready2.ClassConstruct)):
-                    yield OWLObjectPropertyDomainAxiom(pe, _parse_concept_to_owlapy(dom))
-                else:
-                    logger.warning("Construct %s not implemented at %s", dom, pe)
-                    pass  # XXX TODO
+            p_x: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
+            domains = set(p_x.domains_indirect())
+            if len(domains) == 0:
+                yield OWLObjectPropertyDomainAxiom(pe, OWLThing)
+            else:
+                for dom in domains:
+                    if isinstance(dom, (owlready2.ThingClass, owlready2.ClassConstruct)):
+                        yield OWLObjectPropertyDomainAxiom(pe, _parse_concept_to_owlapy(dom))
+                    else:
+                        logger.warning("Construct %s not implemented at %s", dom, pe)
+                        pass  # XXX TODO
 
     def object_property_range_axioms(self, pe: OWLObjectProperty) -> Iterable[OWLObjectPropertyRangeAxiom]:
-        p_x: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
-        ranges = set(chain.from_iterable(super_prop.range for super_prop in p_x.ancestors()))
-        if len(ranges) == 0:
-            yield OWLObjectPropertyRangeAxiom(pe, OWLThing)
+        if self.is_using_triplestore:
+            query = "PREFIX  rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" \
+                    "SELECT ?x WHERE { " + f"<{pe.get_iri().as_str()}>" + " rdfs:range ?x. }"
+            ranges = set(get_results_from_ts(self._triplestore_address, query, OWLClass))
+            if len(ranges) == 0:
+                yield OWLObjectPropertyRangeAxiom(pe, OWLThing)
+            else:
+                for rng in ranges:
+                    yield OWLObjectPropertyRangeAxiom(pe, rng)
         else:
-            for rng in ranges:
-                if isinstance(rng, (owlready2.ThingClass, owlready2.ClassConstruct)):
-                    yield OWLObjectPropertyRangeAxiom(pe, _parse_concept_to_owlapy(rng))
-                else:
-                    logger.warning("Construct %s not implemented at %s", rng, pe)
-                    pass  # XXX TODO
+            p_x: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
+            ranges = set(chain.from_iterable(super_prop.range for super_prop in p_x.ancestors()))
+            if len(ranges) == 0:
+                yield OWLObjectPropertyRangeAxiom(pe, OWLThing)
+            else:
+                for rng in ranges:
+                    if isinstance(rng, (owlready2.ThingClass, owlready2.ClassConstruct)):
+                        yield OWLObjectPropertyRangeAxiom(pe, _parse_concept_to_owlapy(rng))
+                    else:
+                        logger.warning("Construct %s not implemented at %s", rng, pe)
+                        pass  # XXX TODO
+
+    def _get_property_domains(self, pe: OWLProperty):
+        if isinstance(pe, OWLObjectProperty) or isinstance(pe, OWLDataProperty):
+            query = "PREFIX  rdfs: <http://www.w3.org/2000/01/rdf-schema#> \n" \
+                    "SELECT ?x WHERE { " + f"<{pe.get_iri().as_str()}>" + " rdfs:domain ?x. }"
+            domains = set(get_results_from_ts(self._triplestore_address, query, OWLClass))
+            return domains
+        else:
+            raise NotImplementedError
 
     def get_original_iri(self):
         """Get the IRI argument that was used to create this ontology."""
@@ -296,7 +405,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             ontology: The ontology that should be used by the reasoner.
             isolate: Whether to isolate the reasoner in a new world + copy of the original ontology.
                      Useful if you create multiple reasoner instances in the same script.
-            use_triplestore: Whether to use triplestore to retrieve instances. This only affects 'instances' method.
+            use_triplestore: Whether to use triplestore to sublcasses, superclasses or instance retrival.
             triplestore_address: The address that hosts the triplestore. Required if use_triplestore = True.
         """
         super().__init__(ontology)
@@ -305,15 +414,9 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         self._triplestore_address = triplestore_address
         self._owl2sparql_converter = Owl2SparqlConverter()
         if use_triplestore:
+            # is triplestore_address valid ?
             assert(is_valid_url(triplestore_address)), "You should specify a valid URL in the following argument: " \
                                                        "'triplestore_address'"
-
-            print(f"INFO  OWLReasoner    :: Make sure the ontology loaded in the triplestore address: "
-                  f"{triplestore_address} is the same as the ontology located in: "
-                  f"{ontology.get_original_iri().as_str()}\n"
-                  f"INFO  OWLReasoner    :: Keep in mind that changes made during runtime are not reflected in the "
-                  f"triplestore")
-
         if isolate:
             self._isolated = True
             new_manager = OWLOntologyManager_Owlready2()
@@ -454,55 +557,74 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
 
     def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty, direct: bool = True) \
             -> Iterable[OWLLiteral]:
-        i: owlready2.Thing = self._world[ind.get_iri().as_str()]
-        p: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
-        retrieval_func = p._get_values_for_individual if direct else p._get_indirect_values_for_individual
-        for val in retrieval_func(i):
-            yield OWLLiteral(val)
+        if self.is_using_triplestore():
+            query = "SELECT ?x WHERE { " + f"<{ind.get_iri().as_str()}>" + f"<{pe.get_iri().as_str()}>" + " ?x . }"
+            yield from get_results_from_ts(self._triplestore_address, query, OWLLiteral)
+        else:
+            i: owlready2.Thing = self._world[ind.get_iri().as_str()]
+            p: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
+            retrieval_func = p._get_values_for_individual if direct else p._get_indirect_values_for_individual
+            for val in retrieval_func(i):
+                yield OWLLiteral(val)
 
     def all_data_property_values(self, pe: OWLDataProperty, direct: bool = True) -> Iterable[OWLLiteral]:
-        p: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
-        relations = p.get_relations()
-        if not direct:
-            indirect_relations = chain.from_iterable(
-                map(lambda x: self._world[x.get_iri().as_str()].get_relations(),
-                    self.sub_data_properties(pe, direct=False)))
-            relations = chain(relations, indirect_relations)
-        for _, val in relations:
-            yield OWLLiteral(val)
+        if self.is_using_triplestore():
+            query = "SELECT ?x WHERE { ?y" + f"<{pe.get_iri().as_str()}>" + " ?x . }"
+            yield from get_results_from_ts(self._triplestore_address, query, OWLLiteral)
+        else:
+            p: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
+            relations = p.get_relations()
+            if not direct:
+                indirect_relations = chain.from_iterable(
+                    map(lambda x: self._world[x.get_iri().as_str()].get_relations(),
+                        self.sub_data_properties(pe, direct=False)))
+                relations = chain(relations, indirect_relations)
+            for _, val in relations:
+                yield OWLLiteral(val)
 
     def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression, direct: bool = False) \
             -> Iterable[OWLNamedIndividual]:
-        if isinstance(pe, OWLObjectProperty):
-            i: owlready2.Thing = self._world[ind.get_iri().as_str()]
-            p: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
-            # Recommended to use direct=False because _get_values_for_individual does not give consistent result
-            # for the case when there are equivalent object properties. At least until this is fixed on owlready2.
-            retieval_func = p._get_values_for_individual if direct else p._get_indirect_values_for_individual
-            for val in retieval_func(i):
-                yield OWLNamedIndividual(IRI.create(val.iri))
-        elif isinstance(pe, OWLObjectInverseOf):
-            p: owlready2.ObjectPropertyClass = self._world[pe.get_named_property().get_iri().as_str()]
-            inverse_p = p.inverse_property
-            # If the inverse property is explicitly defined we can take shortcut
-            if inverse_p is not None:
-                yield from self.object_property_values(ind, OWLObjectProperty(IRI.create(inverse_p.iri)), direct)
-            else:
-                if not direct:
-                    raise NotImplementedError('Indirect values of inverse properties are only implemented if the '
-                                              'inverse property is explicitly defined in the ontology.'
-                                              f'Property: {pe}')
-                i: owlready2.Thing = self._world[ind.get_iri().as_str()]
-                for val in p._get_inverse_values_for_individual(i):
-                    yield OWLNamedIndividual(IRI.create(val.iri))
+        if self.is_using_triplestore():
+            query = "SELECT ?x WHERE { " + f"<{ind.get_iri().as_str()}> " + create_op_str(pe) + " ?x . }"
+            yield from get_results_from_ts(self._triplestore_address, query, OWLNamedIndividual)
         else:
-            raise NotImplementedError(pe)
+            if isinstance(pe, OWLObjectProperty):
+                i: owlready2.Thing = self._world[ind.get_iri().as_str()]
+                p: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
+                # Recommended to use direct=False because _get_values_for_individual does not give consistent result
+                # for the case when there are equivalent object properties. At least until this is fixed on owlready2.
+                retieval_func = p._get_values_for_individual if direct else p._get_indirect_values_for_individual
+                for val in retieval_func(i):
+                    yield OWLNamedIndividual(IRI.create(val.iri))
+            elif isinstance(pe, OWLObjectInverseOf):
+                p: owlready2.ObjectPropertyClass = self._world[pe.get_named_property().get_iri().as_str()]
+                inverse_p = p.inverse_property
+                # If the inverse property is explicitly defined we can take shortcut
+                if inverse_p is not None:
+                    yield from self.object_property_values(ind, OWLObjectProperty(IRI.create(inverse_p.iri)), direct)
+                else:
+                    if not direct:
+                        raise NotImplementedError('Indirect values of inverse properties are only implemented if the '
+                                                  'inverse property is explicitly defined in the ontology.'
+                                                  f'Property: {pe}')
+                    i: owlready2.Thing = self._world[ind.get_iri().as_str()]
+                    for val in p._get_inverse_values_for_individual(i):
+                        yield OWLNamedIndividual(IRI.create(val.iri))
+            else:
+                raise NotImplementedError(pe)
 
     def flush(self) -> None:
         pass
 
     def instances(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLNamedIndividual]:
-        if not self._use_triplestore:
+        if self._use_triplestore:
+            ce_to_sparql = self._owl2sparql_converter.as_query("?x", ce)
+            if not direct:
+                ce_to_sparql = ce_to_sparql.replace("?x a ", "?x a ?some_cls. \n ?some_cls "
+                                                             "<http://www.w3.org/2000/01/rdf-schema#subClassOf>* ")
+            yield from get_results_from_ts(self._triplestore_address, ce_to_sparql, OWLNamedIndividual)
+
+        else:
             if direct:
                 if isinstance(ce, OWLClass):
                     c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
@@ -529,23 +651,6 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                 #             yield OWLNamedIndividual(IRI.create(i.iri))
                 else:
                     raise NotImplementedError("instances for complex class expressions not implemented", ce)
-        else:
-            try:
-                ce_to_sparql = self._owl2sparql_converter.as_query("?x", ce)
-
-                response = requests.post(self._triplestore_address, data={'query': ce_to_sparql})
-                yield from [OWLNamedIndividual(IRI.create(i['x']['value'])) for i in
-                            response.json()['results']['bindings']]
-                if not direct:
-                    ce_sub_classes = self.sub_classes(ce, False, False)
-                    for ce_sub_class in ce_sub_classes:
-                        ce_to_sparql = self._owl2sparql_converter.as_query("?x", ce_sub_class)
-                        response = requests.post(self._triplestore_address, data={'query': ce_to_sparql})
-                        yield from [OWLNamedIndividual(IRI.create(i['x']['value'])) for i in
-                                    response.json()['results']['bindings']]
-            except RequestException as e:
-                raise RequestException(f"Connection error: Please make sure the server is running on the "
-                                       f"`triplestore_address` = '{self._triplestore_address}'.\n -->Error: {e}")
 
     def _sub_classes_recursive(self, ce: OWLClassExpression, seen_set: Set, only_named: bool = True) \
             -> Iterable[OWLClassExpression]:
@@ -594,29 +699,51 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
 
     def sub_classes(self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True) \
             -> Iterable[OWLClassExpression]:
-        if not direct:
-            seen_set = {ce}
-            yield from self._sub_classes_recursive(ce, seen_set, only_named=only_named)
-        else:
-            # First go through all general class axioms, they should only have complex classes as sub_classes.
-            # Done for OWLClass and OWLClassExpression.
+        if self.is_using_triplestore():
             if not only_named:
-                for axiom in self._ontology.general_class_axioms():
-                    if isinstance(axiom, OWLSubClassOfAxiom) and axiom.get_super_class() == ce:
-                        yield axiom.get_sub_class()
+                raise NotImplementedError("Finding anonymous subclasses not implemented")
             if isinstance(ce, OWLClass):
-                c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
-                # Subclasses will only return named classes
-                for sc in c_x.subclasses(world=self._world):
-                    if isinstance(sc, owlready2.ThingClass):
-                        yield OWLClass(IRI.create(sc.iri))
-            elif isinstance(ce, OWLClassExpression):
-                # Slow but works. No better way to do this in owlready2 without using the reasoners at the moment.
-                for c in self._ontology.classes_in_signature():
-                    if ce in self.super_classes(c, direct=True, only_named=False):
-                        yield c
+                query = "PREFIX  rdfs: <http://www.w3.org/2000/01/rdf-schema#> " \
+                        "SELECT ?x WHERE { ?x rdfs:subClassOf" + suf(direct) + f"<{ce.get_iri().as_str()}>" + ". }"
+                results = list(get_results_from_ts(self._triplestore_address, query, OWLClass))
+                if ce in results:
+                    results.remove(ce)
+                yield from results
             else:
-                raise ValueError(f'Sub classes retrieval not implemented for: {ce}')
+                raise NotImplementedError("Subclasses of complex classes retrieved via triple store is not implemented")
+                # query = "PREFIX  rdfs: <http://www.w3.org/2000/01/rdf-schema#> " \
+                #         "SELECT DISTINCT ?x WHERE { ?x rdfs:subClassOf" + suf(direct) + " ?c. \n" \
+                #         "?s a ?c . \n"
+                # ce_to_sparql_statements = self._owl2sparql_converter.convert("?s", ce)
+                # for s in ce_to_sparql_statements:
+                #     query = query + s + "\n"
+                # query = query + "}"
+                # yield from get_results_from_ts(self._triplestore_address, query, OWLClass)
+
+        else:
+            if not direct:
+                seen_set = {ce}
+                yield from self._sub_classes_recursive(ce, seen_set, only_named=only_named)
+            else:
+                # First go through all general class axioms, they should only have complex classes as sub_classes.
+                # Done for OWLClass and OWLClassExpression.
+                if not only_named:
+                    for axiom in self._ontology.general_class_axioms():
+                        if isinstance(axiom, OWLSubClassOfAxiom) and axiom.get_super_class() == ce:
+                            yield axiom.get_sub_class()
+                if isinstance(ce, OWLClass):
+                    c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
+                    # Subclasses will only return named classes
+                    for sc in c_x.subclasses(world=self._world):
+                        if isinstance(sc, owlready2.ThingClass):
+                            yield OWLClass(IRI.create(sc.iri))
+                elif isinstance(ce, OWLClassExpression):
+                    # Slow but works. No better way to do this in owlready2 without using the reasoners at the moment.
+                    for c in self._ontology.classes_in_signature():
+                        if ce in self.super_classes(c, direct=True, only_named=False):
+                            yield c
+                else:
+                    raise ValueError(f'Sub classes retrieval not implemented for: {ce}')
 
     def _super_classes_recursive(self, ce: OWLClassExpression, seen_set: Set, only_named: bool = True) \
             -> Iterable[OWLClassExpression]:
@@ -659,32 +786,50 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
 
     def super_classes(self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True) \
             -> Iterable[OWLClassExpression]:
-        if not direct:
-            seen_set = {ce}
-            yield from self._super_classes_recursive(ce, seen_set, only_named=only_named)
-        else:
+        if self.is_using_triplestore():
+            if not only_named:
+                raise NotImplementedError("Finding anonymous superclasses not implemented")
             if isinstance(ce, OWLClass):
-                c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
-                for sc in c_x.is_a:
-                    if (isinstance(sc, owlready2.ThingClass) or
-                            (not only_named and isinstance(sc, owlready2.ClassConstruct))):
-                        yield _parse_concept_to_owlapy(sc)
-            elif isinstance(ce, OWLClassExpression):
-                seen_set = set()
-                for axiom in self._ontology.general_class_axioms():
-                    if (isinstance(axiom, OWLSubClassOfAxiom) and axiom.get_sub_class() == ce
-                            and (not only_named or isinstance(axiom.get_super_class(), OWLClass))):
-                        seen_set.add(axiom.get_super_class())
-                        yield axiom.get_super_class()
-                # Slow but works. No better way to do this in owlready2 without using the reasoners at the moment.
-                # TODO: Might not be needed, in theory the general class axioms above should cover all classes
-                # that can be found here
-                for c in self._ontology.classes_in_signature():
-                    if ce in self.sub_classes(c, direct=True, only_named=False) and c not in seen_set:
-                        seen_set.add(c)
-                        yield c
+                if ce == OWLThing:
+                    return []
+                query = "PREFIX  rdfs: <http://www.w3.org/2000/01/rdf-schema#> " \
+                        "SELECT ?x WHERE { " + f"<{ce.get_iri().as_str()}>" + " rdfs:subClassOf" + suf(direct) + "?x. }"
+                results = list(get_results_from_ts(self._triplestore_address, query, OWLClass))
+                if ce in results:
+                    results.remove(ce)
+                if (not direct and OWLThing not in results) or len(results) == 0:
+                    results.append(OWLThing)
+                yield from results
             else:
-                raise ValueError(f'Super classes retrieval not supported for {ce}')
+                raise NotImplementedError("Superclasses of complex classes retrieved via triple store is not "
+                                          "implemented")
+        else:
+            if not direct:
+                seen_set = {ce}
+                yield from self._super_classes_recursive(ce, seen_set, only_named=only_named)
+            else:
+                if isinstance(ce, OWLClass):
+                    c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
+                    for sc in c_x.is_a:
+                        if (isinstance(sc, owlready2.ThingClass) or
+                                (not only_named and isinstance(sc, owlready2.ClassConstruct))):
+                            yield _parse_concept_to_owlapy(sc)
+                elif isinstance(ce, OWLClassExpression):
+                    seen_set = set()
+                    for axiom in self._ontology.general_class_axioms():
+                        if (isinstance(axiom, OWLSubClassOfAxiom) and axiom.get_sub_class() == ce
+                                and (not only_named or isinstance(axiom.get_super_class(), OWLClass))):
+                            seen_set.add(axiom.get_super_class())
+                            yield axiom.get_super_class()
+                    # Slow but works. No better way to do this in owlready2 without using the reasoners at the moment.
+                    # TODO: Might not be needed, in theory the general class axioms above should cover all classes
+                    # that can be found here
+                    for c in self._ontology.classes_in_signature():
+                        if ce in self.sub_classes(c, direct=True, only_named=False) and c not in seen_set:
+                            seen_set.add(c)
+                            yield c
+                else:
+                    raise ValueError(f'Super classes retrieval not supported for {ce}')
 
     def equivalent_object_properties(self, op: OWLObjectPropertyExpression) -> Iterable[OWLObjectPropertyExpression]:
         if isinstance(op, OWLObjectProperty):
@@ -802,10 +947,20 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
          Returns:
              Iterable of super properties.
          """
-        yield from self._sup_or_sub_data_properties(dp, direct, "super")
+        if self.is_using_triplestore():
+            query = "PREFIX  rdfs: <http://www.w3.org/2000/01/rdf-schema#> " \
+                    "SELECT ?x WHERE {" + f"<{dp.get_iri().as_str()}>" + " rdfs:subPropertyOf" + suf(direct) + " ?x. }"
+            yield from get_results_from_ts(self._triplestore_address, query, OWLDataProperty)
+        else:
+            yield from self._sup_or_sub_data_properties(dp, direct, "super")
 
     def sub_data_properties(self, dp: OWLDataProperty, direct: bool = False) -> Iterable[OWLDataProperty]:
-        yield from self._sup_or_sub_data_properties(dp, direct, "sub")
+        if self.is_using_triplestore():
+            query = "PREFIX  rdfs: <http://www.w3.org/2000/01/rdf-schema#> " \
+                    "SELECT ?x WHERE { ?x rdfs:subPropertyOf" + suf(direct) + f"<{dp.get_iri().as_str()}>" + ". }"
+            yield from get_results_from_ts(self._triplestore_address, query, OWLDataProperty)
+        else:
+            yield from self._sup_or_sub_data_properties(dp, direct, "sub")
 
     def _sup_or_sub_object_properties_recursive(self, op: OWLObjectProperty, seen_set: Set, super_or_sub=""):
         for o in self.equivalent_object_properties(op):
@@ -868,24 +1023,42 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
          Returns:
              Iterable of super properties.
          """
-        yield from self._sup_or_sub_object_properties(op, direct, "super")
+        if self.is_using_triplestore():
+            query = "PREFIX  rdfs: <http://www.w3.org/2000/01/rdf-schema#> " \
+                    "SELECT ?x WHERE {" + create_op_str(op) + " rdfs:subPropertyOf" + suf(direct) + " ?x. }"
+            yield from get_results_from_ts(self._triplestore_address, query, OWLObjectProperty)
+        else:
+            yield from self._sup_or_sub_object_properties(op, direct, "super")
 
     def sub_object_properties(self, op: OWLObjectPropertyExpression, direct: bool = False) \
             -> Iterable[OWLObjectPropertyExpression]:
-        yield from self._sup_or_sub_object_properties(op, direct, "sub")
+        if self.is_using_triplestore():
+            query = "PREFIX  rdfs: <http://www.w3.org/2000/01/rdf-schema#> " \
+                    "SELECT ?x WHERE { ?x rdfs:subPropertyOf" + suf(direct) + create_op_str(op) + ". }"
+            yield from get_results_from_ts(self._triplestore_address, query, OWLObjectProperty)
+        else:
+            yield from self._sup_or_sub_object_properties(op, direct, "sub")
 
     def types(self, ind: OWLNamedIndividual, direct: bool = False) -> Iterable[OWLClass]:
-        i: owlready2.Thing = self._world[ind.get_iri().as_str()]
-        if direct:
-            for c in i.is_a:
-                if isinstance(c, owlready2.ThingClass):
-                    yield OWLClass(IRI.create(c.iri))
-                # Anonymous classes are ignored
+        if self.is_using_triplestore():
+            if direct:
+                query = "SELECT ?x WHERE {" + f"<{ind.get_iri().as_str()}> a" + " ?x. }"
+            else:
+                query = "SELECT DISTINCT ?x WHERE {" + f"<{ind.get_iri().as_str()}> a ?cls. " \
+                                                   " ?cls <http://www.w3.org/2000/01/rdf-schema#subClassOf>* ?x}"
+            yield from get_results_from_ts(self._triplestore_address, query, OWLClass)
         else:
-            for c in i.INDIRECT_is_a:
-                if isinstance(c, owlready2.ThingClass):
-                    yield OWLClass(IRI.create(c.iri))
-                # Anonymous classes are ignored
+            i: owlready2.Thing = self._world[ind.get_iri().as_str()]
+            if direct:
+                for c in i.is_a:
+                    if isinstance(c, owlready2.ThingClass):
+                        yield OWLClass(IRI.create(c.iri))
+                    # Anonymous classes are ignored
+            else:
+                for c in i.INDIRECT_is_a:
+                    if isinstance(c, owlready2.ThingClass):
+                        yield OWLClass(IRI.create(c.iri))
+                    # Anonymous classes are ignored
 
     def _sync_reasoner(self, other_reasoner: BaseReasoner_Owlready2 = None,
                        infer_property_values: bool = True,
