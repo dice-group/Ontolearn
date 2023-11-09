@@ -142,6 +142,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.path = path
 
         if triplestore_address is not None:
+            self._manager = _Default_OntologyManagerFactory()
             if path is None:
                 # create a dummy ontology, so we can avoid making tons of changes.
                 self._ontology = OWLOntology_Owlready2(self._manager, IRI.create("dummy_ontology#onto"), load=False,
