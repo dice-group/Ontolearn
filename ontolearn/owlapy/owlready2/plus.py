@@ -14,9 +14,9 @@ class OWLReasoner_Owlready2_Plus(OWLReasoner_Owlready2):
 
     Contains some behavioural fixes."""
 
-    def __init__(self, ontology: OWLOntology_Owlready2, isolate: bool = False, use_triplestore: bool = False,
+    def __init__(self, ontology: OWLOntology_Owlready2, isolate: bool = False,
                  triplestore_address: str = None):
-        super().__init__(ontology, isolate, use_triplestore, triplestore_address)
+        super().__init__(ontology, isolate, triplestore_address)
 
     def sub_classes(self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True) -> Iterable[OWLClass]:
         if isinstance(ce, OWLClass):

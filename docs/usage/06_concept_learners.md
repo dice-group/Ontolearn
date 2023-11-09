@@ -293,18 +293,17 @@ concept learner as follows:
 ```python
 from ontolearn.knowledge_base import KnowledgeBase
 
-kb = KnowledgeBase(use_triplestore=True, triplestore_address="http://your_domain/some_path/sparql")
+kb = KnowledgeBase(triplestore_address="http://your_domain/some_path/sparql")
 ```
 
 Notice that we did not provide a value for the `path` argument. When using triplestore, it is not required. Keep
 in mind that the `kb` will create a default reasoner that uses the triplestore. Passing a custom
-reasoner will not make any difference, because they all behave the same when `use_triplestore=True`.
+reasoner will not make any difference, because they all behave the same when using the triplestore.
 You may wonder what happens to the `Ontology` object of the `kb` since no path was given. A default ontology 
 object is created that will also use the triplestore for its processes. Basically every querying process concerning
 concept learning is now using the triplestore.
 
-> **Important notice:** The performance of a concept learner may differentiate when using triplestore. This 
-> differences will be flattened soon.
+> **Important notice:** The performance of a concept learner may differentiate when using triplestore.
 
 ## Loading and Launching a Triplestore
 
@@ -362,7 +361,7 @@ java -Xmx4G -jar fuseki-server.jar --tdb2 --loc=databases/father /father
 
 Notice that we launched the database found in `Fuseki/apache-jena-fuseki-4.7.0/databases/father` to the path `/father`.
 By default, jena-fuseki runs on port 3030 so the full URL would be: `http://localhost:3030/father`. When 
-you pass this url to `triplestore_address` argument of the reasoner, you have to add the
+you pass this url to `triplestore_address` argument, you have to add the
 `/sparql` sub-path indicating to the server that we are querying via SPARQL queries. Full path now should look like:
 `http://localhost:3030/father/sparql`.
 
@@ -372,7 +371,7 @@ operations:
 ```python
 from ontolearn.knowledge_base import KnowledgeBase
 
-father_kb = KnowledgeBase(use_triplestore=True, triplestore_address="http://localhost:3030/father/sparql")
+father_kb = KnowledgeBase(triplestore_address="http://localhost:3030/father/sparql")
 # ** Execute the learning algorithm as you normally would. ** .
 ```
 
@@ -381,7 +380,8 @@ father_kb = KnowledgeBase(use_triplestore=True, triplestore_address="http://loca
 
 In this guide, we have shown the prerequisites of running a concept learner,
 how to configure it's input properties and how to run it to successfully
-learn class expressions for learning problems in an ontology. There is also a jupyter 
+learn class expressions for learning problems in an ontology. We showed as well how to set up
+a triplestore server that can be used to execute the concept learner. There is also a jupyter 
 notebook for each of these concept learners:
 
 - [NCES notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/simple-usage-NCES.ipynb)

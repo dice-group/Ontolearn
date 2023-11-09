@@ -194,15 +194,14 @@ class OWLOntology_Owlready2(OWLOntology):
     _world: owlready2.World
 
     def __init__(self, manager: OWLOntologyManager_Owlready2, ontology_iri: IRI, load: bool,
-                 use_triplestore: bool = False, triplestore_address: str = None):
+                 triplestore_address: str = None):
         """Represents an Ontology in Ontolearn.
 
         Args:
             manager: Ontology manager.
             ontology_iri: IRI of the ontology.
             load: Whether to load the ontology or not.
-            use_triplestore: Whether to use triplestore for retrieving signature objects.
-            triplestore_address: The address that hosts the triplestore. Required if use_triplestore = True.
+            triplestore_address: The address that hosts the triplestore..
         """
         self._manager = manager
         self._iri = ontology_iri
@@ -212,9 +211,8 @@ class OWLOntology_Owlready2(OWLOntology):
             onto = onto.load()
         self._onto = onto
         self._triplestore_address = triplestore_address
-        self.is_using_triplestore = use_triplestore
-
-        if use_triplestore:
+        self.is_using_triplestore = True if self._triplestore_address is not None else False
+        if self.is_using_triplestore:
             assert(is_valid_url(triplestore_address)), "You should specify a valid URL in the following argument: " \
                                                        "'triplestore_address'"
 
@@ -396,8 +394,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
     _ontology: OWLOntology_Owlready2
     _world: owlready2.World
 
-    def __init__(self, ontology: OWLOntology_Owlready2, isolate: bool = False, use_triplestore: bool = False,
-                 triplestore_address: str = None):
+    def __init__(self, ontology: OWLOntology_Owlready2, isolate: bool = False, triplestore_address: str = None):
         """
         Base reasoner in Ontolearn, used to reason in the given ontology.
 
@@ -405,19 +402,20 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             ontology: The ontology that should be used by the reasoner.
             isolate: Whether to isolate the reasoner in a new world + copy of the original ontology.
                      Useful if you create multiple reasoner instances in the same script.
-            use_triplestore: Whether to use triplestore to sublcasses, superclasses or instance retrival.
-            triplestore_address: The address that hosts the triplestore. Required if use_triplestore = True.
+            triplestore_address: The address that hosts the triplestore.
         """
         super().__init__(ontology)
         assert isinstance(ontology, OWLOntology_Owlready2)
-        self._use_triplestore = use_triplestore
         self._triplestore_address = triplestore_address
         self._owl2sparql_converter = Owl2SparqlConverter()
-        if use_triplestore:
+        if triplestore_address is not None:
             # is triplestore_address valid ?
             assert(is_valid_url(triplestore_address)), "You should specify a valid URL in the following argument: " \
                                                        "'triplestore_address'"
-        if isolate:
+            if isolate:
+                print("WARN  OWLReasoner    :: Setting `isolated = True` has no purpose when using triplestore.")
+
+        if isolate and triplestore_address is None:
             self._isolated = True
             new_manager = OWLOntologyManager_Owlready2()
             self._ontology = new_manager.load_ontology(ontology.get_original_iri())
@@ -617,7 +615,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         pass
 
     def instances(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLNamedIndividual]:
-        if self._use_triplestore:
+        if self.is_using_triplestore():
             ce_to_sparql = self._owl2sparql_converter.as_query("?x", ce)
             if not direct:
                 ce_to_sparql = ce_to_sparql.replace("?x a ", "?x a ?some_cls. \n ?some_cls "
@@ -1088,4 +1086,4 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         return self._isolated
 
     def is_using_triplestore(self):
-        return self._use_triplestore
+        return self._triplestore_address is not None

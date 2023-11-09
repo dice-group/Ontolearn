@@ -70,10 +70,10 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
         super().__init__(ontology)
         if base_reasoner.is_using_triplestore():
             print("WARN  OWLReasoner    :: Instance retrieval will be performed via triplestore using SPARQL query "
-                  "because `use_triplestore` is set to True for the `base_reasoner`. The `instances` method will "
+                  "because you have entered a triplestore address for the `base_reasoner`. The `instances` method will "
                   "default to the implementation in the base_reasoner and every functionality offered by "
                   "OWLReasoner_FastInstanceChecker will be irrelevant to this method ")
-        if base_reasoner.is_isolated():
+        if base_reasoner.is_isolated() and not base_reasoner.is_using_triplestore():
             self._ontology = base_reasoner.get_root_ontology()
         else:
             self._ontology = ontology

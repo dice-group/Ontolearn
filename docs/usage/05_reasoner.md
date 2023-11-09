@@ -34,9 +34,9 @@ from. Currently, there are the following reasoners available:
     The structural reasoner requires an ontology ([OWLOntology](ontolearn.owlapy.model.OWLOntology)).
     The second argument is `isolate` argument which isolates the world (therefore the ontology) where the reasoner is 
     performing the reasoning. More on that on _[Reasoning Details](07_reasoning_details.md#isolated-world)_. 
-    The rest of the arguments `use_triplestore` and `triplestore_address` are used in case you want to
+    The remaining argument, `triplestore_address`,  is used in case you want to
     retrieve instances from a triplestore (go to 
-    [#using-a-triplestore-for-reasoning-tasks](#using-a-triplestore-for-reasoning-tasks) for details).
+    [_Using a Triplestore for Reasoning Tasks_](#using-a-triplestore-for-reasoning-tasks) for details).
     
 
 
@@ -60,7 +60,7 @@ from. Currently, there are the following reasoners available:
     which is just an enumeration with two possible values: `BaseReasoner_Owlready2.HERMIT` and `BaseReasoner_Owlready2.PELLET`.
     You can set the `infer_property_values` argument to `True` if you want the reasoner to infer
     property values. `infer_data_property_values` is an additional argument when the base reasoner is set to 
-    `BaseReasoner_Owlready2.PELLET`. The rest of the arguments `isolated`, `use_triplestore` and `triplestore_address` 
+    `BaseReasoner_Owlready2.PELLET`. The rest of the arguments `isolated` and `triplestore_address` 
     are inherited from the base class.
 
 
@@ -231,11 +231,9 @@ for ind in male_individuals:
 
 ### Using a Triplestore for Reasoning Tasks
 
-As we mentioned earlier, OWLReasoner has two arguments for enabling triplestore 
-querying: 
-- `use_triplestore` is a boolean argument. Setting this to `True` tells the reasoner that for its operations it
-should query the triplestore hosted on the server address specified by the following argument:
-- `triplestore_address` is a string that contains the URL of the triplestore host/server.
+As we mentioned earlier, OWLReasoner has an argument for enabling triplestore querying:
+- `triplestore_address` - a string that contains the URL of the triplestore host/server. If specified, it tells
+the reasoner that for its operations it should query the triplestore hosted on the given address.
 
 Triplestores are known for their efficiency in retrieving data, and they can be queried using SPARQL.
 Making this functionality available for reasoners in Ontolearn makes it possible to use concept learners that
@@ -245,7 +243,7 @@ independently for reasoning tasks. Therefore, you can initialize a reasoner to u
 ```python
 from ontolearn.owlapy.owlready2._base import OWLReasoner_Owlready2
 
-reasoner = OWLReasoner_Owlready2(onto, use_triplestore=True, triplestore_address="http://some_domain/some_path/sparql")
+reasoner = OWLReasoner_Owlready2(onto, triplestore_address="http://some_domain/some_path/sparql")
 ```
 
 Now you can use the reasoner methods as you would normally do:
@@ -260,12 +258,11 @@ males = reasoner.instances(male, direct=False)
 > Not all the methods of the reasoner are implemented to use triplestore but the main methods 
 > such as 'instance' and those used to get sub/super classes/properties will work just fine.
 
-> **You cannot pass the triplestore arguments directly to FIC constructor.** 
+> **You cannot pass the triplestore argument directly to FIC constructor.** 
 > Because of the way it is implemented, if the base reasoner is set to use triplestore,
-> then FIC's `instances` method will default to the base reasoners implementation that uses 
-> triplestore for instance retrieval.
+> then FIC's is considered to using triplestore.
 
-> When using triplestore the all methods, including `instances` method **will default to the base
+> When using triplestore all methods, including `instances` method **will default to the base
 > implementation**. This means that no matter which type of reasoner you are using, the results will be always 
 > the same.
 
