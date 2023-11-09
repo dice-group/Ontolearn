@@ -12,3 +12,4 @@ parsimonious>=0.8.1
 tqdm>=4.64.0
 tokenizers>=0.12.1
 transformers>=4.19.2
+requests>=2.31.0
