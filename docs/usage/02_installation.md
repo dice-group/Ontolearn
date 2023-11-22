@@ -12,6 +12,20 @@ One such system for virtual python environments is
 We have good experience with it and make use of conda in the
 [Installation from source](#installation-from-source) step.
 
+## Installation via _pip_
+
+Released versions of Ontolearn can be installed using `pip`, the
+Package Installer for Python. It comes as part of Python. Please
+research externally (or use `conda create` command below) on how to
+create virtual environments for Python programs.
+
+```shell
+pip install ontolearn
+```
+
+This will download and install the latest release version of Ontolearn
+and all its dependencies from <https://pypi.org/project/ontolearn/>.
+
 ## Installation From Source
 
 To download the Ontolearn source code, you will also need to have a
@@ -34,11 +48,11 @@ installation links to get started with the library.
   git clone https://github.com/dice-group/Ontolearn.git
   cd Ontolearn
   ```
-* Load the dependencies into a new conda environment called "temp" (you can name it however you like)
+  
+* Create a conda environment using the `environment.yml` file.
   ```shell
-  conda create --name temp python=3.8
-  conda activate temp
-  conda env update --name temp
+  conda env create -f environment.yml
+  conda activate ontolearn
   ```
 * Install the development links so that Python will find the library
   ```shell
@@ -68,21 +82,6 @@ to successfully pass all the tests:
 ```shell
 pytest
 ```
-
-
-## Installation via _pip_
-
-Released versions of Ontolearn can also be installed using `pip`, the
-Package Installer for Python. It comes as part of Python. Please
-research externally (or use above `conda create` command) on how to
-create virtual environments for Python programs.
-
-```shell
-pip install ontolearn
-```
-
-This will download and install the latest release version of Ontolearn
-and all its dependencies from <https://pypi.org/project/ontolearn/>.
 
 ## Download External Files
 

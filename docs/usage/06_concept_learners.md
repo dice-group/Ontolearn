@@ -12,12 +12,34 @@ of Ontolearn library:
 > **Important Notice**: 
 > 
 > **_DRILL_ is not fully implemented in Ontolearn**. In the meantime you can refer to 
-> [_DRILL's_ GitHub repo](https://github.com/dice-group/drill). 
+> [_DRILL's_ GitHub repo](https://github.com/dice-group/drill).
 > 
-> **Documentation for _NCES_ coming soon**. In the meantime visit _NCES_ jupyter notebooks
-> inside [examples folder](https://github.com/dice-group/Ontolearn/tree/develop/examples).
+> **_NCES_ is not currently documented here**. You can visit _NCES_ jupyter notebooks
+> inside [examples folder](https://github.com/dice-group/Ontolearn/tree/develop/examples) to find the description on
+> how it works.
+> 
+> NCES2, CLIP and NERO are not yet implemented in Ontolearn, they will be soon.
 
-These algorithms are similar in execution, for that reason, we are 
+### Expressiveness
+
+Evolearner → _**ALCQ(D)**_.
+
+DRILL  → _**ALC**_
+
+NCES  → **_ALC_**
+
+NCES2 → **_ALCHIQ(D)_**
+
+NERO → **_ALC_**
+
+CLIP → **_ALC_**
+
+CELOE and OCEL → **_ALC_**
+
+-----------------------------------
+
+
+The three algorithms that we mentioned in the beginning are similar in execution, for that reason, we are 
 describing them in a general manner. To test them separately see [_Quick try-out_](#quick-try-out).
 Each algorithm may have different available configuration. However, at
 minimum, they require a [knowledge base](04_knowledge_base.md) and a
@@ -38,7 +60,7 @@ an example file `synthetic_problems.json` showing how should it look:
     {  
       "data_path": "../KGs/Family/family-benchmark_rich_background2.owl",  
       "problems": {  
-        "concept_1": {  
+        "lp1": {  
           "positive_examples": [  
             "http://www.benchmark.org/family#F2F28",  
             "http://www.benchmark.org/family#F2F36",  
@@ -50,7 +72,7 @@ an example file `synthetic_problems.json` showing how should it look:
             "http://www.benchmark.org/family#F2F30"  
            ]  
         },  
-        "concept_2": {  
+        "lp2": {  
           "positive_examples": [  
             "http://www.benchmark.org/family#F2M13",  
             "http://www.benchmark.org/family#F2M18"  
@@ -147,14 +169,15 @@ and `negative_examples` to `OWLNamedIndividual`:
 
 ```python
     from ontolearn.learning_problem import PosNegLPStandard
-    from ontolearn.owlapy.model import IRI, OWLNamedIndividual
+    from owlapy.model import IRI, OWLNamedIndividual
     
     typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
     typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
     lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
 ```
 
-To construct an [OWLNamedIndividual](ontolearn.owlapy.model.OWLNamedIndividual) object an [IRI](ontolearn.owlapy.model.IRI) is required as an input. 
+To construct an [OWLNamedIndividual](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L917) 
+object an [IRI](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/_iri.py#L47) is required as an input. 
 You can simply create an `IRI` object by calling the static method `create` 
 and passing the IRI as a `string`.
 
@@ -181,7 +204,7 @@ There are as well [Predictive Accuracy](ontolearn.metrics.Accuracy),
     pred_acc = Accuracy()
 ```
 
-In the following example we have build a model of [OCEL](ontolearn.concept_learner.OCEL) and 
+In the following example we have built a model of [OCEL](ontolearn.concept_learner.OCEL) and 
 we have specified some of the parameters which OCEL offers.
 
 *(Optional)* If you have target concepts that you want to ignore check 
@@ -251,11 +274,19 @@ You can execute the script `deploy_cl.py` to deploy the concept learners in a lo
 the algorithms using an interactive interface made possible by [gradio](https://www.gradio.app/). Currently, 
 you can only deploy the following concept learners: **NCES**, **EvoLearner**, **CELOE** and **OCEL**.
 
+**Warning:** Gradio is not part of the required packages. Therefore, if you want to use this functionality
+you need to install gradio in addition to the other dependencies:
+
+```shell
+pip install gradio
+```
+
 > **NOTE: In case you don't have you own dataset, don't worry, you can use
 > the datasets we store in our data server. See _[Download external files](02_installation.md#download-external-files)_.**
 
 For example the command below will launch an interface using **EvoLearner** as the model on 
 the **Family** dataset which is a simple dataset with 202 individuals:
+
 
 ```shell
 python deploy_cl.py --model evolearner --path_knowledge_base KGs/Family/family-benchmark_rich_background.owl

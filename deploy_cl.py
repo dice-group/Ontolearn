@@ -146,7 +146,7 @@ def launch_evolearner(args):
                         with gr.Row():
                             i6 = gr.Checkbox(label="Terminate on goal", value=True)
                             i8 = gr.Checkbox(label="Use data properties", value=True)
-                            i9 = gr.Checkbox(label="Use card restrictions", value=True)
+                            i9 = gr.Checkbox(label="Use cardinality restrictions for object properties", value=True)
                             i10 = gr.Checkbox(label="Use inverse", value=False)
                         with gr.Row():
                             i7 = gr.Number(label="Maximum runtime", value=600)
@@ -154,7 +154,7 @@ def launch_evolearner(args):
                             i13 = gr.Number(label="Population size", value=800)
                         with gr.Row():
                             i14 = gr.Number(label="Num generations", value=200)
-                            i12 = gr.Number(label="Card limit", value=10)
+                            i12 = gr.Number(label="Cardinality limit for object properties", value=10)
                             i15 = gr.Number(label="Height limit", value=17)
                     gr.Markdown("Set arguments for the fitness function (LinearPressureFitness)")
                     with gr.Box():
@@ -296,8 +296,8 @@ def launch_celoe(args):
                                             info="For the value splitter: BinningValueSplitter")
                             i18 = gr.Number(label="Maximum child length", value=10, info="\n")
                         with gr.Row():
-                            i22 = gr.Checkbox(label="Use card restrictions", value=True)
-                            i26 = gr.Number(label="Card limit", value=10)
+                            i22 = gr.Checkbox(label="Use cardinality restrictions for object properties", value=True)
+                            i26 = gr.Number(label="Cardinality limit for object properties", value=10)
                         with gr.Row():
                             i19 = gr.Checkbox(label="Use negation", value=True)
                             i20 = gr.Checkbox(label="Use all constructors", value=True)
@@ -410,8 +410,8 @@ def launch_ocel(args):
                                             info="For the value splitter: BinningValueSplitter")
                             i16 = gr.Number(label="Maximum child length", value=10, info="\n")
                         with gr.Row():
-                            i20 = gr.Checkbox(label="Use card restrictions", value=True)
-                            i24 = gr.Number(label="Card limit", value=10)
+                            i20 = gr.Checkbox(label="Use cardinality restrictions for object properties", value=True)
+                            i24 = gr.Number(label="Cardinality limit for object properties", value=10)
                         with gr.Row():
                             i17 = gr.Checkbox(label="Use negation", value=True)
                             i18 = gr.Checkbox(label="Use all constructors", value=True)

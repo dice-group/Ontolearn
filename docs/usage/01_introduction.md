@@ -14,19 +14,24 @@
 
 Ontolearn is an open-source software library for explainable structured machine learning in Python.
 
-For the core module [owlapy](ontolearn.owlapy) Ontolearn is based on [Owlready2](https://owlready2.readthedocs.io/en/latest/index.html), 
-a package for manipulating OWL 2.0 ontologies in Python. In addition, we have implemented
-a higher degree of code for manipulation OWL 2.0 ontologies, in pursuit of making it 
-easier, more flexible and of course, having this all in Python. This adaptation of 
-Owlready2 library made it possible to build more complex algorithms.
-
 Ontolearn started with the goal of using _Explainable Structured Machine Learning_ 
 in OWL 2.0 ontologies and this
 exactly what our library offers. The main contribution are the exclusive concept learning
 algorithms that are part of this library. Currently, we have 4 fully functioning algorithms that 
 learn concept in description logics. Papers can be found [here](09_further_resources.md).
 
-Ontolearn can do the following:
+For the base (core) module of Ontolearn we use [owlapy](https://github.com/dice-group/owlapy)
+combined with [Owlready2](https://owlready2.readthedocs.io/en/latest/index.html). _Owlapy_ is a python package
+based on owlapi and implemented by us, the Ontolearn team. For the sake of modularization we
+have moved it in a separate repository. On the other side _Owlready2_ is a package for manipulating 
+OWL 2.0 ontologies in Python. So in the end we have implemented
+a higher degree of code for manipulation OWL 2.0 ontologies, in pursuit of making it 
+easier to implement and understand, and of course, having this all in Python. This adaptation of 
+Owlready2 library made it possible to build more complex algorithms.
+
+---------------------------------------
+
+**Ontolearn (including owlapy) can do the following:**
 
 - Load/save ontologies in RDF/XML, OWL/XML.
 - Modify ontologies by adding/removing axioms.
@@ -37,6 +42,8 @@ Ontolearn can do the following:
 - Use local datasets or datasets that are hosted on a triplestore server, for the learning task.
 - Reason over an ontology.
 - Other convenient functionalities like converting OWL class expressions to SPARQL or DL syntax.
+
+------------------------------------
 
 The rest of the content is build as a top-to-bottom guide, but nevertheless self-containing, where
 you can learn more in depth about the capabilities of Ontolearn.
