@@ -7,7 +7,7 @@ from ontolearn.metrics import Accuracy, F1
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.sparqlkb import SparqlKnowledgeBase
 from ontolearn.utils import setup_logging, read_individuals_file
-from ontolearn.owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer  # noqa: F401
+from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer  # noqa: F401
 
 ENDPOINT_URL = "http://172.17.0.2:3030/ds/query"
 # ENDPOINT_URL = "http://172.18.0.2:7200/repositories/carcinogenesis"

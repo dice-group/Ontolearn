@@ -12,17 +12,17 @@ from owlready2 import declare_datatype
 from pandas import Timedelta
 from requests.exceptions import RequestException, JSONDecodeError
 
-from ontolearn.owlapy.owl2sparql.converter import Owl2SparqlConverter
-from ontolearn.owlapy.owlready2 import axioms
-from ontolearn.owlapy import namespaces
-from ontolearn.owlapy.ext import OWLReasonerEx
-from ontolearn.owlapy.model import OWLObjectPropertyRangeAxiom, OWLOntologyManager, OWLDataProperty, \
+from owlapy.owl2sparql.converter import Owl2SparqlConverter
+from ontolearn.base import axioms
+from owlapy import namespaces
+from ontolearn.base.ext import OWLReasonerEx
+from owlapy.model import OWLObjectPropertyRangeAxiom, OWLOntologyManager, OWLDataProperty, \
     OWLNamedIndividual, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, OWLOntology, \
     OWLOntologyChange, AddImport, OWLThing, DoubleOWLDatatype, OWLObjectPropertyDomainAxiom, OWLLiteral, \
     OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, DateOWLDatatype, DateTimeOWLDatatype, OWLClass, \
     DurationOWLDatatype, StringOWLDatatype, IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLClassAxiom, \
     OWLSubClassOfAxiom, OWLEquivalentClassesAxiom, OWLObjectSomeValuesFrom, OWLObjectProperty, OWLProperty
-from ontolearn.owlapy.owlready2.utils import FromOwlready2
+from ontolearn.base.utils import FromOwlready2
 
 logger = logging.getLogger(__name__)
 

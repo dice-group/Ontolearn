@@ -3,20 +3,20 @@
 import logging
 import random
 from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict
-from ontolearn.owlapy.owlready2 import OWLOntology_Owlready2, OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from ontolearn.owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, \
+from ontolearn.base import OWLOntology_Owlready2, OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
+from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, \
     OWLNamedIndividual, OWLObjectProperty, OWLClass, OWLDataProperty, IRI, OWLDataRange, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLDatatype, BooleanOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, OWLThing, \
     OWLObjectPropertyExpression, OWLLiteral, OWLDataPropertyExpression
-from ontolearn.owlapy.render import DLSyntaxObjectRenderer
+from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.search import EvaluatedConcept
-from ontolearn.owlapy.util import iter_count, LRUCache
+from owlapy.util import iter_count, LRUCache
 from .abstracts import AbstractKnowledgeBase, AbstractScorer, EncodedLearningProblem
 from .concept_generator import ConceptGenerator
-from .core.owl.utils import OWLClassExpressionLengthMetric
+from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
 from .learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
-from ontolearn.core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
+from ontolearn.base.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 
 Factory = Callable
 

@@ -4,8 +4,8 @@ import logging
 from abc import ABCMeta, abstractmethod
 from typing import Set, List, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional
 
-from ontolearn.owlapy.model import OWLClassExpression, OWLOntology
-from ontolearn.owlapy.util import iter_count
+from owlapy.model import OWLClassExpression, OWLOntology
+from owlapy.util import iter_count
 from .data_struct import Experience
 from .utils import read_csv
 from collections import OrderedDict

@@ -2,7 +2,7 @@ import unittest
 from datetime import date, datetime, timedelta, timezone
 
 from pandas import Timedelta
-from ontolearn.owlapy.model import OWLObjectInverseOf, OWLObjectMinCardinality, OWLObjectSomeValuesFrom, \
+from owlapy.model import OWLObjectInverseOf, OWLObjectMinCardinality, OWLObjectSomeValuesFrom, \
     OWLObjectUnionOf, DoubleOWLDatatype, IntegerOWLDatatype, OWLClass, IRI, OWLDataAllValuesFrom, \
     OWLDataIntersectionOf, OWLDataOneOf, OWLDataProperty, OWLDataSomeValuesFrom, OWLDatatypeRestriction,  \
     OWLLiteral, OWLNamedIndividual, OWLObjectAllValuesFrom, OWLObjectComplementOf, OWLObjectExactCardinality, \
@@ -10,10 +10,10 @@ from ontolearn.owlapy.model import OWLObjectInverseOf, OWLObjectMinCardinality, 
     OWLObjectProperty, OWLDataComplementOf, OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataUnionOf, \
     OWLDataMinCardinality, OWLDataHasValue, OWLThing, OWLNothing, OWLFacetRestriction
 
-from ontolearn.owlapy.model.providers import OWLDatatypeMinExclusiveRestriction,\
+from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction,\
     OWLDatatypeMinMaxExclusiveRestriction, OWLDatatypeMaxExclusiveRestriction
-from ontolearn.owlapy.parser import DLSyntaxParser, ManchesterOWLSyntaxParser
-from ontolearn.owlapy.vocab import OWLFacet
+from owlapy.parser import DLSyntaxParser, ManchesterOWLSyntaxParser
+from owlapy.vocab import OWLFacet
 
 
 class ManchesterOWLSyntaxParserTest(unittest.TestCase):

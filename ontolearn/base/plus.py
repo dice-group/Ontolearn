@@ -3,10 +3,10 @@ from typing import Iterable, Set
 
 import owlready2
 
-from ontolearn.owlapy import namespaces
-from ontolearn.owlapy.model import OWLObjectPropertyExpression, OWLObjectProperty, OWLClassExpression, OWLClass, \
+from owlapy import namespaces
+from owlapy.model import OWLObjectPropertyExpression, OWLObjectProperty, OWLClassExpression, OWLClass, \
     OWLThing, IRI
-from ontolearn.owlapy.owlready2 import OWLReasoner_Owlready2, OWLOntology_Owlready2
+from ontolearn.base import OWLReasoner_Owlready2, OWLOntology_Owlready2
 
 
 class OWLReasoner_Owlready2_Plus(OWLReasoner_Owlready2):

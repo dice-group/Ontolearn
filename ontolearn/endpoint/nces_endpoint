@@ -10,9 +10,9 @@ from flask import make_response
 from ontolearn.concept_learner import NCES
 from ontolearn.utils.log_config import setup_logging
 
-from ontolearn.owlapy.model import OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
+from owlapy.model import OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
     OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, IRI
-from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2
+from ontolearn.base import OWLOntologyManager_Owlready2
 import time, io
 
 from typing import Final

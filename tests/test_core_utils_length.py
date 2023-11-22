@@ -1,9 +1,9 @@
 import unittest
 
-from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric
+from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
 from ontolearn.utils import setup_logging
-from ontolearn.owlapy.model.providers import OWLDatatypeMinMaxInclusiveRestriction
-from ontolearn.owlapy.model import OWLDataUnionOf, OWLLiteral, OWLObjectProperty, OWLObjectUnionOf, \
+from owlapy.model.providers import OWLDatatypeMinMaxInclusiveRestriction
+from owlapy.model import OWLDataUnionOf, OWLLiteral, OWLObjectProperty, OWLObjectUnionOf, \
     OWLObjectComplementOf, OWLObjectIntersectionOf, OWLThing, OWLNamedIndividual, OWLObjectOneOf, OWLObjectHasValue, \
     OWLObjectMinCardinality, IRI, DoubleOWLDatatype, IntegerOWLDatatype, OWLClass, OWLObjectSomeValuesFrom, \
     OWLDataAllValuesFrom, OWLDataComplementOf, OWLDataExactCardinality, OWLDataHasValue, OWLDataIntersectionOf, \

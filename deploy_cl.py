@@ -1,6 +1,5 @@
 import pandas as pd
 import torch
-import gradio as gr
 from argparse import ArgumentParser
 import random
 import os
@@ -15,8 +14,14 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.value_splitter import EntropyValueSplitter, BinningValueSplitter
-from ontolearn.owlapy.model import OWLNamedIndividual, IRI
-from ontolearn.owlapy.render import DLSyntaxObjectRenderer
+from owlapy.model import OWLNamedIndividual, IRI
+from owlapy.render import DLSyntaxObjectRenderer
+
+try:
+    import gradio as gr
+except ImportError as e:
+    raise ImportError("Gradio not found! Please install gradio to use this script --> `pip install gradio`")
+
 
 metrics = {'F1': F1,
            'Accuracy': Accuracy,

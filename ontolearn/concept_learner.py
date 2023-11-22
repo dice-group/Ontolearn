@@ -21,7 +21,7 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.abstracts import AbstractDrill, AbstractFitness, AbstractScorer, AbstractNode, BaseRefinement, \
     AbstractHeuristic, EncodedPosNegLPStandardKind
 from ontolearn.base_concept_learner import BaseConceptLearner, RefinementBasedConceptLearner
-from ontolearn.core.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter, OperandSetTransform
+from ontolearn.base.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter, OperandSetTransform
 from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction, NCESDataLoader, \
     NCESDataLoaderInference
 from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
@@ -41,10 +41,10 @@ from ontolearn.base_nces import BaseNCES
 from ontolearn.nces_architectures import LSTM, GRU, SetTransformer
 from ontolearn.nces_trainer import NCESTrainer, before_pad
 from ontolearn.nces_utils import SimpleSolution
-from ontolearn.owlapy.model import OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual, OWLReasoner
-from ontolearn.owlapy.render import DLSyntaxObjectRenderer
-from ontolearn.owlapy.parser import DLSyntaxParser
-from ontolearn.owlapy.util import OrderedOWLObject
+from owlapy.model import OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual, OWLReasoner
+from owlapy.render import DLSyntaxObjectRenderer
+from owlapy.parser import DLSyntaxParser
+from owlapy.util import OrderedOWLObject
 from sortedcontainers import SortedSet
 import os
 

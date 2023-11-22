@@ -2,7 +2,7 @@ import json
 import random
 import unittest
 from ontolearn.learning_problem import PosNegLPStandard
-from ontolearn.owlapy.model import OWLNamedIndividual, IRI
+from owlapy.model import OWLNamedIndividual, IRI
 
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import EvoLearner
