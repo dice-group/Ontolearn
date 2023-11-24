@@ -4,8 +4,8 @@ import unittest
 from owlready2.prop import DataProperty
 from pandas import Timedelta
 
-from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from ontolearn.owlapy.model import OWLObjectInverseOf, OWLObjectOneOf, OWLObjectProperty, OWLNamedIndividual, \
+from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
+from owlapy.model import OWLObjectInverseOf, OWLObjectOneOf, OWLObjectProperty, OWLNamedIndividual, \
     OWLObjectSomeValuesFrom, OWLThing, OWLObjectComplementOf, IRI, OWLObjectAllValuesFrom, OWLNothing, \
     OWLObjectHasValue, DoubleOWLDatatype, OWLClass, OWLDataAllValuesFrom, OWLDataComplementOf, \
     OWLDataHasValue, OWLDataIntersectionOf, OWLDataOneOf, OWLDataProperty, OWLDataSomeValuesFrom, \
@@ -13,10 +13,10 @@ from ontolearn.owlapy.model import OWLObjectInverseOf, OWLObjectOneOf, OWLObject
     OWLObjectIntersectionOf, OWLSubDataPropertyOfAxiom, OWLSubObjectPropertyOfAxiom, OWLInverseObjectPropertiesAxiom, \
     DurationOWLDatatype
 
-from ontolearn.owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, \
+from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, \
     OWLDatatypeMinMaxInclusiveRestriction, OWLDatatypeMinMaxExclusiveRestriction, OWLDatatypeMaxExclusiveRestriction, \
     OWLDatatypeMaxInclusiveRestriction
-from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from ontolearn.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 
 
 class Owlapy_FastInstanceChecker_Test(unittest.TestCase):

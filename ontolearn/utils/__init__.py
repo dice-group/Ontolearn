@@ -7,7 +7,7 @@ import time
 from typing import Callable, Set, TypeVar, Tuple, Union
 
 from ontolearn.utils.log_config import setup_logging  # noqa: F401
-from ontolearn.owlapy.model import OWLNamedIndividual, IRI, OWLClass, HasIRI
+from owlapy.model import OWLNamedIndividual, IRI, OWLClass, HasIRI
 import pandas as pd
 
 Factory = Callable

@@ -2,12 +2,12 @@ from datetime import date, datetime
 import unittest
 
 from pandas import Timedelta
-from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from ontolearn.owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
+from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
+from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
     OWLDatatypeMinMaxExclusiveRestriction, OWLDatatypeMinMaxInclusiveRestriction
 
 import owlready2
-from ontolearn.owlapy.model import OWLObjectInverseOf, OWLObjectPropertyRangeAxiom, OWLSameIndividualAxiom, OWLClass, \
+from owlapy.model import OWLObjectInverseOf, OWLObjectPropertyRangeAxiom, OWLSameIndividualAxiom, OWLClass, \
     OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectComplementOf, IRI, OWLDataAllValuesFrom, \
     OWLDataComplementOf, OWLDataHasValue, OWLDataIntersectionOf, OWLDataProperty, OWLDataSomeValuesFrom, \
     OWLDataUnionOf, OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLDataOneOf, \
@@ -21,9 +21,9 @@ from ontolearn.owlapy.model import OWLObjectInverseOf, OWLObjectPropertyRangeAxi
     OWLObjectPropertyAssertionAxiom, OWLObjectPropertyDomainAxiom, OWLInverseObjectPropertiesAxiom, OWLSubClassOfAxiom, \
     OWLDeclarationAxiom
 
-from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
-from ontolearn.owlapy.owlready2.utils import ToOwlready2, FromOwlready2
+from ontolearn.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
+from ontolearn.base.utils import ToOwlready2, FromOwlready2
 
 
 class Owlapy_Owlready2_Test(unittest.TestCase):

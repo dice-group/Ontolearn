@@ -3,9 +3,9 @@ import unittest
 
 from owlready2.prop import DataProperty
 from ontolearn.value_splitter import BinningValueSplitter
-from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from ontolearn.owlapy.model import OWLDataProperty, OWLLiteral, IRI
-from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
+from owlapy.model import OWLDataProperty, OWLLiteral, IRI
+from ontolearn.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 
 
 class BinningValueSplitter_Test(unittest.TestCase):

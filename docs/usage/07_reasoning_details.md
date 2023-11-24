@@ -2,7 +2,7 @@
 
 In an earlier guide we explained how to [use reasoners](05_reasoner.md) in Ontolearn. Here we cover a detailed explanation of 
 the Ontolearn reasoners, particularly 
-[OWLReasoner_Owlready2_ComplexCEInstances](ontolearn.owlapy.owlready2.complex_ce_instances.OWLReasoner_Owlready2_ComplexCEInstances) (CCEI).
+[OWLReasoner_Owlready2_ComplexCEInstances](ontolearn.base.complex_ce_instances.OWLReasoner_Owlready2_ComplexCEInstances) (CCEI).
 Before we continue to talk about its [capabilities](#capabilities) we have to explain briefly 
 the term _sync_reasoner_.
 
@@ -20,7 +20,7 @@ in the ontology by using the ontology manager will not be reflected to the ontol
 the ontology at the moment it is instantiated.
 
 There are 2 boolean parameters for sync_reasoner that you can specify when creating an instance of 
-[OWLReasoner_Owlready2_ComplexCEInstances](ontolearn.owlapy.owlready2.complex_ce_instances.OWLReasoner_Owlready2_ComplexCEInstances).
+[OWLReasoner_Owlready2_ComplexCEInstances](ontolearn.base.complex_ce_instances.OWLReasoner_Owlready2_ComplexCEInstances).
 The first one `infer_property_values` tells HermiT or Pellet whether to infer (or not) property values. The same idea but
 for data properties is specified by the parameter `infer_data_property_values` which is only relevant to Pellet.
 
@@ -40,7 +40,7 @@ an instance of _OWLReasoner_Owlready2_ComplexCEInstances_ it will apply sync_rea
 of the ontology and this will affect also the other reasoner/s which is/are using the same world. 
 To overcome this issue you can set the argument `isolate=True` when
 initializing a reasoner.
-[OWLReasoner_FastInstanceChecker](ontolearn.owlapy.fast_instance_checker.OWLReasoner_FastInstanceChecker) (FIC)
+[OWLReasoner_FastInstanceChecker](ontolearn.base.fast_instance_checker.OWLReasoner_FastInstanceChecker) (FIC)
 does not have this argument because it uses a base reasoner to delegate most of its methods. Therefore,
 if the base reasoner has `isolate=True` then FIC will also operate in the isolated world of it's base reasoner.
 
@@ -132,7 +132,7 @@ each **method** of the reasoner _OWLReasoner_Owlready2_ComplexCEInstances_ the r
 depending on a given **TBox** and **Abox**. The level of complexity of the TBox-es is low compared
 to real world scenarios, but it's just to show the capabilities of the reasoner.
 
-> **Note:** not every method of the reasoner is used in this example. You can check all the methods at the [API documentation](owlapy).
+> **Note:** not every method of the reasoner is used in this example. You can check all the methods at the [API documentation](ontolearn.base).
 
 
 | Method                                    | TBox                      | ABox                  | Returns<br>(T = Thing) |

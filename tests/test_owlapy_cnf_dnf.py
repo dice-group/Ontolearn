@@ -1,10 +1,10 @@
 import unittest
 
-from ontolearn.owlapy.model import OWLObjectProperty, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
+from owlapy.model import OWLObjectProperty, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
     OWLClass, IRI, OWLDataProperty, OWLDataSomeValuesFrom, OWLNamedIndividual, OWLObjectComplementOf, \
     OWLObjectIntersectionOf, OWLObjectMinCardinality, OWLObjectOneOf
-from ontolearn.owlapy.model.providers import OWLDatatypeMinExclusiveRestriction
-from ontolearn.owlapy.util import TopLevelCNF, TopLevelDNF
+from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction
+from owlapy.util import TopLevelCNF, TopLevelDNF
 
 
 class TopLevelNFTest(unittest.TestCase):

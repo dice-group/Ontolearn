@@ -4,10 +4,10 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import Accuracy, F1
-from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from ontolearn.owlapy.model import OWLClass, OWLObjectSomeValuesFrom, OWLObjectProperty, IRI
-from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from ontolearn.owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
+from owlapy.model import OWLClass, OWLObjectSomeValuesFrom, OWLObjectProperty, IRI
+from ontolearn.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from owlapy.render import DLSyntaxObjectRenderer
 
 if __name__ == '__main__':
     # In[45]:

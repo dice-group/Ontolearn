@@ -7,7 +7,7 @@ from typing import Union
 import owlready2
 from pandas import Timedelta
 
-from ontolearn.owlapy.model import OWLObjectMinCardinality, OWLObjectOneOf, OWLObjectRestriction, \
+from owlapy.model import OWLObjectMinCardinality, OWLObjectOneOf, OWLObjectRestriction, \
     OWLObjectComplementOf, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLObjectPropertyExpression, OWLObject, OWLOntology, OWLAnnotationProperty, IRI, OWLObjectInverseOf, \
     DoubleOWLDatatype, IntegerOWLDatatype, OWLClassExpression, OWLDataAllValuesFrom, OWLDataComplementOf, \
@@ -18,7 +18,7 @@ from ontolearn.owlapy.model import OWLObjectMinCardinality, OWLObjectOneOf, OWLO
     DateOWLDatatype, DateTimeOWLDatatype, DurationOWLDatatype, OWLRestriction, OWLDataOneOf, OWLDataRestriction, \
     OWLIndividual, StringOWLDatatype, OWLPropertyExpression
 
-from ontolearn.owlapy.vocab import OWLFacet
+from owlapy.vocab import OWLFacet
 
 
 OWLREADY2_FACET_KEYS = MappingProxyType({

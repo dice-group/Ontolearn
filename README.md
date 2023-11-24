@@ -8,7 +8,7 @@ Learning algorithms:
 - **EvoLearner** &rarr; [EvoLearner: Learning Description Logics with Evolutionary Algorithms](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
 - **NCES2** &rarr; (soon) [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
 - **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13) 
-- **NERO** &rarr; [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://link.springer.com/chapter/10.1007/978-3-031-30047-9_9)
+- **NERO** &rarr; (soon) [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://link.springer.com/chapter/10.1007/978-3-031-30047-9_9)
 - **CLIP** &rarr; (soon) [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
 - **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
 - **OCEL** &rarr; A limited version of CELOE
@@ -34,9 +34,9 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, Drill
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1
-from ontolearn.owlapy.model import OWLNamedIndividual, IRI
+from owlapy.model import OWLNamedIndividual, IRI
 from ontolearn.utils import setup_logging
-from ontolearn.owlapy.render import DLSyntaxObjectRenderer
+from owlapy.render import DLSyntaxObjectRenderer
 setup_logging()
 renderer = DLSyntaxObjectRenderer()
 max_runtime, topk=1, 3
@@ -63,6 +63,9 @@ Fore more please refer to  the [examples](https://github.com/dice-group/Ontolear
 
 ## Deployment 
 
+```shell
+pip install gradio
+```
 
 To deploy **EvoLearner** on the **Family** knowledge graph. Available models to deploy: **EvoLearner**, **NCES**, **CELOE** and **OCEL**.
 ```shell

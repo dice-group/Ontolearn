@@ -6,10 +6,10 @@ from ontolearn.concept_learner import CELOE
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import Accuracy, F1
 from ontolearn.utils import setup_logging, read_individuals_file
-from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from ontolearn.owlapy.model import IRI
-from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from ontolearn.owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer  # noqa: F401
+from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
+from owlapy.model import IRI
+from ontolearn.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer  # noqa: F401
 
 
 def run(data_file, pos_file, neg_file):

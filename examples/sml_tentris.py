@@ -7,7 +7,7 @@ from ontolearn.metrics import Accuracy, F1
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.tentris import TentrisKnowledgeBase
 from ontolearn.utils import setup_logging, read_individuals_file
-from ontolearn.owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer  # noqa: F401
+from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer  # noqa: F401
 
 
 # TODO: check if this works after fixing the warnings in ontolearn\tentris.py

@@ -6,10 +6,10 @@ from typing import Iterable, cast, Optional, List
 import os
 import owlready2
 
-from ontolearn.owlapy.model import OWLClass, OWLClassExpression, OWLNamedIndividual, IRI, OWLAxiom
-from ontolearn.owlapy.owlready2 import OWLReasoner_Owlready2, OWLOntology_Owlready2, BaseReasoner_Owlready2, \
+from owlapy.model import OWLClass, OWLClassExpression, OWLNamedIndividual, IRI, OWLAxiom
+from ontolearn.base import OWLReasoner_Owlready2, OWLOntology_Owlready2, BaseReasoner_Owlready2, \
     OWLOntologyManager_Owlready2
-from ontolearn.owlapy.owlready2.utils import ToOwlready2
+from ontolearn.base.utils import ToOwlready2
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ class OWLReasoner_Owlready2_ComplexCEInstances(OWLReasoner_Owlready2):
 
     def __init__(self, ontology: OWLOntology_Owlready2, base_reasoner: Optional[BaseReasoner_Owlready2] = None,
                  infer_property_values: bool = True, infer_data_property_values: bool = True, isolate: bool = False,
-                 use_triplestore: bool = False, triplestore_address: str = None):
+                 triplestore_address: str = None):
         """
         OWL Reasoner with support for Complex Class Expression Instances + sync_reasoner.
 
@@ -33,17 +33,16 @@ class OWLReasoner_Owlready2_ComplexCEInstances(OWLReasoner_Owlready2):
             infer_data_property_values: Whether to infer data property values (only for PELLET).
             isolate: Whether to isolate the reasoner in a new world + copy of the original ontology.
                      Useful if you create multiple reasoner instances in the same script.
-            use_triplestore: Whether to use triplestore to retrieve instances. This only affects 'instances' method.
-            triplestore_address: The address that hosts the triplestore. Required if use_triplestore = True.
+            triplestore_address: The address that hosts the triplestore.
         """
 
-        super().__init__(ontology, isolate, use_triplestore, triplestore_address)
-        if use_triplestore:
+        super().__init__(ontology, isolate, triplestore_address)
+        if triplestore_address is not None:
             print("WARN  OWLReasoner    :: Instance retrieval will be performed via triplestore using SPARQL query "
-                  "because `use_triplestore` is set to True. The `instances` method will default to the implementation"
-                  " in the base class and every functionality offered by OWLReasoner_Owlready2_ComplexCEInstances will "
-                  "be irrelevant to this method ")
-        if isolate:
+                  "because you have entered a triplestore address. The `instances` method will default to the "
+                  "implementation in the base class and every functionality offered by "
+                  "OWLReasoner_Owlready2_ComplexCEInstances will be irrelevant to this method ")
+        if isolate and triplestore_address is None:
             new_manager = OWLOntologyManager_Owlready2()
             self.reference_ontology = new_manager.load_ontology(ontology.get_original_iri())
             self.reference_iri = IRI.create(f'file:/isolated_ontology_{id(self.reference_ontology)}.owl')
@@ -100,7 +99,7 @@ class OWLReasoner_Owlready2_ComplexCEInstances(OWLReasoner_Owlready2):
                 yield OWLNamedIndividual(IRI.create(i.iri))
 
     def __del__(self):
-        if self._isolated:
+        if self._isolated and not self.is_using_triplestore():
             file_path = f"isolated_ontology_{id(self.reference_ontology)}.owl"
             try:
                 os.remove(file_path)

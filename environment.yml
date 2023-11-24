@@ -4,6 +4,7 @@ channels:
   - conda-forge
   - pytorch
 dependencies:
+  - python=3.8
   - matplotlib=3.3.4
   - pandas=1.2.3
   - pytorch=1.8.0
@@ -32,6 +33,7 @@ dependencies:
   # PIP
   - pip=21.0.1
   - pip:
+    - owlapy == 0.1.0
     - tokenizers==0.12.1
     - transformers==4.19.2
     # testing

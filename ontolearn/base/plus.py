@@ -3,10 +3,10 @@ from typing import Iterable, Set
 
 import owlready2
 
-from ontolearn.owlapy import namespaces
-from ontolearn.owlapy.model import OWLObjectPropertyExpression, OWLObjectProperty, OWLClassExpression, OWLClass, \
+from owlapy import namespaces
+from owlapy.model import OWLObjectPropertyExpression, OWLObjectProperty, OWLClassExpression, OWLClass, \
     OWLThing, IRI
-from ontolearn.owlapy.owlready2 import OWLReasoner_Owlready2, OWLOntology_Owlready2
+from ontolearn.base import OWLReasoner_Owlready2, OWLOntology_Owlready2
 
 
 class OWLReasoner_Owlready2_Plus(OWLReasoner_Owlready2):
@@ -14,9 +14,9 @@ class OWLReasoner_Owlready2_Plus(OWLReasoner_Owlready2):
 
     Contains some behavioural fixes."""
 
-    def __init__(self, ontology: OWLOntology_Owlready2, isolate: bool = False, use_triplestore: bool = False,
+    def __init__(self, ontology: OWLOntology_Owlready2, isolate: bool = False,
                  triplestore_address: str = None):
-        super().__init__(ontology, isolate, use_triplestore, triplestore_address)
+        super().__init__(ontology, isolate, triplestore_address)
 
     def sub_classes(self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True) -> Iterable[OWLClass]:
         if isinstance(ce, OWLClass):

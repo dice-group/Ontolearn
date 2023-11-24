@@ -4,22 +4,22 @@ import logging
 import time
 from abc import ABCMeta, abstractmethod
 from typing import List, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, Union, cast, Callable, Type
-
+import xml.etree.ElementTree as ET
 import numpy as np
 import pandas as pd
-
+import os
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.metrics import F1, Accuracy
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.search import _NodeQuality
 
-from ontolearn.owlapy.model import OWLDeclarationAxiom, OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport,\
+from owlapy.model import OWLDeclarationAxiom, OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport,\
     OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, OWLAnnotationAssertionAxiom, OWLAnnotation, \
     OWLAnnotationProperty, OWLLiteral, IRI, OWLClassExpression, OWLReasoner, OWLAxiom, OWLThing
-from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLOntology_Owlready2
-from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
-from ontolearn.owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.base import OWLOntologyManager_Owlready2, OWLOntology_Owlready2
+from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
+from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
     AbstractConceptNode, AbstractLearningProblem
 from .utils import oplogging
@@ -357,6 +357,67 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
                 for equivalent_c in equivalent_classes.class_expressions():
                     if equivalent_c != c:
                         yield equivalent_c
+
+    @staticmethod
+    def verbalize(predictions_file_path: str):
+
+        tree = ET.parse(predictions_file_path)
+        root = tree.getroot()
+        tmp_file = 'tmp_file_' + predictions_file_path
+        owl = 'http://www.w3.org/2002/07/owl#'
+        ontology_elem = root.find(f'{{{owl}}}Ontology')
+        ontology_elem.remove(ontology_elem.find(f'{{{owl}}}imports'))
+
+        # The commented lines below are needed if you want to use `verbaliser.verbalise_class_expression`
+        # They assign labels to classes and properties.
+
+        # rdf = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'
+        # rdfs = 'http://www.w3.org/2000/01/rdf-schema#'
+        # for element in root.iter():
+        #     resource = None
+        #     if f'{{{rdf}}}about' in element.attrib:
+        #         resource = element.attrib[f'{{{rdf}}}about']
+        #     elif f'{{{rdf}}}resource' in element.attrib:
+        #         resource = element.attrib[f'{{{rdf}}}resource']
+        #     if resource is not None:
+        #         label = resource.split('#')
+        #         if len(label) > 1:
+        #             element.set(f'{{{rdfs}}}label', label[1])
+        #         else:
+        #             element.set(f'{{{rdfs}}}label', resource)
+
+        tree.write(tmp_file)
+
+        try:
+            from deeponto.onto import Ontology, OntologyVerbaliser
+            from anytree.dotexport import RenderTreeGraph
+            from IPython.display import Image
+        except Exception as e:
+            print("You need to install deeponto to use this feature (pip install deeponto). If you have already, check "
+                  "whether it's installed properly. \n   ----> Error: " + f'{e}')
+            if os.path.exists(tmp_file):
+                os.remove(tmp_file)
+            return
+
+        onto = Ontology(tmp_file)
+        verbalizer = OntologyVerbaliser(onto)
+        complex_concepts = onto.get_asserted_complex_classes()
+        try:
+            for i, ce in enumerate(complex_concepts):
+                tree = verbalizer.parser.parse(str(ce))
+                tree.render_image()
+                os.rename("range_node.png", f"Prediction_{i}.png")
+        except Exception as e:
+            print("If you have not installed graphviz, please do so at https://graphviz.org/download/ to make the "
+                  "verbalization possible. Otherwise check the error message: \n" + f'{e}')
+        if os.path.exists(tmp_file):
+            os.remove(tmp_file)
+        if len(complex_concepts) == 0:
+            print("No complex classes found!")
+        elif len(complex_concepts) == 1:
+            print("Image generated successfully!")
+        else:
+            print("Images generated successfully!")
 
 
 class RefinementBasedConceptLearner(BaseConceptLearner[_N]):

@@ -6,13 +6,13 @@ from typing import Callable, Final, List, Optional, Tuple, Union
 from deap.gp import Primitive, Terminal
 
 from ontolearn.concept_generator import ConceptGenerator
-from ontolearn.owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
+from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
     OWLClassExpression, OWLDataHasValue, OWLDataPropertyExpression, OWLDataSomeValuesFrom, OWLLiteral, \
     OWLObjectAllValuesFrom, OWLObjectIntersectionOf, NUMERIC_DATATYPES, OWLDataProperty, OWLObjectProperty, \
     OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectMinCardinality
 import re
 
-from ontolearn.owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
+from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
     OWLDatatypeMaxExclusiveRestriction, OWLDatatypeMaxInclusiveRestriction
 
 

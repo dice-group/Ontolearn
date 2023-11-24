@@ -9,19 +9,19 @@ import httpx as httpx
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.abstracts import AbstractScorer, AbstractLearningProblem, AbstractKnowledgeBase, \
     EncodedPosNegLPStandardKind
-from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric
+from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
 from ontolearn.knowledge_base import Factory, _Default_ClassExpressionLengthMetricFactory
 from ontolearn.search import EvaluatedConcept
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1, Precision, Accuracy, Recall
 from ontolearn.utils import oplogging
-from ontolearn.owlapy.ext import OWLReasonerEx
-from ontolearn.owlapy.model import OWLClassExpression, OWLEntity, OWLOntology, OWLClass, OWLNamedIndividual, \
+from ontolearn.base.ext import OWLReasonerEx
+from owlapy.model import OWLClassExpression, OWLEntity, OWLOntology, OWLClass, OWLNamedIndividual, \
     OWLObjectPropertyExpression, OWLDataProperty, OWLObjectProperty, OWLOntologyID, _M, OWLDataPropertyRangeAxiom, \
     IRI, OWLThing, OWLLiteral, OWLObjectPropertyRangeAxiom, OWLObjectPropertyDomainAxiom, OWLDataPropertyDomainAxiom
-from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from ontolearn.owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer
-from ontolearn.owlapy.util import LRUCache
+from ontolearn.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer
+from owlapy.util import LRUCache
 
 logger = logging.getLogger(__name__)
 

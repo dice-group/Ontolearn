@@ -7,7 +7,7 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE, EvoLearner, OCEL
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import Accuracy, F1
-from ontolearn.owlapy.model import OWLClass, OWLNamedIndividual, IRI
+from owlapy.model import OWLClass, OWLNamedIndividual, IRI
 from ontolearn.utils import setup_logging
 
 setup_logging()

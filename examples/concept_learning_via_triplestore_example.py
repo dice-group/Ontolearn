@@ -4,7 +4,7 @@ from ontolearn.concept_learner import CELOE
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
-from ontolearn.owlapy.model import IRI, OWLNamedIndividual
+from owlapy.model import IRI, OWLNamedIndividual
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 
 """
@@ -24,7 +24,7 @@ For this example you can fulfill the prerequisites as follows:
 """
 
 # Create a knowledge base object for the Family dataset using the URL address of the triplestore host only
-kb = KnowledgeBase(use_triplestore=True, triplestore_address="http://localhost:3030/family/sparql")
+kb = KnowledgeBase(triplestore_address="http://localhost:3030/family/sparql")
 
 # Define the model
 heur = CELOEHeuristic(expansionPenaltyFactor=0.05, startNodeBonus=1.0, nodeRefinementPenalty=0.01)

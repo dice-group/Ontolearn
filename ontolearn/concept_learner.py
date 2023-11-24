@@ -21,7 +21,7 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.abstracts import AbstractDrill, AbstractFitness, AbstractScorer, AbstractNode, BaseRefinement, \
     AbstractHeuristic, EncodedPosNegLPStandardKind
 from ontolearn.base_concept_learner import BaseConceptLearner, RefinementBasedConceptLearner
-from ontolearn.core.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter, OperandSetTransform
+from ontolearn.base.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter, OperandSetTransform
 from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction, NCESDataLoader, \
     NCESDataLoaderInference
 from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
@@ -41,10 +41,10 @@ from ontolearn.base_nces import BaseNCES
 from ontolearn.nces_architectures import LSTM, GRU, SetTransformer
 from ontolearn.nces_trainer import NCESTrainer, before_pad
 from ontolearn.nces_utils import SimpleSolution
-from ontolearn.owlapy.model import OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual, OWLReasoner
-from ontolearn.owlapy.render import DLSyntaxObjectRenderer
-from ontolearn.owlapy.parser import DLSyntaxParser
-from ontolearn.owlapy.util import OrderedOWLObject
+from owlapy.model import OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual, OWLReasoner
+from owlapy.render import DLSyntaxObjectRenderer
+from owlapy.parser import DLSyntaxParser
+from owlapy.util import OrderedOWLObject
 from sortedcontainers import SortedSet
 import os
 
@@ -1448,7 +1448,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
     Attributes:
         algorithm (AbstractEvolutionaryAlgorithm): The evolutionary algorithm.
-        card_limit (int): The upper card limit if using card restriction.
+        card_limit (int): The upper cardinality limit if using cardinality restriction on object properties.
         fitness_func (AbstractFitness): Fitness function.
         height_limit (int): The maximum value allowed for the height of the Crossover and Mutation operations.
         init_method (AbstractEAInitialization): The evolutionary algorithm initialization method.
@@ -1468,7 +1468,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found.
         toolbox (base.Toolbox): A toolbox for evolution that contains the evolutionary operators.
         tournament_size (int): The number of evolutionary individuals participating in each tournament.
-        use_card_restrictions (bool): Use card restriction?
+        use_card_restrictions (bool): Use cardinality restriction for object properties?
         use_data_properties (bool): Consider data properties?
         use_inverse (bool): Consider inversed concepts?
         value_splitter (AbstractValueSplitter): Used to calculate the splits for data properties values.
@@ -1531,7 +1531,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
         Args:
             algorithm (AbstractEvolutionaryAlgorithm): The evolutionary algorithm. Defaults to `EASimple`.
-            card_limit (int): The upper card limit if using card restriction. Defaults to 10.
+            card_limit (int): The upper cardinality limit if using cardinality restriction for object properties. Defaults to 10.
             fitness_func (AbstractFitness): Fitness function. Defaults to `LinearPressureFitness`.
             height_limit (int): The maximum value allowed for the height of the Crossover and Mutation operations.
                                 Defaults to 17.
@@ -1550,7 +1550,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found. Defaults to True.
             tournament_size (int): The number of evolutionary individuals participating in each tournament.
                                     Defaults to 7.
-            use_card_restrictions (bool): Use card restriction? Default to True.
+            use_card_restrictions (bool): Use cardinality restriction for object properties? Default to True.
             use_data_properties (bool): Consider data properties? Defaults to True.
             use_inverse (bool): Consider inversed concepts? Defaults to False.
             value_splitter (AbstractValueSplitter): Used to calculate the splits for data properties values. Defaults to

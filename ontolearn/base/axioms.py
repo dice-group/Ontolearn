@@ -7,7 +7,7 @@ from typing import cast
 import owlready2
 from owlready2 import destroy_entity, AllDisjoint, AllDifferent, GeneralClassAxiom
 
-from ontolearn.owlapy.model import OWLDisjointUnionAxiom, OWLQuantifiedDataRestriction, \
+from owlapy.model import OWLDisjointUnionAxiom, OWLQuantifiedDataRestriction, \
     OWLAnnotationAssertionAxiom, OWLClass, OWLClassAssertionAxiom, OWLEquivalentClassesAxiom, OWLObject, \
     OWLAnnotationProperty, OWLDataHasValue, OWLDataProperty, OWLDeclarationAxiom, OWLIndividual, \
     OWLNamedIndividual, OWLNaryBooleanClassExpression, OWLObjectComplementOf, OWLObjectHasValue, \
@@ -21,7 +21,7 @@ from ontolearn.owlapy.model import OWLDisjointUnionAxiom, OWLQuantifiedDataRestr
     OWLEquivalentObjectPropertiesAxiom, OWLInverseObjectPropertiesAxiom, OWLNaryPropertyAxiom, OWLNaryIndividualAxiom, \
     OWLDifferentIndividualsAxiom, OWLDisjointClassesAxiom, OWLSameIndividualAxiom, OWLProperty, \
     OWLQuantifiedObjectRestriction
-from ontolearn.owlapy.owlready2.utils import ToOwlready2
+from ontolearn.base.utils import ToOwlready2
 
 
 @singledispatch
