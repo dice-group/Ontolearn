@@ -1,10 +1,10 @@
-from ontolearn.owlapy.model import OWLSubClassOfAxiom, OWLEquivalentObjectPropertiesAxiom, \
+from owlapy.model import OWLSubClassOfAxiom, OWLEquivalentObjectPropertiesAxiom, \
     OWLObjectPropertyDomainAxiom, OWLDataProperty
-from ontolearn.owlapy.owlready2 import OWLReasoner_Owlready2, BaseReasoner_Owlready2
+from ontolearn.base import OWLReasoner_Owlready2, BaseReasoner_Owlready2
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.owlapy.model import OWLObjectProperty, IRI, OWLObjectSomeValuesFrom, \
+from owlapy.model import OWLObjectProperty, IRI, OWLObjectSomeValuesFrom, \
     OWLObjectIntersectionOf, OWLClass, OWLNamedIndividual
-from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
+from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
 
 data_file = '../KGs/test_ontology.owl'
 NS = 'http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#'

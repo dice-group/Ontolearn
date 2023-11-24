@@ -2,7 +2,8 @@
 
 In Ontolearn we represent a knowledge base 
 by the class [KnowledgeBase](ontolearn.knowledge_base.KnowledgeBase) which contains two main class attributes, 
-an ontology [OWLOntology](ontolearn.owlapy.model.OWLOntology) and a reasoner [OWLReasoner](ontolearn.owlapy.model.OWLReasoner).
+an ontology [OWLOntology](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L3064)
+and a reasoner [OWLReasoner](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L3322).
 It also contains the class and properties hierarchy as well as other
 Ontology-related attributes required for the Structured Machine Learning library.
 
@@ -18,7 +19,7 @@ differently from the ontology you can use methods that require reasoning. You ca
 the methods for each in the links below:
 
 - [KnowledgeBase](ontolearn.knowledge_base.KnowledgeBase)
-- [OWLOntology](ontolearn.owlapy.model.OWLOntology)
+- [OWLOntology](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L3064)
 
 In summary:
 
@@ -48,6 +49,10 @@ kb = KnowledgeBase(path="file://KGs/father.owl")
 What happens in the background is that the ontology located in this path will be loaded
 in the `OWLOntology` object of `kb` as done [here](03_ontologies.md#loading-an-ontology).
 
+In our recent version you can also initialize the KnowledgeBase using a dataset hosted in a triplestore.
+Since that knowledge base is mainly used for executing a concept learner, we cover that matter more in depth 
+in _[Use Triplestore Knowledge Base](06_concept_learners.md#use-triplestore-knowledge-base)_ 
+section of _[Concept Learning](06_concept_learners.md)_.
 
 ## Ignore Concepts
 
@@ -66,8 +71,8 @@ It can be done as follows:
 <!--pytest-codeblocks:cont-->
 
 ```python
-from ontolearn.owlapy.model import OWLClass
-from ontolearn.owlapy.model import IRI
+from owlapy.model import OWLClass
+from owlapy.model import IRI
 
 iri = IRI('http://example.com/father#', 'Father')
 father_concept = OWLClass(iri)
@@ -75,7 +80,7 @@ concepts_to_ignore = {father_concept}  # you can add more than 1
 
 new_kb = kb.ignore_and_copy(ignored_classes=concepts_to_ignore)
 ```
-In this example, we have created an instance of [OWLClass](ontolearn.owlapy.model.OWLClass) by using an [IRI](ontolearn.owlapy.model.IRI). 
+In this example, we have created an instance of [OWLClass](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L209) by using an [IRI](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/_iri.py#L47). 
 On the other side, an instance of `IRI` is created by passing two parameters which are
 the namespace of the ontology and the remainder 'Father'.
 
@@ -85,7 +90,7 @@ You may need to work with individuals of a knowledge base.
 We cover different ways of accessing them.
 
 Let us give a  simple example of how to get the individuals that
-are classified by an [OWLClassExpression](ontolearn.owlapy.model.OWLClassExpression). As a class expression, we will simply use the 
+are classified by an [OWLClassExpression](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L209Expression). As a class expression, we will simply use the 
 concept 'male'.
 
 <!--pytest-codeblocks:cont-->
@@ -138,7 +143,7 @@ When using a concept learner, the generated concepts (class expressions) for a c
 need to be evaluated to see the performance. 
 To do that you can use the method `evaluate_concept` of `KnowledgeBase`. It requires the following arguments:
 
-1. a concept to evaluate: [OWLClassExpression](ontolearn.owlapy.model.OWLClassExpression)
+1. a concept to evaluate: [OWLClassExpression](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L209Expression)
 2. a quality metric: [AbstractScorer](ontolearn.abstracts.AbstractScorer)
 3. the encoded learning problem: [EncodedLearningProblem](ontolearn.learning_problem.EncodedPosNegLPStandard)
 
@@ -156,7 +161,7 @@ the positive and negative examples for the concept of 'Father'. Our positive exa
 
 <!--pytest-codeblocks:cont-->
 ```python
-from ontolearn.owlapy.model import OWLNamedIndividual
+from owlapy.model import OWLNamedIndividual
 
 positive_examples = {OWLNamedIndividual(IRI.create(NS, 'stefan')),
                      OWLNamedIndividual(IRI.create(NS, 'markus')),
@@ -191,7 +196,7 @@ but for now we let's construct this class expression manually:
 
 <!--pytest-codeblocks:cont-->
 ```python
-from ontolearn.owlapy.model import OWLObjectProperty, OWLObjectSomeValuesFrom , OWLObjectIntersectionOf
+from owlapy.model import OWLObjectProperty, OWLObjectSomeValuesFrom , OWLObjectIntersectionOf
 
 female = OWLClass(IRI(NS,'female'))
 not_female = kb.generator.negation(female)
@@ -204,11 +209,11 @@ concept_to_test = OWLObjectIntersectionOf([not_female, exist_has_child_T])
 
 `kb` has an instance of [ConceptGenerator](ontolearn.concept_generator.ConceptGenerator)
 which we use in this case to create the negated concept `¬female`. The other classes 
-[OWLObjectProperty](ontolearn.owlapy.model.OWLObjectProperty), 
-[OWLObjectSomeValuesFrom](ontolearn.owlapy.model.OWLObjectSomeValuesFrom) 
-and [OWLObjectIntersectionOf](ontolearn.owlapy.model.OWLObjectIntersectionOf) are classes
-that represent different kind of axioms in ontolearn and can be found in 
-[owlapy model](ontolearn.owlapy.model). There are more kind of axioms there which you
+[OWLObjectProperty](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L380C7-L380C24), 
+[OWLObjectSomeValuesFrom](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L554) 
+and [OWLObjectIntersectionOf](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L650) are classes
+that represent different kind of axioms in owlapy and can be found in 
+[owlapy model](https://github.com/dice-group/owlapy/blob/main/owlapy/model/__init__.py) module. There are more kind of axioms there which you
 can use to construct class expressions like we did in the example above.
 
 ### Evaluation and results

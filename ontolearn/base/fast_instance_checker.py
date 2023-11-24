@@ -8,15 +8,15 @@ from itertools import repeat, chain
 from types import MappingProxyType, FunctionType
 from typing import DefaultDict, Iterable, Dict, Mapping, Set, Type, TypeVar, Optional, FrozenSet
 
-from ontolearn.owlapy.ext import OWLReasonerEx
-from ontolearn.owlapy.model import OWLDataRange, OWLObjectOneOf, OWLOntology, OWLNamedIndividual, OWLClass, \
+from ontolearn.base.ext import OWLReasonerEx
+from owlapy.model import OWLDataRange, OWLObjectOneOf, OWLOntology, OWLNamedIndividual, OWLClass, \
     OWLObjectProperty, OWLDataProperty, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
     OWLObjectPropertyExpression, OWLObjectComplementOf, OWLObjectAllValuesFrom, IRI, OWLObjectInverseOf, \
     OWLDataSomeValuesFrom, OWLDataPropertyExpression, OWLDatatypeRestriction, OWLLiteral, OWLClassExpression, \
     OWLDataComplementOf, OWLDataAllValuesFrom, OWLDatatype, OWLDataHasValue, OWLDataOneOf, OWLReasoner, \
     OWLDataIntersectionOf, OWLDataUnionOf, OWLObjectCardinalityRestriction, OWLObjectMinCardinality, \
     OWLObjectMaxCardinality, OWLObjectExactCardinality, OWLObjectHasValue, OWLPropertyExpression, OWLFacetRestriction
-from ontolearn.owlapy.util import LRUCache
+from owlapy.util import LRUCache
 
 logger = logging.getLogger(__name__)
 
@@ -70,10 +70,10 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
         super().__init__(ontology)
         if base_reasoner.is_using_triplestore():
             print("WARN  OWLReasoner    :: Instance retrieval will be performed via triplestore using SPARQL query "
-                  "because `use_triplestore` is set to True for the `base_reasoner`. The `instances` method will "
+                  "because you have entered a triplestore address for the `base_reasoner`. The `instances` method will "
                   "default to the implementation in the base_reasoner and every functionality offered by "
                   "OWLReasoner_FastInstanceChecker will be irrelevant to this method ")
-        if base_reasoner.is_isolated():
+        if base_reasoner.is_isolated() and not base_reasoner.is_using_triplestore():
             self._ontology = base_reasoner.get_root_ontology()
         else:
             self._ontology = ontology
@@ -211,7 +211,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
         opc: DefaultDict[OWLNamedIndividual, Set[OWLNamedIndividual]] = defaultdict(set)
 
         # shortcut for owlready2
-        from ontolearn.owlapy.owlready2 import OWLOntology_Owlready2
+        from ontolearn.base import OWLOntology_Owlready2
         if isinstance(self._ontology, OWLOntology_Owlready2):
             import owlready2
             # _x => owlready2 objects
@@ -253,7 +253,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
             subs = set()
 
             # shortcut for owlready2
-            from ontolearn.owlapy.owlready2 import OWLOntology_Owlready2
+            from ontolearn.base import OWLOntology_Owlready2
             if isinstance(self._ontology, OWLOntology_Owlready2):
                 import owlready2
                 # _x => owlready2 objects
@@ -330,7 +330,7 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
         opc: Dict[OWLNamedIndividual, Set[OWLLiteral]] = dict()
 
         # shortcut for owlready2
-        from ontolearn.owlapy.owlready2 import OWLOntology_Owlready2
+        from ontolearn.base import OWLOntology_Owlready2
         if isinstance(self._ontology, OWLOntology_Owlready2):
             import owlready2
             # _x => owlready2 objects

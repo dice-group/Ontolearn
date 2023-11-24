@@ -6,10 +6,10 @@ from functools import total_ordering
 from queue import PriorityQueue
 from typing import List, Optional, ClassVar, Final, Iterable, TypeVar, Generic, Set, Tuple, Dict
 
-from ontolearn.owlapy.io import OWLObjectRenderer
-from ontolearn.owlapy.model import OWLClassExpression
-from ontolearn.owlapy.render import DLSyntaxObjectRenderer
-from ontolearn.owlapy.util import as_index, OrderedOWLObject
+from owlapy.io import OWLObjectRenderer
+from owlapy.model import OWLClassExpression
+from owlapy.render import DLSyntaxObjectRenderer
+from owlapy.util import as_index, OrderedOWLObject
 from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree, \
     AbstractConceptNode, EncodedLearningProblem, DRILLAbstractTree
 
@@ -287,6 +287,7 @@ class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality
             f'Tree Depth:{self._tree_depth}',
             _NodeIndividualsCount.__str__(self),
         ))
+
 
 
 class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodeParentRef['RL_State']):
@@ -742,6 +743,16 @@ class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
     def clean(self):
         self.items_in_queue = PriorityQueue()
         self._nodes.clear()
+
+
+class EvaluatedConcept:
+    """Explicitly declare the attributes that should be returned by the evaluate_concept method of a KnowledgeBase.
+
+    This way, Python uses a more efficient way to store the instance attributes, which can significantly reduce the
+    memory usage.
+    """
+    __slots__ = 'q', 'inds', 'ic'
+    pass
 
 
 class SuperProp:

@@ -6,8 +6,8 @@ from typing import TypeVar, List, Optional, Union
 from ontolearn.abstracts import AbstractHeuristic, AbstractScorer, BaseRefinement, AbstractKnowledgeBase, \
     AbstractNode
 from ontolearn.base_concept_learner import BaseConceptLearner
-from ontolearn.owlapy.model import OWLReasoner, OWLNamedIndividual, OWLClassExpression, OWLAxiom
-from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
+from owlapy.model import OWLReasoner, OWLNamedIndividual, OWLClassExpression, OWLAxiom
+from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
 
 logger = logging.getLogger(__name__)
 # TODO:CD: Move all imports to the top of the file

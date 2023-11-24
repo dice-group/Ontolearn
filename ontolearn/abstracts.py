@@ -4,8 +4,8 @@ import logging
 from abc import ABCMeta, abstractmethod
 from typing import Set, List, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional
 
-from ontolearn.owlapy.model import OWLClassExpression, OWLOntology
-from ontolearn.owlapy.util import iter_count
+from owlapy.model import OWLClassExpression, OWLOntology
+from owlapy.util import iter_count
 from .data_struct import Experience
 from .utils import read_csv
 from collections import OrderedDict
@@ -232,6 +232,8 @@ class AbstractNode(metaclass=ABCMeta):
         addr = addr[0:2] + addr[6:-1]
         return f'{type(self)} at {addr}'
 
+    def __repr__(self):
+        return self.__str__()
 
 class AbstractOEHeuristicNode(metaclass=ABCMeta):
     """Abstract Node for the CELOEHeuristic heuristic function.
@@ -465,7 +467,11 @@ class AbstractDrill:
                  num_epochs_per_replay=None, num_workers=None, verbose=0):
         self.name = 'DRILL'
         self.instance_embeddings = read_csv(path_of_embeddings)
-        self.embedding_dim = self.instance_embeddings.shape[1]
+        if self.instance_embeddings is None:
+            print("No embeddings found")
+            self.embedding_dim = None
+        else:
+            self.embedding_dim = self.instance_embeddings.shape[1]
         self.reward_func = reward_func
         self.representation_mode = representation_mode
         assert representation_mode in ['averaging', 'sampling']

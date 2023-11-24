@@ -2,7 +2,7 @@ from tqdm import tqdm
 import random
 from rdflib import graph
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.owlapy.render import DLSyntaxObjectRenderer
+from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.refinement_operators import ExpressRefinement
 import os
 import json

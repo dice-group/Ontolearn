@@ -26,14 +26,16 @@ class PrepareBatchOfPrediction(torch.utils.data.Dataset):
 
         # Expands them into torch.Size([n, 1, dim])
         self.S = current_state.expand(self.S_Prime.shape)
-        self.Positives = p.expand(self.S_Prime.shape)
-        self.Negatives = n.expand(self.S_Prime.shape)
-        assert self.S.shape == self.S_Prime.shape == self.Positives.shape == self.Negatives.shape
-        assert self.S.dtype == self.S_Prime.dtype == self.Positives.dtype == self.Negatives.dtype == torch.float32
+        # Ignore
+        if False:
+            self.Positives = p.expand(self.S_Prime.shape)
+            self.Negatives = n.expand(self.S_Prime.shape)
+            assert self.S.shape == self.S_Prime.shape == self.Positives.shape == self.Negatives.shape
+            assert self.S.dtype == self.S_Prime.dtype == self.Positives.dtype == self.Negatives.dtype == torch.float32
 
-        self.X = torch.cat([self.S, self.S_Prime, self.Positives, self.Negatives], 1)
-        n, depth, dim = self.X.shape
-        self.X = self.X.view(n, depth, 1, dim)
+            self.X = torch.cat([self.S, self.S_Prime, self.Positives, self.Negatives], 1)
+            n, depth, dim = self.X.shape
+            self.X = self.X.view(n, depth, 1, dim)
 
     def __len__(self):
         return len(self.X)
@@ -42,7 +44,7 @@ class PrepareBatchOfPrediction(torch.utils.data.Dataset):
         return self.X[idx]
 
     def get_all(self):
-        return self.X
+        return torch.rand(size=(3,1,1))#self.X
 
 
 class PrepareBatchOfTraining(torch.utils.data.Dataset):

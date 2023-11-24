@@ -5,10 +5,10 @@ import random
 from ontolearn.concept_learner import CELOE
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.model_adapter import ModelAdapter, Trainer
-from ontolearn.owlapy.model import OWLClass, OWLNamedIndividual, IRI
+from owlapy.model import OWLClass, OWLNamedIndividual, IRI
 from ontolearn.utils import setup_logging
-from ontolearn.owlapy.owlready2 import BaseReasoner_Owlready2, OWLOntology_Owlready2
-from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
+from ontolearn.base import BaseReasoner_Owlready2, OWLOntology_Owlready2
+from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
 from typing import cast
 setup_logging()
 

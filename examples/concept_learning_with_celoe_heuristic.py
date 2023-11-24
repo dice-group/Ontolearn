@@ -4,11 +4,11 @@ import random
 
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE
-from ontolearn.core.owl.utils import OWLClassExpressionLengthMetric  # noqa: F401
+from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric  # noqa: F401
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import Accuracy
-from ontolearn.owlapy.model import OWLClass, OWLNamedIndividual, IRI
+from owlapy.model import OWLClass, OWLNamedIndividual, IRI
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.utils import setup_logging
 

@@ -5,7 +5,7 @@ from abc import ABCMeta, abstractmethod
 from functools import reduce
 from typing import Dict, Iterable, Tuple, overload, TypeVar, Generic, Type, cast, Optional, FrozenSet, Set
 
-from ontolearn.owlapy.model import OWLClass, OWLReasoner, OWLObjectProperty, OWLDataProperty, OWLTopObjectProperty, \
+from owlapy.model import OWLClass, OWLReasoner, OWLObjectProperty, OWLDataProperty, OWLTopObjectProperty, \
     OWLBottomObjectProperty, OWLTopDataProperty, OWLBottomDataProperty, OWLThing, OWLNothing, HasIRI
 
 _S = TypeVar('_S', bound=HasIRI)  #:
@@ -261,8 +261,8 @@ class ClassHierarchy(AbstractHierarchy[OWLClass]):
         return OWLNothing
 
     def _hierarchy_down_generator(self, reasoner: OWLReasoner) -> Iterable[Tuple[OWLClass, Iterable[OWLClass]]]:
-        return ((_, reasoner.sub_classes(_, direct=True))
-                for _ in reasoner.get_root_ontology().classes_in_signature())
+        yield from ((_, reasoner.sub_classes(_, direct=True))
+                    for _ in reasoner.get_root_ontology().classes_in_signature())
 
     def sub_classes(self, entity: OWLClass, direct: bool = True) -> Iterable[OWLClass]:
         yield from self.children(entity, direct)

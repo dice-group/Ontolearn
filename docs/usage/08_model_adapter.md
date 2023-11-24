@@ -10,11 +10,11 @@ from ontolearn.concept_learner import CELOE
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.metrics import Accuracy
 from ontolearn.model_adapter import ModelAdapter
-from ontolearn.owlapy.model import OWLNamedIndividual, IRI
-from ontolearn.owlapy.namespaces import Namespaces
-from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2
-from ontolearn.owlapy.owlready2.complex_ce_instances import OWLReasoner_Owlready2_ComplexCEInstances
-from ontolearn.owlapy.render import DLSyntaxObjectRenderer
+from owlapy.model import OWLNamedIndividual, IRI
+from owlapy.namespaces import Namespaces
+from ontolearn.base import OWLOntologyManager_Owlready2
+from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
+from owlapy.render import DLSyntaxObjectRenderer
 
 manager = OWLOntologyManager_Owlready2()
 onto = manager.load_ontology(IRI.create("KGs/father.owl"))

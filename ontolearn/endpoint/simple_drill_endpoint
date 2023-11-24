@@ -8,7 +8,7 @@ from functools import wraps, update_wrapper
 
 from flask import Flask, request, Response, abort
 from flask import make_response
-from ontolearn.owlapy.model import OWLNamedIndividual
+from owlapy.model import OWLNamedIndividual
 
 from experiments_standard import ClosedWorld_ReasonerFactory
 from ontolearn.knowledge_base import KnowledgeBase
@@ -58,7 +58,7 @@ def create_flask_app():
             app.logger.debug(learning_problem)
             no_of_hypotheses = request.form.get("no_of_hypotheses", 1, type=int)
             try:
-                from ontolearn.owlapy.model import IRI
+                from owlapy.model import IRI
                 typed_pos = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["positives"]))))
                 typed_neg = set(map(OWLNamedIndividual, map(IRI.create, set(learning_problem["negatives"]))))
                 drill.fit(typed_pos, typed_neg,

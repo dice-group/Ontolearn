@@ -3,7 +3,7 @@ import logging
 from abc import ABCMeta
 from typing import Iterable
 
-from ontolearn.owlapy.model import OWLNamedIndividual, OWLObjectProperty, OWLReasoner, OWLDataProperty, OWLDataRange, \
+from owlapy.model import OWLNamedIndividual, OWLObjectProperty, OWLReasoner, OWLDataProperty, OWLDataRange, \
     OWLLiteral
 
 

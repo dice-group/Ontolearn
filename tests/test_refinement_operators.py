@@ -7,11 +7,11 @@ import json
 
 from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.core.owl.utils import ConceptOperandSorter
+from ontolearn.base.owl.utils import ConceptOperandSorter
 from ontolearn.utils import setup_logging
-from ontolearn.owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction
-from ontolearn.owlapy.render import DLSyntaxObjectRenderer
-from ontolearn.owlapy.model import OWLObjectMinCardinality, OWLObjectProperty, OWLObjectSomeValuesFrom, \
+from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction
+from owlapy.render import DLSyntaxObjectRenderer
+from owlapy.model import OWLObjectMinCardinality, OWLObjectProperty, OWLObjectSomeValuesFrom, \
     OWLClass, IRI, OWLDataHasValue, OWLDataProperty, OWLDataSomeValuesFrom, OWLLiteral, OWLObjectAllValuesFrom, \
     OWLObjectCardinalityRestriction, OWLObjectComplementOf, OWLObjectIntersectionOf, OWLObjectMaxCardinality, \
     OWLObjectUnionOf

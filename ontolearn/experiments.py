@@ -8,7 +8,7 @@ from typing import List, Tuple, Set, Dict, Any, Iterable
 import numpy as np
 from sklearn.model_selection import KFold
 
-from ontolearn.owlapy.model import OWLNamedIndividual, IRI
+from owlapy.model import OWLNamedIndividual, IRI
 
 
 class Experiments:

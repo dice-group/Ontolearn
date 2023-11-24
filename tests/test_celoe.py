@@ -7,8 +7,8 @@ from ontolearn.concept_learner import CELOE
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.model_adapter import ModelAdapter
 from ontolearn.utils import setup_logging
-from ontolearn.owlapy.model import OWLNamedIndividual, OWLClass, IRI
-from ontolearn.owlapy.render import DLSyntaxObjectRenderer
+from owlapy.model import OWLNamedIndividual, OWLClass, IRI
+from owlapy.render import DLSyntaxObjectRenderer
 
 setup_logging("ontolearn/logging_test.conf")
 

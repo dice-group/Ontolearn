@@ -2,21 +2,21 @@
 
 import logging
 import random
-from functools import singledispatchmethod
 from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict
-from ontolearn.owlapy.owlready2 import OWLOntology_Owlready2, OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from ontolearn.owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, \
+from ontolearn.base import OWLOntology_Owlready2, OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
+from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, \
     OWLNamedIndividual, OWLObjectProperty, OWLClass, OWLDataProperty, IRI, OWLDataRange, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLDatatype, BooleanOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, OWLThing, \
     OWLObjectPropertyExpression, OWLLiteral, OWLDataPropertyExpression
-from ontolearn.owlapy.render import DLSyntaxObjectRenderer
-from ontolearn.owlapy.util import iter_count, LRUCache
-from .abstracts import AbstractKnowledgeBase, AbstractScorer, EncodedLearningProblem, AbstractLearningProblem
+from owlapy.render import DLSyntaxObjectRenderer
+from ontolearn.search import EvaluatedConcept
+from owlapy.util import iter_count, LRUCache
+from .abstracts import AbstractKnowledgeBase, AbstractScorer, EncodedLearningProblem
 from .concept_generator import ConceptGenerator
-from .core.owl.utils import OWLClassExpressionLengthMetric
+from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
 from .learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
-from ontolearn.core.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
+from ontolearn.base.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 
 Factory = Callable
 
@@ -28,13 +28,12 @@ def _Default_OntologyManagerFactory(world_store=None) -> OWLOntologyManager:
     return OWLOntologyManager_Owlready2(world_store=world_store)
 
 
-def _Default_ReasonerFactory(onto: OWLOntology, use_triplestore: bool, triplestore_address: str) -> OWLReasoner:
+def _Default_ReasonerFactory(onto: OWLOntology, triplestore_address: str) -> OWLReasoner:
 
     assert isinstance(onto, OWLOntology_Owlready2)
-    base_reasoner = OWLReasoner_Owlready2(ontology=onto, use_triplestore=use_triplestore,
-                                          triplestore_address=triplestore_address)
+    base_reasoner = OWLReasoner_Owlready2(ontology=onto, triplestore_address=triplestore_address)
 
-    if use_triplestore:
+    if triplestore_address is not None:
         return base_reasoner
     else:
         return OWLReasoner_FastInstanceChecker(ontology=onto, base_reasoner=base_reasoner)
@@ -42,16 +41,6 @@ def _Default_ReasonerFactory(onto: OWLOntology, use_triplestore: bool, triplesto
 
 def _Default_ClassExpressionLengthMetricFactory() -> OWLClassExpressionLengthMetric:
     return OWLClassExpressionLengthMetric.get_default()
-
-
-class EvaluatedConcept:
-    """Explicitly declare the attributes that should be returned by the evaluate_concept method.
-
-    This way, Python uses a more efficient way to store the instance attributes, which can significantly reduce the
-    memory usage.
-    """
-    __slots__ = 'q', 'inds', 'ic'
-    pass
 
 # TODO:CD: __init__ is overcrowded. This bit can/should be simplified to few lines
 # TODO:CD: Namings are not self-explanatory: User does not need to know
@@ -71,11 +60,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
         length_metric: Length metric that is used in calculation of class expression lengths.
         individuals_cache_size: How many individuals of class expressions to cache.
         backend_store: Whether to sync the world to backend store.
-        use_triplestore: Tells the reasoner to use triplestore to retrieve instances. This is set for the default
             reasoner of this object, if you enter a reasoner using :arg:`reasoner_factory` or :arg:`reasoner`
             argument it will override this setting.
-        triplestore_address: The address where the triplestore is hosted. This is also overrode if this object
-            is not using the default reasoner.
+        triplestore_address: The address where the triplestore is hosted.
 
     Attributes:
         generator (ConceptGenerator): Instance of concept generator.
@@ -116,7 +103,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
                  length_metric_factory: Optional[Factory[[], OWLClassExpressionLengthMetric]] = None,
                  individuals_cache_size=128,
-                 use_triplestore: bool = False,
                  triplestore_address: str = None,
                  backend_store: bool = False):
         ...
@@ -130,6 +116,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  individuals_cache_size=128):
         ...
 
+    @overload
+    def __init__(self, *, triplestore_address: str = None):
+        ...
+
     def __init__(self, *,
                  path: Optional[str] = None,
 
@@ -139,7 +129,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
                  ontology: Optional[OWLOntology] = None,
                  reasoner: Optional[OWLReasoner] = None,
-                 use_triplestore: bool = False,
                  triplestore_address: str = None,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
 
@@ -152,35 +141,45 @@ class KnowledgeBase(AbstractKnowledgeBase):
         AbstractKnowledgeBase.__init__(self)
         self.path = path
 
-        if ontology is not None:
-            self._manager = ontology.get_owl_ontology_manager()
-            self._ontology = ontology
-        elif ontologymanager_factory is not None:
-            self._manager = ontologymanager_factory()
-        else:  # default to Owlready2 implementation
-            if path is not None and backend_store:
-                self._manager = _Default_OntologyManagerFactory(world_store=path + ".or2")
-            else:
-                self._manager = _Default_OntologyManagerFactory()
-            # raise TypeError("neither ontology nor manager factory given")
-
-        if ontology is None:
+        if triplestore_address is not None:
+            self._manager = _Default_OntologyManagerFactory()
             if path is None:
-                raise TypeError("path missing")
-            self._ontology = self._manager.load_ontology(IRI.create('file://' + self.path))
+                # create a dummy ontology, so we can avoid making tons of changes.
+                self._ontology = OWLOntology_Owlready2(self._manager, IRI.create("dummy_ontology#onto"), load=False,
+                                                       triplestore_address=triplestore_address)
+            else:
+                # why not create a real ontology if the user gives the path :) (triplestore will be used anyway)
+                self._ontology = OWLOntology_Owlready2(self._manager, IRI.create('file://' + self.path), load=True,
+                                                       triplestore_address=triplestore_address)
+        else:
+            if ontology is not None:
+                self._manager = ontology.get_owl_ontology_manager()
+                self._ontology = ontology
+            elif ontologymanager_factory is not None:
+                self._manager = ontologymanager_factory()
+            else:  # default to Owlready2 implementation
+                if path is not None and backend_store:
+                    self._manager = _Default_OntologyManagerFactory(world_store=path + ".or2")
+                else:
+                    self._manager = _Default_OntologyManagerFactory()
+                # raise TypeError("neither ontology nor manager factory given")
 
-            from ontolearn.owlapy.owlready2 import OWLOntologyManager_Owlready2
-            if isinstance(self._manager, OWLOntologyManager_Owlready2) and backend_store:
-                self._manager.save_world()
-                logger.debug("Synced world to backend store")
+            if ontology is None:
+                if path is None:
+                    raise TypeError("path missing")
+                else:
+                    self._ontology = self._manager.load_ontology(IRI.create('file://' + self.path))
+                    if isinstance(self._manager, OWLOntologyManager_Owlready2) and backend_store:
+                        self._manager.save_world()
+                        logger.debug("Synced world to backend store")
 
-        if reasoner is not None:
+        is_using_triplestore = True if triplestore_address is not None else False
+        if reasoner is not None and reasoner.is_using_triplestore() == is_using_triplestore:
             self._reasoner = reasoner
-        elif reasoner_factory is not None:
+        elif reasoner_factory is not None and triplestore_address is None:
             self._reasoner = reasoner_factory(self._ontology)
-        else:  # default to fast instance checker
-            self._reasoner = _Default_ReasonerFactory(self._ontology, use_triplestore, triplestore_address)
-            # raise TypeError("neither reasoner nor reasoner factory given")
+        else:
+            self._reasoner = _Default_ReasonerFactory(self._ontology, triplestore_address)
 
         if length_metric is not None:
             self._length_metric = length_metric
@@ -208,8 +207,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self._dp_ranges = dict()
         self.generator = ConceptGenerator()
 
-        from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
-        if isinstance(self._reasoner, OWLReasoner_FastInstanceChecker):
+        if isinstance(self._reasoner, OWLReasoner_FastInstanceChecker) and triplestore_address is None:
             self._ind_set = self._reasoner._ind_set  # performance hack
         else:
             individuals = self._ontology.individuals_in_signature()
@@ -333,7 +331,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
             raise TypeError
         if ce in self._ind_cache:
             return
-        from ontolearn.owlapy.fast_instance_checker import OWLReasoner_FastInstanceChecker
         if isinstance(self._reasoner, OWLReasoner_FastInstanceChecker):
             self._ind_cache[ce] = self._reasoner._find_instances(ce)  # performance hack
         else:
@@ -466,26 +463,13 @@ class KnowledgeBase(AbstractKnowledgeBase):
         return f'KnowledgeBase(path={repr(self.path)} <{class_count} classes, {properties_count} properties, ' \
                f'{individuals_count} individuals)'
 
-    @singledispatchmethod
-    def encode_learning_problem(self, lp: AbstractLearningProblem):
-        """Provides the encoded learning problem (lp), i.e. the class containing the set of OWLNamedIndividuals
-        as follows:
-            kb_pos --> the positive examples set,
-            kb_neg --> the negative examples set,
-            kb_all --> all lp individuals / all individuals set,
-            kb_diff --> kb_all - (kb_pos + kb_neg).
-        Note:
-            Simple access of the learning problem individuals divided in respective sets.
-            You will need the encoded learning problem to use the method evaluate_concept of this class.
-        Args:
-            lp (PosNegLPStandard): The learning problem.
-        Return:
-            EncodedPosNegLPStandard: The encoded learning problem.
-        """
-        raise NotImplementedError(lp)
+    # in case more types of AbstractLearningProblem are introduced to the project uncomment the method below and use
+    # decorators
+    # @singledispatchmethod
+    # def encode_learning_problem(self, lp: AbstractLearningProblem):
+    #     raise NotImplementedError(lp)
 
-    @encode_learning_problem.register
-    def _(self, lp: PosNegLPStandard):
+    def encode_learning_problem(self, lp: PosNegLPStandard):
         """Provides the encoded learning problem (lp), i.e. the class containing the set of OWLNamedIndividuals
         as follows:
             kb_pos --> the positive examples set,
