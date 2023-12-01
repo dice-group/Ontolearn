@@ -102,12 +102,11 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         self.max_num_of_concepts_tested = max_num_of_concepts_tested
         self.terminate_on_goal = terminate_on_goal
         self.max_runtime = max_runtime
-        # self.store_onto_flag = False
+
         self.start_time = None
         self._goal_found = False
         self._number_of_tested_concepts = 0
-        # self.storage_path, _ = create_experiment_folder()
-        # self.last_path = None  # path of lastly stored onto.
+
         self.__default_values()
         self.__sanity_checking()
 

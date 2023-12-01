@@ -10,6 +10,7 @@ from itertools import islice, chain
 from typing import Any, Callable, Dict, FrozenSet, Set, List, Tuple, Iterable, Optional, Generator, SupportsFloat, Union
 
 import numpy as np
+import pandas as pd
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
@@ -18,7 +19,7 @@ from torch.nn.init import xavier_normal_
 from deap import gp, tools, base, creator
 
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.abstracts import AbstractDrill, AbstractFitness, AbstractScorer, AbstractNode, BaseRefinement, \
+from ontolearn.abstracts import AbstractFitness, AbstractScorer, AbstractNode, BaseRefinement, \
     AbstractHeuristic, EncodedPosNegLPStandardKind
 from ontolearn.base_concept_learner import BaseConceptLearner, RefinementBasedConceptLearner
 from ontolearn.base.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter, OperandSetTransform
@@ -84,7 +85,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
 
     """
     __slots__ = 'best_descriptions', 'max_he', 'min_he', 'best_only', 'calculate_min_max', 'heuristic_queue', \
-                'search_tree', '_learning_problem', '_max_runtime', '_seen_norm_concepts'
+        'search_tree', '_learning_problem', '_max_runtime', '_seen_norm_concepts'
 
     name = 'celoe_python'
 
@@ -340,8 +341,8 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
             import asyncio
             for task in asyncio.as_completed(evaluated_refs):
                 ref, eval_ = await task
-            # for task in await asyncio.gather(*evaluated_refs):
-            #     ref, eval_ = task
+                # for task in await asyncio.gather(*evaluated_refs):
+                #     ref, eval_ = task
 
                 # note: tree_parent has to be equal to node_tree_parent(ref.parent_node)!
                 added = self._add_node_evald(ref, eval_, tree_parent)
@@ -647,34 +648,50 @@ class OCEL(CELOE):
         return r
 
 
-class Drill(AbstractDrill, RefinementBasedConceptLearner):
+class Drill(RefinementBasedConceptLearner):
     """Deep Reinforcement Learning for Refinement Operators in ALC."""
-    kb: KnowledgeBase
 
     def __init__(self, knowledge_base,
-                 path_of_embeddings: str=None, refinement_operator: LengthBasedRefinement=None,
-                 quality_func: AbstractScorer=None,
+                 path_of_embeddings: str = None, refinement_operator: LengthBasedRefinement = None,
+                 quality_func: AbstractScorer = None,
                  reward_func=None, batch_size=None, num_workers=None, pretrained_model_name=None,
                  iter_bound=None, max_num_of_concepts_tested=None, verbose=None, terminate_on_goal=None,
                  max_len_replay_memory=None, epsilon_decay=None, epsilon_min=None, num_epochs_per_replay=None,
                  num_episodes_per_replay=None, learning_rate=None, max_runtime=None, num_of_sequential_actions=None,
                  num_episode=None):
-        AbstractDrill.__init__(self,
-                               path_of_embeddings=path_of_embeddings,
-                               reward_func=reward_func,
-                               max_len_replay_memory=max_len_replay_memory,
-                               num_episodes_per_replay=num_episodes_per_replay,
-                               batch_size=batch_size, epsilon_min=epsilon_min,
-                               num_epochs_per_replay=num_epochs_per_replay,
-                               representation_mode='averaging',
-                               epsilon_decay=epsilon_decay,
-                               num_of_sequential_actions=num_of_sequential_actions, num_episode=num_episode,
-                               learning_rate=learning_rate,
-                               num_workers=num_workers, verbose=verbose
-                               )
+
+        self.name = "DRILL"
+        self.reward_func = reward_func
+        self.representation_mode = "averaging"
+        self.heuristic_func = None
+        self.num_workers = num_workers
+        self.epsilon = 1
+        self.learning_rate = .001
+        self.num_episode = 1
+        self.num_of_sequential_actions = 3
+        self.num_epochs_per_replay = 1
+        self.max_len_replay_memory = 256
+        self.epsilon_decay = 0.01
+        self.epsilon_min = 0
+        self.batch_size = 1024
+        self.verbose = 0
+        self.num_episodes_per_replay = 2
+        self.seen_examples = dict()
+        self.emb_pos, self.emb_neg = None, None
+        self.start_time = None
+        self.goal_found = False
+        from .data_struct import Experience
+        self.experiences = Experience(maxlen=self.max_len_replay_memory)
+
+        if path_of_embeddings is not None and os.path.exists(path_of_embeddings):
+            self.instance_embeddings = pd.read_csv(path_of_embeddings)
+            self.embedding_dim = self.instance_embeddings.shape[1]
+        else:
+            print("No embeddings found")
+            self.instance_embeddings = None
+            self.embedding_dim = 12
 
         self.sample_size = 1
-        self.embedding_dim = 12
         arg_net = {'input_shape': (4 * self.sample_size, self.embedding_dim),
                    'first_out_channels': 32, 'second_out_channels': 16, 'third_out_channels': 8,
                    'kernel_size': 3}
@@ -683,11 +700,13 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
             self.optimizer = torch.optim.Adam(self.heuristic_func.net.parameters(), lr=self.learning_rate)
 
         if pretrained_model_name:
-            m = torch.load(pretrained_model_name, torch.device('cpu'))
-            self.heuristic_func.net.load_state_dict(m)
+            self.pre_trained_model_loaded=True
+            self.heuristic_func.net.load_state_dict(torch.load(pretrained_model_name, torch.device('cpu')))
+        else:
+            self.pre_trained_model_loaded=False
 
         if refinement_operator is None:
-            refinement_operator=LengthBasedRefinement(knowledge_base=knowledge_base)
+            refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base)
 
         RefinementBasedConceptLearner.__init__(self, knowledge_base=knowledge_base,
                                                refinement_operator=refinement_operator,
@@ -701,9 +720,6 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
 
         self.search_tree = DRILLSearchTreePriorityQueue()
         self._learning_problem = None
-        # @TODO: Temporary removed
-        # self.attributes_sanity_checking_rl()
-
         self.storage_path, _ = create_experiment_folder()
 
     def best_hypotheses(self, n=1) -> Iterable:
@@ -733,7 +749,7 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
         """
         Return a node that maximizes the heuristic function at time t.
         """
-        #if self.verbose > 5:
+        # if self.verbose > 5:
         #    self.search_tree.show_search_tree(t)
         return self.search_tree.get_most_promising()
 
@@ -755,8 +771,8 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
         self._learning_problem = PosNegLPStandard(pos=set(pos), neg=set(neg)).encode_kb(self.kb)
         # 2. Obtain embeddings of positive and negative examples.
         if self.instance_embeddings is None:
-            self.emb_pos=torch.FloatTensor()
-            self.emb_neg=torch.FloatTensor()
+            self.emb_pos = torch.rand((1, 1, self.embedding_dim))
+            self.emb_neg = torch.rand((1, 1, self.embedding_dim))
         else:
             self.emb_pos = torch.tensor(
                 self.instance_embeddings.loc[[owl_indv.get_iri().as_str() for owl_indv in pos]].values,
@@ -781,39 +797,32 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
         self.compute_quality_of_class_expression(root_rl_state)
         return root_rl_state
 
-    def fit(self, lp:PosNegLPStandard, max_runtime=None):
-        """
-        Find an OWL Class Expression h s.t.
-        \\forall e in E^+ K \\model h(e)
-        \\forall e in E^- K \\not\\model h(e)
-        """
-        pos=lp.pos
-        neg=lp.pos
-        #assert isinstance(pos, set) and isinstance(neg, set)
-        #assert sum([type(_) == OWLNamedIndividual for _ in pos]) == len(pos)
-        #assert sum([type(_) == OWLNamedIndividual for _ in pos]) == len(neg)
+    def fit(self, lp: PosNegLPStandard, max_runtime=None):
 
         if max_runtime:
             assert isinstance(max_runtime, int)
             self.max_runtime = max_runtime
         # 2. Initialize learning problem
-        root_state = self.initialize_class_expression_learning_problem(pos=pos, neg=neg)
+        root_state = self.initialize_class_expression_learning_problem(pos=lp.pos, neg=lp.neg)
         root_state.heuristic = 0
         self.search_tree.add(root_state)
         # (3) Add root state into search tree
         self.start_time = time.time()
-        # 5. Iterate until the second criterion is satisfied.
         for i in range(1, self.iter_bound):
+            # (1) Get the most fitting RL-state
             most_promising = self.next_node_to_expand(i)
             next_possible_states = []
+            # (2) Refine (1)
             for ref in self.apply_refinement(most_promising):
+                # (2.1) If the next possible RL-state is not a dead end
+                # (2.1.) If the refinement of (1) is not equivalent to \bottom
                 if len(ref.instances):
                     # Compute quality
                     self.compute_quality_of_class_expression(ref)
                     if ref.quality == 0:
                         continue
                     next_possible_states.append(ref)
-                    if ref.quality == 1:
+                    if ref.quality == 1.0:
                         break
             try:
                 assert len(next_possible_states) > 0
@@ -825,8 +834,12 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
             if len(next_possible_states) == 0:
                 # We do not need to compute Q value based on embeddings of "zeros".
                 continue
-            predicted_Q_values = self.predict_Q(current_state=most_promising, next_states=next_possible_states)
-            self.goal_found = self.update_search(next_possible_states, predicted_Q_values)
+
+            if self.pre_trained_model_loaded is True:
+                preds = self.predict_values(current_state=most_promising, next_states=next_possible_states)
+            else:
+                preds = None
+            self.goal_found = self.update_search(next_possible_states, preds)
             if self.goal_found:
                 if self.terminate_on_goal:
                     return self.terminate()
@@ -935,7 +948,6 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
         assert isinstance(rl_state, RL_State)
         # 1.
         for i in self.operator.refine(rl_state.concept):  # O(N)
-            # TODO: CURRENTLY IGNORED the checking not wanted concetpts if i.str not in self.concepts_to_ignore:  # O(1)
             yield self.create_rl_state(i, parent_node=rl_state)
 
     def learn_from_illustration(self, sequence_of_goal_path: List[RL_State]):
@@ -1017,7 +1029,7 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
         return sum_of_rewards_per_actions
 
     def sequence_of_actions(self, root_rl_state: RL_State) -> Tuple[List[Tuple[AbstractNode, AbstractNode]],
-                                                                    List[SupportsFloat]]:
+    List[SupportsFloat]]:
         assert isinstance(root_rl_state, RL_State)
 
         current_state = root_rl_state
@@ -1126,18 +1138,26 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
 
         self.heuristic_func.net.train().eval()
 
-    def update_search(self, concepts, predicted_Q_values):
+    def update_search(self, concepts, predicted_Q_values=None):
         """
         @param concepts:
         @param predicted_Q_values:
         @return:
         """
-        for child_node, pred_Q in zip(concepts, predicted_Q_values):
-            child_node.heuristic = pred_Q
-            if child_node.quality > 0:  # > too weak, ignore.
-                self.search_tree.add(child_node)
-            if child_node.quality == 1:
-                return child_node
+        if predicted_Q_values is not None:
+            for child_node, pred_Q in zip(concepts, predicted_Q_values):
+                child_node.heuristic = pred_Q
+                if child_node.quality > 0:  # > too weak, ignore.
+                    self.search_tree.add(child_node)
+                if child_node.quality == 1:
+                    return child_node
+        else:
+            for child_node in concepts:
+                child_node.heuristic = child_node.quality
+                if child_node.quality > 0:  # > too weak, ignore.
+                    self.search_tree.add(child_node)
+                if child_node.quality == 1:
+                    return child_node
 
     def assign_embeddings(self, rl_state: RL_State) -> None:
         """
@@ -1162,7 +1182,7 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
                     if self.instance_embeddings is not None:
                         emb = torch.zeros(1, self.sample_size, self.instance_embeddings.shape[1])
                     else:
-                        emb=torch.rand(size=(1, self.sample_size, self.embedding_dim))
+                        emb = torch.rand(size=(1, self.sample_size, self.embedding_dim))
                 else:
                     # If|R(C)| \not= \emptyset, then take the mean of individuals.
                     str_idx = [i.get_iri().as_str() for i in rl_state.instances]
@@ -1172,7 +1192,7 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
                         emb = torch.mean(emb, dim=0)
                         emb = emb.view(1, self.sample_size, self.instance_embeddings.shape[1])
                     else:
-                        emb=torch.rand(size=(1, self.sample_size, self.embedding_dim))
+                        emb = torch.rand(size=(1, self.sample_size, self.embedding_dim))
                 # (6) Assign embeddings
                 rl_state.embeddings = emb
             else:
@@ -1253,7 +1273,7 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
 
         (4) Return next state.
         """
-        predictions: torch.Tensor = self.predict_Q(current_state, next_states)
+        predictions: torch.Tensor = self.predict_values(current_state, next_states)
         argmax_id = int(torch.argmax(predictions))
         next_state = next_states[argmax_id]
         """
@@ -1266,13 +1286,14 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
         """
         return next_state
 
-    def predict_Q(self, current_state: AbstractNode, next_states: List[AbstractNode]) -> torch.Tensor:
+    def predict_values(self, current_state: AbstractNode, next_states: List[AbstractNode]) -> torch.Tensor:
         """
         Predict promise of next states given current state.
 
         Returns:
             Predicted Q values.
         """
+        # Instead it should be get embeddings ?
         self.assign_embeddings(current_state)
         assert len(next_states) > 0
         with torch.no_grad():
@@ -1283,14 +1304,11 @@ class Drill(AbstractDrill, RefinementBasedConceptLearner):
                 self.assign_embeddings(_)
                 next_state_batch.append(_.embeddings)
             next_state_batch = torch.cat(next_state_batch, dim=0)
-            ds = PrepareBatchOfPrediction(current_state.embeddings,
-                                          next_state_batch,
-                                          self.emb_pos,
-                                          self.emb_neg)
-            if False:
-                predictions = self.heuristic_func.net.forward(ds.get_all())
-            else:
-                predictions=torch.rand(size=(3,1))
+            x = PrepareBatchOfPrediction(current_state.embeddings,
+                                         next_state_batch,
+                                         self.emb_pos,
+                                         self.emb_neg).get_all()
+            predictions = self.heuristic_func.net.forward(x)
         return predictions
 
     @staticmethod
@@ -1408,12 +1426,11 @@ class DrillNet(nn.Module):
     def __init__(self, args):
         super(DrillNet, self).__init__()
         self.in_channels, self.embedding_dim = args['input_shape']
-        if self.embedding_dim is None:
-            print(f"self.embedding_dim is {self.embedding_dim}. ")
-            self.embedding_dim=1
-        self.loss = nn.MSELoss()
+        assert self.embedding_dim
 
-        self.conv1 = nn.Conv2d(in_channels=self.in_channels,
+        self.loss = nn.MSELoss()
+        # Conv1D seems to be faster than Conv2d
+        self.conv1 = nn.Conv1d(in_channels=4,
                                out_channels=args['first_out_channels'],
                                kernel_size=args['kernel_size'],
                                padding=1, stride=1, bias=True)
@@ -1424,24 +1441,23 @@ class DrillNet(nn.Module):
         self.fc2 = nn.Linear(in_features=self.size_of_fc1 // 2, out_features=1)
 
         self.init()
-        # @TODO: CD: Ignored
-        # assert self.__sanity_checking(torch.rand(32, 4, 1, self.embedding_dim)).shape == (32, 1)
 
     def init(self):
         xavier_normal_(self.fc1.weight.data)
         xavier_normal_(self.conv1.weight.data)
 
-    def __sanity_checking(self, X):
-        return self.forward(X)
-
     def forward(self, X: torch.FloatTensor):
-        # X denotes a batch of tensors where each tensor has the shape of (4, 1, embedding_dim)
-        # 4 => S, S', E^+, E^- \in R^embedding_dim
+        """
+        X  n by 4 by d float tensor
+        """
+        # N x 32 x D
         X = F.relu(self.conv1(X))
-        X = X.view(X.shape[0], X.shape[1] * X.shape[2] * X.shape[3])
+        X = X.flatten(start_dim=1)
+        # N x (32D/2)
         X = F.relu(self.fc1(X))
-        return self.fc2(X)
-
+        # N x 1
+        scores=self.fc2(X).flatten()
+        return scores
 
 class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
     """An evolutionary approach to learn concepts in ALCQ(D).
@@ -1477,10 +1493,10 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
     """
 
-    __slots__ = 'fitness_func', 'init_method', 'algorithm', 'value_splitter', 'tournament_size',  \
-                'population_size', 'num_generations', 'height_limit', 'use_data_properties', 'pset', 'toolbox', \
-                '_learning_problem', '_result_population', 'mut_uniform_gen', '_dp_to_prim_type', '_dp_splits', \
-                '_split_properties', '_cache', 'use_card_restrictions', 'card_limit', 'use_inverse'
+    __slots__ = 'fitness_func', 'init_method', 'algorithm', 'value_splitter', 'tournament_size', \
+        'population_size', 'num_generations', 'height_limit', 'use_data_properties', 'pset', 'toolbox', \
+        '_learning_problem', '_result_population', 'mut_uniform_gen', '_dp_to_prim_type', '_dp_splits', \
+        '_split_properties', '_cache', 'use_card_restrictions', 'card_limit', 'use_inverse'
 
     name = 'evolearner'
 
@@ -1638,6 +1654,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         if self.use_data_properties:
             class Bool(object):
                 pass
+
             false_ = OWLLiteral(False)
             true_ = OWLLiteral(True)
             pset.addTerminal(false_, Bool, name=owlliteral_to_primitive_string(false_))
@@ -1669,7 +1686,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                 #                  name=OperatorVocabulary.DATA_MAX_EXCLUSIVE + name)
 
         if self.use_card_restrictions:
-            for i in range(1, self.card_limit+1):
+            for i in range(1, self.card_limit + 1):
                 pset.addTerminal(i, int)
             for op in self.kb.get_object_properties():
                 name = escape(op.get_iri().get_remainder())
@@ -1810,7 +1827,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
     def _get_top_hypotheses(self, population: List[Tree], n: int = 5, key: str = 'fitness') \
             -> Iterable[EvoLearnerNode]:
-        best_inds = tools.selBest(population, k=n*10, fit_attr=key)
+        best_inds = tools.selBest(population, k=n * 10, fit_attr=key)
         best_inds_distinct = []
         for ind in best_inds:
             if ind not in best_inds_distinct:
@@ -1852,6 +1869,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
 class NCES(BaseNCES):
     """Neural Class Expression Synthesis."""
+
     def __init__(self, knowledge_base_path, learner_name, path_of_embeddings, proj_dim, rnn_n_layers, drop_prob,
                  num_heads, num_seeds, num_inds, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0,
                  batch_size=256, num_workers=8, max_length=48, load_pretrained=True, sorted_examples=True,
@@ -1886,11 +1904,13 @@ class NCES(BaseNCES):
                 model = LSTM(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size,
                              self.proj_dim, self.rnn_n_layers, self.drop_prob)
             if load_pretrained:
-                model_path = self.path_of_embeddings.split("embeddings")[0]+"trained_models/trained_"+learner_name+".pt"
+                model_path = self.path_of_embeddings.split("embeddings")[
+                                 0] + "trained_models/trained_" + learner_name + ".pt"
                 model.load_state_dict(torch.load(model_path, map_location=self.device))
                 model.eval()
                 print("\n\n Loaded pretrained model! \n")
             return model
+
         if not self.load_pretrained:
             return [load_model(self.learner_name, self.load_pretrained)]
         elif self.load_pretrained and isinstance(self.pretrained_model_name, str):
@@ -1905,19 +1925,19 @@ class NCES(BaseNCES):
         assert type(pos[0]) == type(neg[0]), "The two iterables pos and neg must be of same type"
         num_ex = self.num_examples
         oversample = False
-        if min(len(pos), len(neg)) >= num_ex//2:
+        if min(len(pos), len(neg)) >= num_ex // 2:
             if len(pos) > len(neg):
-                num_neg_ex = num_ex//2
-                num_pos_ex = num_ex-num_neg_ex
+                num_neg_ex = num_ex // 2
+                num_pos_ex = num_ex - num_neg_ex
             else:
-                num_pos_ex = num_ex//2
-                num_neg_ex = num_ex-num_pos_ex
+                num_pos_ex = num_ex // 2
+                num_neg_ex = num_ex - num_pos_ex
         elif len(pos) + len(neg) >= num_ex and len(pos) > len(neg):
             num_neg_ex = len(neg)
-            num_pos_ex = num_ex-num_neg_ex
+            num_pos_ex = num_ex - num_neg_ex
         elif len(pos) + len(neg) >= num_ex and len(pos) < len(neg):
             num_pos_ex = len(pos)
-            num_neg_ex = num_ex-num_pos_ex
+            num_neg_ex = num_ex - num_pos_ex
         # elif len(pos) + len(neg) < num_ex:
         #    num_pos_ex = max(num_ex//3, len(pos))
         #    num_neg_ex = max(num_ex-num_pos_ex, len(neg))
@@ -1927,9 +1947,9 @@ class NCES(BaseNCES):
             num_neg_ex = len(neg)
         if oversample:
             remaining = list(self.all_individuals.difference(set(pos).union(set(neg))))
-            positive = pos + random.sample(remaining, min(max(0, num_pos_ex-len(pos)), len(remaining)))
+            positive = pos + random.sample(remaining, min(max(0, num_pos_ex - len(pos)), len(remaining)))
             remaining = list(set(remaining).difference(set(positive)))
-            negative = neg + random.sample(remaining, min(max(0, num_neg_ex-len(neg)), len(remaining)))
+            negative = neg + random.sample(remaining, min(max(0, num_neg_ex - len(neg)), len(remaining)))
         else:
             positive = random.sample(pos, min(num_pos_ex, len(pos)))
             negative = random.sample(neg, min(num_neg_ex, len(neg)))
@@ -1944,7 +1964,7 @@ class NCES(BaseNCES):
             else:
                 _, sc = model(x1, x2)
                 scores = scores + sc
-        scores = scores/len(models)
+        scores = scores / len(models)
         prediction = model.inv_vocab[scores.argmax(1)]
         return prediction
 
@@ -2003,7 +2023,7 @@ class NCES(BaseNCES):
         return (target_concept_str, pos_str, neg_str)
 
     def fit_from_iterable(self, dataset: Union[List[Tuple[str, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]],
-                                               List[Tuple[str, Set[str], Set[str]]]], shuffle_examples=False,
+    List[Tuple[str, Set[str], Set[str]]]], shuffle_examples=False,
                           verbose=False, **kwargs) -> List:
         """
         Dataset is a list of tuples where the first items are strings corresponding to target concepts.
