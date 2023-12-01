@@ -9,14 +9,13 @@ from owlapy.util import iter_count
 from .data_struct import Experience
 from .utils import read_csv
 from collections import OrderedDict
-
 _N = TypeVar('_N')  #:
 _KB = TypeVar('_KB', bound='AbstractKnowledgeBase')  #:
 
 logger = logging.getLogger(__name__)
 
 # @TODO:CD: Each Class definiton in abstract.py should share a prefix, e.g., BaseX or AbstractX.
-
+# @TODO:CD: All imports must be located on top of the script
 
 class EncodedLearningProblem(metaclass=ABCMeta):
     """Encoded Abstract learning problem for use in Scorers."""
@@ -54,7 +53,7 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
         """
         if len(instances) == 0:
             return False, 0
-
+        # @TODO: It must be moved to the top of the abstracts.py
         from ontolearn.learning_problem import EncodedPosNegLPStandard
         if isinstance(learning_problem, EncodedPosNegLPStandard):
             tp = len(learning_problem.kb_pos.intersection(instances))
@@ -62,7 +61,6 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
 
             fp = len(learning_problem.kb_neg.intersection(instances))
             fn = len(learning_problem.kb_pos.difference(instances))
-
             return self.score2(tp=tp, tn=tn, fp=fp, fn=fn)
         else:
             raise NotImplementedError(learning_problem)
@@ -95,10 +93,12 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
         Returns:
             True if the quality function was applied successfully
         """
+
         assert isinstance(learning_problem, EncodedLearningProblem), \
             f'Expected EncodedLearningProblem but got {type(learning_problem)}'
         assert isinstance(node, AbstractNode), \
             f'Expected AbstractNode but got {type(node)}'
+        # @TODO: It must be moved to the top of the abstracts.py
         from ontolearn.search import _NodeQuality
         assert isinstance(node, _NodeQuality), \
             f'Expected _NodeQuality but got {type(_NodeQuality)}'
@@ -455,7 +455,7 @@ class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
         pass
 
 
-class AbstractDrill:
+class DepthAbstractDrill:
     """
     Abstract class for Convolutional DQL concept learning.
     """

@@ -1,7 +1,5 @@
 """ Test the default pipeline for structured machine learning"""
 import json
-import unittest
-
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE
 from ontolearn.learning_problem import PosNegLPStandard
@@ -9,8 +7,6 @@ from ontolearn.model_adapter import ModelAdapter
 from ontolearn.utils import setup_logging
 from owlapy.model import OWLNamedIndividual, OWLClass, IRI
 from owlapy.render import DLSyntaxObjectRenderer
-
-setup_logging("ontolearn/logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 PATH_MUTAGENESIS = 'KGs/Mutagenesis/mutagenesis.owl'
@@ -20,7 +16,7 @@ with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 
 
-class Celoe_Test(unittest.TestCase):
+class Celoe_Test:
     def test_celoe(self):
         kb = KnowledgeBase(path=PATH_FAMILY)
 
@@ -49,7 +45,7 @@ class Celoe_Test(unittest.TestCase):
 
             returned_val = model.fit(learning_problem=lp)
             self.assertEqual(returned_val, model, "fit should return its self")
-            hypotheses = list(model.best_hypotheses(n=3))
+            hypotheses = model.best_hypotheses(n=3)
             tested[str_target_concept] = model.number_of_tested_concepts
             found_qualities[str_target_concept] = hypotheses[0].quality
             self.assertGreaterEqual(hypotheses[0].quality, exp_qualities[str_target_concept],
@@ -74,7 +70,7 @@ class Celoe_Test(unittest.TestCase):
         lp = PosNegLPStandard(pos=pos, neg=neg)
         model = CELOE(knowledge_base=kb, max_runtime=60, max_num_of_concepts_tested=3000)
         returned_model = model.fit(learning_problem=lp)
-        best_pred = next(returned_model.best_hypotheses(n=1))
+        best_pred = returned_model.best_hypotheses(n=1)
         self.assertGreaterEqual(best_pred.quality, 0.96)
 
         r = DLSyntaxObjectRenderer()
@@ -104,7 +100,7 @@ class Celoe_Test(unittest.TestCase):
         model = CELOE(knowledge_base=kb)
 
         model.fit(learning_problem=lp)
-        best_pred = model.best_hypotheses(n=1).__iter__().__next__()
+        best_pred = model.best_hypotheses(n=1)
         print(best_pred)
         self.assertEqual(best_pred.quality, 1.0)
         r = DLSyntaxObjectRenderer()
@@ -147,6 +143,3 @@ class Celoe_Test(unittest.TestCase):
         self.assertEqual(q, q2)
         self.assertEqual(str_concept, str_concept2)
 
-
-if __name__ == '__main__':
-    unittest.main()

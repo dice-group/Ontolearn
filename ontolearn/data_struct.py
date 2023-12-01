@@ -5,37 +5,20 @@ from collections import deque
 import pandas as pd
 import random
 
-# @Todo CD:Could we combine PrepareBatchOfPrediction and PrepareBatchOfTraining?
-
 
 class PrepareBatchOfPrediction(torch.utils.data.Dataset):
 
-    def __init__(self, current_state: torch.FloatTensor, next_state_batch: torch.Tensor, p: torch.FloatTensor,
+    def __init__(self, current_state: torch.FloatTensor, next_state_batch: torch.FloatTensor, p: torch.FloatTensor,
                  n: torch.FloatTensor):
-        """
-        Batch of prediction preparation class.
+        assert len(p) > 0 and len(n) > 0
+        num_next_states = len(next_state_batch)
 
-        Args:
-            current_state: a Tensor of torch.Size([1, 1, dim]) corresponds to embeddings of current_state
-            next_state_batch: a Tensor of torch.Size([n, 1, dim]) corresponds to embeddings of next_states, i.e.
-                \\rho(current_state)
-            p:
-            n:
-        """
-        self.S_Prime = next_state_batch
 
-        # Expands them into torch.Size([n, 1, dim])
-        self.S = current_state.expand(self.S_Prime.shape)
-        # Ignore
-        if False:
-            self.Positives = p.expand(self.S_Prime.shape)
-            self.Negatives = n.expand(self.S_Prime.shape)
-            assert self.S.shape == self.S_Prime.shape == self.Positives.shape == self.Negatives.shape
-            assert self.S.dtype == self.S_Prime.dtype == self.Positives.dtype == self.Negatives.dtype == torch.float32
-
-            self.X = torch.cat([self.S, self.S_Prime, self.Positives, self.Negatives], 1)
-            n, depth, dim = self.X.shape
-            self.X = self.X.view(n, depth, 1, dim)
+        current_state = current_state.repeat(num_next_states, 1, 1)
+        p = p.repeat((num_next_states, 1, 1))
+        n = n.repeat((num_next_states, 1, 1))
+        # batch, 4, dim
+        self.X = torch.cat([current_state, next_state_batch, p, n], 1)
 
     def __len__(self):
         return len(self.X)
@@ -44,7 +27,7 @@ class PrepareBatchOfPrediction(torch.utils.data.Dataset):
         return self.X[idx]
 
     def get_all(self):
-        return torch.rand(size=(3,1,1))#self.X
+        return self.X
 
 
 class PrepareBatchOfTraining(torch.utils.data.Dataset):
@@ -204,7 +187,8 @@ class NCESDataLoader(BaseDataLoader, torch.utils.data.Dataset):
         datapoint_neg = torch.FloatTensor(self.embeddings.loc[selected_neg].values.squeeze())
         labels, length = self.get_labels(key)
         return datapoint_pos, datapoint_neg, torch.cat([torch.tensor(labels),
-                                                        self.vocab['PAD']*torch.ones(self.max_length-length)]).long()
+                                                        self.vocab['PAD'] * torch.ones(
+                                                            self.max_length - length)]).long()
 
 
 class NCESDataLoaderInference(BaseDataLoader, torch.utils.data.Dataset):

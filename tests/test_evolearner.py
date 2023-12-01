@@ -50,9 +50,9 @@ class TestEvoLearner(unittest.TestCase):
         lp = PosNegLPStandard(pos=pos, neg=neg)
         model = EvoLearner(knowledge_base=kb, max_runtime=10)
         returned_model = model.fit(learning_problem=lp)
-        best_pred = next(returned_model.best_hypotheses(n=1))
+        best_pred = returned_model.best_hypotheses(n=1)
         self.assertEqual(best_pred.quality, 1.00)
 
         returned_model = model.fit(learning_problem=lp)
-        best_pred = next(returned_model.best_hypotheses(n=1))
+        best_pred = returned_model.best_hypotheses(n=1)
         self.assertEqual(best_pred.quality, 1.00)
