@@ -181,7 +181,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
         # raise ValueError('Search Tree can not be empty.')
 
     def best_hypotheses(self, n=10) -> Iterable[OENode]:
-        yield from islice(self.best_descriptions, n)
+        return list(islice(self.best_descriptions, n))
 
     def make_node(self, c: OWLClassExpression, parent_node: Optional[OENode] = None, is_root: bool = False) -> OENode:
         """
@@ -700,10 +700,10 @@ class Drill(RefinementBasedConceptLearner):
             self.optimizer = torch.optim.Adam(self.heuristic_func.net.parameters(), lr=self.learning_rate)
 
         if pretrained_model_name:
-            self.pre_trained_model_loaded=True
+            self.pre_trained_model_loaded = True
             self.heuristic_func.net.load_state_dict(torch.load(pretrained_model_name, torch.device('cpu')))
         else:
-            self.pre_trained_model_loaded=False
+            self.pre_trained_model_loaded = False
 
         if refinement_operator is None:
             refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base)
@@ -1456,8 +1456,9 @@ class DrillNet(nn.Module):
         # N x (32D/2)
         X = F.relu(self.fc1(X))
         # N x 1
-        scores=self.fc2(X).flatten()
+        scores = self.fc2(X).flatten()
         return scores
+
 
 class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
     """An evolutionary approach to learn concepts in ALCQ(D).
@@ -1823,7 +1824,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
     def best_hypotheses(self, n: int = 5, key: str = 'fitness') -> Iterable[EvoLearnerNode]:
         assert self._result_population is not None
         assert len(self._result_population) > 0
-        yield from self._get_top_hypotheses(self._result_population, n, key)
+        return [i for i in self._get_top_hypotheses(self._result_population, n, key)]
 
     def _get_top_hypotheses(self, population: List[Tree], n: int = 5, key: str = 'fitness') \
             -> Iterable[EvoLearnerNode]:
