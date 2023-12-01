@@ -23,12 +23,15 @@ or
 git clone https://github.com/dice-group/Ontolearn.git && conda create --name onto python=3.8 && conda activate onto 
 pip3 install -r requirements.txt && python -c "import ontolearn"
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
-python -m pytest tests # Partial test with pytest
+python -m pytest tests
+```
+```shell
+pytest -p no:warnings -x # Runs > tests leading to > 15 mins
 ```
 
 
-## Usage
 
+## Learning Description Logic Concept
 ```python
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, Drill

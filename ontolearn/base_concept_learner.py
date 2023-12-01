@@ -163,7 +163,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
                 t = 'A goal concept found: {0}'
             else:
                 t = 'Current best concept: {0}'
-            logger.info(t.format(list(self.best_hypotheses(n=1))[0]))
+            logger.info(t.format(self.best_hypotheses(n=1)))
 
         return self
 
@@ -310,7 +310,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         assert isinstance(self.kb, KnowledgeBase)
 
-        best = list(self.best_hypotheses(n))
+        best = self.best_hypotheses(n)
         try:
             assert len(best) >= n
         except AssertionError:

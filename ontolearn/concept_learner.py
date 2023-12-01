@@ -180,8 +180,12 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
         #     return n
         # raise ValueError('Search Tree can not be empty.')
 
-    def best_hypotheses(self, n=10) -> Iterable[OENode]:
-        return list(islice(self.best_descriptions, n))
+    def best_hypotheses(self, n=10) -> Union[OENode, Iterable[OENode]]:
+        x = islice(self.best_descriptions, n)
+        if n == 1:
+            return next(x)
+        else:
+            return list(x)
 
     def make_node(self, c: OWLClassExpression, parent_node: Optional[OENode] = None, is_root: bool = False) -> OENode:
         """
@@ -1821,10 +1825,13 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             population = self.toolbox.population(population_size=self.population_size)
         return population
 
-    def best_hypotheses(self, n: int = 5, key: str = 'fitness') -> Iterable[EvoLearnerNode]:
+    def best_hypotheses(self, n: int = 5, key: str = 'fitness') -> Union[EvoLearnerNode, Iterable[EvoLearnerNode]]:
         assert self._result_population is not None
         assert len(self._result_population) > 0
-        return [i for i in self._get_top_hypotheses(self._result_population, n, key)]
+        if n > 1:
+            return [i for i in self._get_top_hypotheses(self._result_population, n, key)]
+        else:
+            return next(self._get_top_hypotheses(self._result_population, n, key))
 
     def _get_top_hypotheses(self, population: List[Tree], n: int = 5, key: str = 'fitness') \
             -> Iterable[EvoLearnerNode]:
