@@ -29,9 +29,66 @@ python -m pytest tests
 pytest -p no:warnings -x # Runs > tests leading to > 15 mins
 ```
 
+## Description Logic Concept Learning 
+```python
+from ontolearn.concept_learner import CELOE
+from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.learning_problem import PosNegLPStandard
+from ontolearn.search import EvoLearnerNode
+from owlapy.model import OWLClass, OWLClassAssertionAxiom, OWLNamedIndividual, IRI, OWLObjectProperty, OWLObjectPropertyAssertionAxiom
+from owlapy.render import DLSyntaxObjectRenderer
+# (1) Load a knowledge graph.
+kb = KnowledgeBase(path='KGs/father.owl')
+# (2) Initialize a learner.
+model = CELOE(knowledge_base=kb)
+# (3) Define a description logic concept learning problem.
+lp = PosNegLPStandard(pos={OWLNamedIndividual(IRI.create("http://example.com/father#stefan")),
+                           OWLNamedIndividual(IRI.create("http://example.com/father#markus")),
+                           OWLNamedIndividual(IRI.create("http://example.com/father#martin"))},
+                      neg={OWLNamedIndividual(IRI.create("http://example.com/father#heinz")),
+                           OWLNamedIndividual(IRI.create("http://example.com/father#anna")),
+                           OWLNamedIndividual(IRI.create("http://example.com/father#michelle"))})
+# (4) Learn description logic concepts best fitting (3).
+dl_classifiers=model.fit(learning_problem=lp).best_hypotheses(2)
 
+# (5) Inference over unseen individuals
+namespace = 'http://example.com/father#'
+# (6) New Individuals
+julia = OWLNamedIndividual(IRI.create(namespace, 'julia'))
+julian = OWLNamedIndividual(IRI.create(namespace, 'julian'))
+thomas = OWLNamedIndividual(IRI.create(namespace, 'thomas'))
+# (7) OWLClassAssertionAxiom  about (6)
+male = OWLClass(IRI.create(namespace, 'male'))
+female = OWLClass(IRI.create(namespace, 'female'))
+axiom1 = OWLClassAssertionAxiom(individual=julia, class_expression=female)
+axiom2 = OWLClassAssertionAxiom(individual=julian, class_expression=male)
+axiom3 = OWLClassAssertionAxiom(individual=thomas, class_expression=male)
+# (8) OWLObjectPropertyAssertionAxiom about (6)
+has_child = OWLObjectProperty(IRI.create(namespace, 'hasChild'))
+# Existing Individuals
+anna = OWLNamedIndividual(IRI.create(namespace, 'anna'))
+markus = OWLNamedIndividual(IRI.create(namespace, 'markus'))
+michelle = OWLNamedIndividual(IRI.create(namespace, 'michelle'))
+axiom4 = OWLObjectPropertyAssertionAxiom(subject=thomas, property_=has_child, object_=julian)
+axiom5 = OWLObjectPropertyAssertionAxiom(subject=julia, property_=has_child, object_=julian)
 
-## Learning Description Logic Concept
+# 4. Use loaded class expressions for predictions
+predictions = model.predict(individuals=[julia, julian, thomas, anna, markus, michelle],
+                            axioms=[axiom1, axiom2, axiom3, axiom4, axiom5],
+                            hypotheses=dl_classifiers)
+print(predictions)
+"""
+          (¬female) ⊓ (∃ hasChild.⊤)  male
+julia                            0.0   0.0
+julian                           0.0   1.0
+thomas                           1.0   1.0
+anna                             0.0   0.0
+markus                           1.0   1.0
+michelle                         0.0   0.0
+"""
+```
+
+We have already many algorithms ready to use
 ```python
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, Drill
@@ -63,6 +120,7 @@ print(f"CELOE:{preds_celoe[0]}")
 print(f"OCEL:{preds_ocel[0]}")
 print(f"DL-CELOE:{preds_dl_celoe[0]}")
 ```
+
 
 Fore more please refer to  the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder.
 

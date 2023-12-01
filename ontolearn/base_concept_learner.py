@@ -233,7 +233,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         return labels
 
     def predict(self, individuals: List[OWLNamedIndividual],
-                hypotheses: Optional[List[Union[_N, OWLClassExpression]]] = None,
+                hypotheses: Optional[ Union[OWLClassExpression, List[Union[_N, OWLClassExpression]]]] = None,
                 axioms: Optional[List[OWLAxiom]] = None,
                 n: int = 10) -> pd.DataFrame:
         """Creates a binary data frame showing for each individual whether it is entailed in the given hypotheses
@@ -273,8 +273,10 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         if hypotheses is None:
             hypotheses = [hyp.concept for hyp in self.best_hypotheses(n)]
+        elif isinstance(hypotheses,list):
+                hypotheses = [(hyp.concept if isinstance(hyp, AbstractConceptNode) else hyp) for hyp in hypotheses]
         else:
-            hypotheses = [(hyp.concept if isinstance(hyp, AbstractConceptNode) else hyp) for hyp in hypotheses]
+            hypotheses=[hypotheses]
 
         renderer = DLSyntaxObjectRenderer()
         predictions = pd.DataFrame(data=self._assign_labels_to_individuals(individuals, hypotheses, reasoner),
