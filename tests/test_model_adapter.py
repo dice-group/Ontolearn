@@ -38,7 +38,7 @@ class ModelAdapterTest(unittest.TestCase):
                              refinement_operator=op)
 
         model = model.fit(pos=typed_pos, neg=typed_neg)
-        hypothesis = next(model.best_hypotheses(n=1))
+        hypothesis = model.best_hypotheses(n=1)
         self.assertGreaterEqual(hypothesis.quality, 0.86)
 
     def test_celoe_quality_variant_2(self):
@@ -69,7 +69,7 @@ class ModelAdapterTest(unittest.TestCase):
                              )
 
         model = model.fit(pos=typed_pos, neg=typed_neg)
-        hypothesis = next(model.best_hypotheses(n=1))
+        hypothesis = model.best_hypotheses(n=1)
         self.assertGreaterEqual(hypothesis.quality, 0.59)
 
     def test_evolearner_quality(self):
@@ -88,7 +88,7 @@ class ModelAdapterTest(unittest.TestCase):
                              reasoner=reasoner)
 
         model = model.fit(pos=typed_pos, neg=typed_neg)
-        hypothesis = next(model.best_hypotheses(n=1))
+        hypothesis = model.best_hypotheses(n=1)
         self.assertGreaterEqual(hypothesis.quality, 0.9)
 
 

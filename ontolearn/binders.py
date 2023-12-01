@@ -5,6 +5,15 @@ from typing import List, Dict
 from .utils import create_experiment_folder
 import re
 import time
+from ontolearn.learning_problem import PosNegLPStandard
+
+
+class PredictedConcept:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+    def __iter__(self):
+        yield self.Prediction
 
 
 class DLLearnerBinder:
@@ -12,7 +21,7 @@ class DLLearnerBinder:
     dl-learner python binder.
     """
 
-    def __init__(self, binary_path=None, model=None, kb_path=None, max_runtime=3):
+    def __init__(self, binary_path=None, model=None, kb_path=None, storage_path=".", max_runtime=3):
         try:
             assert binary_path
             assert model
@@ -24,7 +33,10 @@ class DLLearnerBinder:
         self.kb_path = kb_path
         self.name = model
         self.max_runtime = max_runtime
-        self.storage_path, _ = create_experiment_folder()
+        if storage_path is not None:
+            self.storage_path = storage_path
+        else:
+            self.storage_path, _ = create_experiment_folder()
         self.best_predictions = None
         self.config_name_identifier = None
 
@@ -38,8 +50,8 @@ class DLLearnerBinder:
         Returns:
             str: Path of generated config file.
         """
-        assert len(pos) > 0
-        assert len(neg) > 0
+        assert len(pos) > 0 and isinstance(pos[0], str)
+        assert len(neg) > 0 and isinstance(neg[0], str)
 
         Text = list()
         pos_string = "{ "
@@ -109,33 +121,36 @@ class DLLearnerBinder:
                 wb.write("\n".encode("utf-8"))
         return pathToConfig
 
-    def fit(self, pos: List[str], neg: List[str], max_runtime: int = None):
+    def fit(self, lp: PosNegLPStandard, max_runtime: int = None):
         """Fit dl-learner model on a given positive and negative examples.
 
         Args:
-            pos: A list of URIs of individuals indicating positive examples in concept learning problem.
-            neg: A list of URIs of individuals indicating negatives examples in concept learning problem.
+            lp:PosNegLPStandard
+            lp.pos A list of URIs of individuals indicating positive examples in concept learning problem.
+            lp.neg A list of URIs of individuals indicating negatives examples in concept learning problem.
             max_runtime: Limit to stop the algorithm after n seconds.
 
         Returns:
             self.
         """
-        try:
-            assert len(pos) > 0
-            assert len(neg) > 0
-        except AssertionError:
-            print(f'Positive and Negative Examples can not be 0 length:|Pos|={len(pos)},|Neg|{len(neg)}')
-            raise
         if max_runtime:
             self.max_runtime = max_runtime
-        pathToConfig = self.write_dl_learner_config(pos=pos, neg=neg)
+
+        pathToConfig = self.write_dl_learner_config(pos=[i.get_iri().as_str() for i in lp.pos],
+                                                    neg=[i.get_iri().as_str() for i in lp.neg])
         total_runtime = time.time()
-        res = subprocess.run([self.binary_path + 'bin/cli', pathToConfig], stdout=subprocess.PIPE,
-                             universal_newlines=True)
+        res = subprocess.run([self.binary_path, pathToConfig], capture_output=True, universal_newlines=True)
         total_runtime = round(time.time() - total_runtime, 3)
         self.best_predictions = self.parse_dl_learner_output(res.stdout.splitlines(), pathToConfig)
         self.best_predictions['Runtime'] = total_runtime
         return self
+
+    def best_hypotheses(self, n: int = None) -> PredictedConcept:
+        # @ TODO:
+        # Convert string to OWL class object
+        # {'Prediction': 'Child', 'Accuracy': 1.0, 'F-measure': 1.0, 'NumClassTested': 3, 'Runtime': 3.502}
+
+        return PredictedConcept(**self.best_hypothesis())
 
     def best_hypothesis(self):
         """ Return predictions if exists.
@@ -304,6 +319,7 @@ class DLLearnerBinder:
         Returns:
             self.
         """
+        raise NotImplementedError
         assert len(dataset) > 0
         if max_runtime:
             assert isinstance(max_runtime, int)

@@ -137,8 +137,7 @@ class LengthBasedRefinement(BaseRefinement):
         3- Intersection with T.
         """
         assert isinstance(class_expression, OWLObjectComplementOf)
-        yield from self.kb.generator.negation_from_iterables(self.kb.get_direct_parents(
-            self.kb.negation(class_expression)))
+        yield from self.kb.generator.negation_from_iterables(self.kb.get_direct_parents(class_expression._operand))
         yield self.kb.generator.intersection((class_expression, self.kb.generator.thing))
 
     def refine_object_some_values_from(self, class_expression: OWLObjectSomeValuesFrom) -> Iterable[OWLClassExpression]:
