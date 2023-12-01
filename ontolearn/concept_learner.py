@@ -663,7 +663,7 @@ class Drill(RefinementBasedConceptLearner):
                  max_len_replay_memory=None, epsilon_decay=None, epsilon_min=None, num_epochs_per_replay=None,
                  num_episodes_per_replay=None, learning_rate=None, max_runtime=None, num_of_sequential_actions=None,
                  num_episode=None):
-
+        print("***CURRENTLY BEING INTEGRATED***")
         self.name = "DRILL"
         self.reward_func = reward_func
         self.representation_mode = "averaging"
