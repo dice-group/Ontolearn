@@ -23,10 +23,10 @@ or
 git clone https://github.com/dice-group/Ontolearn.git && conda create --name onto python=3.8 && conda activate onto 
 pip3 install -r requirements.txt && python -c "import ontolearn"
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
-python -m pytest tests
 ```
 ```shell
-pytest -p no:warnings -x # Runs > tests leading to > 15 mins
+python -m pytest tests
+pytest -p no:warnings -x # Running 158 tests takes ~ 3 mins
 ```
 
 ## Description Logic Concept Learning 
@@ -87,40 +87,6 @@ markus                           1.0   1.0
 michelle                         0.0   0.0
 """
 ```
-
-We have already many algorithms ready to use
-```python
-from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, Drill
-from ontolearn.binders import DLLearnerBinder
-from ontolearn.learning_problem import PosNegLPStandard
-from ontolearn.metrics import F1
-from owlapy.model import OWLNamedIndividual, IRI
-from ontolearn.utils import setup_logging
-
-setup_logging()
-max_runtime, topk=5, 1
-kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
-lp = PosNegLPStandard(pos={OWLNamedIndividual(IRI.create(p)) for p in
-                           {"http://www.benchmark.org/family#F10F175",
-                            "http://www.benchmark.org/family#F10F177"}},
-                      neg={OWLNamedIndividual(IRI.create("http://www.benchmark.org/family#F9M142"))})
-preds_drill = list(Drill(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime).fit(lp).best_hypotheses(n=topk))
-preds_dl_celoe = list(DLLearnerBinder(binary_path="examples/dllearner-1.5.0/bin/cli",
-                                      kb_path="KGs/Family/family-benchmark_rich_background.owl", model='celoe',
-                                      max_runtime=max_runtime).fit(lp).best_hypotheses(n=topk))
-preds_evo = list(EvoLearner(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime).fit(lp,verbose=0).best_hypotheses(n=topk))
-preds_celoe = list(CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime).fit(lp).best_hypotheses(n=topk))
-preds_ocel = list(OCEL(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime).fit(lp).best_hypotheses(n=topk))
-
-print("RESULTS")
-print(f"DRILL:{preds_drill[0]}")
-print(f"EvoLearner:{preds_celoe[0]}")
-print(f"CELOE:{preds_celoe[0]}")
-print(f"OCEL:{preds_ocel[0]}")
-print(f"DL-CELOE:{preds_dl_celoe[0]}")
-```
-
 
 Fore more please refer to  the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder.
 

@@ -40,6 +40,10 @@ class _NodeConcept(metaclass=ABCMeta):
     def __str__(self):
         return _NodeConcept.renderer.render(self.concept)
 
+    @property
+    def str(self):
+        return _NodeConcept.__str__(self)
+
 
 # noinspection PyUnresolvedReferences
 # noinspection PyDunderSlots
@@ -243,7 +247,6 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
             f'|RC|:{self.refinement_count}',
             _NodeIndividualsCount.__str__(self),
         ))
-
 
 class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, AbstractNode, AbstractConceptNode):
     """

@@ -34,7 +34,6 @@ class ConceptGenerator:
         """ Create an intersection of each class expression in a_operands with each class expression in b_operands."""
         assert isinstance(a_operands, Generator) is False and isinstance(b_operands, Generator) is False
         seen = set()
-        # TODO: if input sizes say 10^4, we can employ multiprocessing
         for i in a_operands:
             for j in b_operands:
                 if (i, j) in seen:
@@ -194,7 +193,8 @@ class ConceptGenerator:
         assert isinstance(property, OWLObjectPropertyExpression)
         return OWLObjectExactCardinality(cardinality=card, property=property, filler=filler)
 
-    def data_existential_restriction(self, filler: OWLDataRange, property: OWLDataPropertyExpression) \
+    @staticmethod
+    def data_existential_restriction(filler: OWLDataRange, property: OWLDataPropertyExpression) \
             -> OWLDataSomeValuesFrom:
         """Create data existential restriction.
 
@@ -208,7 +208,8 @@ class ConceptGenerator:
         assert isinstance(property, OWLDataPropertyExpression)
         return OWLDataSomeValuesFrom(property=property, filler=filler)
 
-    def data_universal_restriction(self, filler: OWLDataRange, property: OWLDataPropertyExpression) \
+    @staticmethod
+    def data_universal_restriction(filler: OWLDataRange, property: OWLDataPropertyExpression) \
             -> OWLDataAllValuesFrom:
         """Create data universal restriction.
 
@@ -222,7 +223,8 @@ class ConceptGenerator:
         assert isinstance(property, OWLDataPropertyExpression)
         return OWLDataAllValuesFrom(property=property, filler=filler)
 
-    def data_has_value_restriction(self, value: OWLLiteral, property: OWLDataPropertyExpression) \
+    @staticmethod
+    def data_has_value_restriction(value: OWLLiteral, property: OWLDataPropertyExpression) \
             -> OWLDataHasValue:
         """Create data has value restriction.
 
