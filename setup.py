@@ -32,6 +32,7 @@ setup(
         "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
         "Topic :: Scientific/Engineering :: Artificial Intelligence"],
     python_requires='>=3.8',
+    entry_points={"console_scripts": ["ontolearn = ontolearn.run:main"]},
     long_description=long_description,
     long_description_content_type="text/markdown",
 )
