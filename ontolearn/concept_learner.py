@@ -4,7 +4,7 @@ import logging
 import operator
 import random
 import time
-from collections import deque
+from collections import deque, Counter
 from contextlib import contextmanager
 from itertools import islice, chain
 from typing import Any, Callable, Dict, FrozenSet, Set, List, Tuple, Iterable, Optional, Generator, SupportsFloat, Union
@@ -42,15 +42,13 @@ from ontolearn.base_nces import BaseNCES
 from ontolearn.nces_architectures import LSTM, GRU, SetTransformer
 from ontolearn.nces_trainer import NCESTrainer, before_pad
 from ontolearn.nces_utils import SimpleSolution
-from owlapy.model import OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual, OWLReasoner
+from owlapy.model import OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual, OWLReasoner, OWLClass
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.parser import DLSyntaxParser
 from owlapy.util import OrderedOWLObject
 from sortedcontainers import SortedSet
 import os
-
-# pd.set_option('display.max_columns', 100)
-
+from .data_struct import Experience
 logger = logging.getLogger(__name__)
 
 _concept_operand_sorter = ConceptOperandSorter()
@@ -657,14 +655,27 @@ class Drill(RefinementBasedConceptLearner):
 
     def __init__(self, knowledge_base,
                  path_of_embeddings: str = None, refinement_operator: LengthBasedRefinement = None,
+                 use_inverse=True,
+                 use_data_properties=True,
+                 use_card_restrictions=True,
+                 card_limit=10,
                  quality_func: AbstractScorer = None,
-                 reward_func=None, batch_size=None, num_workers=None, pretrained_model_name=None,
+                 reward_func=None,
+                 batch_size=None, num_workers=None, pretrained_model_name=None,
                  iter_bound=None, max_num_of_concepts_tested=None, verbose=None, terminate_on_goal=None,
                  max_len_replay_memory=None, epsilon_decay=None, epsilon_min=None, num_epochs_per_replay=None,
                  num_episodes_per_replay=None, learning_rate=None, max_runtime=None, num_of_sequential_actions=None,
                  num_episode=None):
-        print("***CURRENTLY BEING INTEGRATED***")
+
+        print("***DRILL has not yet been fully integrated***")
         self.name = "DRILL"
+        # TODO: Clear difference between training and testing should be defined at init
+        if refinement_operator is None:
+            refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base,
+                                                        use_data_properties=use_data_properties,
+                                                        use_card_restrictions=use_card_restrictions,
+                                                        card_limit=card_limit,
+                                                        use_inverse=use_inverse)
         self.reward_func = reward_func
         self.representation_mode = "averaging"
         self.heuristic_func = None
@@ -684,14 +695,12 @@ class Drill(RefinementBasedConceptLearner):
         self.emb_pos, self.emb_neg = None, None
         self.start_time = None
         self.goal_found = False
-        from .data_struct import Experience
         self.experiences = Experience(maxlen=self.max_len_replay_memory)
 
         if path_of_embeddings is not None and os.path.exists(path_of_embeddings):
             self.instance_embeddings = pd.read_csv(path_of_embeddings)
             self.embedding_dim = self.instance_embeddings.shape[1]
         else:
-            print("No embeddings found")
             self.instance_embeddings = None
             self.embedding_dim = 12
 
@@ -709,9 +718,6 @@ class Drill(RefinementBasedConceptLearner):
         else:
             self.pre_trained_model_loaded = False
 
-        if refinement_operator is None:
-            refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base)
-
         RefinementBasedConceptLearner.__init__(self, knowledge_base=knowledge_base,
                                                refinement_operator=refinement_operator,
                                                quality_func=quality_func,
@@ -726,10 +732,13 @@ class Drill(RefinementBasedConceptLearner):
         self._learning_problem = None
         self.storage_path, _ = create_experiment_folder()
 
-    def best_hypotheses(self, n=1) -> Iterable:
+    def best_hypotheses(self, n=1):
         assert self.search_tree is not None
         assert len(self.search_tree) > 1
-        return [i for i in self.search_tree.get_top_n_nodes(n)]
+        if n == 1:
+            return [i for i in self.search_tree.get_top_n_nodes(n)][0]
+        else:
+            return [i for i in self.search_tree.get_top_n_nodes(n)]
 
     def clean(self):
         self.emb_pos, self.emb_neg = None, None
@@ -749,12 +758,8 @@ class Drill(RefinementBasedConceptLearner):
     def downward_refinement(self, *args, **kwargs):
         ValueError('downward_refinement')
 
-    def next_node_to_expand(self, t: int = None) -> RL_State:
-        """
-        Return a node that maximizes the heuristic function at time t.
-        """
-        # if self.verbose > 5:
-        #    self.search_tree.show_search_tree(t)
+    def next_node_to_expand(self) -> RL_State:
+        """ Return a node that maximizes the heuristic function at time t. """
         return self.search_tree.get_most_promising()
 
     def initialize_class_expression_learning_problem(self, pos: Set[OWLNamedIndividual], neg: Set[OWLNamedIndividual]):
@@ -765,9 +770,6 @@ class Drill(RefinementBasedConceptLearner):
             3) Initialize the root and search tree.
             """
         self.clean()
-
-        # @TODO:CD: for the time being removed
-        # assert isinstance(pos, set) and isinstance(neg, set)
         assert 0 < len(pos) and 0 < len(neg)
 
         # 1.
@@ -775,8 +777,8 @@ class Drill(RefinementBasedConceptLearner):
         self._learning_problem = PosNegLPStandard(pos=set(pos), neg=set(neg)).encode_kb(self.kb)
         # 2. Obtain embeddings of positive and negative examples.
         if self.instance_embeddings is None:
-            self.emb_pos = torch.rand((1, 1, self.embedding_dim))
-            self.emb_neg = torch.rand((1, 1, self.embedding_dim))
+            self.emb_pos = None
+            self.emb_neg = None
         else:
             self.emb_pos = torch.tensor(
                 self.instance_embeddings.loc[[owl_indv.get_iri().as_str() for owl_indv in pos]].values,
@@ -790,11 +792,11 @@ class Drill(RefinementBasedConceptLearner):
             self.emb_pos = self.emb_pos.view(1, 1, self.emb_pos.shape[0])
             self.emb_neg = torch.mean(self.emb_neg, dim=0)
             self.emb_neg = self.emb_neg.view(1, 1, self.emb_neg.shape[0])
-        # Sanity checking
-        if torch.isnan(self.emb_pos).any() or torch.isinf(self.emb_pos).any():
-            raise ValueError('invalid value detected in E+,\n{0}'.format(self.emb_pos))
-        if torch.isnan(self.emb_neg).any() or torch.isinf(self.emb_neg).any():
-            raise ValueError('invalid value detected in E-,\n{0}'.format(self.emb_neg))
+            # Sanity checking
+            if torch.isnan(self.emb_pos).any() or torch.isinf(self.emb_pos).any():
+                raise ValueError('invalid value detected in E+,\n{0}'.format(self.emb_pos))
+            if torch.isnan(self.emb_neg).any() or torch.isinf(self.emb_neg).any():
+                raise ValueError('invalid value detected in E-,\n{0}'.format(self.emb_neg))
 
         # Initialize ROOT STATE
         root_rl_state = self.create_rl_state(self.start_class, is_root=True)
@@ -802,19 +804,31 @@ class Drill(RefinementBasedConceptLearner):
         return root_rl_state
 
     def fit(self, lp: PosNegLPStandard, max_runtime=None):
-
         if max_runtime:
             assert isinstance(max_runtime, int)
             self.max_runtime = max_runtime
-        # 2. Initialize learning problem
+        # @TODO: Type injection should be possible for all
+        pos_type_counts = Counter(
+            [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in lp.pos))])
+        neg_type_counts = Counter(
+            [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in lp.neg))])
+        type_bias = pos_type_counts - neg_type_counts
+
+        # (1) Initialize learning problem
         root_state = self.initialize_class_expression_learning_problem(pos=lp.pos, neg=lp.neg)
-        root_state.heuristic = 0
+        # (2) Add root state into search tree
+        root_state.heuristic = root_state.quality
         self.search_tree.add(root_state)
-        # (3) Add root state into search tree
+        # (3) Inject Type Bias
+        for x in (self.create_rl_state(i, parent_node=root_state) for i in type_bias):
+            self.compute_quality_of_class_expression(x)
+            x.heuristic = x.quality
+            self.search_tree.add(x)
         self.start_time = time.time()
+        # (3) Search
         for i in range(1, self.iter_bound):
             # (1) Get the most fitting RL-state
-            most_promising = self.next_node_to_expand(i)
+            most_promising = self.next_node_to_expand()
             next_possible_states = []
             # (2) Refine (1)
             for ref in self.apply_refinement(most_promising):
@@ -834,7 +848,6 @@ class Drill(RefinementBasedConceptLearner):
                 if self.verbose > 1:
                     logger.info(f'DEAD END at {most_promising}')
                 continue
-
             if len(next_possible_states) == 0:
                 # We do not need to compute Q value based on embeddings of "zeros".
                 continue
@@ -848,8 +861,6 @@ class Drill(RefinementBasedConceptLearner):
                 if self.terminate_on_goal:
                     return self.terminate()
             if time.time() - self.start_time > self.max_runtime:
-                return self.terminate()
-            if self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
                 return self.terminate()
 
     def show_search_tree(self, heading_step: str, top_n: int = 10) -> None:
@@ -1169,7 +1180,6 @@ class Drill(RefinementBasedConceptLearner):
         all individuals belonging to a respective OWLClassExpression.
         """
         assert isinstance(rl_state, RL_State)
-
         # (1) Detect mode of representing OWLClassExpression
         if self.representation_mode == 'averaging':
             # (2) if input node has not seen before, assign embeddings.
