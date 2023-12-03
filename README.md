@@ -20,12 +20,11 @@ pip install ontolearn
 ```
 or
 ```shell
-git clone https://github.com/dice-group/Ontolearn.git && conda create --name onto python=3.8 && conda activate onto 
-pip3 install -r requirements.txt && python -c "import ontolearn"
+git clone https://github.com/dice-group/Ontolearn.git && conda create --name onto python=3.8.18 && conda activate onto 
+pip3 install -e . && python -c "import ontolearn"
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
 ```
 ```shell
-python -m pytest tests
 pytest -p no:warnings -x # Running 158 tests takes ~ 3 mins
 ```
 
