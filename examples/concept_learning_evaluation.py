@@ -2,7 +2,6 @@ import json
 import os
 import time
 import pandas as pd
-
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, Drill
 from ontolearn.learning_problem import PosNegLPStandard
@@ -28,11 +27,11 @@ def dl_concept_learning(args):
     celoe=CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
     evo=EvoLearner(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
     drill=Drill(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
-
-    columns = ["LP", "F1-OCEL", "RT-OCEL",
-               "F1-CELOE", "RT-CELOE",
-               "F1-EvoLearner", "RT-EvoLearner",
-               "F1-DRILL", "RT-DRILL"]
+    columns = ["LP",
+               "OCEL", "F1-OCEL", "RT-OCEL",
+               "CELOE", "F1-CELOE", "RT-CELOE",
+               "EvoLearner", "F1-EvoLearner", "RT-EvoLearner",
+               "DRILL", "F1-DRILL", "RT-DRILL"]
     values = []
     for str_target_concept, examples in settings['problems'].items():
         p = set(examples['positive_examples'])
@@ -45,39 +44,39 @@ def dl_concept_learning(args):
         lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
 
         start_time = time.time()
-        pred_ocel = ocel.fit(lp).best_hypotheses(
-            n=1).pop().quality
+        # Untrained & max runtime is not fully integrated.
+        pred_drill = drill.fit(lp).best_hypotheses(n=1)
+        rt_drill = time.time() - start_time
+
+
+        start_time = time.time()
+        pred_ocel = ocel.fit(lp).best_hypotheses(n=1)
         rt_ocel = time.time() - start_time
 
         start_time = time.time()
-        pred_celoe = celoe.fit(lp).best_hypotheses(
-            n=1).pop().quality
+        pred_celoe = celoe.fit(lp).best_hypotheses(n=1)
         rt_celoe = time.time() - start_time
 
         start_time = time.time()
-        pred_evo = evo.fit(lp).best_hypotheses(n=1).pop().quality
+        pred_evo = evo.fit(lp).best_hypotheses(n=1)
         rt_evo = time.time() - start_time
 
-        start_time = time.time()
-        # Untrained
-        pred_drill = drill.fit(lp).best_hypotheses(n=1).pop().quality
-        rt_drill = time.time() - start_time
-
         values.append(
-            [str_target_concept, pred_ocel, rt_ocel, pred_celoe, rt_celoe, pred_evo, rt_evo, pred_drill, rt_drill])
+            [str_target_concept,
+             pred_ocel.str, pred_ocel.quality, rt_ocel,
+             pred_celoe.str, pred_celoe.quality, rt_celoe,
+             pred_evo.str, pred_evo.quality, rt_evo,
+             pred_drill.str, pred_drill.quality, rt_drill])
 
     df = pd.DataFrame(values, columns=columns)
-
     print(df)
-
     print(df.select_dtypes(include="number").mean())
-
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Description Logic Concept Learning')
 
-    parser.add_argument("--max_runtime", type=int, default=3)
+    parser.add_argument("--max_runtime", type=int, default=10)
     parser.add_argument("--lps", type=str, default="synthetic_problems.json")
     parser.add_argument("--kb", type=str, default="../KGs/Family/family-benchmark_rich_background.owl")
 
