@@ -376,9 +376,9 @@ def execute(args):
                    "algorithm": algorithm,
                    "mut_uniform_gen": mut_uniform_gen,
                    "value_splitter": value_splitter}
-    elif args.model == "drill":
-        optargs = {"knowledge_base": kb,
-                   "quality_func": metrics[args.quality_metric]()}
+    # elif args.model == "drill":
+    #     optargs = {"knowledge_base": kb,
+    #                "quality_func": metrics[args.quality_metric]()}
 
     model = learner_type(**_get_matching_opts(learner_type, optargs, args_d))
 
