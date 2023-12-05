@@ -17,7 +17,6 @@ dependencies:
   - httpx=0.21.1
   - parsimonious=0.8.1
   - tqdm=4.64.0
-  - dicee==0.1.2
   # testing
   - tox=3.24.3
   - tox-conda=0.8.3
@@ -34,6 +33,7 @@ dependencies:
   # PIP
   - pip=21.0.1
   - pip:
+    - dicee==0.1.2
     - owlapy == 0.1.0
     - tokenizers==0.12.1
     - transformers==4.19.2
