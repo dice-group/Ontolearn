@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 setup(
     name="ontolearn",
     description="Ontolearn is an open-source software library for structured machine learning in Python. Ontolearn includes modules for processing knowledge bases, inductive logic programming and ontology engineering.",
-    version="0.6.1",
+    version="0.6.2",
     packages=find_packages(),
     install_requires=[
         "scikit-learn>=0.24.1",
