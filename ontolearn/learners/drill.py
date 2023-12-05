@@ -12,12 +12,23 @@ from ontolearn.utils import create_experiment_folder
 from collections import Counter
 from itertools import chain
 import time
+import dicee
+import os
+
 
 class Drill(RefinementBasedConceptLearner):
-    """Deep Reinforcement Learning for Refinement Operators in ALC."""
+    """ Neuro-Symbolic Class Expression Learning (https://www.ijcai.org/proceedings/2023/0403.pdf)
+    dice embeddings ?
+    pip3 install dicee
+    dicee --path_single_kg KGs/Family/family-benchmark_rich_background.owl --backend rdflib --model Keci --embedding_dim 32 --num_epochs 100 --path_to_store_single_run KeciFamilyRun
+
+
+    """
 
     def __init__(self, knowledge_base,
-                 path_of_embeddings: str = None, refinement_operator: LengthBasedRefinement = None,
+                 path_pretrained_kge: str = None,
+                 path_pretrained_drill: str = None,
+                 refinement_operator: LengthBasedRefinement = None,
                  use_inverse=True,
                  use_data_properties=True,
                  use_card_restrictions=True,
@@ -32,7 +43,18 @@ class Drill(RefinementBasedConceptLearner):
 
         print("***DRILL has not yet been fully integrated***")
         self.name = "DRILL"
-        # TODO: Clear difference between training and testing should be defined at init
+        if path_pretrained_kge is not None and os.path.isdir(path_pretrained_kge):
+            self.pre_trained_kge = dicee.KGE(path=path_pretrained_kge)
+            self.embedding_dim = self.pre_trained_kge.configs["embedding_dim"]
+        else:
+            self.pre_trained_kge = None
+            self.embedding_dim = 32
+
+        if path_pretrained_drill is not None and os.path.isdir(path_pretrained_drill):
+            raise NotImplementedError()
+        else:
+            self.pre_trained_drill = None
+
         if refinement_operator is None:
             refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base,
                                                         use_data_properties=use_data_properties,
@@ -60,18 +82,12 @@ class Drill(RefinementBasedConceptLearner):
         self.goal_found = False
         self.experiences = Experience(maxlen=self.max_len_replay_memory)
 
-        if path_of_embeddings is not None and os.path.exists(path_of_embeddings):
-            self.instance_embeddings = pd.read_csv(path_of_embeddings)
-            self.embedding_dim = self.instance_embeddings.shape[1]
-        else:
-            self.instance_embeddings = None
-            self.embedding_dim = 12
-
         self.sample_size = 1
-        arg_net = {'input_shape': (4 * self.sample_size, self.embedding_dim),
-                   'first_out_channels': 32, 'second_out_channels': 16, 'third_out_channels': 8,
-                   'kernel_size': 3}
-        self.heuristic_func = DrillHeuristic(mode='averaging', model_args=arg_net)
+        self.heuristic_func = DrillHeuristic(mode=self.representation_mode,
+                                             model_args={'input_shape': (4 * self.sample_size, self.embedding_dim),
+                                                         'first_out_channels': 32,
+                                                         'second_out_channels': 16, 'third_out_channels': 8,
+                                                         'kernel_size': 3})
         if self.learning_rate:
             self.optimizer = torch.optim.Adam(self.heuristic_func.net.parameters(), lr=self.learning_rate)
 
@@ -139,16 +155,12 @@ class Drill(RefinementBasedConceptLearner):
         # Generate a Learning Problem
         self._learning_problem = PosNegLPStandard(pos=set(pos), neg=set(neg)).encode_kb(self.kb)
         # 2. Obtain embeddings of positive and negative examples.
-        if self.instance_embeddings is None:
+        if self.pre_trained_kge is None:
             self.emb_pos = None
             self.emb_neg = None
         else:
-            self.emb_pos = torch.tensor(
-                self.instance_embeddings.loc[[owl_indv.get_iri().as_str() for owl_indv in pos]].values,
-                dtype=torch.float32)
-            self.emb_neg = torch.tensor(
-                self.instance_embeddings.loc[[owl_indv.get_iri().as_str() for owl_indv in neg]].values,
-                dtype=torch.float32)
+            self.emb_pos = self.pre_trained_kge.get_entity_embeddings([owl_indv.get_iri().as_str() for owl_indv in pos])
+            self.emb_neg = self.pre_trained_kge.get_entity_embeddings([owl_indv.get_iri().as_str() for owl_indv in neg])
 
             # (3) Take the mean of positive and negative examples and reshape it into (1,1,embedding_dim) for mini batching.
             self.emb_pos = torch.mean(self.emb_pos, dim=0)
@@ -556,18 +568,18 @@ class Drill(RefinementBasedConceptLearner):
                 # (5) |R(C)|=\emptyset ?
                 if len(rl_state.instances) == 0:
                     # If|R(C)|=\emptyset, then represent C with zeros
-                    if self.instance_embeddings is not None:
-                        emb = torch.zeros(1, self.sample_size, self.instance_embeddings.shape[1])
+                    if self.pre_trained_kge is not None:
+                        emb = torch.zeros(1, self.sample_size, self.embedding_dim)
                     else:
                         emb = torch.rand(size=(1, self.sample_size, self.embedding_dim))
                 else:
                     # If|R(C)| \not= \emptyset, then take the mean of individuals.
-                    str_idx = [i.get_iri().as_str() for i in rl_state.instances]
-                    assert len(str_idx) > 0
-                    if self.instance_embeddings is not None:
-                        emb = torch.tensor(self.instance_embeddings.loc[str_idx].values, dtype=torch.float32)
+                    str_individuals = [i.get_iri().as_str() for i in rl_state.instances]
+                    assert len(str_individuals) > 0
+                    if self.pre_trained_kge is not None:
+                        emb = self.pre_trained_kge.get_entity_embeddings(str_individuals)
                         emb = torch.mean(emb, dim=0)
-                        emb = emb.view(1, self.sample_size, self.instance_embeddings.shape[1])
+                        emb = emb.view(1, self.sample_size, self.embedding_dim)
                     else:
                         emb = torch.rand(size=(1, self.sample_size, self.embedding_dim))
                 # (6) Assign embeddings
@@ -808,9 +820,9 @@ class DrillNet(torch.nn.Module):
         self.loss = torch.nn.MSELoss()
         # Conv1D seems to be faster than Conv2d
         self.conv1 = torch.nn.Conv1d(in_channels=4,
-                               out_channels=args['first_out_channels'],
-                               kernel_size=args['kernel_size'],
-                               padding=1, stride=1, bias=True)
+                                     out_channels=args['first_out_channels'],
+                                     kernel_size=args['kernel_size'],
+                                     padding=1, stride=1, bias=True)
 
         # Fully connected layers.
         self.size_of_fc1 = int(args['first_out_channels'] * self.embedding_dim)
@@ -835,4 +847,3 @@ class DrillNet(torch.nn.Module):
         # N x 1
         scores = self.fc2(X).flatten()
         return scores
-

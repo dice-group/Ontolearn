@@ -20,7 +20,7 @@ pip install ontolearn
 ```
 or
 ```shell
-git clone https://github.com/dice-group/Ontolearn.git && conda create --name onto python=3.8.18 && conda activate onto 
+git clone https://github.com/dice-group/Ontolearn.git && conda create --name onto python=3.9.18 && conda activate onto 
 pip3 install -e . && python -c "import ontolearn"
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
 ```

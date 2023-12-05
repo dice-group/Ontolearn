@@ -80,5 +80,6 @@ if __name__ == '__main__':
     parser.add_argument("--max_runtime", type=int, default=10)
     parser.add_argument("--lps", type=str, default="synthetic_problems.json")
     parser.add_argument("--kb", type=str, default="../KGs/Family/family-benchmark_rich_background.owl")
+    parser.add_argument("--path_pretrained_kge", type=str, default="../KeciFamilyRun")
 
     dl_concept_learning(parser.parse_args())
