@@ -385,10 +385,14 @@ def execute(args):
     if args.model in ["celoe", "evolearner", "ocel"]:
         trainer = Trainer(model, kb.reasoner())
         trainer.fit(lp)
-        print(list(trainer.best_hypotheses(1)).pop())
+        # @TODO:CD: If n=1, best_hypotheses must return an object containing a DL concept (e.g. OENODE), otherwise
+        # @TODO:CD a list of objects each of which contains a DL concept
+        # best_dl_concept=trainer.best_hypotheses(1)
+        # best_dl_concepts=trainer.best_hypotheses(10)
 
     elif args.model in ["nces"]:
         hypothesis = model.fit(pos, neg)
+        # @TODO:CD: model.fit() should return a train model itself, not predictions
         report = "Prediction: " + DLSyntaxObjectRenderer().render(hypothesis) + "Quality: " + \
                  compute_quality(kb, hypothesis, pos, neg, args.quality_metric) + "Individuals: " + \
                  kb.individuals_count(hypothesis)
