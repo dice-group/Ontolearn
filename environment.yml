@@ -33,7 +33,6 @@ dependencies:
   # PIP
   - pip=21.0.1
   - pip:
-    - dicee == 0.1.2
     - owlapy == 0.1.0
     - tokenizers==0.12.1
     - transformers==4.19.2
