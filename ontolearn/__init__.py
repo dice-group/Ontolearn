@@ -16,3 +16,5 @@ __version__ = '0.6.1'
 # from .metrics import *
 # from .search import *
 __all__ = ['knowledge_base', 'abstracts', 'base_concept_learner', 'metrics', 'search']
+
+from .learners import Drill

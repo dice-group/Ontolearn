@@ -3,7 +3,8 @@ import os
 import time
 import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, Drill
+from ontolearn.concept_learner import CELOE, OCEL, EvoLearner
+from ontolearn import Drill
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import Accuracy, F1
 from owlapy.model import OWLClass, OWLNamedIndividual, IRI
