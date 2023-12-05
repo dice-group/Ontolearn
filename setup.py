@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 setup(
     name="ontolearn",
     description="Ontolearn is an open-source software library for structured machine learning in Python. Ontolearn includes modules for processing knowledge bases, inductive logic programming and ontology engineering.",
-    version="0.6.1",
+    version="0.6.2",
     packages=find_packages(),
     install_requires=[
         "scikit-learn>=0.24.1",
@@ -23,7 +23,8 @@ setup(
         "tokenizers>=0.12.1",
         "transformers>=4.19.2",
         "pytest>=7.2.2",
-        "owlapy>=0.1.0"],
+        "owlapy>=0.1.0",
+        "dicee>=0.1.2"],
     author='Caglar Demir',
     author_email='caglardemir8@gmail.com',
     url='https://github.com/dice-group/Ontolearn',

@@ -3,7 +3,8 @@ import os
 import time
 import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, Drill
+from ontolearn.concept_learner import CELOE, OCEL, EvoLearner
+from ontolearn import Drill
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import Accuracy, F1
 from owlapy.model import OWLClass, OWLNamedIndividual, IRI
@@ -79,5 +80,6 @@ if __name__ == '__main__':
     parser.add_argument("--max_runtime", type=int, default=10)
     parser.add_argument("--lps", type=str, default="synthetic_problems.json")
     parser.add_argument("--kb", type=str, default="../KGs/Family/family-benchmark_rich_background.owl")
+    parser.add_argument("--path_pretrained_kge", type=str, default="../KeciFamilyRun")
 
     dl_concept_learning(parser.parse_args())
