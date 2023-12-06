@@ -11,7 +11,6 @@ dependencies:
   - rdflib=6.0.2
   - scikit-learn=1.0.2
   - sortedcontainers=2.4.0
-  - owlready2=0.40
   - flask=1.1.2
   - deap=1.3.1
   - httpx=0.21.1
@@ -33,7 +32,8 @@ dependencies:
   # PIP
   - pip=21.0.1
   - pip:
-    - owlapy == 0.1.0
+    - owlready2==0.40
+    - owlapy==0.1.0
     - tokenizers==0.12.1
     - transformers==4.19.2
     # testing
