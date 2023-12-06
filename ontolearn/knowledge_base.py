@@ -2,6 +2,7 @@
 
 import logging
 import random
+from itertools import chain
 from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict
 from ontolearn.base import OWLOntology_Owlready2, OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
@@ -63,6 +64,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
             reasoner of this object, if you enter a reasoner using :arg:`reasoner_factory` or :arg:`reasoner`
             argument it will override this setting.
         triplestore_address: The address where the triplestore is hosted.
+        include_implicit_individuals: Whether to identify and consider instances which are not set as OWL Named
+            Individuals (does not contain this type) as individuals.
 
     Attributes:
         generator (ConceptGenerator): Instance of concept generator.
@@ -104,7 +107,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  length_metric_factory: Optional[Factory[[], OWLClassExpressionLengthMetric]] = None,
                  individuals_cache_size=128,
                  triplestore_address: str = None,
-                 backend_store: bool = False):
+                 backend_store: bool = False,
+                 include_implicit_individuals=False):
         ...
 
     @overload
@@ -136,7 +140,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  backend_store: bool = False,
                  class_hierarchy: Optional[ClassHierarchy] = None,
                  object_property_hierarchy: Optional[ObjectPropertyHierarchy] = None,
-                 data_property_hierarchy: Optional[DatatypePropertyHierarchy] = None
+                 data_property_hierarchy: Optional[DatatypePropertyHierarchy] = None,
+                 include_implicit_individuals=False
                  ):
         AbstractKnowledgeBase.__init__(self)
         self.path = path
@@ -207,15 +212,17 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self._dp_ranges = dict()
         self.generator = ConceptGenerator()
 
-        if isinstance(self._reasoner, OWLReasoner_FastInstanceChecker) and triplestore_address is None:
-            self._ind_set = self._reasoner._ind_set  # performance hack
-        else:
-            individuals = self._ontology.individuals_in_signature()
-            self._ind_set = frozenset(individuals)
-
         self.use_individuals_cache = individuals_cache_size > 0
         if self.use_individuals_cache:
             self._ind_cache = LRUCache(maxsize=individuals_cache_size)
+
+        if include_implicit_individuals:
+            self._ind_set = frozenset(chain.from_iterable(self.individuals(i) for i in self.get_concepts()))
+        elif isinstance(self._reasoner, OWLReasoner_FastInstanceChecker) and triplestore_address is None:
+            self._ind_set = self._reasoner._ind_set  # performance hack:
+        else:
+            individuals = self._ontology.individuals_in_signature()
+            self._ind_set = frozenset(individuals)
 
         self.describe()
 
@@ -455,7 +462,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                 yield prop
 
     def __repr__(self):
-        properties_count = iter_count(self.ontology().object_properties_in_signature()) + iter_count(
+        properties_count = iter_count(self._ind_set) + iter_count(
             self.ontology().data_properties_in_signature())
         class_count = iter_count(self.ontology().classes_in_signature())
         individuals_count = self.individuals_count()
