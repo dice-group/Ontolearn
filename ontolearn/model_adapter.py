@@ -385,10 +385,11 @@ def execute(args):
     if args.model in ["celoe", "evolearner", "ocel"]:
         trainer = Trainer(model, kb.reasoner())
         trainer.fit(lp)
-        print(list(trainer.best_hypotheses(1)).pop())
+        print(trainer.best_hypotheses(1))
 
     elif args.model in ["nces"]:
         hypothesis = model.fit(pos, neg)  # This will also print the prediction
+        # @TODO:CD: model.fit() should return a train model itself, not predictions
         report = f"Quality: {compute_quality(kb, hypothesis, pos, neg, args.quality_metric)} \nIndividuals: " + \
                  f"{kb.individuals_count(hypothesis)}"
         print(report)
