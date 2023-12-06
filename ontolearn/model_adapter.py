@@ -388,8 +388,7 @@ def execute(args):
         print(list(trainer.best_hypotheses(1)).pop())
 
     elif args.model in ["nces"]:
-        hypothesis = model.fit(pos, neg)
-        report = "Prediction: " + DLSyntaxObjectRenderer().render(hypothesis) + "Quality: " + \
-                 compute_quality(kb, hypothesis, pos, neg, args.quality_metric) + "Individuals: " + \
-                 kb.individuals_count(hypothesis)
+        hypothesis = model.fit(pos, neg)  # This will also print the prediction
+        report = f"Quality: {compute_quality(kb, hypothesis, pos, neg, args.quality_metric)} \nIndividuals: " + \
+                 f"{kb.individuals_count(hypothesis)}"
         print(report)
