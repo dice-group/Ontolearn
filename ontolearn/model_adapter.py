@@ -4,13 +4,12 @@ import json
 import logging
 import re
 from typing import TypeVar, List, Optional, Union
-from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.abstracts import AbstractHeuristic, AbstractScorer, BaseRefinement, AbstractKnowledgeBase, \
     AbstractNode
 from ontolearn.base_concept_learner import BaseConceptLearner
 from owlapy.model import OWLReasoner, OWLNamedIndividual, OWLClassExpression, OWLAxiom, IRI
 from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
-from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, NCES, Drill
+from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, NCES
 from ontolearn.ea_algorithms import EASimple
 from ontolearn.ea_initialization import EARandomWalkInitialization, EARandomInitialization, RandomInitMethod
 from ontolearn.fitness_functions import LinearPressureFitness
@@ -33,8 +32,7 @@ metrics = {'f1': F1,
 models = {'celoe': CELOE,
           'ocel': OCEL,
           'evolearner': EvoLearner,
-          'nces': NCES,
-          'drill': Drill}
+          'nces': NCES}
 
 heuristics = {'celoe': CELOEHeuristic,
               'ocel': OCELHeuristic}

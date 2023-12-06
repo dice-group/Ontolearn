@@ -462,7 +462,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                 yield prop
 
     def __repr__(self):
-        properties_count = iter_count(self._ind_set) + iter_count(
+        properties_count = iter_count(self.ontology().object_properties_in_signature()) + iter_count(
             self.ontology().data_properties_in_signature())
         class_count = iter_count(self.ontology().classes_in_signature())
         individuals_count = self.individuals_count()
