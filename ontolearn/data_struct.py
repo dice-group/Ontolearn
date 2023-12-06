@@ -12,8 +12,6 @@ class PrepareBatchOfPrediction(torch.utils.data.Dataset):
                  n: torch.FloatTensor):
         assert len(p) > 0 and len(n) > 0
         num_next_states = len(next_state_batch)
-
-
         current_state = current_state.repeat(num_next_states, 1, 1)
         p = p.repeat((num_next_states, 1, 1))
         n = n.repeat((num_next_states, 1, 1))
@@ -63,8 +61,9 @@ class PrepareBatchOfTraining(torch.utils.data.Dataset):
         assert self.S.shape == self.S_Prime.shape == self.Positives.shape == self.Negatives.shape
         assert self.S.dtype == self.S_Prime.dtype == self.Positives.dtype == self.Negatives.dtype == torch.float32
         self.X = torch.cat([self.S, self.S_Prime, self.Positives, self.Negatives], 1)
+
         num_points, depth, dim = self.X.shape
-        self.X = self.X.view(num_points, depth, 1, dim)
+        # self.X = self.X.view(num_points, depth, 1, dim)
         # X[0] => corresponds to a data point, X[0] \in R^{4 \times 1 \times dim}
         # where X[0][0] => current state representation R^{1 \times dim}
         # where X[0][1] => next state representation R^{1 \times dim}

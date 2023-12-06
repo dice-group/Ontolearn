@@ -44,8 +44,7 @@ class LengthBasedRefinement(BaseRefinement):
         assert num_of_named_classes == len(list(i for i in self.kb.ontology().classes_in_signature()))
         self.max_len_refinement_top = 5
 
-        self.top_refinements = {ref for ref in self.refine_top()}
-        print("Top refinements:", len(self.top_refinements))
+        self.top_refinements = None # {ref for ref in self.refine_top()}
 
     def from_iterables(self, cls, a_operands, b_operands):
         assert (isinstance(a_operands, Generator) is False) and (isinstance(b_operands, Generator) is False)
@@ -237,6 +236,9 @@ class LengthBasedRefinement(BaseRefinement):
 
     def refine(self, class_expression) -> Iterable[OWLClassExpression]:
         assert isinstance(class_expression, OWLClassExpression)
+        if self.top_refinements is None:
+            self.top_refinements = {ref for ref in self.refine_top()}
+
         if class_expression.is_owl_thing():
             yield from self.top_refinements
         elif class_expression.is_owl_nothing():
@@ -262,11 +264,6 @@ class LengthBasedRefinement(BaseRefinement):
             yield from (self.kb.generator.intersection((class_expression, i)) for i in self.top_refinements)
         else:
             raise ValueError(f"{type(class_expression)} objects are not yet supported")
-
-        """
-
-
-        """
 
 
 class ModifiedCELOERefinement(BaseRefinement[OENode]):
