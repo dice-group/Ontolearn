@@ -467,7 +467,7 @@ class DepthAbstractDrill:
                  num_epochs_per_replay=None, num_workers=None, verbose=0):
         self.name = 'DRILL'
         self.instance_embeddings = read_csv(path_of_embeddings)
-        if self.instance_embeddings is None:
+        if not self.instance_embeddings:
             print("No embeddings found")
             self.embedding_dim = None
         else:
