@@ -26,6 +26,7 @@ dependencies:
   # docs
   - sphinx=4.0.2
   - sphinx_rtd_theme=0.5.1
+  - myst-parser==2.0.0
   # # building
   - build=0.6.0
   # PIP
