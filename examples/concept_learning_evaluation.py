@@ -19,7 +19,7 @@ def dl_concept_learning(args):
 
     kb = KnowledgeBase(path=args.kb)
     drill = Drill(knowledge_base=kb, path_pretrained_kge=args.path_pretrained_kge, quality_func=F1(),
-                  max_runtime=args.max_runtime).train(num_episode=1, num_learning_problems=1)
+                  max_runtime=args.max_runtime).train(num_of_target_concepts=2, num_learning_problems=2)
     ocel = OCEL(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
     celoe = CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
     evo = EvoLearner(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
@@ -42,7 +42,6 @@ def dl_concept_learning(args):
         start_time = time.time()
         pred_drill = drill.fit(lp).best_hypotheses(n=1)
         rt_drill = time.time() - start_time
-
         start_time = time.time()
         pred_ocel = ocel.fit(lp).best_hypotheses(n=1)
         rt_ocel = time.time() - start_time
