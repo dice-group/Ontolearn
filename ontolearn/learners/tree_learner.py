@@ -7,7 +7,8 @@ import collections
 import matplotlib.pyplot as plt
 from sklearn import tree
 
-from owlapy.model import OWLObjectSomeValuesFrom, OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
+from owlapy.model import OWLObjectSomeValuesFrom, OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, \
+    OWLObjectAllValuesFrom, \
     OWLObjectIntersectionOf, OWLClassExpression, OWLNothing, OWLThing, OWLNaryBooleanClassExpression, \
     OWLObjectUnionOf, OWLClass, OWLObjectComplementOf, OWLObjectMaxCardinality, OWLObjectMinCardinality, \
     OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLLiteral, OWLObjectInverseOf, OWLDataProperty, \
@@ -106,11 +107,12 @@ def explain_inference(clf, X_test, features, only_shared):
 
 
 class TreeLearner:
-    def __init__(self, knowledge_base, dataframe_triples: pd.DataFrame):
+    def __init__(self, knowledge_base, dataframe_triples: pd.DataFrame, quality_func):
         assert isinstance(dataframe_triples, pd.DataFrame), "dataframe_triples must be a Pandas DataFrame"
         assert isinstance(knowledge_base, KnowledgeBase), "knowledge_base must be a KnowledgeBase instance"
         assert len(
             dataframe_triples) > 0, f"length of the dataframe must be greater than 0:Currently {dataframe_triples.shape}"
+        self.quality_func = quality_func
         self.knowledge_base = knowledge_base
         self.owl_classes_dict = {c.get_iri().as_str(): c for c in self.knowledge_base.get_concepts()}
         self.owl_object_property_dict = {p.get_iri().as_str(): p for p in self.knowledge_base.get_object_properties()}
@@ -152,7 +154,7 @@ class TreeLearner:
         self.Xraw.loc[pos, "label"] = 1  # positives
         self.Xraw.loc[neg, "label"] = -1  # negatives
         # (5.1) drop unknowns although unknowns provide info
-        X = self.Xraw[self.Xraw.label != 0]
+        X = self.Xraw  # self.Xraw[self.Xraw.label != 0]
 
         raw_features = X.columns.tolist()
         raw_features.remove("label")
@@ -165,10 +167,17 @@ class TreeLearner:
         print(f"Train data shape:{X_train_sparse.shape}")
         return X_train_sparse, y_train_sparse
 
-    def fit(self, lp: PosNegLPStandard, max_runtime=None):
-        pos = lp.pos
-        neg = lp.neg
+    def compute_quality(self, concept, pos, neg):
+        instances = set(self.knowledge_base.individuals(concept))
+        tp = len(pos.intersection(instances))
+        tn = len(neg.difference(instances))
 
+        fp = len(neg.intersection(instances))
+        fn = len(pos.difference(instances))
+        _, f1_score = self.quality_func.score2(tp=tp, fn=fn, fp=fp, tn=tn)
+        return f1_score
+
+    def fit(self, lp: PosNegLPStandard, max_runtime=None):
         str_pos_examples = [i.get_iri().as_str() for i in lp.pos]
         str_neg_examples = [i.get_iri().as_str() for i in lp.neg]
 
@@ -179,21 +188,23 @@ class TreeLearner:
         # plt.figure(figsize=(30, 30))
         # tree.plot_tree(self.clf, fontsize=10, feature_names=X.columns.to_list())
         # plt.show()
-
+        from owlapy.render import DLSyntaxObjectRenderer
+        render=DLSyntaxObjectRenderer()
         representation_of_positives = X.loc[str_pos_examples].values
-        concepts = []
+        dl_concepts = set()
         for sequence_of_reasoning_steps, single_positive_individuals in zip(
                 explain_inference(self.clf, X_test=representation_of_positives, features=X.columns.to_list(),
                                   only_shared=False), str_pos_examples):
-            # print("Predicted as :", self.clf.predict(X.loc[single_positive_individuals].values.reshape(1, -1)))
-
-            dl_concept = None
+            predicted_class=self.clf.predict(X.loc[single_positive_individuals].values.reshape(1, -1))
+            assert predicted_class==1
             for step, reasoning_step in enumerate(sequence_of_reasoning_steps):
+                # print(f"\t{reasoning_step}")
                 # tail can be individual or class
                 relation, tail = reasoning_step["feature"]
+                # from numpy.bool_ to python bool
+                value = bool(reasoning_step["value"])
                 if relation == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
-
-                    if reasoning_step["value"] is True:
+                    if value:
                         owl_class = self.owl_classes_dict[tail]
                     else:
                         owl_class = self.owl_classes_dict[tail].get_object_complement_of()
@@ -201,21 +212,20 @@ class TreeLearner:
                     assert single_positive_individuals in [i.get_iri().as_str() for i in
                                                            self.knowledge_base.individuals(owl_class)]
 
+                    dl_concepts.add(owl_class)
                 else:
 
-                    if reasoning_step["value"] is True:
-                        owl_class = OWLObjectHasValue(property=self.owl_object_property_dict[relation],individual=self.owl_individuals[tail])
+                    if value:
+                        dl_concepts.add(OWLObjectHasValue(property=self.owl_object_property_dict[relation], individual=self.owl_individuals[tail]))
+                        for i in self.knowledge_base.get_types(self.owl_individuals[tail]):
+                            dl_concepts.add(OWLObjectSomeValuesFrom(property=self.owl_object_property_dict[relation], filler=i))
 
                     else:
-                        owl_class = OWLObjectHasValue(property=self.owl_object_property_dict[relation],
-                                                    individual=self.owl_individuals[tail]).get_object_complement_of()
+                        continue
+                        #owl_class = OWLObjectHasValue(property=self.owl_object_property_dict[relation],
+                        #                              individual=self.owl_individuals[tail]).get_object_complement_of()
 
-                    assert single_positive_individuals in [i.get_iri().as_str() for i in self.knowledge_base.individuals(owl_class)]
 
-                if dl_concept is None:
-                    dl_concept = owl_class
-                else:
-                    dl_concept = OWLObjectIntersectionOf((dl_concept, owl_class))
 
                 """
                 predicate, tail = step["feature"]
@@ -233,13 +243,10 @@ class TreeLearner:
                         exist_decision.append(self.knowledge_base.generator.existential_restriction(
                             property=self.owl_object_property_dict[predicate], filler=self.owl_classes_dict[type_tail]))
                 """
-
-            concepts.append(dl_concept)
-
-        for i in concepts:
-            print(i)
-        # TODO:
-        # best_hypothesis = construct_description_logic_concept(trained_clf, df, X, pos_examples, neg_examples)
-
+        # @TODO: Do something with them !
+        for i in dl_concepts:
+            print(render.render(i), end="\t")
+            f1_score = self.compute_quality(concept=i, pos=lp.pos, neg=lp.neg)
+            print(f1_score)
         exit(1)
         pass
