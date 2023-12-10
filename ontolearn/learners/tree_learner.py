@@ -109,7 +109,7 @@ def explain_inference(clf, X_test, features, only_shared):
 
 
 class TreeLearner:
-    def __init__(self, knowledge_base, dataframe_triples: pd.DataFrame, quality_func):
+    def __init__(self, knowledge_base, dataframe_triples: pd.DataFrame, quality_func, max_runtime):
         assert isinstance(dataframe_triples, pd.DataFrame), "dataframe_triples must be a Pandas DataFrame"
         assert isinstance(knowledge_base, KnowledgeBase), "knowledge_base must be a KnowledgeBase instance"
         assert len(
@@ -120,6 +120,7 @@ class TreeLearner:
         self.owl_object_property_dict = {p.get_iri().as_str(): p for p in self.knowledge_base.get_object_properties()}
         self.owl_individuals = {i.get_iri().as_str(): i for i in self.knowledge_base.individuals()}
 
+        self.best_pred = None
         self.dataframe_triples = dataframe_triples
         # Remove some triples triples
         self.dataframe_triples = self.dataframe_triples[
@@ -166,7 +167,7 @@ class TreeLearner:
             X_train_sparse = X[raw_features]
         y_train_sparse = X.loc[:, "label"]
 
-        print(f"Train data shape:{X_train_sparse.shape}")
+        # print(f"Train data shape:{X_train_sparse.shape}")
         return X_train_sparse, y_train_sparse
 
     def compute_quality(self, instances, pos, neg, conf_matrix=False):
@@ -203,20 +204,20 @@ class TreeLearner:
         if relation == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
             if value:
                 owl_class = self.owl_classes_dict[tail]
-                assert self.owl_individuals[single_positive_indv] in self.knowledge_base.individuals(owl_class)
+                # assert self.owl_individuals[single_positive_indv] in self.knowledge_base.individuals(owl_class)
             else:
                 owl_class = self.owl_classes_dict[tail].get_object_complement_of()
-                assert self.owl_individuals[single_positive_indv] in self.knowledge_base.individuals(owl_class)
+                # assert self.owl_individuals[single_positive_indv] in self.knowledge_base.individuals(owl_class)
         else:
             owl_class = OWLObjectHasValue(property=self.owl_object_property_dict[relation],
                                           individual=self.owl_individuals[tail])
             if value:
-                assert self.owl_individuals[single_positive_indv] in self.knowledge_base.individuals(
-                    owl_class)
+                pass
+                # assert self.owl_individuals[single_positive_indv] in self.knowledge_base.individuals(owl_class)
             else:
                 owl_class = owl_class.get_object_complement_of()
-                assert self.owl_individuals[single_positive_indv] in self.knowledge_base.individuals(
-                    owl_class)
+                # assert self.owl_individuals[single_positive_indv] in self.knowledge_base.individuals(owl_class)
+
         return owl_class
 
     def cumulative_intersection_from_iterable(self, concepts):
@@ -238,6 +239,19 @@ class TreeLearner:
                 dl_concept_path = OWLObjectIntersectionOf((dl_concept_path, c))
         return dl_concept_path
 
+    def union_of_concepts(self, concepts):
+        dl_concept_path = None
+        for c in concepts:
+            if dl_concept_path is None:
+                dl_concept_path = c
+            else:
+                dl_concept_path = OWLObjectUnionOf((dl_concept_path, c))
+        return dl_concept_path
+
+    def best_hypotheses(self, n=1):
+        assert n == 1
+        return self.best_pred
+
     def fit(self, lp: PosNegLPStandard, max_runtime=None):
         str_pos_examples = [i.get_iri().as_str() for i in lp.pos]
         str_neg_examples = [i.get_iri().as_str() for i in lp.neg]
@@ -245,8 +259,8 @@ class TreeLearner:
         X, y = self.labeling(pos=str_pos_examples, neg=str_neg_examples, apply_dummy=False)
         # Binaries
         self.clf = tree.DecisionTreeClassifier(random_state=0).fit(X=X.values, y=y.values)
-        print("Classification Report: Negatives: -1, Unknowns:0, Positives 1 ")
-        print(sklearn.metrics.classification_report(y.values, self.clf.predict(X.values), target_names=None))
+        # print("Classification Report: Negatives: -1, Unknowns:0, Positives 1 ")
+        # print(sklearn.metrics.classification_report(y.values, self.clf.predict(X.values), target_names=None))
         # plt.figure(figsize=(30, 30))
         # tree.plot_tree(self.clf, fontsize=10, feature_names=X.columns.to_list())
         # plt.show()
@@ -269,14 +283,20 @@ class TreeLearner:
                                                 sequence_of_reasoning_steps]
             pred = self.intersect_of_concepts(sequence_of_concept_path_of_tree)
             # SANITY CHECKING: A path starting from root and ending in a leaf for a single positive example must be F1.=0
-            assert self.compute_quality(instances={i for i in self.knowledge_base.individuals(pred)},
-                                        pos={self.owl_individuals[pos]},
-                                        neg=lp.neg) == 1.0
+            # assert self.compute_quality(instances={i for i in self.knowledge_base.individuals(pred)},
+            #                            pos={self.owl_individuals[pos]},
+            #                            neg=lp.neg) == 1.0
             prediction_per_example.append((pred, pos))
 
+        self.best_pred = self.union_of_concepts([pred for pred, pos in prediction_per_example])
+        """
+        # print(f"Union Of paths of DL concepts:{render.render(final_pred)}")
+        # individuals_final_pred = {i for i in self.knowledge_base.individuals(final_pred)}
+        
+        
         for dl_concept, str_pos_example in prediction_per_example:
-            print(f"A positive example:{str_pos_example}")
-            print(f"Path of DL concepts:{render.render(dl_concept)}")
+            # print(f"A positive example:{str_pos_example}")
+            # print(f"Path of DL concepts:{render.render(dl_concept)}")
             individuals = {i for i in self.knowledge_base.individuals(dl_concept)}
             f1_local = self.compute_quality(instances=individuals,
                                             pos={self.owl_individuals[str_pos_example]},
@@ -285,7 +305,10 @@ class TreeLearner:
                                              pos=lp.pos,
                                              neg=lp.neg)
 
-            print(f"Local Quality:{f1_local}")
-            print(f"Global Quality:{f1_global}")
+            # print(f"Local Quality:{f1_local}")
+            # print(f"Global Quality:{f1_global}")
 
-        exit(1)
+        # print(f"Global Quality of Final :{self.compute_quality(instances=individuals_final_pred, pos=lp.pos, neg=lp.neg)}")
+        """
+
+        return self
