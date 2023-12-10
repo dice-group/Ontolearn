@@ -1,3 +1,4 @@
+import owlapy.model
 import pandas as pd
 
 from ontolearn.knowledge_base import KnowledgeBase
@@ -5,14 +6,15 @@ from typing import Dict, Set, Tuple, List
 from ontolearn.learning_problem import PosNegLPStandard
 import collections
 import matplotlib.pyplot as plt
+import sklearn
 from sklearn import tree
 
 from owlapy.model import OWLObjectSomeValuesFrom, OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, \
     OWLObjectIntersectionOf, OWLClassExpression, OWLNothing, OWLThing, OWLNaryBooleanClassExpression, \
     OWLObjectUnionOf, OWLClass, OWLObjectComplementOf, OWLObjectMaxCardinality, OWLObjectMinCardinality, \
-    OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLLiteral, OWLObjectInverseOf, OWLDataProperty, \
-    OWLDataHasValue, OWLObjectHasValue
+    OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLLiteral, OWLDataHasValue, OWLObjectHasValue
+from owlapy.render import DLSyntaxObjectRenderer
 
 
 def extract_cbd(dataframe) -> Dict[str, Set[Tuple[str, str]]]:
@@ -167,15 +169,74 @@ class TreeLearner:
         print(f"Train data shape:{X_train_sparse.shape}")
         return X_train_sparse, y_train_sparse
 
-    def compute_quality(self, concept, pos, neg):
-        instances = set(self.knowledge_base.individuals(concept))
+    def compute_quality(self, instances, pos, neg, conf_matrix=False):
+        assert isinstance(instances, set)
         tp = len(pos.intersection(instances))
         tn = len(neg.difference(instances))
 
         fp = len(neg.intersection(instances))
         fn = len(pos.difference(instances))
+
         _, f1_score = self.quality_func.score2(tp=tp, fn=fn, fp=fp, tn=tn)
+        if conf_matrix:
+            return f1_score, f"TP:{tp}\tFN:{fn}\tFP:{fp}\tTN:{tn}"
         return f1_score
+
+    def union_and_intersect(self, filtered_hypothesis):
+        intersections_and_unions = set()
+        for c in filtered_hypothesis:
+            for other in filtered_hypothesis:
+                intersections_and_unions.add(OWLObjectIntersectionOf((c, other)))
+                intersections_and_unions.add(OWLObjectUnionOf((c, other)))
+
+        return intersections_and_unions.union(filtered_hypothesis)
+
+    def decision_to_owl_class_exp(self, reasoning_step: dict, single_positive_indv):
+        """
+
+        """
+        # print(f"\t{reasoning_step}")
+        # tail can be individual or class
+        relation, tail = reasoning_step["feature"]
+        # from numpy.bool_ to python bool
+        value = bool(reasoning_step["value"])
+        if relation == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
+            if value:
+                owl_class = self.owl_classes_dict[tail]
+                assert self.owl_individuals[single_positive_indv] in self.knowledge_base.individuals(owl_class)
+            else:
+                owl_class = self.owl_classes_dict[tail].get_object_complement_of()
+                assert self.owl_individuals[single_positive_indv] in self.knowledge_base.individuals(owl_class)
+        else:
+            owl_class = OWLObjectHasValue(property=self.owl_object_property_dict[relation],
+                                          individual=self.owl_individuals[tail])
+            if value:
+                assert self.owl_individuals[single_positive_indv] in self.knowledge_base.individuals(
+                    owl_class)
+            else:
+                owl_class = owl_class.get_object_complement_of()
+                assert self.owl_individuals[single_positive_indv] in self.knowledge_base.individuals(
+                    owl_class)
+        return owl_class
+
+    def cumulative_intersection_from_iterable(self, concepts):
+        result = None
+        for i in concepts:
+            if result is None:
+                result = i
+            else:
+                result = OWLObjectIntersectionOf((result, i))
+
+        return result
+
+    def intersect_of_concepts(self, concepts):
+        dl_concept_path = None
+        for c in concepts:
+            if dl_concept_path is None:
+                dl_concept_path = c
+            else:
+                dl_concept_path = OWLObjectIntersectionOf((dl_concept_path, c))
+        return dl_concept_path
 
     def fit(self, lp: PosNegLPStandard, max_runtime=None):
         str_pos_examples = [i.get_iri().as_str() for i in lp.pos]
@@ -183,70 +244,48 @@ class TreeLearner:
 
         X, y = self.labeling(pos=str_pos_examples, neg=str_neg_examples, apply_dummy=False)
         # Binaries
-        self.clf = tree.DecisionTreeClassifier(max_depth=10, random_state=0).fit(X=X.values, y=y.values)
-
+        self.clf = tree.DecisionTreeClassifier(random_state=0).fit(X=X.values, y=y.values)
+        print("Classification Report: Negatives: -1, Unknowns:0, Positives 1 ")
+        print(sklearn.metrics.classification_report(y.values, self.clf.predict(X.values), target_names=None))
         # plt.figure(figsize=(30, 30))
         # tree.plot_tree(self.clf, fontsize=10, feature_names=X.columns.to_list())
         # plt.show()
-        from owlapy.render import DLSyntaxObjectRenderer
-        render=DLSyntaxObjectRenderer()
-        representation_of_positives = X.loc[str_pos_examples].values
-        dl_concepts = set()
-        for sequence_of_reasoning_steps, single_positive_individuals in zip(
-                explain_inference(self.clf, X_test=representation_of_positives, features=X.columns.to_list(),
+
+        render = DLSyntaxObjectRenderer()
+        prediction_per_example = []
+
+        # () Iterate over E^+
+        for sequence_of_reasoning_steps, pos in zip(
+                explain_inference(self.clf,
+                                  X_test=X.loc[str_pos_examples].values,
+                                  features=X.columns.to_list(),
                                   only_shared=False), str_pos_examples):
-            predicted_class=self.clf.predict(X.loc[single_positive_individuals].values.reshape(1, -1))
-            assert predicted_class==1
-            for step, reasoning_step in enumerate(sequence_of_reasoning_steps):
-                # print(f"\t{reasoning_step}")
-                # tail can be individual or class
-                relation, tail = reasoning_step["feature"]
-                # from numpy.bool_ to python bool
-                value = bool(reasoning_step["value"])
-                if relation == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
-                    if value:
-                        owl_class = self.owl_classes_dict[tail]
-                    else:
-                        owl_class = self.owl_classes_dict[tail].get_object_complement_of()
+            # () Ensure that e \in E^+ is classified as positive
+            assert 1 == self.clf.predict(X.loc[pos].values.reshape(1, -1))
+            # () Reasoning behind of the prediction of a single positive example.
 
-                    assert single_positive_individuals in [i.get_iri().as_str() for i in
-                                                           self.knowledge_base.individuals(owl_class)]
+            sequence_of_concept_path_of_tree = [self.decision_to_owl_class_exp(reasoning_step, pos) for
+                                                reasoning_step in
+                                                sequence_of_reasoning_steps]
+            pred = self.intersect_of_concepts(sequence_of_concept_path_of_tree)
+            # SANITY CHECKING: A path starting from root and ending in a leaf for a single positive example must be F1.=0
+            assert self.compute_quality(instances={i for i in self.knowledge_base.individuals(pred)},
+                                        pos={self.owl_individuals[pos]},
+                                        neg=lp.neg) == 1.0
+            prediction_per_example.append((pred, pos))
 
-                    dl_concepts.add(owl_class)
-                else:
+        for dl_concept, str_pos_example in prediction_per_example:
+            print(f"A positive example:{str_pos_example}")
+            print(f"Path of DL concepts:{render.render(dl_concept)}")
+            individuals = {i for i in self.knowledge_base.individuals(dl_concept)}
+            f1_local = self.compute_quality(instances=individuals,
+                                            pos={self.owl_individuals[str_pos_example]},
+                                            neg=lp.neg)
+            f1_global = self.compute_quality(instances=individuals,
+                                             pos=lp.pos,
+                                             neg=lp.neg)
 
-                    if value:
-                        dl_concepts.add(OWLObjectHasValue(property=self.owl_object_property_dict[relation], individual=self.owl_individuals[tail]))
-                        for i in self.knowledge_base.get_types(self.owl_individuals[tail]):
-                            dl_concepts.add(OWLObjectSomeValuesFrom(property=self.owl_object_property_dict[relation], filler=i))
+            print(f"Local Quality:{f1_local}")
+            print(f"Global Quality:{f1_global}")
 
-                    else:
-                        continue
-                        #owl_class = OWLObjectHasValue(property=self.owl_object_property_dict[relation],
-                        #                              individual=self.owl_individuals[tail]).get_object_complement_of()
-
-
-
-                """
-                predicate, tail = step["feature"]
-
-                if predicate == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
-                    if step['value']:
-                        decision.append(self.owl_classes_dict[tail])
-                    else:
-                        decision.append(self.owl_classes_dict[tail].get_object_complement_of())
-                else:
-                    types = self.dataframe_triples[(self.dataframe_triples.subject == tail) & (
-                            self.dataframe_triples.relation == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")][
-                        "object"].tolist()
-                    for type_tail in types:
-                        exist_decision.append(self.knowledge_base.generator.existential_restriction(
-                            property=self.owl_object_property_dict[predicate], filler=self.owl_classes_dict[type_tail]))
-                """
-        # @TODO: Do something with them !
-        for i in dl_concepts:
-            print(render.render(i), end="\t")
-            f1_score = self.compute_quality(concept=i, pos=lp.pos, neg=lp.neg)
-            print(f1_score)
         exit(1)
-        pass
