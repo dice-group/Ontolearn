@@ -7,7 +7,7 @@ The goal of ontolearn is to provide efficient solutions for concept learning on 
 Author:
     The Ontolearn team <onto-learn@lists.uni-paderborn.de>
 """
-__version__ = '0.6.1'
+__version__ = '0.6.2'
 
 # TODO: Importing decision required rethinking
 # from .knowledge_base import KnowledgeBase
@@ -16,3 +16,5 @@ __version__ = '0.6.1'
 # from .metrics import *
 # from .search import *
 __all__ = ['knowledge_base', 'abstracts', 'base_concept_learner', 'metrics', 'search']
+
+from .learners import Drill
