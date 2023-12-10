@@ -108,14 +108,16 @@ def explain_inference(clf, X_test, features, only_shared):
     return reports
 
 
-class TreeLearner:
-    def __init__(self, knowledge_base, dataframe_triples: pd.DataFrame, quality_func, max_runtime):
+class TDL:
+    """Tree-based Description Logic Concept Learner"""
+    def __init__(self, knowledge_base, dataframe_triples: pd.DataFrame, quality_func, kwards_model,max_runtime):
         assert isinstance(dataframe_triples, pd.DataFrame), "dataframe_triples must be a Pandas DataFrame"
         assert isinstance(knowledge_base, KnowledgeBase), "knowledge_base must be a KnowledgeBase instance"
         assert len(
             dataframe_triples) > 0, f"length of the dataframe must be greater than 0:Currently {dataframe_triples.shape}"
         self.quality_func = quality_func
         self.knowledge_base = knowledge_base
+        self.kwards_model=kwards_model
         self.owl_classes_dict = {c.get_iri().as_str(): c for c in self.knowledge_base.get_concepts()}
         self.owl_object_property_dict = {p.get_iri().as_str(): p for p in self.knowledge_base.get_object_properties()}
         self.owl_individuals = {i.get_iri().as_str(): i for i in self.knowledge_base.individuals()}
@@ -258,7 +260,7 @@ class TreeLearner:
 
         X, y = self.labeling(pos=str_pos_examples, neg=str_neg_examples, apply_dummy=False)
         # Binaries
-        self.clf = tree.DecisionTreeClassifier(random_state=0).fit(X=X.values, y=y.values)
+        self.clf = tree.DecisionTreeClassifier(**self.kwards_model).fit(X=X.values, y=y.values)
         # print("Classification Report: Negatives: -1, Unknowns:0, Positives 1 ")
         # print(sklearn.metrics.classification_report(y.values, self.clf.predict(X.values), target_names=None))
         # plt.figure(figsize=(30, 30))
