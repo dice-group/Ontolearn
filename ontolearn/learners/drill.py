@@ -17,7 +17,7 @@ import os
 from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.metrics import F1
 import random
-from ontolearn.heuristics import Reward
+from ontolearn.heuristics import CeloeBasedReward
 import torch
 from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
 
@@ -73,7 +73,7 @@ class Drill(RefinementBasedConceptLearner):
         else:
             refinement_operator = refinement_operator
         if reward_func is None:
-            self.reward_func = Reward()
+            self.reward_func = CeloeBasedReward()
         else:
             self.reward_func = reward_func
 
@@ -127,36 +127,6 @@ class Drill(RefinementBasedConceptLearner):
         self.renderer = DLSyntaxObjectRenderer()
 
         self.operator: RefinementBasedConceptLearner
-
-    def best_hypotheses(self, n=1):
-        assert self.search_tree is not None
-        assert len(self.search_tree) > 1
-        if n == 1:
-            return [i for i in self.search_tree.get_top_n_nodes(n)][0]
-        else:
-            return [i for i in self.search_tree.get_top_n_nodes(n)]
-
-    def clean(self):
-        self.emb_pos, self.emb_neg = None, None
-        self.goal_found = False
-        self.start_time = None
-        if len(self.search_tree) != 0:
-            self.search_tree.clean()
-
-        try:
-            assert len(self.search_tree) == 0
-        except AssertionError:
-            print(len(self.search_tree))
-            raise AssertionError('EMPTY search tree')
-
-        self._number_of_tested_concepts = 0
-
-    def downward_refinement(self, *args, **kwargs):
-        ValueError('downward_refinement')
-
-    def next_node_to_expand(self) -> RL_State:
-        """ Return a node that maximizes the heuristic function at time t. """
-        return self.search_tree.get_most_promising()
 
     def initialize_class_expression_learning_problem(self, pos: Set[OWLNamedIndividual], neg: Set[OWLNamedIndividual]):
         """
@@ -358,58 +328,38 @@ class Drill(RefinementBasedConceptLearner):
         for i in self.operator.refine(rl_state.concept):  # O(N)
             yield self.create_rl_state(i, parent_node=rl_state)
 
-    def learn_from_illustration(self, sequence_of_goal_path: List[RL_State]):
-        """
-        Args:
-            sequence_of_goal_path: ⊤,Parent,Parent ⊓ Daughter.
-        """
-        current_state = sequence_of_goal_path.pop(0)
-        rewards = []
-        sequence_of_states = []
-        while len(sequence_of_goal_path) > 0:
-            self.assign_embeddings(current_state)
-            current_state.length = self.kb.concept_len(current_state.concept)
-            if current_state.quality is None:
-                self.compute_quality_of_class_expression(current_state)
-
-            next_state = sequence_of_goal_path.pop(0)
-            self.assign_embeddings(next_state)
-            next_state.length = self.kb.concept_len(next_state.concept)
-            if next_state.quality is None:
-                self.compute_quality_of_class_expression(next_state)
-            sequence_of_states.append((current_state, next_state))
-            rewards.append(self.reward_func.apply(current_state, next_state))
-        for x in range(2):
-            self.form_experiences(sequence_of_states, rewards)
-        self.learn_from_replay_memory()
-
-    def rl_learning_loop(self, num_episode: int, pos_uri: Set[OWLNamedIndividual], neg_uri: Set[OWLNamedIndividual],
+    def rl_learning_loop(self, num_episode: int,
+                         pos_uri: Set[OWLNamedIndividual],
+                         neg_uri: Set[OWLNamedIndividual],
                          goal_path: List[RL_State] = None) -> List[float]:
-        """
-        Standard RL training loop.
+        """ Reinforcement Learning Training Loop
 
-        1. Initialize RL environment for training.
+        Initialize RL environment for a given learning problem (E^+ pos_iri and E^- neg_iri )
 
-        2. Learn from an illustration if possible.
-        2. Training Loop.
+        Training:
+                    2.1 Obtain a trajectory: A sequence of RL states/DL concepts
+                    T, Person, (Female and \forall hasSibling Female).
+                    Rewards at each transition are also computed
         """
-        """ (1) Initialize RL environment for training """
+
+        # (1) Initialize RL environment for training
+        print("Reinforcement Learning loop started...")
         assert isinstance(pos_uri, Set) and isinstance(neg_uri, Set)
         self.init_training(pos_uri=pos_uri, neg_uri=neg_uri)
         root_rl_state = self.create_rl_state(self.start_class, is_root=True)
         self.compute_quality_of_class_expression(root_rl_state)
         sum_of_rewards_per_actions = []
-        """ (2) Learn from an illustration if possible """
-        if goal_path:
-            self.learn_from_illustration(goal_path)
 
-        """ (3) Reinforcement Learning offline training loop  """
+        # () Reinforcement Learning offline training loop
         for th in range(num_episode):
-            """ (3.1) Sequence of decisions """
+            print(f"Episode {th + 1}: ", end=" ")
+            # Sequence of decisions
+            start_time = time.time()
             sequence_of_states, rewards = self.sequence_of_actions(root_rl_state)
-
+            print(f"Runtime {time.time() - start_time:.3f} secs", end=" | ")
+            print(f"Max reward: {max(rewards)}", end=" | ")
+            print(f"Epsilon : {self.epsilon}")
             """
-            
             print('#' * 10, end='')
             print(f'\t{th}.th Sequence of Actions\t', end='')
             print('#' * 10)
@@ -423,7 +373,7 @@ class Drill(RefinementBasedConceptLearner):
                                             self.epsilon,
                                             len(self.experiences)))
             """
-            """(3.2) Form experiences"""
+            # Form experiences
             self.form_experiences(sequence_of_states, rewards)
             sum_of_rewards_per_actions.append(sum(rewards))
             """(3.2) Learn from experiences"""
@@ -435,6 +385,15 @@ class Drill(RefinementBasedConceptLearner):
             self.epsilon -= self.epsilon_decay
 
         return sum_of_rewards_per_actions
+
+    def select_next_state(self, current_state, next_rl_states) -> Tuple[RL_State, float]:
+        if True:
+            next_selected_rl_state = self.exploration_exploitation_tradeoff(current_state, next_rl_states)
+            return next_selected_rl_state, self.reward_func.apply(current_state, next_selected_rl_state)
+        else:
+            for i in next_rl_states:
+                print(i)
+            exit(1)
 
     def sequence_of_actions(self, root_rl_state: RL_State) -> Tuple[List[Tuple[AbstractNode, AbstractNode]],
     List[SupportsFloat]]:
@@ -458,12 +417,12 @@ class Drill(RefinementBasedConceptLearner):
                 # assert (current_state.length + 3) <= self.max_child_length
                 print('No next state')
                 break
-            # (1.3)
-            next_selected_rl_state = self.exploration_exploitation_tradeoff(current_state, next_rl_states)
+            next_selected_rl_state, reward = self.select_next_state(current_state, next_rl_states)
             # (1.4) Remember the concept path
             path_of_concepts.append((current_state, next_selected_rl_state))
             # (1.5)
-            rewards.append(self.reward_func.apply(current_state, next_selected_rl_state))
+            rewards.append(reward)
+
             # (1.6)
             current_state = next_selected_rl_state
         return path_of_concepts, rewards
@@ -481,9 +440,6 @@ class Drill(RefinementBasedConceptLearner):
         X - A list of embeddings of current concept, next concept, positive examples, negative examples.
         y - Argmax Q value.
         """
-
-        print('Form Experiences for the training')
-
         for th, consecutive_states in enumerate(state_pairs):
             e, e_next = consecutive_states
             self.experiences.append(
@@ -493,7 +449,7 @@ class Drill(RefinementBasedConceptLearner):
         """
         Learning by replaying memory.
         """
-        print('learn_from_replay_memory', end="\t|\t")
+        # print('learn_from_replay_memory', end="\t|\t")
         current_state_batch: List[torch.FloatTensor]
         next_state_batch: List[torch.FloatTensor]
         current_state_batch, next_state_batch, y = self.experiences.retrieve()
@@ -534,14 +490,12 @@ class Drill(RefinementBasedConceptLearner):
                                                   batch_size=self.batch_size, shuffle=True,
                                                   num_workers=self.num_workers)
         """
-
-        print(f'Experiences:{X.shape}', end="\t|\t")
+        # print(f'Experiences:{X.shape}', end="\t|\t")
         self.heuristic_func.net.train()
         total_loss = 0
         for m in range(self.num_epochs_per_replay):
             self.optimizer.zero_grad()  # zero the gradient buffers
-            # forward
-            # n by 4, dim
+            # forward: n by 4, dim
             predicted_q = self.heuristic_func.net.forward(X)
             # loss
             loss = self.heuristic_func.net.loss(predicted_q, y)
@@ -551,8 +505,7 @@ class Drill(RefinementBasedConceptLearner):
             # clip gradients if gradients are killed. =>torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
             self.optimizer.step()
 
-        print(f'Average loss during training: {total_loss / self.num_epochs_per_replay:0.5f}')
-
+        # print(f'Average loss during training: {total_loss / self.num_epochs_per_replay:0.5f}')
         self.heuristic_func.net.eval()
 
     def update_search(self, concepts, predicted_Q_values=None):
@@ -738,6 +691,7 @@ class Drill(RefinementBasedConceptLearner):
         return list(hierarchy)
 
     def generate_learning_problems(self, dataset: Optional[Iterable[Tuple[str, Set, Set]]] = None,
+                                   num_of_target_concepts: int = 3,
                                    num_learning_problems: int = 5) -> Iterable[
         Tuple[str, Set, Set]]:
         """ Generate learning problems if none is provided.
@@ -746,10 +700,9 @@ class Drill(RefinementBasedConceptLearner):
         """
 
         if dataset is None:
-            learning_problems = []
             counter = 0
             size_of_examples = 3
-            print("Generating learning problems...")
+            print("Generating learning problems on the fly...")
             for i in self.kb.get_concepts():
                 individuals_i = set(self.kb.individuals(i))
 
@@ -761,78 +714,102 @@ class Drill(RefinementBasedConceptLearner):
                         individuals_j = set(self.kb.individuals(j))
                         if len(individuals_j) < size_of_examples:
                             continue
+                        for _ in range(num_learning_problems):
+                            lp = (str_dl_concept_i,
+                                  set(random.sample(individuals_i, size_of_examples)),
+                                  set(random.sample(individuals_j, size_of_examples)))
+                            yield lp
 
-                        lp = (str_dl_concept_i,
-                              set(random.sample(individuals_i, size_of_examples)),
-                              set(random.sample(individuals_j, size_of_examples)))
-                        yield lp
                         counter += 1
 
-                        if counter == num_learning_problems:
+                        if counter == num_of_target_concepts:
                             break
-
-                    if counter == num_learning_problems:
+                    if counter == num_of_target_concepts:
                         break
                 else:
                     """Empy concept"""
-
-            # assert isinstance(learning_problems, Iterable)
-            # return learning_problems
         else:
             return dataset
 
-    def train(self, dataset: Optional[Iterable[Tuple[str, Set, Set]]] = None, num_episode: int = 10,
-              relearn_ratio: int = 2, num_learning_problems=3):
-        """
-        Train RL agent on learning problems with relearn_ratio.
+    def train(self, dataset: Optional[Iterable[Tuple[str, Set, Set]]] = None, num_of_target_concepts: int = 3,
+              num_episode: int = 3, num_learning_problems: int = 3):
+        """ Train an RL agent on description logic concept learning problems """
 
-        Args:
-            dataset: An iterable containing training data. Each item corresponds to a tuple of string representation
-                of target concept, a set of positive examples in the form of URIs amd a set of negative examples in
-                the form of URIs, respectively.
-            relearn_ratio: An integer indicating the number of times dataset is iterated.
-
-        Computation:
-        1. Dataset and relearn_ratio loops: Learn each problem relearn_ratio times.
-
-        2. Learning loop.
-
-        3. Take post process action that implemented by subclass.
-
-        Returns:
-            self.
-        """
         if self.pre_trained_kge is None:
             return self.terminate_training()
 
-        dataset = self.generate_learning_problems(dataset, num_learning_problems)
         counter = 1
-        renderer = DLSyntaxObjectRenderer()
+        for (target_owl_ce, positives, negatives) in self.generate_learning_problems(dataset,
+                                                                                     num_of_target_concepts,
+                                                                                     num_learning_problems):
+            print(f"Goal Concept:\t {target_owl_ce}\tE^+:[{len(positives)}]\t E^-:[{len(negatives)}]")
+            sum_of_rewards_per_actions = self.rl_learning_loop(num_episode=num_episode, pos_uri=positives,
+                                                               neg_uri=negatives)
+            # print(f'Sum of Rewards in last 3 trajectories:{sum_of_rewards_per_actions[:3]}')
 
-        # 1.
-        for _ in range(relearn_ratio):
-            for (target_owl_ce, positives, negatives) in dataset:
-
-                print('Goal Concept:{0}\tE^+:[{1}] \t E^-:[{2}]'.format(target_owl_ce,
-                                                                        len(positives), len(negatives)))
-                print(f'RL training on {counter}.th learning problem {target_owl_ce} starts')
-
-                sum_of_rewards_per_actions = self.rl_learning_loop(num_episode=num_episode, pos_uri=positives,
-                                                                   neg_uri=negatives)
-
-                print(f'Sum of Rewards in first 3 trajectory:{sum_of_rewards_per_actions[:3]}')
-                print(f'Sum of Rewards in last 3 trajectory:{sum_of_rewards_per_actions[:3]}')
-
-                self.seen_examples.setdefault(counter, dict()).update(
-                    {'Concept': target_owl_ce,
-                     'Positives': [i.get_iri().as_str() for i in positives],
-                     'Negatives': [i.get_iri().as_str() for i in negatives]})
-
-                counter += 1
-                if counter % 100 == 0:
-                    self.save_weights()
-                # 3.
+            self.seen_examples.setdefault(counter, dict()).update(
+                {'Concept': target_owl_ce,
+                 'Positives': [i.get_iri().as_str() for i in positives],
+                 'Negatives': [i.get_iri().as_str() for i in negatives]})
+            counter += 1
+            if counter % 100 == 0:
+                self.save_weights()
         return self.terminate_training()
+
+    def learn_from_illustration(self, sequence_of_goal_path: List[RL_State]):
+        """
+        Args:
+            sequence_of_goal_path: ⊤,Parent,Parent ⊓ Daughter.
+        """
+        current_state = sequence_of_goal_path.pop(0)
+        rewards = []
+        sequence_of_states = []
+        while len(sequence_of_goal_path) > 0:
+            self.assign_embeddings(current_state)
+            current_state.length = self.kb.concept_len(current_state.concept)
+            if current_state.quality is None:
+                self.compute_quality_of_class_expression(current_state)
+
+            next_state = sequence_of_goal_path.pop(0)
+            self.assign_embeddings(next_state)
+            next_state.length = self.kb.concept_len(next_state.concept)
+            if next_state.quality is None:
+                self.compute_quality_of_class_expression(next_state)
+            sequence_of_states.append((current_state, next_state))
+            rewards.append(self.reward_func.apply(current_state, next_state))
+        for x in range(2):
+            self.form_experiences(sequence_of_states, rewards)
+        self.learn_from_replay_memory()
+
+    def best_hypotheses(self, n=1):
+        assert self.search_tree is not None
+        assert len(self.search_tree) > 1
+        if n == 1:
+            return [i for i in self.search_tree.get_top_n_nodes(n)][0]
+        else:
+            return [i for i in self.search_tree.get_top_n_nodes(n)]
+
+    def clean(self):
+        self.emb_pos, self.emb_neg = None, None
+        self.goal_found = False
+        self.start_time = None
+        if len(self.search_tree) != 0:
+            self.search_tree.clean()
+
+        try:
+            assert len(self.search_tree) == 0
+        except AssertionError:
+            print(len(self.search_tree))
+            raise AssertionError('EMPTY search tree')
+
+        self._number_of_tested_concepts = 0
+
+    def downward_refinement(self, *args, **kwargs):
+        ValueError('downward_refinement')
+
+    def next_node_to_expand(self) -> RL_State:
+        """ Return a node that maximizes the heuristic function at time t. """
+        return self.search_tree.get_most_promising()
 
 
 class DrillHeuristic:
