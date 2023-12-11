@@ -24,8 +24,6 @@ git clone https://github.com/dice-group/Ontolearn.git
 conda create --name onto python=3.9.18 && conda activate onto && pip3 install -e . && python -c "import ontolearn"
 # To download knowledge graphs
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
-# To download learning problems.
-wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
 ```
 
 ```shell
@@ -95,7 +93,8 @@ Fore more please refer to  the [examples](https://github.com/dice-group/Ontolear
 
 ## Benchmarking on Family dataset
 ```shell
-# Benchmark learners on the Family benchmark dataset with benchmark learning problems.
+# To download learning problems. # Benchmark learners on the Family benchmark dataset with benchmark learning problems.
+wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
 python examples/concept_learning_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 3 --report family_results.csv 
 python -c 'import pandas as pd; print(pd.read_csv("family_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
 ```

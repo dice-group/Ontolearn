@@ -44,14 +44,15 @@ def dl_concept_learning(args):
 
     kb = KnowledgeBase(path=args.kb)
     # Our ongoing work
-    # See https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html#sklearn-tree-decisiontreeclassifier
-    # For kwards_model
+    # kwargs_classifier is for sklearn.tree.DecisionTreeClassifier.html#sklearn-tree-decisiontreeclassifier
     tdl = TDL(knowledge_base=kb,
+              # From rdflib into dataframe sorted by subject
               dataframe_triples=pd.DataFrame(
                   data=[(str(s), str(p), str(o)) for s, p, o in Graph().parse(args.kb)],
-                  columns=['subject', 'relation', 'object'], dtype=str),
-              kwards_model={"criterion": "gini", "random_state": 0},
-              quality_func=F1(), max_runtime=args.max_runtime)
+                  columns=['subject', 'relation', 'object'], dtype=str).sort_values('subject'),
+              kwargs_classifier={"criterion": "gini", "random_state": 0},
+              max_runtime=args.max_runtime)
+
     drill = Drill(knowledge_base=kb, path_pretrained_kge=args.path_pretrained_kge, quality_func=F1(),
                   max_runtime=args.max_runtime).train(num_of_target_concepts=2, num_learning_problems=2)
 
@@ -81,7 +82,6 @@ def dl_concept_learning(args):
         rt_dtl = time.time() - start_time
         # Compute quality of best prediction
         f1_dtl = compute_f1_score(individuals={i for i in kb.individuals(pred_dtl)}, pos=lp.pos, neg=lp.neg)
-
         start_time = time.time()
         pred_drill = drill.fit(lp).best_hypotheses(n=1)
         rt_drill = time.time() - start_time
@@ -111,7 +111,7 @@ def dl_concept_learning(args):
              f1_dtl, rt_dtl])
 
     df = pd.DataFrame(values, columns=columns)
-    df.to_csv(args.report)
+    df.to_csv(args.report, index=False)
     print(df)
     print(df.select_dtypes(include="number").mean())
 

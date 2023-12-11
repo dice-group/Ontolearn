@@ -2,7 +2,7 @@ import owlapy.model
 import pandas as pd
 
 from ontolearn.knowledge_base import KnowledgeBase
-from typing import Dict, Set, Tuple, List
+from typing import Dict, Set, Tuple, List, Union, TypeVar, Callable
 from ontolearn.learning_problem import PosNegLPStandard
 import collections
 import matplotlib.pyplot as plt
@@ -15,6 +15,20 @@ from owlapy.model import OWLObjectSomeValuesFrom, OWLObjectPropertyExpression, O
     OWLObjectUnionOf, OWLClass, OWLObjectComplementOf, OWLObjectMaxCardinality, OWLObjectMinCardinality, \
     OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLLiteral, OWLDataHasValue, OWLObjectHasValue
 from owlapy.render import DLSyntaxObjectRenderer
+
+
+def compute_quality(instances, pos, neg, conf_matrix=False, quality_func=None):
+    assert isinstance(instances, set)
+    tp = len(pos.intersection(instances))
+    tn = len(neg.difference(instances))
+
+    fp = len(neg.intersection(instances))
+    fn = len(pos.difference(instances))
+
+    _, f1_score = quality_func.score2(tp=tp, fn=fn, fp=fp, tn=tn)
+    if conf_matrix:
+        return f1_score, f"TP:{tp}\tFN:{fn}\tFP:{fp}\tTN:{tn}"
+    return f1_score
 
 
 def extract_cbd(dataframe) -> Dict[str, Set[Tuple[str, str]]]:
@@ -35,10 +49,9 @@ def extract_cbd(dataframe) -> Dict[str, Set[Tuple[str, str]]]:
 def base_construct_second(cbd_entities: Dict[str, Set[Tuple[str, str]]], rows: List[str],
                           feature_names: List[Tuple[str, str]]):
     """
-    :param cbd_entities: concise bounded description for each entity, where the entity is a subject entity that is
-    mapped to a predict and an object entity
-    :param rows: Individuals
+
     """
+    print("Constructing matrix for training..")
     assert cbd_entities is not None, "No cbd entities"
     result = []
     for s in rows:
@@ -108,58 +121,90 @@ def explain_inference(clf, X_test, features, only_shared):
     return reports
 
 
+def concepts_reducer(concepts: List[OWLClassExpression], reduced_cls: Callable) -> Union[
+    OWLObjectUnionOf, OWLObjectIntersectionOf]:
+    """ Reduces a list of OWLClassExpression instances into a single instance of OWLObjectUnionOf or OWLObjectIntersectionOf """
+    dl_concept_path = None
+    for c in concepts:
+        assert isinstance(c, OWLClassExpression)
+        if dl_concept_path is None:
+            dl_concept_path = c
+        else:
+            dl_concept_path = reduced_cls((dl_concept_path, c))
+    return dl_concept_path
+
+
 class TDL:
     """Tree-based Description Logic Concept Learner"""
-    def __init__(self, knowledge_base, dataframe_triples: pd.DataFrame, quality_func, kwards_model,max_runtime):
+
+    def __init__(self, knowledge_base, dataframe_triples: pd.DataFrame, kwargs_classifier,
+                 on_fly_tabular: bool = False, max_runtime=1):
         assert isinstance(dataframe_triples, pd.DataFrame), "dataframe_triples must be a Pandas DataFrame"
         assert isinstance(knowledge_base, KnowledgeBase), "knowledge_base must be a KnowledgeBase instance"
-        assert len(
-            dataframe_triples) > 0, f"length of the dataframe must be greater than 0:Currently {dataframe_triples.shape}"
-        self.quality_func = quality_func
+        assert len(dataframe_triples) > 0, f"length of the dataframe must be greater than 0:{dataframe_triples.shape}"
+        print(f"Knowledge Base: {knowledge_base}")
+        print(f"Matrix representation of knowledge base: {dataframe_triples.shape}")
         self.knowledge_base = knowledge_base
-        self.kwards_model=kwards_model
-        self.owl_classes_dict = {c.get_iri().as_str(): c for c in self.knowledge_base.get_concepts()}
-        self.owl_object_property_dict = {p.get_iri().as_str(): p for p in self.knowledge_base.get_object_properties()}
-        self.owl_individuals = {i.get_iri().as_str(): i for i in self.knowledge_base.individuals()}
-
-        self.best_pred = None
         self.dataframe_triples = dataframe_triples
-        # Remove some triples triples
+        # Mappings from string of IRI to named concepts
+        self.owl_classes_dict = {c.get_iri().as_str(): c for c in self.knowledge_base.get_concepts()}
+        # Mappings from string of IRI to object properties
+        self.owl_object_property_dict = {p.get_iri().as_str(): p for p in self.knowledge_base.get_object_properties()}
+        # Mappings from string of IRI to data properties
+        self.owl_data_property_dict = {p.get_iri().as_str(): p for p in self.knowledge_base.get_data_properties()}
+        # Mappings from string of IRI to individuals
+        self.owl_individuals = {i.get_iri().as_str(): i for i in self.knowledge_base.individuals()}
+        # Keyword arguments for sklearn Decision tree
+        self.kwargs_classifier = kwargs_classifier
+        self.max_runtime = max_runtime
+        self.on_fly_tabular = on_fly_tabular
+        self.best_pred = None
+
+        # Remove uninformative triples if exists
+        print("Removing uninformative triples...")
         self.dataframe_triples = self.dataframe_triples[
             ~((self.dataframe_triples["relation"] == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") & (
                     (self.dataframe_triples["object"] == "http://www.w3.org/2002/07/owl#NamedIndividual") | (
                     self.dataframe_triples["object"] == "http://www.w3.org/2002/07/owl#Thing") | (
                             self.dataframe_triples["object"] == "Ontology")))]
+        print(f"Matrix representation of knowledge base: {dataframe_triples.shape}")
 
         self.cbd_mapping: Dict[str, Set[Tuple[str, str]]]
         self.cbd_mapping = extract_cbd(self.dataframe_triples)
 
-        self.str_individuals = list({i.get_iri().as_str() for i in self.knowledge_base.individuals()})
+        self.str_type = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        # Fix an ordering: Not quite sure whether we needed
+        self.str_individuals = list(self.owl_individuals)
 
         self.cbd_mapping_entities = {k: v for k, v in self.cbd_mapping.items() if k in self.str_individuals}
-
-        self.Xraw = base_construct_second(cbd_entities=self.cbd_mapping_entities,
-                                          rows=self.str_individuals,
-                                          feature_names=[("http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-                                                          c.get_iri().as_str()) for c in
-                                                         self.knowledge_base.get_concepts()]
-                                                        + [(r.get_iri().as_str(), i) for i in self.str_individuals for r
-                                                           in self.knowledge_base.get_object_properties()])
-        assert len(self.Xraw) == len(self.str_individuals), "Xraw must be equal to individuals"
+        # Type info
+        self.features = [(self.str_type, str_c) for str_c in self.owl_classes_dict.keys()]
+        # Object Info
+        self.features.extend([(str_r, i) for i in self.str_individuals for str_r in self.owl_object_property_dict])
+        # Data Info
+        self.features.extend([(str_r, i) for i in self.str_individuals for str_r in self.owl_data_property_dict])
+        # Initialize classifier
         self.clf = None
 
-    def labeling(self, pos, neg, apply_dummy=True):
+        if self.on_fly_tabular:
+            # Trade-off between runtime at inference and memory
+            self.Xraw = None
+        else:
+            self.Xraw = base_construct_second(cbd_entities=self.cbd_mapping_entities, rows=self.str_individuals,
+                                              feature_names=self.features)
+
+    def labeling(self, Xraw, pos, neg, apply_dummy=True):
         """
 
         """
         # (5) Labeling: Label each row/node
         # Drop "label" if exists
 
-        self.Xraw.loc[:, "label"] = 0  # unknowns
-        self.Xraw.loc[pos, "label"] = 1  # positives
-        self.Xraw.loc[neg, "label"] = -1  # negatives
+        Xraw.loc[:, "label"] = 0  # unknowns
+        Xraw.loc[pos, "label"] = 1  # positives
+        Xraw.loc[neg, "label"] = -1  # negatives
         # (5.1) drop unknowns although unknowns provide info
-        X = self.Xraw  # self.Xraw[self.Xraw.label != 0]
+        X = Xraw  # self.Xraw[self.Xraw.label != 0]
 
         raw_features = X.columns.tolist()
         raw_features.remove("label")
@@ -171,28 +216,6 @@ class TDL:
 
         # print(f"Train data shape:{X_train_sparse.shape}")
         return X_train_sparse, y_train_sparse
-
-    def compute_quality(self, instances, pos, neg, conf_matrix=False):
-        assert isinstance(instances, set)
-        tp = len(pos.intersection(instances))
-        tn = len(neg.difference(instances))
-
-        fp = len(neg.intersection(instances))
-        fn = len(pos.difference(instances))
-
-        _, f1_score = self.quality_func.score2(tp=tp, fn=fn, fp=fp, tn=tn)
-        if conf_matrix:
-            return f1_score, f"TP:{tp}\tFN:{fn}\tFP:{fp}\tTN:{tn}"
-        return f1_score
-
-    def union_and_intersect(self, filtered_hypothesis):
-        intersections_and_unions = set()
-        for c in filtered_hypothesis:
-            for other in filtered_hypothesis:
-                intersections_and_unions.add(OWLObjectIntersectionOf((c, other)))
-                intersections_and_unions.add(OWLObjectUnionOf((c, other)))
-
-        return intersections_and_unions.union(filtered_hypothesis)
 
     def decision_to_owl_class_exp(self, reasoning_step: dict, single_positive_indv):
         """
@@ -222,34 +245,6 @@ class TDL:
 
         return owl_class
 
-    def cumulative_intersection_from_iterable(self, concepts):
-        result = None
-        for i in concepts:
-            if result is None:
-                result = i
-            else:
-                result = OWLObjectIntersectionOf((result, i))
-
-        return result
-
-    def intersect_of_concepts(self, concepts):
-        dl_concept_path = None
-        for c in concepts:
-            if dl_concept_path is None:
-                dl_concept_path = c
-            else:
-                dl_concept_path = OWLObjectIntersectionOf((dl_concept_path, c))
-        return dl_concept_path
-
-    def union_of_concepts(self, concepts):
-        dl_concept_path = None
-        for c in concepts:
-            if dl_concept_path is None:
-                dl_concept_path = c
-            else:
-                dl_concept_path = OWLObjectUnionOf((dl_concept_path, c))
-        return dl_concept_path
-
     def best_hypotheses(self, n=1):
         assert n == 1
         return self.best_pred
@@ -258,18 +253,23 @@ class TDL:
         str_pos_examples = [i.get_iri().as_str() for i in lp.pos]
         str_neg_examples = [i.get_iri().as_str() for i in lp.neg]
 
-        X, y = self.labeling(pos=str_pos_examples, neg=str_neg_examples, apply_dummy=False)
+        if self.on_fly_tabular:
+            Xraw = base_construct_second(cbd_entities=self.cbd_mapping_entities,
+                                         rows=str_pos_examples + str_neg_examples,
+                                         feature_names=self.features)
+            X, y = self.labeling(Xraw=Xraw, pos=str_pos_examples, neg=str_neg_examples, apply_dummy=False)
+        else:
+            X, y = self.labeling(Xraw=self.Xraw, pos=str_pos_examples, neg=str_neg_examples, apply_dummy=False)
+
         # Binaries
-        self.clf = tree.DecisionTreeClassifier(**self.kwards_model).fit(X=X.values, y=y.values)
+        self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=X.values, y=y.values)
         # print("Classification Report: Negatives: -1, Unknowns:0, Positives 1 ")
         # print(sklearn.metrics.classification_report(y.values, self.clf.predict(X.values), target_names=None))
         # plt.figure(figsize=(30, 30))
         # tree.plot_tree(self.clf, fontsize=10, feature_names=X.columns.to_list())
         # plt.show()
 
-        render = DLSyntaxObjectRenderer()
         prediction_per_example = []
-
         # () Iterate over E^+
         for sequence_of_reasoning_steps, pos in zip(
                 explain_inference(self.clf,
@@ -283,34 +283,10 @@ class TDL:
             sequence_of_concept_path_of_tree = [self.decision_to_owl_class_exp(reasoning_step, pos) for
                                                 reasoning_step in
                                                 sequence_of_reasoning_steps]
-            pred = self.intersect_of_concepts(sequence_of_concept_path_of_tree)
-            # SANITY CHECKING: A path starting from root and ending in a leaf for a single positive example must be F1.=0
-            # assert self.compute_quality(instances={i for i in self.knowledge_base.individuals(pred)},
-            #                            pos={self.owl_individuals[pos]},
-            #                            neg=lp.neg) == 1.0
+            pred = concepts_reducer(concepts=sequence_of_concept_path_of_tree, reduced_cls=OWLObjectIntersectionOf)
             prediction_per_example.append((pred, pos))
 
-        self.best_pred = self.union_of_concepts([pred for pred, pos in prediction_per_example])
-        """
-        # print(f"Union Of paths of DL concepts:{render.render(final_pred)}")
-        # individuals_final_pred = {i for i in self.knowledge_base.individuals(final_pred)}
-        
-        
-        for dl_concept, str_pos_example in prediction_per_example:
-            # print(f"A positive example:{str_pos_example}")
-            # print(f"Path of DL concepts:{render.render(dl_concept)}")
-            individuals = {i for i in self.knowledge_base.individuals(dl_concept)}
-            f1_local = self.compute_quality(instances=individuals,
-                                            pos={self.owl_individuals[str_pos_example]},
-                                            neg=lp.neg)
-            f1_global = self.compute_quality(instances=individuals,
-                                             pos=lp.pos,
-                                             neg=lp.neg)
-
-            # print(f"Local Quality:{f1_local}")
-            # print(f"Global Quality:{f1_global}")
-
-        # print(f"Global Quality of Final :{self.compute_quality(instances=individuals_final_pred, pos=lp.pos, neg=lp.neg)}")
-        """
+        self.best_pred = concepts_reducer(concepts=[pred for pred, pos in prediction_per_example],
+                                          reduced_cls=OWLObjectUnionOf)
 
         return self
