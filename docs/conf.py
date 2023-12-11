@@ -10,10 +10,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
-
+import os
+import sys
+sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
@@ -27,11 +26,9 @@ author = 'Ontolearn team'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinxext_autox',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.autodoc',
     'sphinx.ext.githubpages',
-    # 'sphinx.ext.intersphinx',
-    # 'sphinx_automodapi.smart_resolver',
-    # 'sphinx.ext.inheritance_diagram',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'sphinxcontrib.plantuml',
