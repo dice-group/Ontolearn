@@ -22,8 +22,12 @@ or
 ```shell
 git clone https://github.com/dice-group/Ontolearn.git 
 conda create --name onto python=3.9.18 && conda activate onto && pip3 install -e . && python -c "import ontolearn"
+# To download knowledge graphs
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
+# To download learning problems.
+wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
 ```
+
 ```shell
 pytest -p no:warnings -x # Running 158 tests takes ~ 3 mins
 ```
@@ -89,6 +93,36 @@ michelle                         0.0   0.0
 
 Fore more please refer to  the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder.
 
+## Benchmarking on Family dataset
+```shell
+# Benchmark learners on the Family benchmark dataset with benchmark learning problems.
+python examples/concept_learning_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 3 --report family_results.csv 
+python -c 'import pandas as pd; print(pd.read_csv("family_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
+```
+<details> <summary> To see the results </summary>
+Each model has 3 second to find a fitting answer. DRILL results are obtained by using F1 score as heuristic function.
+
+| LP                 |   F1-OCEL |   RT-OCEL |   F1-CELOE |   RT-CELOE |   F1-EvoLearner |   RT-EvoLearner |   F1-DRILL |   RT-DRILL |   F1-tDL |   RT-tDL |
+|:-------------------|----------:|----------:|-----------:|-----------:|----------------:|----------------:|-----------:|-----------:|---------:|---------:|
+| Aunt               |     0.804 |     3.004 |      0.837 |      3.002 |           0.837 |           3.607 |      1.000 |      2.172 |    1.000 |    0.609 |
+| Brother            |     1.000 |     0.013 |      1.000 |      0.003 |           1.000 |           0.021 |      1.000 |      0.342 |    1.000 |    0.656 |
+| Cousin             |     0.693 |     3.069 |      0.793 |      3.001 |           0.751 |           3.510 |      0.348 |      0.293 |    1.000 |    0.917 |
+| Daughter           |     1.000 |     0.011 |      1.000 |      0.004 |           1.000 |           0.027 |      1.000 |      0.480 |    1.000 |    0.737 |
+| Father             |     1.000 |     0.004 |      1.000 |      0.002 |           1.000 |           0.008 |      1.000 |      0.342 |    1.000 |    0.778 |
+| Granddaughter      |     1.000 |     0.003 |      1.000 |      0.001 |           1.000 |           0.006 |      1.000 |      0.314 |    1.000 |    0.607 |
+| Grandfather        |     1.000 |     0.003 |      1.000 |      0.001 |           1.000 |           0.006 |      0.909 |      0.292 |    1.000 |    0.605 |
+| Grandgranddaughter |     1.000 |     0.003 |      1.000 |      0.001 |           1.000 |           0.004 |      1.000 |      0.262 |    1.000 |    0.288 |
+| Grandgrandfather   |     1.000 |     0.757 |      1.000 |      0.156 |           1.000 |           0.074 |      0.944 |      0.247 |    1.000 |    0.288 |
+| Grandgrandmother   |     1.000 |     0.556 |      1.000 |      0.200 |           1.000 |           0.075 |      1.000 |      0.247 |    1.000 |    0.421 |
+| Grandgrandson      |     1.000 |     0.512 |      1.000 |      0.163 |           1.000 |           1.818 |      0.486 |      0.266 |    1.000 |    0.359 |
+| Grandmother        |     1.000 |     0.004 |      1.000 |      0.002 |           1.000 |           0.012 |      1.000 |      0.265 |    1.000 |    0.494 |
+| Grandson           |     1.000 |     0.003 |      1.000 |      0.002 |           1.000 |           0.007 |      0.451 |      0.294 |    1.000 |    0.587 |
+| Mother             |     1.000 |     0.004 |      1.000 |      0.002 |           1.000 |           0.009 |      1.000 |      0.271 |    1.000 |    0.808 |
+| PersonWithASibling |     1.000 |     0.003 |      1.000 |      0.001 |           0.737 |           3.037 |      0.588 |      0.295 |    1.000 |    0.928 |
+| Sister             |     1.000 |     0.003 |      1.000 |      0.001 |           1.000 |           0.017 |      0.800 |      0.269 |    1.000 |    0.568 |
+| Son                |     1.000 |     0.004 |      1.000 |      0.002 |           1.000 |           0.008 |      0.732 |      0.269 |    1.000 |    0.689 |
+| Uncle              |     0.884 |     3.007 |      0.905 |      3.001 |           0.905 |           3.516 |      0.657 |      0.219 |    1.000 |    0.527 |
+</details>
 
 ## Deployment 
 
