@@ -116,8 +116,8 @@ class LengthBasedRefinement(BaseRefinement):
         yield from restrictions
 
         for bool_dp in self.kb.get_boolean_data_properties():
-            raise NotImplementedError("Not yet boolean data properties for DRILL")
-
+            print("Not yet boolean data properties for DRILL")
+            continue
     def apply_union_and_intersection_from_iterable(self, cont: List) -> Iterable:
         """ Create Union and Intersection OWL Class Expressions.
         1. Create OWLObjectIntersectionOf via logical conjunction of cartesian product of input owl class expressions.
