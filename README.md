@@ -91,7 +91,7 @@ michelle                         0.0   0.0
 
 Fore more please refer to  the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder.
 
-## Benchmarking on Family dataset
+## Benchmark Results
 ```shell
 # To download learning problems. # Benchmark learners on the Family benchmark dataset with benchmark learning problems.
 wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
@@ -129,6 +129,7 @@ Each model has 60 second to find a fitting answer. DRILL results are obtained by
 | Uncle              |     0.905 |    29.269 |      0.905 |      8.582 |           0.950 |         103.332 |      0.633 |      0.322 |    1.000 |    0.198 |
 
 
+### Mutagenesis Benchmark Results
 ```shell
 python examples/concept_learning_evaluation.py --lps LPs/Mutagenesis/lps.json --kb KGs/Mutagenesis/mutagenesis.owl --max_runtime 60 --report mutagenesis_results.csv 
 python -c 'import pandas as pd; print(pd.read_csv("mutagenesis_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
@@ -137,7 +138,7 @@ python -c 'import pandas as pd; print(pd.read_csv("mutagenesis_results.csv", ind
 |:---------|----------:|----------:|-----------:|-----------:|----------------:|----------------:|-----------:|-----------:|---------:|---------:|
 | NotKnown |     0.916 |    60.002 |      0.916 |     41.288 |           0.856 |         247.329 |      0.976 |     40.502 |    1.000 |   47.646 |
 
-
+### Carcinogenesis Benchmark Results
 ```shell
 python examples/concept_learning_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 60 --report carcinogenesis_results.csv 
 python -c 'import pandas as pd; print(pd.read_csv("carcinogenesis_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
