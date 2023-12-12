@@ -59,7 +59,7 @@ You can get the object properties in the signature:
 onto.object_properties_in_signature()
 ```
 
-For more methods, see the owlapy abstract class [OWLOntology](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L3064)
+For more methods, see the owlapy abstract class [OWLOntology](owlapy.model.OWLOntology)
 or the concrete implementation in Ontolearn [OWLOntology_Owlready2](ontolearn.base.OWLOntology_Owlready2).
 
 ## Modifying an Ontology
