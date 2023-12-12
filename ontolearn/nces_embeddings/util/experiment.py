@@ -1,10 +1,10 @@
 import json
-
+import os
+import numpy as np
 import torch
-from .helper_funcs import *
-from .helper_classes import *
-from .complex_models import *
-from .real_models import *
+from ontolearn.nces_embeddings.util.complex_models import ConEx, Complex
+from ontolearn.nces_embeddings.util.helper_classes import HeadAndRelationBatchLoader, DatasetTriple
+from ontolearn.nces_embeddings.util.real_models import Distmult, Tucker, TransE
 from torch.optim.lr_scheduler import ExponentialLR
 from collections import defaultdict
 from torch.utils.data import DataLoader
