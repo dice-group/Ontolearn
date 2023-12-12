@@ -26,8 +26,7 @@ author = 'Ontolearn team'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autosummary',
-    'sphinx.ext.autodoc',
+    'autoapi.extension',
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
@@ -35,6 +34,16 @@ extensions = [
     'myst_parser',
     'sphinx_rtd_theme',
 ]
+
+# autoapi for ontolearn and owlapy. for owlapy we need to refer to its path in GitHub Action environment
+autoapi_dirs = ['../ontolearn', '/opt/hostedtoolcache/Python/3.9.18/x64/lib/python3.9/site-packages/owlapy']
+
+# by default all are included but had to reinitialize this to remove private members from shoing
+autoapi_options = ['members', 'undoc-members', 'show-inheritance', 'show-module-summary', 'special-members',
+                   'imported-members']
+# this is set to false, so we can add it manually in index.rst together with the other .md files of the documentation.
+autoapi_add_toctree_entry = False
+
 
 inheritance_graph_attrs = dict(rankdir="TB")
 

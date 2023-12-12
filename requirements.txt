@@ -14,6 +14,7 @@ owlapy>=0.1.0
 dicee>=0.1.2
 flake8>=6.0.0
 sphinx>=7.2.6
+sphinx-autoapi>=3.0.0
 sphinx_rtd_theme>=2.0.0
 sphinx-theme>=1.0
 sphinxcontrib-plantuml>=0.27
