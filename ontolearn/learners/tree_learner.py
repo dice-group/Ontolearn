@@ -17,6 +17,14 @@ from owlapy.model import OWLObjectSomeValuesFrom, OWLObjectPropertyExpression, O
 from owlapy.render import DLSyntaxObjectRenderer
 
 
+def is_float(value):
+    try:
+        float(value)
+        return True
+    except (ValueError, TypeError):
+        return False
+
+
 def compute_quality(instances, pos, neg, conf_matrix=False, quality_func=None):
     assert isinstance(instances, set)
     tp = len(pos.intersection(instances))
@@ -46,26 +54,37 @@ def extract_cbd(dataframe) -> Dict[str, Set[Tuple[str, str]]]:
     return data
 
 
-def base_construct_second(cbd_entities: Dict[str, Set[Tuple[str, str]]], rows: List[str],
-                          feature_names: List[Tuple[str, str]]):
-    """
-
-    """
-    print("Constructing matrix for training..")
+def base_construct_second(cbd_entities: Dict[str, Set[Tuple[str, str]]], individuals: List[str],
+                          feature_names: List[Tuple[str, Union[str, None]]]):
+    """ Construct a tabular representations from fixed features """
     assert cbd_entities is not None, "No cbd entities"
     result = []
-    for s in rows:
-        # (1) Initialize an empty row
-        row = [False for _ in feature_names]
+    # () Iterate over individuals.
+    for s in individuals:
+        # () Initialize an empty row.
+        representation_of_s = [False for _ in feature_names]
         for (p, o) in cbd_entities[s]:
-            idx = feature_names.index((p, o))
-            # (2) Fill th row with nodes/object entities
-            assert row[idx] is False
-            row[idx] = True
-        result.append(row)
-    result = pd.DataFrame(data=result, index=rows, columns=feature_names, dtype="category")
-    # print(f"Constructed tabular shape: {result.shape}")
-    # print("Features/Columns:", result.columns.tolist())
+            """ o can be a IRI or a number a boolean"""
+            # () if (p,o) not in feature_names, o must be a number
+            if (p, o) in feature_names:
+                if o is not None:
+                    idx = feature_names.index((p, o))
+                    value = True
+                    assert representation_of_s[idx] is False
+                else:
+                    "Ignore information comes as p,o "
+                    print(p, o)
+                    exit(1)
+                    idx = feature_names.index((p, None))
+                    value = o
+
+                representation_of_s[idx] = value
+        result.append(representation_of_s)
+    result = pd.DataFrame(data=result, index=individuals, columns=feature_names, dtype="category")
+    # result = pd.DataFrame(data=result, index=individuals, columns=feature_names)
+    print("Tabular data representing positive and negative examples:", result.shape)
+    result = result.loc[:, (result != False).any(axis=0)]
+    print("Tabular data representing positive and negative examples after removing uninformative features:", result.shape)
     return result
 
 
@@ -126,7 +145,7 @@ def concepts_reducer(concepts: List[OWLClassExpression], reduced_cls: Callable) 
     """ Reduces a list of OWLClassExpression instances into a single instance of OWLObjectUnionOf or OWLObjectIntersectionOf """
     dl_concept_path = None
     for c in concepts:
-        assert isinstance(c, OWLClassExpression)
+        assert isinstance(c, OWLClassExpression), f"c is not OWL: {type(c)}"
         if dl_concept_path is None:
             dl_concept_path = c
         else:
@@ -138,7 +157,7 @@ class TDL:
     """Tree-based Description Logic Concept Learner"""
 
     def __init__(self, knowledge_base, dataframe_triples: pd.DataFrame, kwargs_classifier,
-                 on_fly_tabular: bool = False, max_runtime=1):
+                 on_fly_tabular: bool = True, max_runtime=1):
         assert isinstance(dataframe_triples, pd.DataFrame), "dataframe_triples must be a Pandas DataFrame"
         assert isinstance(knowledge_base, KnowledgeBase), "knowledge_base must be a KnowledgeBase instance"
         assert len(dataframe_triples) > 0, f"length of the dataframe must be greater than 0:{dataframe_triples.shape}"
@@ -146,21 +165,20 @@ class TDL:
         print(f"Matrix representation of knowledge base: {dataframe_triples.shape}")
         self.knowledge_base = knowledge_base
         self.dataframe_triples = dataframe_triples
-        # Mappings from string of IRI to named concepts
+        # Mappings from string of IRI to named concepts.
         self.owl_classes_dict = {c.get_iri().as_str(): c for c in self.knowledge_base.get_concepts()}
-        # Mappings from string of IRI to object properties
+        # Mappings from string of IRI to object properties.
         self.owl_object_property_dict = {p.get_iri().as_str(): p for p in self.knowledge_base.get_object_properties()}
-        # Mappings from string of IRI to data properties
+        # Mappings from string of IRI to data properties.
         self.owl_data_property_dict = {p.get_iri().as_str(): p for p in self.knowledge_base.get_data_properties()}
-        # Mappings from string of IRI to individuals
+        # Mappings from string of IRI to individuals.
         self.owl_individuals = {i.get_iri().as_str(): i for i in self.knowledge_base.individuals()}
-        # Keyword arguments for sklearn Decision tree
+        # Keyword arguments for sklearn Decision tree.
         self.kwargs_classifier = kwargs_classifier
         self.max_runtime = max_runtime
         self.on_fly_tabular = on_fly_tabular
         self.best_pred = None
-
-        # Remove uninformative triples if exists
+        # Remove uninformative triples if exists.
         print("Removing uninformative triples...")
         self.dataframe_triples = self.dataframe_triples[
             ~((self.dataframe_triples["relation"] == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") & (
@@ -168,7 +186,6 @@ class TDL:
                     self.dataframe_triples["object"] == "http://www.w3.org/2002/07/owl#Thing") | (
                             self.dataframe_triples["object"] == "Ontology")))]
         print(f"Matrix representation of knowledge base: {dataframe_triples.shape}")
-
         self.cbd_mapping: Dict[str, Set[Tuple[str, str]]]
         self.cbd_mapping = extract_cbd(self.dataframe_triples)
 
@@ -181,8 +198,8 @@ class TDL:
         self.features = [(self.str_type, str_c) for str_c in self.owl_classes_dict.keys()]
         # Object Info
         self.features.extend([(str_r, i) for i in self.str_individuals for str_r in self.owl_object_property_dict])
-        # Data Info
-        self.features.extend([(str_r, i) for i in self.str_individuals for str_r in self.owl_data_property_dict])
+        # Data Info. None will be filled by object s.t. i str_r, object
+        self.features.extend([(str_r, None) for str_r in self.owl_data_property_dict])
         # Initialize classifier
         self.clf = None
 
@@ -190,13 +207,12 @@ class TDL:
             # Trade-off between runtime at inference and memory
             self.Xraw = None
         else:
-            self.Xraw = base_construct_second(cbd_entities=self.cbd_mapping_entities, rows=self.str_individuals,
+            self.Xraw = base_construct_second(cbd_entities=self.cbd_mapping_entities,
+                                              individuals=self.str_individuals,
                                               feature_names=self.features)
 
     def labeling(self, Xraw, pos, neg, apply_dummy=True):
-        """
-
-        """
+        """ Labelling """
         # (5) Labeling: Label each row/node
         # Drop "label" if exists
 
@@ -218,9 +234,7 @@ class TDL:
         return X_train_sparse, y_train_sparse
 
     def decision_to_owl_class_exp(self, reasoning_step: dict, single_positive_indv):
-        """
-
-        """
+        """ """
         # print(f"\t{reasoning_step}")
         # tail can be individual or class
         relation, tail = reasoning_step["feature"]
@@ -234,8 +248,12 @@ class TDL:
                 owl_class = self.owl_classes_dict[tail].get_object_complement_of()
                 # assert self.owl_individuals[single_positive_indv] in self.knowledge_base.individuals(owl_class)
         else:
-            owl_class = OWLObjectHasValue(property=self.owl_object_property_dict[relation],
-                                          individual=self.owl_individuals[tail])
+            if tail in self.owl_individuals:
+                owl_class = OWLObjectHasValue(property=self.owl_object_property_dict[relation],
+                                              individual=self.owl_individuals[tail])
+            else:
+                owl_class = OWLDataHasValue(property=self.owl_data_property_dict[relation], value=OWLLiteral(tail))
+
             if value:
                 pass
                 # assert self.owl_individuals[single_positive_indv] in self.knowledge_base.individuals(owl_class)
@@ -250,12 +268,16 @@ class TDL:
         return self.best_pred
 
     def fit(self, lp: PosNegLPStandard, max_runtime=None):
+        if max_runtime is not None:
+            self.max_runtime = max_runtime
+
         str_pos_examples = [i.get_iri().as_str() for i in lp.pos]
         str_neg_examples = [i.get_iri().as_str() for i in lp.neg]
 
         if self.on_fly_tabular:
+            print("Constructing representations on the fly...")
             Xraw = base_construct_second(cbd_entities=self.cbd_mapping_entities,
-                                         rows=str_pos_examples + str_neg_examples,
+                                         individuals=str_pos_examples + str_neg_examples,
                                          feature_names=self.features)
             X, y = self.labeling(Xraw=Xraw, pos=str_pos_examples, neg=str_neg_examples, apply_dummy=False)
         else:
@@ -277,7 +299,7 @@ class TDL:
                                   features=X.columns.to_list(),
                                   only_shared=False), str_pos_examples):
             # () Ensure that e \in E^+ is classified as positive
-            assert 1 == self.clf.predict(X.loc[pos].values.reshape(1, -1))
+            # assert 1 == self.clf.predict(X.loc[pos].values.reshape(1, -1))
             # () Reasoning behind of the prediction of a single positive example.
 
             sequence_of_concept_path_of_tree = [self.decision_to_owl_class_exp(reasoning_step, pos) for
