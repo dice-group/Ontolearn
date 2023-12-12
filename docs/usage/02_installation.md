@@ -5,19 +5,15 @@ your system. Python comes in various versions and with different,
 sometimes conflicting dependencies. Hence, most guides will recommend
 to set up a "virtual environment" to work in.
 
-One such system for virtual python environments is
-[Anaconda](https://www.anaconda.com/). You can download miniconda from
-<https://docs.conda.io/en/latest/miniconda.html>.
+One such system for virtual python environments is python
+[venv](https://docs.python.org/3/library/venv.html). Since the command comes 
+together with python, you don't need to install any external tool.
 
-We have good experience with it and make use of conda in the
-[Installation from source](#installation-from-source) step.
 
 ## Installation via _pip_
 
 Released versions of Ontolearn can be installed using `pip`, the
-Package Installer for Python. It comes as part of Python. Please
-research externally (or use `conda create` command below) on how to
-create virtual environments for Python programs.
+Package Installer for Python. `pip` comes as part of Python.
 
 ```shell
 pip install ontolearn
