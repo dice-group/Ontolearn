@@ -1,8 +1,8 @@
 import json
-from .data import Data
-from .helper_funcs import *
-from .complex_models import Complex, ConEx
-from .real_models import Distmult, Tucker
+import json
+from ontolearn.nces_embeddings.util.data import Data
+from ontolearn.nces_embeddings.util.complex_models import Complex, ConEx
+from ontolearn.nces_embeddings.util.real_models import Distmult, Tucker
 from torch.optim.lr_scheduler import ExponentialLR
 from collections import defaultdict
 from torch.utils.data import DataLoader

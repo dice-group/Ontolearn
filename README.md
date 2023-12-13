@@ -21,8 +21,8 @@ pip install ontolearn
 or
 ```shell
 git clone https://github.com/dice-group/Ontolearn.git 
-conda create --name onto python=3.9.18 && conda activate onto && pip3 install -e . && python -c "import ontolearn"
-# To download knowledge graphs
+python -m venv venv && source venv/bin/activate # for Windows use: .\venv\Scripts\activate 
+pip install -r requirements.txt
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
 ```
 
@@ -153,10 +153,11 @@ python -c 'import pandas as pd; print(pd.read_csv("carcinogenesis_results.csv", 
 ## Deployment 
 
 ```shell
-pip install gradio
+pip install gradio # (check `pip show gradio` first)
 ```
 
-To deploy **EvoLearner** on the **Family** knowledge graph. Available models to deploy: **EvoLearner**, **NCES**, **CELOE** and **OCEL**.
+Available models to deploy: **EvoLearner**, **NCES**, **CELOE** and **OCEL**.
+To deploy **EvoLearner** on the **Family** knowledge graph:
 ```shell
 python deploy_cl.py --model evolearner --path_knowledge_base KGs/Family/family-benchmark_rich_background.owl
 ```

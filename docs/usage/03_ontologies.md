@@ -25,7 +25,7 @@ are six persons (individuals), of which four are male and two are female.
 ## Loading an Ontology
 
 To load an ontology as well as to manage it, you will need an 
-[OWLOntologyManager](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L3245)
+[OWLOntologyManager](owlapy.model.OWLOntologyManager)
 (this is an abstract class, concrete implementation in Ontolearn is mentioned below).
 An ontology can be loaded using the following Python code:
 
@@ -59,7 +59,7 @@ You can get the object properties in the signature:
 onto.object_properties_in_signature()
 ```
 
-For more methods, see the owlapy abstract class [OWLOntology](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L3064)
+For more methods, see the owlapy abstract class [OWLOntology](owlapy.model.OWLOntology)
 or the concrete implementation in Ontolearn [OWLOntology_Owlready2](ontolearn.base.OWLOntology_Owlready2).
 
 ## Modifying an Ontology
@@ -73,12 +73,12 @@ allowing the ontology to evolve and adapt as new knowledge is gained.
 In owlapy we also have different axioms represented by different classes. You can check all
 the axioms classes [here](https://github.com/dice-group/owlapy/blob/main/owlapy/model/__init__.py). Some frequently used axioms are:
 
-- [OWLDeclarationAxiom](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L2027)
-- [OWLObjectPropertyAssertionAxiom](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L2817)
-- [OWLDataPropertyAssertionAxiom](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L2835)
-- [OWLClassAssertionAxiom](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L2447)
-- [OWLSubClassOfAxiom](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L2368)
-- [OWLEquivalentClassesAxiom](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L2183)
+- [OWLDeclarationAxiom](owlapy.model.OWLDeclarationAxiom)
+- [OWLObjectPropertyAssertionAxiom](owlapy.model.OWLObjectPropertyAssertionAxiom)
+- [OWLDataPropertyAssertionAxiom](owlapy.model.OWLDataPropertyAssertionAxiom)
+- [OWLClassAssertionAxiom](owlapy.model.OWLClassAssertionAxiom)
+- [OWLSubClassOfAxiom](owlapy.model.OWLSubClassOfAxiom)
+- [OWLEquivalentClassesAxiom](owlapy.model.OWLEquivalentClassesAxiom)
 
 
 #### Add a new Class
@@ -99,21 +99,21 @@ child_class_declaration_axiom = OWLDeclarationAxiom(child_class)
 manager.add_axiom(onto, child_class_declaration_axiom)
 ```
 In this example, we added the class 'child' to the father.owl ontology.
-Firstly we create an instance of [OWLClass](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L209) to represent the concept 
-of 'child' by using an [IRI](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/_iri.py#L47). 
+Firstly we create an instance of [OWLClass](owlapy.model.OWLClass) to represent the concept 
+of 'child' by using an [IRI](owlapy.model.IRI). 
 On the other side, an instance of `IRI` is created by passing two arguments which are
 the namespace of the ontology and the remainder 'child'. To declare this new class we need
 an axiom of type `OWLDeclarationAxiom`. We simply pass the `child_class` to create an 
 instance of this axiom. The final step is to add this axiom to the ontology using the 
-[OWLOntologyManager](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L3245). We use the `add_axiom` method
+[OWLOntologyManager](owlapy.model.OWLOntologyManager). We use the `add_axiom` method
 of the `manager` to add into the ontology
 `onto` the axiom `child_class_declaration_axiom`.
 
 #### Add a new Object Property / Data Property
 
 The idea is the same as adding a new class. Instead of `OWLClass`, for object properties,
-you can use the class [OWLObjectProperty](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L380C7-L380C24) and for data
-properties you can use the class [OWLDataProperty](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L356C11-L356C11).
+you can use the class [OWLObjectProperty](owlapy.model.OWLObjectProperty) and for data
+properties you can use the class [OWLDataProperty](owlapy.model.OWLDataProperty).
 
 <!--pytest-codeblocks:cont-->
 
@@ -132,7 +132,7 @@ hasAge_dp_declaration_axiom = OWLDeclarationAxiom(hasAge_dp)
 manager.add_axiom(onto, hasAge_dp_declaration_axiom)
 ```
 
-See the [owlapy](https://github.com/dice-group/owlapy/blob/main/owlapy/model/__init__.py) repository for more OWL entities that you can add as a declaration axiom.
+See the [owlapy](owlapy) for more OWL entities that you can add as a declaration axiom.
 
 #### Add an Assertion Axiom
 
@@ -156,7 +156,7 @@ want to assert a class axiom for the individual `heinz`.
 We have used the class `OWLClassAssertionAxiom`
 where the first argument is the 'individual' `heinz` and the second argument is 
 the 'class_expression'. As the class expression, we used the previously defined class 
-`child_Class`. Finally, add the axiom by using `add_axiom` method of the [OWLOntologyManager](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L3245).
+`child_Class`. Finally, add the axiom by using `add_axiom` method of the [OWLOntologyManager](owlapy.model.OWLOntologyManager).
 
 Let's show one more example using a `OWLDataPropertyAssertionAxiom` to assign the age of 17 to
 heinz. 
@@ -173,14 +173,14 @@ dp_assertion_axiom = OWLDataPropertyAssertionAxiom(heinz, hasAge_dp, literal_17)
 manager.add_axiom(onto, dp_assertion_axiom)
 ```
 
-[OWLLiteral](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L1128) is a class that represents the literal values in
+[OWLLiteral](owlapy.model.OWLLiteral) is a class that represents the literal values in
 Owlapy. We have stored the integer literal value of '18' in the variable `literal_17`.
 Then we construct the `OWLDataPropertyAssertionAxiom` by passing as the first argument, the 
 individual `heinz`, as the second argument the data property `hasAge_dp`, and the third 
 argument the literal value `literal_17`. Finally, add it to the ontology by using `add_axiom` 
 method.
 
-Check the [owlapy](https://github.com/dice-group/owlapy/blob/main/owlapy/model/__init__.py) repository to see all the OWL 
+Check the [owlapy](owlapy) to see all the OWL 
 assertion axioms that you can use.
 
 
@@ -199,7 +199,7 @@ argument is the axiom you want to remove.
 ## Save an Ontology
 
 If you modified an ontology, you may want to save it as a new file. To do this
-you can use the `save_ontology` method of the [OWLOntologyManager](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L3245).
+you can use the `save_ontology` method of the [OWLOntologyManager](owlapy.model.OWLOntologyManager).
 It requires two arguments, the first is the ontology you want to save and The second
 is the IRI of the new ontology.
 
