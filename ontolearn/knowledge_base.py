@@ -19,84 +19,18 @@ from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
 from .learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from ontolearn.base.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 
+from .utils.static_funcs import (init_length_metric, init_hierarchy_instances,
+                                 init_named_individuals, init_individuals_from_concepts)
 logger = logging.getLogger(__name__)
-
-
-def _Default_OntologyManagerFactory(world_store=None) -> OWLOntologyManager:
-    return OWLOntologyManager_Owlready2(world_store=world_store)
 
 
 def _Default_ReasonerFactory(onto: OWLOntology, triplestore_address: str) -> OWLReasoner:
     assert isinstance(onto, OWLOntology_Owlready2)
     base_reasoner = OWLReasoner_Owlready2(ontology=onto, triplestore_address=triplestore_address)
-
     if triplestore_address is not None:
         return base_reasoner
     else:
         return OWLReasoner_FastInstanceChecker(ontology=onto, base_reasoner=base_reasoner)
-
-
-def init_length_metric(length_metric: Optional[OWLClassExpressionLengthMetric] = None,
-                       length_metric_factory: Optional[Callable[[], OWLClassExpressionLengthMetric]] = None):
-    """ Initialize the technique on computing length of a concept"""
-    if length_metric is not None:
-        pass
-    elif length_metric_factory is not None:
-        length_metric = length_metric_factory()
-    else:
-        length_metric = _Default_ClassExpressionLengthMetricFactory()
-
-    return length_metric
-
-
-def init_hierarchy_instances(reasoner, class_hierarchy, object_property_hierarchy, data_property_hierarchy) -> Tuple[
-    ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy]:
-    """ Initialize class, object property, and data property hierarchies """
-    if class_hierarchy is None:
-        class_hierarchy = ClassHierarchy(reasoner)
-
-    if object_property_hierarchy is None:
-        object_property_hierarchy = ObjectPropertyHierarchy(reasoner)
-
-    if data_property_hierarchy is None:
-        data_property_hierarchy = DatatypePropertyHierarchy(reasoner)
-
-    assert class_hierarchy is None or isinstance(class_hierarchy, ClassHierarchy)
-    assert object_property_hierarchy is None or isinstance(object_property_hierarchy, ObjectPropertyHierarchy)
-    assert data_property_hierarchy is None or isinstance(data_property_hierarchy, DatatypePropertyHierarchy)
-
-    return class_hierarchy, object_property_hierarchy, data_property_hierarchy
-
-
-def init_named_individuals(individuals_cache_size, ):
-    use_individuals_cache = individuals_cache_size > 0
-    if use_individuals_cache:
-        _ind_cache = LRUCache(maxsize=individuals_cache_size)
-    else:
-        _ind_cache = None
-    return use_individuals_cache, _ind_cache
-
-
-def init_individuals_from_concepts(include_implicit_individuals: bool = None, reasoner=None, ontology=None,
-                                   triplestore_address=None, individuals_per_concept=None):
-    assert isinstance(include_implicit_individuals, bool), f"{include_implicit_individuals} must be boolean"
-    if include_implicit_individuals:
-        assert isinstance(individuals_per_concept, Generator)
-        # get all individuals from concepts
-        _ind_set = frozenset(chain.from_iterable(individuals_per_concept))
-    elif isinstance(reasoner, OWLReasoner_FastInstanceChecker) and triplestore_address is None:
-        # performance hack: @TODO: needs to be explained
-        _ind_set = reasoner._ind_set
-    else:
-        # @TODO: needs to be explained
-        individuals = ontology.individuals_in_signature()
-        _ind_set = frozenset(individuals)
-    return _ind_set
-
-
-def _Default_ClassExpressionLengthMetricFactory() -> OWLClassExpressionLengthMetric:
-    return OWLClassExpressionLengthMetric.get_default()
-
 
 class KnowledgeBase(AbstractKnowledgeBase):
     """Representation of an OWL knowledge base in Ontolearn.
@@ -139,8 +73,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
     @overload
     def __init__(self, *,
                  path: str,
-                 ontologymanager_factory: Callable[[], OWLOntologyManager] = _Default_OntologyManagerFactory,
-                 reasoner_factory: Callable[[OWLOntology], OWLReasoner] = _Default_ReasonerFactory,
+                 ontologymanager_factory: Callable[[], OWLOntologyManager] = OWLOntologyManager_Owlready2(world_store=None),
+                 reasoner_factory: Callable[[OWLOntology], OWLReasoner] = None,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
                  length_metric_factory: Optional[Callable[[], OWLClassExpressionLengthMetric]] = None,
                  individuals_cache_size=128,
@@ -205,9 +139,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
                 self.manager = ontologymanager_factory()
             else:  # default to Owlready2 implementation
                 if path is not None and backend_store:
-                    self.manager = _Default_OntologyManagerFactory(world_store=path + ".or2")
+                    self.manager = OWLOntologyManager_Owlready2(world_store=path + ".or2")
                 else:
-                    self.manager = _Default_OntologyManagerFactory()
+                    self.manager = OWLOntologyManager_Owlready2(world_store=None)
                 # raise TypeError("neither ontology nor manager factory given")
 
             if ontology is None:
@@ -226,6 +160,13 @@ class KnowledgeBase(AbstractKnowledgeBase):
         elif reasoner_factory is not None and triplestore_address is None:
             self.reasoner = reasoner_factory(self.ontology)
         else:
+            if triplestore_address is not None:
+                self.reasoner = OWLReasoner_Owlready2(ontology=onto, triplestore_address=triplestore_address)
+            else:
+                self.reasoner= OWLReasoner_FastInstanceChecker(ontology=self.ontology,
+                                                               base_reasoner=OWLReasoner_Owlready2(ontology=self.ontology,
+                                                                                                   triplestore_address=triplestore_address))
+
             self.reasoner = _Default_ReasonerFactory(self.ontology, triplestore_address)
 
         self.length_metric = init_length_metric(length_metric, length_metric_factory)
