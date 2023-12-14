@@ -82,9 +82,9 @@ def base_construct_second(cbd_entities: Dict[str, Set[Tuple[str, str]]], individ
         result.append(representation_of_s)
     result = pd.DataFrame(data=result, index=individuals, columns=feature_names, dtype="category")
     # result = pd.DataFrame(data=result, index=individuals, columns=feature_names)
-    print("Tabular data representing positive and negative examples:", result.shape)
+    # print("Tabular data representing positive and negative examples:", result.shape)
     result = result.loc[:, (result != False).any(axis=0)]
-    print("Tabular data representing positive and negative examples after removing uninformative features:", result.shape)
+    # print("Tabular data representing positive and negative examples after removing uninformative features:",result.shape)
     return result
 
 
@@ -161,8 +161,8 @@ class TDL:
         assert isinstance(dataframe_triples, pd.DataFrame), "dataframe_triples must be a Pandas DataFrame"
         assert isinstance(knowledge_base, KnowledgeBase), "knowledge_base must be a KnowledgeBase instance"
         assert len(dataframe_triples) > 0, f"length of the dataframe must be greater than 0:{dataframe_triples.shape}"
-        print(f"Knowledge Base: {knowledge_base}")
-        print(f"Matrix representation of knowledge base: {dataframe_triples.shape}")
+        # print(f"Knowledge Base: {knowledge_base}")
+        # print(f"Matrix representation of knowledge base: {dataframe_triples.shape}")
         self.knowledge_base = knowledge_base
         self.dataframe_triples = dataframe_triples
         # Mappings from string of IRI to named concepts.
@@ -179,13 +179,13 @@ class TDL:
         self.on_fly_tabular = on_fly_tabular
         self.best_pred = None
         # Remove uninformative triples if exists.
-        print("Removing uninformative triples...")
+        # print("Removing uninformative triples...")
         self.dataframe_triples = self.dataframe_triples[
             ~((self.dataframe_triples["relation"] == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") & (
                     (self.dataframe_triples["object"] == "http://www.w3.org/2002/07/owl#NamedIndividual") | (
                     self.dataframe_triples["object"] == "http://www.w3.org/2002/07/owl#Thing") | (
                             self.dataframe_triples["object"] == "Ontology")))]
-        print(f"Matrix representation of knowledge base: {dataframe_triples.shape}")
+        # print(f"Matrix representation of knowledge base: {dataframe_triples.shape}")
         self.cbd_mapping: Dict[str, Set[Tuple[str, str]]]
         self.cbd_mapping = extract_cbd(self.dataframe_triples)
 
@@ -275,7 +275,7 @@ class TDL:
         str_neg_examples = [i.get_iri().as_str() for i in lp.neg]
 
         if self.on_fly_tabular:
-            print("Constructing representations on the fly...")
+            # print("Constructing representations on the fly...")
             Xraw = base_construct_second(cbd_entities=self.cbd_mapping_entities,
                                          individuals=str_pos_examples + str_neg_examples,
                                          feature_names=self.features)

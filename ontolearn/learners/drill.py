@@ -2,7 +2,7 @@ from ontolearn.base_concept_learner import RefinementBasedConceptLearner
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.abstracts import AbstractScorer, AbstractNode
 from ontolearn.search import RL_State
-from typing import Set, List, Tuple, Optional, Generator, SupportsFloat, Iterable
+from typing import Set, List, Tuple, Optional, Generator, SupportsFloat, Iterable, FrozenSet
 from owlapy.model import OWLNamedIndividual, OWLClassExpression
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 import torch
@@ -52,17 +52,15 @@ class Drill(RefinementBasedConceptLearner):
                  num_episode=10):
 
         self.name = "DRILL"
+
+        assert path_pretrained_drill is None, "Not implemented the integration of using pre-trained model"
         if path_pretrained_kge is not None and os.path.isdir(path_pretrained_kge):
             self.pre_trained_kge = dicee.KGE(path=path_pretrained_kge)
             self.embedding_dim = self.pre_trained_kge.configs["embedding_dim"]
         else:
+            print("No pre-trained model...")
             self.pre_trained_kge = None
-            self.embedding_dim = 12
-
-        if path_pretrained_drill is not None and os.path.isdir(path_pretrained_drill):
-            raise NotImplementedError()
-        else:
-            self.pre_trained_drill = None
+            self.embedding_dim = None
 
         if refinement_operator is None:
             refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base,
@@ -76,14 +74,6 @@ class Drill(RefinementBasedConceptLearner):
             self.reward_func = CeloeBasedReward()
         else:
             self.reward_func = reward_func
-
-        self.representation_mode = "averaging"
-        self.sample_size = 1
-        self.heuristic_func = DrillHeuristic(mode=self.representation_mode,
-                                             model_args={'input_shape': (4 * self.sample_size, self.embedding_dim),
-                                                         'first_out_channels': 32,
-                                                         'second_out_channels': 16, 'third_out_channels': 8,
-                                                         'kernel_size': 3})
 
         self.num_workers = num_workers
         self.learning_rate = learning_rate
@@ -100,18 +90,28 @@ class Drill(RefinementBasedConceptLearner):
         self.emb_pos, self.emb_neg = None, None
         self.start_time = None
         self.goal_found = False
-        self.experiences = Experience(maxlen=self.max_len_replay_memory)
+        if self.pre_trained_kge:
+            self.representation_mode = "averaging"
+            self.sample_size = 1
+            self.heuristic_func = DrillHeuristic(mode=self.representation_mode,
+                                                 model_args={'input_shape': (4 * self.sample_size, self.embedding_dim),
+                                                             'first_out_channels': 32,
+                                                             'second_out_channels': 16, 'third_out_channels': 8,
+                                                             'kernel_size': 3})
+            self.experiences = Experience(maxlen=self.max_len_replay_memory)
+            self.epsilon = 1
 
-        self.epsilon = 1
+            if self.learning_rate:
+                self.optimizer = torch.optim.Adam(self.heuristic_func.net.parameters(), lr=self.learning_rate)
 
-        if self.learning_rate:
-            self.optimizer = torch.optim.Adam(self.heuristic_func.net.parameters(), lr=self.learning_rate)
-
-        if pretrained_model_name:
-            self.pre_trained_model_loaded = True
-            self.heuristic_func.net.load_state_dict(torch.load(pretrained_model_name, torch.device('cpu')))
+            if pretrained_model_name:
+                self.pre_trained_model_loaded = True
+                self.heuristic_func.net.load_state_dict(torch.load(pretrained_model_name, torch.device('cpu')))
+            else:
+                self.pre_trained_model_loaded = False
         else:
-            self.pre_trained_model_loaded = False
+            self.heuristic_func = CeloeBasedReward()
+            self.representation_mode = None
 
         RefinementBasedConceptLearner.__init__(self, knowledge_base=knowledge_base,
                                                refinement_operator=refinement_operator,
@@ -123,7 +123,7 @@ class Drill(RefinementBasedConceptLearner):
                                                max_runtime=max_runtime)
         self.search_tree = DRILLSearchTreePriorityQueue()
         self.storage_path, _ = create_experiment_folder()
-        self._learning_problem = None
+        self.learning_problem = None
         self.renderer = DLSyntaxObjectRenderer()
 
         self.operator: RefinementBasedConceptLearner
@@ -140,7 +140,7 @@ class Drill(RefinementBasedConceptLearner):
 
         # 1.
         # Generate a Learning Problem
-        self._learning_problem = PosNegLPStandard(pos=set(pos), neg=set(neg)).encode_kb(self.kb)
+        self.learning_problem = PosNegLPStandard(pos=set(pos), neg=set(neg)).encode_kb(self.kb)
         # 2. Obtain embeddings of positive and negative examples.
         if self.pre_trained_kge is None:
             self.emb_pos = None
@@ -167,26 +167,27 @@ class Drill(RefinementBasedConceptLearner):
 
     def fit(self, lp: PosNegLPStandard, max_runtime=None):
         if max_runtime:
-            assert isinstance(max_runtime, int)
+            assert isinstance(max_runtime, float)
             self.max_runtime = max_runtime
-        # @TODO: Type injection should be possible for all
+
         pos_type_counts = Counter(
             [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in lp.pos))])
         neg_type_counts = Counter(
             [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in lp.neg))])
         type_bias = pos_type_counts - neg_type_counts
-
         # (1) Initialize learning problem
         root_state = self.initialize_class_expression_learning_problem(pos=lp.pos, neg=lp.neg)
         # (2) Add root state into search tree
         root_state.heuristic = root_state.quality
         self.search_tree.add(root_state)
+
+        self.start_time = time.time()
         # (3) Inject Type Bias
         for x in (self.create_rl_state(i, parent_node=root_state) for i in type_bias):
             self.compute_quality_of_class_expression(x)
             x.heuristic = x.quality
             self.search_tree.add(x)
-        self.start_time = time.time()
+
         # (3) Search
         for i in range(1, self.iter_bound):
             # (1) Get the most fitting RL-state
@@ -194,8 +195,11 @@ class Drill(RefinementBasedConceptLearner):
             next_possible_states = []
             # (2) Refine (1)
             for ref in self.apply_refinement(most_promising):
+                if time.time() - self.start_time > self.max_runtime:
+                    return self.terminate()
                 # (2.1) If the next possible RL-state is not a dead end
                 # (2.1.) If the refinement of (1) is not equivalent to \bottom
+
                 if len(ref.instances):
                     # Compute quality
                     self.compute_quality_of_class_expression(ref)
@@ -213,7 +217,7 @@ class Drill(RefinementBasedConceptLearner):
                 # We do not need to compute Q value based on embeddings of "zeros".
                 continue
 
-            if self.pre_trained_model_loaded is True:
+            if self.pre_trained_kge:
                 preds = self.predict_values(current_state=most_promising, next_states=next_possible_states)
             else:
                 preds = None
@@ -300,16 +304,24 @@ class Drill(RefinementBasedConceptLearner):
     def create_rl_state(self, c: OWLClassExpression, parent_node: Optional[RL_State] = None,
                         is_root: bool = False) -> RL_State:
         """ Create an RL_State instance."""
-        # Create State
-        rl_state = RL_State(c, parent_node=parent_node, is_root=is_root)
-        # Assign Embeddings to it. Later, assign_embeddings can be also done in RL_STATE
-        self.assign_embeddings(rl_state)
+        instances: Generator
+        instances = set(self.kb.individuals(c))
+        instances_bitset: FrozenSet[OWLNamedIndividual]
+        instances_bitset = self.kb.individuals_set(c)
+
+        if self.pre_trained_kge is not None:
+            raise NotImplementedError("No pre-trained knowledge")
+
+        rl_state = RL_State(c, parent_node=parent_node,
+                            is_root=is_root,
+                            instances=instances,
+                            instances_bitset=instances_bitset, embeddings=None)
         rl_state.length = self.kb.concept_len(c)
         return rl_state
 
     def compute_quality_of_class_expression(self, state: RL_State) -> None:
         """ Compute Quality of owl class expression."""
-        self.quality_func.apply(state, state.instances_bitset, self._learning_problem)
+        self.quality_func.apply(state, state.instances_bitset, self.learning_problem)
         self._number_of_tested_concepts += 1
 
     def apply_refinement(self, rl_state: RL_State) -> Generator:
@@ -541,7 +553,7 @@ class Drill(RefinementBasedConceptLearner):
             if rl_state.embeddings is None:
                 assert isinstance(rl_state.concept, OWLClassExpression)
                 # (3) Retrieval instances via our retrieval function (R(C)). Be aware Open World and Closed World
-                # Assumption
+
                 rl_state.instances = set(self.kb.individuals(rl_state.concept))
                 # (4) Retrieval instances in terms of bitset.
                 rl_state.instances_bitset = self.kb.individuals_set(rl_state.concept)
@@ -574,38 +586,52 @@ class Drill(RefinementBasedConceptLearner):
                     print(rl_state.embeddings.shape)
                     print((1, self.sample_size, self.instance_embeddings.shape[1]))
                     raise
-        elif self.representation_mode == 'sampling':
-            raise NotImplementedError('Sampling technique for state representation is not implemented.')
-            """
-                        if node.embeddings is None:
-                str_idx = [get_full_iri(i).replace('\n', '') for i in node.concept.instances]
-                if len(str_idx) >= self.sample_size:
-                    sampled_str_idx = random.sample(str_idx, self.sample_size)
-                    emb = torch.tensor(self.instance_embeddings.loc[sampled_str_idx].values, dtype=torch.float32)
-                else:
-                    num_rows_to_fill = self.sample_size - len(str_idx)
-                    emb = torch.tensor(self.instance_embeddings.loc[str_idx].values, dtype=torch.float32)
-                    emb = torch.cat((torch.zeros(num_rows_to_fill, self.instance_embeddings.shape[1]), emb))
-                emb = emb.view(1, self.sample_size, self.instance_embeddings.shape[1])
-                node.embeddings = emb
-            else:
-                try:
-                    assert node.embeddings.shape == (1, self.sample_size, self.instance_embeddings.shape[1])
-                except AssertionError:
-                    print(node)
-                    print(self.sample_size)
-                    print(node.embeddings.shape)
-                    print((1, self.sample_size, self.instance_embeddings.shape[1]))
-                    raise ValueError
-            """
         else:
-            raise ValueError
+            """ No embeddings available assigned."""""
+            assert self.representation_mode is None
 
-        # @todo remove this testing in experiments.
-        if torch.isnan(rl_state.embeddings).any() or torch.isinf(rl_state.embeddings).any():
-            # No individual contained in the input concept.
-            # Sanity checking.
-            raise ValueError
+    def get_embeddings(self, instances) -> None:
+        if self.representation_mode == 'averaging':
+            # (2) if input node has not seen before, assign embeddings.
+            if rl_state.embeddings is None:
+                assert isinstance(rl_state.concept, OWLClassExpression)
+                # (3) Retrieval instances via our retrieval function (R(C)). Be aware Open World and Closed World
+
+                rl_state.instances = set(self.kb.individuals(rl_state.concept))
+                # (4) Retrieval instances in terms of bitset.
+                rl_state.instances_bitset = self.kb.individuals_set(rl_state.concept)
+                # (5) |R(C)|=\emptyset ?
+                if len(rl_state.instances) == 0:
+                    # If|R(C)|=\emptyset, then represent C with zeros
+                    if self.pre_trained_kge is not None:
+                        emb = torch.zeros(1, self.sample_size, self.embedding_dim)
+                    else:
+                        emb = torch.rand(size=(1, self.sample_size, self.embedding_dim))
+                else:
+                    # If|R(C)| \not= \emptyset, then take the mean of individuals.
+                    str_individuals = [i.get_iri().as_str() for i in rl_state.instances]
+                    assert len(str_individuals) > 0
+                    if self.pre_trained_kge is not None:
+                        emb = self.pre_trained_kge.get_entity_embeddings(str_individuals)
+                        emb = torch.mean(emb, dim=0)
+                        emb = emb.view(1, self.sample_size, self.embedding_dim)
+                    else:
+                        emb = torch.rand(size=(1, self.sample_size, self.embedding_dim))
+                # (6) Assign embeddings
+                rl_state.embeddings = emb
+            else:
+                """ Embeddings already assigned."""
+                try:
+                    assert rl_state.embeddings.shape == (1, self.sample_size, self.embedding_dim)
+                except AssertionError as e:
+                    print(e)
+                    print(rl_state)
+                    print(rl_state.embeddings.shape)
+                    print((1, self.sample_size, self.instance_embeddings.shape[1]))
+                    raise
+        else:
+            """ No embeddings available assigned."""""
+            assert self.representation_mode is None
 
     def save_weights(self):
         """
@@ -793,6 +819,7 @@ class Drill(RefinementBasedConceptLearner):
         self.emb_pos, self.emb_neg = None, None
         self.goal_found = False
         self.start_time = None
+        self.learning_problem = None
         if len(self.search_tree) != 0:
             self.search_tree.clean()
 
