@@ -53,75 +53,89 @@ def dl_concept_learning(args):
               kwargs_classifier={"criterion": "gini", "random_state": 0},
               max_runtime=args.max_runtime)
 
-    drill = Drill(knowledge_base=kb, path_pretrained_kge=args.path_pretrained_kge, quality_func=F1(),
-                  max_runtime=args.max_runtime).train(num_of_target_concepts=2, num_learning_problems=2)
+    drill = Drill(knowledge_base=kb,
+                  path_pretrained_kge=args.path_pretrained_kge,
+                  quality_func=F1(),
+                  max_runtime=args.max_runtime)
     ocel = OCEL(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
     celoe = CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
     evo = EvoLearner(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
-    columns = ["LP",
-               "F1-OCEL", "RT-OCEL",
-               "F1-CELOE", "RT-CELOE",
-               "F1-EvoLearner", "RT-EvoLearner",
-               "F1-DRILL", "RT-DRILL",
-               "F1-tDL", "RT-tDL"]
-    values = []
+
+    # dictionary to store the data
+    data = dict()
     for str_target_concept, examples in settings['problems'].items():
         p = set(examples['positive_examples'])
         n = set(examples['negative_examples'])
+        print('\n\n')
 
         print('Target concept: ', str_target_concept)
+        data.setdefault("LP", []).append(str_target_concept)
 
         typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
         typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
         lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
 
         start_time = time.time()
-        # Get best prediction
-        print("TDL starts..")
-        pred_dtl = tdl.fit(lp).best_hypotheses(n=1)
-        print("TDL ends..")
-        rt_dtl = time.time() - start_time
-        # Compute quality of best prediction
-        f1_dtl = compute_f1_score(individuals={i for i in kb.individuals(pred_dtl)}, pos=lp.pos, neg=lp.neg)
-
-        start_time = time.time()
-        print("DRILL starts..")
-        pred_drill = drill.fit(lp).best_hypotheses(n=1)
-        print("Ends starts..")
-        rt_drill = time.time() - start_time
-        f1_drill = compute_f1_score(individuals={i for i in kb.individuals(pred_drill.concept)}, pos=lp.pos, neg=lp.neg)
-
-        start_time = time.time()
-        print("OCEL starts..")
+        print("OCEL starts..", end="\t")
         pred_ocel = ocel.fit(lp).best_hypotheses(n=1)
-        print("OCEL ends..")
+        print("OCEL ends..", end="\t")
         rt_ocel = time.time() - start_time
         f1_ocel = compute_f1_score(individuals={i for i in kb.individuals(pred_ocel.concept)}, pos=lp.pos, neg=lp.neg)
+        print(f"OCEL Quality: {f1_ocel:.3f}")
+        data.setdefault("F1-OCEL", []).append(f1_ocel)
+        data.setdefault("RT-OCEL", []).append(rt_ocel)
+        print(f"OCEL Runtime: {rt_ocel:.3f}")
 
         start_time = time.time()
-        print("CELOE starts..")
+        print("CELOE starts..", end="\t")
         pred_celoe = celoe.fit(lp).best_hypotheses(n=1)
-        print("CELOE Ends..")
+        print("CELOE Ends..", end="\t")
         rt_celoe = time.time() - start_time
         f1_celoe = compute_f1_score(individuals={i for i in kb.individuals(pred_celoe.concept)}, pos=lp.pos, neg=lp.neg)
+        print(f"CELOE Quality: {f1_celoe:.3f}")
+        data.setdefault("F1-CELOE", []).append(f1_celoe)
+        data.setdefault("RT-CELOE", []).append(rt_celoe)
+        print(f"CELOE Runtime: {rt_celoe:.3f}", end="\t")
 
         start_time = time.time()
-        print("Evolearner starts..")
+        print("Evo starts..", end="\t")
         pred_evo = evo.fit(lp).best_hypotheses(n=1)
-        print("Evolearner ends..")
-
+        print("Evo ends..", end="\t")
         rt_evo = time.time() - start_time
         f1_evo = compute_f1_score(individuals={i for i in kb.individuals(pred_evo.concept)}, pos=lp.pos, neg=lp.neg)
+        print(f"Evo Quality: {f1_evo:.3f}")
+        data.setdefault("F1-Evo", []).append(f1_evo)
+        data.setdefault("RT-Evo", []).append(rt_evo)
+        print(f"Evo Runtime: {rt_evo:.3f}", end="\t")
 
-        values.append(
-            [str_target_concept,
-             f1_ocel, rt_ocel,
-             f1_celoe, rt_celoe,
-             f1_drill, rt_drill,
-             f1_evo, rt_evo,
-             f1_dtl, rt_dtl])
+        start_time = time.time()
+        print("DRILL starts..", end="\t")
+        pred_drill = drill.fit(lp).best_hypotheses(n=1)
+        print("DRILL ends..", end="\t")
+        rt_drill = time.time() - start_time
+        f1_drill = compute_f1_score(individuals=set(kb.individuals(pred_drill.concept)), pos=lp.pos, neg=lp.neg)
+        print(f"DRILL Quality: {f1_drill:.3f}")
+        data.setdefault("F1-DRILL", []).append(f1_drill)
+        data.setdefault("RT-DRILL", []).append(rt_drill)
+        print(f"DRILL Runtime: {rt_drill:.3f}", end="\t")
 
-    df = pd.DataFrame(values, columns=columns)
+        start_time = time.time()
+        # Get best prediction
+        print("TDL starts..", end="\t")
+        pred_tdl = tdl.fit(lp).best_hypotheses(n=1)
+        print("TDL ends..", end="\t")
+        rt_tdl = time.time() - start_time
+        # Compute quality of best prediction
+        f1_tdl = compute_f1_score(individuals={i for i in kb.individuals(pred_tdl)}, pos=lp.pos, neg=lp.neg)
+        print(f"TDL Quality: {f1_tdl:.3f}", end="\t")
+        print(f"TDL Runtime: {rt_tdl:.3f}")
+
+        data.setdefault("F1-TDL", []).append(f1_tdl)
+        data.setdefault("RT-TDL", []).append(rt_tdl)
+
+
+
+    df = pd.DataFrame.from_dict(data)
     df.to_csv(args.report, index=False)
     print(df)
     print(df.select_dtypes(include="number").mean())
@@ -130,7 +144,7 @@ def dl_concept_learning(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Description Logic Concept Learning')
 
-    parser.add_argument("--max_runtime", type=int, default=100)
+    parser.add_argument("--max_runtime", type=int, default=1)
     parser.add_argument("--lps", type=str, required=True)
     parser.add_argument("--kb", type=str, required=True)
     parser.add_argument("--path_pretrained_kge", type=str, default=None)

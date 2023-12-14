@@ -99,54 +99,51 @@ wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && 
 
 ```shell
 # To download learning problems. # Benchmark learners on the Family benchmark dataset with benchmark learning problems.
-python examples/concept_learning_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 60 --report family_results.csv 
-python -c 'import pandas as pd; print(pd.read_csv("family_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
+python examples/concept_learning_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 60 --report family_results.csv  && python -c 'import pandas as pd; print(pd.read_csv("family_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
 ```
 <details> <summary> To see the results </summary>
 Each model has 60 second to find a fitting answer. DRILL results are obtained by using F1 score as heuristic function.
 
 ### Family Benchmark Results
 
-| LP                 |   F1-OCEL |   RT-OCEL |   F1-CELOE |   RT-CELOE |   F1-EvoLearner |   RT-EvoLearner |   F1-DRILL |   RT-DRILL |   F1-tDL |   RT-tDL |
-|:-------------------|----------:|----------:|-----------:|-----------:|----------------:|----------------:|-----------:|-----------:|---------:|---------:|
-| Aunt               |     0.837 |    13.737 |      0.911 |      7.238 |           0.882 |         105.142 |      1.000 |      1.567 |    1.000 |    0.343 |
-| Brother            |     1.000 |     0.030 |      1.000 |      0.007 |           1.000 |           0.186 |      1.000 |      0.341 |    1.000 |    0.193 |
-| Cousin             |     0.721 |    11.565 |      0.793 |     10.104 |           0.831 |          98.884 |      0.348 |      0.334 |    1.000 |    0.232 |
-| Daughter           |     1.000 |     0.025 |      1.000 |      0.008 |           1.000 |           0.324 |      1.000 |      0.587 |    1.000 |    0.335 |
-| Father             |     1.000 |     0.005 |      1.000 |      0.002 |           1.000 |           0.010 |      1.000 |      0.400 |    1.000 |    0.246 |
-| Granddaughter      |     1.000 |     0.003 |      1.000 |      0.001 |           1.000 |           0.006 |      1.000 |      0.310 |    1.000 |    0.217 |
-| Grandfather        |     1.000 |     0.003 |      1.000 |      0.001 |           1.000 |           0.005 |      1.000 |      0.266 |    1.000 |    0.196 |
-| Grandgranddaughter |     1.000 |     0.003 |      1.000 |      0.001 |           1.000 |           0.003 |      1.000 |      0.279 |    1.000 |    0.178 |
-| Grandgrandfather   |     1.000 |     0.775 |      1.000 |      0.164 |           1.000 |           0.732 |      0.944 |      0.220 |    1.000 |    0.176 |
-| Grandgrandmother   |     1.000 |     2.458 |      1.000 |      0.202 |           1.000 |           0.714 |      0.000 |      0.239 |    1.000 |    0.173 |
-| Grandgrandson      |     1.000 |     0.547 |      1.000 |      0.165 |           1.000 |           0.610 |      0.486 |      0.289 |    1.000 |    0.185 |
-| Grandmother        |     1.000 |     0.004 |      1.000 |      0.002 |           1.000 |           0.007 |      0.654 |      0.282 |    1.000 |    0.194 |
-| Grandson           |     1.000 |     0.003 |      1.000 |      0.002 |           1.000 |           0.006 |      0.687 |      0.267 |    1.000 |    0.330 |
-| Mother             |     1.000 |     0.004 |      1.000 |      0.002 |           1.000 |           0.008 |      1.000 |      0.282 |    1.000 |    0.227 |
-| PersonWithASibling |     1.000 |     0.004 |      1.000 |      0.001 |           0.737 |          85.697 |      0.571 |      0.316 |    1.000 |    0.242 |
-| Sister             |     1.000 |     0.003 |      1.000 |      0.001 |           1.000 |           0.150 |      0.800 |      0.282 |    1.000 |    0.525 |
-| Son                |     1.000 |     0.004 |      1.000 |      0.002 |           1.000 |           0.008 |      0.556 |      0.268 |    1.000 |    0.217 |
-| Uncle              |     0.905 |    29.269 |      0.905 |      8.582 |           0.950 |         103.332 |      0.633 |      0.322 |    1.000 |    0.198 |
+| LP                 |   F1-OCEL |   RT-OCEL |   F1-CELOE |   RT-CELOE |   F1-Evo |   RT-Evo |   F1-DRILL |   RT-DRILL |   F1-TDL |   RT-TDL |
+|:-------------------|----------:|----------:|-----------:|-----------:|---------:|---------:|-----------:|-----------:|---------:|---------:|
+| Aunt               |     0.837 |    13.393 |      0.911 |      7.194 |    1.000 |    1.341 |      0.921 |     60.046 |    1.000 |    0.207 |
+| Brother            |     1.000 |     0.030 |      1.000 |      0.008 |    1.000 |    0.344 |      1.000 |      0.076 |    1.000 |    0.187 |
+| Cousin             |     0.721 |    10.756 |      0.793 |      8.396 |    0.348 |    0.390 |      0.861 |     60.068 |    1.000 |    0.231 |
+| Daughter           |     1.000 |     0.026 |      1.000 |      0.008 |    1.000 |    0.358 |      1.000 |      0.122 |    1.000 |    0.210 |
+| Father             |     1.000 |     0.004 |      1.000 |      0.002 |    1.000 |    0.419 |      1.000 |      0.008 |    1.000 |    0.213 |
+| Granddaughter      |     1.000 |     0.004 |      1.000 |      0.003 |    1.000 |    0.297 |      1.000 |      0.006 |    1.000 |    0.188 |
+| Grandfather        |     1.000 |     0.003 |      1.000 |      0.001 |    0.909 |    0.250 |      1.000 |      0.005 |    1.000 |    0.189 |
+| Grandgranddaughter |     1.000 |     0.004 |      1.000 |      0.001 |    1.000 |    0.264 |      1.000 |      0.003 |    1.000 |    0.286 |
+| Grandgrandfather   |     1.000 |     0.720 |      1.000 |      0.153 |    0.944 |    0.220 |      1.000 |      0.473 |    1.000 |    0.163 |
+| Grandgrandmother   |     1.000 |     2.273 |      1.000 |      0.197 |    0.200 |    0.237 |      1.000 |      0.478 |    1.000 |    0.304 |
+| Grandgrandson      |     1.000 |     1.801 |      1.000 |      0.159 |    1.000 |    0.277 |      1.000 |      0.600 |    1.000 |    0.174 |
+| Grandmother        |     1.000 |     0.008 |      1.000 |      0.002 |    1.000 |    0.270 |      1.000 |      0.007 |    1.000 |    0.191 |
+| Grandson           |     1.000 |     0.003 |      1.000 |      0.002 |    1.000 |    0.398 |      1.000 |      0.006 |    1.000 |    0.196 |
+| Mother             |     1.000 |     0.004 |      1.000 |      0.002 |    0.510 |    0.287 |      1.000 |      0.008 |    1.000 |    0.220 |
+| PersonWithASibling |     1.000 |     0.003 |      1.000 |      0.001 |    0.700 |    0.314 |      0.737 |     60.060 |    1.000 |    0.224 |
+| Sister             |     1.000 |     0.003 |      1.000 |      0.001 |    0.800 |    0.269 |      1.000 |      0.051 |    1.000 |    0.197 |
+| Son                |     1.000 |     0.004 |      1.000 |      0.002 |    0.556 |    0.273 |      1.000 |      0.008 |    1.000 |    0.209 |
+| Uncle              |     0.905 |    17.389 |      0.905 |      6.406 |    0.483 |    0.232 |      0.950 |     60.051 |    1.000 |    0.199 |
 
 
 ### Mutagenesis Benchmark Results
 ```shell
-python examples/concept_learning_evaluation.py --lps LPs/Mutagenesis/lps.json --kb KGs/Mutagenesis/mutagenesis.owl --max_runtime 60 --report mutagenesis_results.csv 
-python -c 'import pandas as pd; print(pd.read_csv("mutagenesis_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
+python examples/concept_learning_evaluation.py --lps LPs/Mutagenesis/lps.json --kb KGs/Mutagenesis/mutagenesis.owl --max_runtime 60 --report mutagenesis_results.csv && python -c 'import pandas as pd; print(pd.read_csv("mutagenesis_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
 ```
-| LP       |   F1-OCEL |   RT-OCEL |   F1-CELOE |   RT-CELOE |   F1-EvoLearner |   RT-EvoLearner |   F1-DRILL |   RT-DRILL |   F1-tDL |   RT-tDL |
-|:---------|----------:|----------:|-----------:|-----------:|----------------:|----------------:|-----------:|-----------:|---------:|---------:|
-| NotKnown |     0.916 |    60.002 |      0.916 |     41.288 |           0.856 |         247.329 |      0.976 |     40.502 |    1.000 |   47.646 |
+| LP       |   F1-OCEL |   RT-OCEL |   F1-CELOE |   RT-CELOE |   F1-Evo |   RT-Evo |   F1-DRILL |   RT-DRILL |   F1-TDL |   RT-TDL |
+|:---------|----------:|----------:|-----------:|-----------:|---------:|---------:|-----------:|-----------:|---------:|---------:|
+| NotKnown |     0.916 |    60.226 |      0.916 |     41.243 |    0.976 |   40.411 |      0.704 |     60.044 |    1.000 |   49.022 |
 
 ### Carcinogenesis Benchmark Results
 ```shell
-python examples/concept_learning_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 60 --report carcinogenesis_results.csv 
-python -c 'import pandas as pd; print(pd.read_csv("carcinogenesis_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
+python examples/concept_learning_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 60 --report carcinogenesis_results.csv  && python -c 'import pandas as pd; print(pd.read_csv("carcinogenesis_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
 ```
 
-| LP       |   F1-OCEL |   RT-OCEL |   F1-CELOE |   RT-CELOE |   F1-EvoLearner |   RT-EvoLearner |   F1-DRILL |   RT-DRILL |   F1-tDL |   RT-tDL |
-|:---------|----------:|----------:|-----------:|-----------:|----------------:|----------------:|-----------:|-----------:|---------:|---------:|
-| NOTKNOWN |     0.734 |    60.307 |      0.739 |     69.639 |           0.745 |        1083.561 |      0.820 |     64.725 |    1.000 |   47.550 |
+| LP       |   F1-OCEL |   RT-OCEL |   F1-CELOE |   RT-CELOE |   F1-Evo |   RT-Evo |   F1-DRILL |   RT-DRILL |   F1-TDL |   RT-TDL |
+|:---------|----------:|----------:|-----------:|-----------:|---------:|---------:|-----------:|-----------:|---------:|---------:|
+| NOTKNOWN |     0.739 |    64.975 |      0.739 |     60.004 |    0.814 |   60.758 |      0.705 |     60.066 |    1.000 |   56.701 |
 
 </details>
 
