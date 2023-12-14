@@ -21,16 +21,18 @@ from ontolearn.base.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy
 
 from .utils.static_funcs import (init_length_metric, init_hierarchy_instances,
                                  init_named_individuals, init_individuals_from_concepts)
+
 logger = logging.getLogger(__name__)
 
 
-def _Default_ReasonerFactory(onto: OWLOntology, triplestore_address: str) -> OWLReasoner:
+def depth_Default_ReasonerFactory(onto: OWLOntology, triplestore_address: str) -> OWLReasoner:
     assert isinstance(onto, OWLOntology_Owlready2)
     base_reasoner = OWLReasoner_Owlready2(ontology=onto, triplestore_address=triplestore_address)
     if triplestore_address is not None:
         return base_reasoner
     else:
         return OWLReasoner_FastInstanceChecker(ontology=onto, base_reasoner=base_reasoner)
+
 
 class KnowledgeBase(AbstractKnowledgeBase):
     """Representation of an OWL knowledge base in Ontolearn.
@@ -73,7 +75,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
     @overload
     def __init__(self, *,
                  path: str,
-                 ontologymanager_factory: Callable[[], OWLOntologyManager] = OWLOntologyManager_Owlready2(world_store=None),
+                 ontologymanager_factory: Callable[[], OWLOntologyManager] = OWLOntologyManager_Owlready2(
+                     world_store=None),
                  reasoner_factory: Callable[[OWLOntology], OWLReasoner] = None,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
                  length_metric_factory: Optional[Callable[[], OWLClassExpressionLengthMetric]] = None,
@@ -163,14 +166,14 @@ class KnowledgeBase(AbstractKnowledgeBase):
             if triplestore_address is not None:
                 self.reasoner = OWLReasoner_Owlready2(ontology=onto, triplestore_address=triplestore_address)
             else:
-                self.reasoner= OWLReasoner_FastInstanceChecker(ontology=self.ontology,
-                                                               base_reasoner=OWLReasoner_Owlready2(ontology=self.ontology,
-                                                                                                   triplestore_address=triplestore_address))
+                self.reasoner = OWLReasoner_FastInstanceChecker(ontology=self.ontology,
+                                                                base_reasoner=OWLReasoner_Owlready2(
+                                                                    ontology=self.ontology,
+                                                                    triplestore_address=triplestore_address))
 
-            self.reasoner = _Default_ReasonerFactory(self.ontology, triplestore_address)
+            # self.reasoner = _Default_ReasonerFactory(self.ontology, triplestore_address)
 
         self.length_metric = init_length_metric(length_metric, length_metric_factory)
-
 
         self.class_hierarchy: ClassHierarchy
         self.object_property_hierarchy: ObjectPropertyHierarchy
@@ -204,7 +207,54 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
         self.describe()
 
+    def individuals(self, concept: Optional[OWLClassExpression] = None) -> Iterable[OWLNamedIndividual]:
+        """Given an OWL class expression, retrieve all individuals belonging to it.
 
+
+        Args:
+            concept: Class expression of which to list individuals.
+        Returns:
+            Individuals belonging to the given class.
+        """
+
+        if concept is None or concept.is_owl_thing():
+            for i in self.ind_set:
+                yield i
+        else:
+            yield from self.maybe_cache_individuals(concept)
+
+    def abox(self, individual=None):
+        assert individual is None, "Fixing individual is not possible "
+        for i in self.individuals():
+            """ Obtain all ty"""
+            # Should we represent type relation/predicate as an IRI, or what else ?
+            yield from ((i, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", j) for j in self.get_types(ind=i))
+            #
+            # check whether i in the domain of a property
+            for k in self.get_data_properties_for_ind(ind=i):
+                raise NotImplementedError(
+                    "Iterating over triples by fixing a subject and a relation is not implemented.")
+            for k in self.get_object_properties_for_ind(ind=i):
+                raise NotImplementedError(
+                    "Iterating over triples by fixing a subject and a relation is not implemented.")
+
+    def tbox(self, concepts: Union[Iterable[OWLClass], OWLClass, None] = None):
+        if concepts is None:
+            for i in self.get_concepts():
+                yield from ((i, "http://www.w3.org/2000/01/rdf-schema#subClassOf", j) for j in
+                            self.get_direct_sub_concepts(i))
+        elif isinstance(concepts,OWLClass):
+            yield from ((concepts, "http://www.w3.org/2000/01/rdf-schema#subClassOf", j) for j in
+                        self.get_direct_sub_concepts(concepts))
+        elif isinstance(concepts, Iterable):
+            for i in concepts:
+                assert isinstance(i, OWLClass)
+                yield from ((i, "http://www.w3.org/2000/01/rdf-schema#subClassOf", j) for j in
+                            self.get_direct_sub_concepts(i))
+        else:
+            raise RuntimeError(f"Unexected input{concepts}")
+
+        # @TODO:CD: equivalence must also be added.
     def ignore_and_copy(self, ignored_classes: Optional[Iterable[OWLClass]] = None,
                         ignored_object_properties: Optional[Iterable[OWLObjectProperty]] = None,
                         ignored_data_properties: Optional[Iterable[OWLDataProperty]] = None) -> 'KnowledgeBase':
@@ -320,22 +370,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             return iter_count(self.reasoner.instances(ce))
 
-    def individuals(self, concept: Optional[OWLClassExpression] = None) -> Iterable[OWLNamedIndividual]:
-        """Retrieve all individuals belonging to the concept in the ontology. If the concept property is not
-        specified then it returns all the individuals.
-
-        Args:
-            concept: Class expression of which to list individuals.
-        Returns:
-            Individuals belonging to the given class.
-        """
-
-        if concept is None or concept.is_owl_thing():
-            for i in self.ind_set:
-                yield i
-        else:
-            yield from self.maybe_cache_individuals(concept)
-
     def individuals_count(self, concept: Optional[OWLClassExpression] = None) -> int:
         """Returns the number of all individuals belonging to the concept in the ontology.
 
@@ -430,7 +464,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
     #     raise NotImplementedError(lp)
 
     def encode_learning_problem(self, lp: PosNegLPStandard):
-        """Provides the encoded learning problem (lp), i.e. the class containing the set of OWLNamedIndividuals
+        """
+        @TODO: A learning problem (DL concept learning problem) should not be a part of a knowledge base
+
+        Provides the encoded learning problem (lp), i.e. the class containing the set of OWLNamedIndividuals
         as follows:
             kb_pos --> the positive examples set,
             kb_neg --> the negative examples set,
@@ -485,6 +522,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
                          encoded_learning_problem: EncodedLearningProblem) -> EvaluatedConcept:
         """Evaluates a concept by using the encoded learning problem examples, in terms of Accuracy or F1-score.
 
+        @ TODO: A knowledge base is a data structure and the context of "evaluating" a concept seems to be unrelated
+
         Note:
             This method is useful to tell the quality (e.q) of a generated concept by the concept learners, to get
             the set of individuals (e.inds) that are classified by this concept and the amount of them (e.ic).
@@ -501,15 +540,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         e.ic = len(e.inds)
         _, e.q = quality_func.score_elp(e.inds, encoded_learning_problem)
         return e
-
-    async def evaluate_concept_async(self, concept: OWLClassExpression, quality_func: AbstractScorer,
-                                     encoded_learning_problem: EncodedLearningProblem) -> EvaluatedConcept:
-        """The asynchronous version of evaluate_concept.
-
-        Raises:
-            NotImplementedError: This method is not implemented yet.
-        """
-        raise NotImplementedError
 
     def get_leaf_concepts(self, concept: OWLClass):
         """Get leaf classes.

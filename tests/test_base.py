@@ -4,14 +4,15 @@
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.utils import setup_logging
 
-setup_logging("ontolearn/logging_test.conf")
-
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 PATH_FATHER = 'KGs/father.owl'
 
 
 def test_knowledge_base():
-    KnowledgeBase(path=PATH_FAMILY)
+    kb = KnowledgeBase(path=PATH_FAMILY)
+    assert len([i for i in kb.tbox()]) > 0
+    assert len([set(kb.tbox(j)) for j in kb.get_concepts()]) > 0
+
     # assert kb.name == 'family-benchmark_rich_background'
     #
     # assert kb.property_hierarchy
