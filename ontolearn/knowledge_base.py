@@ -3,7 +3,7 @@
 import logging
 import random
 from itertools import chain
-from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict, Tuple
+from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict, Tuple, Generator
 from ontolearn.base import OWLOntology_Owlready2, OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, \
@@ -19,11 +19,9 @@ from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
 from .learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from ontolearn.base.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 
-
 logger = logging.getLogger(__name__)
 
 
-# TODO:CD: To many non pythonic functions
 def _Default_OntologyManagerFactory(world_store=None) -> OWLOntologyManager:
     return OWLOntologyManager_Owlready2(world_store=world_store)
 
@@ -70,13 +68,34 @@ def init_hierarchy_instances(reasoner, class_hierarchy, object_property_hierarch
     return class_hierarchy, object_property_hierarchy, data_property_hierarchy
 
 
+def init_named_individuals(individuals_cache_size, ):
+    use_individuals_cache = individuals_cache_size > 0
+    if use_individuals_cache:
+        _ind_cache = LRUCache(maxsize=individuals_cache_size)
+    else:
+        _ind_cache = None
+    return use_individuals_cache, _ind_cache
+
+
+def init_individuals_from_concepts(include_implicit_individuals: bool = None, reasoner=None, ontology=None,
+                                   triplestore_address=None, individuals_per_concept=None):
+    assert isinstance(include_implicit_individuals, bool), f"{include_implicit_individuals} must be boolean"
+    if include_implicit_individuals:
+        assert isinstance(individuals_per_concept, Generator)
+        # get all individuals from concepts
+        _ind_set = frozenset(chain.from_iterable(individuals_per_concept))
+    elif isinstance(reasoner, OWLReasoner_FastInstanceChecker) and triplestore_address is None:
+        # performance hack: @TODO: needs to be explained
+        _ind_set = reasoner._ind_set
+    else:
+        # @TODO: needs to be explained
+        individuals = ontology.individuals_in_signature()
+        _ind_set = frozenset(individuals)
+    return _ind_set
+
+
 def _Default_ClassExpressionLengthMetricFactory() -> OWLClassExpressionLengthMetric:
     return OWLClassExpressionLengthMetric.get_default()
-
-
-# TODO:CD: __init__ is overcrowded. This bit can/should be simplified to few lines
-# TODO:CD: Namings are not self-explanatory: User does not need to know
-#  a) factory programming pattern b) Manager Classes etc inadvertently increases cognitive load
 
 
 class KnowledgeBase(AbstractKnowledgeBase):
@@ -103,31 +122,19 @@ class KnowledgeBase(AbstractKnowledgeBase):
         path (str): Path of the ontology file.
         use_individuals_cache (bool): Whether to use individuals cache to store individuals for method efficiency.
     """
-    __slots__ = '_manager', '_ontology', '_reasoner', '_length_metric', \
-        '_ind_set', '_ind_cache', 'path', 'use_individuals_cache', 'generator', '_class_hierarchy', \
-        '_object_property_hierarchy', '_data_property_hierarchy', '_op_domains', '_op_ranges', '_dp_domains', \
-        '_dp_ranges'
+    # __slots__ = '_manager', '_ontology', '_reasoner', '_length_metric', \
+    #    '_ind_set', '_ind_cache', 'path', 'use_individuals_cache', 'generator', '_class_hierarchy', \
+    #    '_object_property_hierarchy', '_data_property_hierarchy', '_op_domains', '_op_ranges', '_dp_domains', \
+    #    '_dp_ranges'
 
-    _manager: OWLOntologyManager
-    _ontology: OWLOntology
-    _reasoner: OWLReasoner
+    length_metric: OWLClassExpressionLengthMetric
 
-    _length_metric: OWLClassExpressionLengthMetric
-
-    _ind_set: FrozenSet[OWLNamedIndividual]
-    _ind_cache: LRUCache[OWLClassExpression, FrozenSet[OWLNamedIndividual]]  # class expression => individuals
+    ind_set: FrozenSet[OWLNamedIndividual]
+    ind_cache: LRUCache[OWLClassExpression, FrozenSet[OWLNamedIndividual]]  # class expression => individuals
 
     path: str
     use_individuals_cache: bool
     generator: ConceptGenerator
-
-    _class_hierarchy: ClassHierarchy
-    _object_property_hierarchy: ObjectPropertyHierarchy
-    _data_property_hierarchy: DatatypePropertyHierarchy
-    _op_domains: Dict[OWLObjectProperty, OWLClassExpression]
-    _op_ranges: Dict[OWLObjectProperty, OWLClassExpression]
-    _dp_domains: Dict[OWLDataProperty, OWLClassExpression]
-    _dp_ranges: Dict[OWLDataProperty, FrozenSet[OWLDataRange]]
 
     @overload
     def __init__(self, *,
@@ -176,92 +183,102 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  ):
         AbstractKnowledgeBase.__init__(self)
         self.path = path
+
         # (1) Using a triple store
         if triplestore_address is not None:
-            self._manager = _Default_OntologyManagerFactory()
+            self.manager: OWLOntologyManager_Owlready2
+            self.manager = OWLOntologyManager_Owlready2(world_store=None)
             if path is None:
                 # create a dummy ontology, so we can avoid making tons of changes.
-                self._ontology = OWLOntology_Owlready2(self._manager, IRI.create("dummy_ontology#onto"), load=False,
-                                                       triplestore_address=triplestore_address)
+                self.ontology: OWLOntology
+                self.ontology = OWLOntology_Owlready2(self.manager, IRI.create("dummy_ontology#onto"), load=False,
+                                                      triplestore_address=triplestore_address)
             else:
                 # why not create a real ontology if the user gives the path :) (triplestore will be used anyway)
-                self._ontology = OWLOntology_Owlready2(self._manager, IRI.create('file://' + self.path), load=True,
-                                                       triplestore_address=triplestore_address)
+                self.ontology = OWLOntology_Owlready2(self.manager, IRI.create('file://' + self.path), load=True,
+                                                      triplestore_address=triplestore_address)
         else:
             if ontology is not None:
-                self._manager = ontology.get_owl_ontology_manager()
-                self._ontology = ontology
+                self.manager = ontology.get_owl_ontology_manager()
+                self.ontology = ontology
             elif ontologymanager_factory is not None:
-                self._manager = ontologymanager_factory()
+                self.manager = ontologymanager_factory()
             else:  # default to Owlready2 implementation
                 if path is not None and backend_store:
-                    self._manager = _Default_OntologyManagerFactory(world_store=path + ".or2")
+                    self.manager = _Default_OntologyManagerFactory(world_store=path + ".or2")
                 else:
-                    self._manager = _Default_OntologyManagerFactory()
+                    self.manager = _Default_OntologyManagerFactory()
                 # raise TypeError("neither ontology nor manager factory given")
 
             if ontology is None:
                 if path is None:
                     raise TypeError("path missing")
                 else:
-                    self._ontology = self._manager.load_ontology(IRI.create('file://' + self.path))
-                    if isinstance(self._manager, OWLOntologyManager_Owlready2) and backend_store:
-                        self._manager.save_world()
+                    self.ontology = self.manager.load_ontology(IRI.create('file://' + self.path))
+                    if isinstance(self.manager, OWLOntologyManager_Owlready2) and backend_store:
+                        self.manager.save_world()
                         logger.debug("Synced world to backend store")
 
         is_using_triplestore = True if triplestore_address is not None else False
+        reasoner: OWLReasoner
         if reasoner is not None and reasoner.is_using_triplestore() == is_using_triplestore:
-            self._reasoner = reasoner
+            self.reasoner = reasoner
         elif reasoner_factory is not None and triplestore_address is None:
-            self._reasoner = reasoner_factory(self._ontology)
+            self.reasoner = reasoner_factory(self.ontology)
         else:
-            self._reasoner = _Default_ReasonerFactory(self._ontology, triplestore_address)
+            self.reasoner = _Default_ReasonerFactory(self.ontology, triplestore_address)
 
-        self._length_metric = init_length_metric(length_metric, length_metric_factory)
+        self.length_metric = init_length_metric(length_metric, length_metric_factory)
 
-        (self._class_hierarchy,
-         self._object_property_hierarchy,
-         self._data_property_hierarchy) = init_hierarchy_instances(self._reasoner, class_hierarchy=class_hierarchy,
-                                                                   object_property_hierarchy=object_property_hierarchy,
-                                                                   data_property_hierarchy=data_property_hierarchy)
-
-        self._op_domains = dict()
-        self._op_ranges = dict()
-        self._dp_domains = dict()
-        self._dp_ranges = dict()
+        self.class_hierarchy: ClassHierarchy
+        self.object_property_hierarchy: ObjectPropertyHierarchy
+        self.data_property_hierarchy: DatatypePropertyHierarchy
+        (self.class_hierarchy,
+         self.object_property_hierarchy,
+         self.data_property_hierarchy) = init_hierarchy_instances(self.reasoner,
+                                                                  class_hierarchy=class_hierarchy,
+                                                                  object_property_hierarchy=object_property_hierarchy,
+                                                                  data_property_hierarchy=data_property_hierarchy)
+        # Object property domain and range:
+        self.op_domains: Dict[OWLObjectProperty, OWLClassExpression]
+        self.op_domains = dict()
+        self.op_ranges: Dict[OWLObjectProperty, OWLClassExpression]
+        self.op_ranges = dict()
+        # Data property domain and range:g
+        self.dp_domains: Dict[OWLDataProperty, OWLClassExpression]
+        self.dp_domains = dict()
+        self.dp_ranges: Dict[OWLDataProperty, FrozenSet[OWLDataRange]]
+        self.dp_ranges = dict()
+        # OWL class expression generator
         self.generator = ConceptGenerator()
 
-        self.use_individuals_cache = individuals_cache_size > 0
-        if self.use_individuals_cache:
-            self._ind_cache = LRUCache(maxsize=individuals_cache_size)
-
-        if include_implicit_individuals:
-            self._ind_set = frozenset(chain.from_iterable(self.individuals(i) for i in self.get_concepts()))
-        elif isinstance(self._reasoner, OWLReasoner_FastInstanceChecker) and triplestore_address is None:
-            self._ind_set = self._reasoner._ind_set  # performance hack:
-        else:
-            individuals = self._ontology.individuals_in_signature()
-            self._ind_set = frozenset(individuals)
+        self.use_individuals_cache, self.ind_cache = init_named_individuals(individuals_cache_size)
+        self.ind_set = init_individuals_from_concepts(include_implicit_individuals,
+                                                      reasoner=self.reasoner,
+                                                      ontology=self.ontology,
+                                                      triplestore_address=triplestore_address,
+                                                      individuals_per_concept=(self.individuals(i) for i in
+                                                                               self.get_concepts()))
 
         self.describe()
 
-    def ontology(self) -> OWLOntology:
+    def depricated_ontology(self) -> OWLOntology:
         """Get the root Ontology loaded in this knowledge base.
 
         Returns:
             The Ontology.
         """
 
-        return self._ontology
+        return self.ontology
 
-    def reasoner(self) -> OWLReasoner:
+    def depricated_reasoner(self) -> OWLReasoner:
         """Get the Reasoner loaded in this knowledge base.
 
         Returns:
             The Reasoner.
         """
 
-        return self._reasoner
+        return self.reasoner
 
     def ignore_and_copy(self, ignored_classes: Optional[Iterable[OWLClass]] = None,
                         ignored_object_properties: Optional[Iterable[OWLObjectProperty]] = None,
@@ -279,21 +296,21 @@ class KnowledgeBase(AbstractKnowledgeBase):
         new = object.__new__(KnowledgeBase)
 
         AbstractKnowledgeBase.__init__(new)
-        new._manager = self._manager
-        new._ontology = self._ontology
-        new._reasoner = self._reasoner
-        new._length_metric = self._length_metric
-        new._ind_set = self._ind_set
+        new.manager = self.manager
+        new.ontology = self.ontology
+        new.reasoner = self.reasoner
+        new.length_metric = self.length_metric
+        new.ind_set = self.ind_set
         new.path = self.path
         new.use_individuals_cache = self.use_individuals_cache
         new.generator = self.generator
-        new._op_domains = self._op_domains
-        new._op_ranges = self._op_ranges
-        new._dp_domains = self._dp_domains
-        new._dp_ranges = self._dp_ranges
+        new.op_domains = self.op_domains
+        new.op_ranges = self.op_ranges
+        new.dp_domains = self.dp_domains
+        new.dp_ranges = self.dp_ranges
 
         if self.use_individuals_cache:
-            new._ind_cache = LRUCache(maxsize=self._ind_cache.maxsize)
+            new.ind_cache = LRUCache(maxsize=self.ind_cache.maxsize)
 
         if ignored_classes is not None:
             owl_concepts_to_ignore = set()
@@ -303,25 +320,25 @@ class KnowledgeBase(AbstractKnowledgeBase):
                 else:
                     raise ValueError(
                         f'{i} could not found in \n{self} \n'
-                        f'{[_ for _ in self.ontology().classes_in_signature()]}.')
+                        f'{[_ for _ in self.ontology.classes_in_signature()]}.')
             if logger.isEnabledFor(logging.INFO):
                 r = DLSyntaxObjectRenderer()
                 logger.info('Concepts to ignore: {0}'.format(' '.join(map(r.render, owl_concepts_to_ignore))))
-            new._class_hierarchy = self._class_hierarchy.restrict_and_copy(remove=owl_concepts_to_ignore)
+            new.class_hierarchy = self.class_hierarchy.restrict_and_copy(remove=owl_concepts_to_ignore)
         else:
-            new._class_hierarchy = self._class_hierarchy
+            new.class_hierarchy = self.class_hierarchy
 
         if ignored_object_properties is not None:
-            new._object_property_hierarchy = self._object_property_hierarchy.restrict_and_copy(
+            new.object_property_hierarchy = self.object_property_hierarchy.restrict_and_copy(
                 remove=ignored_object_properties)
         else:
-            new._object_property_hierarchy = self._object_property_hierarchy
+            new.object_property_hierarchy = self.object_property_hierarchy
 
         if ignored_data_properties is not None:
-            new._data_property_hierarchy = self._data_property_hierarchy.restrict_and_copy(
+            new.data_property_hierarchy = self.data_property_hierarchy.restrict_and_copy(
                 remove=ignored_data_properties)
         else:
-            new._data_property_hierarchy = self._data_property_hierarchy
+            new.data_property_hierarchy = self.data_property_hierarchy
 
         return new
 
@@ -335,7 +352,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Length of the concept.
         """
 
-        return self._length_metric.length(ce)
+        return self.length_metric.length(ce)
 
     def clean(self):
         """Clean all stored values (states and caches) if there is any.
@@ -348,35 +365,35 @@ class KnowledgeBase(AbstractKnowledgeBase):
             use this method before the initialization to avoid data mismatch.
         """
 
-        self._op_domains.clear()
+        self.op_domains.clear()
         if self.use_individuals_cache:
-            self._ind_cache.cache_clear()
+            self.ind_cache.cache_clear()
 
-    def _cache_individuals(self, ce: OWLClassExpression) -> None:
+    def cache_individuals(self, ce: OWLClassExpression) -> None:
         if not self.use_individuals_cache:
             raise TypeError
-        if ce in self._ind_cache:
+        if ce in self.ind_cache:
             return
-        if isinstance(self._reasoner, OWLReasoner_FastInstanceChecker):
-            self._ind_cache[ce] = self._reasoner._find_instances(ce)  # performance hack
+        if isinstance(self.reasoner, OWLReasoner_FastInstanceChecker):
+            self.ind_cache[ce] = self.reasoner._find_instances(ce)  # performance hack
         else:
-            temp = self._reasoner.instances(ce)
-            self._ind_cache[ce] = frozenset(temp)
+            temp = self.reasoner.instances(ce)
+            self.ind_cache[ce] = frozenset(temp)
 
-    def _maybe_cache_individuals(self, ce: OWLClassExpression) -> Iterable[OWLNamedIndividual]:
+    def maybe_cache_individuals(self, ce: OWLClassExpression) -> Iterable[OWLNamedIndividual]:
         if self.use_individuals_cache:
-            self._cache_individuals(ce)
-            yield from self._ind_cache[ce]
+            self.cache_individuals(ce)
+            yield from self.ind_cache[ce]
         else:
-            yield from self._reasoner.instances(ce)
+            yield from self.reasoner.instances(ce)
 
-    def _maybe_cache_individuals_count(self, ce: OWLClassExpression) -> int:
+    def maybe_cache_individuals_count(self, ce: OWLClassExpression) -> int:
         if self.use_individuals_cache:
-            self._cache_individuals(ce)
-            r = self._ind_cache[ce]
+            self.cache_individuals(ce)
+            r = self.ind_cache[ce]
             return len(r)
         else:
-            return iter_count(self._reasoner.instances(ce))
+            return iter_count(self.reasoner.instances(ce))
 
     def individuals(self, concept: Optional[OWLClassExpression] = None) -> Iterable[OWLNamedIndividual]:
         """Retrieve all individuals belonging to the concept in the ontology. If the concept property is not
@@ -389,10 +406,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
 
         if concept is None or concept.is_owl_thing():
-            for i in self._ind_set:
+            for i in self.ind_set:
                 yield i
         else:
-            yield from self._maybe_cache_individuals(concept)
+            yield from self.maybe_cache_individuals(concept)
 
     def individuals_count(self, concept: Optional[OWLClassExpression] = None) -> int:
         """Returns the number of all individuals belonging to the concept in the ontology.
@@ -404,9 +421,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
 
         if concept is None or concept.is_owl_thing():
-            return len(self._ind_set)
+            return len(self.ind_set)
         else:
-            return self._maybe_cache_individuals_count(concept)
+            return self.maybe_cache_individuals_count(concept)
 
     @overload
     def individuals_set(self, concept: OWLClassExpression):
@@ -433,8 +450,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
         if isinstance(arg, OWLClassExpression):
             if self.use_individuals_cache:
-                self._cache_individuals(arg)
-                r = self._ind_cache[arg]
+                self.cache_individuals(arg)
+                r = self.ind_cache[arg]
                 return r
             else:
                 return frozenset(self.individuals(arg))
@@ -450,10 +467,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Frozenset of the all individuals.
         """
 
-        if self._ind_set is not None:
-            return self._ind_set
+        if self.ind_set is not None:
+            return self.ind_set
         else:
-            return frozenset(self._ontology.individuals_in_signature())
+            return frozenset(self.ontology.individuals_in_signature())
 
     def most_general_object_properties(self, *, domain: OWLClassExpression, inverse: bool = False) \
             -> Iterable[OWLObjectProperty]:
@@ -464,15 +481,15 @@ class KnowledgeBase(AbstractKnowledgeBase):
             inverse: Inverse order?
         """
         assert isinstance(domain, OWLClassExpression)
-
+        func: Callable
         func = self.get_object_property_ranges if inverse else self.get_object_property_domains
 
         inds_domain = self.individuals_set(domain)
-        for prop in self._object_property_hierarchy.most_general_roles():
+        for prop in self.object_property_hierarchy.most_general_roles():
             if domain.is_owl_thing() or inds_domain <= self.individuals_set(func(prop)):
                 yield prop
 
-    def _data_properties_for_domain(self, domain: OWLClassExpression, data_properties: Iterable[OWLDataProperty]) \
+    def data_properties_for_domain(self, domain: OWLClassExpression, data_properties: Iterable[OWLDataProperty]) \
             -> Iterable[OWLDataProperty]:
         assert isinstance(domain, OWLClassExpression)
 
@@ -482,9 +499,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
                 yield prop
 
     def __repr__(self):
-        properties_count = iter_count(self.ontology().object_properties_in_signature()) + iter_count(
-            self.ontology().data_properties_in_signature())
-        class_count = iter_count(self.ontology().classes_in_signature())
+        properties_count = iter_count(self.ontology.object_properties_in_signature()) + iter_count(
+            self.ontology.data_properties_in_signature())
+        class_count = iter_count(self.ontology.classes_in_signature())
         individuals_count = self.individuals_count()
 
         return f'KnowledgeBase(path={repr(self.path)} <{class_count} classes, {properties_count} properties, ' \
@@ -512,7 +529,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             EncodedPosNegLPStandard: The encoded learning problem.
         """
 
-        assert len(self.class_hierarchy()) > 0
+        assert len(self.class_hierarchy) > 0
 
         if lp.all is None:
             kb_all = self.all_individuals_set()
@@ -587,7 +604,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Leaf classes { x \\| (x subClassOf concept) AND not exist y: y subClassOf x )}. """
         assert isinstance(concept, OWLClass)
-        yield from self._class_hierarchy.leaves(of=concept)
+        yield from self.class_hierarchy.leaves(of=concept)
 
     def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
         """Direct sub-classes of atomic class.
@@ -598,7 +615,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Direct sub classes of concept { x \\| ( x subClassOf concept )}."""
         assert isinstance(concept, OWLClass)
-        yield from self._class_hierarchy.sub_classes(concept, direct=True)
+        yield from self.class_hierarchy.sub_classes(concept, direct=True)
 
     def get_object_property_domains(self, prop: OWLObjectProperty) -> OWLClassExpression:
         """Get the domains of an object property.
@@ -609,10 +626,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Domains of the property.
         """
-        if prop not in self._op_domains:
-            domains = list(self._reasoner.object_property_domains(prop, direct=True))
-            self._op_domains[prop] = self.generator.intersection(domains) if len(domains) > 1 else domains[0]
-        return self._op_domains[prop]
+        if prop not in self.op_domains:
+            domains = list(self.reasoner.object_property_domains(prop, direct=True))
+            self.op_domains[prop] = self.generator.intersection(domains) if len(domains) > 1 else domains[0]
+        return self.op_domains[prop]
 
     def get_object_property_ranges(self, prop: OWLObjectProperty) -> OWLClassExpression:
         """Get the ranges of an object property.
@@ -623,10 +640,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Ranges of the property.
         """
-        if prop not in self._op_ranges:
-            ranges = list(self._reasoner.object_property_ranges(prop, direct=True))
-            self._op_ranges[prop] = self.generator.intersection(ranges) if len(ranges) > 1 else ranges[0]
-        return self._op_ranges[prop]
+        if prop not in self.op_ranges:
+            ranges = list(self.reasoner.object_property_ranges(prop, direct=True))
+            self.op_ranges[prop] = self.generator.intersection(ranges) if len(ranges) > 1 else ranges[0]
+        return self.op_ranges[prop]
 
     def get_data_property_domains(self, prop: OWLDataProperty) -> OWLClassExpression:
         """Get the domains of a data property.
@@ -637,10 +654,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Domains of the property.
         """
-        if prop not in self._dp_domains:
-            domains = list(self._reasoner.data_property_domains(prop, direct=True))
-            self._dp_domains[prop] = self.generator.intersection(domains) if len(domains) > 1 else domains[0]
-        return self._dp_domains[prop]
+        if prop not in self.dp_domains:
+            domains = list(self.reasoner.data_property_domains(prop, direct=True))
+            self.dp_domains[prop] = self.generator.intersection(domains) if len(domains) > 1 else domains[0]
+        return self.dp_domains[prop]
 
     def get_data_property_ranges(self, prop: OWLDataProperty) -> FrozenSet[OWLDataRange]:
         """Get the ranges of a data property.
@@ -651,9 +668,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Ranges of the property.
         """
-        if prop not in self._dp_ranges:
-            self._dp_ranges[prop] = frozenset(self._reasoner.data_property_ranges(prop, direct=True))
-        return self._dp_ranges[prop]
+        if prop not in self.dp_ranges:
+            self.dp_ranges[prop] = frozenset(self.reasoner.data_property_ranges(prop, direct=True))
+        return self.dp_ranges[prop]
 
     def most_general_data_properties(self, *, domain: OWLClassExpression) -> Iterable[OWLDataProperty]:
         """Find most general data properties that are applicable to a domain.
@@ -664,7 +681,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Most general data properties for the given domain.
         """
-        yield from self._data_properties_for_domain(domain, self.get_data_properties())
+        yield from self.data_properties_for_domain(domain, self.get_data_properties())
 
     def most_general_boolean_data_properties(self, *, domain: OWLClassExpression) -> Iterable[OWLDataProperty]:
         """Find most general boolean data properties that are applicable to a domain.
@@ -675,7 +692,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Most general boolean data properties for the given domain.
         """
-        yield from self._data_properties_for_domain(domain, self.get_boolean_data_properties())
+        yield from self.data_properties_for_domain(domain, self.get_boolean_data_properties())
 
     def most_general_numeric_data_properties(self, *, domain: OWLClassExpression) -> Iterable[OWLDataProperty]:
         """Find most general numeric data properties that are applicable to a domain.
@@ -686,7 +703,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Most general numeric data properties for the given domain.
         """
-        yield from self._data_properties_for_domain(domain, self.get_numeric_data_properties())
+        yield from self.data_properties_for_domain(domain, self.get_numeric_data_properties())
 
     def most_general_time_data_properties(self, *, domain: OWLClassExpression) -> Iterable[OWLDataProperty]:
         """Find most general time data properties that are applicable to a domain.
@@ -697,7 +714,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Most general time data properties for the given domain.
         """
-        yield from self._data_properties_for_domain(domain, self.get_time_data_properties())
+        yield from self.data_properties_for_domain(domain, self.get_time_data_properties())
 
     def most_general_existential_restrictions(self, *,
                                               domain: OWLClassExpression, filler: Optional[OWLClassExpression] = None) \
@@ -787,7 +804,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Direct parent concepts.
         """
         assert isinstance(concept, OWLClass)
-        yield from self._class_hierarchy.super_classes(concept, direct=True)
+        yield from self.class_hierarchy.super_classes(concept, direct=True)
 
     def get_all_direct_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
         """All direct sub concepts of a concept.
@@ -799,7 +816,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Direct sub concepts.
         """
         assert isinstance(concept, OWLClass)
-        yield from self._class_hierarchy.sub_classes(concept, direct=True)
+        yield from self.class_hierarchy.sub_classes(concept, direct=True)
 
     def get_all_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
         """All sub concepts of a concept.
@@ -811,7 +828,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Sub concepts.
         """
         assert isinstance(concept, OWLClass)
-        yield from self._class_hierarchy.sub_classes(concept, direct=False)
+        yield from self.class_hierarchy.sub_classes(concept, direct=False)
 
     def get_concepts(self) -> Iterable[OWLClass]:
         """Get all concepts of this concept generator.
@@ -819,7 +836,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Concepts.
         """
-        yield from self._class_hierarchy.items()
+        yield from self.class_hierarchy.items()
 
     def get_object_properties(self) -> Iterable[OWLObjectProperty]:
         """Get all object properties of this concept generator.
@@ -828,7 +845,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Object properties.
         """
 
-        yield from self._object_property_hierarchy.items()
+        yield from self.object_property_hierarchy.items()
 
     def get_data_properties(self, ranges: Set[OWLDatatype] = None) -> Iterable[OWLDataProperty]:
         """Get all data properties of this concept generator for the given ranges.
@@ -840,11 +857,11 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Data properties for the given range.
         """
         if ranges is not None:
-            for dp in self._data_property_hierarchy.items():
+            for dp in self.data_property_hierarchy.items():
                 if self.get_data_property_ranges(dp) & ranges:
                     yield dp
         else:
-            yield from self._data_property_hierarchy.items()
+            yield from self.data_property_hierarchy.items()
 
     def get_boolean_data_properties(self) -> Iterable[OWLDataProperty]:
         """Get all boolean data properties of this concept generator.
@@ -881,7 +898,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Types of the given individual.
         """
         all_types = set(self.get_concepts())
-        for type_ in self._reasoner.types(ind, direct):
+        for type_ in self.reasoner.types(ind, direct):
             if type_ in all_types or type_ == OWLThing:
                 yield type_
 
@@ -899,7 +916,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Object properties.
         """
         properties = set(self.get_object_properties())
-        yield from (pe for pe in self._reasoner.ind_object_properties(ind, direct) if pe in properties)
+        yield from (pe for pe in self.reasoner.ind_object_properties(ind, direct) if pe in properties)
 
     def get_data_properties_for_ind(self, ind: OWLNamedIndividual, direct: bool = True) -> Iterable[OWLDataProperty]:
         """Get the data properties for the given individual
@@ -914,7 +931,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Data properties.
         """
         properties = set(self.get_data_properties())
-        yield from (pe for pe in self._reasoner.ind_data_properties(ind, direct) if pe in properties)
+        yield from (pe for pe in self.reasoner.ind_data_properties(ind, direct) if pe in properties)
 
     def get_object_property_values(self, ind: OWLNamedIndividual,
                                    property_: OWLObjectPropertyExpression,
@@ -930,7 +947,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Individuals.
         """
-        yield from self._reasoner.object_property_values(ind, property_, direct)
+        yield from self.reasoner.object_property_values(ind, property_, direct)
 
     def get_data_property_values(self, ind: OWLNamedIndividual,
                                  property_: OWLDataPropertyExpression,
@@ -946,7 +963,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Literals.
         """
-        yield from self._reasoner.data_property_values(ind, property_, direct)
+        yield from self.reasoner.data_property_values(ind, property_, direct)
 
     def contains_class(self, concept: OWLClassExpression) -> bool:
         """Check if an atomic class is contained within this concept generator.
@@ -958,7 +975,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Whether the class is contained in the concept generator.
         """
         assert isinstance(concept, OWLClass)
-        return concept in self._class_hierarchy
+        return concept in self.class_hierarchy
 
     def class_hierarchy(self) -> ClassHierarchy:
         """Access the Class Hierarchy of this Concept Generator.
@@ -966,7 +983,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Class hierarchy.
         """
-        return self._class_hierarchy
+        return self.class_hierarchy
 
     def object_property_hierarchy(self) -> ObjectPropertyHierarchy:
         """Access the Object property hierarchy of this concept generator.
@@ -974,7 +991,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Object property hierarchy.
         """
-        return self._object_property_hierarchy
+        return self.object_property_hierarchy
 
     def data_property_hierarchy(self) -> DatatypePropertyHierarchy:
         """Access the Datatype property hierarchy of this concept generator.
@@ -982,4 +999,4 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Data property hierarchy.
         """
-        return self._data_property_hierarchy
+        return self.data_property_hierarchy

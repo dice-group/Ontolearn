@@ -3,10 +3,7 @@ import unittest
 
 from ontolearn.model_adapter import ModelAdapter
 from ontolearn.refinement_operators import ExpressRefinement
-from ontolearn.utils import setup_logging
 from owlapy.model import OWLClass, OWLNamedIndividual, IRI
-
-setup_logging("ontolearn/logging_test.conf")
 
 NS = 'http://www.benchmark.org/family#'
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
@@ -15,7 +12,7 @@ with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 
 
-class ExpressRefinement_Test(unittest.TestCase):
+class TestExpressRefinement(unittest.TestCase):
     def test_celoe_express(self):
         concepts_to_ignore = {
             OWLClass(IRI(NS, 'Brother')),
@@ -55,7 +52,3 @@ class ExpressRefinement_Test(unittest.TestCase):
             hypotheses = list(model.best_hypotheses(n=3))
             [print(_) for _ in hypotheses]
             break
-
-
-if __name__ == '__main__':
-    unittest.main()

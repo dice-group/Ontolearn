@@ -986,7 +986,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         return self.terminate()
 
     def _initialize(self, pos: FrozenSet[OWLNamedIndividual], neg: FrozenSet[OWLNamedIndividual]) -> List[Tree]:
-        reasoner = self.kb.reasoner() if self.reasoner is None else self.reasoner
+        reasoner = self.kb.reasoner if self.reasoner is None else self.reasoner
         if self.use_data_properties:
             if isinstance(self.value_splitter, BinningValueSplitter):
                 self._dp_splits = self.value_splitter.compute_splits_properties(reasoner,

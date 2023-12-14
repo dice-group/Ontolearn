@@ -7,9 +7,7 @@ from owlapy.model import OWLNamedIndividual, IRI
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import EvoLearner
 from ontolearn.utils import setup_logging
-
 random.seed(1)
-setup_logging("ontolearn/logging_test.conf")
 
 
 class TestEvoLearner(unittest.TestCase):
