@@ -264,7 +264,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         # If axioms are provided they need to be added to the ontology
         if axioms is not None:
-            ontology: OWLOntology = cast(OWLOntology_Owlready2, self.kb.ontology())
+            ontology: OWLOntology = cast(OWLOntology_Owlready2, self.kb.ontology)
             manager: OWLOntologyManager = ontology.get_owl_ontology_manager()
             for axiom in axioms:
                 manager.add_axiom(ontology, axiom)

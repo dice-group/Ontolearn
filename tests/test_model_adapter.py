@@ -20,7 +20,7 @@ class ModelAdapterTest(unittest.TestCase):
             settings = json.load(json_file)
         kb_path = "KGs/Family/family-benchmark_rich_background.owl"
         kb = KnowledgeBase(path=kb_path)
-        reasoner = OWLReasoner_Owlready2_ComplexCEInstances(cast(OWLOntology_Owlready2, kb.ontology()),
+        reasoner = OWLReasoner_Owlready2_ComplexCEInstances(cast(OWLOntology_Owlready2, kb.ontology),
                                                             BaseReasoner_Owlready2.HERMIT)
         op = ModifiedCELOERefinement(knowledge_base=kb, use_negation=False, use_all_constructor=False)
         p = set(settings['problems']['Uncle']['positive_examples'])
@@ -46,7 +46,7 @@ class ModelAdapterTest(unittest.TestCase):
             settings = json.load(json_file)
         kb_path = "KGs/Family/family-benchmark_rich_background.owl"
         kb = KnowledgeBase(path=kb_path)
-        reasoner = OWLReasoner_Owlready2_ComplexCEInstances(cast(OWLOntology_Owlready2, kb.ontology()),
+        reasoner = OWLReasoner_Owlready2_ComplexCEInstances(cast(OWLOntology_Owlready2, kb.ontology),
                                                             BaseReasoner_Owlready2.PELLET)
         op = ModifiedCELOERefinement(knowledge_base=kb, use_negation=False, use_all_constructor=False)
         p = set(settings['problems']['Uncle']['positive_examples'])
@@ -76,7 +76,7 @@ class ModelAdapterTest(unittest.TestCase):
         with open('examples/synthetic_problems.json') as json_file:
             settings = json.load(json_file)
         kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
-        reasoner = OWLReasoner_Owlready2_ComplexCEInstances(cast(OWLOntology_Owlready2, kb.ontology()),
+        reasoner = OWLReasoner_Owlready2_ComplexCEInstances(cast(OWLOntology_Owlready2, kb.ontology),
                                                             BaseReasoner_Owlready2.HERMIT)
         p = set(settings['problems']['Uncle']['positive_examples'])
         n = set(settings['problems']['Uncle']['negative_examples'])

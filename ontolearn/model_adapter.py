@@ -162,9 +162,7 @@ def ModelAdapter(*args, **kwargs):  # noqa: C901
             reasoner_type = OWLReasoner_Owlready2_ComplexCEInstances
         assert issubclass(reasoner_type, OWLReasoner)
         reasoner = reasoner_type(**_get_matching_opts(
-            reasoner_type, {
-                'ontology': target_kb.ontology()
-            }, kwargs))
+            reasoner_type, {'ontology': target_kb.ontology}, kwargs))
     assert isinstance(reasoner, OWLReasoner)
 
     if "refinement_operator" in kwargs:
@@ -274,7 +272,7 @@ class Trainer:
             reasoner: The reasoner to use (should have the same ontology as the `kb` argument of the learner).
         """
         assert reasoner.get_root_ontology().get_ontology_id().get_ontology_iri().as_str() == \
-               learner.kb.ontology().get_ontology_id().get_ontology_iri().as_str(), "New reasoner does not have " + \
+               learner.kb.ontology.get_ontology_id().get_ontology_iri().as_str(), "New reasoner does not have " + \
                                                                                     "the same ontology as the learner!"
         learner.reasoner = reasoner
         self.learner = learner
