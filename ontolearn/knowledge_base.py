@@ -171,6 +171,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
         self.length_metric = init_length_metric(length_metric, length_metric_factory)
 
+
         self.class_hierarchy: ClassHierarchy
         self.object_property_hierarchy: ObjectPropertyHierarchy
         self.data_property_hierarchy: DatatypePropertyHierarchy
@@ -203,23 +204,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
         self.describe()
 
-    def depricated_ontology(self) -> OWLOntology:
-        """Get the root Ontology loaded in this knowledge base.
-
-        Returns:
-            The Ontology.
-        """
-
-        return self.ontology
-
-    def depricated_reasoner(self) -> OWLReasoner:
-        """Get the Reasoner loaded in this knowledge base.
-
-        Returns:
-            The Reasoner.
-        """
-
-        return self.reasoner
 
     def ignore_and_copy(self, ignored_classes: Optional[Iterable[OWLClass]] = None,
                         ignored_object_properties: Optional[Iterable[OWLObjectProperty]] = None,
@@ -438,15 +422,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         for prop in data_properties:
             if domain.is_owl_thing() or inds_domain <= self.individuals_set(self.get_data_property_domains(prop)):
                 yield prop
-
-    def __repr__(self):
-        properties_count = iter_count(self.ontology.object_properties_in_signature()) + iter_count(
-            self.ontology.data_properties_in_signature())
-        class_count = iter_count(self.ontology.classes_in_signature())
-        individuals_count = self.individuals_count()
-
-        return f'KnowledgeBase(path={repr(self.path)} <{class_count} classes, {properties_count} properties, ' \
-               f'{individuals_count} individuals)'
 
     # in case more types of AbstractLearningProblem are introduced to the project uncomment the method below and use
     # decorators
@@ -918,26 +893,11 @@ class KnowledgeBase(AbstractKnowledgeBase):
         assert isinstance(concept, OWLClass)
         return concept in self.class_hierarchy
 
-    def class_hierarchy(self) -> ClassHierarchy:
-        """Access the Class Hierarchy of this Concept Generator.
+    def __repr__(self):
+        properties_count = iter_count(self.ontology.object_properties_in_signature()) + iter_count(
+            self.ontology.data_properties_in_signature())
+        class_count = iter_count(self.ontology.classes_in_signature())
+        individuals_count = self.individuals_count()
 
-        Returns:
-            Class hierarchy.
-        """
-        return self.class_hierarchy
-
-    def object_property_hierarchy(self) -> ObjectPropertyHierarchy:
-        """Access the Object property hierarchy of this concept generator.
-
-        Returns:
-            Object property hierarchy.
-        """
-        return self.object_property_hierarchy
-
-    def data_property_hierarchy(self) -> DatatypePropertyHierarchy:
-        """Access the Datatype property hierarchy of this concept generator.
-
-        Returns:
-            Data property hierarchy.
-        """
-        return self.data_property_hierarchy
+        return f'KnowledgeBase(path={repr(self.path)} <{class_count} classes, {properties_count} properties, ' \
+               f'{individuals_count} individuals)'
