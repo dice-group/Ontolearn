@@ -98,34 +98,37 @@ wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && 
 ```
 
 ```shell
-# To download learning problems. # Benchmark learners on the Family benchmark dataset with benchmark learning problems.
+# To download learning problems and benchmark learners on the Family benchmark dataset with benchmark learning problems.
 python examples/concept_learning_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 60 --report family_results.csv  && python -c 'import pandas as pd; print(pd.read_csv("family_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
 ```
 <details> <summary> To see the results </summary>
+
+Below, we report the average results of 5 runs.
 Each model has 60 second to find a fitting answer. DRILL results are obtained by using F1 score as heuristic function.
+Note that F1 scores denote the quality of the find/constructed concept w.r.t. E^+ and E^-.
 
 ### Family Benchmark Results
 
 | LP                 |   F1-OCEL |   RT-OCEL |   F1-CELOE |   RT-CELOE |   F1-Evo |   RT-Evo |   F1-DRILL |   RT-DRILL |   F1-TDL |   RT-TDL |
 |:-------------------|----------:|----------:|-----------:|-----------:|---------:|---------:|-----------:|-----------:|---------:|---------:|
-| Aunt               |     0.837 |    13.393 |      0.911 |      7.194 |    1.000 |    1.341 |      0.921 |     60.046 |    1.000 |    0.207 |
-| Brother            |     1.000 |     0.030 |      1.000 |      0.008 |    1.000 |    0.344 |      1.000 |      0.076 |    1.000 |    0.187 |
-| Cousin             |     0.721 |    10.756 |      0.793 |      8.396 |    0.348 |    0.390 |      0.861 |     60.068 |    1.000 |    0.231 |
-| Daughter           |     1.000 |     0.026 |      1.000 |      0.008 |    1.000 |    0.358 |      1.000 |      0.122 |    1.000 |    0.210 |
-| Father             |     1.000 |     0.004 |      1.000 |      0.002 |    1.000 |    0.419 |      1.000 |      0.008 |    1.000 |    0.213 |
-| Granddaughter      |     1.000 |     0.004 |      1.000 |      0.003 |    1.000 |    0.297 |      1.000 |      0.006 |    1.000 |    0.188 |
-| Grandfather        |     1.000 |     0.003 |      1.000 |      0.001 |    0.909 |    0.250 |      1.000 |      0.005 |    1.000 |    0.189 |
-| Grandgranddaughter |     1.000 |     0.004 |      1.000 |      0.001 |    1.000 |    0.264 |      1.000 |      0.003 |    1.000 |    0.286 |
-| Grandgrandfather   |     1.000 |     0.720 |      1.000 |      0.153 |    0.944 |    0.220 |      1.000 |      0.473 |    1.000 |    0.163 |
-| Grandgrandmother   |     1.000 |     2.273 |      1.000 |      0.197 |    0.200 |    0.237 |      1.000 |      0.478 |    1.000 |    0.304 |
-| Grandgrandson      |     1.000 |     1.801 |      1.000 |      0.159 |    1.000 |    0.277 |      1.000 |      0.600 |    1.000 |    0.174 |
-| Grandmother        |     1.000 |     0.008 |      1.000 |      0.002 |    1.000 |    0.270 |      1.000 |      0.007 |    1.000 |    0.191 |
-| Grandson           |     1.000 |     0.003 |      1.000 |      0.002 |    1.000 |    0.398 |      1.000 |      0.006 |    1.000 |    0.196 |
-| Mother             |     1.000 |     0.004 |      1.000 |      0.002 |    0.510 |    0.287 |      1.000 |      0.008 |    1.000 |    0.220 |
-| PersonWithASibling |     1.000 |     0.003 |      1.000 |      0.001 |    0.700 |    0.314 |      0.737 |     60.060 |    1.000 |    0.224 |
-| Sister             |     1.000 |     0.003 |      1.000 |      0.001 |    0.800 |    0.269 |      1.000 |      0.051 |    1.000 |    0.197 |
-| Son                |     1.000 |     0.004 |      1.000 |      0.002 |    0.556 |    0.273 |      1.000 |      0.008 |    1.000 |    0.209 |
-| Uncle              |     0.905 |    17.389 |      0.905 |      6.406 |    0.483 |    0.232 |      0.950 |     60.051 |    1.000 |    0.199 |
+| Aunt               |     0.837 |    13.966 |      0.911 |      7.395 |    1.000 |    3.929 |      0.888 |     60.088 |    1.000 |    0.560 |
+| Brother            |     1.000 |     0.011 |      1.000 |      0.010 |    1.000 |    0.504 |      1.000 |      0.107 |    1.000 |    0.380 |
+| Cousin             |     0.721 |    12.431 |      0.793 |      8.843 |    1.000 |    4.590 |      0.836 |     60.186 |    1.000 |    0.552 |
+| Daughter           |     1.000 |     0.039 |      1.000 |      0.010 |    1.000 |    0.552 |      1.000 |      0.105 |    1.000 |    0.426 |
+| Father             |     1.000 |     0.012 |      1.000 |      0.010 |    1.000 |    0.503 |      1.000 |      0.102 |    1.000 |    0.479 |
+| Granddaughter      |     1.000 |     0.042 |      1.000 |      0.010 |    1.000 |    0.457 |      1.000 |      0.126 |    1.000 |    0.364 |
+| Grandfather        |     1.000 |     0.012 |      1.000 |      0.010 |    1.000 |    0.448 |      1.000 |      0.161 |    1.000 |    0.425 |
+| Grandgranddaughter |     1.000 |     0.013 |      1.000 |      0.011 |    1.000 |    0.433 |      1.000 |      0.095 |    1.000 |    0.339 |
+| Grandgrandfather   |     1.000 |     0.784 |      1.000 |      0.202 |    1.000 |    0.488 |      1.000 |      0.846 |    1.000 |    0.379 |
+| Grandgrandmother   |     1.000 |     1.293 |      1.000 |      0.247 |    1.000 |    0.411 |      1.000 |      0.852 |    1.000 |    0.417 |
+| Grandgrandson      |     1.000 |     1.314 |      1.000 |      0.208 |    1.000 |    0.473 |      1.000 |      0.399 |    1.000 |    0.425 |
+| Grandmother        |     1.000 |     0.012 |      1.000 |      0.011 |    1.000 |    0.446 |      1.000 |      0.099 |    1.000 |    0.442 |
+| Grandson           |     1.000 |     0.013 |      1.000 |      0.011 |    1.000 |    0.470 |      1.000 |      0.135 |    1.000 |    0.448 |
+| Mother             |     1.000 |     0.013 |      1.000 |      0.011 |    1.000 |    0.542 |      1.000 |      0.103 |    1.000 |    0.471 |
+| PersonWithASibling |     1.000 |     0.011 |      1.000 |      0.009 |    1.000 |    0.536 |      0.737 |     60.149 |    1.000 |    0.482 |
+| Sister             |     1.000 |     0.012 |      1.000 |      0.010 |    1.000 |    0.522 |      1.000 |      0.100 |    1.000 |    0.376 |
+| Son                |     1.000 |     0.014 |      1.000 |      0.012 |    1.000 |    0.504 |      1.000 |      0.101 |    1.000 |    0.516 |
+| Uncle              |     0.905 |    17.918 |      0.905 |      6.465 |    1.000 |    3.105 |      0.941 |     60.175 |    1.000 |    0.491 |
 
 
 ### Mutagenesis Benchmark Results
@@ -144,6 +147,10 @@ python examples/concept_learning_evaluation.py --lps LPs/Carcinogenesis/lps.json
 | LP       |   F1-OCEL |   RT-OCEL |   F1-CELOE |   RT-CELOE |   F1-Evo |   RT-Evo |   F1-DRILL |   RT-DRILL |   F1-TDL |   RT-TDL |
 |:---------|----------:|----------:|-----------:|-----------:|---------:|---------:|-----------:|-----------:|---------:|---------:|
 | NOTKNOWN |     0.739 |    64.975 |      0.739 |     60.004 |    0.814 |   60.758 |      0.705 |     60.066 |    1.000 |   56.701 |
+
+
+
+Use `python examples/concept_learning_cv_evaluation.py` to apply stratified k-fold cross validation on learning problems. 
 
 </details>
 
