@@ -223,3 +223,26 @@ if __name__ == '__main__':
     parser.add_argument("--path_pretrained_kge", type=str, default=None)
     parser.add_argument("--report", type=str, default="report.csv")
     dl_concept_learning(parser.parse_args())
+
+
+"""
+# Benchmarking: Run a bash script tdl_stratified_kfold_cv_experiments.sh with the followings 
+
+mkdir CVFamilyBenchmarkResults
+python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family.owl --max_runtime 60 --report cv_family_results.csv && mv cv_family_results.csv CVFamilyBenchmarkResults
+mkdir CVMutagenesisBenchmarkResults
+python examples/concept_learning_cv_evaluation.py --lps LPs/Mutagenesis/lps.json --kb KGs/Mutagenesis/mutagenesis.owl --max_runtime 60 --report cv_mutagenesis_results.csv && mv cv_mutagenesis_results.csv CVMutagenesisBenchmarkResults
+mkdir CVCarcinogenesisBenchmarkResults
+python examples/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 60 --report cv_carcinogenesis_results.csv && mv cv_carcinogenesis_results.csv CVCarcinogenesisBenchmarkResults
+
+#Anaylsing results
+import pandas as pd
+pd.set_option("display.precision", 3)
+pd.set_option('display.max_columns', None)
+path="CVCarcinogenesisBenchmarkResults/cv_carcinogenesis_results.csv"
+df = pd.read_csv(path, index_col=0)
+df_mean_by_lp = df.groupby(by=df.index).mean()
+filter_col = [col for col in df if col.startswith('Test-F1') or col.startswith('RT')]
+print(df_mean_by_lp[filter_col])
+print(df_mean_by_lp[filter_col].to_latex(index=True, formatters={"name": str.upper}, float_format="{:.1f}".format))
+"""
