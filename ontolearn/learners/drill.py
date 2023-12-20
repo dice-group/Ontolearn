@@ -58,7 +58,7 @@ class Drill(RefinementBasedConceptLearner):
             self.pre_trained_kge = dicee.KGE(path=path_pretrained_kge)
             self.embedding_dim = self.pre_trained_kge.configs["embedding_dim"]
         else:
-            print("No pre-trained model...")
+            print("No pre-trained model...", end="\t")
             self.pre_trained_kge = None
             self.embedding_dim = None
 
