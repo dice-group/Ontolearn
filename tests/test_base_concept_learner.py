@@ -11,7 +11,7 @@ from owlapy.model import OWLClass, OWLClassAssertionAxiom, OWLNamedIndividual, I
 from owlapy.render import DLSyntaxObjectRenderer
 
 
-class BaseConceptLearnerTest(unittest.TestCase):
+class TestBaseConceptLearner(unittest.TestCase):
 
     def setUp(self):
         kb = KnowledgeBase(path='KGs/father.owl')

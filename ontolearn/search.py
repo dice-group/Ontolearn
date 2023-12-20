@@ -12,6 +12,7 @@ from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.util import as_index, OrderedOWLObject
 from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree, \
     AbstractConceptNode, EncodedLearningProblem, DRILLAbstractTree
+from typing import FrozenSet
 
 _N = TypeVar('_N')  #:
 
@@ -199,8 +200,8 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
              _NodeParentRef['OENode'], AbstractNode, AbstractConceptNode, AbstractOEHeuristicNode):
     """OENode search tree node."""
     __slots__ = '_concept', '_len', '_individuals_count', '_quality', '_heuristic', \
-                '_parent_ref', '_horizontal_expansion', \
-                '_refinement_count', '__weakref__'
+        '_parent_ref', '_horizontal_expansion', \
+        '_refinement_count', '__weakref__'
 
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
 
@@ -248,6 +249,7 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
             _NodeIndividualsCount.__str__(self),
         ))
 
+
 class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, AbstractNode, AbstractConceptNode):
     """
     EvoLearner search tree node.
@@ -292,20 +294,22 @@ class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality
         ))
 
 
-
 class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodeParentRef['RL_State']):
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
     """RL_State node."""
     __slots__ = '_concept', '_quality', '_heuristic', \
-                'embeddings', 'individuals', \
-                'instances_bitset', 'length', 'instances', 'parent_node', 'is_root', '_parent_ref', '__weakref__'
+        'embeddings', 'individuals', \
+        'instances_bitset', 'length', 'instances', 'parent_node', 'is_root', '_parent_ref', '__weakref__'
 
     def __init__(self, concept: OWLClassExpression, parent_node: Optional['RL_State'] = None, is_root: bool = False,
-                 embeddings=None, instances=None, instances_set=None, length=None):
+                 embeddings=None, instances: Set = None, instances_bitset: FrozenSet = None, length=None):
         _NodeConcept.__init__(self, concept)
         _NodeQuality.__init__(self)
         _NodeHeuristic.__init__(self)
         _NodeParentRef.__init__(self, parent_node=parent_node, is_root=is_root)
+
+        assert isinstance(instances, set), f"Instances must be a set {type(instances)}"
+        assert isinstance(instances_bitset, frozenset), "Instances must be a set"
         # TODO: CD _NodeParentRef causes unintended results:
         #  Without using _NodeParentRef, one can reach the top class expression via recursive calling parent_node
         #  However, if one uses _NodeParentRef amd comments self.parent_node and self.is_root, we can reach T.
@@ -315,7 +319,7 @@ class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodePa
 
         self.embeddings = embeddings  # tensor
         self.instances = instances  # list
-        self.instances_bitset = instances_set  # bitset
+        self.instances_bitset = instances_bitset  # bitset
         self.length = length
         self.__sanity_checking()
 

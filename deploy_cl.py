@@ -3,7 +3,7 @@ import torch
 from argparse import ArgumentParser
 import random
 import os
-
+from ontolearn.model_adapter import compute_quality
 from ontolearn.ea_algorithms import EASimple
 from ontolearn.ea_initialization import EARandomWalkInitialization, RandomInitMethod, EARandomInitialization
 from ontolearn.fitness_functions import LinearPressureFitness
@@ -30,18 +30,6 @@ metrics = {'F1': F1,
            'WeightedAccuracy': WeightedAccuracy
            }
 renderer = DLSyntaxObjectRenderer()
-
-
-def compute_quality(KB, solution, pos, neg, qulaity_func="F1"):
-    func = metrics[qulaity_func]().score2
-    instances = set(KB.individuals(solution))
-    if isinstance(list(pos)[0], str):
-        instances = {ind.get_iri().as_str().split("/")[-1] for ind in instances}
-    tp = len(pos.intersection(instances))
-    fn = len(pos.difference(instances))
-    fp = len(neg.intersection(instances))
-    tn = len(neg.difference(instances))
-    return func(tp=tp, fn=fn, fp=fp, tn=tn)[-1]
 
 
 def setup_prerequisites(individuals, pos_ex, neg_ex, random_ex: bool, size_of_ex):
@@ -661,9 +649,11 @@ if __name__ == '__main__':
 
     if not os.path.exists("NCESData/") and args.model == "nces":
         print("\nWarning! You are trying to deploy NCES without the NCES data!")
-        print(f"Please download the necessary files first: see ./download_external_resources.sh\n")
+        print(f"Please download the necessary files first: see "
+              f"https://ontolearn-docs-dice-group.netlify.app/usage/02_installation#download-external-files\n")
     elif not os.path.exists("KGs") and "KGs/" in args.path_knowledge_base:
         print("\nWarning! There is no 'KGs' folder!")
-        print(f"Please download the datasets first: see ./download_external_resources.sh\n")
+        print(f"Please download the datasets first: "
+              f"see https://ontolearn-docs-dice-group.netlify.app/usage/02_installation#download-external-files\n")
     else:
         run(args)

@@ -40,12 +40,11 @@ class LengthBasedRefinement(BaseRefinement):
         self.card_limit = card_limit
 
         # 1. Number of named classes and sanity checking
-        num_of_named_classes = len(set(i for i in self.kb.ontology().classes_in_signature()))
-        assert num_of_named_classes == len(list(i for i in self.kb.ontology().classes_in_signature()))
+        num_of_named_classes = len(set(i for i in self.kb.ontology.classes_in_signature()))
+        assert num_of_named_classes == len(list(i for i in self.kb.ontology.classes_in_signature()))
         self.max_len_refinement_top = 5
 
-        self.top_refinements = {ref for ref in self.refine_top()}
-        print("Top refinements:", len(self.top_refinements))
+        self.top_refinements = None # {ref for ref in self.refine_top()}
 
     def from_iterables(self, cls, a_operands, b_operands):
         assert (isinstance(a_operands, Generator) is False) and (isinstance(b_operands, Generator) is False)
@@ -117,8 +116,8 @@ class LengthBasedRefinement(BaseRefinement):
         yield from restrictions
 
         for bool_dp in self.kb.get_boolean_data_properties():
-            raise NotImplementedError("Not yet boolean data properties for DRILL")
-
+            print("Not yet boolean data properties for DRILL")
+            continue
     def apply_union_and_intersection_from_iterable(self, cont: List) -> Iterable:
         """ Create Union and Intersection OWL Class Expressions.
         1. Create OWLObjectIntersectionOf via logical conjunction of cartesian product of input owl class expressions.
@@ -237,6 +236,9 @@ class LengthBasedRefinement(BaseRefinement):
 
     def refine(self, class_expression) -> Iterable[OWLClassExpression]:
         assert isinstance(class_expression, OWLClassExpression)
+        if self.top_refinements is None:
+            self.top_refinements = {ref for ref in self.refine_top()}
+
         if class_expression.is_owl_thing():
             yield from self.top_refinements
         elif class_expression.is_owl_nothing():
@@ -262,11 +264,6 @@ class LengthBasedRefinement(BaseRefinement):
             yield from (self.kb.generator.intersection((class_expression, i)) for i in self.top_refinements)
         else:
             raise ValueError(f"{type(class_expression)} objects are not yet supported")
-
-        """
-
-
-        """
 
 
 class ModifiedCELOERefinement(BaseRefinement[OENode]):
@@ -350,7 +347,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
             split_dps.extend(self.kb.get_time_data_properties())
 
         if len(split_dps) > 0:
-            self.dp_splits = self.value_splitter.compute_splits_properties(self.kb.reasoner(), split_dps)
+            self.dp_splits = self.value_splitter.compute_splits_properties(self.kb.reasoner, split_dps)
 
     def _operands_len(self, _Type: Type[OWLNaryBooleanClassExpression],
                       ops: List[OWLClassExpression]) -> int:
@@ -549,7 +546,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
             if i is not None:
                 yield self.generator.existential_restriction(i, ce.get_property())
 
-        for more_special_op in self.kb.object_property_hierarchy(). \
+        for more_special_op in self.kb.object_property_hierarchy. \
                 more_special_roles(ce.get_property().get_named_property()):
             yield self.generator.existential_restriction(ce.get_filler(), more_special_op)
 
@@ -583,7 +580,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
             # if not concept.get_filler().is_owl_nothing() and concept.get_filler().isatomic and (len(refs) == 0):
             #    # TODO find a way to include nothing concept
             #    refs.update(self.kb.universal_restriction(i, concept.get_property()))
-            for more_special_op in self.kb.object_property_hierarchy(). \
+            for more_special_op in self.kb.object_property_hierarchy. \
                     more_special_roles(ce.get_property().get_named_property()):
                 yield self.generator.universal_restriction(ce.get_filler(), more_special_op)
         else:
@@ -731,7 +728,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
         """
         assert isinstance(ce, OWLDataHasValue)
 
-        for more_special_dp in self.kb.data_property_hierarchy().more_special_roles(ce.get_property()):
+        for more_special_dp in self.kb.data_property_hierarchy.more_special_roles(ce.get_property()):
             yield self.generator.data_has_value_restriction(ce.get_filler(), more_special_dp)
 
     def refine(self, ce: OWLClassExpression, max_length: int, current_domain: Optional[OWLClassExpression] = None) \
@@ -945,7 +942,7 @@ class ExpressRefinement(ModifiedCELOERefinement):
             reft = self.generator.universal_restriction(ce.get_filler(), ce.get_property())
             yield reft
 
-        for more_special_op in self.kb.object_property_hierarchy(). \
+        for more_special_op in self.kb.object_property_hierarchy. \
                 more_special_roles(ce.get_property().get_named_property()):
             if self.len(ce) <= self.max_child_length:
                 yield self.generator.existential_restriction(ce.get_filler(), more_special_op)
@@ -975,7 +972,7 @@ class ExpressRefinement(ModifiedCELOERefinement):
                 any_refinement = True
                 reft = self.generator.universal_restriction(ref, ce.get_property())
                 yield reft
-        for more_special_op in self.kb.object_property_hierarchy(). \
+        for more_special_op in self.kb.object_property_hierarchy. \
                 more_special_roles(ce.get_property().get_named_property()):
             if 2 + self.len(ce.get_filler()) <= self.max_child_length:
                 yield self.generator.universal_restriction(ce.get_filler(), more_special_op)
@@ -1116,7 +1113,7 @@ class ExpressRefinement(ModifiedCELOERefinement):
         """
         assert isinstance(ce, OWLDataHasValue)
         any_refinement = False
-        for more_special_dp in self.kb.data_property_hierarchy().more_special_roles(ce.get_property()):
+        for more_special_dp in self.kb.data_property_hierarchy.more_special_roles(ce.get_property()):
             yield self.generator.data_has_value_restriction(ce.get_filler(), more_special_dp)
             any_refinement = True
 

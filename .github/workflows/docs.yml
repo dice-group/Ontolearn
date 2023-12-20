@@ -11,35 +11,42 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     strategy:
+      matrix:
+        python-version: [ "3.9.18" ]
       max-parallel: 5
 
     steps:
     - uses: actions/checkout@v3
-    - name: Install tox
-      id: install-tox
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
       run: |
-        pip install tox
-        echo "tox_version=$(pip list | grep tox | tr -d ' ')" >> $GITHUB_OUTPUT
-    - name: prepare required software
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt   
+
+    - name: Prepare required software
       run: |
         # epstopdf & dot & noto-fonts
-        sudo apt update && sudo apt install texlive-font-utils graphviz fonts-noto
-    - uses: actions/cache@v3
-      with:
-        key: ${{ runner.os }}-${{ steps.install-tox.outputs.tox_version }}-docs-${{ hashFiles('environment.yml', 'tox.ini') }}
-        path: .tox
-    - name: Build docs with tox
+        sudo apt update && sudo apt install texlive-font-utils graphviz fonts-noto\
+
+    - name: Build docs
       run: |
-        tox -o -e docs
-    - name: Build latex docs with tox
+        sphinx-build -M html docs/ docs/_build/
+
+    - name: Build LaTeX docs
       run: |
-        tox -o -e docs -- latex
+        sphinx-build -M latex docs/ docs/_build/
+
     - name: Compile LaTeX document
       uses: docker://texlive/texlive:latest
       with:
         args: make -C docs/_build/latex
     - run: |
         cp docs/_build/latex/ontolearn.pdf docs/_build/html/
+
     - name: Deploy to netlify
       uses: nwtgck/actions-netlify@v1.2
       with:

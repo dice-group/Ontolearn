@@ -122,7 +122,7 @@ class OCELHeuristic(AbstractHeuristic):
         node.heuristic = round(heuristic_val, 5)
 
 
-class Reward:
+class CeloeBasedReward:
     """Reward function for DRILL."""
     def __init__(self, reward_of_goal=5.0, beta=.04, alpha=.5):
         self.name = 'DRILL_Reward'

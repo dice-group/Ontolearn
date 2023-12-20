@@ -119,18 +119,20 @@ def read_csv(path)->Union[None,pd.DataFrame]:
     else:
         return None
 
-def assertion_path_isfile(path) -> None:
+
+def assertion_path_isfile(path) -> bool:
     try:
         assert path is not None
     except AssertionError:
         print(f'Path can not be:{path}')
-        return None
+        return False
 
     try:
         assert os.path.isfile(path)
     except (AssertionError, TypeError):
         print(f'Input:{path} not found.')
-        return None
+        return False
+    return True
 
 
 def sanity_checking_args(args):

@@ -213,8 +213,8 @@ class OWLOntology_Owlready2(OWLOntology):
         self._triplestore_address = triplestore_address
         self.is_using_triplestore = True if self._triplestore_address is not None else False
         if self.is_using_triplestore:
-            assert(is_valid_url(triplestore_address)), "You should specify a valid URL in the following argument: " \
-                                                       "'triplestore_address'"
+            assert (is_valid_url(triplestore_address)), "You should specify a valid URL in the following argument: " \
+                                                        "'triplestore_address'"
 
     def classes_in_signature(self) -> Iterable[OWLClass]:
         if self.is_using_triplestore:
@@ -410,8 +410,8 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         self._owl2sparql_converter = Owl2SparqlConverter()
         if triplestore_address is not None:
             # is triplestore_address valid ?
-            assert(is_valid_url(triplestore_address)), "You should specify a valid URL in the following argument: " \
-                                                       "'triplestore_address'"
+            assert (is_valid_url(triplestore_address)), "You should specify a valid URL in the following argument: " \
+                                                        "'triplestore_address'"
             if isolate:
                 print("WARN  OWLReasoner    :: Setting `isolated = True` has no purpose when using triplestore.")
 
@@ -483,7 +483,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             for eq_x in c_x.INDIRECT_equivalent_to:
                 eq = _parse_concept_to_owlapy(eq_x)
                 if (isinstance(eq, OWLClass) or
-                        (isinstance(eq, OWLClassExpression) and not only_named)) and eq not in seen_set:
+                    (isinstance(eq, OWLClassExpression) and not only_named)) and eq not in seen_set:
                     seen_set.add(eq)
                     yield eq
                 # Workaround for problems in owlready2. It does not always recognize equivalent complex class
@@ -1043,7 +1043,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                 query = "SELECT ?x WHERE {" + f"<{ind.get_iri().as_str()}> a" + " ?x. }"
             else:
                 query = "SELECT DISTINCT ?x WHERE {" + f"<{ind.get_iri().as_str()}> a ?cls. " \
-                                                   " ?cls <http://www.w3.org/2000/01/rdf-schema#subClassOf>* ?x}"
+                                                       " ?cls <http://www.w3.org/2000/01/rdf-schema#subClassOf>* ?x}"
             yield from get_results_from_ts(self._triplestore_address, query, OWLClass)
         else:
             i: owlready2.Thing = self._world[ind.get_iri().as_str()]

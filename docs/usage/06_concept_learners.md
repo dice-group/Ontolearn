@@ -149,8 +149,8 @@ typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
 lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
 ```
 
-To construct an [OWLNamedIndividual](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/__init__.py#L917) 
-object an [IRI](https://github.com/dice-group/owlapy/blob/6a6338665a6df0845e67eda577327ca4c62f446b/owlapy/model/_iri.py#L47) is required as an input. 
+To construct an [OWLNamedIndividual](owlapy.model.OWLNamedIndividual) 
+object an [IRI](owlapy.model.IRI) is required as an input. 
 You can simply create an `IRI` object by calling the static method `create` 
 and passing the IRI as a `string`.
 

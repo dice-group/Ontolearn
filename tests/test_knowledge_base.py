@@ -17,7 +17,7 @@ class KnowledgeBaseTest(unittest.TestCase):
     def setUp(self):
         self.namespace = "http://dl-learner.org/mutagenesis#"
         self.kb = KnowledgeBase(path="KGs/Mutagenesis/mutagenesis.owl")
-        self.onto = self.kb.ontology()
+        self.onto = self.kb.ontology
         self.mgr = self.onto.get_owl_ontology_manager()
         self.generator = ConceptGenerator()
         # Classes
@@ -196,12 +196,12 @@ class KnowledgeBaseTest(unittest.TestCase):
         concepts_to_ignore = {self.bond1, self.compound}
         object_properties_to_ignore = {self.in_bond, self.has_structure}
         data_properties_to_ignore = {self.act, self.has_fife_examples}
-        self.kb._class_hierarchy = self.kb._class_hierarchy.restrict_and_copy(remove=concepts_to_ignore)
-        self.kb._object_property_hierarchy = (
-            self.kb._object_property_hierarchy.restrict_and_copy(remove=object_properties_to_ignore)
+        self.kb.class_hierarchy = self.kb.class_hierarchy.restrict_and_copy(remove=concepts_to_ignore)
+        self.kb.object_property_hierarchy = (
+            self.kb.object_property_hierarchy.restrict_and_copy(remove=object_properties_to_ignore)
         )
-        self.kb._data_property_hierarchy = (
-            self.kb._data_property_hierarchy.restrict_and_copy(remove=data_properties_to_ignore)
+        self.kb.data_property_hierarchy = (
+            self.kb.data_property_hierarchy.restrict_and_copy(remove=data_properties_to_ignore)
         )
 
         # get concepts

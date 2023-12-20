@@ -328,16 +328,17 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
     """Abstract knowledge base."""
     __slots__ = ()
 
-    @abstractmethod
+    # CD: This function is used as "a get method". Insteadf either access the atttribute directly
+    # or use it as a property @abstractmethod
     def ontology(self) -> OWLOntology:
         """The base ontology of this knowledge base."""
         pass
 
     def describe(self) -> None:
         """Print a short description of the Knowledge Base to the info logger output."""
-        properties_count = iter_count(self.ontology().object_properties_in_signature()) + iter_count(
-            self.ontology().data_properties_in_signature())
-        logger.info(f'Number of named classes: {iter_count(self.ontology().classes_in_signature())}\n'
+        properties_count = iter_count(self.ontology.object_properties_in_signature()) + iter_count(
+            self.ontology.data_properties_in_signature())
+        logger.info(f'Number of named classes: {iter_count(self.ontology.classes_in_signature())}\n'
                     f'Number of individuals: {self.individuals_count()}\n'
                     f'Number of properties: {properties_count}')
 
@@ -467,7 +468,7 @@ class DepthAbstractDrill:
                  num_epochs_per_replay=None, num_workers=None, verbose=0):
         self.name = 'DRILL'
         self.instance_embeddings = read_csv(path_of_embeddings)
-        if self.instance_embeddings is None:
+        if not self.instance_embeddings:
             print("No embeddings found")
             self.embedding_dim = None
         else:
