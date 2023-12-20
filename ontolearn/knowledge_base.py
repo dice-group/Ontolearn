@@ -243,7 +243,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             for i in self.get_concepts():
                 yield from ((i, "http://www.w3.org/2000/01/rdf-schema#subClassOf", j) for j in
                             self.get_direct_sub_concepts(i))
-        elif isinstance(concepts,OWLClass):
+        elif isinstance(concepts, OWLClass):
             yield from ((concepts, "http://www.w3.org/2000/01/rdf-schema#subClassOf", j) for j in
                         self.get_direct_sub_concepts(concepts))
         elif isinstance(concepts, Iterable):
@@ -255,6 +255,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             raise RuntimeError(f"Unexected input{concepts}")
 
         # @TODO:CD: equivalence must also be added.
+
     def ignore_and_copy(self, ignored_classes: Optional[Iterable[OWLClass]] = None,
                         ignored_object_properties: Optional[Iterable[OWLObjectProperty]] = None,
                         ignored_data_properties: Optional[Iterable[OWLDataProperty]] = None) -> 'KnowledgeBase':
@@ -783,6 +784,34 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Concepts.
         """
         yield from self.class_hierarchy.items()
+
+    @property
+    def concepts(self) -> Iterable[OWLClass]:
+        """Get all concepts of this concept generator.
+
+        Returns:
+            Concepts.
+        """
+        yield from self.class_hierarchy.items()
+
+    @property
+    def object_properties(self) -> Iterable[OWLObjectProperty]:
+        """Get all object properties of this concept generator.
+
+        Returns:
+            Object properties.
+        """
+
+        yield from self.object_property_hierarchy.items()
+
+    @property
+    def data_properties(self) -> Iterable[OWLDataProperty]:
+        """Get all data properties of this concept generator.
+
+        Returns:
+            Data properties for the given range.
+        """
+        yield from self.data_property_hierarchy.items()
 
     def get_object_properties(self) -> Iterable[OWLObjectProperty]:
         """Get all object properties of this concept generator.
