@@ -384,6 +384,8 @@ def execute(args):
         trainer = Trainer(model, kb.reasoner())
         trainer.fit(lp)
         print(trainer.best_hypotheses(1))
+        if args.save:
+            trainer.save_best_hypothesis()
 
     elif args.model in ["nces"]:
         hypothesis = model.fit(pos, neg)  # This will also print the prediction
