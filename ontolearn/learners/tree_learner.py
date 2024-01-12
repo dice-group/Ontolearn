@@ -18,6 +18,8 @@ from owlapy.model import OWLObjectSomeValuesFrom, OWLObjectPropertyExpression, O
 from owlapy.render import DLSyntaxObjectRenderer
 from sklearn.model_selection import GridSearchCV
 
+import time
+
 
 def is_float(value):
     try:
@@ -168,7 +170,11 @@ class TDL:
 
         self.render = DLSyntaxObjectRenderer()
         # Keyword arguments for sklearn Decision tree.
+        # Initialize classifier
+        self.clf = None
+        self.feature_names = None
         self.kwargs_classifier = kwargs_classifier
+
         self.max_runtime = max_runtime
         self.on_fly_tabular = on_fly_tabular
         self.best_pred = None
@@ -194,9 +200,6 @@ class TDL:
                 if relation == self.str_type:
                     self.types_of_individuals.setdefault(k, set()).add(tail)
 
-        # Initialize classifier
-        self.clf = None
-
         if self.on_fly_tabular:
             # Trade-off between runtime at inference and memory
             self.Xraw = None
@@ -211,18 +214,18 @@ class TDL:
         # () Iterate over individuals.
         for s in individuals:
             # () Initialize an empty row.
-            representation_of_s = [False for _ in feature_names]
+            representation_of_s = [0.0 for _ in feature_names]
             # All info about s should be in the features.
             for relation, hop_info in entity_infos[s].items():
                 assert isinstance(relation, str), "Relation must be string"
                 for t in hop_info:
                     if isinstance(t, str):
-                        representation_of_s[feature_names.index((relation, t))] = True
+                        representation_of_s[feature_names.index((relation, t))] = 1.0
                     elif isinstance(t, tuple):
                         assert len(t) == 2
-                        representation_of_s[feature_names.index((relation, *t))] = True
+                        representation_of_s[feature_names.index((relation, *t))] = 1.0
             result.append(representation_of_s)
-        result = pd.DataFrame(data=result, index=individuals, columns=feature_names, dtype="category")
+        result = pd.DataFrame(data=result, index=individuals, columns=feature_names, dtype=np.float32)
         result = result.loc[:, (result != False).any(axis=0)]
         return result
 
@@ -231,33 +234,34 @@ class TDL:
 
         # Nested dictionary
         hop = dict()
-
         features = set()
-
+        # Iterate over individuals.
         for s in individuals:
-            # iterate over triples where s is a subject
+            # iterate over triples where s is a subject.
             temp = dict()
+            # Given a specific individual, iterate over matching relations and tails.
             for p, o in self.first_hop[s]:
+                ##### SAVE FEATURE: (type, PERSON) #####
                 if p == self.str_type:
                     # F3 hasChild Male.
                     assert o in self.owl_classes_dict
                     temp.setdefault(p, set()).add(o)
                     features.add((p, o))
                 else:
-                    # F3 hasChild F12.
+                    # if the relation leads to an individual, iterate over the first hop of the individual, e.g.
+                    # from F3 hasChild F12, => [type Female, type Mother, hasChild F44] since
+                    # (F12 type Female), (F12 type Mother), (F12 hasChild F44) \in KG.
                     for (pp, oo) in self.first_hop[o]:
-
                         if pp == self.str_type:
-                            # s, hasChild {Person}.
+                            ##### SAVE FEATURE: (hasChild, PERSON) #####
                             assert oo in self.owl_classes_dict
                             temp.setdefault(p, set()).add(oo)
                             features.add((p, oo))
                         else:
-                            # s, hasChild {married Male, Father}.
-                            for _ in self.types_of_individuals[oo]:
-                                temp.setdefault(p, set()).add((pp, _))
-                                features.add((p, pp, _))
-
+                            for c in self.types_of_individuals[oo]:
+                                ##### SAVE FEATURE: (hasChild, married, Father) #####
+                                temp.setdefault(p, set()).add((pp, c))
+                                features.add((p, pp, c))
             hop[s] = temp
         return hop, features
 
@@ -302,8 +306,13 @@ class TDL:
             else:
                 rel1, tail = feature
 
+                """
                 owl_class = OWLObjectMinCardinality(property=self.owl_object_property_dict[rel1],
                                                     filler=self.owl_classes_dict[tail], cardinality=1)
+                """
+
+                owl_class = OWLObjectSomeValuesFrom(property=self.owl_object_property_dict[rel1],
+                                                    filler=self.owl_classes_dict[tail])
 
                 """
                 
@@ -313,58 +322,50 @@ class TDL:
         else:
             assert len(feature) == 3
             rel1, rel2, concept = feature
+            """
             owl_class = OWLObjectMinCardinality(property=self.owl_object_property_dict[rel1],
                                                 filler=OWLObjectMinCardinality(
                                                     property=self.owl_object_property_dict[rel2],
                                                     filler=self.owl_classes_dict[concept], cardinality=1),
                                                 cardinality=1)
             """
-            if tail_info in self.str_individuals:
-                # ∃ hasChild.{F5M68}
-                owl_class = OWLObjectHasValue(property=self.owl_object_property_dict[relation],
-                                              individual=self.owl_individuals[tail_info])
-            else:
-                second_relation, next_tail_info = tail_info
-                if isinstance(next_tail_info, str):
-                    if second_relation == self.str_type:
-                        assert isinstance(next_tail_info,
-                                          str) and next_tail_info in self.owl_classes_dict, "Tail must be a string and a defined OWL class"
-                        owl_class = OWLObjectMinCardinality(property=self.owl_object_property_dict[relation],
-                                                            filler=self.owl_classes_dict[next_tail_info],
-                                                            cardinality=1)
-                    else:
-                        # ∃ hasChild.{F5M68}
-                        owl_class = OWLObjectHasValue(property=self.owl_object_property_dict[second_relation],
-                                                      individual=self.owl_individuals[next_tail_info])
-                else:
-                    filler = concepts_reducer(concepts=[self.owl_classes_dict[i] for i in next_tail_info],
-                                              reduced_cls=OWLObjectIntersectionOf)
-
-                    owl_class = OWLObjectMinCardinality(property=self.owl_object_property_dict[relation],
-                                                        filler=OWLObjectMinCardinality(
-                                                            property=self.owl_object_property_dict[second_relation],
-                                                            filler=filler, cardinality=1), cardinality=1)
-            """
-
-            """
-                        
-            if tail in self.owl_classes_dict:
-                owl_class = OWLObjectMinCardinality(property=self.owl_object_property_dict[relation],
-                                                    filler=self.owl_classes_dict[tail], cardinality=1)
-            else:
-                assert tail in self.owl_individuals
-                if tail in self.owl_individuals:
-                    owl_class = OWLObjectHasValue(property=self.owl_object_property_dict[relation],
-                                                  individual=self.owl_individuals[tail])
-                else:
-                    owl_class = OWLDataHasValue(property=self.owl_data_property_dict[relation], value=OWLLiteral(tail))
-            """
+            owl_class = OWLObjectSomeValuesFrom(property=self.owl_object_property_dict[rel1],
+                                                filler=OWLObjectSomeValuesFrom(
+                                                    property=self.owl_object_property_dict[rel2],
+                                                    filler=self.owl_classes_dict[concept]))
             if value:
                 pass
             else:
                 owl_class = owl_class.get_object_complement_of()
 
         return owl_class
+
+    def plot(self):
+        pretified_feature_names = []
+        for i in self.feature_names:
+            f = []
+            for x in i:
+                x = x.replace("http://www.benchmark.org/family#", "")
+                x = x.replace("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "")
+                f.append(x)
+            pretified_feature_names.append(f)
+
+        plt.figure(figsize=(10, 10))
+        tree.plot_tree(self.clf, fontsize=10, feature_names=pretified_feature_names,
+                       class_names=["Negative", "Positive"],
+                       filled=True)
+        plt.savefig('Aunt_Tree.pdf')
+        plt.show()
+
+        feature_importance = pd.Series(np.array(self.clf.feature_importances_),
+                                       index=[",".join(i) for i in pretified_feature_names])
+        feature_importance = feature_importance[feature_importance > 0.0]
+        fig, ax = plt.subplots()
+        feature_importance.plot.bar(ax=ax)
+        ax.set_title("Feature Importance")
+        fig.tight_layout()
+        plt.savefig('feature_importance.pdf')
+        plt.show()
 
     def fit(self, lp: PosNegLPStandard, max_runtime=None):
         if max_runtime is not None:
@@ -384,18 +385,31 @@ class TDL:
                                                individuals=str_pos_examples + str_neg_examples,
                                                feature_names=features)
         X, y = self.labeling(Xraw=Xraw, pos=str_pos_examples, neg=str_neg_examples)
+        if False:
+            import umap
+            print("Fitting")
+            reducer = umap.UMAP(random_state=1)
+            embedding = reducer.fit_transform(X)
+            plt.scatter(embedding[:, 0], embedding[:, 1],
+                        c=["r" if x == 1 else "b" for x in y])
+            plt.grid()
+            plt.gca().set_aspect('equal', 'datalim')
+            plt.savefig("UMAP_AUNT.pdf")
+            plt.show()
 
-        param_grid = {'criterion': ["gini", "entropy", "log_loss"],
+        param_grid = {'criterion': ["entropy", "gini", "log_loss"],
+                      "min_samples_leaf": [1, 5]
                       # 'max_depth': [3, 5, 10, 20, None],
-                      # 'min_samples_leaf': [1, 2, 10, len(X) // 2],
                       # 'min_samples_split': [20, 30, 40],
                       # "max_leaf_nodes": [None, 4, 8]
                       }
         grid_search = GridSearchCV(tree.DecisionTreeClassifier(**self.kwargs_classifier),
                                    param_grid=param_grid,
                                    cv=10).fit(X.values, y.values)
+        print(grid_search.best_params_)
         self.kwargs_classifier.update(grid_search.best_params_)
         self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=X.values, y=y.values)
+        self.feature_names = X.columns.to_list()
         """
         print("Classification Report: Negatives: -1, Unknowns:0, Positives 1 ")
         print(sklearn.metrics.classification_report(y.values, self.clf.predict(X.values), target_names=None))
@@ -414,22 +428,30 @@ class TDL:
             sequence_of_concept_path_of_tree = [self.decision_to_owl_class_exp(reasoning_step) for
                                                 reasoning_step in
                                                 sequence_of_reasoning_steps]
+
             pred = concepts_reducer(concepts=sequence_of_concept_path_of_tree, reduced_cls=OWLObjectIntersectionOf)
 
             prediction_per_example.append((pred, pos))
 
         # Remove paths from the root to leafs if overallping
         prediction_per_example = {p for p, indv in prediction_per_example}
-        """
         # If debugging needed.
-        set_str_pos=set(str_pos_examples)
-        set_str_neg=set(str_neg_examples)
+        """
+        set_str_pos = set(str_pos_examples)
+        set_str_neg = set(str_neg_examples)
         for i in prediction_per_example:
             quality = compute_f1_score(individuals={_.get_iri().as_str() for _ in self.knowledge_base.individuals(i)},
                                        pos=set_str_pos, neg=set_str_neg)
-            print(self.render.render(i),quality)
+            print(self.render.render(i), quality)
         """
-        self.best_pred = concepts_reducer(concepts=[pred for pred in prediction_per_example],
+        predictions = [pred for pred in prediction_per_example]
+        """
+        print(len(predictions))
+        for i in predictions:
+            print(self.render.render(i))
+        """
+
+        self.best_pred = concepts_reducer(concepts=predictions,
                                           reduced_cls=OWLObjectUnionOf)
 
         # print(self.render.render(self.best_pred), compute_f1_score(individuals={_.get_iri().as_str() for _ in self.knowledge_base.individuals(self.best_pred)},
