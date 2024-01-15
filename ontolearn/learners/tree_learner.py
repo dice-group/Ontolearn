@@ -1,8 +1,17 @@
 import numpy as np
 import owlapy.model
 import pandas as pd
-
+import requests
+import json
 from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.base import OWLOntologyManager_Owlready2
+from owlapy.model import OWLEquivalentClassesAxiom, OWLOntologyManager, OWLOntology, AddImport, OWLImportsDeclaration, \
+    IRI
+
+# mv best_pred.owl
+# (base) demir@demir:~/Desktop/Softwares/Ontolearn/LD2NL/owl2nl$ ./owl2nl.sh -a ./src/test/resources/best_pred.owl             -u false -o ./src/test/resources/family.owl             -t json -s test_out.json -m rule
+# ./owl2nl.sh -a ./home/demir/Desktop/Softwares/Ontolearn/examples/best_pred.owl -u false -o ./home/demir/Desktop/Softwares/Ontolearn/KGs/Family/family.owl -t json -s test_out.json -m rule
+
 from typing import Dict, Set, Tuple, List, Union, TypeVar, Callable
 from ontolearn.learning_problem import PosNegLPStandard
 import collections
@@ -15,10 +24,12 @@ from owlapy.model import OWLObjectSomeValuesFrom, OWLObjectPropertyExpression, O
     OWLObjectIntersectionOf, OWLClassExpression, OWLNothing, OWLThing, OWLNaryBooleanClassExpression, \
     OWLObjectUnionOf, OWLClass, OWLObjectComplementOf, OWLObjectMaxCardinality, OWLObjectMinCardinality, \
     OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLLiteral, OWLDataHasValue, OWLObjectHasValue, OWLNamedIndividual
-from owlapy.render import DLSyntaxObjectRenderer
+from owlapy.render import DLSyntaxObjectRenderer, ManchesterOWLSyntaxOWLObjectRenderer
 from sklearn.model_selection import GridSearchCV
 
 import time
+
+from sklearn.tree import export_text
 
 
 def is_float(value):
@@ -168,7 +179,9 @@ class TDL:
         # Mappings from string of IRI to individuals.
         self.owl_individuals = {i.get_iri().as_str(): i for i in self.knowledge_base.individuals()}
 
-        self.render = DLSyntaxObjectRenderer()
+        self.dl_render = DLSyntaxObjectRenderer()
+        self.manchester_render = ManchesterOWLSyntaxOWLObjectRenderer()
+
         # Keyword arguments for sklearn Decision tree.
         # Initialize classifier
         self.clf = None
@@ -177,7 +190,9 @@ class TDL:
 
         self.max_runtime = max_runtime
         self.on_fly_tabular = on_fly_tabular
-        self.best_pred = None
+        # best pred
+        self.disjunction_of_conjunctive_concepts = None
+        self.conjunctive_concepts = None
         # Remove uninformative triples if exists.
         # print("Removing uninformative triples...")
         self.dataframe_triples = self.dataframe_triples[
@@ -206,7 +221,8 @@ class TDL:
         else:
             raise NotImplementedError()
 
-    def built_sparse_training_data(self, entity_infos: Dict[str, Dict], individuals: List[str],
+    @staticmethod
+    def built_sparse_training_data(entity_infos: Dict[str, Dict], individuals: List[str],
                                    feature_names: List[Tuple[str, Union[str, None]]]):
         """ Construct a tabular representations from fixed features """
         assert entity_infos is not None, "No entity_infos"
@@ -265,7 +281,8 @@ class TDL:
             hop[s] = temp
         return hop, features
 
-    def labeling(self, Xraw, pos, neg, apply_dummy=False):
+    @staticmethod
+    def labeling(Xraw, pos, neg, apply_dummy=False):
         """ Labelling """
         # (5) Labeling: Label each row/node
         # Drop "label" if exists
@@ -339,6 +356,17 @@ class TDL:
                 owl_class = owl_class.get_object_complement_of()
 
         return owl_class
+
+    def feature_pretify(self):
+        pretified_feature_names = []
+        for i in self.feature_names:
+            feature = ""
+            for x in i:
+                x = x.replace("http://www.benchmark.org/family#", "")
+                x = x.replace("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "")
+                feature += x + " "
+            pretified_feature_names.append(feature)
+        return pretified_feature_names
 
     def plot(self):
         pretified_feature_names = []
@@ -436,32 +464,26 @@ class TDL:
         # Remove paths from the root to leafs if overallping
         prediction_per_example = {p for p, indv in prediction_per_example}
         # If debugging needed.
-        """
-        set_str_pos = set(str_pos_examples)
-        set_str_neg = set(str_neg_examples)
-        for i in prediction_per_example:
-            quality = compute_f1_score(individuals={_.get_iri().as_str() for _ in self.knowledge_base.individuals(i)},
-                                       pos=set_str_pos, neg=set_str_neg)
-            print(self.render.render(i), quality)
-        """
-        predictions = [pred for pred in prediction_per_example]
-        """
-        print(len(predictions))
-        for i in predictions:
-            print(self.render.render(i))
-        """
+        # set_str_pos = set(str_pos_examples)
+        # set_str_neg = set(str_neg_examples)
+        # for i in prediction_per_example:
+        #    quality = compute_f1_score(individuals={_.get_iri().as_str() for _ in self.knowledge_base.individuals(i)},
+        #                               pos=set_str_pos, neg=set_str_neg)
+        #    print(self.render.render(i), quality)
 
-        self.best_pred = concepts_reducer(concepts=predictions,
-                                          reduced_cls=OWLObjectUnionOf)
+        self.conjunctive_concepts = [pred for pred in prediction_per_example]
+
+        self.disjunction_of_conjunctive_concepts = concepts_reducer(concepts=self.conjunctive_concepts,
+                                                                    reduced_cls=OWLObjectUnionOf)
 
         # print(self.render.render(self.best_pred), compute_f1_score(individuals={_.get_iri().as_str() for _ in self.knowledge_base.individuals(self.best_pred)},
-        #                               pos=set(str_pos_examples), neg=set(str_neg_examples)))
+        #                                                           pos=set(str_pos_examples), neg=set(str_neg_examples)))
 
         return self
 
     def best_hypotheses(self, n=1):
         assert n == 1
-        return self.best_pred
+        return self.disjunction_of_conjunctive_concepts
 
     def predict(self, X: List[OWLNamedIndividual]) -> np.ndarray:
         #
@@ -470,3 +492,117 @@ class TDL:
                                               individuals=owl_individuals,
                                               feature_names=self.features)
         return self.clf.predict(X_vector.values)
+
+    @staticmethod
+    def __post_request_llm(prompt, llm_name: str):
+        print("###########")
+        print(f"{llm_name} STARTS")
+        print("###########")
+        assert llm_name in ["mistral", "llama2"]
+        data = {"model": llm_name,
+                "prompt": prompt,
+                "content": "You are an expert. Be concise in your answers",
+                "options": {  # "num_keep": 5,
+                    "seed": 1,
+                    # "num_predict": 100,
+                    # "top_k": 20,
+                    # "top_p": 0.9,
+                    # "tfs_z": 0.5,
+                    # "typical_p": 0.7,
+                    # "repeat_last_n": 33,
+                    "temperature": 0.0,
+                    "repeat_penalty": 1.2,
+                    # "presence_penalty": 1.5,
+                    # "frequency_penalty": 1.0,
+                    # "mirostat": 1,
+                    # "mirostat_tau": 0.8,
+                    # "mirostat_eta": 0.6,
+                    # "penalize_newline": true,
+                    # "stop": ["\n", "user:"],
+                    # "numa": false,
+                    # "num_ctx": 1024,
+                    # "num_batch": 2,
+                    # "num_gqa": 1,
+                    # "num_gpu": 1,
+                    # "main_gpu": 0,
+                    # "low_vram": false,
+                    # "f16_kv": true,
+                    # "vocab_only": false,
+                    # "use_mmap": true,
+                    # "use_mlock": false,
+                    # "embedding_only": false,
+                    # "rope_frequency_base": 1.1,
+                    # "rope_frequency_scale": 0.8,
+                    # "num_thread": 8
+                }}
+
+        text = ""
+        response = requests.post("http://localhost:11434/api/generate", json=data, stream=True)
+        response.raise_for_status()
+
+        for line in response.iter_lines():
+            body = json.loads(line)
+            response_part = body.get('response', '')
+            print(response_part, end='', flush=True)
+            text += response_part
+            if 'error' in body:
+                raise Exception(body['error'])
+
+            if body.get('done', False):
+                break
+        print("\n###########")
+        print(f"{llm_name} END")
+        print("###########\n")
+        return text
+
+    def verbalize(self):
+        """
+        Ensure that Ollama is running athttp://localhost:11434/
+
+        """
+
+        """ Map a DL concept into natural languages """
+        # features = self.feature_pretify()
+        # r = export_text(self.clf, feature_names=features)
+        # # replace <= with ==0.0
+        # print("Learned rules: ")
+        # r = r.replace("<= 0.50", "==False")
+        # r = r.replace(">  0.50", "==True")
+        # print(r)
+
+        # https://github.com/jmorganca/ollama/blob/main/docs/api.md#generate-a-completion
+
+        # Save the best prediction
+        self.save_best_hypothesis(concepts=[self.disjunction_of_conjunctive_concepts],
+                                  path="best_pred")
+
+        prompt = f"Translate this description logic concept into english sentences. Provide no explanations: {self.dl_render.render(self.disjunction_of_conjunctive_concepts)}"
+        print(prompt)
+        full_text_mistral = self.__post_request_llm(prompt, llm_name="mistral")
+        full_text_llama2 = self.__post_request_llm(prompt, llm_name="llama2")
+
+    def save_best_hypothesis(self, concepts: List[OWLClassExpression],
+                             path: str = 'Predictions',
+                             rdf_format: str = 'rdfxml') -> None:
+        """Serialise the best hypotheses to a file.
+
+        Args:
+            concepts:
+            path: Filename base (extension will be added automatically).
+            rdf_format: Serialisation format. currently supported: "rdfxml".
+        """
+        #NS: Final = 'https://dice-research.org/predictions/' + str(time.time()) + '#'
+        NS: Final = 'https://dice-research.org/predictions' + str(time.time()) + '#'
+        if rdf_format != 'rdfxml':
+            raise NotImplementedError(f'Format {rdf_format} not implemented.')
+        # ()
+        manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
+        # ()
+        ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
+        # () Iterate over concepts
+        for i in concepts:
+            cls_a: OWLClass = OWLClass(IRI.create(NS, self.manchester_render.render(i)))
+            equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, i])
+            manager.add_axiom(ontology, equivalent_classes_axiom)
+
+        manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))
