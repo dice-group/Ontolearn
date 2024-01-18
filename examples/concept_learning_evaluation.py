@@ -1,3 +1,12 @@
+"""
+Fitting DL Concept Learning Algorithms:
+
+Given E^+  and E^-, a learner finds a concept H and F1 score is computed w.r.t. E^+, E^-, and R(H) retrieval of H.
+
+python examples/concept_learning_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family.owl --max_runtime 30 --report family.csv
+
+"""
+
 import json
 import os
 import time
@@ -44,6 +53,18 @@ def dl_concept_learning(args):
 
     kb = KnowledgeBase(path=args.kb)
 
+    ocel = OCEL(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
+    celoe = CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
+    drill = Drill(knowledge_base=KnowledgeBase(path=args.kb),
+                  path_pretrained_kge=args.path_pretrained_kge,
+                  quality_func=F1(),
+                  max_runtime=args.max_runtime)
+    tdl = TDL(knowledge_base=KnowledgeBase(path=args.kb),
+              dataframe_triples=pd.DataFrame(
+                  data=sorted([(str(s), str(p), str(o)) for s, p, o in Graph().parse(args.kb)], key=lambda x: len(x)),
+                  columns=['subject', 'relation', 'object'], dtype=str),
+              kwargs_classifier={"random_state": 0},
+              max_runtime=args.max_runtime)
     # dictionary to store the data
     data = dict()
     for str_target_concept, examples in settings['problems'].items():
@@ -59,9 +80,8 @@ def dl_concept_learning(args):
         lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
 
         print("OCEL starts..", end="\t")
-        model = OCEL(knowledge_base=KnowledgeBase(path=args.kb), quality_func=F1(), max_runtime=args.max_runtime)
         start_time = time.time()
-        pred_ocel = model.fit(lp).best_hypotheses(n=1)
+        pred_ocel = ocel.fit(lp).best_hypotheses(n=1)
         print("OCEL ends..", end="\t")
         rt_ocel = time.time() - start_time
         f1_ocel = compute_f1_score(individuals={i for i in kb.individuals(pred_ocel.concept)}, pos=lp.pos, neg=lp.neg)
@@ -71,9 +91,8 @@ def dl_concept_learning(args):
         print(f"OCEL Runtime: {rt_ocel:.3f}")
 
         print("CELOE starts..", end="\t")
-        model = CELOE(knowledge_base=KnowledgeBase(path=args.kb), quality_func=F1(), max_runtime=args.max_runtime)
         start_time = time.time()
-        pred_celoe = model.fit(lp).best_hypotheses(n=1)
+        pred_celoe = celoe.fit(lp).best_hypotheses(n=1)
         print("CELOE Ends..", end="\t")
         rt_celoe = time.time() - start_time
         f1_celoe = compute_f1_score(individuals={i for i in kb.individuals(pred_celoe.concept)}, pos=lp.pos, neg=lp.neg)
@@ -83,9 +102,10 @@ def dl_concept_learning(args):
         print(f"CELOE Runtime: {rt_celoe:.3f}")
 
         print("Evo starts..", end="\t")
-        model = EvoLearner(knowledge_base=KnowledgeBase(path=args.kb), quality_func=F1(), max_runtime=args.max_runtime)
         start_time = time.time()
-        pred_evo = model.fit(lp).best_hypotheses(n=1)
+        # Evolearner has a bug and KB needs to be reloaded
+        evo = EvoLearner(knowledge_base=KnowledgeBase(path=args.kb), quality_func=F1(), max_runtime=args.max_runtime)
+        pred_evo = evo.fit(lp).best_hypotheses(n=1)
         print("Evo ends..", end="\t")
         rt_evo = time.time() - start_time
         f1_evo = compute_f1_score(individuals={i for i in kb.individuals(pred_evo.concept)}, pos=lp.pos, neg=lp.neg)
@@ -96,11 +116,7 @@ def dl_concept_learning(args):
 
         print("DRILL starts..", end="\t")
         start_time = time.time()
-        model = Drill(knowledge_base=KnowledgeBase(path=args.kb),
-                      path_pretrained_kge=args.path_pretrained_kge,
-                      quality_func=F1(),
-                      max_runtime=args.max_runtime)
-        pred_drill = model.fit(lp).best_hypotheses(n=1)
+        pred_drill = drill.fit(lp).best_hypotheses(n=1)
         print("DRILL ends..", end="\t")
         rt_drill = time.time() - start_time
         f1_drill = compute_f1_score(individuals=set(kb.individuals(pred_drill.concept)), pos=lp.pos, neg=lp.neg)
@@ -111,21 +127,20 @@ def dl_concept_learning(args):
 
         print("TDL starts..", end="\t")
         start_time = time.time()
-        model = TDL(knowledge_base=KnowledgeBase(path=args.kb), dataframe_triples=pd.DataFrame(
-            data=[(str(s), str(p), str(o)) for s, p, o in Graph().parse(args.kb)],
-            columns=['subject', 'relation', 'object'], dtype=str).sort_values('subject'),
-                    kwargs_classifier={"criterion": "gini", "random_state": 0},
-                    max_runtime=args.max_runtime)
-        pred_tdl = model.fit(lp).best_hypotheses(n=1)
+        # () Fit model training dataset
+        pred_tdl = tdl.fit(lp).best_hypotheses(n=1)
         print("TDL ends..", end="\t")
         rt_tdl = time.time() - start_time
-        # Compute quality of best prediction
-        f1_tdl = compute_f1_score(individuals={i for i in kb.individuals(pred_tdl)}, pos=lp.pos, neg=lp.neg)
+
+        # () Quality on the training data
+        f1_tdl = compute_f1_score(individuals={i for i in kb.individuals(pred_tdl)},
+                                        pos=lp.pos,
+                                        neg=lp.neg)
+
         data.setdefault("F1-TDL", []).append(f1_tdl)
         data.setdefault("RT-TDL", []).append(rt_tdl)
         print(f"TDL Quality: {f1_tdl:.3f}", end="\t")
         print(f"TDL Runtime: {rt_tdl:.3f}")
-
     df = pd.DataFrame.from_dict(data)
     df.to_csv(args.report, index=False)
     print(df)
@@ -134,7 +149,6 @@ def dl_concept_learning(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Description Logic Concept Learning')
-
     parser.add_argument("--max_runtime", type=int, default=1)
     parser.add_argument("--lps", type=str, required=True)
     parser.add_argument("--kb", type=str, required=True)

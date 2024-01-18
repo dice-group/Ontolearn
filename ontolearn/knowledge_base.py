@@ -482,9 +482,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Return:
             EncodedPosNegLPStandard: The encoded learning problem.
         """
-
-        assert len(self.class_hierarchy) > 0
-
         if lp.all is None:
             kb_all = self.all_individuals_set()
         else:
