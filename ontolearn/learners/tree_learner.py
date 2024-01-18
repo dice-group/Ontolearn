@@ -161,9 +161,20 @@ def compute_f1_score(individuals, pos, neg):
 class TDL:
     """Tree-based Description Logic Concept Learner"""
 
-    def __init__(self, knowledge_base, dataframe_triples: pd.DataFrame, kwargs_classifier, max_runtime: int = 1,
-                 grid_search_over=None, report_classification: bool = False, plot_built_tree: bool = False,
+    def __init__(self, knowledge_base,
+                 dataframe_triples: pd.DataFrame,
+                 kwargs_classifier:dict,
+                 max_runtime: int = 1,
+                 grid_search_over=None,
+                 report_classification: bool = False,
+                 plot_built_tree: bool = False,
                  plotembeddings: bool = False):
+        if grid_search_over is None:
+            grid_search_over = {'criterion': ["entropy", "gini", "log_loss"],
+                                "splitter": ["random", "best"],
+                                "max_features": [None, "sqrt", "log2"],
+                                "min_samples_leaf": [1, 2, 3, 4, 5, 10],
+                                "max_depth": [1, 2, 3, 4, 5, 10, None]}
         assert isinstance(dataframe_triples, pd.DataFrame), "dataframe_triples must be a Pandas DataFrame"
         assert isinstance(knowledge_base, KnowledgeBase), "knowledge_base must be a KnowledgeBase instance"
         assert len(dataframe_triples) > 0, f"length of the dataframe must be greater than 0:{dataframe_triples.shape}"

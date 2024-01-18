@@ -65,15 +65,6 @@ def dl_concept_learning(args):
                   data=sorted([(str(s), str(p), str(o)) for s, p, o in Graph().parse(args.kb)], key=lambda x: len(x)),
                   columns=['subject', 'relation', 'object'], dtype=str),
               kwargs_classifier={"random_state": 0},
-              # default params for Decision Tree classifier
-              # criterion='gini', splitter='best', max_depth=None, min_samples_split=2, min_samples_leaf=1,
-              # min_weight_fraction_leaf=0.0, max_features=None, random_state=None, max_leaf_nodes=None,
-              # min_impurity_decrease=0.0, class_weight=None, ccp_alpha=0.0
-              grid_search_over={'criterion': ["entropy", "gini", "log_loss"],
-                                "splitter": ["random", "best"],
-                                "max_features": [None, "sqrt", "log2"],
-                                "min_samples_leaf": [1, 2, 3, 4, 5, 10],
-                                "max_depth": [1, 2, 3, 4, 5, 10, None]},
               max_runtime=args.max_runtime)
 
     # dictionary to store the data
