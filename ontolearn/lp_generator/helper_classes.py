@@ -97,7 +97,7 @@ class KB2Data:
         self.kb = KnowledgeBase(path=path)
         self.num_examples = self.find_optimal_number_of_examples()
         self.min_num_pos_examples = min_num_pos_examples
-        atomic_concepts = frozenset(self.kb.ontology().classes_in_signature())
+        atomic_concepts = frozenset(self.kb.ontology.classes_in_signature())
         self.atomic_concept_names = frozenset([self.dl_syntax_renderer.render(a) for a in atomic_concepts])
         rho = ExpressRefinement(knowledge_base=self.kb, max_child_length=max_child_length, sample_fillers_count=sample_fillers_count,
                                 downsample=downsample_refinements, use_inverse=False, use_card_restrictions=False,
