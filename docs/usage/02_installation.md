@@ -5,19 +5,15 @@ your system. Python comes in various versions and with different,
 sometimes conflicting dependencies. Hence, most guides will recommend
 to set up a "virtual environment" to work in.
 
-One such system for virtual python environments is
-[Anaconda](https://www.anaconda.com/). You can download miniconda from
-<https://docs.conda.io/en/latest/miniconda.html>.
+One such system for virtual python environments is python
+[venv](https://docs.python.org/3/library/venv.html). Since the command comes 
+together with python, you don't need to install any external tool.
 
-We have good experience with it and make use of conda in the
-[Installation from source](#installation-from-source) step.
 
 ## Installation via _pip_
 
 Released versions of Ontolearn can be installed using `pip`, the
-Package Installer for Python. It comes as part of Python. Please
-research externally (or use `conda create` command below) on how to
-create virtual environments for Python programs.
+Package Installer for Python. `pip` comes as part of Python.
 
 ```shell
 pip install ontolearn
@@ -30,39 +26,36 @@ and all its dependencies from <https://pypi.org/project/ontolearn/>.
 
 To download the Ontolearn source code, you will also need to have a
 copy of the [Git](https://git-scm.com/) version control system.
-If you haven't, you might also need to install java and curl:
+
+Install java and curl:
 ```shell
+# for Unix systems (Linux and macOS)
 sudo apt install openjdk-11-jdk
 sudo apt install curl
+# for Windows please check online for yourself :)
 ```
 
+Once you have the done previous step, you can continue setting up a virtual
+environment and installing the dependencies. You may as well use your IDE interface
+to set up your venv.
 
-Once you have `conda` and `git` installed, the following commands
-should be typed in your shell in order to download the Ontolearn
-development sources, install the dependencies listened in the
-`environment.yml` into a conda environment and create the necessary
-installation links to get started with the library.
-
-* Download (clone) the source code
+* ->First download (clone) the source code
   ```shell
   git clone https://github.com/dice-group/Ontolearn.git
   cd Ontolearn
   ```
   
-* Create a conda environment using the `environment.yml` file.
+* ->Create a python virtual environment. (We are not using conda anymore)
   ```shell
-  conda env create -f environment.yml
-  conda activate ontolearn
+  python -m venv venv 
+  source venv/bin/activate # --> for Unix systems
+  # .\venv\Scripts\activate  --> for Windows
   ```
-* Install the development links so that Python will find the library
+* ->Install the dependencies
   ```shell
-  python -c 'from setuptools import setup; setup()' develop 
+  pip install -r requirements.txt
   ```
-* Instead of the previous step there is also Possibility B, which is valid temporarily only in your current shell:
-  ```shell
-  export PYTHONPATH=$PWD
-  ```
-
+  
 Now you are ready to develop on Ontolearn or use the library!
 
 ### Verify installation
@@ -82,12 +75,16 @@ to successfully pass all the tests:
 ```shell
 pytest
 ```
+Note: Since Unix and Windows reference files differently, the test are set to work on Linux 
+but in Widows the filepaths throughout test cases should be changed which is something that
+is not very convenient to do. If you really want to run the tests in Windows, you can
+make use of the replace all functionality to change them.
 
 ## Download External Files
 
 Some resources like pre-calculated embeddings or `pre_trained_agents` and datasets (ontologies)
 are not included in the repository directly. Use the command line command `wget`
- to download them from our data server.
+to download them from our data server.
 
 > **NOTE: Before you run this commands in your terminal, make sure you are 
 in the root directory of the project!**
@@ -133,10 +130,11 @@ rm -f NCESData.zip
 
 ## Building (sdist and bdist_wheel)
 
-In order to create a *distribution* of the Ontolearn source code, typically when creating a new release, it is necessary to use the `build` tool. It can be invoked with:
+In order to create a *distribution* of the Ontolearn source code, typically when creating a new release, 
+it is necessary to use the `build` tool. It can be invoked with:
 
 ```shell
-tox -e build
+python -m build
 ```
 
 from the main source code folder. Packages created by `build` can then
@@ -149,14 +147,14 @@ be uploaded as releases to the [Python Package Index (PyPI)](https://pypi.org/) 
 The documentation can be built with
 
 ```shell
-tox -e docs
+sphinx-build -M html docs/ docs/_build/
 ```
 
 It is also possible to create a PDF manual, but that requires LaTeX to
 be installed:
 
 ```shell
-tox -e docs latexpdf
+sphinx-build -M latex docs/ docs/_build/
 ```
 
 ## Simple Linting

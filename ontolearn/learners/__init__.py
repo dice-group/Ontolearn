@@ -1,2 +1,2 @@
 from .drill import Drill
-from .tree_learner import TreeLearner
+from .tree_learner import TDL

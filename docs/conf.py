@@ -10,10 +10,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
-
+import os
+import sys
+sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
@@ -27,17 +26,24 @@ author = 'Ontolearn team'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinxext_autox',
+    'autoapi.extension',
     'sphinx.ext.githubpages',
-    # 'sphinx.ext.intersphinx',
-    # 'sphinx_automodapi.smart_resolver',
-    # 'sphinx.ext.inheritance_diagram',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'sphinxcontrib.plantuml',
     'myst_parser',
     'sphinx_rtd_theme',
 ]
+
+# autoapi for ontolearn and owlapy. for owlapy we need to refer to its path in GitHub Action environment
+autoapi_dirs = ['../ontolearn', '/opt/hostedtoolcache/Python/3.9.18/x64/lib/python3.9/site-packages/owlapy']
+
+# by default all are included but had to reinitialize this to remove private members from shoing
+autoapi_options = ['members', 'undoc-members', 'show-inheritance', 'show-module-summary', 'special-members',
+                   'imported-members']
+# this is set to false, so we can add it manually in index.rst together with the other .md files of the documentation.
+autoapi_add_toctree_entry = False
+
 
 inheritance_graph_attrs = dict(rankdir="TB")
 
