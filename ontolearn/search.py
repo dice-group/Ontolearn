@@ -293,6 +293,33 @@ class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality
             _NodeIndividualsCount.__str__(self),
         ))
 
+    
+class NCESNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, AbstractNode, AbstractConceptNode):
+    """
+    EvoLearner search tree node.
+    """
+    __slots__ = '_concept', '_len', '_individuals_count', '_quality'
+
+    def __init__(self,
+                 concept: OWLClassExpression,
+                 length: int,
+                 individuals_count: int,
+                 quality: float):
+        _NodeConcept.__init__(self, concept)
+        _NodeLen.__init__(self, length)
+        _NodeIndividualsCount.__init__(self, individuals_count)
+        _NodeQuality.__init__(self, quality)
+        AbstractNode.__init__(self)
+
+    def __str__(self):
+        return "\t".join((
+            AbstractNode.__str__(self),
+            _NodeConcept.__str__(self),
+            _NodeQuality.__str__(self),
+            f'Length:{self._len}',
+            _NodeIndividualsCount.__str__(self),
+        ))
+    
 
 class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodeParentRef['RL_State']):
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()

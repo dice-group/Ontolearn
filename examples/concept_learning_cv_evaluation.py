@@ -12,7 +12,7 @@ import json
 import time
 import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import CELOE, OCEL, EvoLearner
+from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, NCES
 from ontolearn.learners import Drill, TDL
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1
@@ -66,6 +66,8 @@ def dl_concept_learning(args):
                   columns=['subject', 'relation', 'object'], dtype=str),
               kwargs_classifier={"random_state": 0},
               max_runtime=args.max_runtime)
+    nces = NCES(knowledge_base_path=args.kb, quality_func=F1(), path_of_embeddings=args.path_of_nces_embeddings,
+                pretrained_model_name=["LSTM", "GRU", "SetTransformer"], num_predictions=5)
 
     # dictionary to store the data
     data = dict()
@@ -214,6 +216,29 @@ def dl_concept_learning(args):
             print(f"TDL Train Quality: {train_f1_tdl:.3f}", end="\t")
             print(f"TDL Test Quality: {test_f1_tdl:.3f}", end="\t")
             print(f"TDL Runtime: {rt_tdl:.3f}")
+            
+            
+            start_time = time.time()
+            # () Fit model training dataset
+            pred_nces = nces.fit(train_lp.pos, train_lp.neg).best_hypotheses(n=1).concept
+            print("NCES ends..", end="\t")
+            rt_nces = time.time() - start_time
+
+            # () Quality on the training data
+            train_f1_nces = compute_f1_score(individuals={i for i in kb.individuals(pred_nces)},
+                                            pos=train_lp.pos,
+                                            neg=train_lp.neg)
+            # () Quality on test data
+            test_f1_nces = compute_f1_score(individuals={i for i in kb.individuals(pred_nces)},
+                                           pos=test_lp.pos,
+                                           neg=test_lp.neg)
+
+            data.setdefault("Train-F1-NCES", []).append(train_f1_nces)
+            data.setdefault("Test-F1-NCES", []).append(test_f1_nces)
+            data.setdefault("RT-NCES", []).append(rt_nces)
+            print(f"NCES Train Quality: {train_f1_nces:.3f}", end="\t")
+            print(f"NCES Test Quality: {test_f1_nces:.3f}", end="\t")
+            print(f"NCES Runtime: {rt_nces:.3f}")
 
     df = pd.DataFrame.from_dict(data)
     df.to_csv(args.report, index=False)
@@ -229,6 +254,7 @@ if __name__ == '__main__':
     parser.add_argument("--kb", type=str, required=True,
                         help="Knowledge base")
     parser.add_argument("--path_pretrained_kge", type=str, default=None)
+    parser.add_argument("--path_of_nces_embeddings", type=str, default=None)
     parser.add_argument("--report", type=str, default="report.csv")
     parser.add_argument("--random_seed", type=int, default=1)
     dl_concept_learning(parser.parse_args())
