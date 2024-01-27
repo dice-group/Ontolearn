@@ -12,7 +12,7 @@ import os
 import time
 import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import CELOE, OCEL, EvoLearner
+from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, NCES
 from ontolearn.learners import Drill, TDL
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import Accuracy, F1

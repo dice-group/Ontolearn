@@ -56,3 +56,10 @@ def init_individuals_from_concepts(include_implicit_individuals: bool = None, re
         individuals = ontology.individuals_in_signature()
         _ind_set = frozenset(individuals)
     return _ind_set
+
+def compute_tp_fn_fp_tn(individuals, pos, neg):
+    tp = len(pos.intersection(individuals))
+    tn = len(neg.difference(individuals))
+    fp = len(neg.intersection(individuals))
+    fn = len(pos.difference(individuals))
+    return tp, fn, fp, tn
