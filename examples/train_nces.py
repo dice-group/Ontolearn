@@ -16,7 +16,7 @@ def str2bool(v):
         return True
     elif v.lower() in ['f', 'false', 'n', 'no', '0']:
         return False
-    else:
+    else:                                         
         raise ValueError('Invalid boolean value.')
 
 

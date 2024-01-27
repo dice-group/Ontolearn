@@ -15,12 +15,12 @@ class BaseNCES:
                  decay_rate=0.0, clip_value=5.0, num_workers=8):
         self.name = "NCES"
         kb = KnowledgeBase(path=knowledge_base_path)
-        self.kb_namespace = list(kb.ontology().classes_in_signature())[0].get_iri().get_namespace()
-        renderer = DLSyntaxObjectRenderer()
-        atomic_concepts = list(kb.ontology().classes_in_signature())
-        atomic_concept_names = [renderer.render(a) for a in atomic_concepts]
+        self.kb_namespace = list(kb.ontology.classes_in_signature())[0].get_iri().get_namespace()
+        self.renderer = DLSyntaxObjectRenderer()
+        atomic_concepts = list(kb.ontology.classes_in_signature())
+        atomic_concept_names = [self.renderer.render(a) for a in atomic_concepts]
         self.atomic_concept_names = atomic_concept_names
-        role_names = [rel.get_iri().get_remainder() for rel in kb.ontology().object_properties_in_signature()]
+        role_names = [rel.get_iri().get_remainder() for rel in kb.ontology.object_properties_in_signature()]
         vocab = atomic_concept_names + role_names + ['⊔', '⊓', '∃', '∀', '¬', '⊤', '⊥', '.', ' ', '(', ')']
         vocab = sorted(vocab) + ['PAD']
         self.knowledge_base_path = knowledge_base_path
