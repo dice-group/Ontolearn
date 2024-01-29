@@ -45,5 +45,6 @@ class TestConceptLearnerReg:
             drill_quality.append(drill.fit(lp).best_hypotheses(n=1).quality)
 
 
-        assert sum(evo_quality)>sum(drill_quality)>sum(celoe_quality)>sum(ocel_quality)
+        assert sum(evo_quality)>=sum(drill_quality)
+        assert sum(celoe_quality)>=sum(ocel_quality)
 

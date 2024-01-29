@@ -34,9 +34,10 @@ from ontolearn.heuristics import OCELHeuristic
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from ontolearn.metrics import Accuracy, F1
 from ontolearn.refinement_operators import LengthBasedRefinement
-from ontolearn.search import EvoLearnerNode, HeuristicOrderedNode, LBLNode, OENode, TreeNode, LengthOrderedNode, \
+from ontolearn.search import EvoLearnerNode, NCESNode, HeuristicOrderedNode, LBLNode, OENode, TreeNode, LengthOrderedNode, \
     QualityOrderedNode, RL_State, DRILLSearchTreePriorityQueue, EvaluatedConcept
 from ontolearn.utils import oplogging, create_experiment_folder
+from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter, EntropyValueSplitter
 from ontolearn.base_nces import BaseNCES
 from ontolearn.nces_architectures import LSTM, GRU, SetTransformer
@@ -986,7 +987,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         return self.terminate()
 
     def _initialize(self, pos: FrozenSet[OWLNamedIndividual], neg: FrozenSet[OWLNamedIndividual]) -> List[Tree]:
-        reasoner = self.kb.reasoner() if self.reasoner is None else self.reasoner
+        reasoner = self.kb.reasoner if self.reasoner is None else self.reasoner
         if self.use_data_properties:
             if isinstance(self.value_splitter, BinningValueSplitter):
                 self._dp_splits = self.value_splitter.compute_splits_properties(reasoner,
@@ -1065,12 +1066,16 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 class NCES(BaseNCES):
     """Neural Class Expression Synthesis."""
 
-    def __init__(self, knowledge_base_path, learner_name, path_of_embeddings, proj_dim, rnn_n_layers, drop_prob,
-                 num_heads, num_seeds, num_inds, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0,
-                 batch_size=256, num_workers=8, max_length=48, load_pretrained=True, sorted_examples=True,
+    def __init__(self, knowledge_base_path, 
+                 quality_func: Optional[AbstractScorer] = None, num_predictions=5,
+                 learner_name="SetTransformer", path_of_embeddings="", proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
+                 num_heads=4, num_seeds=1, num_inds=32, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0,
+                 batch_size=256, num_workers=8, max_length=48, load_pretrained=True, sorted_examples=False,
                  pretrained_model_name=None):
         super().__init__(knowledge_base_path, learner_name, path_of_embeddings, batch_size, learning_rate, decay_rate,
                          clip_value, num_workers)
+        self.quality_func = quality_func
+        self.num_predictions = num_predictions
         self.path_of_embeddings = path_of_embeddings
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.max_length = max_length
@@ -1085,6 +1090,8 @@ class NCES(BaseNCES):
         self.sorted_examples = sorted_examples
         self.pretrained_model_name = pretrained_model_name
         self.model = self.get_synthesizer()
+        self.dl_parser = DLSyntaxParser(namespace=self.kb_namespace)
+        self.best_predictions = None
 
     def get_synthesizer(self):
         def load_model(learner_name, load_pretrained):
@@ -1119,7 +1126,6 @@ class NCES(BaseNCES):
     def sample_examples(self, pos, neg):
         assert type(pos[0]) == type(neg[0]), "The two iterables pos and neg must be of same type"
         num_ex = self.num_examples
-        oversample = False
         if min(len(pos), len(neg)) >= num_ex // 2:
             if len(pos) > len(neg):
                 num_neg_ex = num_ex // 2
@@ -1133,73 +1139,98 @@ class NCES(BaseNCES):
         elif len(pos) + len(neg) >= num_ex and len(pos) < len(neg):
             num_pos_ex = len(pos)
             num_neg_ex = num_ex - num_pos_ex
-        # elif len(pos) + len(neg) < num_ex:
-        #    num_pos_ex = max(num_ex//3, len(pos))
-        #    num_neg_ex = max(num_ex-num_pos_ex, len(neg))
-        #    oversample = True
         else:
             num_pos_ex = len(pos)
             num_neg_ex = len(neg)
-        if oversample:
-            remaining = list(self.all_individuals.difference(set(pos).union(set(neg))))
-            positive = pos + random.sample(remaining, min(max(0, num_pos_ex - len(pos)), len(remaining)))
-            remaining = list(set(remaining).difference(set(positive)))
-            negative = neg + random.sample(remaining, min(max(0, num_neg_ex - len(neg)), len(remaining)))
-        else:
-            positive = random.sample(pos, min(num_pos_ex, len(pos)))
-            negative = random.sample(neg, min(num_neg_ex, len(neg)))
+        positive = random.sample(pos, min(num_pos_ex, len(pos)))
+        negative = random.sample(neg, min(num_neg_ex, len(neg)))
         return positive, negative
 
-    @staticmethod
-    def get_prediction(models, x1, x2):
+    def get_prediction(self, models, x1, x2):
         for i, model in enumerate(models):
             model.eval()
+            model.to(self.device)
+            x1 = x1.to(self.device)
+            x2 = x2.to(self.device)
             if i == 0:
                 _, scores = model(x1, x2)
             else:
                 _, sc = model(x1, x2)
                 scores = scores + sc
         scores = scores / len(models)
-        prediction = model.inv_vocab[scores.argmax(1)]
+        prediction = model.inv_vocab[scores.argmax(1).cpu()]
         return prediction
-
-    def fit(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]],
-            shuffle_examples=False, verbose=True, **kwargs):
-        pos = list(pos)
-        neg = list(neg)
+    
+    def fit_one(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]], verbose=False):
         if isinstance(pos[0], OWLNamedIndividual):
             pos_str = [ind.get_iri().as_str().split("/")[-1] for ind in pos]
             neg_str = [ind.get_iri().as_str().split("/")[-1] for ind in neg]
-            pos_str, neg_str = self.sample_examples(pos_str, neg_str)
         elif isinstance(pos[0], str):
-            pos_str, neg_str = self.sample_examples(pos, neg)
+            pos_str = pos
+            neg_str = neg
         else:
             raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
-        if self.sorted_examples:
-            pos_str, neg_str = sorted(pos_str), sorted(neg_str)
+        Pos = [random.sample(pos_str, len(pos_str)) for _ in range(self.num_predictions)]
+        Neg = [random.sample(neg_str, len(neg_str)) for _ in range(self.num_predictions)]
 
         assert self.load_pretrained and self.pretrained_model_name, \
             "No pretrained model found. Please first train NCES, see the <<train>> method below"
 
-        dataset = NCESDataLoaderInference([("", pos_str, neg_str)], self.instance_embeddings,
-                                          self.vocab, self.inv_vocab, shuffle_examples, self.sorted_examples)
+        dataset = NCESDataLoaderInference([("", Pos_str, Neg_str) for (Pos_str, Neg_str) in zip(Pos, Neg)], self.instance_embeddings,
+                                          self.vocab, self.inv_vocab, False, self.sorted_examples)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers,
                                 collate_fn=self.collate_batch_inference, shuffle=False)
         x_pos, x_neg = next(iter(dataloader))
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
-        dl_parser = DLSyntaxParser(namespace=self.kb_namespace)
-        prediction = self.get_prediction(self.model, x_pos, x_neg)
-        try:
-            prediction_str = "".join(before_pad(prediction.squeeze()))
-            prediction_as_owl_class_expression = dl_parser.parse(prediction_str)
-            if verbose:
-                print("Prediction: ", prediction_str)
-        except:
-            prediction_str = simpleSolution.predict("".join(before_pad(prediction.squeeze())))
-            prediction_as_owl_class_expression = dl_parser.parse(prediction_str)
-            if verbose:
-                print("Prediction: ", prediction_str)
-        return prediction_as_owl_class_expression
+        predictions_raw = self.get_prediction(self.model, x_pos, x_neg)
+        predictions = []
+        for prediction in predictions_raw:
+            try:
+                prediction_str = "".join(before_pad(prediction.squeeze()))
+                concept = self.dl_parser.parse(prediction_str)
+            except:
+                prediction_str = simpleSolution.predict("".join(before_pad(prediction.squeeze())))
+                concept = self.dl_parser.parse(prediction_str)
+                if verbose:
+                    print("Prediction: ", prediction_str)
+            predictions.append(concept)
+        return predictions
+
+    def fit(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]], verbose=False, **kwargs):
+        if isinstance(pos, set) or isinstance(pos, frozenset):
+            pos_list = list(pos)
+            neg_list = list(neg)
+            if self.sorted_examples:
+                pos_list = sorted(pos_list)
+                neg_list = sorted(neg_list)
+        else:
+            raise ValueError(f"Expected pos and neg to be sets, got {type(pos)} and {type(neg)}")
+        predictions = self.fit_one(pos_list, neg_list, verbose=verbose)
+        predictions_as_nodes = []
+        for concept in predictions:
+            try:
+                concept_individuals_count = self.kb.individuals_count(concept)
+            except AttributeError:
+                concept = self.dl_parser.parse('⊤')
+                concept_individuals_count = self.kb.individuals_count(concept)
+            concept_length = init_length_metric().length(concept)
+            concept_instances = set(self.kb.individuals(concept)) if isinstance(pos_list[0], OWLNamedIndividual) else set([ind.get_iri().as_str().split("/")[-1] for ind in self.kb.individuals(concept)])
+            tp, fn, fp, tn = compute_tp_fn_fp_tn(concept_instances, pos, neg)
+            quality = self.quality_func.score2(tp, fn, fp, tn)[1]
+            node = NCESNode(concept, length=concept_length, individuals_count=concept_individuals_count, quality=quality)
+            predictions_as_nodes.append(node)
+        predictions_as_nodes = sorted(predictions_as_nodes, key=lambda x: -x.quality)
+        self.best_predictions = predictions_as_nodes
+        return self
+    
+    def best_hypotheses(self, n=1)->Union[NCESNode, Iterable[NCESNode]]:
+        if self.best_predictions is None:
+            print("NCES needs to be fitted to a problem first")
+            return None
+        elif len(self.best_predictions) == 1 or n == 1:
+            return self.best_predictions[0]
+        else:
+            return self.best_predictions[:n]
 
     def convert_to_list_str_from_iterable(self, data):
         target_concept_str, examples = data[0], data[1:]
@@ -1208,9 +1239,8 @@ class NCES(BaseNCES):
         if isinstance(pos[0], OWLNamedIndividual):
             pos_str = [ind.get_iri().as_str().split("/")[-1] for ind in pos]
             neg_str = [ind.get_iri().as_str().split("/")[-1] for ind in neg]
-            pos_str, neg_str = self.sample_examples(pos_str, neg_str)
         elif isinstance(pos[0], str):
-            pos_str, neg_str = self.sample_examples(list(pos), list(neg))
+            pos_str, neg_str = list(pos), list(neg)
         else:
             raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
         if self.sorted_examples:
@@ -1221,17 +1251,17 @@ class NCES(BaseNCES):
     List[Tuple[str, Set[str], Set[str]]]], shuffle_examples=False,
                           verbose=False, **kwargs) -> List:
         """
-        Dataset is a list of tuples where the first items are strings corresponding to target concepts.
+        - Dataset is a list of tuples where the first items are strings corresponding to target concepts.
+        
+        - This function returns predictions as owl class expressions, not nodes as in fit
         """
         assert self.load_pretrained and self.pretrained_model_name, \
-            "No pretrained model found. Please first train NCES, see the <<train>> method"
+            "No pretrained model found. Please first train NCES, refer to the <<train>> method"
         dataset = [self.convert_to_list_str_from_iterable(datapoint) for datapoint in dataset]
-        dataset = NCESDataLoaderInference(dataset, self.instance_embeddings, self.vocab, self.inv_vocab,
-                                          shuffle_examples)
+        dataset = NCESDataLoaderInference(dataset, self.instance_embeddings, self.vocab, self.inv_vocab, shuffle_examples)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers,
                                 collate_fn=self.collate_batch_inference, shuffle=False)
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
-        dl_parser = DLSyntaxParser(namespace=self.kb_namespace)
         predictions_as_owl_class_expressions = []
         predictions_str = []
         for x_pos, x_neg in dataloader:
@@ -1239,12 +1269,12 @@ class NCES(BaseNCES):
             for prediction in predictions:
                 try:
                     prediction_str = "".join(before_pad(prediction))
-                    ce = dl_parser.parse(prediction_str)
+                    ce = self.dl_parser.parse(prediction_str)
                     predictions_str.append(prediction_str)
                 except:
                     prediction_str = simpleSolution.predict("".join(before_pad(prediction)))
                     predictions_str.append(prediction_str)
-                    ce = dl_parser.parse(prediction_str)
+                    ce = self.dl_parser.parse(prediction_str)
                 predictions_as_owl_class_expressions.append(ce)
         if verbose:
             print("Predictions: ", predictions_str)

@@ -15,11 +15,11 @@ kb = KnowledgeBase(path=PATH_FAMILY, reasoner_factory=OWLReasoner_Owlready2)
 
 def test_concept():
     # Processes input kb
-    iri = kb.ontology().get_ontology_id().get_ontology_iri()
+    iri = kb.ontology.get_ontology_id().get_ontology_iri()
     assert iri == IRI.create("http://www.benchmark.org/family")
-    classes = list(kb.ontology().classes_in_signature())
+    classes = list(kb.ontology.classes_in_signature())
     assert len(classes) >= 18
-    for cls in kb.ontology().classes_in_signature():
+    for cls in kb.ontology.classes_in_signature():
         assert isinstance(cls, OWLClass)
         ic = kb.individuals_count(cls)
         assert ic > 0
