@@ -3,13 +3,14 @@
 import logging
 import random
 from itertools import chain
-from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict, Tuple, Generator
+from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict, Tuple, Generator, cast
 from ontolearn.base import OWLOntology_Owlready2, OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, \
     OWLNamedIndividual, OWLObjectProperty, OWLClass, OWLDataProperty, IRI, OWLDataRange, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLDatatype, BooleanOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, OWLThing, \
-    OWLObjectPropertyExpression, OWLLiteral, OWLDataPropertyExpression
+    OWLObjectPropertyExpression, OWLLiteral, OWLDataPropertyExpression, OWLClassAssertionAxiom, \
+    OWLObjectPropertyAssertionAxiom, OWLDataPropertyAssertionAxiom, OWLSubClassOfAxiom, OWLEquivalentClassesAxiom
 from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.search import EvaluatedConcept
 from owlapy.util import iter_count, LRUCache
@@ -164,7 +165,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             self.reasoner = reasoner_factory(self.ontology)
         else:
             if triplestore_address is not None:
-                self.reasoner = OWLReasoner_Owlready2(ontology=onto, triplestore_address=triplestore_address)
+                self.reasoner = OWLReasoner_Owlready2(ontology=ontology, triplestore_address=triplestore_address)
             else:
                 self.reasoner = OWLReasoner_FastInstanceChecker(ontology=self.ontology,
                                                                 base_reasoner=OWLReasoner_Owlready2(
@@ -223,38 +224,94 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             yield from self.maybe_cache_individuals(concept)
 
-    def abox(self, individual=None):
-        assert individual is None, "Fixing individual is not possible "
-        for i in self.individuals():
-            """ Obtain all ty"""
-            # Should we represent type relation/predicate as an IRI, or what else ?
-            yield from ((i, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", j) for j in self.get_types(ind=i))
-            #
-            # check whether i in the domain of a property
-            for k in self.get_data_properties_for_ind(ind=i):
-                raise NotImplementedError(
-                    "Iterating over triples by fixing a subject and a relation is not implemented.")
-            for k in self.get_object_properties_for_ind(ind=i):
-                raise NotImplementedError(
-                    "Iterating over triples by fixing a subject and a relation is not implemented.")
+    def abox(self, individual: OWLNamedIndividual = None, mode='native'):
+        """
+        Get all the abox axioms for a given individual. If no individual is given, returns abox axioms for all
+        individuals
 
-    def tbox(self, concepts: Union[Iterable[OWLClass], OWLClass, None] = None):
-        if concepts is None:
-            for i in self.get_concepts():
-                yield from ((i, "http://www.w3.org/2000/01/rdf-schema#subClassOf", j) for j in
-                            self.get_direct_sub_concepts(i))
+        Args:
+            individual: Individual to get the abox axioms from.
+            mode (str): The return format.
+             1) 'native' -> returns triples as tuples of owlapy objects,
+             2) 'iri' -> returns triples as tuples of IRIs as string,
+             3) 'axiom' -> triples are represented by owlapy axioms.
+
+        Returns: Iterable of tuples or owlapy axiom, depending on the mode.
+        """
+
+        assert mode in ['native', 'iri', 'axiom'], "Valid modes are: 'native', 'iri' or 'axiom'"
+
+        individuals = [individual] if individual else self.individuals()
+
+        for i in individuals:
+            if mode == "native":
+                # Obtain all class assertion triples/axioms
+                yield from ((i, IRI.create("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), t) for t in
+                            self.get_types(ind=i))  # for now, 'type' predicate will be represented as an IRI
+
+                # Obtain all property assertion triples/axioms
+                for dp in self.get_data_properties_for_ind(ind=i):
+                    yield from ((i, dp, literal) for literal in self.get_data_property_values(i, dp))
+
+                for op in self.get_object_properties_for_ind(ind=i):
+                    yield from ((i, op, ind) for ind in self.get_object_property_values(i, op))
+            elif mode == "iri":
+                yield from ((i.get_iri().as_str(), "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+                             t.get_iri().as_str()) for t in self.get_types(ind=i))
+                for dp in self.get_data_properties_for_ind(ind=i):
+                    yield from ((i.get_iri().as_str(), dp.get_iri().as_str(), literal.get_literal()) for literal in
+                                self.get_data_property_values(i, dp))
+                for op in self.get_object_properties_for_ind(ind=i):
+                    yield from ((i.get_iri().as_str(), op.get_iri().as_str(), ind.get_iri().as_str()) for ind in
+                                self.get_object_property_values(i, op))
+            elif mode == "axiom":
+                yield from (OWLClassAssertionAxiom(i, t) for t in self.get_types(ind=i))
+                for dp in self.get_data_properties_for_ind(ind=i):
+                    yield from (OWLDataPropertyAssertionAxiom(i, dp, literal) for literal in
+                                self.get_data_property_values(i, dp))
+                for op in self.get_object_properties_for_ind(ind=i):
+                    yield from (OWLObjectPropertyAssertionAxiom(i, op, ind) for ind in
+                                self.get_object_property_values(i, op))
+
+    def tbox(self, concepts: Union[Iterable[OWLClass], OWLClass, None] = None, mode='native'):
+
+        assert mode in ['native', 'iri', 'axiom'], "Valid modes are: 'native', 'iri' or 'axiom'"
+        all_classes = False
+        if isinstance(concepts, Iterable):
+            cs = list(concepts)
         elif isinstance(concepts, OWLClass):
-            yield from ((concepts, "http://www.w3.org/2000/01/rdf-schema#subClassOf", j) for j in
-                        self.get_direct_sub_concepts(concepts))
-        elif isinstance(concepts, Iterable):
-            for i in concepts:
-                assert isinstance(i, OWLClass)
-                yield from ((i, "http://www.w3.org/2000/01/rdf-schema#subClassOf", j) for j in
-                            self.get_direct_sub_concepts(i))
+            cs = [concepts]
         else:
-            raise RuntimeError(f"Unexected input{concepts}")
+            cs = list(self.get_concepts())
+            all_classes = True
 
-        # @TODO:CD: equivalence must also be added.
+        for concept in cs:
+            if mode == 'native':
+                yield from ((j, IRI.create("http://www.w3.org/2000/01/rdf-schema#subClassOf"), concept) for j in
+                            self.get_direct_sub_concepts(concept))
+                yield from ((concept, IRI.create("http://www.w3.org/2000/01/rdf-schema#equivalentClass"), j) for j in
+                            self.reasoner.equivalent_classes(concept, only_named=True))
+                if not all_classes:
+                    yield from ((concept, IRI.create("http://www.w3.org/2000/01/rdf-schema#subClassOf"), j) for j in
+                                self.get_direct_parents(concept))
+            elif mode == 'iri':
+                yield from ((j.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+                             concept.get_iri().as_str()) for j in self.get_direct_sub_concepts(concept))
+                yield from ((concept.get_iri().as_str(), "http://www.w3.org/2002/07/owl#equivalentClass",
+                             cast(OWLClass, j).get_iri().as_str()) for j in
+                            self.reasoner.equivalent_classes(concept, only_named=True))
+                if not all_classes:
+                    yield from ((concept.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+                                 j.get_iri().as_str()) for j in
+                                self.get_direct_parents(concept))
+            elif mode == "axiom":
+                yield from (OWLSubClassOfAxiom(super_class=concept, sub_class=j) for j in
+                            self.get_direct_sub_concepts(concept))
+                yield from (OWLEquivalentClassesAxiom([concept, j]) for j in
+                            self.reasoner.equivalent_classes(concept, only_named=True))
+                if not all_classes:
+                    yield from (OWLSubClassOfAxiom(super_class=j, sub_class=concept) for j in
+                                self.get_direct_parents(concept))
 
     def ignore_and_copy(self, ignored_classes: Optional[Iterable[OWLClass]] = None,
                         ignored_object_properties: Optional[Iterable[OWLObjectProperty]] = None,
