@@ -188,12 +188,11 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
     def sub_data_properties(self, dp: OWLDataProperty, direct: bool = False) -> Iterable[OWLDataProperty]:
         yield from self._base_reasoner.sub_data_properties(dp=dp, direct=direct)
 
-    # the cast to OWLReasoner_Owlready2 is temporary. After new release of owlapy it will not be needed anymore.
     def super_data_properties(self, dp: OWLDataProperty, direct: bool = False) -> Iterable[OWLDataProperty]:
-        yield from cast(OWLReasoner_Owlready2, self._base_reasoner).super_data_properties(dp=dp, direct=direct)
+        yield from self._base_reasoner.super_data_properties(dp=dp, direct=direct)
 
     def super_object_properties(self, op: OWLObjectProperty, direct: bool = False) -> Iterable[OWLDataProperty]:
-        yield from cast(OWLReasoner_Owlready2, self._base_reasoner).super_object_properties(op=op, direct=direct)
+        yield from self._base_reasoner.super_object_properties(op=op, direct=direct)
 
     def sub_object_properties(self, op: OWLObjectPropertyExpression, direct: bool = False) \
             -> Iterable[OWLObjectPropertyExpression]:
