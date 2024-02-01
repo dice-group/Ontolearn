@@ -21,7 +21,7 @@ setup(
         "tqdm>=4.64.0",
         "transformers>=4.35.0",
         "pytest>=7.2.2",
-        "owlapy>=0.1.0",
+        "owlapy>=0.1.1",
         "dicee>=0.1.2"],
     author='Caglar Demir',
     author_email='caglardemir8@gmail.com',
