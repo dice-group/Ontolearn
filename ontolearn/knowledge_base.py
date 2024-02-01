@@ -227,12 +227,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             yield from self.maybe_cache_individuals(concept)
 
-    def abox(self, individual: OWLNamedIndividual = None, mode='native'):
+    def abox(self, individuals: Union[OWLNamedIndividual, Iterable[OWLNamedIndividual]] = None, mode='native'):
         """
         Get all the abox axioms for a given individual. If no individual is given, get all abox axioms
 
         Args:
-            individual (OWLNamedIndividual): Individual to get the abox axioms from.
+            individuals (OWLNamedIndividual): Individual/s to get the abox axioms from.
             mode (str): The return format.
              1) 'native' -> returns triples as tuples of owlapy objects,
              2) 'iri' -> returns triples as tuples of IRIs as string,
@@ -243,9 +243,14 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
         assert mode in ['native', 'iri', 'axiom'], "Valid modes are: 'native', 'iri' or 'axiom'"
 
-        individuals = [individual] if individual else self.individuals()
+        if isinstance(individuals, OWLNamedIndividual):
+            inds = [individuals]
+        elif isinstance(individuals, Iterable):
+            inds = individuals
+        else:
+            inds = self.individuals()
 
-        for i in individuals:
+        for i in inds:
             if mode == "native":
                 # Obtain all class assertion triples/axioms
                 yield from ((i, IRI.create("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), t) for t in
