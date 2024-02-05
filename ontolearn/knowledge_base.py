@@ -253,8 +253,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
         for i in inds:
             if mode == "native":
                 # Obtain all class assertion triples/axioms
+                # For now, 'rdfs:type' predicate will be represented as an IRI
                 yield from ((i, IRI.create("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), t) for t in
-                            self.get_types(ind=i))  # for now, 'type' predicate will be represented as an IRI
+                            self.get_types(ind=i, direct=True))
 
                 # Obtain all property assertion triples/axioms
                 for dp in self.get_data_properties_for_ind(ind=i):
@@ -264,7 +265,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                     yield from ((i, op, ind) for ind in self.get_object_property_values(i, op))
             elif mode == "iri":
                 yield from ((i.str, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-                             t.get_iri().as_str()) for t in self.get_types(ind=i))
+                             t.get_iri().as_str()) for t in self.get_types(ind=i, direct=True))
                 for dp in self.get_data_properties_for_ind(ind=i):
                     yield from ((i.str, dp.get_iri().as_str(), literal.get_literal()) for literal in
                                 self.get_data_property_values(i, dp))
@@ -272,7 +273,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                     yield from ((i.str, op.get_iri().as_str(), ind.get_iri().as_str()) for ind in
                                 self.get_object_property_values(i, op))
             elif mode == "axiom":
-                yield from (OWLClassAssertionAxiom(i, t) for t in self.get_types(ind=i))
+                yield from (OWLClassAssertionAxiom(i, t) for t in self.get_types(ind=i, direct=True))
                 for dp in self.get_data_properties_for_ind(ind=i):
                     yield from (OWLDataPropertyAssertionAxiom(i, dp, literal) for literal in
                                 self.get_data_property_values(i, dp))
@@ -388,7 +389,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                     if not include_all:
                         [results.add((prop.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subPropertyOf",
                                       j.get_iri().as_str())) for j
-                         in getattr(self.reasoner, "super_" + prop_type + "_properties")(prop, direct=True)]
+                         in getattr(self.reasoner, "super_" + prop_type.lower() + "_properties")(prop, direct=True)]
                 elif mode == 'axiom':
                     [results.add(getattr(owlapy.model, "OWLSub" + prop_type + "PropertyOfAxiom")(j, prop)) for j in
                      getattr(self.reasoner, "sub_" + prop_type.lower() + "_properties")(prop, direct=True)]
