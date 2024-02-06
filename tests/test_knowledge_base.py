@@ -18,7 +18,7 @@ class KnowledgeBaseTest(unittest.TestCase):
 
     def setUp(self):
         self.namespace = "http://dl-learner.org/mutagenesis#"
-        self.kb = KnowledgeBase(path="/KGs/Mutagenesis/mutagenesis.owl")
+        self.kb = KnowledgeBase(path="KGs/Mutagenesis/mutagenesis.owl")
         self.onto = self.kb.ontology
         self.mgr = self.onto.get_owl_ontology_manager()
         self.generator = ConceptGenerator()
