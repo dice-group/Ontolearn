@@ -253,11 +253,43 @@ You can now:
     print(evaluated_concept.ic) # 3
     ```
 
+## Obtaining axioms
+
+You can retrieve Tbox and Abox axioms by using `tbox` and `abox` methods respectively.
+Let us take them one at a time. The `tbox` method has 2 parameters, `entities` and `mode`.
+`entities` specifies the owl entity from which we want to obtain the Tbox axioms. It can be 
+a single entity, a `Iterable` of entities, or `None`. 
+
+The allowed types of entities are: 
+- OWLClass
+- OWLObjectProperty
+- OWLDataProperty
+
+Only the Tbox axioms related to the given entit-y/ies will be returned. If no entities are 
+passed, then it returns all the Tbox axioms.
+The second parameter `mode` _(str)_ sets the return format type. It can have the
+following values:
+1) `'native'` -> triples are represented as tuples of owlapy objects.
+2) `'iri'` -> triples are represented as tuples of IRIs as strings.
+3) `'axiom'` -> triples are represented as owlapy axioms.
+
+For the `abox` method the idea is similar. Instead of the parameter `entities`, there is the parameter 
+`individuals` which accepts an object of type OWLNamedIndividuals or Iterable[OWLNamedIndividuals].
+
+If you want to obtain all the axioms (Tbox + Abox) of the knowledge base, you can use the method `triples`. It
+requires only the `mode` parameter.
+
+> **NOTE**: The results of these methods are limited only to named and direct entities. 
+> That means that especially the axioms that contain anonymous owl objects (objects that don't have an IRI)
+> will not be part of the result set. For example, if there is a Tbox T={ C ⊑ (A ⊓ B), C ⊑ D }, 
+> only the latter subsumption axiom will be returned.
+
+
 -----------------------------------------------------------------------------------------------------
 
-See [KnowledgeBase API documentation](ontolearn.knowledge_base.KnowledgeBase)
-to check all the methods that this class has to offer. You will find methods to 
-access the class/property hierarchy, convenient methods that use the reasoner indirectly and 
+Since we cannot cover everything here in details, see [KnowledgeBase API documentation](ontolearn.knowledge_base.KnowledgeBase)
+to check all the methods that this class has to offer. You will find convenient methods to 
+access the class/property hierarchy, methods that use the reasoner indirectly and 
 a lot more.
 
 Speaking of the reasoner, it is important that an ontology 
