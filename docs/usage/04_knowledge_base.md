@@ -49,7 +49,7 @@ kb = KnowledgeBase(path="file://KGs/father.owl")
 What happens in the background is that the ontology located in this path will be loaded
 in the `OWLOntology` object of `kb` as done [here](03_ontologies.md#loading-an-ontology).
 
-In our recent version you can also initialize the KnowledgeBase using a dataset hosted in a triplestore.
+In our recent version you can also initialize a knowledge base using a dataset hosted in a triplestore.
 Since that knowledge base is mainly used for executing a concept learner, we cover that matter more in depth 
 in _[Use Triplestore Knowledge Base](06_concept_learners.md#use-triplestore-knowledge-base)_ 
 section of _[Concept Learning](06_concept_learners.md)_.
