@@ -1,8 +1,11 @@
-from typing import Optional, Callable, Tuple
+from itertools import chain
+from typing import Optional, Callable, Tuple, Generator
 from ..base.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from ..base.owl.utils import OWLClassExpressionLengthMetric
 from owlapy.util import LRUCache
 from ..base.fast_instance_checker import OWLReasoner_FastInstanceChecker
+
+
 def init_length_metric(length_metric: Optional[OWLClassExpressionLengthMetric] = None,
                        length_metric_factory: Optional[Callable[[], OWLClassExpressionLengthMetric]] = None):
     """ Initialize the technique on computing length of a concept"""
@@ -14,6 +17,8 @@ def init_length_metric(length_metric: Optional[OWLClassExpressionLengthMetric] =
         length_metric = OWLClassExpressionLengthMetric.get_default()
 
     return length_metric
+
+
 def init_hierarchy_instances(reasoner, class_hierarchy, object_property_hierarchy, data_property_hierarchy) -> Tuple[
     ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy]:
     """ Initialize class, object property, and data property hierarchies """
@@ -32,6 +37,7 @@ def init_hierarchy_instances(reasoner, class_hierarchy, object_property_hierarch
 
     return class_hierarchy, object_property_hierarchy, data_property_hierarchy
 
+
 def init_named_individuals(individuals_cache_size, ):
     use_individuals_cache = individuals_cache_size > 0
     if use_individuals_cache:
@@ -42,14 +48,14 @@ def init_named_individuals(individuals_cache_size, ):
 
 
 def init_individuals_from_concepts(include_implicit_individuals: bool = None, reasoner=None, ontology=None,
-                                   triplestore_address=None, individuals_per_concept=None):
+                                   individuals_per_concept=None):
     assert isinstance(include_implicit_individuals, bool), f"{include_implicit_individuals} must be boolean"
     if include_implicit_individuals:
         assert isinstance(individuals_per_concept, Generator)
         # get all individuals from concepts
         _ind_set = frozenset(chain.from_iterable(individuals_per_concept))
-    elif isinstance(reasoner, OWLReasoner_FastInstanceChecker) and triplestore_address is None:
-        # performance hack: @TODO: needs to be explained
+    elif isinstance(reasoner, OWLReasoner_FastInstanceChecker):
+        # performance hack: using the individuals already stored in the reasoner (no need to iterate over them again)
         _ind_set = reasoner._ind_set
     else:
         # @TODO: needs to be explained
@@ -57,9 +63,34 @@ def init_individuals_from_concepts(include_implicit_individuals: bool = None, re
         _ind_set = frozenset(individuals)
     return _ind_set
 
+
 def compute_tp_fn_fp_tn(individuals, pos, neg):
     tp = len(pos.intersection(individuals))
     tn = len(neg.difference(individuals))
     fp = len(neg.intersection(individuals))
     fn = len(pos.difference(individuals))
     return tp, fn, fp, tn
+
+
+def compute_f1_score(individuals, pos, neg):
+    tp = len(pos.intersection(individuals))
+    tn = len(neg.difference(individuals))
+
+    fp = len(neg.intersection(individuals))
+    fn = len(pos.difference(individuals))
+
+    try:
+        recall = tp / (tp + fn)
+    except ZeroDivisionError:
+        return 0
+
+    try:
+        precision = tp / (tp + fp)
+    except ZeroDivisionError:
+        return 0
+
+    if precision == 0 or recall == 0:
+        return 0
+
+    f_1 = 2 * ((precision * recall) / (precision + recall))
+    return f_1
