@@ -29,13 +29,10 @@ from .utils.static_funcs import (init_length_metric, init_hierarchy_instances,
 logger = logging.getLogger(__name__)
 
 
-def depth_Default_ReasonerFactory(onto: OWLOntology, triplestore_address: str) -> OWLReasoner:
+def depth_Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
     assert isinstance(onto, OWLOntology_Owlready2)
-    base_reasoner = OWLReasoner_Owlready2(ontology=onto, triplestore_address=triplestore_address)
-    if triplestore_address is not None:
-        return base_reasoner
-    else:
-        return OWLReasoner_FastInstanceChecker(ontology=onto, base_reasoner=base_reasoner)
+    base_reasoner = OWLReasoner_Owlready2(ontology=onto)
+    return OWLReasoner_FastInstanceChecker(ontology=onto, base_reasoner=base_reasoner)
 
 
 class KnowledgeBase(AbstractKnowledgeBase):
@@ -53,7 +50,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         backend_store: Whether to sync the world to backend store.
             reasoner of this object, if you enter a reasoner using :arg:`reasoner_factory` or :arg:`reasoner`
             argument it will override this setting.
-        triplestore_address: The address where the triplestore is hosted.
         include_implicit_individuals: Whether to identify and consider instances which are not set as OWL Named
             Individuals (does not contain this type) as individuals.
 
@@ -85,7 +81,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
                  length_metric_factory: Optional[Callable[[], OWLClassExpressionLengthMetric]] = None,
                  individuals_cache_size=128,
-                 triplestore_address: str = None,
                  backend_store: bool = False,
                  include_implicit_individuals=False):
         ...
@@ -99,10 +94,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  individuals_cache_size=128):
         ...
 
-    @overload
-    def __init__(self, *, triplestore_address: str = None):
-        ...
-
     def __init__(self, *,
                  path: Optional[str] = None,
 
@@ -112,7 +103,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
                  ontology: Optional[OWLOntology] = None,
                  reasoner: Optional[OWLReasoner] = None,
-                 triplestore_address: str = None,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
 
                  individuals_cache_size=128,
@@ -125,57 +115,36 @@ class KnowledgeBase(AbstractKnowledgeBase):
         AbstractKnowledgeBase.__init__(self)
         self.path = path
 
-        # (1) Using a triple store
-        if triplestore_address is not None:
-            self.manager: OWLOntologyManager_Owlready2
-            self.manager = OWLOntologyManager_Owlready2(world_store=None)
-            if path is None:
-                # create a dummy ontology, so we can avoid making tons of changes.
-                self.ontology: OWLOntology
-                self.ontology = OWLOntology_Owlready2(self.manager, IRI.create("dummy_ontology#onto"), load=False,
-                                                      triplestore_address=triplestore_address)
+        if ontology is not None:
+            self.manager = ontology.get_owl_ontology_manager()
+            self.ontology = ontology
+        elif ontologymanager_factory is not None:
+            self.manager = ontologymanager_factory()
+        else:  # default to Owlready2 implementation
+            if path is not None and backend_store:
+                self.manager = OWLOntologyManager_Owlready2(world_store=path + ".or2")
             else:
-                # why not create a real ontology if the user gives the path :) (triplestore will be used anyway)
-                self.ontology = OWLOntology_Owlready2(self.manager, IRI.create('file://' + self.path), load=True,
-                                                      triplestore_address=triplestore_address)
-        else:
-            if ontology is not None:
-                self.manager = ontology.get_owl_ontology_manager()
-                self.ontology = ontology
-            elif ontologymanager_factory is not None:
-                self.manager = ontologymanager_factory()
-            else:  # default to Owlready2 implementation
-                if path is not None and backend_store:
-                    self.manager = OWLOntologyManager_Owlready2(world_store=path + ".or2")
-                else:
-                    self.manager = OWLOntologyManager_Owlready2(world_store=None)
-                # raise TypeError("neither ontology nor manager factory given")
+                self.manager = OWLOntologyManager_Owlready2(world_store=None)
+            # raise TypeError("neither ontology nor manager factory given")
 
-            if ontology is None:
-                if path is None:
-                    raise TypeError("path missing")
-                else:
-                    self.ontology = self.manager.load_ontology(IRI.create('file://' + self.path))
-                    if isinstance(self.manager, OWLOntologyManager_Owlready2) and backend_store:
-                        self.manager.save_world()
-                        logger.debug("Synced world to backend store")
+        if ontology is None:
+            if path is None:
+                raise TypeError("path missing")
+            else:
+                self.ontology = self.manager.load_ontology(IRI.create('file://' + self.path))
+                if isinstance(self.manager, OWLOntologyManager_Owlready2) and backend_store:
+                    self.manager.save_world()
+                    logger.debug("Synced world to backend store")
 
-        is_using_triplestore = True if triplestore_address is not None else False
         reasoner: OWLReasoner
-        if reasoner is not None and reasoner.is_using_triplestore() == is_using_triplestore:
+        if reasoner is not None:
             self.reasoner = reasoner
-        elif reasoner_factory is not None and triplestore_address is None:
+        elif reasoner_factory is not None:
             self.reasoner = reasoner_factory(self.ontology)
         else:
-            if triplestore_address is not None:
-                self.reasoner = OWLReasoner_Owlready2(ontology=ontology, triplestore_address=triplestore_address)
-            else:
-                self.reasoner = OWLReasoner_FastInstanceChecker(ontology=self.ontology,
-                                                                base_reasoner=OWLReasoner_Owlready2(
-                                                                    ontology=self.ontology,
-                                                                    triplestore_address=triplestore_address))
-
-            # self.reasoner = _Default_ReasonerFactory(self.ontology, triplestore_address)
+            self.reasoner = OWLReasoner_FastInstanceChecker(ontology=self.ontology,
+                                                            base_reasoner=OWLReasoner_Owlready2(
+                                                                ontology=self.ontology))
 
         self.length_metric = init_length_metric(length_metric, length_metric_factory)
 
@@ -205,7 +174,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.ind_set = init_individuals_from_concepts(include_implicit_individuals,
                                                       reasoner=self.reasoner,
                                                       ontology=self.ontology,
-                                                      triplestore_address=triplestore_address,
                                                       individuals_per_concept=(self.individuals(i) for i in
                                                                                self.get_concepts()))
 
