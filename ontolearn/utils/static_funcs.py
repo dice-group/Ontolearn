@@ -54,9 +54,6 @@ def init_individuals_from_concepts(include_implicit_individuals: bool = None, re
         assert isinstance(individuals_per_concept, Generator)
         # get all individuals from concepts
         _ind_set = frozenset(chain.from_iterable(individuals_per_concept))
-    elif isinstance(reasoner, OWLReasoner_FastInstanceChecker):
-        # performance hack: using the individuals already stored in the reasoner (no need to iterate over them again)
-        _ind_set = reasoner._ind_set
     else:
         # @TODO: needs to be explained
         individuals = ontology.individuals_in_signature()
