@@ -296,15 +296,8 @@ a library that we use to perform the sampling process. It offers different sampl
 techniques which fall into the following categories:
 
 - Node-based samplers
-   - Random Node
 - Edge-based samplers
-   - Random Edge
 - Exploration-based samplers
-    - Random Walker
-    - Random Walker with Jumps
-    - Random Walker with Prioritization
-    - Random Walker with Prioritization & Jumps
-    - Forest Fire
 
 and almost each sampler is offered in 3 modes:
 
@@ -312,9 +305,11 @@ and almost each sampler is offered in 3 modes:
 - Learning problem first (LPF)
 - Learning problem centered (LPC)
 
-When used on its own, Ontosample uses a light version of Ontolearn (`ontolearn_light`) 
+You can check them [here](ontosample).
+
+When operated on its own, Ontosample uses a light version of Ontolearn (`ontolearn_light`) 
 to reason over ontologies, but when both packages are installed in the same environment 
-it will use ontolearn module instead. This is made for compatibility reasons.
+it will use `ontolearn` module instead. This is made for compatibility reasons.
 
 Ontosample treats the knowledge base as a graph where nodes are individuals
 and edges are object properties. However, Ontosample also offers support for 
@@ -332,7 +327,8 @@ data properties sampling, although they are not considered as _"edges"_.
    variable, use directly in the code or save locally by using the static method 
    `save_sample`.
 
-Let's see an example where we use RandomWalkSampler to sample a knowledge base:
+Let's see an example where we use [RandomNodeSampler](ontosample.classic_samplers.RandomNodeSampler) to sample a 
+knowledge base:
 
 ```python
 from ontosample.classic_samplers import RandomNodeSampler
@@ -377,8 +373,8 @@ sampler.save_sample(kb=sampled_kb, filename="some_other_name")
 
 > WARNING! Random walker and Random Walker with Prioritization are two samplers that suffer 
 > from non-termination in case that the ontology contains nodes that point to each other and 
-> forms an inescapable loop. In this scenario you can use their "jumping" version to escape 
-> these loops and ensure termination.
+> form an inescapable loop for the "walker". In this scenario you can use their "jumping" 
+> version to make the "walker" escape these loops and ensure termination.
 
 To see how to use a sampled knowledge base for the task of concept learning check
 the `sampling_example.py` in [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) 

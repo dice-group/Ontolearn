@@ -2,6 +2,8 @@
 
 You can find more details in the related papers for each algorithm:
 
+Concept Learning:
+
 - **NCES2** &rarr; (soon) [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
 - **Drill** &rarr; [Deep Reinforcement Learning for Refinement Operators in ALC](https://arxiv.org/pdf/2106.15373.pdf)
 - **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13)
@@ -92,7 +94,9 @@ address="Cham"
 ## More Inside the Project
 
 Examples and test cases provide a good starting point to get to know
-the project better. Find them in the folders `examples` and `tests`.
+the project better. Find them in the folders 
+[examples](https://github.com/dice-group/Ontolearn/tree/develop/examples)  
+and [tests](https://github.com/dice-group/Ontolearn/tree/develop/tests).
 
 ## Contribution
 
