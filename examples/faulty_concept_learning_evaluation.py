@@ -12,31 +12,9 @@ from owlapy.model import OWLClass, OWLNamedIndividual, IRI
 import argparse
 from rdflib import Graph
 
+from ontolearn.utils.static_funcs import compute_f1_score
+
 pd.set_option("display.precision", 5)
-
-
-def compute_f1_score(individuals, pos, neg):
-    tp = len(pos.intersection(individuals))
-    tn = len(neg.difference(individuals))
-
-    fp = len(neg.intersection(individuals))
-    fn = len(pos.difference(individuals))
-
-    try:
-        recall = tp / (tp + fn)
-    except ZeroDivisionError:
-        return 0
-
-    try:
-        precision = tp / (tp + fp)
-    except ZeroDivisionError:
-        return 0
-
-    if precision == 0 or recall == 0:
-        return 0
-
-    f_1 = 2 * ((precision * recall) / (precision + recall))
-    return f_1
 
 
 def dl_concept_learning(args):

@@ -313,10 +313,8 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         assert isinstance(self.kb, KnowledgeBase)
 
         best = self.best_hypotheses(n)
-        try:
-            assert len(best) >= n
-        except AssertionError:
-            logger.warning("There were only %d results", len(best))
+        if len(best) >= n:
+            logger.warning("There was/were only %d unique result/-s found", len(best))
 
         manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
 

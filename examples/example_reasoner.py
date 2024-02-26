@@ -114,7 +114,7 @@ JK = OWLObjectIntersectionOf([J, K])
 r1T = OWLObjectSomeValuesFrom(property=r1, filler=OWLClass(IRI('http://www.w3.org/2002/07/owl#', 'Thing')))
 
 kb = KnowledgeBase(path=data_file)
-onto = kb.ontology()
+onto = kb.ontology
 manager = onto.get_owl_ontology_manager()
 
 manager.add_axiom(onto, OWLEquivalentObjectPropertiesAxiom([r6, r5]))

@@ -323,23 +323,24 @@ Let's see what it takes to make use of it.
 First of all you need a server which should host the triplestore for your ontology. If you don't
 already have one, see [Loading and Launching a Triplestore](#loading-and-launching-a-triplestore) below.
 
-Now you can simply initialize the `KnowledgeBase` object that will server as an input for your desired 
+Now you can simply initialize a `TripleStoreKnowledgeBase` object that will server as an input for your desired 
 concept learner as follows:
 
 ```python
-from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.triple_store import TripleStoreKnowledgeBase
 
-kb = KnowledgeBase(triplestore_address="http://your_domain/some_path/sparql")
+kb = TripleStoreKnowledgeBase("http://your_domain/some_path/sparql")
 ```
 
-Notice that we did not provide a value for the `path` argument. When using triplestore, it is not required. Keep
-in mind that the `kb` will create a default reasoner that uses the triplestore. Passing a custom
-reasoner will not make any difference, because they all behave the same when using the triplestore.
-You may wonder what happens to the `Ontology` object of the `kb` since no path was given. A default ontology 
-object is created that will also use the triplestore for its processes. Basically every querying process concerning
-concept learning is now using the triplestore.
+Notice that the triplestore endpoint is the only argument that you need to pass.
+Also keep in mind that this knowledge base contains a 
+[TripleStoreOntology](ontolearn.triple_store.TripleStoreOntology) 
+and [TripleStoreReasoner](ontolearn.triple_store.TripleStoreReasoner) which means that
+every querying process concerning concept learning is now using the triplestore.
 
 > **Important notice:** The performance of a concept learner may differentiate when using triplestore.
+>  This happens because some SPARQL queries may not yield the exact same results as the local querying methods.
+
 
 ## Loading and Launching a Triplestore
 
@@ -401,14 +402,15 @@ you pass this url to `triplestore_address` argument, you have to add the
 `/sparql` sub-path indicating to the server that we are querying via SPARQL queries. Full path now should look like:
 `http://localhost:3030/father/sparql`.
 
-You can now create a knowledge base or a reasoner object that uses this URL for their 
+You can now create a triplestore knowledge base or a reasoner that uses this URL for their 
 operations:
 
 ```python
-from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.triple_store import TripleStoreKnowledgeBase
 
-father_kb = KnowledgeBase(triplestore_address="http://localhost:3030/father/sparql")
-# ** Execute the learning algorithm as you normally would. ** .
+father_kb = TripleStoreKnowledgeBase("http://localhost:3030/father/sparql")
+
+# ** Continue to execute the learning algorithm as you normally do. ** .
 ```
 
 -------------------------------------------------------------------
