@@ -3,13 +3,17 @@
 import logging
 import random
 from itertools import chain
-from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict, Tuple, Generator
+from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict, Tuple, Generator, cast
+
+import owlapy
+
 from ontolearn.base import OWLOntology_Owlready2, OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
 from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, \
     OWLNamedIndividual, OWLObjectProperty, OWLClass, OWLDataProperty, IRI, OWLDataRange, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLDatatype, BooleanOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, OWLThing, \
-    OWLObjectPropertyExpression, OWLLiteral, OWLDataPropertyExpression
+    OWLObjectPropertyExpression, OWLLiteral, OWLDataPropertyExpression, OWLClassAssertionAxiom, \
+    OWLObjectPropertyAssertionAxiom, OWLDataPropertyAssertionAxiom, OWLSubClassOfAxiom, OWLEquivalentClassesAxiom
 from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.search import EvaluatedConcept
 from owlapy.util import iter_count, LRUCache
@@ -25,13 +29,10 @@ from .utils.static_funcs import (init_length_metric, init_hierarchy_instances,
 logger = logging.getLogger(__name__)
 
 
-def depth_Default_ReasonerFactory(onto: OWLOntology, triplestore_address: str) -> OWLReasoner:
+def depth_Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
     assert isinstance(onto, OWLOntology_Owlready2)
-    base_reasoner = OWLReasoner_Owlready2(ontology=onto, triplestore_address=triplestore_address)
-    if triplestore_address is not None:
-        return base_reasoner
-    else:
-        return OWLReasoner_FastInstanceChecker(ontology=onto, base_reasoner=base_reasoner)
+    base_reasoner = OWLReasoner_Owlready2(ontology=onto)
+    return OWLReasoner_FastInstanceChecker(ontology=onto, base_reasoner=base_reasoner)
 
 
 class KnowledgeBase(AbstractKnowledgeBase):
@@ -49,7 +50,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         backend_store: Whether to sync the world to backend store.
             reasoner of this object, if you enter a reasoner using :arg:`reasoner_factory` or :arg:`reasoner`
             argument it will override this setting.
-        triplestore_address: The address where the triplestore is hosted.
         include_implicit_individuals: Whether to identify and consider instances which are not set as OWL Named
             Individuals (does not contain this type) as individuals.
 
@@ -81,7 +81,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
                  length_metric_factory: Optional[Callable[[], OWLClassExpressionLengthMetric]] = None,
                  individuals_cache_size=128,
-                 triplestore_address: str = None,
                  backend_store: bool = False,
                  include_implicit_individuals=False):
         ...
@@ -95,10 +94,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  individuals_cache_size=128):
         ...
 
-    @overload
-    def __init__(self, *, triplestore_address: str = None):
-        ...
-
     def __init__(self, *,
                  path: Optional[str] = None,
 
@@ -108,7 +103,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
                  ontology: Optional[OWLOntology] = None,
                  reasoner: Optional[OWLReasoner] = None,
-                 triplestore_address: str = None,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
 
                  individuals_cache_size=128,
@@ -121,57 +115,36 @@ class KnowledgeBase(AbstractKnowledgeBase):
         AbstractKnowledgeBase.__init__(self)
         self.path = path
 
-        # (1) Using a triple store
-        if triplestore_address is not None:
-            self.manager: OWLOntologyManager_Owlready2
-            self.manager = OWLOntologyManager_Owlready2(world_store=None)
-            if path is None:
-                # create a dummy ontology, so we can avoid making tons of changes.
-                self.ontology: OWLOntology
-                self.ontology = OWLOntology_Owlready2(self.manager, IRI.create("dummy_ontology#onto"), load=False,
-                                                      triplestore_address=triplestore_address)
+        if ontology is not None:
+            self.manager = ontology.get_owl_ontology_manager()
+            self.ontology = ontology
+        elif ontologymanager_factory is not None:
+            self.manager = ontologymanager_factory()
+        else:  # default to Owlready2 implementation
+            if path is not None and backend_store:
+                self.manager = OWLOntologyManager_Owlready2(world_store=path + ".or2")
             else:
-                # why not create a real ontology if the user gives the path :) (triplestore will be used anyway)
-                self.ontology = OWLOntology_Owlready2(self.manager, IRI.create('file://' + self.path), load=True,
-                                                      triplestore_address=triplestore_address)
-        else:
-            if ontology is not None:
-                self.manager = ontology.get_owl_ontology_manager()
-                self.ontology = ontology
-            elif ontologymanager_factory is not None:
-                self.manager = ontologymanager_factory()
-            else:  # default to Owlready2 implementation
-                if path is not None and backend_store:
-                    self.manager = OWLOntologyManager_Owlready2(world_store=path + ".or2")
-                else:
-                    self.manager = OWLOntologyManager_Owlready2(world_store=None)
-                # raise TypeError("neither ontology nor manager factory given")
+                self.manager = OWLOntologyManager_Owlready2(world_store=None)
+            # raise TypeError("neither ontology nor manager factory given")
 
-            if ontology is None:
-                if path is None:
-                    raise TypeError("path missing")
-                else:
-                    self.ontology = self.manager.load_ontology(IRI.create('file://' + self.path))
-                    if isinstance(self.manager, OWLOntologyManager_Owlready2) and backend_store:
-                        self.manager.save_world()
-                        logger.debug("Synced world to backend store")
+        if ontology is None:
+            if path is None:
+                raise TypeError("path missing")
+            else:
+                self.ontology = self.manager.load_ontology(IRI.create('file://' + self.path))
+                if isinstance(self.manager, OWLOntologyManager_Owlready2) and backend_store:
+                    self.manager.save_world()
+                    logger.debug("Synced world to backend store")
 
-        is_using_triplestore = True if triplestore_address is not None else False
         reasoner: OWLReasoner
-        if reasoner is not None and reasoner.is_using_triplestore() == is_using_triplestore:
+        if reasoner is not None:
             self.reasoner = reasoner
-        elif reasoner_factory is not None and triplestore_address is None:
+        elif reasoner_factory is not None:
             self.reasoner = reasoner_factory(self.ontology)
         else:
-            if triplestore_address is not None:
-                self.reasoner = OWLReasoner_Owlready2(ontology=onto, triplestore_address=triplestore_address)
-            else:
-                self.reasoner = OWLReasoner_FastInstanceChecker(ontology=self.ontology,
-                                                                base_reasoner=OWLReasoner_Owlready2(
-                                                                    ontology=self.ontology,
-                                                                    triplestore_address=triplestore_address))
-
-            # self.reasoner = _Default_ReasonerFactory(self.ontology, triplestore_address)
+            self.reasoner = OWLReasoner_FastInstanceChecker(ontology=self.ontology,
+                                                            base_reasoner=OWLReasoner_Owlready2(
+                                                                ontology=self.ontology))
 
         self.length_metric = init_length_metric(length_metric, length_metric_factory)
 
@@ -201,7 +174,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.ind_set = init_individuals_from_concepts(include_implicit_individuals,
                                                       reasoner=self.reasoner,
                                                       ontology=self.ontology,
-                                                      triplestore_address=triplestore_address,
                                                       individuals_per_concept=(self.individuals(i) for i in
                                                                                self.get_concepts()))
 
@@ -223,38 +195,198 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             yield from self.maybe_cache_individuals(concept)
 
-    def abox(self, individual=None):
-        assert individual is None, "Fixing individual is not possible "
-        for i in self.individuals():
-            """ Obtain all ty"""
-            # Should we represent type relation/predicate as an IRI, or what else ?
-            yield from ((i, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type", j) for j in self.get_types(ind=i))
-            #
-            # check whether i in the domain of a property
-            for k in self.get_data_properties_for_ind(ind=i):
-                raise NotImplementedError(
-                    "Iterating over triples by fixing a subject and a relation is not implemented.")
-            for k in self.get_object_properties_for_ind(ind=i):
-                raise NotImplementedError(
-                    "Iterating over triples by fixing a subject and a relation is not implemented.")
+    def abox(self, individuals: Union[OWLNamedIndividual, Iterable[OWLNamedIndividual]] = None, mode='native'):
+        """
+        Get all the abox axioms for a given individual. If no individual is given, get all abox axioms
 
-    def tbox(self, concepts: Union[Iterable[OWLClass], OWLClass, None] = None):
-        if concepts is None:
-            for i in self.get_concepts():
-                yield from ((i, "http://www.w3.org/2000/01/rdf-schema#subClassOf", j) for j in
-                            self.get_direct_sub_concepts(i))
-        elif isinstance(concepts, OWLClass):
-            yield from ((concepts, "http://www.w3.org/2000/01/rdf-schema#subClassOf", j) for j in
-                        self.get_direct_sub_concepts(concepts))
-        elif isinstance(concepts, Iterable):
-            for i in concepts:
-                assert isinstance(i, OWLClass)
-                yield from ((i, "http://www.w3.org/2000/01/rdf-schema#subClassOf", j) for j in
-                            self.get_direct_sub_concepts(i))
+        Args:
+            individuals (OWLNamedIndividual): Individual/s to get the abox axioms from.
+            mode (str): The return format.
+             1) 'native' -> returns triples as tuples of owlapy objects,
+             2) 'iri' -> returns triples as tuples of IRIs as string,
+             3) 'axiom' -> triples are represented by owlapy axioms.
+
+        Returns: Iterable of tuples or owlapy axiom, depending on the mode.
+        """
+
+        assert mode in ['native', 'iri', 'axiom'], "Valid modes are: 'native', 'iri' or 'axiom'"
+
+        if isinstance(individuals, OWLNamedIndividual):
+            inds = [individuals]
+        elif isinstance(individuals, Iterable):
+            inds = individuals
         else:
-            raise RuntimeError(f"Unexected input{concepts}")
+            inds = self.individuals()
 
-        # @TODO:CD: equivalence must also be added.
+        for i in inds:
+            if mode == "native":
+                # Obtain all class assertion triples/axioms
+                # For now, 'rdfs:type' predicate will be represented as an IRI
+                yield from ((i, IRI.create("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), t) for t in
+                            self.get_types(ind=i, direct=True))
+
+                # Obtain all property assertion triples/axioms
+                for dp in self.get_data_properties_for_ind(ind=i):
+                    yield from ((i, dp, literal) for literal in self.get_data_property_values(i, dp))
+
+                for op in self.get_object_properties_for_ind(ind=i):
+                    yield from ((i, op, ind) for ind in self.get_object_property_values(i, op))
+            elif mode == "iri":
+                yield from ((i.str, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+                             t.get_iri().as_str()) for t in self.get_types(ind=i, direct=True))
+                for dp in self.get_data_properties_for_ind(ind=i):
+                    yield from ((i.str, dp.get_iri().as_str(), literal.get_literal()) for literal in
+                                self.get_data_property_values(i, dp))
+                for op in self.get_object_properties_for_ind(ind=i):
+                    yield from ((i.str, op.get_iri().as_str(), ind.get_iri().as_str()) for ind in
+                                self.get_object_property_values(i, op))
+            elif mode == "axiom":
+                yield from (OWLClassAssertionAxiom(i, t) for t in self.get_types(ind=i, direct=True))
+                for dp in self.get_data_properties_for_ind(ind=i):
+                    yield from (OWLDataPropertyAssertionAxiom(i, dp, literal) for literal in
+                                self.get_data_property_values(i, dp))
+                for op in self.get_object_properties_for_ind(ind=i):
+                    yield from (OWLObjectPropertyAssertionAxiom(i, op, ind) for ind in
+                                self.get_object_property_values(i, op))
+
+    def tbox(self, entities: Union[Iterable[OWLClass], Iterable[OWLDataProperty], Iterable[OWLObjectProperty], OWLClass,
+                                   OWLDataProperty, OWLObjectProperty, None] = None, mode='native'):
+        """Get all the tbox axioms for the given concept-s|propert-y/ies.
+         If no concept-s|propert-y/ies are given, get all tbox axioms.
+
+         Args:
+             entities: Entities to obtain tbox axioms from. This can be a single
+              OWLClass/OWLDataProperty/OWLObjectProperty object, a list of those objects or None. If you enter a list
+              that combines classes and properties (which we don't recommend doing), only axioms for one type will be
+              returned, whichever comes first (classes or props).
+             mode (str): The return format.
+              1) 'native' -> returns triples as tuples of owlapy objects,
+              2) 'iri' -> returns triples as tuples of IRIs as string,
+              3) 'axiom' -> triples are represented by owlapy axioms.
+
+         Returns: Iterable of tuples or owlapy axiom, depending on the mode.
+
+        """
+        assert mode in ['native', 'iri', 'axiom'], "Valid modes are: 'native', 'iri' or 'axiom'"
+        if mode == "iri":
+            print("WARN  KnowledgeBase.tbox()    :: Ranges of data properties are not implemented for the 'iri' mode!")
+        include_all = False
+        results = set()  # Using a set to avoid yielding duplicated results.
+        classes = False
+        if isinstance(entities, Iterable):
+            ens = list(entities)
+            if isinstance(ens[0], OWLClass):
+                classes = True
+        elif not isinstance(entities, Iterable) and entities:
+            ens = [entities]
+            if isinstance(entities, OWLClass):
+                classes = True
+        else:
+            ens = list(self.get_concepts())
+            ens.extend(list(self.get_object_properties()))
+            ens.extend(list(self.get_data_properties()))
+            include_all = True
+
+        if include_all or classes:
+            for concept in ens:
+                if not isinstance(concept, OWLClass):
+                    continue
+                if mode == 'native':
+                    [results.add((j, IRI.create("http://www.w3.org/2000/01/rdf-schema#subClassOf"), concept)) for j in
+                     self.get_direct_sub_concepts(concept)]
+                    [results.add((concept, IRI.create("http://www.w3.org/2002/07/owl#equivalentClass"), j)) for j in
+                     self.reasoner.equivalent_classes(concept, only_named=True)]
+                    if not include_all:  # This kind of check is just for performance purposes
+                        [results.add((concept, IRI.create("http://www.w3.org/2000/01/rdf-schema#subClassOf"), j)) for j in
+                         self.get_direct_parents(concept)]
+                elif mode == 'iri':
+                    [results.add((j.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+                                  concept.get_iri().as_str())) for j in self.get_direct_sub_concepts(concept)]
+                    [results.add((concept.get_iri().as_str(), "http://www.w3.org/2002/07/owl#equivalentClass",
+                                  cast(OWLClass, j).get_iri().as_str())) for j in
+                     self.reasoner.equivalent_classes(concept, only_named=True)]
+                    if not include_all:
+                        [results.add((concept.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+                                      j.get_iri().as_str())) for j in self.get_direct_parents(concept)]
+                elif mode == "axiom":
+                    [results.add(OWLSubClassOfAxiom(super_class=concept, sub_class=j)) for j in self.get_direct_sub_concepts(concept)]
+                    [results.add(OWLEquivalentClassesAxiom([concept, j])) for j in
+                     self.reasoner.equivalent_classes(concept, only_named=True)]
+                    if not include_all:
+                        [results.add(OWLSubClassOfAxiom(super_class=j, sub_class=concept)) for j in
+                         self.get_direct_parents(concept)]
+        if include_all or not classes:
+            for prop in ens:
+                if isinstance(prop, OWLObjectProperty):
+                    prop_type = "Object"
+                elif isinstance(prop, OWLDataProperty):
+                    prop_type = "Data"
+                else:
+                    continue
+                if mode == 'native':
+                    [results.add((j, IRI.create("http://www.w3.org/2000/01/rdf-schema#subPropertyOf"), prop)) for j in
+                     getattr(self.reasoner, "sub_" + prop_type.lower() + "_properties")(prop, direct=True)]
+                    [results.add((prop, IRI.create("http://www.w3.org/2002/07/owl#equivalentProperty"), j)) for j in
+                     getattr(self.reasoner, "equivalent_" + prop_type.lower() + "_properties")(prop)]
+                    [results.add((prop, IRI.create("http://www.w3.org/2000/01/rdf-schema#domain"), j)) for j in
+                     getattr(self.reasoner, prop_type.lower() + "_property_domains")(prop, direct=True)]
+                    [results.add((prop, IRI.create("http://www.w3.org/2000/01/rdf-schema#range"), j)) for j in
+                     getattr(self.reasoner, prop_type.lower() + "_property_ranges")(prop, direct=True)]
+                    if not include_all:
+                        [results.add((prop, IRI.create("http://www.w3.org/2000/01/rdf-schema#subPropertyOf"), j)) for j
+                         in getattr(self.reasoner, "super_" + prop_type.lower() + "_properties")(prop, direct=True)]
+                elif mode == 'iri':
+                    [results.add((j.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subPropertyOf",
+                                  prop.get_iri().as_str())) for j in
+                     getattr(self.reasoner, "sub_" + prop_type.lower() + "_properties")(prop, direct=True)]
+                    [results.add((prop.get_iri().as_str(), "http://www.w3.org/2002/07/owl#equivalentProperty",
+                                  j.get_iri().as_str())) for j in
+                     getattr(self.reasoner, "equivalent_" + prop_type.lower() + "_properties")(prop)]
+                    [results.add((prop.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#domain",
+                                  j.get_iri().as_str())) for j in
+                     getattr(self.reasoner, prop_type.lower() + "_property_domains")(prop, direct=True)]
+                    if prop_type == 'Object':
+                        [results.add((prop.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#range",
+                                      j.get_iri().as_str())) for j in
+                         self.reasoner.object_property_ranges(prop, direct=True)]
+                    # # ranges of data properties not implemented for this mode
+                    # else:
+                    #     [results.add((prop.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#range",
+                    #                   str(j))) for j in self.reasoner.data_property_ranges(prop, direct=True)]
+
+                    if not include_all:
+                        [results.add((prop.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subPropertyOf",
+                                      j.get_iri().as_str())) for j
+                         in getattr(self.reasoner, "super_" + prop_type.lower() + "_properties")(prop, direct=True)]
+                elif mode == 'axiom':
+                    [results.add(getattr(owlapy.model, "OWLSub" + prop_type + "PropertyOfAxiom")(j, prop)) for j in
+                     getattr(self.reasoner, "sub_" + prop_type.lower() + "_properties")(prop, direct=True)]
+                    [results.add(getattr(owlapy.model, "OWLEquivalent" + prop_type + "PropertiesAxiom")([j, prop])) for j in
+                     getattr(self.reasoner, "equivalent_" + prop_type.lower() + "_properties")(prop)]
+                    [results.add(getattr(owlapy.model, "OWL" + prop_type + "PropertyDomainAxiom")(prop, j)) for j in
+                     getattr(self.reasoner, prop_type.lower() + "_property_domains")(prop, direct=True)]
+                    [results.add(getattr(owlapy.model, "OWL" + prop_type + "PropertyRangeAxiom")(prop, j)) for j in
+                     getattr(self.reasoner, prop_type.lower() + "_property_ranges")(prop, direct=True)]
+                    if not include_all:
+                        [results.add(getattr(owlapy.model, "OWLSub" + prop_type + "PropertyOfAxiom")(prop, j)) for j
+                         in getattr(self.reasoner, "super_" + prop_type.lower() + "_properties")(prop, direct=True)]
+
+        return results
+
+    def triples(self, mode="native"):
+        """Get all tbox and abox axioms/triples.
+
+        Args:
+            mode (str): The return format.
+              1) 'native' -> returns triples as tuples of owlapy objects,
+              2) 'iri' -> returns triples as tuples of IRIs as string,
+              3) 'axiom' -> triples are represented by owlapy axioms.
+
+        Returns: Iterable of tuples or owlapy axiom, depending on the mode.
+        """
+        yield from self.abox(mode=mode)
+        yield from self.tbox(mode=mode)
+
 
     def ignore_and_copy(self, ignored_classes: Optional[Iterable[OWLClass]] = None,
                         ignored_object_properties: Optional[Iterable[OWLObjectProperty]] = None,

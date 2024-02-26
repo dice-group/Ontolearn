@@ -134,30 +134,6 @@ def concepts_reducer(concepts: List[OWLClassExpression], reduced_cls: Callable) 
     return dl_concept_path
 
 
-def compute_f1_score(individuals, pos, neg):
-    tp = len(pos.intersection(individuals))
-    tn = len(neg.difference(individuals))
-
-    fp = len(neg.intersection(individuals))
-    fn = len(pos.difference(individuals))
-
-    try:
-        recall = tp / (tp + fn)
-    except ZeroDivisionError:
-        return 0
-
-    try:
-        precision = tp / (tp + fp)
-    except ZeroDivisionError:
-        return 0
-
-    if precision == 0 or recall == 0:
-        return 0
-
-    f_1 = 2 * ((precision * recall) / (precision + recall))
-    return f_1
-
-
 class TDL:
     """Tree-based Description Logic Concept Learner"""
 

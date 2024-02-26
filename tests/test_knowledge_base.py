@@ -9,7 +9,9 @@ from owlapy.model import OWLObjectUnionOf, OWLSubDataPropertyOfAxiom, OWLSubObje
     OWLDataHasValue, OWLDataProperty, OWLDataSomeValuesFrom, OWLLiteral, OWLNamedIndividual, \
     OWLNothing, OWLObjectAllValuesFrom, OWLObjectComplementOf, OWLObjectExactCardinality, \
     OWLObjectHasValue, OWLObjectIntersectionOf, OWLObjectInverseOf, OWLObjectMaxCardinality, \
-    OWLObjectMinCardinality, OWLObjectProperty, IRI, OWLObjectSomeValuesFrom
+    OWLObjectMinCardinality, OWLObjectProperty, IRI, OWLObjectSomeValuesFrom, OWLClassAssertionAxiom, \
+    OWLEquivalentClassesAxiom, OWLSubClassOfAxiom, OWLObjectPropertyAssertionAxiom, OWLObjectPropertyDomainAxiom, \
+    OWLObjectPropertyRangeAxiom, OWLDataPropertyDomainAxiom
 
 
 class KnowledgeBaseTest(unittest.TestCase):
@@ -365,3 +367,283 @@ class KnowledgeBaseTest(unittest.TestCase):
         representation = repr(self.kb)
         self.assertEqual("KnowledgeBase(path='KGs/Mutagenesis/mutagenesis.owl' <86 classes, 11 properties,"
                          " 14145 individuals)", representation)
+
+    def test_tbox_abox(self):
+
+        kb = KnowledgeBase(path="KGs/test_ontology.owl")
+        ind1 = OWLNamedIndividual(
+            IRI.create('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#b'))
+        ind2 = OWLNamedIndividual(
+            IRI.create('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#a'))
+        dp = OWLDataProperty(
+            IRI.create('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#dp2'))
+        op1 = OWLObjectProperty(
+            IRI.create('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r1'))
+        op2 = OWLObjectProperty(
+            IRI.create('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r2'))
+        cls1 = OWLClass(IRI.create('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#N'))
+        cls2 = OWLClass(IRI.create('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#O'))
+
+        ind1_1 = OWLClassAssertionAxiom(individual=OWLNamedIndividual(
+            IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'b')),
+            class_expression=OWLClass(
+                IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'B')))
+        ind1_2 = OWLObjectPropertyAssertionAxiom(
+            subject=OWLNamedIndividual(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'b')),
+            property_=OWLObjectProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r7')),
+            object_=OWLNamedIndividual(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'f')))
+
+        ind2_1 = OWLClassAssertionAxiom(individual=OWLNamedIndividual(
+            IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'a')),
+                               class_expression=OWLClass(
+                                   IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#',
+                                       'A')))
+        ind2_2 = OWLClassAssertionAxiom(individual=OWLNamedIndividual(
+            IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'a')),
+                               class_expression=OWLClass(
+                                   IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#',
+                                       'B')))
+
+        results = set(kb.abox(ind1, 'axiom'))
+        self.assertEqual(results, {ind1_1, ind1_2})
+        results = set(kb.abox([ind1, ind2], 'axiom'))
+        self.assertEqual(results, {ind1_1, ind1_2, ind2_1, ind2_2})
+
+        ind1_1 = ('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#b',
+                  'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+                  'http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#B')
+        ind1_2 = ('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#b',
+                  'http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r7',
+                  'http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#f')
+
+        ind2_1 = ('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#a',
+                  'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+                  'http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#A')
+        ind2_2 = ('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#a',
+                  'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+                  'http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#B')
+
+        results = set(kb.abox(ind1, 'iri'))
+        self.assertEqual(results, {ind1_1, ind1_2})
+        results = set(kb.abox([ind1, ind2], 'iri'))
+        self.assertEqual(results, {ind1_1, ind1_2, ind2_1, ind2_1, ind2_2})
+
+        ind1_1 = (OWLNamedIndividual(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'b')),
+                  IRI('http://www.w3.org/1999/02/22-rdf-syntax-ns#','type'),
+                  OWLClass(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#','B')))
+        ind1_2 = (OWLNamedIndividual(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'b')),
+                  OWLObjectProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r7')),
+                  OWLNamedIndividual(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'f')))
+
+        ind2_1 = (OWLNamedIndividual(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'a')),
+                  IRI('http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'type'),
+                  OWLClass(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'B')))
+        ind2_2 = (OWLNamedIndividual(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'a')),
+                  IRI('http://www.w3.org/1999/02/22-rdf-syntax-ns#', 'type'),
+                  OWLClass(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'A')))
+
+        results = set(kb.abox(ind1, 'native'))
+        self.assertEqual(results, {ind1_1, ind1_2})
+        results = set(kb.abox([ind1, ind2], 'native'))
+        self.assertEqual(results, {ind1_1, ind1_2, ind2_1, ind2_2, ind2_2})
+
+        r1 = set(kb.abox(mode="axiom"))
+        r2 = set(kb.abox(mode="iri"))
+        r3 = set(kb.abox(mode="native"))
+        self.assertEqual(len(r1), len(r2))
+        self.assertEqual(len(r1), len(r3))
+
+        cls1_1 = OWLEquivalentClassesAxiom(
+            [OWLClass(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'N')),
+             OWLClass(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'Q'))])
+        cls2_1 = OWLSubClassOfAxiom(
+            sub_class=OWLClass(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'O')),
+            super_class=OWLClass(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'P')))
+
+        results = set(kb.tbox(cls1, 'axiom'))
+        self.assertEqual(results, {cls1_1})
+        results = set(kb.tbox([cls1, cls2], 'axiom'))
+        self.assertEqual(results, {cls1_1, cls2_1})
+
+        cls1_1 = ('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#N',
+                  'http://www.w3.org/2002/07/owl#equivalentClass',
+                  'http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#Q')
+        cls2_1 = ('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#O',
+                  'http://www.w3.org/2000/01/rdf-schema#subClassOf',
+                  'http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#P')
+
+        results = set(kb.tbox(cls1, 'iri'))
+        self.assertEqual(results, {cls1_1})
+        results = set(kb.tbox([cls1, cls2], 'iri'))
+        self.assertEqual(results, {cls1_1, cls2_1})
+
+        cls1_1 = (OWLClass(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'N')),
+                  IRI('http://www.w3.org/2002/07/owl#', 'equivalentClass'),
+                  OWLClass(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'Q')))
+        cls2_1 = (OWLClass(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'O')),
+                  IRI('http://www.w3.org/2000/01/rdf-schema#', 'subClassOf'),
+                  OWLClass(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'P')))
+
+        results = set(kb.tbox(cls1, 'native'))
+        self.assertEqual(results, {cls1_1})
+        results = set(kb.tbox([cls1, cls2], 'native'))
+        self.assertEqual(results, {cls1_1, cls2_1})
+
+        op1_1 = OWLSubObjectPropertyOfAxiom(sub_property=OWLObjectProperty(
+            IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r1')),
+                                            super_property=OWLObjectProperty(
+                                                IRI('http://www.w3.org/2002/07/owl#', 'ObjectProperty')),
+                                            annotations=[])
+        op1_2 = OWLObjectPropertyDomainAxiom(
+            OWLObjectProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r1')),
+            OWLClass(IRI('http://www.w3.org/2002/07/owl#', 'Thing')), [])
+        op1_3 = OWLObjectPropertyRangeAxiom(
+            OWLObjectProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r1')),
+            OWLClass(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'G')), [])
+        op1_4 = OWLSubObjectPropertyOfAxiom(sub_property=OWLObjectProperty(
+            IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r2')),
+                                            super_property=OWLObjectProperty(
+                                                IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#',
+                                                    'r1')), annotations=[])
+
+        op2_1 = OWLSubObjectPropertyOfAxiom(sub_property=OWLObjectProperty(
+            IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r2')),
+                                            super_property=OWLObjectProperty(
+                                                IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#',
+                                                    'r1')), annotations=[])
+        op2_2 = OWLObjectPropertyRangeAxiom(
+            OWLObjectProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r2')),
+            OWLClass(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'G')), [])
+        op2_3 = OWLObjectPropertyDomainAxiom(
+            OWLObjectProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r2')),
+            OWLClass(IRI('http://www.w3.org/2002/07/owl#', 'Thing')), [])
+        op2_4 = OWLSubObjectPropertyOfAxiom(sub_property=OWLObjectProperty(
+            IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r2')),
+                                            super_property=OWLObjectProperty(
+                                                IRI('http://www.w3.org/2002/07/owl#', 'ObjectProperty')),
+                                            annotations=[])
+
+        results = set(kb.tbox(op1, 'axiom'))
+        self.assertEqual(results, {op1_1, op1_2, op1_3, op1_4})
+        results = set(kb.tbox(op2, 'axiom'))
+        self.assertEqual(results, {op2_1, op2_2, op2_3, op2_4})
+        results = set(kb.tbox([op1, op2], 'axiom'))
+        self.assertEqual(results, {op1_1, op1_2, op1_3, op1_4, op2_3, op2_2, op2_4})
+
+        op1_1 = ('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r2',
+                 'http://www.w3.org/2000/01/rdf-schema#subPropertyOf',
+                 'http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r1')
+        op1_2 = ('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r1',
+                 'http://www.w3.org/2000/01/rdf-schema#range',
+                 'http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#G')
+        op1_3 = ('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r1',
+                 'http://www.w3.org/2000/01/rdf-schema#subPropertyOf', 'http://www.w3.org/2002/07/owl#ObjectProperty')
+        op1_4 = ('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r1',
+                 'http://www.w3.org/2000/01/rdf-schema#domain', 'http://www.w3.org/2002/07/owl#Thing')
+
+        op2_1 = ('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r2',
+                 'http://www.w3.org/2000/01/rdf-schema#subPropertyOf', 'http://www.w3.org/2002/07/owl#ObjectProperty')
+        op2_2 = ('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r2',
+                 'http://www.w3.org/2000/01/rdf-schema#range',
+                 'http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#G')
+        op2_3 = ('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r2',
+                 'http://www.w3.org/2000/01/rdf-schema#subPropertyOf',
+                 'http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r1')
+        op2_4 = ('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#r2',
+                 'http://www.w3.org/2000/01/rdf-schema#domain', 'http://www.w3.org/2002/07/owl#Thing')
+
+        results = set(kb.tbox(op1, 'iri'))
+        self.assertEqual(results, {op1_1, op1_2, op1_3, op1_4})
+        results = set(kb.tbox(op2, 'iri'))
+        self.assertEqual(results, {op2_1, op2_2, op2_3, op2_4})
+        results = set(kb.tbox([op1, op2], 'iri'))
+        self.assertEqual(results, {op1_1, op1_2, op1_3, op1_4, op2_1, op2_2, op2_4})
+
+        op1_1 = (OWLObjectProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r1')),
+                 IRI('http://www.w3.org/2000/01/rdf-schema#', 'domain'),
+                 OWLClass(IRI('http://www.w3.org/2002/07/owl#', 'Thing')))
+        op1_2 = (OWLObjectProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r1')),
+                 IRI('http://www.w3.org/2000/01/rdf-schema#', 'range'),
+                 OWLClass(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'G')))
+        op1_3 = (OWLObjectProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r2')),
+                 IRI('http://www.w3.org/2000/01/rdf-schema#', 'subPropertyOf'),
+                 OWLObjectProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r1')))
+        op1_4 = (OWLObjectProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r1')),
+                 IRI('http://www.w3.org/2000/01/rdf-schema#', 'subPropertyOf'),
+                 OWLObjectProperty(IRI('http://www.w3.org/2002/07/owl#', 'ObjectProperty')))
+
+        op2_1 = (OWLObjectProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r2')),
+                 IRI('http://www.w3.org/2000/01/rdf-schema#', 'domain'),
+                 OWLClass(IRI('http://www.w3.org/2002/07/owl#', 'Thing')))
+        op2_2 = (OWLObjectProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r2')),
+                 IRI('http://www.w3.org/2000/01/rdf-schema#', 'subPropertyOf'),
+                 OWLObjectProperty(IRI('http://www.w3.org/2002/07/owl#', 'ObjectProperty')))
+        op2_3 = (OWLObjectProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r2')),
+                 IRI('http://www.w3.org/2000/01/rdf-schema#', 'subPropertyOf'),
+                 OWLObjectProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r1')))
+        op2_4 = (OWLObjectProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'r2')),
+                 IRI('http://www.w3.org/2000/01/rdf-schema#', 'range'),
+                 OWLClass(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'G')))
+
+        results = set(kb.tbox(op1, 'native'))
+        self.assertEqual(results, {op1_1, op1_2, op1_3, op1_4})
+        results = set(kb.tbox(op2, 'native'))
+        self.assertEqual(results, {op2_1, op2_2, op2_3, op2_4})
+        results = set(kb.tbox([op1, op2], 'native'))
+        self.assertEqual(results, {op1_1, op1_2, op1_3, op1_4, op2_1, op2_2, op2_4})
+
+        dp_1 = OWLSubDataPropertyOfAxiom(sub_property=OWLDataProperty(
+            IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'dp2')),
+                                         super_property=OWLDataProperty(
+                                             IRI('http://www.w3.org/2002/07/owl#', 'DatatypeProperty')), annotations=[])
+        dp_2 = OWLDataPropertyDomainAxiom(
+            OWLDataProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'dp2')),
+            OWLClass(IRI('http://www.w3.org/2002/07/owl#', 'Thing')), [])
+        dp_3 = OWLSubDataPropertyOfAxiom(sub_property=OWLDataProperty(
+            IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'dp2')),
+                                         super_property=OWLDataProperty(
+                                             IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#',
+                                                 'dp1')), annotations=[])
+
+        results = set(kb.tbox(dp, 'axiom'))
+        self.assertEqual(results, {dp_1, dp_2, dp_3})
+
+        dp_1 = ('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#dp2',
+                'http://www.w3.org/2000/01/rdf-schema#subPropertyOf', 'http://www.w3.org/2002/07/owl#DatatypeProperty')
+        dp_2 = ('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#dp2',
+                'http://www.w3.org/2000/01/rdf-schema#domain', 'http://www.w3.org/2002/07/owl#Thing')
+        dp_3 = ('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#dp2',
+                'http://www.w3.org/2000/01/rdf-schema#subPropertyOf',
+                'http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#dp1')
+
+        results = set(kb.tbox(dp, 'iri'))
+        self.assertEqual(results, {dp_1, dp_2, dp_3})
+
+        dp_1 = (OWLDataProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'dp2')),
+                IRI('http://www.w3.org/2000/01/rdf-schema#', 'subPropertyOf'),
+                OWLDataProperty(IRI('http://www.w3.org/2002/07/owl#', 'DatatypeProperty')))
+        dp_2 = (OWLDataProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'dp2')),
+                IRI('http://www.w3.org/2000/01/rdf-schema#', 'domain'),
+                OWLClass(IRI('http://www.w3.org/2002/07/owl#', 'Thing')))
+        dp_3 = (OWLDataProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'dp2')),
+                IRI('http://www.w3.org/2000/01/rdf-schema#', 'subPropertyOf'),
+                OWLDataProperty(IRI('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#', 'dp1')))
+
+        results = set(kb.tbox(dp, 'native'))
+        self.assertEqual(results, {dp_1, dp_2, dp_3})
+
+        r4 = set(kb.tbox(mode="axiom"))
+        r5 = set(kb.tbox(mode="iri"))
+        r6 = set(kb.tbox(mode="native"))
+        self.assertEqual(len(r4), len(r5))
+        self.assertEqual(len(r4), len(r6))
+
+        r7 = set(kb.triples(mode="axiom"))
+        r8 = set(kb.triples(mode="iri"))
+        r9 = set(kb.triples(mode="native"))
+        self.assertEqual(len(r7), len(r8))
+        self.assertEqual(len(r7), len(r9))
+
+        self.assertEqual(len(r7), len(r4) + len(r1))
+        self.assertEqual(len(r8), len(r5) + len(r2))
+        self.assertEqual(len(r9), len(r6) + len(r3))

@@ -18,6 +18,7 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.metrics import Accuracy, F1, Recall, Precision, WeightedAccuracy
+from ontolearn.triple_store import TripleStoreKnowledgeBase
 from ontolearn.value_splitter import BinningValueSplitter, EntropyValueSplitter
 
 logger = logging.getLogger(__name__)
@@ -337,7 +338,7 @@ def execute(args):
     learner_type = models[args.model]
     optargs = {}
     if args.sparql_endpoint:
-        kb = KnowledgeBase(triplestore_address=args.sparql_endpoint)
+        kb = TripleStoreKnowledgeBase(args.sparql_endpoint)
     else:
         kb = KnowledgeBase(path=args.knowledge_base_path)
 
@@ -382,6 +383,8 @@ def execute(args):
         trainer = Trainer(model, kb.reasoner())
         trainer.fit(lp)
         print(trainer.best_hypotheses(1))
+        if args.save:
+            trainer.save_best_hypothesis()
 
     elif args.model in ["nces"]:
         hypothesis = model.fit(pos, neg)  # This will also print the prediction

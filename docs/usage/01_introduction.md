@@ -1,6 +1,6 @@
 # Ontolearn
 
-**Version:** ontolearn 0.6.2
+**Version:** ontolearn 0.6.1
 
 **GitHub repository:** [https://github.com/dice-group/Ontolearn](https://github.com/dice-group/Ontolearn)
 
@@ -31,12 +31,13 @@ Owlready2 library made it possible to build more complex algorithms.
 
 ---------------------------------------
 
-**Ontolearn (including owlapy) can do the following:**
+**Ontolearn (including owlapy and ontosample) can do the following:**
 
 - Load/save ontologies in RDF/XML, OWL/XML.
 - Modify ontologies by adding/removing axioms.
 - Access individuals/classes/properties of an ontology (and a lot more).
 - Define learning problems.
+- Sample ontologies.
 - Construct class expressions.
 - Use concept learning algorithms to classify positive examples in a learning problem.
 - Use local datasets or datasets that are hosted on a triplestore server, for the learning task.

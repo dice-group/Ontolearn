@@ -36,7 +36,8 @@ extensions = [
 ]
 
 # autoapi for ontolearn and owlapy. for owlapy we need to refer to its path in GitHub Action environment
-autoapi_dirs = ['../ontolearn', '/opt/hostedtoolcache/Python/3.9.18/x64/lib/python3.9/site-packages/owlapy']
+autoapi_dirs = ['../ontolearn', '/opt/hostedtoolcache/Python/3.9.18/x64/lib/python3.9/site-packages/owlapy',
+                '/opt/hostedtoolcache/Python/3.9.18/x64/lib/python3.9/site-packages/ontosample']
 
 # by default all are included but had to reinitialize this to remove private members from shoing
 autoapi_options = ['members', 'undoc-members', 'show-inheritance', 'show-module-summary', 'special-members',

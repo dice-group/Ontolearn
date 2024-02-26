@@ -2,15 +2,14 @@ import json
 
 from ontolearn.concept_learner import CELOE
 from ontolearn.heuristics import CELOEHeuristic
-from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.model import IRI, OWLNamedIndividual
 from ontolearn.refinement_operators import ModifiedCELOERefinement
+from ontolearn.triple_store import TripleStoreKnowledgeBase
 
 """
 
-This is an example to show how simply you can execute a learning algorithm having a knowledge base that uses a 
-triplestore.
+This is an example to show how simply you can execute a learning algorithm using the triplestore knowledge base.
 
 Prerequisite:
 - Server hosting the dataset as a triplestore
@@ -24,7 +23,7 @@ For this example you can fulfill the prerequisites as follows:
 """
 
 # Create a knowledge base object for the Family dataset using the URL address of the triplestore host only
-kb = KnowledgeBase(triplestore_address="http://localhost:3030/family/sparql")
+kb = TripleStoreKnowledgeBase("http://localhost:3030/family/sparql")
 
 # Define the model
 heur = CELOEHeuristic(expansionPenaltyFactor=0.05, startNodeBonus=1.0, nodeRefinementPenalty=0.01)

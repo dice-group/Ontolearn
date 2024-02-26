@@ -18,6 +18,7 @@ Ontolearn is an open-source software library for explainable structured machine 
    usage/09_further_resources
    autoapi/ontolearn/index
    autoapi/owlapy/index
+   autoapi/ontosample/index
 
 
 .. raw:: latex

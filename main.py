@@ -18,6 +18,7 @@ def get_default_arguments(description=None):
                         default='NCESData/family/embeddings/ConEx_entity_embeddings.csv',
                         help="Path to knowledge base embeddings. Some models like NCES require this,"
                              "e.g. 'some/path/kb_embeddings.csv'")
+    parser.add_argument("--save", action="store_true", help="save the hypothesis?")
     # Common model arguments
     parser.add_argument("--path_learning_problem", type=str, default='examples/uncle_lp2.json',
                         help="Path to a .json file that contains 2 properties 'positive_examples' and "

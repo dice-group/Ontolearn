@@ -21,8 +21,7 @@ class OWLReasoner_Owlready2_ComplexCEInstances(OWLReasoner_Owlready2):
     _base_reasoner: BaseReasoner_Owlready2
 
     def __init__(self, ontology: OWLOntology_Owlready2, base_reasoner: Optional[BaseReasoner_Owlready2] = None,
-                 infer_property_values: bool = True, infer_data_property_values: bool = True, isolate: bool = False,
-                 triplestore_address: str = None):
+                 infer_property_values: bool = True, infer_data_property_values: bool = True, isolate: bool = False):
         """
         OWL Reasoner with support for Complex Class Expression Instances + sync_reasoner.
 
@@ -33,16 +32,10 @@ class OWLReasoner_Owlready2_ComplexCEInstances(OWLReasoner_Owlready2):
             infer_data_property_values: Whether to infer data property values (only for PELLET).
             isolate: Whether to isolate the reasoner in a new world + copy of the original ontology.
                      Useful if you create multiple reasoner instances in the same script.
-            triplestore_address: The address that hosts the triplestore.
         """
 
-        super().__init__(ontology, isolate, triplestore_address)
-        if triplestore_address is not None:
-            print("WARN  OWLReasoner    :: Instance retrieval will be performed via triplestore using SPARQL query "
-                  "because you have entered a triplestore address. The `instances` method will default to the "
-                  "implementation in the base class and every functionality offered by "
-                  "OWLReasoner_Owlready2_ComplexCEInstances will be irrelevant to this method ")
-        if isolate and triplestore_address is None:
+        super().__init__(ontology, isolate)
+        if isolate:
             new_manager = OWLOntologyManager_Owlready2()
             self.reference_ontology = new_manager.load_ontology(ontology.get_original_iri())
             self.reference_iri = IRI.create(f'file:/isolated_ontology_{id(self.reference_ontology)}.owl')
@@ -74,32 +67,29 @@ class OWLReasoner_Owlready2_ComplexCEInstances(OWLReasoner_Owlready2):
                                  f"using an isolated ontology.")
 
     def instances(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLNamedIndividual]:
-        if isinstance(ce, OWLClass) or self.is_using_triplestore():
-            yield from super().instances(ce, direct=direct)
-        else:
-            if direct:
-                warning("direct not implemented")
-            with self._world.get_ontology("http://temp.classes/"):
-                temp_pred = cast(owlready2.ThingClass, types.new_class("TempCls%d" % self._cnt, (owlready2.owl.Thing,)))
-                temp_pred.equivalent_to = [self._conv.map_concept(ce)]
-                if self._base_reasoner == BaseReasoner_Owlready2.HERMIT:
-                    owlready2.sync_reasoner_hermit(self._world.get_ontology("http://temp.classes/"),
-                                                   self.infer_property_values)
-                else:
-                    owlready2.sync_reasoner_pellet(self._world.get_ontology("http://temp.classes/"),
-                                                   self.infer_property_values, self.infer_data_property_values)
-            instances = list(temp_pred.instances(world=self._world))
-            temp_pred.equivalent_to = []
-            try:
-                owlready2.destroy_entity(temp_pred)
-            except AttributeError as e:
-                logger.info(f"AttributeError: {e} Source: {__file__} (you can ignore this)")
-            self._cnt += 1
-            for i in instances:
-                yield OWLNamedIndividual(IRI.create(i.iri))
+        if direct:
+            warning("direct not implemented")
+        with self._world.get_ontology("http://temp.classes/"):
+            temp_pred = cast(owlready2.ThingClass, types.new_class("TempCls%d" % self._cnt, (owlready2.owl.Thing,)))
+            temp_pred.equivalent_to = [self._conv.map_concept(ce)]
+            if self._base_reasoner == BaseReasoner_Owlready2.HERMIT:
+                owlready2.sync_reasoner_hermit(self._world.get_ontology("http://temp.classes/"),
+                                               self.infer_property_values)
+            else:
+                owlready2.sync_reasoner_pellet(self._world.get_ontology("http://temp.classes/"),
+                                               self.infer_property_values, self.infer_data_property_values)
+        instances = list(temp_pred.instances(world=self._world))
+        temp_pred.equivalent_to = []
+        try:
+            owlready2.destroy_entity(temp_pred)
+        except AttributeError as e:
+            logger.info(f"AttributeError: {e} Source: {__file__} (you can ignore this)")
+        self._cnt += 1
+        for i in instances:
+            yield OWLNamedIndividual(IRI.create(i.iri))
 
     def __del__(self):
-        if self._isolated and not self.is_using_triplestore():
+        if self._isolated:
             file_path = f"isolated_ontology_{id(self.reference_ontology)}.owl"
             try:
                 os.remove(file_path)

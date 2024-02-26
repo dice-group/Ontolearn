@@ -49,7 +49,7 @@ kb = KnowledgeBase(path="file://KGs/father.owl")
 What happens in the background is that the ontology located in this path will be loaded
 in the `OWLOntology` object of `kb` as done [here](03_ontologies.md#loading-an-ontology).
 
-In our recent version you can also initialize the KnowledgeBase using a dataset hosted in a triplestore.
+In our recent version you can also initialize a knowledge base using a dataset hosted in a triplestore.
 Since that knowledge base is mainly used for executing a concept learner, we cover that matter more in depth 
 in _[Use Triplestore Knowledge Base](06_concept_learners.md#use-triplestore-knowledge-base)_ 
 section of _[Concept Learning](06_concept_learners.md)_.
@@ -253,11 +253,140 @@ You can now:
     print(evaluated_concept.ic) # 3
     ```
 
+## Obtaining axioms
+
+You can retrieve Tbox and Abox axioms by using `tbox` and `abox` methods respectively.
+Let us take them one at a time. The `tbox` method has 2 parameters, `entities` and `mode`.
+`entities` specifies the owl entity from which we want to obtain the Tbox axioms. It can be 
+a single entity, a `Iterable` of entities, or `None`. 
+
+The allowed types of entities are: 
+- OWLClass
+- OWLObjectProperty
+- OWLDataProperty
+
+Only the Tbox axioms related to the given entit-y/ies will be returned. If no entities are 
+passed, then it returns all the Tbox axioms.
+The second parameter `mode` _(str)_ sets the return format type. It can have the
+following values:
+1) `'native'` -> triples are represented as tuples of owlapy objects.
+2) `'iri'` -> triples are represented as tuples of IRIs as strings.
+3) `'axiom'` -> triples are represented as owlapy axioms.
+
+For the `abox` method the idea is similar. Instead of the parameter `entities`, there is the parameter 
+`individuals` which accepts an object of type OWLNamedIndividuals or Iterable[OWLNamedIndividuals].
+
+If you want to obtain all the axioms (Tbox + Abox) of the knowledge base, you can use the method `triples`. It
+requires only the `mode` parameter.
+
+> **NOTE**: The results of these methods are limited only to named and direct entities. 
+> That means that especially the axioms that contain anonymous owl objects (objects that don't have an IRI)
+> will not be part of the result set. For example, if there is a Tbox T={ C ⊑ (A ⊓ B), C ⊑ D }, 
+> only the latter subsumption axiom will be returned.
+
+
+## Sampling the Knowledge Base
+
+Sometimes ontologies and therefore knowledge bases can get very large and our
+concept learners become inefficient in terms of runtime. Sampling is an approach
+to extract a portion of the whole knowledge base without changing its semantic and
+still being expressive enough to yield results with as little loss of quality as 
+possible. [OntoSample](https://github.com/alkidbaci/OntoSample/tree/main) is 
+a library that we use to perform the sampling process. It offers different sampling 
+techniques which fall into the following categories:
+
+- Node-based samplers
+- Edge-based samplers
+- Exploration-based samplers
+
+and almost each sampler is offered in 3 modes:
+
+- Classic
+- Learning problem first (LPF)
+- Learning problem centered (LPC)
+
+You can check them [here](ontosample).
+
+When operated on its own, Ontosample uses a light version of Ontolearn (`ontolearn_light`) 
+to reason over ontologies, but when both packages are installed in the same environment 
+it will use `ontolearn` module instead. This is made for compatibility reasons.
+
+Ontosample treats the knowledge base as a graph where nodes are individuals
+and edges are object properties. However, Ontosample also offers support for 
+data properties sampling, although they are not considered as _"edges"_.
+
+#### Sampling steps:
+1. Initialize the sample using a `KnowledgeBase` object. If you are using an LPF or LPC
+   sampler than you also need to pass the set of learning problem individuals (`lp_nodes`).
+2. To perform the sampling use the `sample` method where you pass the number
+   of nodes (`nodes_number`) that you want to sample, the amount of data properties in percentage
+   (`data_properties_percentage`) that you want to sample which is represented by float values 
+   form 0 to 1 and jump probability (`jump_prob`) for samplers that 
+   use "jumping", a technique to avoid infinite loops during sampling.
+3. The `sample` method returns the sampled knowledge which you can store to a 
+   variable, use directly in the code or save locally by using the static method 
+   `save_sample`.
+
+Let's see an example where we use [RandomNodeSampler](ontosample.classic_samplers.RandomNodeSampler) to sample a 
+knowledge base:
+
+```python
+from ontosample.classic_samplers import RandomNodeSampler
+
+# 1. Initialize KnowledgeBase object using the path of the ontology
+kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
+
+# 2. Initialize the sampler and generate the sample
+sampler = RandomNodeSampler(kb)
+sampled_kb = sampler.sample(30) # will generate a sample with 30 nodes
+
+# 3. Save the sampled ontology
+sampler.save_sample(kb=sampled_kb, filename="some_name")
+```
+
+Here is another example where this time we use an LPC sampler:
+
+```python
+from ontosample.lpc_samplers import RandomWalkerJumpsSamplerLPCentralized
+from owlapy.model import OWLNamedIndividual,IRI
+import json
+
+# 0. Load json that stores the learning problem
+with open("examples/uncle_lp2.json") as json_file:
+    examples = json.load(json_file)
+
+# 1. Initialize KnowledgeBase object using the path of the ontology
+kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
+
+# 2. Initialize learning problem (required only for LPF and LPC samplers)
+pos = set(map(OWLNamedIndividual, map(IRI.create, set(examples['positive_examples']))))
+neg = set(map(OWLNamedIndividual, map(IRI.create, set(examples['negative_examples']))))
+lp = pos.union(neg)
+
+# 3. Initialize the sampler and generate the sample
+sampler = RandomWalkerJumpsSamplerLPCentralized(graph=kb, lp_nodes=lp)
+sampled_kb = sampler.sample(nodes_number=40,jump_prob=0.15)
+
+# 4. Save the sampled ontology
+sampler.save_sample(kb=sampled_kb, filename="some_other_name")
+```
+
+> WARNING! Random walker and Random Walker with Prioritization are two samplers that suffer 
+> from non-termination in case that the ontology contains nodes that point to each other and 
+> form an inescapable loop for the "walker". In this scenario you can use their "jumping" 
+> version to make the "walker" escape these loops and ensure termination.
+
+To see how to use a sampled knowledge base for the task of concept learning check
+the `sampling_example.py` in [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) 
+folder. You will find descriptive comments in that script that will help you understand it better.
+
+For more details about OntoSample you can see [this paper](https://dl.acm.org/doi/10.1145/3583780.3615158).
+
 -----------------------------------------------------------------------------------------------------
 
-See [KnowledgeBase API documentation](ontolearn.knowledge_base.KnowledgeBase)
-to check all the methods that this class has to offer. You will find methods to 
-access the class/property hierarchy, convenient methods that use the reasoner indirectly and 
+Since we cannot cover everything here in details, see [KnowledgeBase API documentation](ontolearn.knowledge_base.KnowledgeBase)
+to check all the methods that this class has to offer. You will find convenient methods to 
+access the class/property hierarchy, methods that use the reasoner indirectly and 
 a lot more.
 
 Speaking of the reasoner, it is important that an ontology 
