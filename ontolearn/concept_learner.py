@@ -791,6 +791,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         self.__setup()
 
     def __setup(self):
+        self._cache = dict()
         self.clean()
         if self.fitness_func is None:
             self.fitness_func = LinearPressureFitness()
@@ -810,7 +811,6 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         self._result_population = None
         self._dp_to_prim_type = dict()
         self._dp_splits = dict()
-        self._cache = dict()
         self._split_properties = []
 
         self.pset = self.__build_primitive_set()
@@ -1059,7 +1059,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             del creator.Quality
         except AttributeError:
             pass
-
+        self._cache.clear()
         super().clean()
 
 
