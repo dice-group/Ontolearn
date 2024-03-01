@@ -689,7 +689,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
     __slots__ = 'fitness_func', 'init_method', 'algorithm', 'value_splitter', 'tournament_size', \
         'population_size', 'num_generations', 'height_limit', 'use_data_properties', 'pset', 'toolbox', \
         '_learning_problem', '_result_population', 'mut_uniform_gen', '_dp_to_prim_type', '_dp_splits', \
-        '_split_properties', '_cache', 'use_card_restrictions', 'card_limit', 'use_inverse'
+        '_split_properties', '_cache', 'use_card_restrictions', 'card_limit', 'use_inverse', 'total_fits'
 
     name = 'evolearner'
 
@@ -788,11 +788,12 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         self.population_size = population_size
         self.num_generations = num_generations
         self.height_limit = height_limit
+        self.total_fits = 0
         self.__setup()
 
     def __setup(self):
+        self.clean(partial=True)
         self._cache = dict()
-        self.clean()
         if self.fitness_func is None:
             self.fitness_func = LinearPressureFitness()
 
@@ -971,7 +972,11 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         """
         Find hypotheses that explain pos and neg.
         """
-        self.clean()
+        # Don't reset everything if the user is just using this model for 1 learning problem, since he may use the
+        # register_op method, else-wise we need to `clean` before fitting to get a fresh fit.
+        if self.total_fits > 0:
+            self.clean()
+        self.total_fits += 1
         learning_problem = self.construct_learning_problem(PosNegLPStandard, args, kwargs)
         self._learning_problem = learning_problem.encode_kb(self.kb)
 
@@ -1049,9 +1054,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             self._cache[ind_str] = (e.q, individual.fitness.values[0])
             self._number_of_tested_concepts += 1
 
-    def clean(self):
-        self._result_population = None
-
+    def clean(self, partial: bool = False):
         # Resets classes if they already exist, names must match the ones that were created in the toolbox
         try:
             del creator.Fitness
@@ -1059,8 +1062,22 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             del creator.Quality
         except AttributeError:
             pass
-        self._cache.clear()
         super().clean()
+        if not partial:
+            # Reset everything if fitting more than one lp. Tests have shown that this is necessary to get the
+            # best performance of EvoLearner.
+            self._result_population = None
+            self._cache.clear()
+            self.fitness_func = LinearPressureFitness()
+            self.init_method = EARandomWalkInitialization()
+            self.algorithm = EASimple()
+            self.mut_uniform_gen = EARandomInitialization(min_height=1, max_height=3)
+            self.value_splitter = EntropyValueSplitter()
+            self._dp_to_prim_type = dict()
+            self._dp_splits = dict()
+            self._split_properties = []
+            self.pset = self.__build_primitive_set()
+            self.toolbox = self.__build_toolbox()
 
 
 class NCES(BaseNCES):

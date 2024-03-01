@@ -18,9 +18,9 @@ class TestEvoLearner(unittest.TestCase):
         kb = KnowledgeBase(path=settings['data_path'][3:])
         model = EvoLearner(knowledge_base=kb, max_runtime=10)
 
-        regression_test_evolearner = {'Aunt': 0.9, 'Brother': 1.0,
-                                      'Cousin': 0.9, 'Granddaughter': 1.0,
-                                      'Uncle': 0.9, 'Grandgrandfather': 0.94}
+        regression_test_evolearner = {'Aunt': 1.0, 'Brother': 1.0,
+                                      'Cousin': 1.0, 'Granddaughter': 1.0,
+                                      'Uncle': 1.0, 'Grandgrandfather': 1.0}
         for str_target_concept, examples in settings['problems'].items():
             pos = set(map(OWLNamedIndividual, map(IRI.create, set(examples['positive_examples']))))
             neg = set(map(OWLNamedIndividual, map(IRI.create, set(examples['negative_examples']))))
@@ -31,8 +31,12 @@ class TestEvoLearner(unittest.TestCase):
             self.assertEqual(returned_model, model)
             hypotheses = list(returned_model.best_hypotheses(n=3))
             self.assertGreaterEqual(hypotheses[0].quality, regression_test_evolearner[str_target_concept])
-            self.assertGreaterEqual(hypotheses[0].quality, hypotheses[1].quality)
-            self.assertGreaterEqual(hypotheses[1].quality, hypotheses[2].quality)
+            # best_hypotheses returns distinct hypotheses and sometimes the model will not find 'n' distinct hypothesis,
+            # hence the checks
+            if len(hypotheses) == 2:
+                self.assertGreaterEqual(hypotheses[0].quality, hypotheses[1].quality)
+            if len(hypotheses) == 3:
+                self.assertGreaterEqual(hypotheses[1].quality, hypotheses[2].quality)
 
     def test_regression_mutagenesis_multiple_fits(self):
         kb = KnowledgeBase(path='KGs/Mutagenesis/mutagenesis.owl')
