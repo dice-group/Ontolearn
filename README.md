@@ -133,7 +133,7 @@ Note that F1 scores denote the quality of the find/constructed concept w.r.t. E^
 
 ### Mutagenesis Benchmark Results
 ```shell
-python examples/concept_learning_evaluation.py --lps LPs/Mutagenesis/lps.json --kb KGs/Mutagenesis/mutagenesis.owl --max_runtime 60 --report mutagenesis_results.csv && python -c 'import pandas as pd; print(pd.read_csv("mutagenesis_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
+python examples/concept_learning_cv_evaluation.py --path_of_nces_embeddings NCESData/mutagenesis/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings CLIPData/mutagenesis/embeddings/ConEx_entity_embeddings.csv --folds 10 --kb KGs/Mutagenesis/mutagenesis.owl --lps LPs/Mutagenesis/lps.json --max_runtime 60 --report mutagenesis_results.csv && python -c 'import pandas as pd; print(pd.read_csv("mutagenesis_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
 ```
 | LP       |   Train-F1-OCEL |   Test-F1-OCEL |   RT-OCEL |   Train-F1-CELOE |   Test-F1-CELOE |   RT-CELOE |   Train-F1-Evo |   Test-F1-Evo |   RT-Evo |   Train-F1-DRILL |   Test-F1-DRILL |   RT-DRILL |   Train-F1-TDL |   Test-F1-TDL |   RT-TDL |   Train-F1-NCES |   Test-F1-NCES |   RT-NCES |   Train-F1-CLIP |   Test-F1-CLIP |   RT-CLIP |
 |:---------|----------------:|---------------:|----------:|-----------------:|----------------:|-----------:|---------------:|--------------:|---------:|-----------------:|----------------:|-----------:|---------------:|--------------:|---------:|----------------:|---------------:|----------:|----------------:|---------------:|----------:|
@@ -141,7 +141,7 @@ python examples/concept_learning_evaluation.py --lps LPs/Mutagenesis/lps.json --
 
 ### Carcinogenesis Benchmark Results
 ```shell
-python examples/concept_learning_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 60 --report carcinogenesis_results.csv  && python -c 'import pandas as pd; print(pd.read_csv("carcinogenesis_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
+python examples/concept_learning_cv_evaluation.py --path_of_nces_embeddings NCESData/carcinogenesis/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings CLIPData/carcinogenesis/embeddings/ConEx_entity_embeddings.csv --folds 10 --kb KGs/Carcinogenesis/carcinogenesis.owl --lps LPs/Carcinogenesis/lps.json --max_runtime 60 --report carcinogenesis_results.csv && python -c 'import pandas as pd; print(pd.read_csv("carcinogenesis_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
 ```
 
 | LP       |   Train-F1-OCEL |   Test-F1-OCEL |   RT-OCEL |   Train-F1-CELOE |   Test-F1-CELOE |   RT-CELOE |   Train-F1-Evo |   Test-F1-Evo |   RT-Evo |   Train-F1-DRILL |   Test-F1-DRILL |   RT-DRILL |   Train-F1-TDL |   Test-F1-TDL |   RT-TDL |   Train-F1-NCES |   Test-F1-NCES |   RT-NCES |   Train-F1-CLIP |   Test-F1-CLIP |   RT-CLIP |
