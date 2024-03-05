@@ -6,7 +6,7 @@ from tqdm import trange
 from collections import defaultdict
 import os
 import json
-from ontolearn.data_struct import BaseDataLoader
+from ontolearn.data_struct import NCESBaseDataLoader
 from torch.optim.lr_scheduler import ExponentialLR
 from torch.nn import functional as F
 from torch.nn.utils import clip_grad_value_
@@ -43,11 +43,11 @@ class NCESTrainer:
             arg1_ = arg1
             arg2_ = arg2
             if isinstance(arg1_, str):
-                arg1_ = set(before_pad(BaseDataLoader.decompose(arg1_)))
+                arg1_ = set(before_pad(NCESBaseDataLoader.decompose(arg1_)))
             else:
                 arg1_ = set(before_pad(arg1_))
             if isinstance(arg2_, str):
-                arg2_ = set(before_pad(BaseDataLoader.decompose(arg2_)))
+                arg2_ = set(before_pad(NCESBaseDataLoader.decompose(arg2_)))
             else:
                 arg2_ = set(before_pad(arg2_))
             return 100*float(len(arg1_.intersection(arg2_)))/len(arg1_.union(arg2_))
@@ -56,11 +56,11 @@ class NCESTrainer:
             arg1_ = arg1
             arg2_ = arg2
             if isinstance(arg1_, str):
-                arg1_ = before_pad(BaseDataLoader.decompose(arg1_))
+                arg1_ = before_pad(NCESBaseDataLoader.decompose(arg1_))
             else:
                 arg1_ = before_pad(arg1_)
             if isinstance(arg2_, str):
-                arg2_ = before_pad(BaseDataLoader.decompose(arg2_))
+                arg2_ = before_pad(NCESBaseDataLoader.decompose(arg2_))
             else:
                 arg2_ = before_pad(arg2_)
             return 100*float(sum(map(lambda x, y: x == y, arg1_, arg2_)))/max(len(arg1_), len(arg2_))

@@ -38,7 +38,7 @@ for i in kb.all_individuals_set():
 print('*' * 100)
 
 # Direct concept hierarchy from Top to Bottom.
-for concept in kb.class_hierarchy().items():
+for concept in kb.class_hierarchy.items():
     print(f'{concept.get_iri().as_str()} => {[c.get_iri().as_str() for c in kb.get_direct_sub_concepts(concept)]}')
 print('*' * 100)
 

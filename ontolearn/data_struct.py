@@ -3,6 +3,7 @@
 import torch
 from collections import deque
 import pandas as pd
+import numpy as np
 import random
 
 
@@ -122,7 +123,7 @@ class Experience:
         self.rewards.clear()
 
 
-class BaseDataLoader:
+class NCESBaseDataLoader:
 
     def __init__(self, vocab, inv_vocab):
 
@@ -154,7 +155,7 @@ class BaseDataLoader:
         return labels, len(target)
 
 
-class NCESDataLoader(BaseDataLoader, torch.utils.data.Dataset):
+class NCESDataLoader(NCESBaseDataLoader, torch.utils.data.Dataset):
 
     def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, max_length, example_sizes=None,
                  sorted_examples=True):
@@ -190,7 +191,7 @@ class NCESDataLoader(BaseDataLoader, torch.utils.data.Dataset):
                                                             self.max_length - length)]).long()
 
 
-class NCESDataLoaderInference(BaseDataLoader, torch.utils.data.Dataset):
+class NCESDataLoaderInference(NCESBaseDataLoader, torch.utils.data.Dataset):
 
     def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, sorted_examples=True):
         self.data_raw = data
@@ -209,6 +210,77 @@ class NCESDataLoaderInference(BaseDataLoader, torch.utils.data.Dataset):
         elif self.shuffle_examples:
             random.shuffle(pos)
             random.shuffle(neg)
-        datapoint_pos = torch.FloatTensor(self.embeddings.loc[pos].values)
-        datapoint_neg = torch.FloatTensor(self.embeddings.loc[neg].values)
+        datapoint_pos = torch.FloatTensor(self.embeddings.loc[pos].values.squeeze())
+        datapoint_neg = torch.FloatTensor(self.embeddings.loc[neg].values.squeeze())
+        return datapoint_pos, datapoint_neg
+
+    
+class CLIPDataLoader(torch.utils.data.Dataset):
+
+    def __init__(self, data: list, embeddings, shuffle_examples, example_sizes: list=None,
+                 k=5, sorted_examples=True):
+        self.data_raw = data
+        self.embeddings = embeddings
+        super().__init__()
+        self.shuffle_examples = shuffle_examples
+        self.example_sizes = example_sizes
+        self.k = k
+        self.sorted_examples = sorted_examples
+
+    def __len__(self):
+        return len(self.data_raw)
+
+    def __getitem__(self, idx):
+        key, value = self.data_raw[idx]
+        pos = value['positive examples']
+        neg = value['negative examples']
+        length = value['length']
+        if self.example_sizes is not None:
+            k_pos, k_neg = random.choice(self.example_sizes)
+            k_pos = min(k_pos, len(pos))
+            k_neg = min(k_neg, len(neg))
+            selected_pos = random.sample(pos, k_pos)
+            selected_neg = random.sample(neg, k_neg)
+        elif self.k is not None:
+            prob_pos_set = 1.0/(1+np.array(range(min(self.k, len(pos)), len(pos)+1, self.k)))
+            prob_pos_set = prob_pos_set/prob_pos_set.sum()
+            prob_neg_set = 1.0/(1+np.array(range(min(self.k, len(neg)), len(neg)+1, self.k)))
+            prob_neg_set = prob_neg_set/prob_neg_set.sum()
+            k_pos = np.random.choice(range(min(self.k, len(pos)), len(pos)+1, self.k), replace=False, p=prob_pos_set)
+            k_neg = np.random.choice(range(min(self.k, len(neg)), len(neg)+1, self.k), replace=False, p=prob_neg_set)
+            selected_pos = random.sample(pos, k_pos)
+            selected_neg = random.sample(neg, k_neg)
+        else:
+            selected_pos = pos
+            selected_neg = neg
+        if self.shuffle_examples:
+            random.shuffle(selected_pos)
+            random.shuffle(selected_neg)
+        datapoint_pos = torch.FloatTensor(self.embeddings.loc[selected_pos].values.squeeze())
+        datapoint_neg = torch.FloatTensor(self.embeddings.loc[selected_neg].values.squeeze())
+        return datapoint_pos, datapoint_neg, torch.LongTensor([length])
+    
+    
+class CLIPDataLoaderInference(torch.utils.data.Dataset):
+
+    def __init__(self, data: list, embeddings, shuffle_examples,
+                 sorted_examples=True):
+        self.data_raw = data
+        self.embeddings = embeddings
+        super().__init__()
+        self.shuffle_examples = shuffle_examples
+        self.sorted_examples = sorted_examples
+
+    def __len__(self):
+        return len(self.data_raw)
+
+    def __getitem__(self, idx):
+        _, pos, neg = self.data_raw[idx]
+        if self.sorted_examples:
+            pos, neg = sorted(pos), sorted(neg)
+        elif self.shuffle_examples:
+            random.shuffle(pos)
+            random.shuffle(neg)
+        datapoint_pos = torch.FloatTensor(self.embeddings.loc[pos].values.squeeze())
+        datapoint_neg = torch.FloatTensor(self.embeddings.loc[pos].values.squeeze())
         return datapoint_pos, datapoint_neg
