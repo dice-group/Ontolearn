@@ -421,7 +421,8 @@ notebook for each of these concept learners:
 
 - [NCES notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/simple-usage-NCES.ipynb)
 - [CLIP notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/clip_notebook.ipynb)
-- [DRILL example](https://github.com/dice-group/Ontolearn/blob/develop/examples/concept_learning_drill_train.py)
+- [DRILL notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/drill_notebook.ipynb)
 - [EvoLearner notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/evolearner_notebook.ipynb)
 - [CELOE notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/celoe_notebook.ipynb)
 - [OCEL notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/ocel_notebook.ipynb)
+- [TDL example](https://github.com/dice-group/Ontolearn/blob/develop/examples/concept_learning_with_tdl_and_triplestore_kb.py)
