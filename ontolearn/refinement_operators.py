@@ -18,7 +18,8 @@ from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, O
 from .search import OENode
 from typing import Callable, Tuple
 from enum import Enum
-from owlapy.model import NUMERIC_DATATYPES, OWLObjectProperty, OWLObjectExactCardinality, OWLObjectHasValue
+from owlapy.model import NUMERIC_DATATYPES, OWLObjectProperty, OWLObjectExactCardinality, OWLObjectHasValue, \
+    OWLObjectOneOf
 
 from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVocabulary, Tree, escape, ind_to_string, \
     owlliteral_to_primitive_string
@@ -112,10 +113,15 @@ class LengthBasedRefinement(BaseRefinement):
                          self.kb.generator.exact_cardinality_restriction(c, inverse_role, card)])
 
         if self.nominals:
-            temp=[]
+            temp = []
             for i in restrictions:
                 for j in self.kb.individuals(i.get_filler()):
-                    temp.append(OWLObjectHasValue(property=i.get_property(), individual=j))
+                    temp.append(OWLObjectSomeValuesFrom(property=i.get_property(), filler=OWLObjectOneOf(j)))
+                    temp.append(OWLObjectAllValuesFrom(property=i.get_property(), filler=OWLObjectOneOf(j)))
+                    temp.append(OWLObjectMinCardinality(cardinality=1,
+                                                        property=i.get_property(),
+                                                        filler=OWLObjectOneOf(j)))
+
             restrictions.extend(temp)
         yield from restrictions
 
