@@ -15,19 +15,17 @@ Learning algorithms:
 
 ## Installation
 
-
 ```shell
 pip install ontolearn 
 ```
 or
 ```shell
-git clone https://github.com/dice-group/Ontolearn.git 
 # ensure that python version >=3.9.18
+git clone https://github.com/dice-group/Ontolearn.git 
 python -m venv venv && source venv/bin/activate # for Windows use: .\venv\Scripts\activate 
-pip install -r requirements.txt
+pip install -r requirements.txt 
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
 ```
-
 ```shell
 pytest -p no:warnings -x # Running 158 tests takes ~ 3 mins
 ```
@@ -237,4 +235,4 @@ address="Cham"
 }
 ```
 
-In case you have any question, please contact:  ```onto-learn@lists.uni-paderborn.de```
+In case you have any question, please contact: ```caglar.demir@upb.de``` or ```caglardemir8@gmail.com```
