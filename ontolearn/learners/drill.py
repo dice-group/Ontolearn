@@ -32,6 +32,7 @@ class Drill(RefinementBasedConceptLearner):
                  use_data_properties=True,
                  use_card_restrictions=True,
                  card_limit=10,
+                 nominals=True,
                  quality_func: AbstractScorer = None,
                  reward_func: object = None,
                  batch_size=None, num_workers: int = 1, pretrained_model_name=None,
@@ -42,6 +43,7 @@ class Drill(RefinementBasedConceptLearner):
                  num_episodes_per_replay: int = 2, learning_rate: float = 0.001,
                  max_runtime=None,
                  num_of_sequential_actions=3,
+                 stop_at_goal=True,
                  num_episode=10):
 
         self.name = "DRILL"
@@ -62,7 +64,8 @@ class Drill(RefinementBasedConceptLearner):
                                                         use_data_properties=use_data_properties,
                                                         use_card_restrictions=use_card_restrictions,
                                                         card_limit=card_limit,
-                                                        use_inverse=use_inverse)
+                                                        use_inverse=use_inverse,
+                                                        nominals=nominals)
         else:
             refinement_operator = refinement_operator
 
@@ -90,6 +93,7 @@ class Drill(RefinementBasedConceptLearner):
         self.storage_path, _ = create_experiment_folder()
         self.search_tree = DRILLSearchTreePriorityQueue()
         self.renderer = DLSyntaxObjectRenderer()
+        self.stop_at_goal=stop_at_goal
 
         if self.pre_trained_kge:
             self.representation_mode = "averaging"
@@ -201,8 +205,10 @@ class Drill(RefinementBasedConceptLearner):
                     if ref.quality == 0:
                         continue
                     next_possible_states.append(ref)
-                    if ref.quality == 1.0:
-                        break
+
+                    if self.stop_at_goal:
+                        if ref.quality == 1.0:
+                            break
             try:
                 assert len(next_possible_states) > 0
             except AssertionError:
