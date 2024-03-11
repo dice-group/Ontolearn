@@ -118,6 +118,10 @@ class LengthBasedRefinement(BaseRefinement):
                 for j in self.kb.individuals(i.get_filler()):
                     temp.append(OWLObjectSomeValuesFrom(property=i.get_property(), filler=OWLObjectOneOf(j)))
                     temp.append(OWLObjectAllValuesFrom(property=i.get_property(), filler=OWLObjectOneOf(j)))
+                    temp.append(OWLObjectMinCardinality(cardinality=1,
+                                                        property=i.get_property(),
+                                                        filler=OWLObjectOneOf(j)))
+
             restrictions.extend(temp)
         yield from restrictions
 
