@@ -15,12 +15,14 @@ Learning algorithms:
 
 ## Installation
 
+
 ```shell
 pip install ontolearn 
 ```
 or
 ```shell
 git clone https://github.com/dice-group/Ontolearn.git 
+# ensure that python version >=3.9.18
 python -m venv venv && source venv/bin/activate # for Windows use: .\venv\Scripts\activate 
 pip install -r requirements.txt
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
@@ -169,6 +171,15 @@ Run the help command to see the description on this script usage:
 
 ```shell
 python deploy_cl.py --help
+```
+
+
+## Development
+
+Creating a feature branch **refactoring** from development branch
+
+```shell
+git branch refactoring develop
 ```
 
 ### Citing
