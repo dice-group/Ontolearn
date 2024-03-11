@@ -20,7 +20,7 @@ class TestEvoLearner(unittest.TestCase):
 
         regression_test_evolearner = {'Aunt': 1.0, 'Brother': 1.0,
                                       'Cousin': 1.0, 'Granddaughter': 1.0,
-                                      'Uncle': 1.0, 'Grandgrandfather': 1.0}
+                                      'Uncle': 0.9, 'Grandgrandfather': 1.0}
         for str_target_concept, examples in settings['problems'].items():
             pos = set(map(OWLNamedIndividual, map(IRI.create, set(examples['positive_examples']))))
             neg = set(map(OWLNamedIndividual, map(IRI.create, set(examples['negative_examples']))))

@@ -113,7 +113,9 @@ Finally, remove the _.zip_ file:
 rm KGs.zip
 ```
 
-And for NCES data: 
+--------------------------------------------------------
+
+### NCES data: 
 
 ```shell
 wget https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip -O ./NCESData.zip
@@ -126,6 +128,16 @@ If you are getting any error check if the following flags can help:
 ```shell
 unzip -o NCESData.zip
 rm -f NCESData.zip
+```
+
+-------------------------------------------------------
+
+### CLIP data:
+
+```commandline
+wget https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip
+unzip CLIPData.zip
+rm CLIPData.zip 
 ```
 
 ## Building (sdist and bdist_wheel)
