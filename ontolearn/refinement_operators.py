@@ -18,10 +18,7 @@ from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, O
 from .search import OENode
 from typing import Callable, Tuple
 from enum import Enum
-from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
-    OWLClassExpression, OWLDataHasValue, OWLDataPropertyExpression, OWLDataSomeValuesFrom, OWLLiteral, \
-    OWLObjectAllValuesFrom, OWLObjectIntersectionOf, NUMERIC_DATATYPES, OWLDataProperty, OWLObjectProperty, \
-    OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectMinCardinality
+from owlapy.model import NUMERIC_DATATYPES, OWLObjectProperty, OWLObjectExactCardinality, OWLObjectHasValue
 
 from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVocabulary, Tree, escape, ind_to_string, \
     owlliteral_to_primitive_string
@@ -31,22 +28,23 @@ class LengthBasedRefinement(BaseRefinement):
     """ A top-down refinement operator in ALC."""
 
     def __init__(self, knowledge_base: KnowledgeBase, use_inverse=False,
-                 use_data_properties=False, use_card_restrictions=False, card_limit=11):
+                 use_data_properties=False, use_card_restrictions=False, card_limit=11, nominals=True):
         super().__init__(knowledge_base)
 
         self.use_inverse = use_inverse
         self.use_data_properties = use_data_properties
         self.use_card_restrictions = use_card_restrictions
         self.card_limit = card_limit
+        self.nominals = nominals
 
         # 1. Number of named classes and sanity checking
         num_of_named_classes = len(set(i for i in self.kb.ontology.classes_in_signature()))
         assert num_of_named_classes == len(list(i for i in self.kb.ontology.classes_in_signature()))
         self.max_len_refinement_top = 5
+        self.top_refinements = None
 
-        self.top_refinements = None # {ref for ref in self.refine_top()}
-
-    def from_iterables(self, cls, a_operands, b_operands):
+    @staticmethod
+    def from_iterables(cls, a_operands, b_operands):
         assert (isinstance(a_operands, Generator) is False) and (isinstance(b_operands, Generator) is False)
         seen = set()
         results = set()
@@ -65,7 +63,6 @@ class LengthBasedRefinement(BaseRefinement):
 
     def refine_top(self) -> Iterable:
         """ Refine Top Class Expression """
-
         # (1) A
         concepts = [i for i in self.kb.get_all_sub_concepts(self.kb.generator.thing)]
         yield from concepts
@@ -113,11 +110,19 @@ class LengthBasedRefinement(BaseRefinement):
                          self.kb.generator.min_cardinality_restriction(c, inverse_role, card),
                          self.kb.generator.max_cardinality_restriction(c, inverse_role, card),
                          self.kb.generator.exact_cardinality_restriction(c, inverse_role, card)])
+
+        if self.nominals:
+            temp=[]
+            for i in restrictions:
+                for j in self.kb.individuals(i.get_filler()):
+                    temp.append(OWLObjectHasValue(property=i.get_property(), individual=j))
+            restrictions.extend(temp)
         yield from restrictions
 
         for bool_dp in self.kb.get_boolean_data_properties():
             print("Not yet boolean data properties for DRILL")
             continue
+
     def apply_union_and_intersection_from_iterable(self, cont: List) -> Iterable:
         """ Create Union and Intersection OWL Class Expressions.
         1. Create OWLObjectIntersectionOf via logical conjunction of cartesian product of input owl class expressions.
@@ -236,17 +241,22 @@ class LengthBasedRefinement(BaseRefinement):
 
     def refine(self, class_expression) -> Iterable[OWLClassExpression]:
         assert isinstance(class_expression, OWLClassExpression)
+        # (1) Initialize top refinement if it has not been initialized.
         if self.top_refinements is None:
             self.top_refinements = {ref for ref in self.refine_top()}
-
+        # (2) Refine Top.
         if class_expression.is_owl_thing():
             yield from self.top_refinements
+        # (3) Refine Bottom.
         elif class_expression.is_owl_nothing():
             yield from {class_expression}
+        # (3) Refine conjunction DL concept.
         elif isinstance(class_expression, OWLObjectIntersectionOf):
             yield from self.refine_object_intersection_of(class_expression)
+        # (5) Refine negated atomic/named concept.
         elif isinstance(class_expression, OWLObjectComplementOf):
             yield from self.refine_complement_of(class_expression)
+        # (6) Refine
         elif isinstance(class_expression, OWLObjectAllValuesFrom):
             yield from self.refine_object_all_values_from(class_expression)
         elif isinstance(class_expression, OWLObjectUnionOf):
