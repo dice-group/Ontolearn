@@ -21,15 +21,8 @@ from ontolearn.heuristics import CeloeBasedReward
 import torch
 from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
 
-
 class Drill(RefinementBasedConceptLearner):
-    """ Neuro-Symbolic Class Expression Learning (https://www.ijcai.org/proceedings/2023/0403.pdf)
-    dice embeddings ?
-    pip3 install dicee
-    dicee --path_single_kg KGs/Family/family-benchmark_rich_background.owl --backend rdflib --model Keci --embedding_dim 32 --num_epochs 100 --path_to_store_single_run KeciFamilyRun
-
-
-    """
+    """ Neuro-Symbolic Class Expression Learning (https://www.ijcai.org/proceedings/2023/0403.pdf)"""
 
     def __init__(self, knowledge_base,
                  path_pretrained_kge: str = None,
@@ -39,6 +32,7 @@ class Drill(RefinementBasedConceptLearner):
                  use_data_properties=True,
                  use_card_restrictions=True,
                  card_limit=10,
+                 nominals=True,
                  quality_func: AbstractScorer = None,
                  reward_func: object = None,
                  batch_size=None, num_workers: int = 1, pretrained_model_name=None,
@@ -49,10 +43,12 @@ class Drill(RefinementBasedConceptLearner):
                  num_episodes_per_replay: int = 2, learning_rate: float = 0.001,
                  max_runtime=None,
                  num_of_sequential_actions=3,
+                 stop_at_goal=True,
                  num_episode=10):
 
         self.name = "DRILL"
-
+        self.learning_problem = None
+        # (1) Initialize KGE.
         assert path_pretrained_drill is None, "Not implemented the integration of using pre-trained model"
         if path_pretrained_kge is not None and os.path.isdir(path_pretrained_kge):
             self.pre_trained_kge = dicee.KGE(path=path_pretrained_kge)
@@ -62,19 +58,23 @@ class Drill(RefinementBasedConceptLearner):
             self.pre_trained_kge = None
             self.embedding_dim = None
 
+        # (2) Initialize Refinement operator.
         if refinement_operator is None:
             refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base,
                                                         use_data_properties=use_data_properties,
                                                         use_card_restrictions=use_card_restrictions,
                                                         card_limit=card_limit,
-                                                        use_inverse=use_inverse)
+                                                        use_inverse=use_inverse,
+                                                        nominals=nominals)
         else:
             refinement_operator = refinement_operator
+
+        # (3) Initialize reward function for the training.
         if reward_func is None:
             self.reward_func = CeloeBasedReward()
         else:
             self.reward_func = reward_func
-
+        # (4) Params.
         self.num_workers = num_workers
         self.learning_rate = learning_rate
         self.num_episode = num_episode
@@ -90,6 +90,11 @@ class Drill(RefinementBasedConceptLearner):
         self.emb_pos, self.emb_neg = None, None
         self.start_time = None
         self.goal_found = False
+        self.storage_path, _ = create_experiment_folder()
+        self.search_tree = DRILLSearchTreePriorityQueue()
+        self.renderer = DLSyntaxObjectRenderer()
+        self.stop_at_goal=stop_at_goal
+
         if self.pre_trained_kge:
             self.representation_mode = "averaging"
             self.sample_size = 1
@@ -121,12 +126,6 @@ class Drill(RefinementBasedConceptLearner):
                                                iter_bound=iter_bound,
                                                max_num_of_concepts_tested=max_num_of_concepts_tested,
                                                max_runtime=max_runtime)
-        self.search_tree = DRILLSearchTreePriorityQueue()
-        self.storage_path, _ = create_experiment_folder()
-        self.learning_problem = None
-        self.renderer = DLSyntaxObjectRenderer()
-
-        self.operator: RefinementBasedConceptLearner
 
     def initialize_class_expression_learning_problem(self, pos: Set[OWLNamedIndividual], neg: Set[OWLNamedIndividual]):
         """
@@ -165,18 +164,18 @@ class Drill(RefinementBasedConceptLearner):
         self.compute_quality_of_class_expression(root_rl_state)
         return root_rl_state
 
-    def fit(self, lp: PosNegLPStandard, max_runtime=None):
+    def fit(self, learning_problem: PosNegLPStandard, max_runtime=None):
         if max_runtime:
             assert isinstance(max_runtime, float)
             self.max_runtime = max_runtime
 
         pos_type_counts = Counter(
-            [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in lp.pos))])
+            [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.pos))])
         neg_type_counts = Counter(
-            [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in lp.neg))])
+            [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.neg))])
         type_bias = pos_type_counts - neg_type_counts
         # (1) Initialize learning problem
-        root_state = self.initialize_class_expression_learning_problem(pos=lp.pos, neg=lp.neg)
+        root_state = self.initialize_class_expression_learning_problem(pos=learning_problem.pos, neg=learning_problem.neg)
         # (2) Add root state into search tree
         root_state.heuristic = root_state.quality
         self.search_tree.add(root_state)
@@ -206,8 +205,10 @@ class Drill(RefinementBasedConceptLearner):
                     if ref.quality == 0:
                         continue
                     next_possible_states.append(ref)
-                    if ref.quality == 1.0:
-                        break
+
+                    if self.stop_at_goal:
+                        if ref.quality == 1.0:
+                            break
             try:
                 assert len(next_possible_states) > 0
             except AssertionError:

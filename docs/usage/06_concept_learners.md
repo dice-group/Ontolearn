@@ -8,17 +8,14 @@ of Ontolearn library:
 - [CELOE](ontolearn.concept_learner.CELOE)
 - [OCEL](ontolearn.concept_learner.OCEL)
 
+The other concept learners are not covered here in details, but we have provided
+examples for them. Check the jupyter notebook files  as well as other example scripts
+for the corresponding learner inside the 
+[examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder 
+(direct links are given at the end of this guide).
 
-> **Important Notice**: 
-> 
-> **_DRILL_ is not fully implemented in Ontolearn**. In the meantime you can refer to 
-> [_DRILL's_ GitHub repo](https://github.com/dice-group/drill).
-> 
-> **_NCES_ is not currently documented here**. You can visit _NCES_ jupyter notebooks
-> inside [examples folder](https://github.com/dice-group/Ontolearn/tree/develop/examples) to find the description on
-> how it works.
-> 
-> NCES2, CLIP and NERO are not yet implemented in Ontolearn, they will be soon.
+It is worth mentioning that NCES2 and NERO are not yet implemented in Ontolearn,
+but they will be soon.
 
 ### Expressiveness
 
@@ -423,6 +420,9 @@ a triplestore server that can be used to execute the concept learner. There is a
 notebook for each of these concept learners:
 
 - [NCES notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/simple-usage-NCES.ipynb)
+- [CLIP notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/clip_notebook.ipynb)
+- [DRILL notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/drill_notebook.ipynb)
 - [EvoLearner notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/evolearner_notebook.ipynb)
 - [CELOE notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/celoe_notebook.ipynb)
 - [OCEL notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/ocel_notebook.ipynb)
+- [TDL example](https://github.com/dice-group/Ontolearn/blob/develop/examples/concept_learning_with_tdl_and_triplestore_kb.py)

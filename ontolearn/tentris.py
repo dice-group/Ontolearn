@@ -25,7 +25,7 @@ from owlapy.util import LRUCache
 
 logger = logging.getLogger(__name__)
 
-# TODO: 14 warnings that need to be fixed
+# TODO: Stale script! Should be updated or removed!
 
 _Metric_map = MappingProxyType({
     F1: 'f1_score',

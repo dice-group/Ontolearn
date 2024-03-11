@@ -20,17 +20,40 @@ pip install ontolearn
 ```
 or
 ```shell
+# ensure that python version >=3.9.18
 git clone https://github.com/dice-group/Ontolearn.git 
-python -m venv venv && source venv/bin/activate # for Windows use: .\venv\Scripts\activate 
-pip install -r requirements.txt
+# To create a virtual python env with conda 
+conda create -n venv python=3.10 --no-default-packages && conda activate venv && pip install -e .
+# or python -m venv venv && source venv/bin/activate && pip install -r requirements.txt 
+# To download knowledge graphs
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
 ```
-
 ```shell
 pytest -p no:warnings -x # Running 158 tests takes ~ 3 mins
 ```
 
 ## Description Logic Concept Learning 
+```python
+from ontolearn.learners import Drill
+from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.learning_problem import PosNegLPStandard
+from owlapy.model import OWLNamedIndividual, IRI
+# (1) Load a knowledge graph.
+kb = KnowledgeBase(path='KGs/father.owl')
+# (2) Initialize a learner.
+model = Drill(knowledge_base=kb)
+# (3) Define a description logic concept learning problem.
+lp = PosNegLPStandard(pos={OWLNamedIndividual(IRI.create("http://example.com/father#stefan")),
+                           OWLNamedIndividual(IRI.create("http://example.com/father#markus")),
+                           OWLNamedIndividual(IRI.create("http://example.com/father#martin"))},
+                      neg={OWLNamedIndividual(IRI.create("http://example.com/father#heinz")),
+                           OWLNamedIndividual(IRI.create("http://example.com/father#anna")),
+                           OWLNamedIndividual(IRI.create("http://example.com/father#michelle"))})
+# (4) Learn description logic concepts best fitting (3).
+for h in model.fit(learning_problem=lp).best_hypotheses(3):
+    print(h)
+```
+Learned hypothesis can be used as a binary classifier as shown below.
 ```python
 from ontolearn.concept_learner import CELOE
 from ontolearn.knowledge_base import KnowledgeBase
@@ -171,6 +194,15 @@ Run the help command to see the description on this script usage:
 python deploy_cl.py --help
 ```
 
+
+## Development
+
+Creating a feature branch **refactoring** from development branch
+
+```shell
+git branch refactoring develop
+```
+
 ### Citing
 Currently, we are working on our manuscript describing our framework. 
 If you find our work useful in your research, please consider citing the respective paper:
@@ -226,4 +258,4 @@ address="Cham"
 }
 ```
 
-In case you have any question, please contact:  ```onto-learn@lists.uni-paderborn.de```
+In case you have any question, please contact: ```caglar.demir@upb.de``` or ```caglardemir8@gmail.com```
