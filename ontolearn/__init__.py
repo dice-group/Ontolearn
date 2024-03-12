@@ -8,7 +8,7 @@ Author:
     The Ontolearn team <onto-learn@lists.uni-paderborn.de>
 """
 __version__ = '0.6.2'
-
+"""
 # TODO: Importing decision required rethinking
 # from .knowledge_base import KnowledgeBase
 # from .abstracts import BaseRefinement, AbstractDrill
@@ -16,3 +16,4 @@ __version__ = '0.6.2'
 # from .metrics import *
 # from .search import *
 __all__ = ['knowledge_base', 'abstracts', 'base_concept_learner', 'metrics', 'search']
+"""
