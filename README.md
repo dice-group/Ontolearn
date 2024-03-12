@@ -33,25 +33,40 @@ pytest -p no:warnings -x # Running 158 tests takes ~ 3 mins
 ```
 
 ## Description Logic Concept Learning 
+
+### Mixtral:8x7b to verbalize DL Concepts 
 ```python
 from ontolearn.learners import Drill
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
+from ontolearn.verbalizer import LLMVerbalizer
 from owlapy.model import OWLNamedIndividual, IRI
+from owlapy.render import DLSyntaxObjectRenderer
 # (1) Load a knowledge graph.
 kb = KnowledgeBase(path='KGs/father.owl')
-# (2) Initialize a learner.
+# (2) Initialize Mixtral:8x7b based verbalizer and a DL renderer.
+verbalizer = LLMVerbalizer(model="mixtral:8x7b")
+render = DLSyntaxObjectRenderer()
+# (3) Initialize a learner.
 model = Drill(knowledge_base=kb)
-# (3) Define a description logic concept learning problem.
-lp = PosNegLPStandard(pos={OWLNamedIndividual(IRI.create("http://example.com/father#stefan")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#markus")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#martin"))},
+# (4) Define a description logic concept learning problem.
+lp = PosNegLPStandard(pos={OWLNamedIndividual(IRI.create("http://example.com/father#stefan"))},
                       neg={OWLNamedIndividual(IRI.create("http://example.com/father#heinz")),
                            OWLNamedIndividual(IRI.create("http://example.com/father#anna")),
                            OWLNamedIndividual(IRI.create("http://example.com/father#michelle"))})
-# (4) Learn description logic concepts best fitting (3).
-for h in model.fit(learning_problem=lp).best_hypotheses(3):
-    print(h)
+
+
+# (5) Learn description logic concepts best fitting (3).
+for h in model.fit(learning_problem=lp).best_hypotheses(10):
+    str_concept = render.render(h.concept)
+    print("Concept:", str_concept)
+    print("Verbalization: ", verbalizer(text=str_concept))
+# e.g.
+# Concept: ≥ 1 hasChild.{markus}
+# Verbalization:   The concept "≥ 1 hasChild.{markus}" in Description Logic represents that 
+# an individual belongs to the class of things that have at least one child named "markus". 
+# This is a shorthand notation for "hasChild exactly 1 Markus or hasChild 2 Markus or ...", 
+# where "Markus" is an individual name and "hasChild" is a role representing the parent-child relationship.
 ```
 Learned hypothesis can be used as a binary classifier as shown below.
 ```python
@@ -60,7 +75,6 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.search import EvoLearnerNode
 from owlapy.model import OWLClass, OWLClassAssertionAxiom, OWLNamedIndividual, IRI, OWLObjectProperty, OWLObjectPropertyAssertionAxiom
-from owlapy.render import DLSyntaxObjectRenderer
 # (1) Load a knowledge graph.
 kb = KnowledgeBase(path='KGs/father.owl')
 # (2) Initialize a learner.
