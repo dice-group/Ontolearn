@@ -11,9 +11,8 @@ class LLMVerbalizer:
         """
         :param text: String representation of an OWL Class Expression
         """
-        prompt = "You are a Description Logic expert. You are particularly good at explaining a complex Description Logic concepts in few sentences."
-        prompt += f"Explain {text} in two sentences."
+        prompt=f"<s> [INST] You are an expert in description logics. You are particularly good at explaining complex concepts with few sentences. [/INST] Model answer</s> [INST] Verbalize {text} in natural language with 1 sentence. Provide no explanations or write no notes.[/INST]"
         response = requests.get(url=self.url,
                                 headers={"accept": "application/json", "Content-Type": "application/json"},
-                                json={"key": 84, "model": self.model, "prompt": prompt})
+                                json={"model": self.model, "prompt": prompt})
         return response.json()["response"]

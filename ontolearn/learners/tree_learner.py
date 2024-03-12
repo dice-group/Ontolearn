@@ -139,18 +139,21 @@ class TDL:
 
     def __init__(self, knowledge_base,
                  dataframe_triples: pd.DataFrame,
-                 kwargs_classifier:dict,
+                 kwargs_classifier: dict,
                  max_runtime: int = 1,
-                 grid_search_over=None,
+                 grid_search_over: dict = None,
+                 grid_search_apply: bool = False,
                  report_classification: bool = False,
                  plot_built_tree: bool = False,
                  plotembeddings: bool = False):
-        if grid_search_over is None:
+        if grid_search_over is None and grid_search_apply:
             grid_search_over = {'criterion': ["entropy", "gini", "log_loss"],
                                 "splitter": ["random", "best"],
                                 "max_features": [None, "sqrt", "log2"],
                                 "min_samples_leaf": [1, 2, 3, 4, 5, 10],
                                 "max_depth": [1, 2, 3, 4, 5, 10, None]}
+        else:
+            grid_search_over=dict()
         assert isinstance(dataframe_triples, pd.DataFrame), "dataframe_triples must be a Pandas DataFrame"
         assert isinstance(knowledge_base, KnowledgeBase), "knowledge_base must be a KnowledgeBase instance"
         assert len(dataframe_triples) > 0, f"length of the dataframe must be greater than 0:{dataframe_triples.shape}"
@@ -510,7 +513,7 @@ class TDL:
             plt.savefig("UMAP_AUNT.pdf")
             plt.show()
 
-        if self.grid_search_over is not None:
+        if self.grid_search_over:
             grid_search = GridSearchCV(tree.DecisionTreeClassifier(**self.kwargs_classifier),
                                        param_grid=self.grid_search_over, cv=10).fit(X.values, y.values)
             print(grid_search.best_params_)
@@ -568,83 +571,9 @@ class TDL:
         else:
             return self.clf.predict(Xraw_numpy)
 
-    @staticmethod
-    def llm(prompt, llm_name: str):
-        """ We need to refactor it"""
-        assert llm_name in ["mistral", "llama2"]
-        data = {"model": llm_name,
-                "prompt": prompt,
-                "content": "You are an expert. Be concise in your answers",
-                "options": {  # "num_keep": 5,
-                    "seed": 1,
-                    # "num_predict": 100,
-                    # "top_k": 20,
-                    # "top_p": 0.9,
-                    # "tfs_z": 0.5,
-                    # "typical_p": 0.7,
-                    # "repeat_last_n": 33,
-                    "temperature": 0.0,
-                    "repeat_penalty": 1.2,
-                    # "presence_penalty": 1.5,
-                    # "frequency_penalty": 1.0,
-                    # "mirostat": 1,
-                    # "mirostat_tau": 0.8,
-                    # "mirostat_eta": 0.6,
-                    # "penalize_newline": true,
-                    # "stop": ["\n", "user:"],
-                    # "numa": false,
-                    # "num_ctx": 1024,
-                    # "num_batch": 2,
-                    # "num_gqa": 1,
-                    # "num_gpu": 1,
-                    # "main_gpu": 0,
-                    # "low_vram": false,
-                    # "f16_kv": true,
-                    # "vocab_only": false,
-                    # "use_mmap": true,
-                    # "use_mlock": false,
-                    # "embedding_only": false,
-                    # "rope_frequency_base": 1.1,
-                    # "rope_frequency_scale": 0.8,
-                    # "num_thread": 8
-                }}
-
-        text = ""
-        response = requests.post("http://localhost:11434/api/generate", json=data, stream=True)
-        response.raise_for_status()
-
-        for line in response.iter_lines():
-            body = json.loads(line)
-            response_part = body.get('response', '')
-            # print(response_part, end='', flush=True)
-            text += response_part
-            if 'error' in body:
-                raise Exception(body['error'])
-
-            if body.get('done', False):
-                break
-        return text
-
-    def verbalize(self):
-        """
-        Ensure that Ollama is running athttp://localhost:11434/
-
-        """
-
-        """ Map a DL concept into natural languages """
-        # https://github.com/jmorganca/ollama/blob/main/docs/api.md#generate-a-completion
-        # Save the best prediction
-        self.save_best_hypothesis(concepts=self.conjunctive_concepts, path="best_pred")
-        for i in self.conjunctive_concepts:
-            prompt = f"Translate this description logic concept into english sentences. Provide no explanations: {self.dl_render.render(i)}"
-            print(f"PROMPT:{prompt}")
-            full_text_mistral = self.llm(prompt, llm_name="mistral")
-            print("RESPONSE:", full_text_mistral)
-            # full_text_llama2 = self.__post_request_llm(prompt, llm_name="llama2")
-
     def save_best_hypothesis(self, concepts: List[OWLClassExpression],
                              path: str = 'Predictions',
-                             rdf_format: str = 'rdfxml') -> None:
+                             rdf_format: str = 'rdfxml', renderer=ManchesterOWLSyntaxOWLObjectRenderer()) -> None:
         """Serialise the best hypotheses to a file.
         @TODO: This should be a single static function We need to refactor it
 
@@ -653,6 +582,7 @@ class TDL:
             concepts:
             path: Filename base (extension will be added automatically).
             rdf_format: Serialisation format. currently supported: "rdfxml".
+            renderer: An instance of ManchesterOWLSyntaxOWLObjectRenderer
         """
         # NS: Final = 'https://dice-research.org/predictions/' + str(time.time()) + '#'
         NS: Final = 'https://dice-research.org/predictions#'
@@ -664,7 +594,7 @@ class TDL:
         ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
         # () Iterate over concepts
         for i in concepts:
-            cls_a: OWLClass = OWLClass(IRI.create(NS, self.manchester_render.render(i)))
+            cls_a: OWLClass = OWLClass(IRI.create(NS, renderer.render(i)))
             equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, i])
             manager.add_axiom(ontology, equivalent_classes_axiom)
 
