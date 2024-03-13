@@ -138,14 +138,36 @@ class TDL:
     """Tree-based Description Logic Concept Learner"""
 
     def __init__(self, knowledge_base,
-                 dataframe_triples: pd.DataFrame,
-                 kwargs_classifier: dict,
+                 dataframe_triples: pd.DataFrame=None,
+                 kwargs_classifier: dict=None,
                  max_runtime: int = 1,
                  grid_search_over: dict = None,
                  grid_search_apply: bool = False,
                  report_classification: bool = False,
                  plot_built_tree: bool = False,
                  plotembeddings: bool = False):
+        # TODO: Later on with Triplestore.
+        assert isinstance(knowledge_base, KnowledgeBase), "knowledge_base must be a KnowledgeBase instance"
+        print(f"Knowledge Base: {knowledge_base}")
+        self.knowledge_base = knowledge_base
+        if dataframe_triples is None:
+            # TODO: Perhaps we do not need to create a dataframe from all triples.
+            # TODO: We can create this dataframe only based E^+ and E^-
+            self.dataframe_triples = pd.DataFrame(
+                data=sorted([(t[0], t[1], t[2]) for t in self.knowledge_base.triples(mode='iri')], key=lambda x: len(x)),
+                columns=['subject', 'relation', 'object'], dtype=str)
+            assert len(
+                self.dataframe_triples) > 0, f"length of the dataframe must be greater than 0:{self.dataframe_triples.shape}"
+            print(f"Matrix representation of knowledge base: {self.dataframe_triples.shape}")
+            self.dataframe_triples = self.dataframe_triples[
+                ~((self.dataframe_triples["relation"] == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") & (
+                        (self.dataframe_triples["object"] == "http://www.w3.org/2002/07/owl#NamedIndividual") | (
+                        self.dataframe_triples["object"] == "http://www.w3.org/2002/07/owl#Thing") | (
+                                self.dataframe_triples["object"] == "Ontology")))]
+            print(f"Matrix representation of knowledge base after removals: {self.dataframe_triples.shape}")
+        else:
+            assert isinstance(dataframe_triples, pd.DataFrame), "dataframe_triples must be a Pandas DataFrame"
+
         if grid_search_over is None and grid_search_apply:
             grid_search_over = {'criterion': ["entropy", "gini", "log_loss"],
                                 "splitter": ["random", "best"],
@@ -154,14 +176,9 @@ class TDL:
                                 "max_depth": [1, 2, 3, 4, 5, 10, None]}
         else:
             grid_search_over=dict()
-        assert isinstance(dataframe_triples, pd.DataFrame), "dataframe_triples must be a Pandas DataFrame"
-        assert isinstance(knowledge_base, KnowledgeBase), "knowledge_base must be a KnowledgeBase instance"
-        assert len(dataframe_triples) > 0, f"length of the dataframe must be greater than 0:{dataframe_triples.shape}"
-        print(f"Knowledge Base: {knowledge_base}")
-        print(f"Matrix representation of knowledge base: {dataframe_triples.shape}")
+
+
         self.grid_search_over = grid_search_over
-        self.knowledge_base = knowledge_base
-        self.dataframe_triples = dataframe_triples
         self.report_classification = report_classification
         self.plot_built_tree = plot_built_tree
         self.plotembeddings = plotembeddings
@@ -173,24 +190,19 @@ class TDL:
         self.owl_data_property_dict = {p.get_iri().as_str(): p for p in self.knowledge_base.get_data_properties()}
         # Mappings from string of IRI to individuals.
         self.owl_individuals = {i.get_iri().as_str(): i for i in self.knowledge_base.individuals()}
+        # Concept renderers
         self.dl_render = DLSyntaxObjectRenderer()
         self.manchester_render = ManchesterOWLSyntaxOWLObjectRenderer()
         # Keyword arguments for sklearn Decision tree.
         # Initialize classifier
         self.clf = None
         self.feature_names = None
-        self.kwargs_classifier = kwargs_classifier
+        self.kwargs_classifier = kwargs_classifier if kwargs_classifier is not None else dict()
         self.max_runtime = max_runtime
         # best pred
         self.disjunction_of_conjunctive_concepts = None
         self.conjunctive_concepts = None
-        # Remove uninformative triples if exists.
-        # print("Removing uninformative triples...")
-        self.dataframe_triples = self.dataframe_triples[
-            ~((self.dataframe_triples["relation"] == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") & (
-                    (self.dataframe_triples["object"] == "http://www.w3.org/2002/07/owl#NamedIndividual") | (
-                    self.dataframe_triples["object"] == "http://www.w3.org/2002/07/owl#Thing") | (
-                            self.dataframe_triples["object"] == "Ontology")))]
+
         # print(f"Matrix representation of knowledge base: {dataframe_triples.shape}")
         self.cbd_mapping: Dict[str, Set[Tuple[str, str]]]
         self.cbd_mapping = extract_cbd(self.dataframe_triples)
@@ -468,7 +480,7 @@ class TDL:
         plt.savefig('feature_importance.pdf')
         plt.show()
 
-    def fit(self, lp: PosNegLPStandard = None, max_runtime: int = None):
+    def fit(self, learning_problem: PosNegLPStandard = None, max_runtime: int = None):
         """ Fit the learner to the given learning problem
 
         (1) Extract multi-hop information about E^+ and E^- denoted by \mathcal{F}.
@@ -478,16 +490,16 @@ class TDL:
 
         (4) Construct a set of DL concept for each e \in E^+
         (5) Union (4)
-        :param lp: The learning problem
+        :param learning_problem: The learning problem
         :param max_runtime:total runtime of the learning
 
         """
-        assert lp is not None, "Learning problem cannot be None."
+        assert learning_problem is not None, "Learning problem cannot be None."
         if max_runtime is not None:
             self.max_runtime = max_runtime
 
-        str_pos_examples = [i.get_iri().as_str() for i in lp.pos]
-        str_neg_examples = [i.get_iri().as_str() for i in lp.neg]
+        str_pos_examples = [i.get_iri().as_str() for i in learning_problem.pos]
+        str_neg_examples = [i.get_iri().as_str() for i in learning_problem.neg]
 
         """self.features.extend([(str_r, None) for str_r in self.owl_data_property_dict])"""
         # Nested dictionary [inv][relation]: => [] Dict[str, Dict]
@@ -510,7 +522,7 @@ class TDL:
                         c=["r" if x == 1 else "b" for x in y])
             plt.grid()
             plt.gca().set_aspect('equal', 'datalim')
-            plt.savefig("UMAP_AUNT.pdf")
+            plt.savefig("figure.pdf")
             plt.show()
 
         if self.grid_search_over:
@@ -554,7 +566,7 @@ class TDL:
     def best_hypotheses(self, n=1):
         """ Return the prediction"""
         assert n == 1, "Only one hypothesis is supported"
-        return self.disjunction_of_conjunctive_concepts
+        return [self.disjunction_of_conjunctive_concepts]
 
     def predict(self, X: List[OWLNamedIndividual], proba=True) -> np.ndarray:
         """ Predict the likelihoods of individuals belonging to the classes"""
