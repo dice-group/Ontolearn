@@ -4,6 +4,7 @@ from ..base.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, Dataty
 from ..base.owl.utils import OWLClassExpressionLengthMetric
 from owlapy.util import LRUCache
 from ..base.fast_instance_checker import OWLReasoner_FastInstanceChecker
+import traceback
 
 
 def init_length_metric(length_metric: Optional[OWLClassExpressionLengthMetric] = None,
@@ -29,7 +30,11 @@ def init_hierarchy_instances(reasoner, class_hierarchy, object_property_hierarch
         object_property_hierarchy = ObjectPropertyHierarchy(reasoner)
 
     if data_property_hierarchy is None:
-        data_property_hierarchy = DatatypePropertyHierarchy(reasoner)
+        try:
+            data_property_hierarchy = DatatypePropertyHierarchy(reasoner)
+        except KeyError as e:
+            data_property_hierarchy=None
+            traceback.print_exception(e)
 
     assert class_hierarchy is None or isinstance(class_hierarchy, ClassHierarchy)
     assert object_property_hierarchy is None or isinstance(object_property_hierarchy, ObjectPropertyHierarchy)

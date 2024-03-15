@@ -58,10 +58,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         path (str): Path of the ontology file.
         use_individuals_cache (bool): Whether to use individuals cache to store individuals for method efficiency.
     """
-    # __slots__ = '_manager', '_ontology', '_reasoner', '_length_metric', \
-    #    '_ind_set', '_ind_cache', 'path', 'use_individuals_cache', 'generator', '_class_hierarchy', \
-    #    '_object_property_hierarchy', '_data_property_hierarchy', '_op_domains', '_op_ranges', '_dp_domains', \
-    #    '_dp_ranges'
 
     length_metric: OWLClassExpressionLengthMetric
 
@@ -114,7 +110,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  ):
         AbstractKnowledgeBase.__init__(self)
         self.path = path
-
         if ontology is not None:
             self.manager = ontology.get_owl_ontology_manager()
             self.ontology = ontology
@@ -151,6 +146,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.class_hierarchy: ClassHierarchy
         self.object_property_hierarchy: ObjectPropertyHierarchy
         self.data_property_hierarchy: DatatypePropertyHierarchy
+        # TODO: CD: We may not effort to store self.class_hierarchy in memory if we use TripleStoreKnowledgeBase-
+        # TODO: CD: Importantly, we may not need even to store all call the all info about hierarchies.
+        # TODO: CD: Instead, if the information about a class hierarchy (e.g. get all subclass of X),
+        # TODO: CD: We should only store this particular knowledge and not store it again.
         (self.class_hierarchy,
          self.object_property_hierarchy,
          self.data_property_hierarchy) = init_hierarchy_instances(self.reasoner,

@@ -14,8 +14,7 @@ from owlapy.model import OWLObjectPropertyRangeAxiom, OWLDataProperty, \
     OWLThing, OWLObjectPropertyDomainAxiom, OWLLiteral, \
     OWLObjectInverseOf, OWLClass, \
     IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLClassAxiom, \
-    OWLEquivalentClassesAxiom,  OWLObjectProperty, OWLProperty, OWLDatatype
-
+    OWLEquivalentClassesAxiom, OWLObjectProperty, OWLProperty, OWLDatatype
 
 logger = logging.getLogger(__name__)
 
@@ -225,9 +224,9 @@ class TripleStoreReasoner(OWLReasonerEx):
         if only_named:
             if isinstance(ce, OWLClass):
                 query = owl_prefix + "SELECT DISTINCT ?x " + \
-                           "WHERE { {?x owl:equivalentClass " + f"<{ce.get_iri().as_str()}>.}}" + \
-                           "UNION {" + f"<{ce.get_iri().as_str()}>" + " owl:equivalentClass ?x.}" + \
-                           "FILTER(?x != " + f"<{ce.get_iri().as_str()}>)}}"
+                        "WHERE { {?x owl:equivalentClass " + f"<{ce.get_iri().as_str()}>.}}" + \
+                        "UNION {" + f"<{ce.get_iri().as_str()}>" + " owl:equivalentClass ?x.}" + \
+                        "FILTER(?x != " + f"<{ce.get_iri().as_str()}>)}}"
                 yield from get_results_from_ts(self.url, query, OWLClass)
             else:
                 raise NotImplementedError("Equivalent classes for complex class expressions is not implemented")
@@ -351,7 +350,7 @@ class TripleStoreReasoner(OWLReasonerEx):
             if ce == OWLThing:
                 return []
             query = rdfs_prefix + \
-                "SELECT ?x WHERE { " + f"<{ce.get_iri().as_str()}>" + " rdfs:subClassOf" + suf(direct) + "?x. }"
+                    "SELECT ?x WHERE { " + f"<{ce.get_iri().as_str()}>" + " rdfs:subClassOf" + suf(direct) + "?x. }"
             results = list(get_results_from_ts(self.url, query, OWLClass))
             if ce in results:
                 results.remove(ce)
@@ -379,9 +378,9 @@ class TripleStoreReasoner(OWLReasonerEx):
 
     def disjoint_data_properties(self, dp: OWLDataProperty) -> Iterable[OWLDataProperty]:
         query = owl_prefix + rdf_prefix + "SELECT DISTINCT ?x \n" + \
-            "WHERE{ ?AllDisjointProperties owl:members/rdf:rest*/rdf:first ?x.\n" + \
-            "?AllDisjointProperties owl:members/rdf:rest*/rdf:first" + f"<{dp.get_iri().as_str()}>" + ".\n" + \
-            "FILTER(?x != " + f"<{dp.get_iri().as_str()}>" + ")}"
+                "WHERE{ ?AllDisjointProperties owl:members/rdf:rest*/rdf:first ?x.\n" + \
+                "?AllDisjointProperties owl:members/rdf:rest*/rdf:first" + f"<{dp.get_iri().as_str()}>" + ".\n" + \
+                "FILTER(?x != " + f"<{dp.get_iri().as_str()}>" + ")}"
         yield from get_results_from_ts(self.url, query, OWLDataProperty)
 
     def all_data_property_values(self, pe: OWLDataProperty, direct: bool = True) -> Iterable[OWLLiteral]:
@@ -448,7 +447,6 @@ class TripleStoreReasoner(OWLReasonerEx):
 
 
 class TripleStoreKnowledgeBase(KnowledgeBase):
-
     url: str
     ontology: TripleStoreOntology
     reasoner: TripleStoreReasoner
