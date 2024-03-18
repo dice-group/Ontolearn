@@ -23,7 +23,7 @@ from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
 from .learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from ontolearn.base.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 
-from .utils.static_funcs import (init_length_metric, init_hierarchy_instances,
+from .utils.static_funcs import (init_length_metric, init_hierarchy_instances, init_class_hierarchy,
                                  init_named_individuals, init_individuals_from_concepts)
 
 logger = logging.getLogger(__name__)
@@ -106,8 +106,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  class_hierarchy: Optional[ClassHierarchy] = None,
                  object_property_hierarchy: Optional[ObjectPropertyHierarchy] = None,
                  data_property_hierarchy: Optional[DatatypePropertyHierarchy] = None,
-                 include_implicit_individuals=False
-                 ):
+                 include_implicit_individuals=False,
+                 construct_hierarchies=False):
         AbstractKnowledgeBase.__init__(self)
         self.path = path
         if ontology is not None:
@@ -146,16 +146,18 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.class_hierarchy: ClassHierarchy
         self.object_property_hierarchy: ObjectPropertyHierarchy
         self.data_property_hierarchy: DatatypePropertyHierarchy
-        # TODO: CD: We may not effort to store self.class_hierarchy in memory if we use TripleStoreKnowledgeBase-
-        # TODO: CD: Importantly, we may not need even to store all call the all info about hierarchies.
-        # TODO: CD: Instead, if the information about a class hierarchy (e.g. get all subclass of X),
-        # TODO: CD: We should only store this particular knowledge and not store it again.
-        (self.class_hierarchy,
-         self.object_property_hierarchy,
-         self.data_property_hierarchy) = init_hierarchy_instances(self.reasoner,
-                                                                  class_hierarchy=class_hierarchy,
-                                                                  object_property_hierarchy=object_property_hierarchy,
-                                                                  data_property_hierarchy=data_property_hierarchy)
+        if construct_hierarchies:
+            (self.class_hierarchy,
+             self.object_property_hierarchy,
+             self.data_property_hierarchy) = init_hierarchy_instances(self.reasoner,
+                                                                      class_hierarchy=class_hierarchy,
+                                                                      object_property_hierarchy=object_property_hierarchy,
+                                                                      data_property_hierarchy=data_property_hierarchy)
+        else:
+            self.class_hierarchy = None
+            self.object_property_hierarchy = None
+            self.data_property_hierarchy = None
+
         # Object property domain and range:
         self.op_domains: Dict[OWLObjectProperty, OWLClassExpression]
         self.op_domains = dict()
@@ -175,7 +177,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
                                                       ontology=self.ontology,
                                                       individuals_per_concept=(self.individuals(i) for i in
                                                                                self.get_concepts()))
-
         self.describe()
 
     def individuals(self, concept: Optional[OWLClassExpression] = None) -> Iterable[OWLNamedIndividual]:
@@ -194,7 +195,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             yield from self.maybe_cache_individuals(concept)
 
-    def abox(self, individuals: Union[OWLNamedIndividual, Iterable[OWLNamedIndividual]] = None, mode='native'):
+    def abox(self, individuals: Union[OWLNamedIndividual, Iterable[OWLNamedIndividual]] = None, mode='native',
+             class_assertions=True, object_property_assertions=False, data_property_assertions=False):
         """
         Get all the abox axioms for a given individual. If no individual is given, get all abox axioms
 
@@ -204,6 +206,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
              1) 'native' -> returns triples as tuples of owlapy objects,
              2) 'iri' -> returns triples as tuples of IRIs as string,
              3) 'axiom' -> triples are represented by owlapy axioms.
+            class_assertions:
+            object_property_assertions:
+            data_property_assertions:
 
         Returns: Iterable of tuples or owlapy axiom, depending on the mode.
         """
@@ -219,26 +224,31 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
         for i in inds:
             if mode == "native":
-                # Obtain all class assertion triples/axioms
-                # For now, 'rdfs:type' predicate will be represented as an IRI
-                yield from ((i, IRI.create("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), t) for t in
-                            self.get_types(ind=i, direct=True))
+                if class_assertions:
+                    # Obtain all class assertion triples/axioms
+                    # For now, 'rdfs:type' predicate will be represented as an IRI
+                    yield from ((i, IRI.create("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), t) for t in
+                                self.get_types(ind=i, direct=True))
+                if data_property_assertions:
+                    # Obtain all property assertion triples/axioms
+                    for dp in self.get_data_properties_for_ind(ind=i):
+                        yield from ((i, dp, literal) for literal in self.get_data_property_values(i, dp))
+                if object_property_assertions:
+                    for op in self.get_object_properties_for_ind(ind=i):
+                        yield from ((i, op, ind) for ind in self.get_object_property_values(i, op))
 
-                # Obtain all property assertion triples/axioms
-                for dp in self.get_data_properties_for_ind(ind=i):
-                    yield from ((i, dp, literal) for literal in self.get_data_property_values(i, dp))
-
-                for op in self.get_object_properties_for_ind(ind=i):
-                    yield from ((i, op, ind) for ind in self.get_object_property_values(i, op))
             elif mode == "iri":
-                yield from ((i.str, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-                             t.get_iri().as_str()) for t in self.get_types(ind=i, direct=True))
-                for dp in self.get_data_properties_for_ind(ind=i):
-                    yield from ((i.str, dp.get_iri().as_str(), literal.get_literal()) for literal in
-                                self.get_data_property_values(i, dp))
-                for op in self.get_object_properties_for_ind(ind=i):
-                    yield from ((i.str, op.get_iri().as_str(), ind.get_iri().as_str()) for ind in
-                                self.get_object_property_values(i, op))
+                if class_assertions:
+                    yield from ((i.str, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+                                 t.get_iri().as_str()) for t in self.get_types(ind=i, direct=True))
+                if data_property_assertions:
+                    for dp in self.get_data_properties_for_ind(ind=i):
+                        yield from ((i.str, dp.get_iri().as_str(), literal.get_literal()) for literal in
+                                    self.get_data_property_values(i, dp))
+                if object_property_assertions:
+                    for op in self.get_object_properties_for_ind(ind=i):
+                        yield from ((i.str, op.get_iri().as_str(), ind.get_iri().as_str()) for ind in
+                                    self.get_object_property_values(i, op))
             elif mode == "axiom":
                 yield from (OWLClassAssertionAxiom(i, t) for t in self.get_types(ind=i, direct=True))
                 for dp in self.get_data_properties_for_ind(ind=i):
@@ -249,7 +259,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                                 self.get_object_property_values(i, op))
 
     def tbox(self, entities: Union[Iterable[OWLClass], Iterable[OWLDataProperty], Iterable[OWLObjectProperty], OWLClass,
-                                   OWLDataProperty, OWLObjectProperty, None] = None, mode='native'):
+    OWLDataProperty, OWLObjectProperty, None] = None, mode='native'):
         """Get all the tbox axioms for the given concept-s|propert-y/ies.
          If no concept-s|propert-y/ies are given, get all tbox axioms.
 
@@ -296,7 +306,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
                     [results.add((concept, IRI.create("http://www.w3.org/2002/07/owl#equivalentClass"), j)) for j in
                      self.reasoner.equivalent_classes(concept, only_named=True)]
                     if not include_all:  # This kind of check is just for performance purposes
-                        [results.add((concept, IRI.create("http://www.w3.org/2000/01/rdf-schema#subClassOf"), j)) for j in
+                        [results.add((concept, IRI.create("http://www.w3.org/2000/01/rdf-schema#subClassOf"), j)) for j
+                         in
                          self.get_direct_parents(concept)]
                 elif mode == 'iri':
                     [results.add((j.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subClassOf",
@@ -308,7 +319,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
                         [results.add((concept.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subClassOf",
                                       j.get_iri().as_str())) for j in self.get_direct_parents(concept)]
                 elif mode == "axiom":
-                    [results.add(OWLSubClassOfAxiom(super_class=concept, sub_class=j)) for j in self.get_direct_sub_concepts(concept)]
+                    [results.add(OWLSubClassOfAxiom(super_class=concept, sub_class=j)) for j in
+                     self.get_direct_sub_concepts(concept)]
                     [results.add(OWLEquivalentClassesAxiom([concept, j])) for j in
                      self.reasoner.equivalent_classes(concept, only_named=True)]
                     if not include_all:
@@ -360,7 +372,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
                 elif mode == 'axiom':
                     [results.add(getattr(owlapy.model, "OWLSub" + prop_type + "PropertyOfAxiom")(j, prop)) for j in
                      getattr(self.reasoner, "sub_" + prop_type.lower() + "_properties")(prop, direct=True)]
-                    [results.add(getattr(owlapy.model, "OWLEquivalent" + prop_type + "PropertiesAxiom")([j, prop])) for j in
+                    [results.add(getattr(owlapy.model, "OWLEquivalent" + prop_type + "PropertiesAxiom")([j, prop])) for
+                     j in
                      getattr(self.reasoner, "equivalent_" + prop_type.lower() + "_properties")(prop)]
                     [results.add(getattr(owlapy.model, "OWL" + prop_type + "PropertyDomainAxiom")(prop, j)) for j in
                      getattr(self.reasoner, prop_type.lower() + "_property_domains")(prop, direct=True)]
@@ -385,7 +398,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
         yield from self.abox(mode=mode)
         yield from self.tbox(mode=mode)
-
 
     def ignore_and_copy(self, ignored_classes: Optional[Iterable[OWLClass]] = None,
                         ignored_object_properties: Optional[Iterable[OWLObjectProperty]] = None,
@@ -618,7 +630,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             kb_all = self.individuals_set(lp.all)
 
-        assert 0 < len(lp.pos) < len(kb_all) and len(kb_all) > len(lp.neg)
+        assert 0 < len(lp.pos) < len(kb_all) and len(kb_all) > len(
+            lp.neg), f"|Pos|:{len(lp.pos)}\t|Neg|:{len(lp.neg)}\tAllIndv {len(kb_all)}Learning problem"
         if logger.isEnabledFor(logging.INFO):
             r = DLSyntaxObjectRenderer()
             logger.info('E^+:[ {0} ]'.format(', '.join(map(r.render, lp.pos))))
@@ -670,6 +683,15 @@ class KnowledgeBase(AbstractKnowledgeBase):
         _, e.q = quality_func.score_elp(e.inds, encoded_learning_problem)
         return e
 
+    def ensure_class_hierarchy(f):
+        """ Ensure that class_hierarchy is structured before using,"""
+        def wrapper(self, *args, **kwargs):
+            if self.class_hierarchy is None:
+                self.class_hierarchy = init_class_hierarchy(self.reasoner)
+            return f(self, *args, **kwargs)
+        return wrapper
+
+    @ensure_class_hierarchy
     def get_leaf_concepts(self, concept: OWLClass):
         """Get leaf classes.
 
@@ -681,6 +703,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         assert isinstance(concept, OWLClass)
         yield from self.class_hierarchy.leaves(of=concept)
 
+    @ensure_class_hierarchy
     def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
         """Direct sub-classes of atomic class.
 
@@ -869,6 +892,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         for prop in self.most_general_object_properties(domain=domain, inverse=True):
             yield OWLObjectAllValuesFrom(property=prop.get_inverse_property(), filler=filler)
 
+    @ensure_class_hierarchy
     def get_direct_parents(self, concept: OWLClassExpression) -> Iterable[OWLClass]:
         """Direct parent concepts.
 
@@ -881,6 +905,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         assert isinstance(concept, OWLClass)
         yield from self.class_hierarchy.super_classes(concept, direct=True)
 
+    @ensure_class_hierarchy
     def get_all_direct_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
         """All direct sub concepts of a concept.
 
@@ -893,6 +918,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         assert isinstance(concept, OWLClass)
         yield from self.class_hierarchy.sub_classes(concept, direct=True)
 
+    @ensure_class_hierarchy
     def get_all_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
         """All sub concepts of a concept.
 
@@ -905,6 +931,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         assert isinstance(concept, OWLClass)
         yield from self.class_hierarchy.sub_classes(concept, direct=False)
 
+    @ensure_class_hierarchy
     def get_concepts(self) -> Iterable[OWLClass]:
         """Get all concepts of this concept generator.
 
@@ -1000,6 +1027,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Types of the given individual.
         """
+
         all_types = set(self.get_concepts())
         for type_ in self.reasoner.types(ind, direct):
             if type_ in all_types or type_ == OWLThing:

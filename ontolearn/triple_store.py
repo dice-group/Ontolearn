@@ -455,7 +455,7 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         self.url = triplestore_address
         self.ontology = TripleStoreOntology(triplestore_address)
         self.reasoner = TripleStoreReasoner(self.ontology)
-        super().__init__(ontology=self.ontology, reasoner=self.reasoner)
+        super().__init__(ontology=self.ontology, reasoner=self.reasoner, construct_hierarchies=False)
 
 
 class TripleStore:

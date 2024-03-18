@@ -30,11 +30,7 @@ def init_hierarchy_instances(reasoner, class_hierarchy, object_property_hierarch
         object_property_hierarchy = ObjectPropertyHierarchy(reasoner)
 
     if data_property_hierarchy is None:
-        try:
-            data_property_hierarchy = DatatypePropertyHierarchy(reasoner)
-        except KeyError as e:
-            data_property_hierarchy=None
-            traceback.print_exception(e)
+        data_property_hierarchy = DatatypePropertyHierarchy(reasoner)
 
     assert class_hierarchy is None or isinstance(class_hierarchy, ClassHierarchy)
     assert object_property_hierarchy is None or isinstance(object_property_hierarchy, ObjectPropertyHierarchy)
@@ -42,6 +38,17 @@ def init_hierarchy_instances(reasoner, class_hierarchy, object_property_hierarch
 
     return class_hierarchy, object_property_hierarchy, data_property_hierarchy
 
+def init_class_hierarchy(reasoner) -> ClassHierarchy:
+    """ Initialize class hierarchy """
+    class_hierarchy = ClassHierarchy(reasoner)
+    assert class_hierarchy is None or isinstance(class_hierarchy, ClassHierarchy)
+    return class_hierarchy
+
+def init_object_property_hierarchy(reasoner) -> ObjectPropertyHierarchy:
+    """ Initialize object property hierarchy"""
+    object_property_hierarchy = ObjectPropertyHierarchy(reasoner)
+    assert object_property_hierarchy is None or isinstance(object_property_hierarchy, ObjectPropertyHierarchy)
+    return object_property_hierarchy
 
 def init_named_individuals(individuals_cache_size, ):
     use_individuals_cache = individuals_cache_size > 0

@@ -138,8 +138,8 @@ class TDL:
     """Tree-based Description Logic Concept Learner"""
 
     def __init__(self, knowledge_base,
-                 dataframe_triples: pd.DataFrame=None,
-                 kwargs_classifier: dict=None,
+                 dataframe_triples: pd.DataFrame = None,
+                 kwargs_classifier: dict = None,
                  max_runtime: int = 1,
                  grid_search_over: dict = None,
                  grid_search_apply: bool = False,
@@ -153,6 +153,9 @@ class TDL:
         if dataframe_triples is None:
             # TODO: Perhaps we do not need to create a dataframe from all triples.
             # TODO: We can create this dataframe only based E^+ and E^-
+
+            """
+            
             self.dataframe_triples = pd.DataFrame(
                 data=sorted([(t[0], t[1], t[2]) for t in self.knowledge_base.triples(mode='iri')], key=lambda x: len(x)),
                 columns=['subject', 'relation', 'object'], dtype=str)
@@ -165,6 +168,7 @@ class TDL:
                         self.dataframe_triples["object"] == "http://www.w3.org/2002/07/owl#Thing") | (
                                 self.dataframe_triples["object"] == "Ontology")))]
             print(f"Matrix representation of knowledge base after removals: {self.dataframe_triples.shape}")
+            """
         else:
             assert isinstance(dataframe_triples, pd.DataFrame), "dataframe_triples must be a Pandas DataFrame"
 
@@ -175,13 +179,15 @@ class TDL:
                                 "min_samples_leaf": [1, 2, 3, 4, 5, 10],
                                 "max_depth": [1, 2, 3, 4, 5, 10, None]}
         else:
-            grid_search_over=dict()
-
+            grid_search_over = dict()
 
         self.grid_search_over = grid_search_over
         self.report_classification = report_classification
         self.plot_built_tree = plot_built_tree
         self.plotembeddings = plotembeddings
+        # Mappings from string of IRI to named concepts.
+        self.owl_classes_dict = dict()
+        """
         # Mappings from string of IRI to named concepts.
         self.owl_classes_dict = {c.get_iri().as_str(): c for c in self.knowledge_base.get_concepts()}
         # Mappings from string of IRI to object properties.
@@ -190,6 +196,9 @@ class TDL:
         self.owl_data_property_dict = {p.get_iri().as_str(): p for p in self.knowledge_base.get_data_properties()}
         # Mappings from string of IRI to individuals.
         self.owl_individuals = {i.get_iri().as_str(): i for i in self.knowledge_base.individuals()}
+        
+        """
+
         # Concept renderers
         self.dl_render = DLSyntaxObjectRenderer()
         self.manchester_render = ManchesterOWLSyntaxOWLObjectRenderer()
@@ -205,18 +214,20 @@ class TDL:
 
         # print(f"Matrix representation of knowledge base: {dataframe_triples.shape}")
         self.cbd_mapping: Dict[str, Set[Tuple[str, str]]]
-        self.cbd_mapping = extract_cbd(self.dataframe_triples)
+        # self.cbd_mapping = extract_cbd(self.dataframe_triples)
+        self.cbd_mapping = None
         self.str_type = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
         # Fix an ordering: Not quite sure whether we needed
-        self.str_individuals = list(self.owl_individuals)
+        # self.str_individuals = list(self.owl_individuals)
         # An entity to a list of tuples of predicate and objects
-        self.first_hop = {k: v for k, v in self.cbd_mapping.items() if k in self.str_individuals}
+        # self.first_hop = {k: v for k, v in self.cbd_mapping.items() if k in self.str_individuals}
         self.types_of_individuals = dict()
-
+        """
         for k, v in self.first_hop.items():
             for relation, tail in v:
                 if relation == self.str_type:
                     self.types_of_individuals.setdefault(k, set()).add(tail)
+        """
 
         self.Xraw = None
 
@@ -235,7 +246,7 @@ class TDL:
                 for t in hop_info:
                     if isinstance(t, str):
                         if relation == self.str_type:
-                            assert t in self.owl_classes_dict
+                            # assert t in self.owl_classes_dict
                             # Boolean feature : (type, CLASS):
                             representation_of_s[feature_names.index((relation, t))] = 1.0
                         elif relation == self.owl_object_property_dict:
@@ -282,25 +293,34 @@ class TDL:
 
         return result
 
-    def construct_hop(self, individuals: List[str]) -> Dict[str, Dict]:
+    def get_first_hop_info(self, x):
+        yield from ((p, o) for s, p, o in self.knowledge_base.abox(individuals=x, class_assertions=True))
+
+    def construct_hop(self, individuals: List[OWLNamedIndividual]) -> Dict[str, Dict]:
         assert len(individuals) == len(set(individuals)), "There are duplicate individuals"
 
-        # () Nested dictionary
+        # (1) Nested dictionary
         hop = dict()
-        # () Unique features/DL concepts.
+        # (2) Unique features/DL concepts.
         features = set()
-        # () Iterate over individuals.
+        # 3) Iterate over individuals.
         for s in individuals:
             temp = dict()
-            # () iterate over triples of (s,p,o)
-            for p, o in self.first_hop[s]:
+            # (4) iterate over triples of (s,p,o)
+            for p, o in self.get_first_hop_info(s):
                 ##### SAVE FEATURE: (type, PERSON) #####
-                if p == self.str_type:
+                # TODO: p.as_str() => p.str
+                if p.as_str() == self.str_type:
                     # For example, (hasChild Male).
-                    assert o in self.owl_classes_dict
-                    temp.setdefault(p, set()).add(o)
-                    features.add((p, o))
+                    # assert o in self.owl_classes_dict
+                    # Mappings from string of IRI to named concepts.
+                    # self.owl_classes_dict = {c.get_iri().as_str(): c for c in self.knowledge_base.get_concepts()}
+                    str_concept = o.get_iri().as_str()
+                    self.owl_classes_dict.setdefault(str_concept, o)
+                    temp.setdefault(p.as_str(), set()).add(str_concept)
+                    features.add((p.as_str(), str_concept))
                 else:
+                    raise NotImplementedError
                     # o can be an individual,
                     #          a literal or
                     #          blank node
@@ -343,7 +363,7 @@ class TDL:
                         temp.setdefault(p, set()).add(o)
                         features.add((p, None))
 
-            hop[s] = temp
+            hop[s.get_iri().as_str()] = temp
         return hop, features
 
     @staticmethod
@@ -378,7 +398,7 @@ class TDL:
             relation, tail_info = feature
             if relation == self.str_type:
                 assert isinstance(tail_info, str), "Tail must be a string"
-                assert tail_info in self.owl_classes_dict, "a defined OWL class"
+                # assert tail_info in self.owl_classes_dict, "a defined OWL class"
                 assert reasoning_step["value"] == 0.0 or reasoning_step["value"] == 1.0
                 if bool(reasoning_step["value"]):
                     owl_class = self.owl_classes_dict[tail_info]
@@ -498,12 +518,15 @@ class TDL:
         if max_runtime is not None:
             self.max_runtime = max_runtime
 
-        str_pos_examples = [i.get_iri().as_str() for i in learning_problem.pos]
-        str_neg_examples = [i.get_iri().as_str() for i in learning_problem.neg]
+        pos_examples = [i for i in learning_problem.pos]
+        neg_examples = [i for i in learning_problem.neg]
+
+        str_pos_examples = [i.get_iri().as_str() for i in pos_examples]
+        str_neg_examples = [i.get_iri().as_str() for i in neg_examples]
 
         """self.features.extend([(str_r, None) for str_r in self.owl_data_property_dict])"""
         # Nested dictionary [inv][relation]: => [] Dict[str, Dict]
-        hop_info, features = self.construct_hop(str_pos_examples + str_neg_examples)
+        hop_info, features = self.construct_hop(pos_examples + neg_examples)
 
         # list of tuples having length 2 or 3
         features = list(features)
