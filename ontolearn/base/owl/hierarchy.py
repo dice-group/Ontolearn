@@ -106,28 +106,21 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
         return type(self).restrict(self, remove=remove, allow=allow)
 
     def _init(self, hierarchy_down: Iterable[Tuple[_S, Iterable[_S]]]) -> None:
+        """
+        Extract downward hierarchy
+        """
         self._parents_map_trans = dict()
         self._children_map_trans = dict()
-        # self._eq_set = dict()
-        # (1) Things and sub things. (e.g. OWL Class)
+        # (1) Things and sub things. (e.g. OWL Class, or property)
         ent_to_sub_entities = dict(hierarchy_down)
-        # (2)
         self._ent_set = frozenset(ent_to_sub_entities.keys())
-        parser_info = ""
-        for i in self._ent_set:
-            parser_info = f"{str(type(i))}"
-            break
-        # (3) i \in sub_it : i rdfs:subClassOf ent
-        for ent, sub_it in tqdm(ent_to_sub_entities.items(), desc=f"Parsing direct {parser_info} hierarchy:"):
+        # (2) i \in sub_it : i rdfs:subClassOf ent
+        for ent, sub_it in tqdm(ent_to_sub_entities.items(), desc=f"Parsing direct {self._Type} hierarchy"):
             self._children_map_trans[ent] = set(sub_it)
             self._parents_map_trans[ent] = set()  # create empty parent entry for all classes
         del ent_to_sub_entities  # exhausted
-
-        # (4) calculate transitive children
-        # @TODO: CD: This part is buggy. It leads t a KeyError on DBpedia
-        # @TODO: CD: I would suspect that this error is caused by modifiy the object while we are
-        # @TODO CD: iterating over it
-        for ent in tqdm(self._children_map_trans, desc=f"Parsing transitive {parser_info} hierarchy:"):
+        # (3) Iterate over direct download hierarchy to calculate transitive children
+        for ent in tqdm(self._children_map_trans, desc=f"Parsing transitive {self._Type} hierarchy:"):
             _children_transitive(self._children_map_trans, ent=ent, seen_set=set())
 
         # TODO handling of eq_sets
@@ -142,10 +135,15 @@ class AbstractHierarchy(Generic[_S], metaclass=ABCMeta):
         #     self._children_map_trans[scc] = sub_entities
         #     self._parents_map_trans[scc] = 0
 
-        # (5) fill transitive parents
+        # (4) fill transitive parents
         for ent, sub_entities in self._children_map_trans.items():
             for sub in sub_entities:
-                self._parents_map_trans[sub] |= {ent}
+                # Replacing the inplace or operation (|=) with an if else solves the keyerror issue.
+                # self._parents_map_trans[sub] |= {ent}
+                if sub in self._parents_map_trans:
+                    self._parents_map_trans[sub] = self._parents_map_trans[sub] | {ent}
+                else:
+                    self._parents_map_trans[sub] = {ent}
 
         self._children_map, self._leaf_set = _reduce_transitive(self._children_map_trans, self._parents_map_trans)
         self._parents_map, self._root_set = _reduce_transitive(self._parents_map_trans, self._children_map_trans)
@@ -400,16 +398,12 @@ def _children_transitive(hier_trans: Dict[_S, Set[_S]], ent: _S, seen_set: Set[_
         ent: Class in map_trans for which to add transitive sub-classes.
 
     """
-    # @TODO This code is buggy whenn parsing OWLDataProperty on DBpedia
 
-    try:
-        sub_classes_ent = frozenset(hier_trans[ent])
-    except KeyError:
-        print(f"{ent} is not found in the transitive mapping...ERROR")
-        return None
+    sub_classes_ent = frozenset(hier_trans[ent])
     for sub_ent in sub_classes_ent:
-        if not {sub_ent} & seen_set:
-            _children_transitive(hier_trans, sub_ent, seen_set | {ent})
+        # CD: Replacing (&) with (and) solves the keyerror.
+        if not {sub_ent} and seen_set:
+            _children_transitive(hier_trans=hier_trans, ent=sub_ent, seen_set=seen_set | {ent})
             seen_set = seen_set | {sub_ent} | hier_trans[sub_ent]
             hier_trans[ent] |= hier_trans[sub_ent]
 
