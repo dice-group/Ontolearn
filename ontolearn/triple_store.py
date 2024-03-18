@@ -18,7 +18,7 @@ from owlapy.model import OWLObjectPropertyRangeAxiom, OWLDataProperty, \
 
 logger = logging.getLogger(__name__)
 
-rdfs_prefix = "PREFIX  rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n "
+rdfs_prefix = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n "
 owl_prefix = "PREFIX owl: <http://www.w3.org/2002/07/owl#>\n "
 rdf_prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n "
 
@@ -456,3 +456,69 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         self.ontology = TripleStoreOntology(triplestore_address)
         self.reasoner = TripleStoreReasoner(self.ontology)
         super().__init__(ontology=self.ontology, reasoner=self.reasoner)
+
+
+class TripleStore:
+    """ triple store """
+    url: str
+    ontology: TripleStoreOntology
+    reasoner: TripleStoreReasoner
+
+    def __init__(self, triplestore_address: str):
+        self.url = triplestore_address
+        self.ontology = TripleStoreOntology(triplestore_address)
+        self.reasoner = TripleStoreReasoner(self.ontology)
+        self.dbo_prefix = "PREFIX dbo: <http://dbpedia.org/ontology/>\n "
+        self.rdf_prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n"
+
+    def named_concepts(self):
+        """ Named Concepts"""
+        yield from self.ontology.classes_in_signature()
+
+    def retrieval(self, expression: OWLClassExpression):
+        """ concept retrieval"""
+        yield from self.reasoner.instances(expression)
+
+    def quality_retrieval(self, expression: OWLClass, pos: set[OWLNamedIndividual], neg: set[OWLNamedIndividual]):
+        assert isinstance(expression,
+                          OWLClass), "Currently we can only compute the F1 score of a named concepts given pos and neg"
+
+        sparql_str = f"{self.dbo_prefix}{self.rdf_prefix}"
+        num_pos = len(pos)
+        str_concept_reminder = expression.get_iri().get_remainder()
+
+        str_concept = expression.get_iri().as_str()
+        str_pos = " ".join(("<" + i.str + ">" for i in pos))
+        str_neg = " ".join(("<" + i.str + ">" for i in neg))
+
+        # TODO
+        sparql_str += f"""
+        SELECT ?tp ?fp ?fn
+        WHERE {{ 
+        
+        {{SELECT DISTINCT (COUNT(?var) as ?tp) ( {num_pos}-COUNT(?var) as ?fn) 
+        WHERE {{ VALUES ?var {{ {str_pos} }} ?var rdf:type dbo:{str_concept_reminder} .}} }}
+
+        {{SELECT DISTINCT (COUNT(?var) as ?fp)
+        WHERE {{ VALUES ?var  {{ {str_neg} }} ?var rdf:type dbo:{str_concept_reminder} .}} }}
+        
+        }}
+        """
+
+        response = requests.post('http://dice-dbpedia.cs.upb.de:9080/sparql', auth=("", ""),
+                                 data=sparql_str,
+                                 headers={"Content-Type": "application/sparql-query"})
+        bindings = response.json()["results"]["bindings"]
+        assert len(bindings) == 1
+        results = bindings.pop()
+        assert len(results) == 3
+        tp = int(results["tp"]["value"])
+        fp = int(results["fp"]["value"])
+        fn = int(results["fn"]["value"])
+        # Compute recall (Sensitivity): Relevant retrieved instances / all relevant instances.
+        recall = 0 if (tp + fn) == 0 else tp / (tp + fn)
+        # Compute recall (Sensitivity): Relevant retrieved instances / all retrieved instances.
+        precision = 0 if (tp + fp) == 0 else tp / (tp + fp)
+        f1 = 0 if precision == 0 or recall == 0 else 2 * ((precision * recall) / (precision + recall))
+
+        return f1
