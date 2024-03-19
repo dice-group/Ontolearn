@@ -23,7 +23,8 @@ from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
 from .learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from ontolearn.base.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 
-from .utils.static_funcs import (init_length_metric, init_hierarchy_instances, init_class_hierarchy,
+from .utils.static_funcs import (init_length_metric, init_hierarchy_instances,
+                                 init_class_hierarchy,init_object_property_hierarchy,
                                  init_named_individuals, init_individuals_from_concepts)
 
 logger = logging.getLogger(__name__)
@@ -179,6 +180,26 @@ class KnowledgeBase(AbstractKnowledgeBase):
                                                                                self.get_concepts()))
         self.describe()
 
+    def ensure_class_hierarchy(f):
+        """ Ensure that class_hierarchy is structured before using,"""
+
+        def wrapper(self, *args, **kwargs):
+            if self.class_hierarchy is None:
+                self.class_hierarchy = init_class_hierarchy(self.reasoner)
+            return f(self, *args, **kwargs)
+
+        return wrapper
+
+    def ensure_object_property_hierarchy(f):
+        """ Ensure that class_hierarchy is structured before using,"""
+
+        def wrapper(self, *args, **kwargs):
+            if self.object_property_hierarchy is None:
+                self.object_property_hierarchy = init_object_property_hierarchy(self.reasoner)
+            return f(self, *args, **kwargs)
+
+        return wrapper
+
     def individuals(self, concept: Optional[OWLClassExpression] = None) -> Iterable[OWLNamedIndividual]:
         """Given an OWL class expression, retrieve all individuals belonging to it.
 
@@ -196,7 +217,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             yield from self.maybe_cache_individuals(concept)
 
     def abox(self, individuals: Union[OWLNamedIndividual, Iterable[OWLNamedIndividual]] = None, mode='native',
-             class_assertions=True, object_property_assertions=False, data_property_assertions=False):
+             class_assertions=True, object_property_assertions=True, data_property_assertions=False):
         """
         Get all the abox axioms for a given individual. If no individual is given, get all abox axioms
 
@@ -229,13 +250,16 @@ class KnowledgeBase(AbstractKnowledgeBase):
                     # For now, 'rdfs:type' predicate will be represented as an IRI
                     yield from ((i, IRI.create("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), t) for t in
                                 self.get_types(ind=i, direct=True))
-                if data_property_assertions:
-                    # Obtain all property assertion triples/axioms
-                    for dp in self.get_data_properties_for_ind(ind=i):
-                        yield from ((i, dp, literal) for literal in self.get_data_property_values(i, dp))
                 if object_property_assertions:
                     for op in self.get_object_properties_for_ind(ind=i):
                         yield from ((i, op, ind) for ind in self.get_object_property_values(i, op))
+
+
+                if data_property_assertions:
+                    # (1) Get all data properties given an individual i Obtain all property assertion triples/axioms
+                    for dp in self.get_data_properties_for_ind(ind=i):
+                        yield from ((i, dp, literal) for literal in self.get_data_property_values(i, dp))
+
 
             elif mode == "iri":
                 if class_assertions:
@@ -575,6 +599,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             return frozenset(self.ontology.individuals_in_signature())
 
+    @ensure_object_property_hierarchy
     def most_general_object_properties(self, *, domain: OWLClassExpression, inverse: bool = False) \
             -> Iterable[OWLObjectProperty]:
         """Find the most general object property.
@@ -683,13 +708,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         _, e.q = quality_func.score_elp(e.inds, encoded_learning_problem)
         return e
 
-    def ensure_class_hierarchy(f):
-        """ Ensure that class_hierarchy is structured before using,"""
-        def wrapper(self, *args, **kwargs):
-            if self.class_hierarchy is None:
-                self.class_hierarchy = init_class_hierarchy(self.reasoner)
-            return f(self, *args, **kwargs)
-        return wrapper
 
     @ensure_class_hierarchy
     def get_leaf_concepts(self, concept: OWLClass):
@@ -949,6 +967,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
         yield from self.class_hierarchy.items()
 
+    @ensure_object_property_hierarchy
     @property
     def object_properties(self) -> Iterable[OWLObjectProperty]:
         """Get all object properties of this concept generator.
@@ -968,6 +987,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
         yield from self.data_property_hierarchy.items()
 
+    @ensure_object_property_hierarchy
     def get_object_properties(self) -> Iterable[OWLObjectProperty]:
         """Get all object properties of this concept generator.
 

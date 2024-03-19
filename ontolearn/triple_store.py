@@ -15,6 +15,7 @@ from owlapy.model import OWLObjectPropertyRangeAxiom, OWLDataProperty, \
     OWLObjectInverseOf, OWLClass, \
     IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLClassAxiom, \
     OWLEquivalentClassesAxiom, OWLObjectProperty, OWLProperty, OWLDatatype
+from owlapy.util import iter_count
 
 logger = logging.getLogger(__name__)
 
@@ -290,8 +291,13 @@ class TripleStoreReasoner(OWLReasonerEx):
     def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression, direct: bool = True) \
             -> Iterable[OWLNamedIndividual]:
         if isinstance(pe, OWLObjectProperty):
-            query = "SELECT ?x WHERE { " + f"<{ind.str}> " + f"<{pe.get_iri().as_str()}>" + " ?x . }"
+            query = "SELECT ?x WHERE { " + f"<{ind.str}> " + f"<{pe.get_iri().as_str()}>" + (" ?x . "
+                                                                                             "FILTER(isIRI(?x))}")
             yield from get_results_from_ts(self.url, query, OWLNamedIndividual)
+        else:
+            raise NotImplementedError()
+        """
+        
         elif isinstance(pe, OWLObjectInverseOf):
             query = (owl_prefix + "SELECT ?x WHERE { ?inverseProperty owl:inverseOf " +
                      f"<{pe.get_inverse().get_iri().as_str()}>." +
@@ -300,7 +306,7 @@ class TripleStoreReasoner(OWLReasonerEx):
         if not direct:
             for prop in self.sub_object_properties(pe):
                 yield from self.object_property_values(ind, prop, True)
-
+        """
     def flush(self) -> None:
         pass
 
@@ -433,6 +439,22 @@ class TripleStoreReasoner(OWLReasonerEx):
         yield from [i for i in get_results_from_ts(self.url, query, OWLClass)
                     if i != OWLClass(IRI('http://www.w3.org/2002/07/owl#', 'NamedIndividual'))]
 
+    def get_object_properties_of_individual(self, ind: OWLNamedIndividual, direct: bool = True) -> Iterable[
+        OWLObjectProperty]:
+        if direct:
+            # CD: Added two fixed rules
+            query = "SELECT DISTINCT ?p WHERE {" + f"<{ind.str}> ?p" + (" ?x. "
+                                                                        "FILTER(isIRI(?x))"
+                                                                        "FILTER(?p != <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>)"
+                                                                        "FILTER(?p != <http://www.w3.org/2002/07/owl#sameAs>)" # a fixed rule
+                                                                        "FILTER(?p != <http://dbpedia.org/property/wikiPageUsesTemplate>)}"
+                                                                        )
+        else:
+            raise NotImplementedError(
+                "SPARQL query for infering object properties for an individual is not implemented.")
+        for object_property_instance in get_results_from_ts(self.url, query, OWLObjectProperty):
+            yield object_property_instance
+
     def get_root_ontology(self) -> OWLOntology:
         return self.ontology
 
@@ -455,8 +477,58 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         self.url = triplestore_address
         self.ontology = TripleStoreOntology(triplestore_address)
         self.reasoner = TripleStoreReasoner(self.ontology)
-        super().__init__(ontology=self.ontology, reasoner=self.reasoner, construct_hierarchies=False)
+        super().__init__(ontology=self.ontology, reasoner=self.reasoner, construct_hierarchies=True)
 
+    def __repr__(self):
+        properties_count = iter_count(self.ontology.object_properties_in_signature()) + iter_count(
+            self.ontology.data_properties_in_signature())
+        class_count = iter_count(self.ontology.classes_in_signature())
+        return f'KnowledgeBase(url={repr(self.url)} <{class_count} classes, {properties_count} properties)'
+
+    def get_types(self, ind: OWLNamedIndividual, direct: bool = False) -> Iterable[OWLClass]:
+        """Get the named classes which are (direct) types of the specified individual.
+
+        Args:
+            ind: Individual.
+            direct: Whether to consider direct types.
+
+        Returns:
+            Types of the given individual.
+        """
+        for type_ in self.reasoner.types(ind, direct):
+            yield type_
+
+    def get_object_properties_for_ind(self, ind: OWLNamedIndividual, direct: bool = True) \
+            -> Iterable[OWLObjectProperty]:
+        """Get the object properties for the given individual.
+
+        Args:
+            ind: Individual
+            direct: Whether only direct properties should be considered (True), or if also
+                    indirect properties should be considered (False). Indirect properties
+                    would be super properties super_p of properties p with ObjectPropertyAssertion(p ind obj).
+
+        Returns:
+            Object properties.
+        """
+
+        yield from (pe for pe in self.reasoner.get_object_properties_of_individual(ind, direct))
+
+    def get_object_property_values(self, ind: OWLNamedIndividual,
+                                   property_: OWLObjectPropertyExpression,
+                                   direct: bool = True) -> Iterable[OWLNamedIndividual]:
+        """Get the object property values for the given individual and property.
+
+        Args:
+            ind: Individual.
+            property_: Object property.
+            direct: Whether only the property property_ should be considered (True), or if also
+                    the values of sub properties of property_ should be considered (False).
+
+        Returns:
+            Individuals.
+        """
+        yield from self.reasoner.object_property_values(ind, property_, direct)
 
 class TripleStore:
     """ triple store """

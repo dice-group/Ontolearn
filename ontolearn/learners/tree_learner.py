@@ -6,11 +6,7 @@ import json
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.base import OWLOntologyManager_Owlready2
 from owlapy.model import OWLEquivalentClassesAxiom, OWLOntologyManager, OWLOntology, AddImport, OWLImportsDeclaration, \
-    IRI, OWLDataOneOf
-
-# mv best_pred.owl
-# (base) demir@demir:~/Desktop/Softwares/Ontolearn/LD2NL/owl2nl$ ./owl2nl.sh -a ./src/test/resources/best_pred.owl             -u false -o ./src/test/resources/family.owl             -t json -s test_out.json -m rule
-# ./owl2nl.sh -a ./home/demir/Desktop/Softwares/Ontolearn/examples/best_pred.owl -u false -o ./home/demir/Desktop/Softwares/Ontolearn/KGs/Family/family.owl -t json -s test_out.json -m rule
+    IRI, OWLDataOneOf, OWLObjectProperty, OWLDataProperty
 
 from typing import Dict, Set, Tuple, List, Union, TypeVar, Callable
 from ontolearn.learning_problem import PosNegLPStandard
@@ -18,6 +14,7 @@ import collections
 import matplotlib.pyplot as plt
 import sklearn
 from sklearn import tree
+from tqdm import tqdm
 
 from owlapy.model import OWLObjectSomeValuesFrom, OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, \
@@ -146,14 +143,10 @@ class TDL:
                  report_classification: bool = False,
                  plot_built_tree: bool = False,
                  plotembeddings: bool = False):
-        # TODO: Later on with Triplestore.
         assert isinstance(knowledge_base, KnowledgeBase), "knowledge_base must be a KnowledgeBase instance"
         print(f"Knowledge Base: {knowledge_base}")
         self.knowledge_base = knowledge_base
         if dataframe_triples is None:
-            # TODO: Perhaps we do not need to create a dataframe from all triples.
-            # TODO: We can create this dataframe only based E^+ and E^-
-
             """
             
             self.dataframe_triples = pd.DataFrame(
@@ -187,6 +180,9 @@ class TDL:
         self.plotembeddings = plotembeddings
         # Mappings from string of IRI to named concepts.
         self.owl_classes_dict = dict()
+        # Mappings from string of IRI to object properties.
+        self.owl_object_property_dict = dict()
+        self.max_features=100
         """
         # Mappings from string of IRI to named concepts.
         self.owl_classes_dict = {c.get_iri().as_str(): c for c in self.knowledge_base.get_concepts()}
@@ -293,8 +289,15 @@ class TDL:
 
         return result
 
-    def get_first_hop_info(self, x):
-        yield from ((p, o) for s, p, o in self.knowledge_base.abox(individuals=x, class_assertions=True))
+    def named_class_membership_feature(self, c: OWLClass):
+        # For example, (hasChild Male).
+        # assert o in self.owl_classes_dict
+        # Mappings from string of IRI to named concepts.
+        # self.owl_classes_dict = {c.get_iri().as_str(): c for c in self.knowledge_base.get_concepts()}
+
+        str_concept = c.get_iri().as_str()
+        self.owl_classes_dict.setdefault(str_concept, c)
+        return str_concept
 
     def construct_hop(self, individuals: List[OWLNamedIndividual]) -> Dict[str, Dict]:
         assert len(individuals) == len(set(individuals)), "There are duplicate individuals"
@@ -304,23 +307,40 @@ class TDL:
         # (2) Unique features/DL concepts.
         features = set()
         # 3) Iterate over individuals.
-        for s in individuals:
+        for s in tqdm(individuals, desc="Building Feature Matrix"):
             temp = dict()
             # (4) iterate over triples of (s,p,o)
-            for p, o in self.get_first_hop_info(s):
-                ##### SAVE FEATURE: (type, PERSON) #####
-                # TODO: p.as_str() => p.str
-                if p.as_str() == self.str_type:
-                    # For example, (hasChild Male).
-                    # assert o in self.owl_classes_dict
-                    # Mappings from string of IRI to named concepts.
-                    # self.owl_classes_dict = {c.get_iri().as_str(): c for c in self.knowledge_base.get_concepts()}
-                    str_concept = o.get_iri().as_str()
-                    self.owl_classes_dict.setdefault(str_concept, o)
-                    temp.setdefault(p.as_str(), set()).add(str_concept)
-                    features.add((p.as_str(), str_concept))
+            for _, p, o in self.knowledge_base.abox(individuals=s,
+                                                    class_assertions=True,
+                                                    object_property_assertions=True):
+                assert s==_
+                print(f"Iterating over triples of (s,p,o): {s} {p} {o}")
+                if isinstance(o, OWLClass):
+                    # (4.1) (s, p=type, o=Person)
+                    assert isinstance(p, IRI) and p.as_str() == self.str_type
+                    str_concept = self.named_class_membership_feature(c=o)
+                    temp.setdefault(self.str_type, set()).add(str_concept)
+                    features.add((self.str_type, str_concept))
+                elif isinstance(o, OWLNamedIndividual) and isinstance(p, OWLObjectProperty):
+                    # (4.2) (s, p=object_property, o=individual).
+                    # (4.3) (o, pp=TYPE, oo=Person)
+                    for oo in self.knowledge_base.get_types(o):
+                        ##### SAVE FEATURE: (p=hasChild, Father) #####
+                        assert isinstance(oo,OWLClass)
+                        # (o, pp=TYPE, oo=Person)
+                        ##### SAVE FEATURE: (hasChild, PERSON) #####
+                        # assert oo in self.owl_classes_dict
+                        temp.setdefault(p.get_iri().as_str(), set()).add(oo.get_iri().as_str())
+                        features.add((p.get_iri().as_str(), oo.get_iri().as_str()))
+
+
+
+                elif isinstance(o, OWLNamedIndividual) and isinstance(p, OWLDataProperty):
+                    print(p, o)
+                    raise RuntimeError(f"{p}:{type(p)} {o}:{type(o)}\tOWLDataProperty")
                 else:
-                    raise NotImplementedError
+                    """ Something went wrong"""
+                    raise RuntimeError(f"{p}:{type(p)} {o}:{type(o)}")
                     # o can be an individual,
                     #          a literal or
                     #          blank node
