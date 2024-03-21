@@ -339,7 +339,7 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
         properties_count = iter_count(self.ontology.object_properties_in_signature()) + iter_count(
             self.ontology.data_properties_in_signature())
         logger.info(f'Number of named classes: {iter_count(self.ontology.classes_in_signature())}\n'
-                    f'Number of individuals: {self.individuals_count()}\n'
+                    f'Number of individuals: {iter_count(self.ontology.individuals_in_signature())}\n'
                     f'Number of properties: {properties_count}')
 
     @abstractmethod
@@ -350,6 +350,7 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
     @abstractmethod
     def individuals_count(self) -> int:
         """Total number of individuals in this knowledge base."""
+        # @TODO: CD No need such function one can count the set of individuals
         pass
 
     @abstractmethod

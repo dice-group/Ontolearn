@@ -309,7 +309,6 @@ class Drill(RefinementBasedConceptLearner):
         instances = set(self.kb.individuals(c))
         instances_bitset: FrozenSet[OWLNamedIndividual]
         instances_bitset = self.kb.individuals_set(c)
-
         if self.pre_trained_kge is not None:
             raise NotImplementedError("No pre-trained knowledge")
 
@@ -808,13 +807,10 @@ class Drill(RefinementBasedConceptLearner):
             self.form_experiences(sequence_of_states, rewards)
         self.learn_from_replay_memory()
 
-    def best_hypotheses(self, n=1):
+    def best_hypotheses(self, n=1)->Iterable[OWLClassExpression]:
         assert self.search_tree is not None
         assert len(self.search_tree) > 1
-        if n == 1:
-            return [i for i in self.search_tree.get_top_n_nodes(n)][0]
-        else:
-            return [i for i in self.search_tree.get_top_n_nodes(n)]
+        return [i.concept for i in self.search_tree.get_top_n_nodes(n)]
 
     def clean(self):
         self.emb_pos, self.emb_neg = None, None

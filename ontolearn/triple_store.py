@@ -2,7 +2,7 @@
 import logging
 import re
 from itertools import chain
-from typing import Iterable, Set
+from typing import Iterable, Set, Generator
 import requests
 from requests import Response
 from requests.exceptions import RequestException, JSONDecodeError
@@ -16,6 +16,7 @@ from owlapy.model import OWLObjectPropertyRangeAxiom, OWLDataProperty, \
     IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLClassAxiom, \
     OWLEquivalentClassesAxiom, OWLObjectProperty, OWLProperty, OWLDatatype
 from owlapy.util import iter_count
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -45,8 +46,9 @@ def is_valid_url(url) -> bool:
     return url is not None and regex.search(url)
 
 
-def get_results_from_ts(triplestore_address: str, query: str, return_type: type):
+def get_results_from_ts(triplestore_address: str, query: str, return_type: type) -> Generator:
     """
+    @TODO: This function should not store any data but should return a genertor object
     Execute the SPARQL query in the given triplestore_address and return the result as the given return_type.
 
     Args:
@@ -57,19 +59,22 @@ def get_results_from_ts(triplestore_address: str, query: str, return_type: type)
     Returns:
         Generator containing the results of the query as the given type.
     """
+    if return_type == OWLLiteral:
+        stream = False
+    else:
+        stream = True
     try:
-        response = requests.post(triplestore_address, data={'query': query})
+        response = requests.post(triplestore_address, data={'query': query}, stream=stream)
     except RequestException as e:
         raise RequestException(f"Make sure the server is running on the `triplestore_address` = '{triplestore_address}'"
                                f". Check the error below:"
                                f"\n  -->Error: {e}")
     try:
+        # CD: Streaming literals can be tricky
         if return_type == OWLLiteral:
             yield from unwrap(response)
         else:
-            yield from [return_type(i) for i in unwrap(response) if i is not None]
-        # return [return_type(IRI.create(i['x']['value'])) for i in
-        #         response.json()['results']['bindings']]
+            yield from (return_type(i) for i in unwrap_stream(response))
     except JSONDecodeError as e:
         raise JSONDecodeError(f"Something went wrong with decoding JSON from the response. Check for typos in "
                               f"the `triplestore_address` = '{triplestore_address}' otherwise the error is likely "
@@ -77,9 +82,15 @@ def get_results_from_ts(triplestore_address: str, query: str, return_type: type)
 
 
 def unwrap(result: Response):
-    json = result.json()
-    vars_ = list(json['head']['vars'])
-    for b in json['results']['bindings']:
+    """ Parsing the response object generated from http.post """
+    assert isinstance(result, Response)
+    print(type(result))
+    # (1) Convert response to json.
+    json_results = result.json()
+    # (2) Extracting variables.
+    vars_ = list(json_results['head']['vars'])
+    # (3) Iterate over bindings
+    for b in json_results['results']['bindings']:
         val = []
         for v in vars_:
             if b[v]['type'] == 'uri':
@@ -92,7 +103,34 @@ def unwrap(result: Response):
         if len(val) == 1:
             yield val.pop()
         else:
-            yield None
+            raise RuntimeError("Something went wrong at retrieving results from triple store")
+            # yield None
+
+
+def unwrap_stream(result: Response):
+    """ Parsing the response object generated from http.post """
+    # @TODO: Currently this funciton is identical to unwrap. Yet it will be modified to operate on stream data.
+    assert isinstance(result, Response)
+    # (1) Convert response to json.
+    json_results = result.json()
+    # (2) Extracting variables.
+    vars_ = list(json_results['head']['vars'])
+    # (3) Iterate over bindings
+    for b in json_results['results']['bindings']:
+        val = []
+        for v in vars_:
+            if b[v]['type'] == 'uri':
+                val.append(IRI.create(b[v]['value']))
+            elif b[v]['type'] == 'bnode':
+                continue
+            else:
+                print(b[v]['type'])
+                val.append(OWLLiteral(b[v]['value'], OWLDatatype(IRI.create(b[v]['datatype']))))
+        if len(val) == 1:
+            yield val.pop()
+        else:
+            raise RuntimeError("Something went wrong at retrieving results from triple store")
+            # yield None
 
 
 def suf(direct: bool):
@@ -100,17 +138,29 @@ def suf(direct: bool):
     return " " if direct else "* "
 
 
+# @TODO: I dont really understand the benefits keeping OWLOntology, OWLReasonerEx, and KnowledgeBase Classes
 class TripleStoreOntology(OWLOntology):
 
     def __init__(self, triplestore_address: str):
         assert (is_valid_url(triplestore_address)), "You should specify a valid URL in the following argument: " \
                                                     "'triplestore_address' of class `TripleStore`"
-
         self.url = triplestore_address
 
     def classes_in_signature(self) -> Iterable[OWLClass]:
-        query = owl_prefix + "SELECT DISTINCT ?x WHERE {?x a owl:Class.}"
-        yield from get_results_from_ts(self.url, query, OWLClass)
+        query = owl_prefix + """CONSTRUCT { ?x <dummy1> <dummy2> } WHERE { ?x a owl:Class }"""
+        response = requests.post(self.url, headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                                 data={'query': query}, stream=True)
+        if response.status_code == 200:
+            for byte_triple in tqdm(requests.post(self.url, data={'query': query}, stream=True).iter_lines(),
+                                    "Downloading and parsing OWL named classes"):
+                items = OWLClass(IRI.create(byte_triple.decode("utf-8").split()[0][1:-1]))
+                yield items
+        else:
+            raise RuntimeError("Request failed with status code:", response.status_code)
+
+    def individuals_in_signature(self) -> Iterable[OWLNamedIndividual]:
+        query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:NamedIndividual.}"
+        yield from get_results_from_ts(self.url, query, OWLNamedIndividual)
 
     def data_properties_in_signature(self) -> Iterable[OWLDataProperty]:
         query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:DatatypeProperty.}"
@@ -119,10 +169,6 @@ class TripleStoreOntology(OWLOntology):
     def object_properties_in_signature(self) -> Iterable[OWLObjectProperty]:
         query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:ObjectProperty.}"
         yield from get_results_from_ts(self.url, query, OWLObjectProperty)
-
-    def individuals_in_signature(self) -> Iterable[OWLNamedIndividual]:
-        query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:NamedIndividual.}"
-        yield from get_results_from_ts(self.url, query, OWLNamedIndividual)
 
     def equivalent_classes_axioms(self, c: OWLClass) -> Iterable[OWLEquivalentClassesAxiom]:
         query = owl_prefix + "SELECT DISTINCT ?x" + \
@@ -199,6 +245,32 @@ class TripleStoreReasoner(OWLReasonerEx):
         self.ontology = ontology
         self.url = self.ontology.url
         self._owl2sparql_converter = Owl2SparqlConverter()
+        self.ind_set = set()
+
+    @property
+    def individuals(self) -> Generator[OWLNamedIndividual, None, None]:
+        # https://peps.python.org/pep-0484/#annotating-generator-functions-and-coroutines
+        if len(self.ind_set) == 0:
+            query = """ PREFIX owl: <http://www.w3.org/2002/07/owl#> CONSTRUCT { ?x <dummy1> <dummy2> } WHERE { ?x a ?object . ?object a owl:Class } """
+            response = requests.post(self.url, headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                                     data={'query': query}, stream=True)
+            if response.status_code == 200:
+                for byte_triple in tqdm(requests.post(self.url, data={'query': query}, stream=True).iter_lines(),
+                                        "Downloading and parsing OWL Individuals"):
+                    owl_named_individual = OWLNamedIndividual(IRI.create(byte_triple.decode("utf-8").split()[0][1:-1]))
+                    self.ind_set.add(owl_named_individual)
+                    yield owl_named_individual
+            else:
+                raise RuntimeError("Request failed with status code:", response.status_code)
+        else:
+            yield from self.ind_set
+
+    @property
+    def num_individuals(self) -> int:
+        if len(self.ind_set) > 0:
+            return len(self.ind_set)
+        else:
+            return len({i for i in self.individuals})
 
     def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
         domains = {d.get_domain() for d in self.ontology.data_property_domain_axioms(pe)}
@@ -307,6 +379,7 @@ class TripleStoreReasoner(OWLReasonerEx):
             for prop in self.sub_object_properties(pe):
                 yield from self.object_property_values(ind, prop, True)
         """
+
     def flush(self) -> None:
         pass
 
@@ -446,7 +519,7 @@ class TripleStoreReasoner(OWLReasonerEx):
             query = "SELECT DISTINCT ?p WHERE {" + f"<{ind.str}> ?p" + (" ?x. "
                                                                         "FILTER(isIRI(?x))"
                                                                         "FILTER(?p != <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>)"
-                                                                        "FILTER(?p != <http://www.w3.org/2002/07/owl#sameAs>)" # a fixed rule
+                                                                        "FILTER(?p != <http://www.w3.org/2002/07/owl#sameAs>)"  # a fixed rule
                                                                         "FILTER(?p != <http://dbpedia.org/property/wikiPageUsesTemplate>)}"
                                                                         )
         else:
@@ -454,6 +527,13 @@ class TripleStoreReasoner(OWLReasonerEx):
                 "SPARQL query for infering object properties for an individual is not implemented.")
         for object_property_instance in get_results_from_ts(self.url, query, OWLObjectProperty):
             yield object_property_instance
+
+    def get_data_properties_for_ind(self, ind: OWLNamedIndividual, direct: bool = True) -> Iterable[
+        OWLObjectProperty]:
+        raise NotImplementedError
+
+    def get_data_property_values(self, *args, **kwargs):
+        raise NotImplementedError
 
     def get_root_ontology(self) -> OWLOntology:
         return self.ontology
@@ -473,11 +553,16 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
     ontology: TripleStoreOntology
     reasoner: TripleStoreReasoner
 
-    def __init__(self, triplestore_address: str):
+    def __init__(self, triplestore_address: str, include_implicit_individuals=True):
         self.url = triplestore_address
         self.ontology = TripleStoreOntology(triplestore_address)
         self.reasoner = TripleStoreReasoner(self.ontology)
-        super().__init__(ontology=self.ontology, reasoner=self.reasoner, construct_hierarchies=True)
+        super().__init__(ontology=self.ontology, reasoner=self.reasoner,
+                         include_implicit_individuals=include_implicit_individuals,
+                         construct_hierarchies=False)
+    @property
+    def ind_set(self):
+        return self.reasoner.ind_set
 
     def __repr__(self):
         properties_count = iter_count(self.ontology.object_properties_in_signature()) + iter_count(
@@ -529,6 +614,7 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
             Individuals.
         """
         yield from self.reasoner.object_property_values(ind, property_, direct)
+
 
 class TripleStore:
     """ triple store """

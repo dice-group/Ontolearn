@@ -24,7 +24,7 @@ from .learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from ontolearn.base.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 
 from .utils.static_funcs import (init_length_metric, init_hierarchy_instances,
-                                 init_class_hierarchy,init_object_property_hierarchy,
+                                 init_class_hierarchy, init_object_property_hierarchy,
                                  init_named_individuals, init_individuals_from_concepts)
 
 logger = logging.getLogger(__name__)
@@ -61,8 +61,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
     """
 
     length_metric: OWLClassExpressionLengthMetric
-
-    ind_set: FrozenSet[OWLNamedIndividual]
     ind_cache: LRUCache[OWLClassExpression, FrozenSet[OWLNamedIndividual]]  # class expression => individuals
 
     path: str
@@ -79,7 +77,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  length_metric_factory: Optional[Callable[[], OWLClassExpressionLengthMetric]] = None,
                  individuals_cache_size=128,
                  backend_store: bool = False,
-                 include_implicit_individuals=False):
+                 include_implicit_individuals=False,
+                 construct_hierarchies=True):
         ...
 
     @overload
@@ -88,7 +87,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  reasoner: OWLReasoner,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
                  length_metric_factory: Optional[Callable[[], OWLClassExpressionLengthMetric]] = None,
-                 individuals_cache_size=128):
+                 individuals_cache_size=128,
+                 construct_hierarchies=True):
         ...
 
     def __init__(self, *,
@@ -102,13 +102,13 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  reasoner: Optional[OWLReasoner] = None,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
 
-                 individuals_cache_size=128,
+                 individuals_cache_size=False,
                  backend_store: bool = False,
                  class_hierarchy: Optional[ClassHierarchy] = None,
                  object_property_hierarchy: Optional[ObjectPropertyHierarchy] = None,
                  data_property_hierarchy: Optional[DatatypePropertyHierarchy] = None,
                  include_implicit_individuals=False,
-                 construct_hierarchies=False):
+                 construct_hierarchies=True):
         AbstractKnowledgeBase.__init__(self)
         self.path = path
         if ontology is not None:
@@ -171,13 +171,19 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.dp_ranges = dict()
         # OWL class expression generator
         self.generator = ConceptGenerator()
-
+        self.use_individuals_cache: bool
+        # Caching for individuals: CD: Unncesseary
+        self.ind_cache: owlapy.util.LRUCache
         self.use_individuals_cache, self.ind_cache = init_named_individuals(individuals_cache_size)
+
+        # @TODO: We do not need to store all individuals
+        """
         self.ind_set = init_individuals_from_concepts(include_implicit_individuals,
-                                                      reasoner=self.reasoner,
                                                       ontology=self.ontology,
                                                       individuals_per_concept=(self.individuals(i) for i in
                                                                                self.get_concepts()))
+        """
+
         self.describe()
 
     def ensure_class_hierarchy(f):
@@ -200,6 +206,15 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
         return wrapper
 
+    @property
+    def num_named_individuals(self) -> int:
+        raise NotImplementedError()
+        pass
+
+    @property
+    def num_individuals(self) -> int:
+        return iter_count(self.ontology.individuals_in_signature())
+
     def individuals(self, concept: Optional[OWLClassExpression] = None) -> Iterable[OWLNamedIndividual]:
         """Given an OWL class expression, retrieve all individuals belonging to it.
 
@@ -211,13 +226,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
 
         if concept is None or concept.is_owl_thing():
-            for i in self.ind_set:
-                yield i
+            yield from self.ontology.individuals_in_signature()
         else:
-            yield from self.maybe_cache_individuals(concept)
+            yield from self.reasoner.instances(concept)
 
     def abox(self, individuals: Union[OWLNamedIndividual, Iterable[OWLNamedIndividual]] = None, mode='native',
-             class_assertions=True, object_property_assertions=True, data_property_assertions=False):
+             class_assertions=True, object_property_assertions=True, data_property_assertions=True):
         """
         Get all the abox axioms for a given individual. If no individual is given, get all abox axioms
 
@@ -254,7 +268,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
                     for op in self.get_object_properties_for_ind(ind=i):
                         yield from ((i, op, ind) for ind in self.get_object_property_values(i, op))
 
-
                 if data_property_assertions:
                     # (1) Get all data properties given an individual i Obtain all property assertion triples/axioms
                     for dp in self.get_data_properties_for_ind(ind=i):
@@ -282,8 +295,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
                     yield from (OWLObjectPropertyAssertionAxiom(i, op, ind) for ind in
                                 self.get_object_property_values(i, op))
 
-    def tbox(self, entities: Union[Iterable[OWLClass], Iterable[OWLDataProperty], Iterable[OWLObjectProperty], OWLClass,
-    OWLDataProperty, OWLObjectProperty, None] = None, mode='native'):
+    def tbox(self, entities: Union[Iterable[OWLClass], Iterable[OWLDataProperty], Iterable[
+        OWLObjectProperty], OWLClass, OWLDataProperty, OWLObjectProperty, None] = None, mode='native'):
         """Get all the tbox axioms for the given concept-s|propert-y/ies.
          If no concept-s|propert-y/ies are given, get all tbox axioms.
 
@@ -512,46 +525,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         if self.use_individuals_cache:
             self.ind_cache.cache_clear()
 
-    def cache_individuals(self, ce: OWLClassExpression) -> None:
-        if not self.use_individuals_cache:
-            raise TypeError
-        if ce in self.ind_cache:
-            return
-        if isinstance(self.reasoner, OWLReasoner_FastInstanceChecker):
-            self.ind_cache[ce] = self.reasoner._find_instances(ce)  # performance hack
-        else:
-            temp = self.reasoner.instances(ce)
-            self.ind_cache[ce] = frozenset(temp)
-
-    def maybe_cache_individuals(self, ce: OWLClassExpression) -> Iterable[OWLNamedIndividual]:
-        if self.use_individuals_cache:
-            self.cache_individuals(ce)
-            yield from self.ind_cache[ce]
-        else:
-            yield from self.reasoner.instances(ce)
-
-    def maybe_cache_individuals_count(self, ce: OWLClassExpression) -> int:
-        if self.use_individuals_cache:
-            self.cache_individuals(ce)
-            r = self.ind_cache[ce]
-            return len(r)
-        else:
-            return iter_count(self.reasoner.instances(ce))
-
-    def individuals_count(self, concept: Optional[OWLClassExpression] = None) -> int:
-        """Returns the number of all individuals belonging to the concept in the ontology.
-
-        Args:
-            concept: Class expression of the individuals to count.
-        Returns:
-            Number of the individuals belonging to the given class.
-        """
-
-        if concept is None or concept.is_owl_thing():
-            return len(self.ind_set)
-        else:
-            return self.maybe_cache_individuals_count(concept)
-
     @overload
     def individuals_set(self, concept: OWLClassExpression):
         ...
@@ -574,6 +547,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Frozenset of the individuals depending on the arg type.
         """
+        # @TODO: CD: This function should be removed.  It does not bring any functionality but takes place
+
 
         if isinstance(arg, OWLClassExpression):
             if self.use_individuals_cache:
@@ -586,18 +561,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
             return frozenset({arg})
         else:
             return frozenset(arg)
-
-    def all_individuals_set(self):
-        """Retrieve all the individuals of the knowledge base.
-
-        Returns:
-            Frozenset of the all individuals.
-        """
-
-        if self.ind_set is not None:
-            return self.ind_set
-        else:
-            return frozenset(self.ontology.individuals_in_signature())
 
     @ensure_object_property_hierarchy
     def most_general_object_properties(self, *, domain: OWLClassExpression, inverse: bool = False) \
@@ -651,7 +614,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             EncodedPosNegLPStandard: The encoded learning problem.
         """
         if lp.all is None:
-            kb_all = self.all_individuals_set()
+            kb_all = {i for i in self.individuals()}
         else:
             kb_all = self.individuals_set(lp.all)
 
@@ -707,7 +670,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         e.ic = len(e.inds)
         _, e.q = quality_func.score_elp(e.inds, encoded_learning_problem)
         return e
-
 
     @ensure_class_hierarchy
     def get_leaf_concepts(self, concept: OWLClass):
@@ -950,8 +912,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
         yield from self.class_hierarchy.sub_classes(concept, direct=False)
 
     @ensure_class_hierarchy
-    def get_concepts(self) -> Iterable[OWLClass]:
-        """Get all concepts of this concept generator.
+    def get_named_concepts(self) -> Iterable[OWLClass]:
+        """Get all named concepts of this concept generator.
 
         Returns:
             Concepts.
@@ -960,7 +922,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
     @property
     def concepts(self) -> Iterable[OWLClass]:
-        """Get all concepts of this concept generator.
+        """Get all concepts of found in class_hierarchy
 
         Returns:
             Concepts.
@@ -1047,11 +1009,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Types of the given individual.
         """
-
-        all_types = set(self.get_concepts())
+        # @TODO: set(self.get_concepts()) is very ineffficent. We cannot effor this
+        #  CD: We cannot return all concepts and create an object
+        # all_types = set(self.get_concepts())
         for type_ in self.reasoner.types(ind, direct):
-            if type_ in all_types or type_ == OWLThing:
-                yield type_
+            # if type_ in all_types or type_ == OWLThing:
+            yield type_
 
     def get_object_properties_for_ind(self, ind: OWLNamedIndividual, direct: bool = True) \
             -> Iterable[OWLObjectProperty]:
@@ -1136,3 +1099,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
         return f'KnowledgeBase(path={repr(self.path)} <{class_count} classes, {properties_count} properties, ' \
                f'{individuals_count} individuals)'
+
+    def individuals_count(self) -> int:
+        return len(self.individuals())

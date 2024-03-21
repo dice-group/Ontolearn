@@ -59,7 +59,7 @@ def init_named_individuals(individuals_cache_size, ):
     return use_individuals_cache, _ind_cache
 
 
-def init_individuals_from_concepts(include_implicit_individuals: bool = None, reasoner=None, ontology=None,
+def init_individuals_from_concepts(include_implicit_individuals: bool = None,ontology=None,
                                    individuals_per_concept=None):
     assert isinstance(include_implicit_individuals, bool), f"{include_implicit_individuals} must be boolean"
     if include_implicit_individuals:
@@ -67,9 +67,10 @@ def init_individuals_from_concepts(include_implicit_individuals: bool = None, re
         # get all individuals from concepts
         _ind_set = frozenset(chain.from_iterable(individuals_per_concept))
     else:
-        # @TODO: needs to be explained
         individuals = ontology.individuals_in_signature()
         _ind_set = frozenset(individuals)
+
+    assert len(_ind_set)>0, "No individuals found."
     return _ind_set
 
 
