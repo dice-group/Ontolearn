@@ -168,7 +168,7 @@ class Drill(RefinementBasedConceptLearner):
         if max_runtime:
             assert isinstance(max_runtime, float)
             self.max_runtime = max_runtime
-
+        # @TODO: CD : We should stop storing individuals in nodes.
         pos_type_counts = Counter(
             [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.pos))])
         neg_type_counts = Counter(

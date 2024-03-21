@@ -123,6 +123,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                 self.manager = OWLOntologyManager_Owlready2(world_store=None)
             # raise TypeError("neither ontology nor manager factory given")
 
+
         if ontology is None:
             if path is None:
                 raise TypeError("path missing")
@@ -132,6 +133,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                     self.manager.save_world()
                     logger.debug("Synced world to backend store")
 
+        # @TODO: This if else steps should be moved into a static function.
         reasoner: OWLReasoner
         if reasoner is not None:
             self.reasoner = reasoner
@@ -141,6 +143,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
             self.reasoner = OWLReasoner_FastInstanceChecker(ontology=self.ontology,
                                                             base_reasoner=OWLReasoner_Owlready2(
                                                                 ontology=self.ontology))
+        # OWL class expression generator
+        self.generator = ConceptGenerator()
+
 
         self.length_metric = init_length_metric(length_metric, length_metric_factory)
 
@@ -159,6 +164,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             self.object_property_hierarchy = None
             self.data_property_hierarchy = None
 
+        # @TODO: CD: There is no need to store domain and ranges twice. These info already available in ontologyo
         # Object property domain and range:
         self.op_domains: Dict[OWLObjectProperty, OWLClassExpression]
         self.op_domains = dict()
@@ -169,11 +175,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.dp_domains = dict()
         self.dp_ranges: Dict[OWLDataProperty, FrozenSet[OWLDataRange]]
         self.dp_ranges = dict()
-        # OWL class expression generator
-        self.generator = ConceptGenerator()
-        self.use_individuals_cache: bool
-        # Caching for individuals: CD: Unncesseary
+
+        # @TODO: Caching will be removed in our next release
         self.ind_cache: owlapy.util.LRUCache
+        self.use_individuals_cache: bool
         self.use_individuals_cache, self.ind_cache = init_named_individuals(individuals_cache_size)
 
         # @TODO: We do not need to store all individuals
@@ -595,59 +600,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
     # def encode_learning_problem(self, lp: AbstractLearningProblem):
     #     raise NotImplementedError(lp)
 
-    def encode_learning_problem(self, lp: PosNegLPStandard):
-        """
-        @TODO: A learning problem (DL concept learning problem) should not be a part of a knowledge base
-
-        Provides the encoded learning problem (lp), i.e. the class containing the set of OWLNamedIndividuals
-        as follows:
-            kb_pos --> the positive examples set,
-            kb_neg --> the negative examples set,
-            kb_all --> all lp individuals / all individuals set,
-            kb_diff --> kb_all - (kb_pos + kb_neg).
-        Note:
-            Simple access of the learning problem individuals divided in respective sets.
-            You will need the encoded learning problem to use the method evaluate_concept of this class.
-        Args:
-            lp (PosNegLPStandard): The learning problem.
-        Return:
-            EncodedPosNegLPStandard: The encoded learning problem.
-        """
-        if lp.all is None:
-            kb_all = {i for i in self.individuals()}
-        else:
-            kb_all = self.individuals_set(lp.all)
-
-        assert 0 < len(lp.pos) < len(kb_all) and len(kb_all) > len(
-            lp.neg), f"|Pos|:{len(lp.pos)}\t|Neg|:{len(lp.neg)}\tAllIndv {len(kb_all)}Learning problem"
-        if logger.isEnabledFor(logging.INFO):
-            r = DLSyntaxObjectRenderer()
-            logger.info('E^+:[ {0} ]'.format(', '.join(map(r.render, lp.pos))))
-            logger.info('E^-:[ {0} ]'.format(', '.join(map(r.render, lp.neg))))
-
-        kb_pos = self.individuals_set(lp.pos)
-        if len(lp.neg) == 0:  # if negatives are not provided, randomly sample.
-            kb_neg = type(kb_all)(random.sample(list(kb_all), len(kb_pos)))
-        else:
-            kb_neg = self.individuals_set(lp.neg)
-
-        try:
-            assert len(kb_pos) == len(lp.pos)
-        except AssertionError:
-            print(lp.pos)
-            print(kb_pos)
-            print(kb_all)
-            print('Assertion error. Exiting.')
-            raise
-        if lp.neg:
-            assert len(kb_neg) == len(lp.neg)
-
-        return EncodedPosNegLPStandard(
-            kb_pos=kb_pos,
-            kb_neg=kb_neg,
-            kb_all=kb_all,
-            kb_diff=kb_all.difference(kb_pos.union(kb_neg)))
-
     def evaluate_concept(self, concept: OWLClassExpression, quality_func: AbstractScorer,
                          encoded_learning_problem: EncodedLearningProblem) -> EvaluatedConcept:
         """Evaluates a concept by using the encoded learning problem examples, in terms of Accuracy or F1-score.
@@ -1029,6 +981,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Object properties.
         """
+        # @TODO:CD: Everytime this function is called we iterate over object properties and create an object:
+        # @TODO: This should be avoided.
         properties = set(self.get_object_properties())
         yield from (pe for pe in self.reasoner.ind_object_properties(ind, direct) if pe in properties)
 
@@ -1044,6 +998,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Data properties.
         """
+        # @TODO:CD: Everytime this function is called we iterate over data properties and create an object:
+        # @TODO: This should be avoided.
         properties = set(self.get_data_properties())
         yield from (pe for pe in self.reasoner.ind_data_properties(ind, direct) if pe in properties)
 
@@ -1100,5 +1056,60 @@ class KnowledgeBase(AbstractKnowledgeBase):
         return f'KnowledgeBase(path={repr(self.path)} <{class_count} classes, {properties_count} properties, ' \
                f'{individuals_count} individuals)'
 
+    # TODO:CD:Functions below should be removed in our next release
     def individuals_count(self) -> int:
         return len(self.individuals())
+
+
+    def encode_learning_problem(self, lp: PosNegLPStandard):
+        """
+        @TODO: A learning problem (DL concept learning problem) should not be a part of a knowledge base
+
+        Provides the encoded learning problem (lp), i.e. the class containing the set of OWLNamedIndividuals
+        as follows:
+            kb_pos --> the positive examples set,
+            kb_neg --> the negative examples set,
+            kb_all --> all lp individuals / all individuals set,
+            kb_diff --> kb_all - (kb_pos + kb_neg).
+        Note:
+            Simple access of the learning problem individuals divided in respective sets.
+            You will need the encoded learning problem to use the method evaluate_concept of this class.
+        Args:
+            lp (PosNegLPStandard): The learning problem.
+        Return:
+            EncodedPosNegLPStandard: The encoded learning problem.
+        """
+        if lp.all is None:
+            kb_all = {i for i in self.individuals()}
+        else:
+            kb_all = self.individuals_set(lp.all)
+
+        assert 0 < len(lp.pos) < len(kb_all) and len(kb_all) > len(
+            lp.neg), f"|Pos|:{len(lp.pos)}\t|Neg|:{len(lp.neg)}\tAllIndv {len(kb_all)}Learning problem"
+        if logger.isEnabledFor(logging.INFO):
+            r = DLSyntaxObjectRenderer()
+            logger.info('E^+:[ {0} ]'.format(', '.join(map(r.render, lp.pos))))
+            logger.info('E^-:[ {0} ]'.format(', '.join(map(r.render, lp.neg))))
+
+        kb_pos = self.individuals_set(lp.pos)
+        if len(lp.neg) == 0:  # if negatives are not provided, randomly sample.
+            kb_neg = type(kb_all)(random.sample(list(kb_all), len(kb_pos)))
+        else:
+            kb_neg = self.individuals_set(lp.neg)
+
+        try:
+            assert len(kb_pos) == len(lp.pos)
+        except AssertionError:
+            print(lp.pos)
+            print(kb_pos)
+            print(kb_all)
+            print('Assertion error. Exiting.')
+            raise
+        if lp.neg:
+            assert len(kb_neg) == len(lp.neg)
+
+        return EncodedPosNegLPStandard(
+            kb_pos=kb_pos,
+            kb_neg=kb_neg,
+            kb_all=kb_all,
+            kb_diff=kb_all.difference(kb_pos.union(kb_neg)))
