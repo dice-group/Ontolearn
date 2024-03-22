@@ -68,7 +68,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     name: ClassVar[str]
 
     kb: KnowledgeBase
-    quality_func: Optional[AbstractScorer]
+    quality_func: Optional[Callable]
     max_num_of_concepts_tested: Optional[int]
     terminate_on_goal: Optional[bool]
     _goal_found: bool
@@ -80,7 +80,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     def __init__(self,
                  knowledge_base: KnowledgeBase,
                  reasoner: Optional[OWLReasoner] = None,
-                 quality_func: Optional[AbstractScorer] = None,
+                 quality_func: Optional[Callable] = None,
                  max_num_of_concepts_tested: Optional[int] = None,
                  max_runtime: Optional[int] = None,
                  terminate_on_goal: Optional[bool] = None):

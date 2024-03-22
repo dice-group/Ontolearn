@@ -27,7 +27,7 @@ class EncodedPosNegLPStandardKind(EncodedLearningProblem, metaclass=ABCMeta):
     __slots__ = ()
 
 
-# @TODO: Why we need Generic[_N] and if we need it why we di not use it in all other abstract classes?
+# @TODO: CD: AbstractScorer will be removed
 class AbstractScorer(Generic[_N], metaclass=ABCMeta):
     """
     An abstract class for quality functions.
@@ -336,11 +336,14 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
 
     def describe(self) -> None:
         """Print a short description of the Knowledge Base to the info logger output."""
-        properties_count = iter_count(self.ontology.object_properties_in_signature()) + iter_count(
-            self.ontology.data_properties_in_signature())
-        logger.info(f'Number of named classes: {iter_count(self.ontology.classes_in_signature())}\n'
-                    f'Number of individuals: {iter_count(self.ontology.individuals_in_signature())}\n'
-                    f'Number of properties: {properties_count}')
+        num_named_classes=iter_count(self.ontology.classes_in_signature())
+        num_individuals=iter_count(self.ontology.individuals_in_signature())
+        num_object_properties=iter_count(self.ontology.object_properties_in_signature())
+        num_data_properties= iter_count(self.ontology.data_properties_in_signature())
+        logger.info(f'Number of named classes: {num_named_classes}\n'
+                    f'Number of individuals: {num_individuals}\n'
+                    f'Number of Object Properties: {num_object_properties}'
+                    f'Number of Data Properties: {num_data_properties}')
 
     @abstractmethod
     def clean(self) -> None:

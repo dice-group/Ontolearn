@@ -1,9 +1,11 @@
 """Quality metrics for concept learners."""
-from typing import Final, Tuple
+from typing import Final, Tuple, Set
 
 from .abstracts import AbstractScorer
+from owlapy.model import OWLNamedIndividual
 
-
+# @TODO:CD: score2 will be deprecated. score2 is not a meaningful naming.
+# @TODO: CD: metrics should be simple functions.
 class Recall(AbstractScorer):
     """Recall quality function.
 
@@ -49,6 +51,30 @@ class F1(AbstractScorer):
     __slots__ = ()
 
     name: Final = 'F1'
+
+    def __call__(self, individuals:Set[OWLNamedIndividual], pos:Set[OWLNamedIndividual], neg:Set[OWLNamedIndividual])->float:
+
+        tp = len(pos.intersection(individuals))
+        tn = len(neg.difference(individuals))
+
+        fp = len(neg.intersection(individuals))
+        fn = len(pos.difference(individuals))
+
+
+        try:
+            recall = tp / (tp + fn)
+        except ZeroDivisionError:
+            return 0.0
+
+        try:
+            precision = tp / (tp + fp)
+        except ZeroDivisionError:
+            return 0.0
+
+        if precision == 0 or recall == 0:
+            return 0.0
+
+        return 2 * ((precision * recall) / (precision + recall))
 
     def score2(self, tp: int, fn: int, fp: int, tn: int) -> Tuple[bool, float]:
         try:
@@ -114,6 +140,6 @@ class WeightedAccuracy(AbstractScorer):
         ap = tp + fn
         an = fp + tn
 
-        wacc = ((tp/ap) + (tn/an)) / ((tp/ap) + (tn/an) + (fp/an) + (fn/ap))
+        wacc = ((tp / ap) + (tn / an)) / ((tp / ap) + (tn / an) + (fp / an) + (fn / ap))
 
         return True, round(wacc, 5)

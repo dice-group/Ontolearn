@@ -188,7 +188,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
                                                       individuals_per_concept=(self.individuals(i) for i in
                                                                                self.get_concepts()))
         """
-
         self.describe()
 
     def ensure_class_hierarchy(f):

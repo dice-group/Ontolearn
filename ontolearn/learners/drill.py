@@ -4,7 +4,7 @@ from ontolearn.abstracts import AbstractScorer, AbstractNode
 from ontolearn.search import RL_State
 from typing import Set, List, Tuple, Optional, Generator, SupportsFloat, Iterable, FrozenSet
 from owlapy.model import OWLNamedIndividual, OWLClassExpression
-from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
+from ontolearn.learning_problem import PosNegLPStandard
 import torch
 from ontolearn.data_struct import Experience
 from ontolearn.search import DRILLSearchTreePriorityQueue
@@ -33,7 +33,7 @@ class Drill(RefinementBasedConceptLearner):
                  use_card_restrictions=True,
                  card_limit=10,
                  nominals=True,
-                 quality_func: AbstractScorer = None,
+                 quality_func = None,
                  reward_func: object = None,
                  batch_size=None, num_workers: int = 1, pretrained_model_name=None,
                  iter_bound=None, max_num_of_concepts_tested=None, verbose: int = 0, terminate_on_goal=None,
@@ -118,6 +118,9 @@ class Drill(RefinementBasedConceptLearner):
             self.heuristic_func = CeloeBasedReward()
             self.representation_mode = None
 
+        if quality_func is None:
+            quality_func=F1()
+
         RefinementBasedConceptLearner.__init__(self, knowledge_base=knowledge_base,
                                                refinement_operator=refinement_operator,
                                                quality_func=quality_func,
@@ -127,19 +130,12 @@ class Drill(RefinementBasedConceptLearner):
                                                max_num_of_concepts_tested=max_num_of_concepts_tested,
                                                max_runtime=max_runtime)
 
-    def initialize_class_expression_learning_problem(self, pos: Set[OWLNamedIndividual], neg: Set[OWLNamedIndividual]):
-        """
-            Determine the learning problem and initialize the search.
-            1) Convert the string representation of an individuals into the owlready2 representation.
-            2) Sample negative examples if necessary.
-            3) Initialize the root and search tree.
-            """
+    def initialize_class_expression_learning_problem(self, learning_problem: PosNegLPStandard):
         self.clean()
-        assert 0 < len(pos) and 0 < len(neg)
 
         # 1.
         # Generate a Learning Problem
-        self.learning_problem = PosNegLPStandard(pos=set(pos), neg=set(neg)).encode_kb(self.kb)
+        self.learning_problem = learning_problem
         # 2. Obtain embeddings of positive and negative examples.
         if self.pre_trained_kge is None:
             self.emb_pos = None
@@ -168,18 +164,16 @@ class Drill(RefinementBasedConceptLearner):
         if max_runtime:
             assert isinstance(max_runtime, float)
             self.max_runtime = max_runtime
-        # @TODO: CD : We should stop storing individuals in nodes.
         pos_type_counts = Counter(
             [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.pos))])
         neg_type_counts = Counter(
             [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.neg))])
         type_bias = pos_type_counts - neg_type_counts
         # (1) Initialize learning problem
-        root_state = self.initialize_class_expression_learning_problem(pos=learning_problem.pos, neg=learning_problem.neg)
+        root_state = self.initialize_class_expression_learning_problem(learning_problem=learning_problem)
         # (2) Add root state into search tree
         root_state.heuristic = root_state.quality
         self.search_tree.add(root_state)
-
         self.start_time = time.time()
         # (3) Inject Type Bias
         for x in (self.create_rl_state(i, parent_node=root_state) for i in type_bias):
@@ -198,17 +192,15 @@ class Drill(RefinementBasedConceptLearner):
                     return self.terminate()
                 # (2.1) If the next possible RL-state is not a dead end
                 # (2.1.) If the refinement of (1) is not equivalent to \bottom
+                # Compute quality
+                self.compute_quality_of_class_expression(ref)
+                if ref.quality == 0:
+                    continue
+                next_possible_states.append(ref)
 
-                if len(ref.instances):
-                    # Compute quality
-                    self.compute_quality_of_class_expression(ref)
-                    if ref.quality == 0:
-                        continue
-                    next_possible_states.append(ref)
-
-                    if self.stop_at_goal:
-                        if ref.quality == 1.0:
-                            break
+                if self.stop_at_goal:
+                    if ref.quality == 1.0:
+                        break
             try:
                 assert len(next_possible_states) > 0
             except AssertionError:
@@ -306,22 +298,23 @@ class Drill(RefinementBasedConceptLearner):
                         is_root: bool = False) -> RL_State:
         """ Create an RL_State instance."""
         instances: Generator
-        instances = set(self.kb.individuals(c))
+        # CD: We cannot effort to store individals/instances at large scale applications
+        # instances = set(self.kb.individuals(c))
         instances_bitset: FrozenSet[OWLNamedIndividual]
-        instances_bitset = self.kb.individuals_set(c)
+        # instances_bitset = self.kb.individuals_set(c)
         if self.pre_trained_kge is not None:
             raise NotImplementedError("No pre-trained knowledge")
 
-        rl_state = RL_State(c, parent_node=parent_node,
-                            is_root=is_root,
-                            instances=instances,
-                            instances_bitset=instances_bitset, embeddings=None)
+        rl_state = RL_State(c, parent_node=parent_node, is_root=is_root, embeddings=None)
         rl_state.length = self.kb.concept_len(c)
         return rl_state
 
     def compute_quality_of_class_expression(self, state: RL_State) -> None:
         """ Compute Quality of owl class expression."""
-        self.quality_func.apply(state, state.instances_bitset, self.learning_problem)
+        individuals={i for i in self.kb.individuals(state.concept)}
+        state.quality=self.quality_func(individuals=individuals,
+                                        pos=self.learning_problem.pos,
+                                        neg=self.learning_problem.neg)
         self._number_of_tested_concepts += 1
 
     def apply_refinement(self, rl_state: RL_State) -> Generator:
@@ -405,7 +398,7 @@ class Drill(RefinementBasedConceptLearner):
         else:
             for i in next_rl_states:
                 print(i)
-            exit(1)
+            raise RuntimeError("WRONG")
 
     def sequence_of_actions(self, root_rl_state: RL_State) -> Tuple[List[Tuple[AbstractNode, AbstractNode]],
     List[SupportsFloat]]:

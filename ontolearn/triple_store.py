@@ -2,7 +2,9 @@
 import logging
 import re
 from itertools import chain
-from typing import Iterable, Set, Generator
+from typing import Iterable, Set, Generator, Dict, List, Optional
+import traceback
+import owlapy.model
 import requests
 from requests import Response
 from requests.exceptions import RequestException, JSONDecodeError
@@ -17,13 +19,20 @@ from owlapy.model import OWLObjectPropertyRangeAxiom, OWLDataProperty, \
     OWLEquivalentClassesAxiom, OWLObjectProperty, OWLProperty, OWLDatatype
 from owlapy.util import iter_count
 from tqdm import tqdm
+import rdflib
+
+from ontolearn.concept_generator import ConceptGenerator
+from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
 
 logger = logging.getLogger(__name__)
 
+rdf_prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n "
 rdfs_prefix = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n "
 owl_prefix = "PREFIX owl: <http://www.w3.org/2002/07/owl#>\n "
-rdf_prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n "
+xsd_prefix = "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n"
 
+# CD: For the sake of efficient software development.
+limit_posix = ""
 
 def is_valid_url(url) -> bool:
     """
@@ -138,6 +147,23 @@ def suf(direct: bool):
     return " " if direct else "* "
 
 
+def querying_triplestore(url: str, query: str, type_, description: str) -> Generator:
+    """ Sending queries to triplestore """
+    assert description, "Please add a description for the iterator"
+    print(f"Waiting for results of\n{query}")
+    response = requests.post(url,
+                             headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                             data={'query': query + " " + limit_posix}, stream=False)
+    if response.status_code == 200:
+        results: List[Dict]
+        results = response.json()["results"]["bindings"]
+        for d in tqdm(results, desc=description):
+            assert d["x"]["type"] == "uri"
+            yield type_(IRI.create(d["x"]["value"]))
+    else:
+        raise RuntimeError("Request failed with status code:", response.status_code)
+
+
 # @TODO: I dont really understand the benefits keeping OWLOntology, OWLReasonerEx, and KnowledgeBase Classes
 class TripleStoreOntology(OWLOntology):
 
@@ -147,28 +173,24 @@ class TripleStoreOntology(OWLOntology):
         self.url = triplestore_address
 
     def classes_in_signature(self) -> Iterable[OWLClass]:
-        query = owl_prefix + """CONSTRUCT { ?x <dummy1> <dummy2> } WHERE { ?x a owl:Class }"""
-        response = requests.post(self.url, headers={'Content-Type': 'application/x-www-form-urlencoded'},
-                                 data={'query': query}, stream=True)
-        if response.status_code == 200:
-            for byte_triple in tqdm(requests.post(self.url, data={'query': query}, stream=True).iter_lines(),
-                                    "Downloading and parsing OWL named classes"):
-                items = OWLClass(IRI.create(byte_triple.decode("utf-8").split()[0][1:-1]))
-                yield items
-        else:
-            raise RuntimeError("Request failed with status code:", response.status_code)
+        query = owl_prefix + """SELECT DISTINCT ?x WHERE { ?x a owl:Class }"""
+        return querying_triplestore(url=self.url, query=query, type_=OWLClass, description="Parsing owl:Class")
 
     def individuals_in_signature(self) -> Iterable[OWLNamedIndividual]:
-        query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:NamedIndividual.}"
-        yield from get_results_from_ts(self.url, query, OWLNamedIndividual)
+        # owl:OWLNamedIndividual is often missing
+        query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a ?y. ?y a owl:Class.}"
+        yield from querying_triplestore(url=self.url, query=query, type_=OWLNamedIndividual,
+                                        description="Parsing owl:OWLNamedIndividual")
 
     def data_properties_in_signature(self) -> Iterable[OWLDataProperty]:
         query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:DatatypeProperty.}"
-        yield from get_results_from_ts(self.url, query, OWLDataProperty)
+        yield from querying_triplestore(url=self.url, query=query, type_=OWLDataProperty,
+                                        description="Parsing owl:DatatypeProperty")
 
     def object_properties_in_signature(self) -> Iterable[OWLObjectProperty]:
         query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:ObjectProperty.}"
-        yield from get_results_from_ts(self.url, query, OWLObjectProperty)
+        yield from querying_triplestore(url=self.url, query=query, type_=OWLObjectProperty,
+                                        description="Parsing owl:OWLObjectProperty")
 
     def equivalent_classes_axioms(self, c: OWLClass) -> Iterable[OWLEquivalentClassesAxiom]:
         query = owl_prefix + "SELECT DISTINCT ?x" + \
@@ -560,6 +582,7 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         super().__init__(ontology=self.ontology, reasoner=self.reasoner,
                          include_implicit_individuals=include_implicit_individuals,
                          construct_hierarchies=False)
+
     @property
     def ind_set(self):
         return self.reasoner.ind_set
@@ -616,26 +639,140 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         yield from self.reasoner.object_property_values(ind, property_, direct)
 
 
+def rdflib_to_str(sparql_result: rdflib.plugins.sparql.processor.SPARQLResult) -> str:
+    for result_row in sparql_result:
+        str_iri: str
+        yield result_row.x.n3()
+
+
+class TripleStoreReasonerOntology:
+
+    def __init__(self, graph: rdflib.graph.Graph):
+        self.g = graph
+        from owlapy.owl2sparql.converter import Owl2SparqlConverter
+        self.converter = Owl2SparqlConverter()
+
+    def query(self, sparql_query: str) -> rdflib.plugins.sparql.processor.SPARQLResult:
+        return self.g.query(sparql_query)
+
+    def classes_in_signature(self) -> Iterable[OWLClass]:
+        query = owl_prefix + """SELECT DISTINCT ?x WHERE { ?x a owl:Class }"""
+        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
+            assert str_iri[0] == "<" and str_iri[-1] == ">"
+            yield OWLClass(IRI.create(str_iri[1:-1]))
+
+    def subconcepts(self, named_concept: owlapy.model.OWLClass, direct=True):
+        assert isinstance(named_concept, owlapy.model.OWLClass)
+        str_named_concept = f"<{named_concept.get_iri().as_str()}>"
+        if direct:
+            query = f"""{rdfs_prefix} SELECT ?x WHERE {{ ?x rdfs:subClassOf* {str_named_concept}. }} """
+        else:
+            query = f"""{rdf_prefix} SELECT ?x WHERE {{ ?x rdf:subClassOf {str_named_concept}. }} """
+        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
+            assert str_iri[0] == "<" and str_iri[-1] == ">"
+            yield OWLClass(IRI.create(str_iri[1:-1]))
+
+    def get_type_individuals(self, individual: str):
+        query = f"""SELECT DISTINCT ?x WHERE {{ <{individual}> a ?x }}"""
+        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
+            assert str_iri[0] == "<" and str_iri[-1] == ">"
+            yield OWLClass(IRI.create(str_iri[1:-1]))
+
+    def instances(self, expression: OWLClassExpression):
+        assert isinstance(expression, OWLClassExpression)
+        # convert to SPARQL query
+        # (1)
+        try:
+            query = self.converter.as_query("?x", expression)
+        except Exception as exc:
+            # @TODO creating a SPARQL query from OWLObjectMinCardinality causes a problem.
+            print(f"Error at converting {expression} into sparql")
+            traceback.print_exception(exc)
+            print(f"Error at converting {expression} into sparql")
+            query=None
+        if query:
+            for str_iri in rdflib_to_str(sparql_result=self.query(query)):
+                assert str_iri[0] == "<" and str_iri[-1] == ">"
+                yield OWLNamedIndividual(IRI.create(str_iri[1:-1]))
+        else:
+            yield
+
+    def individuals_in_signature(self) -> Iterable[OWLNamedIndividual]:
+        # owl:OWLNamedIndividual is often missing: Perhaps we should add union as well
+        query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a ?y. ?y a owl:Class.}"
+        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
+            assert str_iri[0] == "<" and str_iri[-1] == ">"
+            yield OWLNamedIndividual(IRI.create(str_iri[1:-1]))
+
+    def data_properties_in_signature(self) -> Iterable[OWLDataProperty]:
+        query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:DatatypeProperty.}"
+        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
+            assert str_iri[0] == "<" and str_iri[-1] == ">"
+            yield OWLDataProperty(IRI.create(str_iri[1:-1]))
+
+    def object_properties_in_signature(self) -> Iterable[OWLObjectProperty]:
+        query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:ObjectProperty.}"
+        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
+            assert str_iri[0] == "<" and str_iri[-1] == ">"
+            yield OWLObjectProperty(IRI.create(str_iri[1:-1]))
+
+    def boolean_data_properties(self):
+        # @TODO: Double check the SPARQL query to return all boolean data properties
+        query = rdf_prefix + xsd_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x rdf:type rdf:Property; rdfs:range xsd:boolean}"
+        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
+            assert str_iri[0] == "<" and str_iri[-1] == ">"
+            raise NotImplementedError("Unsure how to represent a boolean data proerty with owlapy")
+            # yield OWLObjectProperty(IRI.create(str_iri[1:-1]))
+
+        yield
+
 class TripleStore:
     """ triple store """
     url: str
-    ontology: TripleStoreOntology
-    reasoner: TripleStoreReasoner
 
-    def __init__(self, triplestore_address: str):
-        self.url = triplestore_address
-        self.ontology = TripleStoreOntology(triplestore_address)
-        self.reasoner = TripleStoreReasoner(self.ontology)
-        self.dbo_prefix = "PREFIX dbo: <http://dbpedia.org/ontology/>\n "
-        self.rdf_prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n"
+    def __init__(self, path: str, url: str = None):
+        if url is not None:
+            raise NotImplementedError("Will be implemented")
+        # Single object to replace the
+        self.g = TripleStoreReasonerOntology(rdflib.Graph().parse(path))
+
+        self.ontology = self.g
+        self.reasoner = self.g
+        # CD: We may want to remove it later. This is required at base_concept_learner.py
+        self.generator = ConceptGenerator()
+        self.length_metric = OWLClassExpressionLengthMetric.get_default()
+
+    def get_object_properties(self):
+        yield from self.reasoner.object_properties_in_signature()
+
+    def get_boolean_data_properties(self):
+        yield from self.reasoner.boolean_data_properties()
+
+    def individuals(self, concept: Optional[OWLClassExpression] = None) -> Iterable[OWLNamedIndividual]:
+        """Given an OWL class expression, retrieve all individuals belonging to it.
+
+
+        Args:
+            concept: Class expression of which to list individuals.
+        Returns:
+            Individuals belonging to the given class.
+        """
+
+        if concept is None or concept.is_owl_thing():
+            yield from self.reasoner.individuals_in_signature()
+        else:
+            yield from self.reasoner.instances(concept)
+
+    def get_types(self, ind: OWLNamedIndividual, direct: True) -> Generator[OWLClass, None, None]:
+        if not direct:
+            raise NotImplementedError("Inferring indirect types not available")
+        return self.reasoner.get_type_individuals(ind.str)
+
+    def get_all_sub_concepts(self, concept: OWLClass, direct=True):
+        yield from self.reasoner.subconcepts(concept, direct)
 
     def named_concepts(self):
-        """ Named Concepts"""
-        yield from self.ontology.classes_in_signature()
-
-    def retrieval(self, expression: OWLClassExpression):
-        """ concept retrieval"""
-        yield from self.reasoner.instances(expression)
+        yield from self.reasoner.classes_in_signature()
 
     def quality_retrieval(self, expression: OWLClass, pos: set[OWLNamedIndividual], neg: set[OWLNamedIndividual]):
         assert isinstance(expression,
@@ -680,3 +817,15 @@ class TripleStore:
         f1 = 0 if precision == 0 or recall == 0 else 2 * ((precision * recall) / (precision + recall))
 
         return f1
+
+    def concept_len(self, ce: OWLClassExpression) -> int:
+        """Calculates the length of a concept and is used by some concept learning algorithms to
+        find the best results considering also the length of the concepts.
+
+        Args:
+            ce: The concept to be measured.
+        Returns:
+            Length of the concept.
+        """
+
+        return self.length_metric.length(ce)
