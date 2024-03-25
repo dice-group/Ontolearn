@@ -15,7 +15,7 @@ render = DLSyntaxObjectRenderer()
 with open("LPs/Family/lps.json") as json_file:
     settings = json.load(json_file)
 # (3) Initialize learner
-model = Drill(knowledge_base=kb)
+model = Drill(knowledge_base=kb,use_nominals=False)
 # (4)
 for str_target_concept, examples in settings['problems'].items():
     p = set(examples['positive_examples'])
