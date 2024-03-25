@@ -324,7 +324,7 @@ class NCESNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, Abst
 class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodeParentRef['RL_State']):
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
     """RL_State node."""
-    __slots__ = '_concept', '_quality', '_heuristic', 'length', 'instances', 'parent_node', 'is_root', '_parent_ref', '__weakref__'
+    __slots__ = '_concept', '_quality', '_heuristic', 'length','parent_node', 'is_root', '_parent_ref', '__weakref__'
 
     def __init__(self, concept: OWLClassExpression, parent_node: Optional['RL_State'] = None,
                  is_root: bool = False, length=None):
@@ -344,18 +344,11 @@ class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodePa
             assert self.parent_node
 
     def __str__(self):
-
-        if self.instances is None:
-            s = 'Not Init.'
-        else:
-            s = len(self.instances)
-
         return "\t".join((
             AbstractNode.__str__(self),
             _NodeConcept.__str__(self),
             _NodeQuality.__str__(self),
             _NodeHeuristic.__str__(self),
-            f'|Instance|:{s}',
             f'Length:{self.length}',
         ))
 
