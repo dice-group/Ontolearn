@@ -2,7 +2,7 @@
 import logging
 import re
 from itertools import chain
-from typing import Iterable, Set
+from typing import Iterable, Set, Optional, Generator, Union, FrozenSet
 import requests
 from requests import Response
 from requests.exceptions import RequestException, JSONDecodeError
@@ -15,15 +15,25 @@ from owlapy.model import OWLObjectPropertyRangeAxiom, OWLDataProperty, \
     OWLObjectInverseOf, OWLClass, \
     IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLClassAxiom, \
     OWLEquivalentClassesAxiom,  OWLObjectProperty, OWLProperty, OWLDatatype
-
+import rdflib
+from ontolearn.concept_generator import ConceptGenerator
+from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
+import traceback
 
 logger = logging.getLogger(__name__)
 
 rdfs_prefix = "PREFIX  rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n "
 owl_prefix = "PREFIX owl: <http://www.w3.org/2002/07/owl#>\n "
 rdf_prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n "
+xsd_prefix = "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n"
 
+# CD: For the sake of efficient software development.
+limit_posix = ""
 
+def rdflib_to_str(sparql_result: rdflib.plugins.sparql.processor.SPARQLResult) -> str:
+    for result_row in sparql_result:
+        str_iri: str
+        yield result_row.x.n3()
 def is_valid_url(url) -> bool:
     """
     Check the validity of a URL.
@@ -458,3 +468,209 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         self.ontology = TripleStoreOntology(triplestore_address)
         self.reasoner = TripleStoreReasoner(self.ontology)
         super().__init__(ontology=self.ontology, reasoner=self.reasoner)
+
+class TripleStoreReasonerOntology:
+
+    def __init__(self, graph: rdflib.graph.Graph):
+        self.g = graph
+        from owlapy.owl2sparql.converter import Owl2SparqlConverter
+        self.converter = Owl2SparqlConverter()
+
+    def query(self, sparql_query: str) -> rdflib.plugins.sparql.processor.SPARQLResult:
+        return self.g.query(sparql_query)
+
+    def classes_in_signature(self) -> Iterable[OWLClass]:
+        query = owl_prefix + """SELECT DISTINCT ?x WHERE { ?x a owl:Class }"""
+        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
+            assert str_iri[0] == "<" and str_iri[-1] == ">"
+            yield OWLClass(IRI.create(str_iri[1:-1]))
+
+    def subconcepts(self, named_concept: OWLClass, direct=True):
+        assert isinstance(named_concept, OWLClass)
+        str_named_concept = f"<{named_concept.get_iri().as_str()}>"
+        if direct:
+            query = f"""{rdfs_prefix} SELECT ?x WHERE {{ ?x rdfs:subClassOf* {str_named_concept}. }} """
+        else:
+            query = f"""{rdf_prefix} SELECT ?x WHERE {{ ?x rdf:subClassOf {str_named_concept}. }} """
+        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
+            assert str_iri[0] == "<" and str_iri[-1] == ">"
+            yield OWLClass(IRI.create(str_iri[1:-1]))
+
+    def get_type_individuals(self, individual: str):
+        query = f"""SELECT DISTINCT ?x WHERE {{ <{individual}> a ?x }}"""
+        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
+            assert str_iri[0] == "<" and str_iri[-1] == ">"
+            yield OWLClass(IRI.create(str_iri[1:-1]))
+
+    def instances(self, expression: OWLClassExpression):
+        assert isinstance(expression, OWLClassExpression)
+        # convert to SPARQL query
+        # (1)
+        try:
+            query = self.converter.as_query("?x", expression)
+        except Exception as exc:
+            # @TODO creating a SPARQL query from OWLObjectMinCardinality causes a problem.
+            print(f"Error at converting {expression} into sparql")
+            traceback.print_exception(exc)
+            print(f"Error at converting {expression} into sparql")
+            query=None
+        if query:
+            for str_iri in rdflib_to_str(sparql_result=self.query(query)):
+                assert str_iri[0] == "<" and str_iri[-1] == ">"
+                yield OWLNamedIndividual(IRI.create(str_iri[1:-1]))
+        else:
+            yield
+
+    def individuals_in_signature(self) -> Iterable[OWLNamedIndividual]:
+        # owl:OWLNamedIndividual is often missing: Perhaps we should add union as well
+        query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a ?y. ?y a owl:Class.}"
+        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
+            assert str_iri[0] == "<" and str_iri[-1] == ">"
+            yield OWLNamedIndividual(IRI.create(str_iri[1:-1]))
+
+    def data_properties_in_signature(self) -> Iterable[OWLDataProperty]:
+        query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:DatatypeProperty.}"
+        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
+            assert str_iri[0] == "<" and str_iri[-1] == ">"
+            yield OWLDataProperty(IRI.create(str_iri[1:-1]))
+
+    def object_properties_in_signature(self) -> Iterable[OWLObjectProperty]:
+        query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:ObjectProperty.}"
+        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
+            assert str_iri[0] == "<" and str_iri[-1] == ">"
+            yield OWLObjectProperty(IRI.create(str_iri[1:-1]))
+
+    def boolean_data_properties(self):
+        # @TODO: Double check the SPARQL query to return all boolean data properties
+        query = rdf_prefix + xsd_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x rdf:type rdf:Property; rdfs:range xsd:boolean}"
+        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
+            assert str_iri[0] == "<" and str_iri[-1] == ">"
+            raise NotImplementedError("Unsure how to represent a boolean data proerty with owlapy")
+            # yield OWLObjectProperty(IRI.create(str_iri[1:-1]))
+
+        yield
+
+
+class TripleStore:
+    """ triple store """
+    url: str
+
+    def __init__(self, path: str, url: str = None):
+        if url is not None:
+            raise NotImplementedError("Will be implemented")
+        # Single object to replace the
+        self.g = TripleStoreReasonerOntology(rdflib.Graph().parse(path))
+
+        self.ontology = self.g
+        self.reasoner = self.g
+        # CD: We may want to remove it later. This is required at base_concept_learner.py
+        self.generator = ConceptGenerator()
+        self.length_metric = OWLClassExpressionLengthMetric.get_default()
+
+    def get_object_properties(self):
+        yield from self.reasoner.object_properties_in_signature()
+
+    def get_boolean_data_properties(self):
+        yield from self.reasoner.boolean_data_properties()
+
+    def individuals(self, concept: Optional[OWLClassExpression] = None) -> Iterable[OWLNamedIndividual]:
+        """Given an OWL class expression, retrieve all individuals belonging to it.
+
+
+        Args:
+            concept: Class expression of which to list individuals.
+        Returns:
+            Individuals belonging to the given class.
+        """
+
+        if concept is None or concept.is_owl_thing():
+            yield from self.reasoner.individuals_in_signature()
+        else:
+            yield from self.reasoner.instances(concept)
+
+    def get_types(self, ind: OWLNamedIndividual, direct: True) -> Generator[OWLClass, None, None]:
+        if not direct:
+            raise NotImplementedError("Inferring indirect types not available")
+        return self.reasoner.get_type_individuals(ind.str)
+
+    def get_all_sub_concepts(self, concept: OWLClass, direct=True):
+        yield from self.reasoner.subconcepts(concept, direct)
+
+    def named_concepts(self):
+        yield from self.reasoner.classes_in_signature()
+
+    def quality_retrieval(self, expression: OWLClass, pos: set[OWLNamedIndividual], neg: set[OWLNamedIndividual]):
+        assert isinstance(expression,
+                          OWLClass), "Currently we can only compute the F1 score of a named concepts given pos and neg"
+
+        sparql_str = f"{self.dbo_prefix}{self.rdf_prefix}"
+        num_pos = len(pos)
+        str_concept_reminder = expression.get_iri().get_remainder()
+
+        str_concept = expression.get_iri().as_str()
+        str_pos = " ".join(("<" + i.str + ">" for i in pos))
+        str_neg = " ".join(("<" + i.str + ">" for i in neg))
+
+        # TODO
+        sparql_str += f"""
+        SELECT ?tp ?fp ?fn
+        WHERE {{ 
+
+        {{SELECT DISTINCT (COUNT(?var) as ?tp) ( {num_pos}-COUNT(?var) as ?fn) 
+        WHERE {{ VALUES ?var {{ {str_pos} }} ?var rdf:type dbo:{str_concept_reminder} .}} }}
+
+        {{SELECT DISTINCT (COUNT(?var) as ?fp)
+        WHERE {{ VALUES ?var  {{ {str_neg} }} ?var rdf:type dbo:{str_concept_reminder} .}} }}
+
+        }}
+        """
+
+        response = requests.post('http://dice-dbpedia.cs.upb.de:9080/sparql', auth=("", ""),
+                                 data=sparql_str,
+                                 headers={"Content-Type": "application/sparql-query"})
+        bindings = response.json()["results"]["bindings"]
+        assert len(bindings) == 1
+        results = bindings.pop()
+        assert len(results) == 3
+        tp = int(results["tp"]["value"])
+        fp = int(results["fp"]["value"])
+        fn = int(results["fn"]["value"])
+        # Compute recall (Sensitivity): Relevant retrieved instances / all relevant instances.
+        recall = 0 if (tp + fn) == 0 else tp / (tp + fn)
+        # Compute recall (Sensitivity): Relevant retrieved instances / all retrieved instances.
+        precision = 0 if (tp + fp) == 0 else tp / (tp + fp)
+        f1 = 0 if precision == 0 or recall == 0 else 2 * ((precision * recall) / (precision + recall))
+
+        return f1
+
+    def concept_len(self, ce: OWLClassExpression) -> int:
+        """Calculates the length of a concept and is used by some concept learning algorithms to
+        find the best results considering also the length of the concepts.
+
+        Args:
+            ce: The concept to be measured.
+        Returns:
+            Length of the concept.
+        """
+
+        return self.length_metric.length(ce)
+
+    def individuals_set(self,arg: Union[Iterable[OWLNamedIndividual], OWLNamedIndividual, OWLClassExpression]) -> FrozenSet:
+        """Retrieve the individuals specified in the arg as a frozenset. If `arg` is an OWLClassExpression then this
+        method behaves as the method "individuals" but will return the final result as a frozenset.
+
+        Args:
+            arg: more than one individual/ single individual/ class expression of which to list individuals.
+        Returns:
+            Frozenset of the individuals depending on the arg type.
+
+        UPDATE: CD: This function should be deprecated it does not introduce any new functionality but coves a rewriting
+        ,e .g. if args needs to be a frozen set, doing frozenset(arg) solves this need without introducing this function
+        """
+
+        if isinstance(arg, OWLClassExpression):
+            return frozenset(self.individuals(arg))
+        elif isinstance(arg, OWLNamedIndividual):
+            return frozenset({arg})
+        else:
+            return frozenset(arg)

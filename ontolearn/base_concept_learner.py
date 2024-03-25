@@ -195,7 +195,6 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         Once finished, the results can be queried with the `best_hypotheses` function."""
         pass
-
     @abstractmethod
     def best_hypotheses(self, n=10) -> Iterable[_N]:
         """Get the current best found hypotheses according to the quality.
@@ -205,6 +204,9 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         Returns:
             Iterable with hypotheses in form of search tree nodes.
+
+        @TODO: We need to write a a decorator for this function to convert each object into an instance of OWLclass epxression
+
         """
         pass
 
