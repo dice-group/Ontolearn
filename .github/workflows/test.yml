@@ -23,5 +23,6 @@ jobs:
       - name: Test with pytest
         run: |
           wget https://files.dice-research.org/projects/Ontolearn/KGs.zip
-          unzip KGs.zip
+          wget https://files.dice-research.org/projects/Ontolearn/LPs.zip
+          unzip KGs.zip && unzip LPs.zip
           pytest -p no:warnings -x

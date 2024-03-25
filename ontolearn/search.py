@@ -324,29 +324,17 @@ class NCESNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, Abst
 class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodeParentRef['RL_State']):
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
     """RL_State node."""
-    __slots__ = '_concept', '_quality', '_heuristic', \
-        'embeddings', 'individuals', \
-        'instances_bitset', 'length', 'instances', 'parent_node', 'is_root', '_parent_ref', '__weakref__'
+    __slots__ = '_concept', '_quality', '_heuristic', 'length','parent_node', 'is_root', '_parent_ref', '__weakref__'
 
-    def __init__(self, concept: OWLClassExpression, parent_node: Optional['RL_State'] = None, is_root: bool = False,
-                 embeddings=None, instances: Set = None, instances_bitset: FrozenSet = None, length=None):
+    def __init__(self, concept: OWLClassExpression, parent_node: Optional['RL_State'] = None,
+                 is_root: bool = False, length=None):
         _NodeConcept.__init__(self, concept)
         _NodeQuality.__init__(self)
         _NodeHeuristic.__init__(self)
         _NodeParentRef.__init__(self, parent_node=parent_node, is_root=is_root)
-
-        assert isinstance(instances, set), f"Instances must be a set {type(instances)}"
-        assert isinstance(instances_bitset, frozenset), "Instances must be a set"
-        # TODO: CD _NodeParentRef causes unintended results:
-        #  Without using _NodeParentRef, one can reach the top class expression via recursive calling parent_node
-        #  However, if one uses _NodeParentRef amd comments self.parent_node and self.is_root, we can reach T.
         AbstractNode.__init__(self)
         self.parent_node = parent_node
         self.is_root = is_root
-
-        self.embeddings = embeddings  # tensor
-        self.instances = instances  # list
-        self.instances_bitset = instances_bitset  # bitset
         self.length = length
         self.__sanity_checking()
 
@@ -356,18 +344,11 @@ class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodePa
             assert self.parent_node
 
     def __str__(self):
-
-        if self.instances is None:
-            s = 'Not Init.'
-        else:
-            s = len(self.instances)
-
         return "\t".join((
             AbstractNode.__str__(self),
             _NodeConcept.__str__(self),
             _NodeQuality.__str__(self),
             _NodeHeuristic.__str__(self),
-            f'|Instance|:{s}',
             f'Length:{self.length}',
         ))
 

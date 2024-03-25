@@ -2,7 +2,7 @@ from ontolearn.base_concept_learner import RefinementBasedConceptLearner
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.abstracts import AbstractScorer, AbstractNode
 from ontolearn.search import RL_State
-from typing import Set, List, Tuple, Optional, Generator, SupportsFloat, Iterable, FrozenSet
+from typing import Set, List, Tuple, Optional, Generator, SupportsFloat, Iterable, FrozenSet, Callable
 from owlapy.model import OWLNamedIndividual, OWLClassExpression
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 import torch
@@ -15,11 +15,14 @@ import time
 import dicee
 import os
 from owlapy.render import DLSyntaxObjectRenderer
+# F1 class will be deprecated to become compute_f1_score function.
 from ontolearn.metrics import F1
+from ontolearn.utils.static_funcs import compute_f1_score
 import random
 from ontolearn.heuristics import CeloeBasedReward
 import torch
 from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
+
 
 class Drill(RefinementBasedConceptLearner):
     """ Neuro-Symbolic Class Expression Learning (https://www.ijcai.org/proceedings/2023/0403.pdf)"""
@@ -32,8 +35,8 @@ class Drill(RefinementBasedConceptLearner):
                  use_data_properties=True,
                  use_card_restrictions=True,
                  card_limit=10,
-                 nominals=True,
-                 quality_func: AbstractScorer = None,
+                 use_nominals=True,
+                 quality_func: Callable = None,  # Abstractscore will be deprecated.
                  reward_func: object = None,
                  batch_size=None, num_workers: int = 1, pretrained_model_name=None,
                  iter_bound=None, max_num_of_concepts_tested=None, verbose: int = 0, terminate_on_goal=None,
@@ -65,7 +68,7 @@ class Drill(RefinementBasedConceptLearner):
                                                         use_card_restrictions=use_card_restrictions,
                                                         card_limit=card_limit,
                                                         use_inverse=use_inverse,
-                                                        nominals=nominals)
+                                                        use_nominals=use_nominals)
         else:
             refinement_operator = refinement_operator
 
@@ -74,6 +77,7 @@ class Drill(RefinementBasedConceptLearner):
             self.reward_func = CeloeBasedReward()
         else:
             self.reward_func = reward_func
+
         # (4) Params.
         self.num_workers = num_workers
         self.learning_rate = learning_rate
@@ -93,7 +97,7 @@ class Drill(RefinementBasedConceptLearner):
         self.storage_path, _ = create_experiment_folder()
         self.search_tree = DRILLSearchTreePriorityQueue()
         self.renderer = DLSyntaxObjectRenderer()
-        self.stop_at_goal=stop_at_goal
+        self.stop_at_goal = stop_at_goal
 
         if self.pre_trained_kge:
             self.representation_mode = "averaging"
@@ -117,7 +121,7 @@ class Drill(RefinementBasedConceptLearner):
         else:
             self.heuristic_func = CeloeBasedReward()
             self.representation_mode = None
-
+        # @CD: RefinementBasedConceptLearner redefines few attributes this should be avoided.
         RefinementBasedConceptLearner.__init__(self, knowledge_base=knowledge_base,
                                                refinement_operator=refinement_operator,
                                                quality_func=quality_func,
@@ -126,6 +130,9 @@ class Drill(RefinementBasedConceptLearner):
                                                iter_bound=iter_bound,
                                                max_num_of_concepts_tested=max_num_of_concepts_tested,
                                                max_runtime=max_runtime)
+        # CD: This setting the valiable will be removed later.
+        self.quality_func = compute_f1_score
+
 
     def initialize_class_expression_learning_problem(self, pos: Set[OWLNamedIndividual], neg: Set[OWLNamedIndividual]):
         """
@@ -137,9 +144,9 @@ class Drill(RefinementBasedConceptLearner):
         self.clean()
         assert 0 < len(pos) and 0 < len(neg)
 
-        # 1.
+        # 1. CD: PosNegLPStandard will be deprecated.
         # Generate a Learning Problem
-        self.learning_problem = PosNegLPStandard(pos=set(pos), neg=set(neg)).encode_kb(self.kb)
+        self.learning_problem = PosNegLPStandard(pos=set(pos), neg=set(neg))
         # 2. Obtain embeddings of positive and negative examples.
         if self.pre_trained_kge is None:
             self.emb_pos = None
@@ -175,7 +182,8 @@ class Drill(RefinementBasedConceptLearner):
             [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.neg))])
         type_bias = pos_type_counts - neg_type_counts
         # (1) Initialize learning problem
-        root_state = self.initialize_class_expression_learning_problem(pos=learning_problem.pos, neg=learning_problem.neg)
+        root_state = self.initialize_class_expression_learning_problem(pos=learning_problem.pos,
+                                                                       neg=learning_problem.neg)
         # (2) Add root state into search tree
         root_state.heuristic = root_state.quality
         self.search_tree.add(root_state)
@@ -199,16 +207,13 @@ class Drill(RefinementBasedConceptLearner):
                 # (2.1) If the next possible RL-state is not a dead end
                 # (2.1.) If the refinement of (1) is not equivalent to \bottom
 
-                if len(ref.instances):
-                    # Compute quality
-                    self.compute_quality_of_class_expression(ref)
-                    if ref.quality == 0:
-                        continue
-                    next_possible_states.append(ref)
-
-                    if self.stop_at_goal:
-                        if ref.quality == 1.0:
-                            break
+                self.compute_quality_of_class_expression(ref)
+                if ref.quality == 0:
+                    continue
+                next_possible_states.append(ref)
+                if self.stop_at_goal:
+                    if ref.quality == 1.0:
+                        break
             try:
                 assert len(next_possible_states) > 0
             except AssertionError:
@@ -305,24 +310,23 @@ class Drill(RefinementBasedConceptLearner):
     def create_rl_state(self, c: OWLClassExpression, parent_node: Optional[RL_State] = None,
                         is_root: bool = False) -> RL_State:
         """ Create an RL_State instance."""
-        instances: Generator
-        instances = set(self.kb.individuals(c))
-        instances_bitset: FrozenSet[OWLNamedIndividual]
-        instances_bitset = self.kb.individuals_set(c)
-
         if self.pre_trained_kge is not None:
             raise NotImplementedError("No pre-trained knowledge")
-
-        rl_state = RL_State(c, parent_node=parent_node,
-                            is_root=is_root,
-                            instances=instances,
-                            instances_bitset=instances_bitset, embeddings=None)
+        rl_state = RL_State(c, parent_node=parent_node, is_root=is_root)
         rl_state.length = self.kb.concept_len(c)
         return rl_state
 
     def compute_quality_of_class_expression(self, state: RL_State) -> None:
-        """ Compute Quality of owl class expression."""
-        self.quality_func.apply(state, state.instances_bitset, self.learning_problem)
+        """ Compute Quality of owl class expression.
+        # (1) Perform concept retrieval
+        # (2) Compute the quality w.r.t. (1), positive and negative examples
+        # (3) Increment the number of tested concepts attribute.
+
+        """
+        individuals = frozenset({i for i in self.kb.individuals(state.concept)})
+        quality = self.quality_func(individuals=individuals, pos=self.learning_problem.pos,
+                                    neg=self.learning_problem.neg)
+        state.quality=quality
         self._number_of_tested_concepts += 1
 
     def apply_refinement(self, rl_state: RL_State) -> Generator:

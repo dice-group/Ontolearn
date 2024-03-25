@@ -69,25 +69,32 @@ def compute_tp_fn_fp_tn(individuals, pos, neg):
     return tp, fn, fp, tn
 
 
-def compute_f1_score(individuals, pos, neg):
+def compute_f1_score(individuals, pos, neg)->float:
+    """ Compute F1-score of a concept
+    """
+    assert type(individuals)==type(pos)==type(neg), f"Types must match:{type(individuals)},{type(pos)},{type(neg)}"
+    # true positive: |E^+ AND R(C)  |
     tp = len(pos.intersection(individuals))
+    # true negative : |E^- AND R(C)|
     tn = len(neg.difference(individuals))
 
+    # false positive : |E^- AND R(C)|
     fp = len(neg.intersection(individuals))
+    # false negative : |E^- \ R(C)|
     fn = len(pos.difference(individuals))
 
     try:
         recall = tp / (tp + fn)
     except ZeroDivisionError:
-        return 0
+        return 0.0
 
     try:
         precision = tp / (tp + fp)
     except ZeroDivisionError:
-        return 0
+        return 0.0
 
     if precision == 0 or recall == 0:
-        return 0
+        return 0.0
 
     f_1 = 2 * ((precision * recall) / (precision + recall))
     return f_1
