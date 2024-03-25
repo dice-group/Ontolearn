@@ -35,7 +35,7 @@ class Drill(RefinementBasedConceptLearner):
                  use_data_properties=True,
                  use_card_restrictions=True,
                  card_limit=10,
-                 nominals=True,
+                 use_nominals=True,
                  quality_func: Callable = None,  # Abstractscore will be deprecated.
                  reward_func: object = None,
                  batch_size=None, num_workers: int = 1, pretrained_model_name=None,
@@ -68,7 +68,7 @@ class Drill(RefinementBasedConceptLearner):
                                                         use_card_restrictions=use_card_restrictions,
                                                         card_limit=card_limit,
                                                         use_inverse=use_inverse,
-                                                        nominals=nominals)
+                                                        use_nominals=use_nominals)
         else:
             refinement_operator = refinement_operator
 
@@ -207,16 +207,13 @@ class Drill(RefinementBasedConceptLearner):
                 # (2.1) If the next possible RL-state is not a dead end
                 # (2.1.) If the refinement of (1) is not equivalent to \bottom
 
-                if len(ref.instances):
-                    # Compute quality
-                    self.compute_quality_of_class_expression(ref)
-                    if ref.quality == 0:
-                        continue
-                    next_possible_states.append(ref)
-
-                    if self.stop_at_goal:
-                        if ref.quality == 1.0:
-                            break
+                self.compute_quality_of_class_expression(ref)
+                if ref.quality == 0:
+                    continue
+                next_possible_states.append(ref)
+                if self.stop_at_goal:
+                    if ref.quality == 1.0:
+                        break
             try:
                 assert len(next_possible_states) > 0
             except AssertionError:
@@ -313,18 +310,9 @@ class Drill(RefinementBasedConceptLearner):
     def create_rl_state(self, c: OWLClassExpression, parent_node: Optional[RL_State] = None,
                         is_root: bool = False) -> RL_State:
         """ Create an RL_State instance."""
-        instances: Generator
-        instances = set(self.kb.individuals(c))
-        instances_bitset: FrozenSet[OWLNamedIndividual]
-        instances_bitset = self.kb.individuals_set(c)
-
         if self.pre_trained_kge is not None:
             raise NotImplementedError("No pre-trained knowledge")
-
-        rl_state = RL_State(c, parent_node=parent_node,
-                            is_root=is_root,
-                            instances=instances,
-                            instances_bitset=instances_bitset, embeddings=None)
+        rl_state = RL_State(c, parent_node=parent_node, is_root=is_root)
         rl_state.length = self.kb.concept_len(c)
         return rl_state
 

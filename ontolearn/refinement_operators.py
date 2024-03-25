@@ -28,15 +28,18 @@ from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVoca
 class LengthBasedRefinement(BaseRefinement):
     """ A top-down refinement operator in ALC."""
 
-    def __init__(self, knowledge_base: KnowledgeBase, use_inverse=False,
-                 use_data_properties=False, use_card_restrictions=False, card_limit=11, nominals=True):
+    def __init__(self, knowledge_base: KnowledgeBase,
+                 use_inverse: bool = False,
+                 use_data_properties: bool = False,
+                 use_card_restrictions: bool = False,
+                 card_limit=11, use_nominals: bool = True):
         super().__init__(knowledge_base)
 
         self.use_inverse = use_inverse
         self.use_data_properties = use_data_properties
         self.use_card_restrictions = use_card_restrictions
         self.card_limit = card_limit
-        self.nominals = nominals
+        self.use_nominals = use_nominals
 
         # 1. Number of named classes and sanity checking
         num_of_named_classes = len(set(i for i in self.kb.ontology.classes_in_signature()))
@@ -112,7 +115,7 @@ class LengthBasedRefinement(BaseRefinement):
                          self.kb.generator.max_cardinality_restriction(c, inverse_role, card),
                          self.kb.generator.exact_cardinality_restriction(c, inverse_role, card)])
 
-        if self.nominals:
+        if self.use_nominals:
             temp = []
             for i in restrictions:
                 for j in self.kb.individuals(i.get_filler()):
