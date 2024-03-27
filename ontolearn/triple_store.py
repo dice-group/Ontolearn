@@ -2,7 +2,7 @@
 import logging
 import re
 from itertools import chain
-from typing import Iterable, Set, Optional, Generator, Union, FrozenSet
+from typing import Iterable, Set, Optional, Generator, Union, FrozenSet, Tuple
 import requests
 from requests import Response
 from requests.exceptions import RequestException, JSONDecodeError
@@ -14,7 +14,7 @@ from owlapy.model import OWLObjectPropertyRangeAxiom, OWLDataProperty, \
     OWLThing, OWLObjectPropertyDomainAxiom, OWLLiteral, \
     OWLObjectInverseOf, OWLClass, \
     IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLClassAxiom, \
-    OWLEquivalentClassesAxiom,  OWLObjectProperty, OWLProperty, OWLDatatype
+    OWLEquivalentClassesAxiom, OWLObjectProperty, OWLProperty, OWLDatatype
 import rdflib
 from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
@@ -30,10 +30,16 @@ xsd_prefix = "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n"
 # CD: For the sake of efficient software development.
 limit_posix = ""
 
+
 def rdflib_to_str(sparql_result: rdflib.plugins.sparql.processor.SPARQLResult) -> str:
+    """
+    @TODO: CD: Not quite sure whether we need this continuent function
+    """
     for result_row in sparql_result:
         str_iri: str
         yield result_row.x.n3()
+
+
 def is_valid_url(url) -> bool:
     """
     Check the validity of a URL.
@@ -235,9 +241,9 @@ class TripleStoreReasoner(OWLReasonerEx):
         if only_named:
             if isinstance(ce, OWLClass):
                 query = owl_prefix + "SELECT DISTINCT ?x " + \
-                           "WHERE { {?x owl:equivalentClass " + f"<{ce.get_iri().as_str()}>.}}" + \
-                           "UNION {" + f"<{ce.get_iri().as_str()}>" + " owl:equivalentClass ?x.}" + \
-                           "FILTER(?x != " + f"<{ce.get_iri().as_str()}>)}}"
+                        "WHERE { {?x owl:equivalentClass " + f"<{ce.get_iri().as_str()}>.}}" + \
+                        "UNION {" + f"<{ce.get_iri().as_str()}>" + " owl:equivalentClass ?x.}" + \
+                        "FILTER(?x != " + f"<{ce.get_iri().as_str()}>)}}"
                 yield from get_results_from_ts(self.url, query, OWLClass)
             else:
                 raise NotImplementedError("Equivalent classes for complex class expressions is not implemented")
@@ -361,7 +367,7 @@ class TripleStoreReasoner(OWLReasonerEx):
             if ce == OWLThing:
                 return []
             query = rdfs_prefix + \
-                "SELECT ?x WHERE { " + f"<{ce.get_iri().as_str()}>" + " rdfs:subClassOf" + suf(direct) + "?x. }"
+                    "SELECT ?x WHERE { " + f"<{ce.get_iri().as_str()}>" + " rdfs:subClassOf" + suf(direct) + "?x. }"
             results = list(get_results_from_ts(self.url, query, OWLClass))
             if ce in results:
                 results.remove(ce)
@@ -389,9 +395,9 @@ class TripleStoreReasoner(OWLReasonerEx):
 
     def disjoint_data_properties(self, dp: OWLDataProperty) -> Iterable[OWLDataProperty]:
         query = owl_prefix + rdf_prefix + "SELECT DISTINCT ?x \n" + \
-            "WHERE{ ?AllDisjointProperties owl:members/rdf:rest*/rdf:first ?x.\n" + \
-            "?AllDisjointProperties owl:members/rdf:rest*/rdf:first" + f"<{dp.get_iri().as_str()}>" + ".\n" + \
-            "FILTER(?x != " + f"<{dp.get_iri().as_str()}>" + ")}"
+                "WHERE{ ?AllDisjointProperties owl:members/rdf:rest*/rdf:first ?x.\n" + \
+                "?AllDisjointProperties owl:members/rdf:rest*/rdf:first" + f"<{dp.get_iri().as_str()}>" + ".\n" + \
+                "FILTER(?x != " + f"<{dp.get_iri().as_str()}>" + ")}"
         yield from get_results_from_ts(self.url, query, OWLDataProperty)
 
     def all_data_property_values(self, pe: OWLDataProperty, direct: bool = True) -> Iterable[OWLLiteral]:
@@ -458,7 +464,6 @@ class TripleStoreReasoner(OWLReasonerEx):
 
 
 class TripleStoreKnowledgeBase(KnowledgeBase):
-
     url: str
     ontology: TripleStoreOntology
     reasoner: TripleStoreReasoner
@@ -469,12 +474,41 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         self.reasoner = TripleStoreReasoner(self.ontology)
         super().__init__(ontology=self.ontology, reasoner=self.reasoner)
 
+
 class TripleStoreReasonerOntology:
 
     def __init__(self, graph: rdflib.graph.Graph):
         self.g = graph
         from owlapy.owl2sparql.converter import Owl2SparqlConverter
         self.converter = Owl2SparqlConverter()
+
+    def concise_bounded_description(self, str_iri: str)-> Generator[Tuple[OWLNamedIndividual, Union[IRI, OWLObjectProperty], Union[OWLClass, OWLNamedIndividual]], None, None]:
+        """
+        https://www.w3.org/submissions/CBD/
+        also see https://docs.aws.amazon.com/neptune/latest/userguide/sparql-query-hints-for-describe.html
+
+        Given a particular node (the starting node) in a particular RDF graph (the source graph),
+        a subgraph of that particular graph, taken to comprise a concise bounded description of the resource denoted by the starting node, can be identified as follows:
+
+        Include in the subgraph all statements in the source graph where the subject of the statement is the starting node;
+        Recursively, for all statements identified in the subgraph thus far having a blank node object, include in the subgraph all statements in the source graph
+        where the subject of the statement is the blank node in question and which are not already included in the subgraph.
+        Recursively, for all statements included in the subgraph thus far, for all reifications of each statement in the source graph, include the concise bounded description beginning from the rdf:Statement node of each reification.
+        his results in a subgraph where the object nodes are either URI references, literals, or blank nodes not serving as the subject of any statement in the graph.
+        """
+        # CD: We can allivate the object creations by creating a dictionary of created instances of
+        for (s, p, o) in self.query(sparql_query=f"""DESCRIBE <{str_iri}>"""):
+            if p.n3() == "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>":
+                assert isinstance(p, rdflib.term.URIRef)
+                assert isinstance(o, rdflib.term.URIRef)
+                yield OWLNamedIndividual(IRI.create(s.n3()[1:-1])), IRI.create(p.n3()[1:-1]), OWLClass(IRI.create(o.n3()[1:-1]))
+            else:
+                assert isinstance(p, rdflib.term.URIRef)
+                assert isinstance(o, rdflib.term.URIRef)
+                # @TODO: CD: Can we safely assume that the object always be owl individuals ?
+                # @TODO: CD: Can we safely assume that the property always be Objet property?
+                yield OWLNamedIndividual(IRI.create(s.n3()[1:-1])), OWLObjectProperty(IRI.create(p.n3()[1:-1])), OWLNamedIndividual(IRI.create(o.n3()[1:-1]))
+
 
     def query(self, sparql_query: str) -> rdflib.plugins.sparql.processor.SPARQLResult:
         return self.g.query(sparql_query)
@@ -513,7 +547,7 @@ class TripleStoreReasonerOntology:
             print(f"Error at converting {expression} into sparql")
             traceback.print_exception(exc)
             print(f"Error at converting {expression} into sparql")
-            query=None
+            query = None
         if query:
             for str_iri in rdflib_to_str(sparql_result=self.query(query)):
                 assert str_iri[0] == "<" and str_iri[-1] == ">"
@@ -566,6 +600,47 @@ class TripleStore:
         # CD: We may want to remove it later. This is required at base_concept_learner.py
         self.generator = ConceptGenerator()
         self.length_metric = OWLClassExpressionLengthMetric.get_default()
+
+    def concise_bounded_description(self, individual: OWLNamedIndividual, mode: str = "native") -> Generator[Tuple[OWLNamedIndividual, Union[IRI, OWLObjectProperty], Union[OWLClass, OWLNamedIndividual]], None, None]:
+        """
+
+        Get the CBD (https://www.w3.org/submissions/CBD/) of a named individual.
+
+        Args:
+            individual (OWLNamedIndividual): Individual to get the abox axioms from.
+            mode (str): The return format.
+             1) 'native' -> returns triples as tuples of owlapy objects,
+             2) 'iri' -> returns triples as tuples of IRIs as string,
+             3) 'axiom' -> triples are represented by owlapy axioms.
+
+        Returns: Iterable of tuples or owlapy axiom, depending on the mode.
+        """
+        assert mode in ['native', 'iri', 'axiom'], "Valid modes are: 'native', 'iri' or 'axiom'"
+        if mode == "native":
+            yield from self.g.concise_bounded_description(str_iri=individual.get_iri().as_str())
+
+
+
+        elif mode == "iri":
+            raise NotImplementedError("Mode==iri has not been implemented yet.")
+            yield from ((i.str, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+                         t.get_iri().as_str()) for t in self.get_types(ind=i, direct=True))
+            for dp in self.get_data_properties_for_ind(ind=i):
+                yield from ((i.str, dp.get_iri().as_str(), literal.get_literal()) for literal in
+                            self.get_data_property_values(i, dp))
+            for op in self.get_object_properties_for_ind(ind=i):
+                yield from ((i.str, op.get_iri().as_str(), ind.get_iri().as_str()) for ind in
+                            self.get_object_property_values(i, op))
+        elif mode == "axiom":
+            raise NotImplementedError("Mode==axiom has not been implemented yet.")
+
+            yield from (OWLClassAssertionAxiom(i, t) for t in self.get_types(ind=i, direct=True))
+            for dp in self.get_data_properties_for_ind(ind=i):
+                yield from (OWLDataPropertyAssertionAxiom(i, dp, literal) for literal in
+                            self.get_data_property_values(i, dp))
+            for op in self.get_object_properties_for_ind(ind=i):
+                yield from (OWLObjectPropertyAssertionAxiom(i, op, ind) for ind in
+                            self.get_object_property_values(i, op))
 
     def get_object_properties(self):
         yield from self.reasoner.object_properties_in_signature()
@@ -655,7 +730,8 @@ class TripleStore:
 
         return self.length_metric.length(ce)
 
-    def individuals_set(self,arg: Union[Iterable[OWLNamedIndividual], OWLNamedIndividual, OWLClassExpression]) -> FrozenSet:
+    def individuals_set(self,
+                        arg: Union[Iterable[OWLNamedIndividual], OWLNamedIndividual, OWLClassExpression]) -> FrozenSet:
         """Retrieve the individuals specified in the arg as a frozenset. If `arg` is an OWLClassExpression then this
         method behaves as the method "individuals" but will return the final result as a frozenset.
 

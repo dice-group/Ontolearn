@@ -3,6 +3,8 @@ import owlapy.model
 import pandas as pd
 import requests
 import json
+
+import ontolearn.triple_store
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.base import OWLOntologyManager_Owlready2
 from owlapy.model import OWLEquivalentClassesAxiom, OWLOntologyManager, OWLOntology, AddImport, OWLImportsDeclaration, \
@@ -12,7 +14,7 @@ from owlapy.model import OWLEquivalentClassesAxiom, OWLOntologyManager, OWLOntol
 # (base) demir@demir:~/Desktop/Softwares/Ontolearn/LD2NL/owl2nl$ ./owl2nl.sh -a ./src/test/resources/best_pred.owl             -u false -o ./src/test/resources/family.owl             -t json -s test_out.json -m rule
 # ./owl2nl.sh -a ./home/demir/Desktop/Softwares/Ontolearn/examples/best_pred.owl -u false -o ./home/demir/Desktop/Softwares/Ontolearn/KGs/Family/family.owl -t json -s test_out.json -m rule
 
-from typing import Dict, Set, Tuple, List, Union, TypeVar, Callable
+from typing import Dict, Set, Tuple, List, Union, TypeVar, Callable, Generator
 from ontolearn.learning_problem import PosNegLPStandard
 import collections
 import matplotlib.pyplot as plt
@@ -138,14 +140,20 @@ class TDL:
     """Tree-based Description Logic Concept Learner"""
 
     def __init__(self, knowledge_base,
-                 dataframe_triples: pd.DataFrame,
-                 kwargs_classifier: dict,
+                 use_inverse: bool = False,
+                 use_data_properties: bool = False,
+                 use_nominals: bool = False,
+                 use_card_restrictions: bool = False,
+                 card_limit=False,
+                 quality_func: Callable = None,
+                 kwargs_classifier: dict = None,
                  max_runtime: int = 1,
                  grid_search_over: dict = None,
                  grid_search_apply: bool = False,
                  report_classification: bool = False,
                  plot_built_tree: bool = False,
                  plotembeddings: bool = False):
+
         if grid_search_over is None and grid_search_apply:
             grid_search_over = {'criterion': ["entropy", "gini", "log_loss"],
                                 "splitter": ["random", "best"],
@@ -153,26 +161,23 @@ class TDL:
                                 "min_samples_leaf": [1, 2, 3, 4, 5, 10],
                                 "max_depth": [1, 2, 3, 4, 5, 10, None]}
         else:
-            grid_search_over=dict()
-        assert isinstance(dataframe_triples, pd.DataFrame), "dataframe_triples must be a Pandas DataFrame"
-        assert isinstance(knowledge_base, KnowledgeBase), "knowledge_base must be a KnowledgeBase instance"
-        assert len(dataframe_triples) > 0, f"length of the dataframe must be greater than 0:{dataframe_triples.shape}"
+            grid_search_over = dict()
+        assert isinstance(knowledge_base, KnowledgeBase) or isinstance(knowledge_base,
+                                                                       ontolearn.triple_store.TripleStore), "knowledge_base must be a KnowledgeBase instance"
         print(f"Knowledge Base: {knowledge_base}")
-        print(f"Matrix representation of knowledge base: {dataframe_triples.shape}")
         self.grid_search_over = grid_search_over
         self.knowledge_base = knowledge_base
-        self.dataframe_triples = dataframe_triples
         self.report_classification = report_classification
         self.plot_built_tree = plot_built_tree
         self.plotembeddings = plotembeddings
         # Mappings from string of IRI to named concepts.
-        self.owl_classes_dict = {c.get_iri().as_str(): c for c in self.knowledge_base.get_concepts()}
+        # self.owl_classes_dict = {c.get_iri().as_str(): c for c in self.knowledge_base.get_concepts()}
         # Mappings from string of IRI to object properties.
-        self.owl_object_property_dict = {p.get_iri().as_str(): p for p in self.knowledge_base.get_object_properties()}
+        # self.owl_object_property_dict = {p.get_iri().as_str(): p for p in self.knowledge_base.get_object_properties()}
         # Mappings from string of IRI to data properties.
-        self.owl_data_property_dict = {p.get_iri().as_str(): p for p in self.knowledge_base.get_data_properties()}
+        # self.owl_data_property_dict = {p.get_iri().as_str(): p for p in self.knowledge_base.get_data_properties()}
         # Mappings from string of IRI to individuals.
-        self.owl_individuals = {i.get_iri().as_str(): i for i in self.knowledge_base.individuals()}
+        # self.owl_individuals = {i.get_iri().as_str(): i for i in self.knowledge_base.individuals()}
         self.dl_render = DLSyntaxObjectRenderer()
         self.manchester_render = ManchesterOWLSyntaxOWLObjectRenderer()
         # Keyword arguments for sklearn Decision tree.
@@ -186,26 +191,29 @@ class TDL:
         self.conjunctive_concepts = None
         # Remove uninformative triples if exists.
         # print("Removing uninformative triples...")
+        """
         self.dataframe_triples = self.dataframe_triples[
             ~((self.dataframe_triples["relation"] == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") & (
                     (self.dataframe_triples["object"] == "http://www.w3.org/2002/07/owl#NamedIndividual") | (
                     self.dataframe_triples["object"] == "http://www.w3.org/2002/07/owl#Thing") | (
                             self.dataframe_triples["object"] == "Ontology")))]
+        """
         # print(f"Matrix representation of knowledge base: {dataframe_triples.shape}")
         self.cbd_mapping: Dict[str, Set[Tuple[str, str]]]
-        self.cbd_mapping = extract_cbd(self.dataframe_triples)
+        # self.cbd_mapping = extract_cbd(self.dataframe_triples)
         self.str_type = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
         # Fix an ordering: Not quite sure whether we needed
-        self.str_individuals = list(self.owl_individuals)
+        # self.str_individuals = list(self.owl_individuals)
         # An entity to a list of tuples of predicate and objects
-        self.first_hop = {k: v for k, v in self.cbd_mapping.items() if k in self.str_individuals}
+        # self.first_hop = {k: v for k, v in self.cbd_mapping.items() if k in self.str_individuals}
         self.types_of_individuals = dict()
-
+        """
+        
         for k, v in self.first_hop.items():
             for relation, tail in v:
                 if relation == self.str_type:
                     self.types_of_individuals.setdefault(k, set()).add(tail)
-
+        """
         self.Xraw = None
 
     def built_sparse_training_data(self, entity_infos: Dict[str, Dict], individuals: List[str],
@@ -468,7 +476,32 @@ class TDL:
         plt.savefig('feature_importance.pdf')
         plt.show()
 
-    def fit(self, lp: PosNegLPStandard = None, max_runtime: int = None):
+    def create_training_data(self, learning_problem: PosNegLPStandard):
+        """
+
+        """
+        X = []
+        y = []
+        features = []
+        # ordered individuals
+        pos = [i for i in learning_problem.pos]
+        neg = [i for i in learning_problem.neg]
+        individuals = pos + neg
+
+        for i in individuals:
+            triples: Generator[Tuple[
+                OWLNamedIndividual, Union[IRI, OWLObjectProperty], Union[OWLClass, OWLNamedIndividual]], None, None]
+            triples = self.knowledge_base.concise_bounded_description(individual=i)
+            for i in triples:
+                print(i)
+            exit(1)
+            exit(1)
+
+            raise NotImplementedError("")
+
+        return pd.DataFrame(data=X, columns=features), pd.DataFrame(data=y)
+
+    def fit(self, learning_problem: PosNegLPStandard = None, max_runtime: int = None):
         """ Fit the learner to the given learning problem
 
         (1) Extract multi-hop information about E^+ and E^- denoted by \mathcal{F}.
@@ -482,20 +515,26 @@ class TDL:
         :param max_runtime:total runtime of the learning
 
         """
-        assert lp is not None, "Learning problem cannot be None."
+        assert learning_problem is not None, "Learning problem cannot be None."
+        assert isinstance(learning_problem,
+                          PosNegLPStandard), f"Learning problem must be PosNegLPStandard. Currently:{learning_problem}."
+
         if max_runtime is not None:
             self.max_runtime = max_runtime
+        # @TODO: write a function that takes learning_problem
+        X: pd.DataFrame
+        y: Union[pd.DataFrame, pd.Series]
+        X, y = self.create_training_data(learning_problem=learning_problem)
 
         str_pos_examples = [i.get_iri().as_str() for i in lp.pos]
         str_neg_examples = [i.get_iri().as_str() for i in lp.neg]
 
         """self.features.extend([(str_r, None) for str_r in self.owl_data_property_dict])"""
         # Nested dictionary [inv][relation]: => [] Dict[str, Dict]
-        hop_info, features = self.construct_hop(str_pos_examples + str_neg_examples)
 
+        hop_info, features = self.construct_hop(str_pos_examples + str_neg_examples)
         # list of tuples having length 2 or 3
         features = list(features)
-
         Xraw = self.built_sparse_training_data(entity_infos=hop_info,
                                                individuals=str_pos_examples + str_neg_examples,
                                                feature_names=features)
