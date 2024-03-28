@@ -19,7 +19,6 @@ import rdflib
 from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
 import traceback
-
 logger = logging.getLogger(__name__)
 
 rdfs_prefix = "PREFIX  rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n "
@@ -477,12 +476,15 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
 
 class TripleStoreReasonerOntology:
 
-    def __init__(self, graph: rdflib.graph.Graph):
+    def __init__(self, graph: rdflib.graph.Graph,url:str=None):
         self.g = graph
-        from owlapy.owl2sparql.converter import Owl2SparqlConverter
+        self.url=url
         self.converter = Owl2SparqlConverter()
+        # A convenience to distinguish type predicate from other predicates in the results of SPARQL query
+        self.type_predicate = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
 
-    def concise_bounded_description(self, str_iri: str)-> Generator[Tuple[OWLNamedIndividual, Union[IRI, OWLObjectProperty], Union[OWLClass, OWLNamedIndividual]], None, None]:
+    def concise_bounded_description(self, str_iri: str) -> Generator[
+        Tuple[OWLNamedIndividual, Union[IRI, OWLObjectProperty], Union[OWLClass, OWLNamedIndividual]], None, None]:
         """
         https://www.w3.org/submissions/CBD/
         also see https://docs.aws.amazon.com/neptune/latest/userguide/sparql-query-hints-for-describe.html
@@ -501,14 +503,46 @@ class TripleStoreReasonerOntology:
             if p.n3() == "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>":
                 assert isinstance(p, rdflib.term.URIRef)
                 assert isinstance(o, rdflib.term.URIRef)
-                yield OWLNamedIndividual(IRI.create(s.n3()[1:-1])), IRI.create(p.n3()[1:-1]), OWLClass(IRI.create(o.n3()[1:-1]))
+                yield OWLNamedIndividual(IRI.create(s.n3()[1:-1])), IRI.create(p.n3()[1:-1]), OWLClass(
+                    IRI.create(o.n3()[1:-1]))
             else:
                 assert isinstance(p, rdflib.term.URIRef)
                 assert isinstance(o, rdflib.term.URIRef)
                 # @TODO: CD: Can we safely assume that the object always be owl individuals ?
                 # @TODO: CD: Can we safely assume that the property always be Objet property?
-                yield OWLNamedIndividual(IRI.create(s.n3()[1:-1])), OWLObjectProperty(IRI.create(p.n3()[1:-1])), OWLNamedIndividual(IRI.create(o.n3()[1:-1]))
+                yield OWLNamedIndividual(IRI.create(s.n3()[1:-1])), OWLObjectProperty(
+                    IRI.create(p.n3()[1:-1])), OWLNamedIndividual(IRI.create(o.n3()[1:-1]))
 
+    def abox(self, str_iri: str) -> Generator[
+        Tuple[OWLNamedIndividual, Union[IRI, OWLObjectProperty], Union[OWLClass, OWLNamedIndividual]], None, None]:
+        """
+        Get all axioms of a given individual being a subject entity
+
+        Args:
+            str_iri (str): An individual
+            mode (str): The return format.
+             1) 'native' -> returns triples as tuples of owlapy objects,
+             2) 'iri' -> returns triples as tuples of IRIs as string,
+             3) 'axiom' -> triples are represented by owlapy axioms.
+
+        Returns: Iterable of tuples or owlapy axiom, depending on the mode.
+        """
+        sparql_query = f"SELECT DISTINCT ?p ?o WHERE {{ <{str_iri}> ?p ?o }}"
+        # CD: Although subject_ is not required. Arguably, it is more in to return also the subject_
+        subject_ = OWLNamedIndividual(IRI.create(str_iri))
+
+        predicate_and_object_pairs: rdflib.query.ResultRow
+        for predicate_and_object_pairs in self.query(sparql_query):
+            p, o = predicate_and_object_pairs
+            assert isinstance(p, rdflib.term.URIRef) and isinstance(o,
+                                                                    rdflib.term.URIRef), f"Currently we only process URIs. Hence, literals, data properties  are ignored. p:{p},o:{o}"
+            str_p = p.n3()
+            str_o = o.n3()
+            if str_p == self.type_predicate:
+                # Remove the brackets <>,<>
+                yield subject_, IRI.create(str_p[1:-1]), OWLClass(IRI.create(str_o[1:-1]))
+            else:
+                yield subject_, OWLObjectProperty(IRI.create(str_p[1:-1])), OWLNamedIndividual(IRI.create(str_o[1:-1]))
 
     def query(self, sparql_query: str) -> rdflib.plugins.sparql.processor.SPARQLResult:
         return self.g.query(sparql_query)
@@ -587,13 +621,16 @@ class TripleStoreReasonerOntology:
 
 class TripleStore:
     """ triple store """
+    path: str
     url: str
 
-    def __init__(self, path: str, url: str = None):
-        if url is not None:
-            raise NotImplementedError("Will be implemented")
+    def __init__(self, path: str = None, url: str = None):
+
         # Single object to replace the
-        self.g = TripleStoreReasonerOntology(rdflib.Graph().parse(path))
+        if path:
+            self.g = TripleStoreReasonerOntology(rdflib.Graph().parse(path))
+        else:
+            self.g = TripleStoreReasonerOntology(rdflib.Graph(),url=url)
 
         self.ontology = self.g
         self.reasoner = self.g
@@ -601,7 +638,8 @@ class TripleStore:
         self.generator = ConceptGenerator()
         self.length_metric = OWLClassExpressionLengthMetric.get_default()
 
-    def concise_bounded_description(self, individual: OWLNamedIndividual, mode: str = "native") -> Generator[Tuple[OWLNamedIndividual, Union[IRI, OWLObjectProperty], Union[OWLClass, OWLNamedIndividual]], None, None]:
+    def concise_bounded_description(self, individual: OWLNamedIndividual, mode: str = "native") -> Generator[
+        Tuple[OWLNamedIndividual, Union[IRI, OWLObjectProperty], Union[OWLClass, OWLNamedIndividual]], None, None]:
         """
 
         Get the CBD (https://www.w3.org/submissions/CBD/) of a named individual.
@@ -619,7 +657,45 @@ class TripleStore:
         if mode == "native":
             yield from self.g.concise_bounded_description(str_iri=individual.get_iri().as_str())
 
+        elif mode == "iri":
+            raise NotImplementedError("Mode==iri has not been implemented yet.")
+            yield from ((i.str, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+                         t.get_iri().as_str()) for t in self.get_types(ind=i, direct=True))
+            for dp in self.get_data_properties_for_ind(ind=i):
+                yield from ((i.str, dp.get_iri().as_str(), literal.get_literal()) for literal in
+                            self.get_data_property_values(i, dp))
+            for op in self.get_object_properties_for_ind(ind=i):
+                yield from ((i.str, op.get_iri().as_str(), ind.get_iri().as_str()) for ind in
+                            self.get_object_property_values(i, op))
+        elif mode == "axiom":
+            raise NotImplementedError("Mode==axiom has not been implemented yet.")
 
+            yield from (OWLClassAssertionAxiom(i, t) for t in self.get_types(ind=i, direct=True))
+            for dp in self.get_data_properties_for_ind(ind=i):
+                yield from (OWLDataPropertyAssertionAxiom(i, dp, literal) for literal in
+                            self.get_data_property_values(i, dp))
+            for op in self.get_object_properties_for_ind(ind=i):
+                yield from (OWLObjectPropertyAssertionAxiom(i, op, ind) for ind in
+                            self.get_object_property_values(i, op))
+
+    def abox(self, individual: OWLNamedIndividual, mode: str = "native") -> Generator[
+        Tuple[OWLNamedIndividual, Union[IRI, OWLObjectProperty], Union[OWLClass, OWLNamedIndividual]], None, None]:
+        """
+
+        Get all axioms of a given individual being a subject entity
+
+        Args:
+            individual (OWLNamedIndividual): An individual
+            mode (str): The return format.
+             1) 'native' -> returns triples as tuples of owlapy objects,
+             2) 'iri' -> returns triples as tuples of IRIs as string,
+             3) 'axiom' -> triples are represented by owlapy axioms.
+
+        Returns: Iterable of tuples or owlapy axiom, depending on the mode.
+        """
+        assert mode in ['native', 'iri', 'axiom'], "Valid modes are: 'native', 'iri' or 'axiom'"
+        if mode == "native":
+            yield from self.g.abox(str_iri=individual.get_iri().as_str())
 
         elif mode == "iri":
             raise NotImplementedError("Mode==iri has not been implemented yet.")
