@@ -147,9 +147,13 @@ class TDL:
                  grid_search_over: dict = None,
                  grid_search_apply: bool = False,
                  report_classification: bool = False,
-                 plot_built_tree: bool = False,
-                 plotembeddings: bool = False):
+                 plot_tree: bool = False,
+                 plot_embeddings: bool = False):
+        assert use_inverse is False, "use_inverse not implemented"
+        assert use_data_properties is False, "use_data_properties not implemented"
+        assert use_card_restrictions is False, "use_card_restrictions not implemented"
 
+        self.use_nominals = use_nominals
         if grid_search_over is None and grid_search_apply:
             grid_search_over = {'criterion': ["entropy", "gini", "log_loss"],
                                 "splitter": ["random", "best"],
@@ -164,8 +168,8 @@ class TDL:
         self.grid_search_over = grid_search_over
         self.knowledge_base = knowledge_base
         self.report_classification = report_classification
-        self.plot_built_tree = plot_built_tree
-        self.plotembeddings = plotembeddings
+        self.plot_tree = plot_tree
+        self.plot_embeddings = plot_embeddings
         self.dl_render = DLSyntaxObjectRenderer()
         self.manchester_render = ManchesterOWLSyntaxOWLObjectRenderer()
         # Keyword arguments for sklearn Decision tree.
@@ -183,34 +187,41 @@ class TDL:
 
     def create_training_data(self, learning_problem: PosNegLPStandard) -> Tuple[pd.DataFrame, pd.Series]:
         """
-        Given a learning problem (pos and neg),
+        Create a training data (X,y) for binary classification problem, where
+        X is a sparse binary matrix and y is a binary vector.
 
-        (1) Extract relevant features for examples ( union of pos and neg)
-        (2) Create boolean representations for each example
+        X: shape (n,d)
+        y: shape (n,1).
+
+        n denotes the number of examples
+        d denotes the number of features extracted from n examples.
         """
-        # (1) Initialize unordered features.
-        features = set()
+        # (1) Initialize features.
+        features = list()
         # (2) Initialize ordered examples.
         positive_examples = [i for i in learning_problem.pos]
         negative_examples = [i for i in learning_problem.neg]
         examples = positive_examples + negative_examples
 
-        # (3) Extract features from (2).
+        # (3) Extract all features from (2).
+        first_hop_features = []
         for i in examples:
-            features = features | ({(p, o) for s, p, o in self.knowledge_base.abox(individual=i)})
-
-
-        assert len(features)>0, f"Features cannot be extracted. Ensure that there are axioms about the examples."
+            first_hop_features.extend(expression for expression in self.knowledge_base.abox(individual=i, mode="expression"))
+        assert len(
+            first_hop_features) > 0, f"First hop features cannot be extracted. Ensure that there are axioms about the examples."
+        # TODO: For the cardinality restriction: from collections import Counter, print(Counter(features))
+        features = list(set(first_hop_features))
         # (4) Order features: create a mapping from tuple of predicate and objects to integers starting from 0.
-        features = {predicate_object_pair: index_ for index_, predicate_object_pair in enumerate(features)}
+        mapping_features = {predicate_object_pair: index_ for index_, predicate_object_pair in enumerate(features)}
 
-        X = np.zeros(shape=(len(examples), len(features)), dtype=int)
+        X = np.zeros(shape=(len(examples), len(features)), dtype=float)
         y = []
 
         for ith_row, i in enumerate(examples):
-            for _, p, o in self.knowledge_base.abox(individual=i):
-                if (p, o) in features:
-                    X[ith_row, features[p, o]] = 1.0
+            for expression in self.knowledge_base.abox(individual=i,mode="expression"):
+                assert expression in mapping_features
+                X[ith_row, mapping_features[expression]] = 1.0
+
             if ith_row < len(positive_examples):
                 # Sanity checking for positive examples.
                 assert i in positive_examples and i not in negative_examples
@@ -226,7 +237,8 @@ class TDL:
         return pd.DataFrame(data=X, index=examples, columns=features), pd.DataFrame(index=examples, data=y,
                                                                                     columns=["label"])
 
-    def construct_dl_concept_from_tree(self, X: pd.DataFrame, y: pd.DataFrame):
+    def construct_owl_expression_from_tree(self, X: pd.DataFrame, y: pd.DataFrame) -> List[OWLObjectIntersectionOf]:
+        """ Construct an OWL class expression from a decision tree """
         positive_examples: List[OWLNamedIndividual]
         positive_examples = y[y.label == 1].index.tolist()
 
@@ -237,38 +249,23 @@ class TDL:
                                   X_test=X.loc[positive_examples].values,
                                   features=X.columns.to_list(),
                                   only_shared=False), positive_examples):
-            concepts_per_reasoning_step=[]
+            concepts_per_reasoning_step = []
             for i in sequence_of_reasoning_steps:
-                p, o = i["feature"]
+                owl_class_expression= i["feature"]
                 # sanity checking about the decision.
                 assert 1 >= i["value"] >= 0.0
                 value = bool(i["value"])
-                if isinstance(p, IRI):
-                    assert isinstance(o, OWLClass)
-                    owl_class_expression=o
-                elif isinstance(p,OWLObjectProperty):
-                    assert isinstance(o, OWLNamedIndividual), f"o ({o}) must be an OWLNamedIndividual: Currently:{OWLNamedIndividual}"
-                    owl_class_expression=OWLObjectSomeValuesFrom(property=p,filler=OWLObjectOneOf(o))
-                else:
-                    assert i
-                    raise RuntimeError(f"Something Went wrong! Predicate must be either IRI or OWLObjectProperty:"
-                                       f"Currently:{type(p)}")
-
-
                 if value is False:
-                    owl_class_expression=OWLObjectComplementOf(owl_class_expression)
+                    owl_class_expression = owl_class_expression.get_object_complement_of()
+
                 concepts_per_reasoning_step.append(owl_class_expression)
 
             pred = concepts_reducer(concepts=concepts_per_reasoning_step, reduced_cls=OWLObjectIntersectionOf)
             prediction_per_example.append((pred, pos))
 
-        # Remove paths from the root to leafs if overallping
-        prediction_per_example = {p for p, indv in prediction_per_example}
-        self.conjunctive_concepts = [pred for pred in prediction_per_example]
-
-        self.disjunction_of_conjunctive_concepts = concepts_reducer(concepts=self.conjunctive_concepts,
-                                                                    reduced_cls=OWLObjectUnionOf)
-
+        # From list to set to remove identical paths from the root to leafs.
+        prediction_per_example = {pred for pred, positive_example in prediction_per_example}
+        return list(prediction_per_example)
 
     def fit(self, learning_problem: PosNegLPStandard = None, max_runtime: int = None):
         """ Fit the learner to the given learning problem
@@ -295,22 +292,7 @@ class TDL:
         y: Union[pd.DataFrame, pd.Series]
         X, y = self.create_training_data(learning_problem=learning_problem)
 
-        """
-        str_pos_examples = [i.get_iri().as_str() for i in lp.pos]
-        str_neg_examples = [i.get_iri().as_str() for i in lp.neg]
-
-        # Nested dictionary [inv][relation]: => [] Dict[str, Dict]
-
-        hop_info, features = self.construct_hop(str_pos_examples + str_neg_examples)
-        # list of tuples having length 2 or 3
-        features = list(features)
-        Xraw = self.built_sparse_training_data(entity_infos=hop_info,
-                                               individuals=str_pos_examples + str_neg_examples,
-                                               feature_names=features)
-        X, y = self.labeling(Xraw=Xraw, pos=str_pos_examples, neg=str_neg_examples)
-        """
-
-        if self.plotembeddings:
+        if self.plot_embeddings:
             import umap
             print("Fitting")
             reducer = umap.UMAP(random_state=1)
@@ -319,7 +301,7 @@ class TDL:
                         c=["r" if x == 1 else "b" for x in y])
             plt.grid()
             plt.gca().set_aspect('equal', 'datalim')
-            plt.savefig("UMAP_AUNT.pdf")
+            plt.savefig("umap_visualization.pdf")
             plt.show()
 
         if self.grid_search_over:
@@ -334,10 +316,12 @@ class TDL:
             print("Classification Report: Negatives: -1 and Positives 1 ")
             print(sklearn.metrics.classification_report(y.values, self.clf.predict(X.values),
                                                         target_names=["Negative", "Positive"]))
-        if self.plot_built_tree:
+        if self.plot_tree:
             self.plot()
 
-        self.construct_dl_concept_from_tree(X, y)
+        self.conjunctive_concepts = self.construct_owl_expression_from_tree(X, y)
+        self.disjunction_of_conjunctive_concepts = concepts_reducer(concepts=self.conjunctive_concepts,
+                                                                    reduced_cls=OWLObjectUnionOf)
 
         return self
 
@@ -571,8 +555,10 @@ class TDL:
     def plot(self, topk: int = 10):
         """ Plot the built CART Decision Tree and feature importance"""
         feature_names = []
-        self.features: List[Tuple[Union[IRI, OWLObjectProperty], Union[OWLClass, OWLNamedIndividual]]]
-        for (p, o) in self.features:
+        for f in self.features:
+            feature_names.append(self.dl_render.render(f))
+
+            continue
             if isinstance(p, IRI):
                 # CD: We should find  a better sanity checking for type predicate
                 assert p.as_str() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
@@ -580,8 +566,6 @@ class TDL:
                 f = self.dl_render.render(o)
             else:
                 f = self.dl_render.render(OWLObjectSomeValuesFrom(property=p, filler=OWLObjectOneOf(o)))
-
-            feature_names.append(f)
 
         plt.figure(figsize=(10, 10))
         tree.plot_tree(self.clf, fontsize=10, feature_names=feature_names, class_names=["Negative", "Positive"],

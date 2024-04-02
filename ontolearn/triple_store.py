@@ -14,11 +14,15 @@ from owlapy.model import OWLObjectPropertyRangeAxiom, OWLDataProperty, \
     OWLThing, OWLObjectPropertyDomainAxiom, OWLLiteral, \
     OWLObjectInverseOf, OWLClass, \
     IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLClassAxiom, \
-    OWLEquivalentClassesAxiom, OWLObjectProperty, OWLProperty, OWLDatatype
+    OWLEquivalentClassesAxiom, OWLObjectProperty, OWLProperty, OWLDatatype, OWLObjectSomeValuesFrom
+
+from owlapy.model import OWLObjectSomeValuesFrom, OWLObjectOneOf, OWLObjectMinCardinality
 import rdflib
 from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
 import traceback
+from collections import Counter
+
 logger = logging.getLogger(__name__)
 
 rdfs_prefix = "PREFIX  rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n "
@@ -476,9 +480,9 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
 
 class TripleStoreReasonerOntology:
 
-    def __init__(self, graph: rdflib.graph.Graph,url:str=None):
+    def __init__(self, graph: rdflib.graph.Graph, url: str = None):
         self.g = graph
-        self.url=url
+        self.url = url
         self.converter = Owl2SparqlConverter()
         # A convenience to distinguish type predicate from other predicates in the results of SPARQL query
         self.type_predicate = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
@@ -630,7 +634,7 @@ class TripleStore:
         if path:
             self.g = TripleStoreReasonerOntology(rdflib.Graph().parse(path))
         else:
-            self.g = TripleStoreReasonerOntology(rdflib.Graph(),url=url)
+            self.g = TripleStoreReasonerOntology(rdflib.Graph(), url=url)
 
         self.ontology = self.g
         self.reasoner = self.g
@@ -690,10 +694,12 @@ class TripleStore:
              1) 'native' -> returns triples as tuples of owlapy objects,
              2) 'iri' -> returns triples as tuples of IRIs as string,
              3) 'axiom' -> triples are represented by owlapy axioms.
+             4) 'expression' -> unique owl class expressions based on (1).
 
         Returns: Iterable of tuples or owlapy axiom, depending on the mode.
         """
-        assert mode in ['native', 'iri', 'axiom'], "Valid modes are: 'native', 'iri' or 'axiom'"
+        assert mode in ['native', 'iri', 'axiom',
+                        "expression"], "Valid modes are: 'native', 'iri' or 'axiom', 'expression'"
         if mode == "native":
             yield from self.g.abox(str_iri=individual.get_iri().as_str())
 
@@ -707,9 +713,44 @@ class TripleStore:
             for op in self.get_object_properties_for_ind(ind=i):
                 yield from ((i.str, op.get_iri().as_str(), ind.get_iri().as_str()) for ind in
                             self.get_object_property_values(i, op))
-        elif mode == "axiom":
-            raise NotImplementedError("Mode==axiom has not been implemented yet.")
+        elif mode == "expression":
+            mapping = dict()
+            # To no return duplicate objects.
+            quantifier_gate = set()
+            # (1) Iterate over triples where individual is in the subject position.
+            for s, p, o in self.g.abox(str_iri=individual.get_iri().as_str()):
+                if isinstance(p, IRI) and isinstance(o, OWLClass):
+                    # RETURN MEMBERSHIP/Type INFORMATION: C(s)
+                    yield o
+                elif isinstance(p, OWLObjectProperty) and isinstance(o, OWLNamedIndividual):
+                    mapping.setdefault(p, []).append(o)
+                else:
+                    raise RuntimeError("Unrecognized triples to expression mappings")
+                    """continue"""
 
+            for k, iter_inds in mapping.items():
+                # RETURN Existential Quantifiers over Nominals: \exists r. {x....y}
+                yield OWLObjectSomeValuesFrom(property=k, filler=OWLObjectOneOf(values=iter_inds))
+                type_: OWLClass
+                count: int
+                for type_, count in Counter(
+                        [type_i for i in iter_inds for type_i in self.get_types(ind=i, direct=True)]).items():
+                    min_cardinality_item = OWLObjectMinCardinality(cardinality=count, property=k, filler=type_)
+                    if min_cardinality_item in quantifier_gate:
+                        continue
+                    else:
+                        quantifier_gate.add(min_cardinality_item)
+                        # RETURN \ge number r. C
+                        yield min_cardinality_item
+                    existential_quantifier = OWLObjectSomeValuesFrom(property=k, filler=type_)
+                    if existential_quantifier in quantifier_gate:
+                        continue
+                    else:
+                        # RETURN Existential Quantifiers over Concepts: \exists r. C
+                        quantifier_gate.add(existential_quantifier)
+                        yield existential_quantifier
+        elif mode == "axiom":
+            raise NotImplementedError("Axioms should be checked.")
             yield from (OWLClassAssertionAxiom(i, t) for t in self.get_types(ind=i, direct=True))
             for dp in self.get_data_properties_for_ind(ind=i):
                 yield from (OWLDataPropertyAssertionAxiom(i, dp, literal) for literal in
