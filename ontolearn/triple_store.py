@@ -730,7 +730,8 @@ class TripleStore:
 
             for k, iter_inds in mapping.items():
                 # RETURN Existential Quantifiers over Nominals: \exists r. {x....y}
-                yield OWLObjectSomeValuesFrom(property=k, filler=OWLObjectOneOf(values=iter_inds))
+                for x in iter_inds:
+                    yield OWLObjectSomeValuesFrom(property=k, filler=x)
                 type_: OWLClass
                 count: int
                 for type_, count in Counter(
@@ -834,6 +835,9 @@ class TripleStore:
         f1 = 0 if precision == 0 or recall == 0 else 2 * ((precision * recall) / (precision + recall))
 
         return f1
+
+    def query(self, sparql: str) -> rdflib.plugins.sparql.processor.SPARQLResult:
+        yield from self.g.query(sparql_query=sparql)
 
     def concept_len(self, ce: OWLClassExpression) -> int:
         """Calculates the length of a concept and is used by some concept learning algorithms to
