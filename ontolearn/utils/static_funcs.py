@@ -1,9 +1,18 @@
 from itertools import chain
-from typing import Optional, Callable, Tuple, Generator
+from typing import Optional, Callable, Tuple, Generator, List, Union
+import pandas
+import matplotlib.pyplot as plt
+import sklearn
+import numpy as np
+
 from ..base.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from ..base.owl.utils import OWLClassExpressionLengthMetric
-from owlapy.util import LRUCache
 from ..base.fast_instance_checker import OWLReasoner_FastInstanceChecker
+from owlapy.util import LRUCache
+
+from owlapy.model import OWLClassExpression
+from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer
+
 
 
 def init_length_metric(length_metric: Optional[OWLClassExpressionLengthMetric] = None,
@@ -69,10 +78,10 @@ def compute_tp_fn_fp_tn(individuals, pos, neg):
     return tp, fn, fp, tn
 
 
-def compute_f1_score(individuals, pos, neg)->float:
+def compute_f1_score(individuals, pos, neg) -> float:
     """ Compute F1-score of a concept
     """
-    assert type(individuals)==type(pos)==type(neg), f"Types must match:{type(individuals)},{type(pos)},{type(neg)}"
+    assert type(individuals) == type(pos) == type(neg), f"Types must match:{type(individuals)},{type(pos)},{type(neg)}"
     # true positive: |E^+ AND R(C)  |
     tp = len(pos.intersection(individuals))
     # true negative : |E^- AND R(C)|
@@ -98,3 +107,77 @@ def compute_f1_score(individuals, pos, neg)->float:
 
     f_1 = 2 * ((precision * recall) / (precision + recall))
     return f_1
+
+
+def plot_umap_reduced_embeddings(X: pandas.DataFrame, y: List[float], name: str = "umap_visualization.pdf") -> None:
+    import umap
+    reducer = umap.UMAP(random_state=1)
+    embedding = reducer.fit_transform(X)
+    plt.scatter(embedding[:, 0], embedding[:, 1],
+                c=["r" if x == 1 else "b" for x in y])
+    plt.grid()
+    plt.gca().set_aspect('equal', 'datalim')
+    plt.savefig(name)
+    plt.show()
+
+
+def plot_decision_tree_of_expressions(feature_names, cart_tree, topk: int = 10):
+    """ Plot the built CART Decision Tree and feature importance"""
+    # Plot the built CART Tree
+    plt.figure(figsize=(10, 10))
+    sklearn.tree.plot_tree(cart_tree, fontsize=10, feature_names=feature_names, class_names=["Negative", "Positive"],
+                           filled=True)
+    plt.savefig('cart_decision_tree.pdf')
+    plt.show()
+    # Plot the features
+    # feature importance is computed as the (normalized) total reduction of the criterion brought by that feature.
+    fig, ax = plt.subplots()
+    #
+    topk_id = np.argsort(cart_tree.feature_importances_)[-topk:]
+
+    expressions = [feature_names[i] for i in topk_id.tolist()]
+    feature_importance = cart_tree.feature_importances_[topk_id]
+    ax.bar(x=expressions, height=feature_importance)
+    ax.set_ylabel('Normalized total reduction')
+    ax.set_title('Feature Importance')
+    plt.xticks(rotation=90, ha='right')
+    fig.tight_layout()
+    plt.show()
+
+
+def save_owl_class_expressions(expressions:Union[OWLClassExpression,List[OWLClassExpression]],
+                               path: str = 'Predictions',
+                               rdf_format: str = 'rdfxml', renderer=None)->None:
+    """
+    TODO:
+            Args:
+            concepts:
+            path: Filename base (extension will be added automatically).
+            rdf_format: Serialisation format. currently supported: "rdfxml".
+            renderer: An instance of ManchesterOWLSyntaxOWLObjectRenderer
+    """
+    assert isinstance(expressions, OWLClassExpression) or isinstance(expressions[0], OWLClassExpression), "expressions must be either OWLClassExpression or a list of OWLClassExpression"
+    if isinstance(expressions, OWLClassExpression):
+        expressions=[expressions]
+
+    if renderer is None:
+        renderer=ManchesterOWLSyntaxOWLObjectRenderer()
+    NS: Final = 'https://dice-research.org/predictions#'
+
+    if rdf_format != 'rdfxml':
+        raise NotImplementedError(f'Format {rdf_format} not implemented.')
+    # @TODO: Lazy import
+    # @TODO: CD: Can we use rdflib to serialize concepts ?!
+    from ..base import OWLOntologyManager_Owlready2
+    from owlapy.model import OWLEquivalentClassesAxiom, OWLOntologyManager, OWLOntology, IRI, OWLClass,OWLDataOneOf, OWLObjectProperty, OWLObjectOneOf
+
+    # ()
+    manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
+    # ()
+    ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
+    # () Iterate over concepts
+    for i in expressions:
+        cls_a: OWLClass = OWLClass(IRI.create(NS, renderer.render(i)))
+        equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, i])
+        manager.add_axiom(ontology, equivalent_classes_axiom)
+    manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))
