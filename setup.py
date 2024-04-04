@@ -57,10 +57,10 @@ setup(
     author_email='caglardemir8@gmail.com',
     url='https://github.com/dice-group/Ontolearn',
     classifiers=[
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
         "Topic :: Scientific/Engineering :: Artificial Intelligence"],
-    python_requires='>=3.9.18',
+    python_requires='>=3.10.13',
     entry_points={"console_scripts": ["ontolearn = ontolearn.run:main"]},
     long_description=long_description,
     long_description_content_type="text/markdown",
