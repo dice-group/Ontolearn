@@ -148,14 +148,6 @@ def plot_decision_tree_of_expressions(feature_names, cart_tree, topk: int = 10)-
 def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLClassExpression]],
                                path: str = 'Predictions',
                                rdf_format: str = 'rdfxml', renderer=None) -> None:
-    """
-    TODO:
-            Args:
-            concepts:
-            path: Filename base (extension will be added automatically).
-            rdf_format: Serialisation format. currently supported: "rdfxml".
-            renderer: An instance of ManchesterOWLSyntaxOWLObjectRenderer
-    """
     assert isinstance(expressions, OWLClassExpression) or isinstance(expressions[0],
                                                                      OWLClassExpression), "expressions must be either OWLClassExpression or a list of OWLClassExpression"
     if isinstance(expressions, OWLClassExpression):
@@ -167,8 +159,7 @@ def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLCl
 
     if rdf_format != 'rdfxml':
         raise NotImplementedError(f'Format {rdf_format} not implemented.')
-    # @TODO: Lazy import
-    # @TODO: CD: Can we use rdflib to serialize concepts ?!
+    # @TODO: CD: Lazy import. CD: Can we use rdflib to serialize concepts ?!
     from ..base import OWLOntologyManager_Owlready2
     # ()
     manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
@@ -176,7 +167,7 @@ def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLCl
     ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
     # () Iterate over concepts
     for i in expressions:
-        cls_a: OWLClass = OWLClass(IRI.create(NS, renderer.render(i)))
+        cls_a = OWLClass(IRI.create(NS, renderer.render(i)))
         equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, i])
         try:
             manager.add_axiom(ontology, equivalent_classes_axiom)
