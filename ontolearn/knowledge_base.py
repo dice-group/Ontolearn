@@ -263,6 +263,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
                         yield o
                     elif isinstance(p, OWLObjectProperty) and isinstance(o, OWLNamedIndividual):
                         mapping.setdefault(p, []).append(o)
+                    elif isinstance(p, OWLDataProperty) and isinstance(o, OWLLiteral):
+                        assert isinstance(o, OWLLiteral), f"OWL Data Property should map to Literal right ! {o}"
+                        yield p, o
                     else:
                         raise RuntimeError("Unrecognized triples to expression mappings")
 
