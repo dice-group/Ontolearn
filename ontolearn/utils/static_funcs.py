@@ -147,14 +147,11 @@ def plot_decision_tree_of_expressions(feature_names, cart_tree, topk: int = 10)-
 
 def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLClassExpression]],
                                path: str = 'Predictions',
-                               rdf_format: str = 'rdfxml', renderer=None) -> None:
+                               rdf_format: str = 'rdfxml') -> None:
     assert isinstance(expressions, OWLClassExpression) or isinstance(expressions[0],
                                                                      OWLClassExpression), "expressions must be either OWLClassExpression or a list of OWLClassExpression"
     if isinstance(expressions, OWLClassExpression):
         expressions = [expressions]
-
-    if renderer is None:
-        renderer = ManchesterOWLSyntaxOWLObjectRenderer()
     NS: Final = 'https://dice-research.org/predictions#'
 
     if rdf_format != 'rdfxml':
@@ -166,8 +163,8 @@ def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLCl
     # ()
     ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
     # () Iterate over concepts
-    for i in expressions:
-        cls_a = OWLClass(IRI.create(NS, renderer.render(i)))
+    for th, i in enumerate(expressions):
+        cls_a = OWLClass(IRI.create(NS, str(th)))
         equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, i])
         try:
             manager.add_axiom(ontology, equivalent_classes_axiom)
