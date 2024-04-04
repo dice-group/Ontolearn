@@ -24,7 +24,7 @@ for str_target_concept, examples in settings['problems'].items():
     typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
     typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
     lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
-    h = model.fit(learning_problem=lp).best_hypotheses(1).concept
+    h = model.fit(learning_problem=lp).best_hypotheses(1)
     str_concept = render.render(h)
     f1_score = compute_f1_score(individuals=frozenset({i for i in kb.individuals(h)}), pos=lp.pos, neg=lp.neg)
     # CD: We need to specify ranges for the regression tests.

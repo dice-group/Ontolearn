@@ -29,7 +29,7 @@ conda create -n venv python=3.10 --no-default-packages && conda activate venv &&
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
 ```
 ```shell
-pytest -p no:warnings -x # Running 158 tests takes ~ 3 mins
+pytest -p no:warnings -x # Running 161 tests takes ~ 6 mins
 ```
 
 ## Description Logic Concept Learning 

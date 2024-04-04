@@ -12,7 +12,7 @@ from ontolearn.metrics import F1
 import os
 import time
 from owlapy.model import OWLNamedIndividual, IRI
-
+from ontolearn.utils.static_funcs import compute_f1_score
 
 class TestConceptLearnerReg:
 
@@ -42,7 +42,10 @@ class TestConceptLearnerReg:
             ocel_quality.append(ocel.fit(lp).best_hypotheses(n=1).quality)
             celoe_quality.append(celoe.fit(lp).best_hypotheses(n=1).quality)
             evo_quality.append(evo.fit(lp).best_hypotheses(n=1).quality)
-            drill_quality.append(drill.fit(lp).best_hypotheses(n=1).quality)
+            drill_quality.append(compute_f1_score(individuals=
+                                                  frozenset({i for i in kb.individuals(drill.fit(lp).best_hypotheses(n=1))}),
+                                                  pos=lp.pos,
+                                                  neg=lp.neg))
 
 
         assert sum(evo_quality)>=sum(drill_quality)
