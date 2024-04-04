@@ -2,7 +2,7 @@ from ontolearn.base_concept_learner import RefinementBasedConceptLearner
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.abstracts import AbstractScorer, AbstractNode
 from ontolearn.search import RL_State
-from typing import Set, List, Tuple, Optional, Generator, SupportsFloat, Iterable, FrozenSet, Callable
+from typing import Set, List, Tuple, Optional, Generator, SupportsFloat, Iterable, FrozenSet, Callable, Union
 from owlapy.model import OWLNamedIndividual, OWLClassExpression
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 import torch
@@ -133,7 +133,6 @@ class Drill(RefinementBasedConceptLearner):
         # CD: This setting the valiable will be removed later.
         self.quality_func = compute_f1_score
 
-
     def initialize_class_expression_learning_problem(self, pos: Set[OWLNamedIndividual], neg: Set[OWLNamedIndividual]):
         """
             Determine the learning problem and initialize the search.
@@ -141,7 +140,7 @@ class Drill(RefinementBasedConceptLearner):
             2) Sample negative examples if necessary.
             3) Initialize the root and search tree.
             """
-        self.clean()
+        #self.clean()
         assert 0 < len(pos) and 0 < len(neg)
 
         # 1. CD: PosNegLPStandard will be deprecated.
@@ -176,63 +175,64 @@ class Drill(RefinementBasedConceptLearner):
             assert isinstance(max_runtime, float)
             self.max_runtime = max_runtime
 
+        self.clean()
+
+        # (1) Initialize the start time
+        self.start_time = time.time()
+
+        # (2) Two mappings from a unique OWL Concept to integer, where a unique concept represents the type info
+        # C(x) s.t. x \in E^+ and  C(y) s.t. y \in E^-
         pos_type_counts = Counter(
             [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.pos))])
         neg_type_counts = Counter(
             [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.neg))])
+        # (3) Favor some OWLClass over others
         type_bias = pos_type_counts - neg_type_counts
-        # (1) Initialize learning problem
+        # (4) Initialize learning problem
         root_state = self.initialize_class_expression_learning_problem(pos=learning_problem.pos,
                                                                        neg=learning_problem.neg)
-        # (2) Add root state into search tree
+        # (5) Add root state into search tree
         root_state.heuristic = root_state.quality
         self.search_tree.add(root_state)
-
-        self.start_time = time.time()
-        # (3) Inject Type Bias
+        # (6) Inject Type Bias/Favor
         for x in (self.create_rl_state(i, parent_node=root_state) for i in type_bias):
             self.compute_quality_of_class_expression(x)
             x.heuristic = x.quality
             self.search_tree.add(x)
 
-        # (3) Search
+        # (6) Search
         for i in range(1, self.iter_bound):
-            # (1) Get the most fitting RL-state
+            # (6.1) Get the most fitting RL-state.
             most_promising = self.next_node_to_expand()
             next_possible_states = []
-            # (2) Refine (1)
+            # (6.2) Checking the runtime termination criterion.
+            if time.time() - self.start_time > self.max_runtime:
+                return self.terminate()
+            # (6.3) Refine (6.1)
             for ref in self.apply_refinement(most_promising):
+                # (6.3.1) Checking the runtime termination criterion.
                 if time.time() - self.start_time > self.max_runtime:
                     return self.terminate()
-                # (2.1) If the next possible RL-state is not a dead end
-                # (2.1.) If the refinement of (1) is not equivalent to \bottom
-
+                # (6.3.2) Compute the quality stored in the RL state
                 self.compute_quality_of_class_expression(ref)
                 if ref.quality == 0:
                     continue
+                # (6.3.3) Consider qualifying RL states as next possible states to transition.
                 next_possible_states.append(ref)
+                # (6.3.4) Checking the goal termination criterion.
                 if self.stop_at_goal:
                     if ref.quality == 1.0:
                         break
-            try:
-                assert len(next_possible_states) > 0
-            except AssertionError:
-                print(f'DEAD END at {most_promising}')
+            if not next_possible_states:
                 continue
-            if len(next_possible_states) == 0:
-                # We do not need to compute Q value based on embeddings of "zeros".
-                continue
-
-            if self.pre_trained_kge:
-                preds = self.predict_values(current_state=most_promising, next_states=next_possible_states)
-            else:
-                preds = None
+            # (6.4) Predict Q-values
+            preds = self.predict_values(current_state=most_promising,
+                                        next_states=next_possible_states) if self.pre_trained_kge else None
+            # (6.5) Add next possible states into search tree based on predicted Q values
             self.goal_found = self.update_search(next_possible_states, preds)
             if self.goal_found:
                 if self.terminate_on_goal:
                     return self.terminate()
-            if time.time() - self.start_time > self.max_runtime:
-                return self.terminate()
 
     def show_search_tree(self, heading_step: str, top_n: int = 10) -> None:
         assert ValueError('show_search_tree')
@@ -326,7 +326,7 @@ class Drill(RefinementBasedConceptLearner):
         individuals = frozenset({i for i in self.kb.individuals(state.concept)})
         quality = self.quality_func(individuals=individuals, pos=self.learning_problem.pos,
                                     neg=self.learning_problem.neg)
-        state.quality=quality
+        state.quality = quality
         self._number_of_tested_concepts += 1
 
     def apply_refinement(self, rl_state: RL_State) -> Generator:
@@ -812,13 +812,18 @@ class Drill(RefinementBasedConceptLearner):
             self.form_experiences(sequence_of_states, rewards)
         self.learn_from_replay_memory()
 
-    def best_hypotheses(self, n=1):
-        assert self.search_tree is not None
-        assert len(self.search_tree) > 1
-        if n == 1:
-            return [i for i in self.search_tree.get_top_n_nodes(n)][0]
+    def best_hypotheses(self, n=1) -> Union[OWLClassExpression, List[OWLClassExpression]]:
+        assert self.search_tree is not None, "Search tree is not initialized"
+        assert len(self.search_tree) > 1, "Search tree is empty"
+
+        result = []
+        for i, rl_state in enumerate(self.search_tree.get_top_n_nodes(n)):
+            result.append(rl_state.concept)
+
+        if len(result) == 1:
+            return result.pop()
         else:
-            return [i for i in self.search_tree.get_top_n_nodes(n)]
+            return result
 
     def clean(self):
         self.emb_pos, self.emb_neg = None, None

@@ -180,7 +180,6 @@ class TDL:
         self.disjunction_of_conjunctive_concepts = None
         self.conjunctive_concepts = None
         self.cbd_mapping: Dict[str, Set[Tuple[str, str]]]
-        # self.str_type = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
         self.types_of_individuals = dict()
 
     def create_training_data(self, learning_problem: PosNegLPStandard) -> Tuple[pd.DataFrame, pd.Series]:
@@ -204,7 +203,8 @@ class TDL:
         # (3) Extract all features from (2).
         for i in examples:
             features = features | {expression for expression in
-                                   self.knowledge_base.abox(individual=i, mode="expression")}
+                                   self.knowledge_base.abox(individual=i,
+                                                            mode="expression")}
         assert len(
             features) > 0, f"First hop features cannot be extracted. Ensure that there are axioms about the examples."
         # @TODO: CD: We must integrate on use_nominals and cardinality restrictions in feature creation.

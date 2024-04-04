@@ -9,10 +9,10 @@ from ..base.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, Dataty
 from ..base.owl.utils import OWLClassExpressionLengthMetric
 from ..base.fast_instance_checker import OWLReasoner_FastInstanceChecker
 from owlapy.util import LRUCache
-
+from owlapy.model import OWLEquivalentClassesAxiom, OWLOntologyManager, OWLOntology, IRI, OWLClass
 from owlapy.model import OWLClassExpression
 from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer
-
+import traceback
 
 
 def init_length_metric(length_metric: Optional[OWLClassExpressionLengthMetric] = None,
@@ -121,7 +121,7 @@ def plot_umap_reduced_embeddings(X: pandas.DataFrame, y: List[float], name: str 
     plt.show()
 
 
-def plot_decision_tree_of_expressions(feature_names, cart_tree, topk: int = 10):
+def plot_decision_tree_of_expressions(feature_names, cart_tree, topk: int = 10)->None:
     """ Plot the built CART Decision Tree and feature importance"""
     # Plot the built CART Tree
     plt.figure(figsize=(10, 10))
@@ -145,39 +145,35 @@ def plot_decision_tree_of_expressions(feature_names, cart_tree, topk: int = 10):
     plt.show()
 
 
-def save_owl_class_expressions(expressions:Union[OWLClassExpression,List[OWLClassExpression]],
+def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLClassExpression]],
                                path: str = 'Predictions',
-                               rdf_format: str = 'rdfxml', renderer=None)->None:
-    """
-    TODO:
-            Args:
-            concepts:
-            path: Filename base (extension will be added automatically).
-            rdf_format: Serialisation format. currently supported: "rdfxml".
-            renderer: An instance of ManchesterOWLSyntaxOWLObjectRenderer
-    """
-    assert isinstance(expressions, OWLClassExpression) or isinstance(expressions[0], OWLClassExpression), "expressions must be either OWLClassExpression or a list of OWLClassExpression"
+                               rdf_format: str = 'rdfxml') -> None:
+    assert isinstance(expressions, OWLClassExpression) or isinstance(expressions[0],
+                                                                     OWLClassExpression), "expressions must be either OWLClassExpression or a list of OWLClassExpression"
     if isinstance(expressions, OWLClassExpression):
-        expressions=[expressions]
-
-    if renderer is None:
-        renderer=ManchesterOWLSyntaxOWLObjectRenderer()
+        expressions = [expressions]
     NS: Final = 'https://dice-research.org/predictions#'
 
     if rdf_format != 'rdfxml':
         raise NotImplementedError(f'Format {rdf_format} not implemented.')
-    # @TODO: Lazy import
-    # @TODO: CD: Can we use rdflib to serialize concepts ?!
+    # @TODO: CD: Lazy import. CD: Can we use rdflib to serialize concepts ?!
     from ..base import OWLOntologyManager_Owlready2
-    from owlapy.model import OWLEquivalentClassesAxiom, OWLOntologyManager, OWLOntology, IRI, OWLClass,OWLDataOneOf, OWLObjectProperty, OWLObjectOneOf
-
     # ()
     manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
     # ()
     ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
     # () Iterate over concepts
-    for i in expressions:
-        cls_a: OWLClass = OWLClass(IRI.create(NS, renderer.render(i)))
+    for th, i in enumerate(expressions):
+        cls_a = OWLClass(IRI.create(NS, str(th)))
         equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, i])
-        manager.add_axiom(ontology, equivalent_classes_axiom)
+        try:
+            manager.add_axiom(ontology, equivalent_classes_axiom)
+        except AttributeError:
+            print(traceback.format_exc())
+            print("Exception at creating OWLEquivalentClassesAxiom")
+            print(equivalent_classes_axiom)
+            print(cls_a)
+            print(i)
+            print(expressions)
+            exit(1)
     manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))

@@ -20,7 +20,6 @@ from owlapy.model import OWLObjectMinCardinality, OWLObjectOneOf, OWLObjectRestr
 
 from owlapy.vocab import OWLFacet
 
-
 OWLREADY2_FACET_KEYS = MappingProxyType({
     OWLFacet.MIN_INCLUSIVE: "min_inclusive",
     OWLFacet.MIN_EXCLUSIVE: "min_exclusive",
@@ -36,7 +35,6 @@ OWLREADY2_FACET_KEYS = MappingProxyType({
 
 
 class ToOwlready2:
-
     __slots__ = '_world'
 
     _world: owlready2.World
@@ -61,13 +59,14 @@ class ToOwlready2:
     @map_object.register
     def _(self, ont: OWLOntology) -> owlready2.namespace.Ontology:
         return self._world.get_ontology(
-                ont.get_ontology_id().get_ontology_iri().as_str()
-            )
+            ont.get_ontology_id().get_ontology_iri().as_str()
+        )
 
     @map_object.register
     def _(self, ap: OWLAnnotationProperty) -> owlready2.annotation.AnnotationPropertyClass:
         return self._world[ap.get_iri().as_str()]
 
+    # @TODO CD: map_object is buggy. and it can return None
     # single dispatch is still not implemented in mypy, see https://github.com/python/mypy/issues/2904
     @singledispatchmethod
     def map_concept(self, o: OWLClassExpression) \
@@ -102,7 +101,13 @@ class ToOwlready2:
 
     @map_concept.register
     def _(self, c: OWLClass) -> owlready2.ThingClass:
-        return self._world[c.get_iri().as_str()]
+        x = self._world[c.get_iri().as_str()]
+        try:
+            assert x is not None
+        except AssertionError:
+            print(f"The world attribute{self._world} maps {c} into None")
+
+        return x
 
     @map_concept.register
     def _(self, c: OWLObjectComplementOf) -> owlready2.class_construct.Not:
@@ -119,6 +124,8 @@ class ToOwlready2:
     @map_concept.register
     def _(self, ce: OWLObjectSomeValuesFrom) -> owlready2.class_construct.Restriction:
         prop = self._to_owlready2_property(ce.get_property())
+        assert isinstance(ce.get_filler(),
+                          OWLClassExpression), f"{ce.get_filler()} is not an OWL Class expression and cannot be serialized at the moment"
         return prop.some(self.map_concept(ce.get_filler()))
 
     @map_concept.register

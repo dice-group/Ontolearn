@@ -11,11 +11,11 @@ from owlapy.model import OWLDisjointUnionAxiom, OWLQuantifiedDataRestriction, \
     OWLAnnotationAssertionAxiom, OWLClass, OWLClassAssertionAxiom, OWLEquivalentClassesAxiom, OWLObject, \
     OWLAnnotationProperty, OWLDataHasValue, OWLDataProperty, OWLDeclarationAxiom, OWLIndividual, \
     OWLNamedIndividual, OWLNaryBooleanClassExpression, OWLObjectComplementOf, OWLObjectHasValue, \
-    OWLObjectInverseOf, OWLObjectOneOf, OWLObjectProperty, OWLObjectPropertyAssertionAxiom,  OWLAxiom, \
+    OWLObjectInverseOf, OWLObjectOneOf, OWLObjectProperty, OWLObjectPropertyAssertionAxiom, OWLAxiom, \
     OWLSubClassOfAxiom, OWLSubPropertyAxiom, OWLSymmetricObjectPropertyAxiom, OWLThing, OWLOntology, \
     OWLPropertyDomainAxiom, OWLPropertyRangeAxiom, OWLObjectPropertyRangeAxiom, OWLTransitiveObjectPropertyAxiom, \
     OWLAsymmetricObjectPropertyAxiom, OWLDataPropertyCharacteristicAxiom, OWLFunctionalDataPropertyAxiom, \
-    OWLDataPropertyAssertionAxiom,  OWLReflexiveObjectPropertyAxiom, OWLFunctionalObjectPropertyAxiom, \
+    OWLDataPropertyAssertionAxiom, OWLReflexiveObjectPropertyAxiom, OWLFunctionalObjectPropertyAxiom, \
     OWLInverseFunctionalObjectPropertyAxiom, OWLIrreflexiveObjectPropertyAxiom, OWLObjectPropertyCharacteristicAxiom, \
     OWLDisjointDataPropertiesAxiom, OWLDisjointObjectPropertiesAxiom, OWLEquivalentDataPropertiesAxiom, \
     OWLEquivalentObjectPropertiesAxiom, OWLInverseObjectPropertiesAxiom, OWLNaryPropertyAxiom, OWLNaryIndividualAxiom, \
@@ -148,8 +148,22 @@ def _(axiom: OWLEquivalentClassesAxiom, ontology: OWLOntology, world: owlready2.
         _check_expression(ce, ontology, world)
     with ont_x:
         for ce_1, ce_2 in combinations(axiom.class_expressions(), 2):
+            assert ce_1 is not None, f"ce_1 cannot be None: {ce_1}, {type(ce_1)}"
+            assert ce_2 is not None, f"ce_2_x cannot be None: {ce_2}, {type(ce_2)}"
+
             ce_1_x = conv.map_concept(ce_1)
             ce_2_x = conv.map_concept(ce_2)
+            try:
+                assert ce_1_x is not None, f"ce_1_x cannot be None: {ce_1_x}, {type(ce_1_x)}"
+                assert ce_2_x is not None, f"ce_2_x cannot be None: {ce_2_x}, {type(ce_2_x)}"
+            except AssertionError:
+                print("function of ToOwlready2.map_concept() returns None")
+                print(ce_1, ce_1_x)
+                print(ce_2, ce_2_x)
+                print("Axiom:", axiom)
+                print("Temporary solution is reinitializing ce_1_x=ce_2_x\n\n")
+                ce_1_x=ce_2_x
+
             if isinstance(ce_1_x, owlready2.ThingClass):
                 ce_1_x.equivalent_to.append(ce_2_x)
             if isinstance(ce_2_x, owlready2.ThingClass):
@@ -220,7 +234,7 @@ def _(axiom: OWLNaryIndividualAxiom, ontology: OWLOntology, world: owlready2.nam
         if isinstance(axiom, OWLSameIndividualAxiom):
             for idx, ind in enumerate(axiom.individuals()):
                 ind_x = conv._to_owlready2_individual(ind)
-                for ind_2 in islice(axiom.individuals(), idx+1, None):
+                for ind_2 in islice(axiom.individuals(), idx + 1, None):
                     ind_2_x = conv._to_owlready2_individual(ind_2)
                     ind_x.equivalent_to.append(ind_2_x)
         elif isinstance(axiom, OWLDifferentIndividualsAxiom):
@@ -287,7 +301,7 @@ def _(axiom: OWLNaryPropertyAxiom, ontology: OWLOntology, world: owlready2.names
         if isinstance(axiom, (OWLEquivalentObjectPropertiesAxiom, OWLEquivalentDataPropertiesAxiom,)):
             for idx, property_ in enumerate(axiom.properties()):
                 property_x = conv._to_owlready2_property(property_)
-                for property_2 in islice(axiom.properties(), idx+1, None):
+                for property_2 in islice(axiom.properties(), idx + 1, None):
                     property_2_x = conv._to_owlready2_property(property_2)
                     property_x.equivalent_to.append(property_2_x)
         elif isinstance(axiom, (OWLDisjointObjectPropertiesAxiom, OWLDisjointDataPropertiesAxiom,)):
@@ -640,9 +654,13 @@ def _(axiom: OWLDataPropertyCharacteristicAxiom, ontology: OWLOntology, world: o
             property_x.is_a.remove(owlready2.FunctionalProperty)
 
 
-# Creates all entities (individuals, classes, properties) that appear in the given (complex) class expression
-# and do not exist in the given ontology yet
 def _check_expression(expr: OWLObject, ontology: OWLOntology, world: owlready2.namespace.World):
+    """
+    @TODO:CD: Documentation
+    Creates all entities (individuals, classes, properties) that appear in the given (complex) class expression
+    and do not exist in the given ontology yet
+
+    """
     if isinstance(expr, (OWLClass, OWLProperty, OWLNamedIndividual,)):
         _add_axiom(OWLDeclarationAxiom(expr), ontology, world)
     elif isinstance(expr, (OWLNaryBooleanClassExpression, OWLObjectComplementOf, OWLObjectOneOf,)):

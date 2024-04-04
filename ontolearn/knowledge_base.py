@@ -3,6 +3,7 @@
 import logging
 import random
 from itertools import chain
+from collections import Counter
 from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict, Tuple, Generator, cast
 
 import owlapy
@@ -13,7 +14,9 @@ from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassE
     OWLNamedIndividual, OWLObjectProperty, OWLClass, OWLDataProperty, IRI, OWLDataRange, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLDatatype, BooleanOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, OWLThing, \
     OWLObjectPropertyExpression, OWLLiteral, OWLDataPropertyExpression, OWLClassAssertionAxiom, \
-    OWLObjectPropertyAssertionAxiom, OWLDataPropertyAssertionAxiom, OWLSubClassOfAxiom, OWLEquivalentClassesAxiom
+    OWLObjectPropertyAssertionAxiom, OWLDataPropertyAssertionAxiom, OWLSubClassOfAxiom, OWLEquivalentClassesAxiom, \
+    OWLObjectMinCardinality, OWLObjectOneOf
+
 from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.search import EvaluatedConcept
 from owlapy.util import iter_count, LRUCache
@@ -195,12 +198,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             yield from self.maybe_cache_individuals(concept)
 
-    def abox(self, individuals: Union[OWLNamedIndividual, Iterable[OWLNamedIndividual]] = None, mode='native'):
+    def abox(self, individual: Union[OWLNamedIndividual, Iterable[OWLNamedIndividual]] = None, mode='native'):
         """
         Get all the abox axioms for a given individual. If no individual is given, get all abox axioms
 
         Args:
-            individuals (OWLNamedIndividual): Individual/s to get the abox axioms from.
+            individual (OWLNamedIndividual): Individual/s to get the abox axioms from.
             mode (str): The return format.
              1) 'native' -> returns triples as tuples of owlapy objects,
              2) 'iri' -> returns triples as tuples of IRIs as string,
@@ -209,12 +212,13 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns: Iterable of tuples or owlapy axiom, depending on the mode.
         """
 
-        assert mode in ['native', 'iri', 'axiom'], "Valid modes are: 'native', 'iri' or 'axiom'"
+        assert mode in ['native', 'iri', 'axiom',
+                        "expression"], "Valid modes are: 'native', 'iri' ,'expression' or 'axiom'"
 
-        if isinstance(individuals, OWLNamedIndividual):
-            inds = [individuals]
-        elif isinstance(individuals, Iterable):
-            inds = individuals
+        if isinstance(individual, OWLNamedIndividual):
+            inds = [individual]
+        elif isinstance(individual, Iterable):
+            inds = individual
         else:
             inds = self.individuals()
 
@@ -248,13 +252,52 @@ class KnowledgeBase(AbstractKnowledgeBase):
                 for op in self.get_object_properties_for_ind(ind=i):
                     yield from (OWLObjectPropertyAssertionAxiom(i, op, ind) for ind in
                                 self.get_object_property_values(i, op))
+            elif mode == "expression":
+                mapping = dict()
+                # To no return duplicate objects.
+                quantifier_gate = set()
+                # (1) Iterate over triples where individual is in the subject position. Recursion
+                for s, p, o in self.abox(individual=individual, mode="native"):
+                    if isinstance(p, IRI) and isinstance(o, OWLClass):
+                        # RETURN MEMBERSHIP/Type INFORMATION: C(s)
+                        yield o
+                    elif isinstance(p, OWLObjectProperty) and isinstance(o, OWLNamedIndividual):
+                        mapping.setdefault(p, []).append(o)
+                    else:
+                        raise RuntimeError("Unrecognized triples to expression mappings")
+
+                for k, iter_inds in mapping.items():
+                    # RETURN Existential Quantifiers over Nominals: \exists r. {x....y}
+                    for x in iter_inds:
+                        yield OWLObjectSomeValuesFrom(property=k, filler=OWLObjectOneOf(values=x))
+                    type_: OWLClass
+                    count: int
+                    for type_, count in Counter(
+                            [type_i for i in iter_inds for type_i in self.get_types(ind=i, direct=True)]).items():
+                        min_cardinality_item = OWLObjectMinCardinality(cardinality=count, property=k, filler=type_)
+                        if min_cardinality_item in quantifier_gate:
+                            continue
+                        else:
+                            quantifier_gate.add(min_cardinality_item)
+                            # RETURN \ge number r. C
+                            yield min_cardinality_item
+                        existential_quantifier = OWLObjectSomeValuesFrom(property=k, filler=type_)
+                        if existential_quantifier in quantifier_gate:
+                            continue
+                        else:
+                            # RETURN Existential Quantifiers over Concepts: \exists r. C
+                            quantifier_gate.add(existential_quantifier)
+                            yield existential_quantifier
+            else:
+                raise RuntimeError(f"Unrecognized mode:{mode}")
 
     def tbox(self, entities: Union[Iterable[OWLClass], Iterable[OWLDataProperty], Iterable[OWLObjectProperty], OWLClass,
-                                   OWLDataProperty, OWLObjectProperty, None] = None, mode='native'):
+    OWLDataProperty, OWLObjectProperty, None] = None, mode='native'):
         """Get all the tbox axioms for the given concept-s|propert-y/ies.
          If no concept-s|propert-y/ies are given, get all tbox axioms.
 
          Args:
+             @TODO: entities or namedindividuals ?!
              entities: Entities to obtain tbox axioms from. This can be a single
               OWLClass/OWLDataProperty/OWLObjectProperty object, a list of those objects or None. If you enter a list
               that combines classes and properties (which we don't recommend doing), only axioms for one type will be
@@ -297,7 +340,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
                     [results.add((concept, IRI.create("http://www.w3.org/2002/07/owl#equivalentClass"), j)) for j in
                      self.reasoner.equivalent_classes(concept, only_named=True)]
                     if not include_all:  # This kind of check is just for performance purposes
-                        [results.add((concept, IRI.create("http://www.w3.org/2000/01/rdf-schema#subClassOf"), j)) for j in
+                        [results.add((concept, IRI.create("http://www.w3.org/2000/01/rdf-schema#subClassOf"), j)) for j
+                         in
                          self.get_direct_parents(concept)]
                 elif mode == 'iri':
                     [results.add((j.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subClassOf",
@@ -309,7 +353,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
                         [results.add((concept.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subClassOf",
                                       j.get_iri().as_str())) for j in self.get_direct_parents(concept)]
                 elif mode == "axiom":
-                    [results.add(OWLSubClassOfAxiom(super_class=concept, sub_class=j)) for j in self.get_direct_sub_concepts(concept)]
+                    [results.add(OWLSubClassOfAxiom(super_class=concept, sub_class=j)) for j in
+                     self.get_direct_sub_concepts(concept)]
                     [results.add(OWLEquivalentClassesAxiom([concept, j])) for j in
                      self.reasoner.equivalent_classes(concept, only_named=True)]
                     if not include_all:
@@ -361,7 +406,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
                 elif mode == 'axiom':
                     [results.add(getattr(owlapy.model, "OWLSub" + prop_type + "PropertyOfAxiom")(j, prop)) for j in
                      getattr(self.reasoner, "sub_" + prop_type.lower() + "_properties")(prop, direct=True)]
-                    [results.add(getattr(owlapy.model, "OWLEquivalent" + prop_type + "PropertiesAxiom")([j, prop])) for j in
+                    [results.add(getattr(owlapy.model, "OWLEquivalent" + prop_type + "PropertiesAxiom")([j, prop])) for
+                     j in
                      getattr(self.reasoner, "equivalent_" + prop_type.lower() + "_properties")(prop)]
                     [results.add(getattr(owlapy.model, "OWL" + prop_type + "PropertyDomainAxiom")(prop, j)) for j in
                      getattr(self.reasoner, prop_type.lower() + "_property_domains")(prop, direct=True)]
@@ -386,7 +432,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
         yield from self.abox(mode=mode)
         yield from self.tbox(mode=mode)
-
 
     def ignore_and_copy(self, ignored_classes: Optional[Iterable[OWLClass]] = None,
                         ignored_object_properties: Optional[Iterable[OWLObjectProperty]] = None,

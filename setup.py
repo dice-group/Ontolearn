@@ -17,7 +17,7 @@ _deps = [
         "tqdm>=4.64.0",
         "transformers>=4.38.1",
         "pytest>=7.2.2",
-        "owlapy>=0.1.1",
+        "owlapy>=0.1.2",
         "dicee>=0.1.2",
         "ontosample>=0.2.2",
         "gradio>=4.11.0"]
@@ -57,10 +57,10 @@ setup(
     author_email='caglardemir8@gmail.com',
     url='https://github.com/dice-group/Ontolearn',
     classifiers=[
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
         "Topic :: Scientific/Engineering :: Artificial Intelligence"],
-    python_requires='>=3.9.18',
+    python_requires='>=3.10.13',
     entry_points={"console_scripts": ["ontolearn = ontolearn.run:main"]},
     long_description=long_description,
     long_description_content_type="text/markdown",

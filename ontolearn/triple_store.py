@@ -726,12 +726,11 @@ class TripleStore:
                     mapping.setdefault(p, []).append(o)
                 else:
                     raise RuntimeError("Unrecognized triples to expression mappings")
-                    """continue"""
 
             for k, iter_inds in mapping.items():
                 # RETURN Existential Quantifiers over Nominals: \exists r. {x....y}
                 for x in iter_inds:
-                    yield OWLObjectSomeValuesFrom(property=k, filler=x)
+                    yield OWLObjectSomeValuesFrom(property=k, filler=OWLObjectOneOf(x))
                 type_: OWLClass
                 count: int
                 for type_, count in Counter(
