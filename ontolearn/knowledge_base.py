@@ -14,7 +14,8 @@ from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassE
     OWLNamedIndividual, OWLObjectProperty, OWLClass, OWLDataProperty, IRI, OWLDataRange, OWLObjectSomeValuesFrom, \
     OWLObjectAllValuesFrom, OWLDatatype, BooleanOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, OWLThing, \
     OWLObjectPropertyExpression, OWLLiteral, OWLDataPropertyExpression, OWLClassAssertionAxiom, \
-    OWLObjectPropertyAssertionAxiom, OWLDataPropertyAssertionAxiom, OWLSubClassOfAxiom, OWLEquivalentClassesAxiom, OWLObjectMinCardinality
+    OWLObjectPropertyAssertionAxiom, OWLDataPropertyAssertionAxiom, OWLSubClassOfAxiom, OWLEquivalentClassesAxiom, \
+    OWLObjectMinCardinality, OWLObjectOneOf
 
 from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.search import EvaluatedConcept
@@ -264,12 +265,11 @@ class KnowledgeBase(AbstractKnowledgeBase):
                         mapping.setdefault(p, []).append(o)
                     else:
                         raise RuntimeError("Unrecognized triples to expression mappings")
-                        """continue"""
 
                 for k, iter_inds in mapping.items():
                     # RETURN Existential Quantifiers over Nominals: \exists r. {x....y}
                     for x in iter_inds:
-                        yield OWLObjectSomeValuesFrom(property=k, filler=x)
+                        yield OWLObjectSomeValuesFrom(property=k, filler=OWLObjectOneOf(values=x))
                     type_: OWLClass
                     count: int
                     for type_, count in Counter(
