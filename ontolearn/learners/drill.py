@@ -2,7 +2,7 @@ from ontolearn.base_concept_learner import RefinementBasedConceptLearner
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.abstracts import AbstractScorer, AbstractNode
 from ontolearn.search import RL_State
-from typing import Set, List, Tuple, Optional, Generator, SupportsFloat, Iterable, FrozenSet, Callable
+from typing import Set, List, Tuple, Optional, Generator, SupportsFloat, Iterable, FrozenSet, Callable, Union
 from owlapy.model import OWLNamedIndividual, OWLClassExpression
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 import torch
@@ -133,7 +133,6 @@ class Drill(RefinementBasedConceptLearner):
         # CD: This setting the valiable will be removed later.
         self.quality_func = compute_f1_score
 
-
     def initialize_class_expression_learning_problem(self, pos: Set[OWLNamedIndividual], neg: Set[OWLNamedIndividual]):
         """
             Determine the learning problem and initialize the search.
@@ -175,7 +174,6 @@ class Drill(RefinementBasedConceptLearner):
         if max_runtime:
             assert isinstance(max_runtime, float)
             self.max_runtime = max_runtime
-
         pos_type_counts = Counter(
             [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.pos))])
         neg_type_counts = Counter(
@@ -200,6 +198,10 @@ class Drill(RefinementBasedConceptLearner):
             # (1) Get the most fitting RL-state
             most_promising = self.next_node_to_expand()
             next_possible_states = []
+
+            if time.time() - self.start_time > self.max_runtime:
+                return self.terminate()
+
             # (2) Refine (1)
             for ref in self.apply_refinement(most_promising):
                 if time.time() - self.start_time > self.max_runtime:
@@ -326,7 +328,7 @@ class Drill(RefinementBasedConceptLearner):
         individuals = frozenset({i for i in self.kb.individuals(state.concept)})
         quality = self.quality_func(individuals=individuals, pos=self.learning_problem.pos,
                                     neg=self.learning_problem.neg)
-        state.quality=quality
+        state.quality = quality
         self._number_of_tested_concepts += 1
 
     def apply_refinement(self, rl_state: RL_State) -> Generator:
@@ -812,13 +814,18 @@ class Drill(RefinementBasedConceptLearner):
             self.form_experiences(sequence_of_states, rewards)
         self.learn_from_replay_memory()
 
-    def best_hypotheses(self, n=1):
-        assert self.search_tree is not None
-        assert len(self.search_tree) > 1
-        if n == 1:
-            return [i for i in self.search_tree.get_top_n_nodes(n)][0]
+    def best_hypotheses(self, n=1) -> Union[OWLClassExpression, List[OWLClassExpression]]:
+        assert self.search_tree is not None, "Search tree is not initialized"
+        assert len(self.search_tree) > 1, "Search tree is empty"
+
+        result = []
+        for i, rl_state in enumerate(self.search_tree.get_top_n_nodes(n)):
+            result.append(rl_state.concept)
+
+        if len(result) == 1:
+            return result.pop()
         else:
-            return [i for i in self.search_tree.get_top_n_nodes(n)]
+            return result
 
     def clean(self):
         self.emb_pos, self.emb_neg = None, None
