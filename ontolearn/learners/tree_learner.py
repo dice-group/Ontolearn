@@ -13,6 +13,7 @@ from owlapy.model import OWLEquivalentClassesAxiom, OWLOntologyManager, OWLOntol
 from typing import Dict, Set, Tuple, List, Union, TypeVar, Callable, Generator
 from ontolearn.learning_problem import PosNegLPStandard
 import collections
+from tqdm import  tqdm
 import sklearn
 from sklearn import tree
 
@@ -201,7 +202,7 @@ class TDL:
         examples = positive_examples + negative_examples
 
         # (3) Extract all features from (2).
-        for i in examples:
+        for i in tqdm(examples,desc="Extracting information about examples"):
             expression: [OWLClassExpression, Tuple[OWLDataProperty, OWLLiteral]]
             sub_features = set()
             for expression in self.knowledge_base.abox(individual=i, mode="expression"):
@@ -211,7 +212,6 @@ class TDL:
                 else:
                     sub_features.add(expression)
             features = features | sub_features
-
         assert len(
             features) > 0, f"First hop features cannot be extracted. Ensure that there are axioms about the examples."
         features = list(features)
@@ -221,8 +221,7 @@ class TDL:
         # (5) Creating a tabular data for the binary classification problem.
         X = np.zeros(shape=(len(examples), len(features)), dtype=float)
         y = []
-
-        for ith_row, i in enumerate(examples):
+        for ith_row, i in enumerate(tqdm(examples,desc="Creating supervised binary classification data")):
             expression: [OWLClassExpression, Tuple[OWLDataProperty, OWLLiteral]]
             # Filling the features
             for expression in self.knowledge_base.abox(individual=i, mode="expression"):
@@ -286,6 +285,8 @@ class TDL:
                     value = bool(i["value"])
                     if value is False:
                         owl_class_expression = feature.get_object_complement_of()
+                    else:
+                        owl_class_expression=feature
                 else:
                     from owlapy.model import OWLDataRange
                     assert isinstance(feature, OWLDataProperty)

@@ -480,9 +480,11 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
 
 class TripleStoreReasonerOntology:
 
-    def __init__(self, graph: rdflib.graph.Graph, url: str = None):
+    def __init__(self, graph: rdflib.graph.Graph = None, url: str = None):
         self.g = graph
         self.url = url
+        if self.url:
+            print("USING remote triple store needs to be tested.")
         self.converter = Owl2SparqlConverter()
         # A convenience to distinguish type predicate from other predicates in the results of SPARQL query
         self.type_predicate = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
@@ -548,8 +550,18 @@ class TripleStoreReasonerOntology:
             else:
                 yield subject_, OWLObjectProperty(IRI.create(str_p[1:-1])), OWLNamedIndividual(IRI.create(str_o[1:-1]))
 
-    def query(self, sparql_query: str) -> rdflib.plugins.sparql.processor.SPARQLResult:
-        return self.g.query(sparql_query)
+    def query(self, sparql_query: str) -> Union[rdflib.plugins.sparql.processor.SPARQLResult,Tuple]:
+        if self.url is not None:
+            response = requests.post(self.url, data={'query': sparql_query}).json()["results"]["bindings"]
+            for row in response:
+                row_values = [values["value"] for variable, values in row.items() if values["type"] == "uri"]
+                if len(row_values) == 2:
+                    p, o = row_values
+                    yield rdflib.term.URIRef(p), rdflib.term.URIRef(o)
+                else:
+                    """Literals are ignored"""
+        else:
+            return self.g.query(sparql_query)
 
     def classes_in_signature(self) -> Iterable[OWLClass]:
         query = owl_prefix + """SELECT DISTINCT ?x WHERE { ?x a owl:Class }"""
@@ -632,9 +644,9 @@ class TripleStore:
 
         # Single object to replace the
         if path:
-            self.g = TripleStoreReasonerOntology(rdflib.Graph().parse(path))
+            self.g = TripleStoreReasonerOntology(graph=rdflib.Graph().parse(path))
         else:
-            self.g = TripleStoreReasonerOntology(rdflib.Graph(), url=url)
+            self.g = TripleStoreReasonerOntology(url=url)
 
         self.ontology = self.g
         self.reasoner = self.g
