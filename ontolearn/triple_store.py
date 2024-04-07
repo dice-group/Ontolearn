@@ -582,9 +582,8 @@ class TripleStoreReasonerOntology:
 
     def classes_in_signature(self) -> Iterable[OWLClass]:
         query = owl_prefix + """SELECT DISTINCT ?x WHERE { ?x a owl:Class }"""
-        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
-            assert str_iri[0] == "<" and str_iri[-1] == ">"
-            yield OWLClass(IRI.create(str_iri[1:-1]))
+        for str_iri in self.query(query):
+            yield OWLClass(IRI.create(str_iri))
 
     def subconcepts(self, named_concept: OWLClass, direct=True):
         assert isinstance(named_concept, OWLClass)
@@ -593,9 +592,8 @@ class TripleStoreReasonerOntology:
             query = f"""{rdfs_prefix} SELECT ?x WHERE {{ ?x rdfs:subClassOf* {str_named_concept}. }} """
         else:
             query = f"""{rdf_prefix} SELECT ?x WHERE {{ ?x rdf:subClassOf {str_named_concept}. }} """
-        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
-            assert str_iri[0] == "<" and str_iri[-1] == ">"
-            yield OWLClass(IRI.create(str_iri[1:-1]))
+        for str_iri in self.query(query):
+            yield OWLClass(IRI.create(str_iri))
 
     def get_type_individuals(self, individual: str):
         query = f"""SELECT DISTINCT ?x WHERE {{ <{individual}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?x }}"""
@@ -623,9 +621,8 @@ class TripleStoreReasonerOntology:
     def individuals_in_signature(self) -> Iterable[OWLNamedIndividual]:
         # owl:OWLNamedIndividual is often missing: Perhaps we should add union as well
         query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a ?y. ?y a owl:Class.}"
-        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
-            assert str_iri[0] == "<" and str_iri[-1] == ">"
-            yield OWLNamedIndividual(IRI.create(str_iri[1:-1]))
+        for str_iri in self.query(query):
+            yield OWLNamedIndividual(IRI.create(str_iri))
 
     def data_properties_in_signature(self) -> Iterable[OWLDataProperty]:
         query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:DatatypeProperty.}"
@@ -635,19 +632,14 @@ class TripleStoreReasonerOntology:
 
     def object_properties_in_signature(self) -> Iterable[OWLObjectProperty]:
         query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:ObjectProperty.}"
-        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
-            assert str_iri[0] == "<" and str_iri[-1] == ">"
-            yield OWLObjectProperty(IRI.create(str_iri[1:-1]))
+        for str_iri in self.query(query):
+            yield OWLObjectProperty(IRI.create(str_iri))
 
     def boolean_data_properties(self):
         # @TODO: Double check the SPARQL query to return all boolean data properties
         query = rdf_prefix + xsd_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x rdf:type rdf:Property; rdfs:range xsd:boolean}"
-        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
-            assert str_iri[0] == "<" and str_iri[-1] == ">"
-            raise NotImplementedError("Unsure how to represent a boolean data proerty with owlapy")
-            # yield OWLObjectProperty(IRI.create(str_iri[1:-1]))
-
-        yield
+        for str_iri in self.query(query):
+            raise NotImplementedError("Unsure how to represent a boolean data property with owlapy")
 
 
 class TripleStore:
