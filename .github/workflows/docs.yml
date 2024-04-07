@@ -22,6 +22,11 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Install dependencies
+      run: |
+        python3 -m pip install --upgrade pip
+        pip3 install -e .["doc"]
+
     - name: Prepare required software
       run: |
         # epstopdf & dot & noto-fonts

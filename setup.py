@@ -1,7 +1,7 @@
 """
 @TODO:CD: Implement dev and full
 # Min version : pip3 install -e .
-# Dev version : pip3 install -e .["dev"]
+# Dev version : pip3 install -e .["doc"]
 # full Lversion :pip3 install -e .["full"]
 """
 
@@ -12,11 +12,11 @@ import re
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
-# TODO:CD: Integrate requirements.txt into _deps
 _deps = [
         "matplotlib>=3.3.4",
+    "scikit-learn>=1.4.1",
         "owlready2>=0.40",
-        "torch>=1.7.1",
+        "torch>=1.7.1,<2.2.0",
         "rdflib>=6.0.2",
         "pandas>=1.5.0",
         "sortedcontainers>=2.4.0",
@@ -29,7 +29,15 @@ _deps = [
         "owlapy>=0.1.2",
         "dicee>=0.1.2",
         "ontosample>=0.2.2",
-        "gradio>=4.11.0"]
+        "gradio>=4.11.0",
+        "sphinx>=7.2.6",
+        "sphinx-autoapi>=3.0.0",
+        "sphinx_rtd_theme>=2.0.0",
+        "sphinx-theme>=1.0",
+        "sphinxcontrib-plantuml>=0.27",
+        "plantuml-local-client>=1.2022.6",
+        "myst-parser>=2.0.0",
+        "flake8>=6.0.0"]
 
 deps = {b: a for a, b in (re.findall(r"^(([^!=<>~ ]+)(?:[!=<>~ ].*)?$)", x)[0] for x in _deps)}
 
@@ -53,6 +61,7 @@ extras["min"] = deps_list(
     "deap",  # Evolearner
 )
 # TODO:CD full version must install full dependencies
+extras["doc"] = (deps_list("sphinx","sphinx-autoapi","sphinx-theme","sphinxcontrib-plantuml"))
 extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "gradio", "ontosample"))
 
 setup(
