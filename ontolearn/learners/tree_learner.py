@@ -13,7 +13,7 @@ from owlapy.model import OWLEquivalentClassesAxiom, OWLOntologyManager, OWLOntol
 from typing import Dict, Set, Tuple, List, Union, TypeVar, Callable, Generator
 from ontolearn.learning_problem import PosNegLPStandard
 import collections
-from tqdm import  tqdm
+from tqdm import tqdm
 import sklearn
 from sklearn import tree
 
@@ -202,10 +202,12 @@ class TDL:
         examples = positive_examples + negative_examples
 
         # (3) Extract all features from (2).
-        for i in tqdm(examples,desc="Extracting information about examples"):
+        for i in tqdm(examples, desc="Extracting information about examples"):
             expression: [OWLClassExpression, Tuple[OWLDataProperty, OWLLiteral]]
             sub_features = set()
-            for expression in self.knowledge_base.abox(individual=i, mode="expression"):
+
+            for expression in tqdm(self.knowledge_base.abox(individual=i, mode="expression"), desc=f"Extracting information about {i}"):
+                # @TODO: expression should not be
                 if isinstance(expression, tuple):
                     p, _ = expression
                     sub_features.add(p)
@@ -217,11 +219,11 @@ class TDL:
         features = list(features)
         # (4) Order features: create a mapping from tuple of predicate and objects to integers starting from 0.
         mapping_features = {predicate_object_pair: index_ for index_, predicate_object_pair in enumerate(features)}
-
+        print(f"{len(features)} features are extracted")
         # (5) Creating a tabular data for the binary classification problem.
         X = np.zeros(shape=(len(examples), len(features)), dtype=float)
         y = []
-        for ith_row, i in enumerate(tqdm(examples,desc="Creating supervised binary classification data")):
+        for ith_row, i in enumerate(tqdm(examples, desc="Creating supervised binary classification data")):
             expression: [OWLClassExpression, Tuple[OWLDataProperty, OWLLiteral]]
             # Filling the features
             for expression in self.knowledge_base.abox(individual=i, mode="expression"):
@@ -286,7 +288,7 @@ class TDL:
                     if value is False:
                         owl_class_expression = feature.get_object_complement_of()
                     else:
-                        owl_class_expression=feature
+                        owl_class_expression = feature
                 else:
                     from owlapy.model import OWLDataRange
                     assert isinstance(feature, OWLDataProperty)
