@@ -1,12 +1,6 @@
 """
 StratifiedKFold Cross Validating DL Concept Learning Algorithms
-Usage
-python examples/concept_learning_evaluation.py
-                    --lps LPs/Family/lps.json
-                    --kb KGs/Family/family.owl
-                    --max_runtime 30
-                    --report family.csv
-
+python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family.owl --max_runtime 3 --report family.csv
 """
 import json
 import time
@@ -40,19 +34,16 @@ def dl_concept_learning(args):
     drill = Drill(knowledge_base=kb, path_pretrained_kge=args.path_pretrained_kge,
                   quality_func=F1(), max_runtime=args.max_runtime)
     tdl = TDL(knowledge_base=kb,
-              dataframe_triples=pd.DataFrame(
-                  data=sorted([(str(s), str(p), str(o)) for s, p, o in Graph().parse(args.kb)], key=lambda x: len(x)),
-                  columns=['subject', 'relation', 'object'], dtype=str),
               kwargs_classifier={"random_state": 0},
               max_runtime=args.max_runtime)
-    nces = NCES(knowledge_base_path=args.kb, quality_func=F1(), path_of_embeddings=args.path_of_nces_embeddings,
-                pretrained_model_name=["LSTM", "GRU", "SetTransformer"], num_predictions=5)
-    
-    express_rho = ExpressRefinement(kb, use_inverse=False, use_numeric_datatypes=False)
-    clip = CLIP(knowledge_base=kb, refinement_operator=express_rho, quality_func=F1(), 
-                max_num_of_concepts_tested=int(1e9), max_runtime=args.max_runtime, 
-                path_of_embeddings=args.path_of_clip_embeddings,
-                pretrained_predictor_name=["LSTM", "GRU", "SetTransformer", "CNN"], load_pretrained=True)
+    # nces = NCES(knowledge_base_path=args.kb, quality_func=F1(), path_of_embeddings=args.path_of_nces_embeddings,
+    #            pretrained_model_name=["LSTM", "GRU", "SetTransformer"], num_predictions=5)
+    #
+    # clip = CLIP(knowledge_base=kb,
+    #            refinement_operator=ExpressRefinement(kb, use_inverse=False, use_numeric_datatypes=False), quality_func=F1(),
+    #            max_num_of_concepts_tested=int(1e9), max_runtime=args.max_runtime,
+    #            path_of_embeddings=args.path_of_clip_embeddings,
+    #            pretrained_predictor_name=["LSTM", "GRU", "SetTransformer", "CNN"], load_pretrained=True)
 
     # dictionary to store the data
     data = dict()
@@ -99,15 +90,15 @@ def dl_concept_learning(args):
                                        neg=set(map(OWLNamedIndividual, map(IRI.create, test_neg))))
             print("OCEL starts..", end="\t")
             start_time = time.time()
-            pred_ocel = ocel.fit(train_lp).best_hypotheses(n=1)
+            pred_ocel = ocel.fit(train_lp).best_hypotheses()
             rt_ocel = time.time() - start_time
             print("OCEL ends..", end="\t")
             # () Quality on the training data
-            train_f1_ocel = compute_f1_score(individuals={i for i in kb.individuals(pred_ocel.concept)},
+            train_f1_ocel = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_ocel)}),
                                              pos=train_lp.pos,
                                              neg=train_lp.neg)
             # () Quality on test data
-            test_f1_ocel = compute_f1_score(individuals={i for i in kb.individuals(pred_ocel.concept)},
+            test_f1_ocel = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_ocel)}),
                                             pos=test_lp.pos,
                                             neg=test_lp.neg)
             # Reporting
@@ -120,15 +111,15 @@ def dl_concept_learning(args):
 
             print("CELOE starts..", end="\t")
             start_time = time.time()
-            pred_celoe = celoe.fit(train_lp).best_hypotheses(n=1)
+            pred_celoe = celoe.fit(train_lp).best_hypotheses()
             rt_celoe = time.time() - start_time
             print("CELOE ends..", end="\t")
             # () Quality on the training data
-            train_f1_celoe = compute_f1_score(individuals={i for i in kb.individuals(pred_celoe.concept)},
+            train_f1_celoe = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_celoe)}),
                                               pos=train_lp.pos,
                                               neg=train_lp.neg)
             # () Quality on test data
-            test_f1_celoe = compute_f1_score(individuals={i for i in kb.individuals(pred_celoe.concept)},
+            test_f1_celoe = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_celoe)}),
                                              pos=test_lp.pos,
                                              neg=test_lp.neg)
             # Reporting
@@ -141,21 +132,20 @@ def dl_concept_learning(args):
 
             print("Evo starts..", end="\t")
             start_time = time.time()
-            # BUG: Evolearner needs to be intialized for each learning problem
-            evolearner = EvoLearner(knowledge_base=KnowledgeBase(path=args.kb), quality_func=F1(),
-                                    max_runtime=args.max_runtime,
-                                    use_data_properties=False,
-                                    use_inverse=False, use_card_restrictions=False)
-            pred_evo = evolearner.fit(train_lp).best_hypotheses(n=1)
+            # BUG: Evolearner needs to be initalized for each learning problem
+            evolearner = EvoLearner(knowledge_base=KnowledgeBase(path=args.kb),
+                                    quality_func=F1(),
+                                    max_runtime=args.max_runtime)
+            pred_evo = evolearner.fit(train_lp).best_hypotheses()
             rt_evo = time.time() - start_time
             print("Evo ends..", end="\t")
 
             # () Quality on the training data
-            train_f1_evo = compute_f1_score(individuals={i for i in kb.individuals(pred_evo.concept)},
+            train_f1_evo = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_evo)}),
                                             pos=train_lp.pos,
                                             neg=train_lp.neg)
             # () Quality on test data
-            test_f1_evo = compute_f1_score(individuals={i for i in kb.individuals(pred_evo.concept)},
+            test_f1_evo = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_evo)}),
                                            pos=test_lp.pos,
                                            neg=test_lp.neg)
             # Reporting
@@ -168,16 +158,16 @@ def dl_concept_learning(args):
 
             print("DRILL starts..", end="\t")
             start_time = time.time()
-            pred_drill = drill.fit(train_lp).best_hypotheses(n=1)
+            pred_drill = drill.fit(train_lp).best_hypotheses()
             rt_drill = time.time() - start_time
             print("DRILL ends..", end="\t")
 
             # () Quality on the training data
-            train_f1_drill = compute_f1_score(individuals={i for i in kb.individuals(pred_drill.concept)},
+            train_f1_drill = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_drill)}),
                                               pos=train_lp.pos,
                                               neg=train_lp.neg)
             # () Quality on test data
-            test_f1_drill = compute_f1_score(individuals={i for i in kb.individuals(pred_drill.concept)},
+            test_f1_drill = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_drill)}),
                                              pos=test_lp.pos,
                                              neg=test_lp.neg)
             # Reporting
@@ -195,11 +185,11 @@ def dl_concept_learning(args):
             rt_tdl = time.time() - start_time
 
             # () Quality on the training data
-            train_f1_tdl = compute_f1_score(individuals={i for i in kb.individuals(pred_tdl)},
+            train_f1_tdl = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_tdl)}),
                                             pos=train_lp.pos,
                                             neg=train_lp.neg)
             # () Quality on test data
-            test_f1_tdl = compute_f1_score(individuals={i for i in kb.individuals(pred_tdl)},
+            test_f1_tdl = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_tdl)}),
                                            pos=test_lp.pos,
                                            neg=test_lp.neg)
 
@@ -209,11 +199,14 @@ def dl_concept_learning(args):
             print(f"TDL Train Quality: {train_f1_tdl:.3f}", end="\t")
             print(f"TDL Test Quality: {test_f1_tdl:.3f}", end="\t")
             print(f"TDL Runtime: {rt_tdl:.3f}")
-            
-            
+            # @TODO: CD: Integrate the process of downloading pretrained model and embeddings for a given knowledge base
+            """
+            e.g. define a function where there is a mapping from three benchmark dataset to the steps to download embeddings
+            or pretrained models etc.
+            @TODO: 
             start_time = time.time()
             # () Fit model training dataset
-            pred_nces = nces.fit(train_lp.pos, train_lp.neg).best_hypotheses(n=1).concept
+            pred_nces = nces.fit(train_lp.pos, train_lp.neg).best_hypotheses(n=1)
             print("NCES ends..", end="\t")
             rt_nces = time.time() - start_time
 
@@ -236,15 +229,15 @@ def dl_concept_learning(args):
             
             print("CLIP starts..", end="\t")
             start_time = time.time()
-            pred_clip = clip.fit(train_lp).best_hypotheses(n=1)
+            pred_clip = clip.fit(train_lp).best_hypotheses()
             rt_clip = time.time() - start_time
             print("CLIP ends..", end="\t")
             # () Quality on the training data
-            train_f1_clip = compute_f1_score(individuals={i for i in kb.individuals(pred_clip.concept)},
+            train_f1_clip = compute_f1_score(individuals={i for i in kb.individuals(pred_clip)},
                                               pos=train_lp.pos,
                                               neg=train_lp.neg)
             # () Quality on test data
-            test_f1_clip = compute_f1_score(individuals={i for i in kb.individuals(pred_clip.concept)},
+            test_f1_clip = compute_f1_score(individuals={i for i in kb.individuals(pred_clip)},
                                              pos=test_lp.pos,
                                              neg=test_lp.neg)
             
@@ -254,6 +247,8 @@ def dl_concept_learning(args):
             print(f"CLIP Train Quality: {train_f1_clip:.3f}", end="\t")
             print(f"CLIP Test Quality: {test_f1_clip:.3f}", end="\t")
             print(f"CLIP Runtime: {rt_clip:.3f}")
+            """
+
 
     df = pd.DataFrame.from_dict(data)
     df.to_csv(args.report, index=False)
