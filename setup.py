@@ -1,9 +1,18 @@
+"""
+@TODO:CD: Implement dev and full
+# Min version : pip3 install -e .
+# Dev version : pip3 install -e .["dev"]
+# full Lversion :pip3 install -e .["full"]
+"""
+
+
+
 from setuptools import setup, find_packages
 import re
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
-
+# TODO:CD: Integrate requirements.txt into _deps
 _deps = [
         "matplotlib>=3.3.4",
         "owlready2>=0.40",
@@ -43,7 +52,7 @@ extras["min"] = deps_list(
     "dicee",  # Drill
     "deap",  # Evolearner
 )
-
+# TODO:CD full version must install full dependencies
 extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "gradio", "ontosample"))
 
 setup(
