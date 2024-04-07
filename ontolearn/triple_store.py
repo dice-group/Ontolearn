@@ -626,9 +626,8 @@ class TripleStoreReasonerOntology:
 
     def data_properties_in_signature(self) -> Iterable[OWLDataProperty]:
         query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:DatatypeProperty.}"
-        for str_iri in rdflib_to_str(sparql_result=self.query(query)):
-            assert str_iri[0] == "<" and str_iri[-1] == ">"
-            yield OWLDataProperty(IRI.create(str_iri[1:-1]))
+        for str_iri in self.query(query):
+            yield OWLDataProperty(IRI.create(str_iri))
 
     def object_properties_in_signature(self) -> Iterable[OWLObjectProperty]:
         query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:ObjectProperty.}"
@@ -636,10 +635,10 @@ class TripleStoreReasonerOntology:
             yield OWLObjectProperty(IRI.create(str_iri))
 
     def boolean_data_properties(self):
-        # @TODO: Double check the SPARQL query to return all boolean data properties
         query = rdf_prefix + xsd_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x rdf:type rdf:Property; rdfs:range xsd:boolean}"
         for str_iri in self.query(query):
-            raise NotImplementedError("Unsure how to represent a boolean data property with owlapy")
+            yield OWLDataProperty(IRI.create(str_iri))
+
 
 
 class TripleStore:
@@ -740,7 +739,7 @@ class TripleStore:
             for s, p, o in self.g.abox(str_iri=individual.get_iri().as_str()):
                 if isinstance(p, IRI) and isinstance(o, OWLClass):
                     ##############################################################
-                    # RETURN: C
+                    # RETURN:< C
                     ##############################################################
 
                     yield o
