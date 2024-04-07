@@ -60,8 +60,9 @@ extras["min"] = deps_list(
     "dicee",  # Drill
     "deap",  # Evolearner
 )
-# TODO:CD full version must install full dependencies
-extras["doc"] = (deps_list("sphinx","sphinx-autoapi","sphinx-theme","sphinxcontrib-plantuml"))
+
+extras["doc"] = (deps_list("sphinx","sphinx-autoapi","sphinx-theme","sphinxcontrib-plantuml","myst-parser",
+                           "plantuml-local-client"))
 extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "gradio", "ontosample"))
 
 setup(
