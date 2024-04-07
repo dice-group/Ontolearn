@@ -565,10 +565,11 @@ class TripleStoreReasonerOntology:
             else:
                 raise RuntimeError(x)
         if self.url is not None:
+            # Sending HTTP request to a remote endpoint.
             response = requests.post(self.url, data={'query': sparql_query}).json()["results"]["bindings"]
             for row in response:
-                x=[dict_to_rdflib_object(values) for variable, values in row.items()]
-                if len(x)==1:
+                x = [dict_to_rdflib_object(values) for variable, values in row.items()]
+                if len(x) == 1:
                     yield x[0]
                 else:
                     yield x
@@ -578,7 +579,6 @@ class TripleStoreReasonerOntology:
                     yield x[0]
                 else:
                     yield x
-
 
     def classes_in_signature(self) -> Iterable[OWLClass]:
         query = owl_prefix + """SELECT DISTINCT ?x WHERE { ?x a owl:Class }"""
@@ -600,25 +600,20 @@ class TripleStoreReasonerOntology:
         for str_iri in self.query(query):
             yield OWLClass(IRI.create(str_iri))
 
-    def instances(self, expression: OWLClassExpression):
+    def instances(self, expression: OWLClassExpression) -> Generator[OWLNamedIndividual, None, None]:
         assert isinstance(expression, OWLClassExpression)
-        # convert to SPARQL query
-        # (1)
         try:
             sparql_query = self.converter.as_query("?x", expression)
         except Exception as exc:
-            # @TODO creating a SPARQL query from OWLObjectMinCardinality causes a problem.
             print(f"Error at converting {expression} into sparql")
             traceback.print_exception(exc)
             print(f"Error at converting {expression} into sparql")
-            sparql_query = None
             raise RuntimeError("Couldn't convert")
 
         for i in self.query(sparql_query):
             yield OWLNamedIndividual(IRI.create(i))
 
-
-    def individuals_in_signature(self) -> Iterable[OWLNamedIndividual]:
+    def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
         # owl:OWLNamedIndividual is often missing: Perhaps we should add union as well
         query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a ?y. ?y a owl:Class.}"
         for str_iri in self.query(query):
@@ -638,7 +633,6 @@ class TripleStoreReasonerOntology:
         query = rdf_prefix + xsd_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x rdf:type rdf:Property; rdfs:range xsd:boolean}"
         for str_iri in self.query(query):
             yield OWLDataProperty(IRI.create(str_iri))
-
 
 
 class TripleStore:
@@ -756,7 +750,7 @@ class TripleStore:
                     ##############################################################
                     # RETURN: \exists r. {x} => Existential restriction over nominals
                     ##############################################################
-                    assert isinstance(x,OWLNamedIndividual)
+                    assert isinstance(x, OWLNamedIndividual)
                     yield OWLObjectSomeValuesFrom(property=k, filler=OWLObjectOneOf(x))
 
                 type_: OWLClass
@@ -797,14 +791,12 @@ class TripleStore:
     def get_boolean_data_properties(self):
         yield from self.reasoner.boolean_data_properties()
 
-    def individuals(self, concept: Optional[OWLClassExpression] = None) -> Iterable[OWLNamedIndividual]:
+    def individuals(self, concept: Optional[OWLClassExpression] = None) -> Generator[OWLNamedIndividual, None, None]:
         """Given an OWL class expression, retrieve all individuals belonging to it.
-
-
         Args:
             concept: Class expression of which to list individuals.
         Returns:
-            Individuals belonging to the given class.
+            Generator of individuals belonging to the given class.
         """
 
         if concept is None or concept.is_owl_thing():
