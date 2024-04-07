@@ -8,11 +8,12 @@ import ontolearn.triple_store
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.base import OWLOntologyManager_Owlready2
 from owlapy.model import OWLEquivalentClassesAxiom, OWLOntologyManager, OWLOntology, AddImport, OWLImportsDeclaration, \
-    IRI, OWLDataOneOf, OWLObjectProperty, OWLObjectOneOf
+    IRI, OWLDataOneOf, OWLObjectProperty, OWLObjectOneOf, OWLDataProperty
 
 from typing import Dict, Set, Tuple, List, Union, TypeVar, Callable, Generator
 from ontolearn.learning_problem import PosNegLPStandard
 import collections
+from tqdm import tqdm
 import sklearn
 from sklearn import tree
 
@@ -201,24 +202,53 @@ class TDL:
         examples = positive_examples + negative_examples
 
         # (3) Extract all features from (2).
-        for i in examples:
-            features = features | {expression for expression in
-                                   self.knowledge_base.abox(individual=i,
-                                                            mode="expression")}
+        for i in tqdm(examples, desc="Extracting information about examples"):
+            expression: [OWLClassExpression, Tuple[OWLDataProperty, OWLLiteral]]
+            sub_features = set()
+
+            for expression in tqdm(self.knowledge_base.abox(individual=i, mode="expression"), desc=f"Extracting information about {i}"):
+                # @TODO: expression should not be
+                if isinstance(expression, tuple):
+                    p, _ = expression
+                    sub_features.add(p)
+                else:
+                    sub_features.add(expression)
+            features = features | sub_features
         assert len(
             features) > 0, f"First hop features cannot be extracted. Ensure that there are axioms about the examples."
-        # @TODO: CD: We must integrate on use_nominals and cardinality restrictions in feature creation.
         features = list(features)
         # (4) Order features: create a mapping from tuple of predicate and objects to integers starting from 0.
         mapping_features = {predicate_object_pair: index_ for index_, predicate_object_pair in enumerate(features)}
-
+        print(f"{len(features)} features are extracted")
         # (5) Creating a tabular data for the binary classification problem.
         X = np.zeros(shape=(len(examples), len(features)), dtype=float)
         y = []
-        for ith_row, i in enumerate(examples):
+        for ith_row, i in enumerate(tqdm(examples, desc="Creating supervised binary classification data")):
+            expression: [OWLClassExpression, Tuple[OWLDataProperty, OWLLiteral]]
+            # Filling the features
             for expression in self.knowledge_base.abox(individual=i, mode="expression"):
-                assert expression in mapping_features
-                X[ith_row, mapping_features[expression]] = 1.0
+                if isinstance(expression, tuple):
+                    o: OWLLiteral
+                    p, o = expression
+                    assert p in mapping_features
+                    if o.is_double():
+                        value: float
+                        value = o.parse_double()
+                        assert isinstance(value, float)
+                        X[ith_row, mapping_features[p]] = value
+                    elif o.is_boolean():
+                        value: bool
+                        value = o.parse_boolean()
+                        X[ith_row, mapping_features[p]] = float(value)
+                    else:
+                        raise RuntimeError(f"{o} type not requi ")
+
+                else:
+                    assert expression in mapping_features
+                    assert isinstance(expression, OWLClassExpression)
+                    X[ith_row, mapping_features[expression]] = 1.0
+
+            # Filling the label
             if ith_row < len(positive_examples):
                 # Sanity checking for positive examples.
                 assert i in positive_examples and i not in negative_examples
@@ -249,12 +279,24 @@ class TDL:
                                   only_shared=False), positive_examples):
             concepts_per_reasoning_step = []
             for i in sequence_of_reasoning_steps:
-                owl_class_expression = i["feature"]
+                feature: Union[OWLClassExpression, OWLDataProperty]
+                feature = i["feature"]
                 # sanity checking about the decision.
-                assert 1 >= i["value"] >= 0.0
-                value = bool(i["value"])
-                if value is False:
-                    owl_class_expression = owl_class_expression.get_object_complement_of()
+                if isinstance(feature, OWLClassExpression):
+                    assert 1.0 >= i["value"] >= 0.0
+                    value = bool(i["value"])
+                    if value is False:
+                        owl_class_expression = feature.get_object_complement_of()
+                    else:
+                        owl_class_expression = feature
+                else:
+                    from owlapy.model import OWLDataRange
+                    assert isinstance(feature, OWLDataProperty)
+                    # {'decision_node': 0, 'feature': OWLDataProperty(IRI('http://dl-learner.org/mutagenesis#','act')), 'value': 4.99}
+                    # We need https://www.w3.org/TR/2004/REC-owl-semantics-20040210/#owl_minCardinality
+                    # https://www.w3.org/TR/owl-ref/#ValueRestriction
+                    # @TODO:CD: Is this really correct ?!
+                    owl_class_expression = OWLDataHasValue(property=feature, value=OWLLiteral(i["value"]))
 
                 concepts_per_reasoning_step.append(owl_class_expression)
 
@@ -321,7 +363,7 @@ class TDL:
         return self
 
     def dept_built_sparse_training_data(self, entity_infos: Dict[str, Dict], individuals: List[str],
-                                   feature_names: List[Tuple[str, Union[str, None]]]):
+                                        feature_names: List[Tuple[str, Union[str, None]]]):
         """ Construct a tabular representations from fixed features """
         assert entity_infos is not None, "No entity_infos"
         result = []
