@@ -1,9 +1,13 @@
-# Ontolearn
+# Ontolearn: Learning OWL Class Expression
 
-*Ontolearn* is an open-source software library for description logic learning problem.
-Find more in the [Documentation](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction).
+*Ontolearn* is an open-source software library for learning owl class expressions at large scale.
 
-Learning algorithms: 
+Given positive and negative [OWL named individual](https://www.w3.org/TR/owl2-syntax/#Individuals) examples
+$E^+$ and $E^-$, learning [OWL Class expression](https://www.w3.org/TR/owl2-syntax/#Class_Expressions) problem refers to the following supervised Machine Learning problem
+
+$$\forall p \in E^+\ \mathcal{K} \models H(p) \wedge \forall n \in E^-\ \mathcal{K} \not \models H(n).$$
+
+To tackle this supervised learnign problem, ontolearn offers many symbolic, neuro-sybmoloc and deep learning based Learning algorithms: 
 - **Drill** &rarr; [Neuro-Symbolic Class Expression Learning](https://www.ijcai.org/proceedings/2023/0403.pdf)
 - **EvoLearner** &rarr; [EvoLearner: Learning Description Logics with Evolutionary Algorithms](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
 - **NCES2** &rarr; (soon) [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
@@ -12,6 +16,8 @@ Learning algorithms:
 - **CLIP** &rarr; [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
 - **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
 - **OCEL** &rarr; A limited version of CELOE
+
+Find more in the [Documentation](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction).
 
 ## Installation
 
@@ -59,71 +65,8 @@ lp = PosNegLPStandard(pos={OWLNamedIndividual(IRI.create("http://example.com/fat
 # (5) Learn description logic concepts best fitting (3).
 for h in model.fit(learning_problem=lp).best_hypotheses(10):
     str_concept = render.render(h.concept)
-    print("Concept:", str_concept)
-    print("Verbalization: ", verbalizer(text=str_concept))
-# e.g.
-# Concept: ≥ 1 hasChild.{markus}
-# Verbalization:   The concept "≥ 1 hasChild.{markus}" in Description Logic represents that 
-# an individual belongs to the class of things that have at least one child named "markus". 
-# This is a shorthand notation for "hasChild exactly 1 Markus or hasChild 2 Markus or ...", 
-# where "Markus" is an individual name and "hasChild" is a role representing the parent-child relationship.
-```
-Learned hypothesis can be used as a binary classifier as shown below.
-```python
-from ontolearn.concept_learner import CELOE
-from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.learning_problem import PosNegLPStandard
-from ontolearn.search import EvoLearnerNode
-from owlapy.model import OWLClass, OWLClassAssertionAxiom, OWLNamedIndividual, IRI, OWLObjectProperty, OWLObjectPropertyAssertionAxiom
-# (1) Load a knowledge graph.
-kb = KnowledgeBase(path='KGs/father.owl')
-# (2) Initialize a learner.
-model = CELOE(knowledge_base=kb)
-# (3) Define a description logic concept learning problem.
-lp = PosNegLPStandard(pos={OWLNamedIndividual(IRI.create("http://example.com/father#stefan")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#markus")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#martin"))},
-                      neg={OWLNamedIndividual(IRI.create("http://example.com/father#heinz")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#anna")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#michelle"))})
-# (4) Learn description logic concepts best fitting (3).
-dl_classifiers=model.fit(learning_problem=lp).best_hypotheses(2)
-
-# (5) Inference over unseen individuals
-namespace = 'http://example.com/father#'
-# (6) New Individuals
-julia = OWLNamedIndividual(IRI.create(namespace, 'julia'))
-julian = OWLNamedIndividual(IRI.create(namespace, 'julian'))
-thomas = OWLNamedIndividual(IRI.create(namespace, 'thomas'))
-# (7) OWLClassAssertionAxiom  about (6)
-male = OWLClass(IRI.create(namespace, 'male'))
-female = OWLClass(IRI.create(namespace, 'female'))
-axiom1 = OWLClassAssertionAxiom(individual=julia, class_expression=female)
-axiom2 = OWLClassAssertionAxiom(individual=julian, class_expression=male)
-axiom3 = OWLClassAssertionAxiom(individual=thomas, class_expression=male)
-# (8) OWLObjectPropertyAssertionAxiom about (6)
-has_child = OWLObjectProperty(IRI.create(namespace, 'hasChild'))
-# Existing Individuals
-anna = OWLNamedIndividual(IRI.create(namespace, 'anna'))
-markus = OWLNamedIndividual(IRI.create(namespace, 'markus'))
-michelle = OWLNamedIndividual(IRI.create(namespace, 'michelle'))
-axiom4 = OWLObjectPropertyAssertionAxiom(subject=thomas, property_=has_child, object_=julian)
-axiom5 = OWLObjectPropertyAssertionAxiom(subject=julia, property_=has_child, object_=julian)
-
-# 4. Use loaded class expressions for predictions
-predictions = model.predict(individuals=[julia, julian, thomas, anna, markus, michelle],
-                            axioms=[axiom1, axiom2, axiom3, axiom4, axiom5],
-                            hypotheses=dl_classifiers)
-print(predictions)
-"""
-          (¬female) ⊓ (∃ hasChild.⊤)  male
-julia                            0.0   0.0
-julian                           0.0   1.0
-thomas                           1.0   1.0
-anna                             0.0   0.0
-markus                           1.0   1.0
-michelle                         0.0   0.0
-"""
+    print("Concept:", str_concept) # Concept: ≥ 1 hasChild.{markus}
+    print("Verbalization: ", verbalizer(text=str_concept)) # Verbalization:   The concept "≥ 1 hasChild.{markus}" in Description Logic represents that  an individual belongs to the class of things that have at least one child named "markus".
 ```
 
 Fore more please refer to  the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder.
