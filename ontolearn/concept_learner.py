@@ -184,12 +184,19 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
         #     return n
         # raise ValueError('Search Tree can not be empty.')
 
-    def best_hypotheses(self, n: int = 1) -> Union[OWLClassExpression, Iterable[OWLClassExpression]]:
+    def best_hypotheses(self, n: int = 1, return_node: bool = False) -> Union[Union[
+        OWLClassExpression, Iterable[OWLClassExpression]], Union[OENode, Iterable[OENode]]]:
         x = islice(self.best_descriptions, n)
         if n == 1:
-            return next(x).concept
+            if return_node:
+                return next(x)
+            else:
+                return next(x).concept
         else:
-            return [i.concept for i in x]
+            if return_node:
+                return [i for i in x]
+            else:
+                return [i.concept for i in x]
 
     def make_node(self, c: OWLClassExpression, parent_node: Optional[OENode] = None, is_root: bool = False) -> OENode:
         """
@@ -462,7 +469,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
     def _log_current_best(self, heading_step, top_n: int = 10) -> None:
         logger.debug('######## %s step Best Hypotheses ###########', heading_step)
 
-        predictions = list(self.best_hypotheses(top_n))
+        predictions = list(self.best_hypotheses(top_n, return_node=True))
         for ith, node in enumerate(predictions):
             logger.debug('{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(
                 ith + 1, DLSyntaxObjectRenderer().render(node.concept),
@@ -512,7 +519,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
 
         print('######## ', heading_step, 'step Best Hypotheses ###########')
 
-        predictions = list(self.best_hypotheses(top_n))
+        predictions = list(self.best_hypotheses(top_n, return_node=True))
         for ith, node in enumerate(predictions):
             print('{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(ith + 1, rdr.render(node.concept),
                                                               type(self.quality_func).name, node.quality,
@@ -1022,14 +1029,21 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             population = self.toolbox.population(population_size=self.population_size)
         return population
 
-    def best_hypotheses(self, n: int = 1, key: str = 'fitness') -> Union[OWLClassExpression,
+    def best_hypotheses(self, n: int = 1, key: str = 'fitness', return_node: bool = False) -> Union[OWLClassExpression,
     Iterable[OWLClassExpression]]:
         assert self._result_population is not None
         assert len(self._result_population) > 0
         if n > 1:
-            return [i.concept for i in self._get_top_hypotheses(self._result_population, n, key)]
+            if return_node:
+                return [i for i in self._get_top_hypotheses(self._result_population, n, key)]
+
+            else:
+                return [i.concept for i in self._get_top_hypotheses(self._result_population, n, key)]
         else:
-            return next(self._get_top_hypotheses(self._result_population, n, key)).concept
+            if return_node:
+                return next(self._get_top_hypotheses(self._result_population, n, key))
+            else:
+                return next(self._get_top_hypotheses(self._result_population, n, key)).concept
 
     def _get_top_hypotheses(self, population: List[Tree], n: int = 5, key: str = 'fitness') \
             -> Iterable[EvoLearnerNode]:

@@ -334,15 +334,15 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         manager.apply_change(AddImport(ontology, OWLImportsDeclaration(IRI.create('file://' + self.kb.path))))
         for ith, h in enumerate(self.best_hypotheses(n=n)):
             cls_a: OWLClass = OWLClass(IRI.create(NS, "Pred_" + str(ith)))
-            equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, h.concept])
+            equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, h])
             manager.add_axiom(ontology, equivalent_classes_axiom)
-
+            # @TODO:CD: We should find a way to include information (F1score etc) outside of OWL class expression instances
+            """
             try:
                 assert isinstance(h, _NodeQuality)
                 quality = h.quality
             except AttributeError:
                 quality = None
-
             if isinstance(self.quality_func, Accuracy):
                 accuracy = OWLAnnotationAssertionAxiom(cls_a.get_iri(), OWLAnnotation(
                     OWLAnnotationProperty(IRI.create(SNS, "accuracy")), OWLLiteral(quality)))
@@ -351,6 +351,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
                 f1_score = OWLAnnotationAssertionAxiom(cls_a.get_iri(), OWLAnnotation(
                     OWLAnnotationProperty(IRI.create(SNS, "f1_score")), OWLLiteral(quality)))
                 manager.add_axiom(ontology, f1_score)
+            """
 
         manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))
 

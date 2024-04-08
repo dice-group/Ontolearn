@@ -15,7 +15,7 @@ render = DLSyntaxObjectRenderer()
 with open("LPs/Family/lps.json") as json_file:
     settings = json.load(json_file)
 # (3) Initialize learner
-model = Drill(knowledge_base=kb,use_nominals=False)
+model = Drill(knowledge_base=kb, use_nominals=False)
 # (4)
 for str_target_concept, examples in settings['problems'].items():
     p = set(examples['positive_examples'])
@@ -28,4 +28,4 @@ for str_target_concept, examples in settings['problems'].items():
     str_concept = render.render(h)
     f1_score = compute_f1_score(individuals=frozenset({i for i in kb.individuals(h)}), pos=lp.pos, neg=lp.neg)
     # CD: We need to specify ranges for the regression tests.
-    assert f1_score>=0.5
+    assert f1_score >= 0.5
