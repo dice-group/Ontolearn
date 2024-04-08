@@ -140,7 +140,7 @@ class Drill(RefinementBasedConceptLearner):
             2) Sample negative examples if necessary.
             3) Initialize the root and search tree.
             """
-        #self.clean()
+        # self.clean()
         assert 0 < len(pos) and 0 < len(neg)
 
         # 1. CD: PosNegLPStandard will be deprecated.
@@ -812,13 +812,16 @@ class Drill(RefinementBasedConceptLearner):
             self.form_experiences(sequence_of_states, rewards)
         self.learn_from_replay_memory()
 
-    def best_hypotheses(self, n=1) -> Union[OWLClassExpression, List[OWLClassExpression]]:
+    def best_hypotheses(self, n=1, return_node: bool = False) -> Union[OWLClassExpression, List[OWLClassExpression]]:
         assert self.search_tree is not None, "Search tree is not initialized"
         assert len(self.search_tree) > 1, "Search tree is empty"
 
         result = []
         for i, rl_state in enumerate(self.search_tree.get_top_n_nodes(n)):
-            result.append(rl_state.concept)
+            if return_node:
+                result.append(rl_state)
+            else:
+                result.append(rl_state.concept)
 
         if len(result) == 1:
             return result.pop()

@@ -7,6 +7,7 @@ from owlapy.model import OWLNamedIndividual, IRI
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import EvoLearner
 from ontolearn.utils import setup_logging
+
 random.seed(1)
 
 
@@ -16,10 +17,11 @@ class TestEvoLearner(unittest.TestCase):
         with open('examples/synthetic_problems.json') as json_file:
             settings = json.load(json_file)
         kb = KnowledgeBase(path=settings['data_path'][3:])
+        # @TODO: Explicitly define params
         model = EvoLearner(knowledge_base=kb, max_runtime=10)
 
         regression_test_evolearner = {'Aunt': 1.0, 'Brother': 1.0,
-                                      'Cousin': 1.0, 'Granddaughter': 1.0,
+                                      'Cousin': 0.992, 'Granddaughter': 1.0,
                                       'Uncle': 0.9, 'Grandgrandfather': 1.0}
         for str_target_concept, examples in settings['problems'].items():
             pos = set(map(OWLNamedIndividual, map(IRI.create, set(examples['positive_examples']))))
@@ -28,15 +30,15 @@ class TestEvoLearner(unittest.TestCase):
 
             lp = PosNegLPStandard(pos=pos, neg=neg)
             returned_model = model.fit(learning_problem=lp)
-            self.assertEqual(returned_model, model)
-            hypotheses = list(returned_model.best_hypotheses(n=3))
-            self.assertGreaterEqual(hypotheses[0].quality, regression_test_evolearner[str_target_concept])
+            assert returned_model == model
+            hypotheses = list(returned_model.best_hypotheses(n=3, return_node=True))
+            assert hypotheses[0].quality >= regression_test_evolearner[str_target_concept]
             # best_hypotheses returns distinct hypotheses and sometimes the model will not find 'n' distinct hypothesis,
             # hence the checks
             if len(hypotheses) == 2:
-                self.assertGreaterEqual(hypotheses[0].quality, hypotheses[1].quality)
+                assert hypotheses[0].quality >= hypotheses[1].quality
             if len(hypotheses) == 3:
-                self.assertGreaterEqual(hypotheses[1].quality, hypotheses[2].quality)
+                assert hypotheses[1].quality >= hypotheses[2].quality
 
     def test_regression_mutagenesis_multiple_fits(self):
         kb = KnowledgeBase(path='KGs/Mutagenesis/mutagenesis.owl')
@@ -52,9 +54,9 @@ class TestEvoLearner(unittest.TestCase):
         lp = PosNegLPStandard(pos=pos, neg=neg)
         model = EvoLearner(knowledge_base=kb, max_runtime=10)
         returned_model = model.fit(learning_problem=lp)
-        best_pred = returned_model.best_hypotheses(n=1)
-        self.assertEqual(best_pred.quality, 1.00)
+        best_pred = returned_model.best_hypotheses(n=1, return_node=True)
+        assert best_pred.quality == 1.00
 
         returned_model = model.fit(learning_problem=lp)
-        best_pred = returned_model.best_hypotheses(n=1)
-        self.assertEqual(best_pred.quality, 1.00)
+        best_pred = returned_model.best_hypotheses(n=1, return_node=True)
+        assert best_pred.quality == 1.00

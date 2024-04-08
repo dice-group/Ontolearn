@@ -14,23 +14,24 @@ import time
 from owlapy.model import OWLNamedIndividual, IRI
 from ontolearn.utils.static_funcs import compute_f1_score
 
+
 class TestConceptLearnerReg:
 
     def test_regression_family(self):
         with open('examples/synthetic_problems.json') as json_file:
             settings = json.load(json_file)
         kb = KnowledgeBase(path=settings['data_path'][3:])
-        max_runtime=10
+        max_runtime = 10
 
         ocel = OCEL(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime)
         celoe = CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime)
         evo = EvoLearner(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime)
         drill = Drill(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime)
 
-        drill_quality=[]
-        celoe_quality=[]
-        ocel_quality=[]
-        evo_quality=[]
+        drill_quality = []
+        celoe_quality = []
+        ocel_quality = []
+        evo_quality = []
 
         for str_target_concept, examples in settings['problems'].items():
             pos = set(map(OWLNamedIndividual, map(IRI.create, set(examples['positive_examples']))))
@@ -39,15 +40,27 @@ class TestConceptLearnerReg:
 
             lp = PosNegLPStandard(pos=pos, neg=neg)
             # Untrained & max runtime is not fully integrated.
-            ocel_quality.append(ocel.fit(lp).best_hypotheses(n=1).quality)
-            celoe_quality.append(celoe.fit(lp).best_hypotheses(n=1).quality)
-            evo_quality.append(evo.fit(lp).best_hypotheses(n=1).quality)
+            # Compute qualities explicitly
+            ocel_quality.append(compute_f1_score(individuals=
+                                                  frozenset({i for i in kb.individuals(
+                                                      ocel.fit(lp).best_hypotheses(n=1, return_node=False))}),
+                                                  pos=lp.pos,
+                                                  neg=lp.neg))
+            celoe_quality.append(compute_f1_score(individuals=
+                                                  frozenset({i for i in kb.individuals(
+                                                      celoe.fit(lp).best_hypotheses(n=1, return_node=False))}),
+                                                  pos=lp.pos,
+                                                  neg=lp.neg))
+            evo_quality.append(compute_f1_score(individuals=
+                                                  frozenset({i for i in kb.individuals(
+                                                      evo.fit(lp).best_hypotheses(n=1, return_node=False))}),
+                                                  pos=lp.pos,
+                                                  neg=lp.neg))
             drill_quality.append(compute_f1_score(individuals=
-                                                  frozenset({i for i in kb.individuals(drill.fit(lp).best_hypotheses(n=1))}),
+                                                  frozenset({i for i in kb.individuals(
+                                                      drill.fit(lp).best_hypotheses(n=1, return_node=False))}),
                                                   pos=lp.pos,
                                                   neg=lp.neg))
 
-
-        assert sum(evo_quality)>=sum(drill_quality)
-        assert sum(celoe_quality)>=sum(ocel_quality)
-
+        assert sum(evo_quality) >= sum(drill_quality)
+        assert sum(celoe_quality) >= sum(ocel_quality)

@@ -60,7 +60,7 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
                                 OWLClass(IRI(NS, 'Granddaughter')),
                                 OWLClass(IRI(NS, 'Grandson')),
                                 OWLClass(IRI(NS, 'Son'))})
-        self.assertEqual(frozenset(ch.sub_classes(OWLClass(IRI(NS, 'Child')))), target_cls)
+        assert frozenset(ch.sub_classes(OWLClass(IRI(NS, 'Child'))))==target_cls
 
     def test_class_hierarchy_children(self):
         NS = "http://example.com/father#"
@@ -88,10 +88,10 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
 
         target_cls = frozenset({OWLClass(IRI(NS, 'Female')),
                                 OWLClass(IRI(NS, 'Grandparent'))})
-        self.assertEqual(frozenset(ch.super_classes(grandmother)), target_cls)
+        assert frozenset(ch.super_classes(grandmother))== target_cls
 
         target_cls = frozenset({OWLClass(IRI(NS, 'Person'))})
-        self.assertEqual(frozenset(ch.roots()), target_cls)
+        assert frozenset(ch.roots())== target_cls
 
     def test_class_hierarchy_siblings(self):
         NS = "http://www.benchmark.org/family#"

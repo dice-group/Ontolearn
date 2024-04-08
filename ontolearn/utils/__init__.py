@@ -9,7 +9,7 @@ from typing import Callable, Set, TypeVar, Tuple, Union
 from ontolearn.utils.log_config import setup_logging  # noqa: F401
 from owlapy.model import OWLNamedIndividual, IRI, OWLClass, HasIRI
 import pandas as pd
-
+from .static_funcs import compute_f1_score
 Factory = Callable
 
 # DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
