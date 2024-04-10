@@ -142,7 +142,7 @@ class Drill(RefinementBasedConceptLearner):
             """
         # self.clean()
         assert 0 < len(pos) and 0 < len(neg)
-
+        print("Initializing learning problem")
         # 1. CD: PosNegLPStandard will be deprecated.
         # Generate a Learning Problem
         self.learning_problem = PosNegLPStandard(pos=set(pos), neg=set(neg))
@@ -166,7 +166,9 @@ class Drill(RefinementBasedConceptLearner):
                 raise ValueError('invalid value detected in E-,\n{0}'.format(self.emb_neg))
 
         # Initialize ROOT STATE
+        print("Initializing root RL state...",end=" ")
         root_rl_state = self.create_rl_state(self.start_class, is_root=True)
+        print("Computing its quality...")
         self.compute_quality_of_class_expression(root_rl_state)
         return root_rl_state
 
@@ -181,9 +183,11 @@ class Drill(RefinementBasedConceptLearner):
         self.start_time = time.time()
 
         # (2) Two mappings from a unique OWL Concept to integer, where a unique concept represents the type info
-        # C(x) s.t. x \in E^+ and  C(y) s.t. y \in E^-
+        # C(x) s.t. x \in E^+ and  C(y) s.t. y \in E^-.
+        print("Counting types of positive examples..")
         pos_type_counts = Counter(
             [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.pos))])
+        print("Counting types of negative examples..")
         neg_type_counts = Counter(
             [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.neg))])
         # (3) Favor some OWLClass over others
@@ -195,6 +199,7 @@ class Drill(RefinementBasedConceptLearner):
         root_state.heuristic = root_state.quality
         self.search_tree.add(root_state)
         # (6) Inject Type Bias/Favor
+        print("Starting search..")
         for x in (self.create_rl_state(i, parent_node=root_state) for i in type_bias):
             self.compute_quality_of_class_expression(x)
             x.heuristic = x.quality

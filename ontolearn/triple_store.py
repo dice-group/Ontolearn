@@ -565,8 +565,28 @@ class TripleStoreReasonerOntology:
             else:
                 raise RuntimeError(x)
         if self.url is not None:
-            # Sending HTTP request to a remote endpoint.
-            response = requests.post(self.url, data={'query': sparql_query}).json()["results"]["bindings"]
+            try:
+                # Sending HTTP request to a remote endpoint.
+                # @TODO: CD: We need to stream results. The computation looses its responsiveness for
+                # @TODO: CD: sparql of ¬(≥ 1 successor.Adviser109774266).
+                """
+                SELECT
+ DISTINCT ?x WHERE { 
+?x ?s_1 ?s_2 . 
+FILTER NOT EXISTS { 
+{ SELECT ?x WHERE { 
+?x <http://dbpedia.org/property/successor> ?s_3 . 
+?s_3 a <http://dbpedia.org/class/yago/Adviser109774266> . 
+ } GROUP BY ?x HAVING ( COUNT ( ?s_3 ) >= 1 ) }
+ }
+ }
+                """
+                response = requests.post(self.url, data={'query': sparql_query}).json()["results"]["bindings"]
+            except requests.exceptions.JSONDecodeError:
+                """If an exception occurs at decoding JSON object Return an Empty Generator"""
+                return
+                yield
+
             for row in response:
                 x = [dict_to_rdflib_object(values) for variable, values in row.items()]
                 if len(x) == 1:
@@ -740,7 +760,7 @@ class TripleStore:
                 elif isinstance(p, OWLObjectProperty) and isinstance(o, OWLNamedIndividual):
                     mapping.setdefault(p, []).append(o)
                 elif isinstance(p, OWLDataProperty) and isinstance(o, OWLLiteral):
-                    print(f"Data Property and Literal to expression needed: {p} {o}")
+                    # print(f"Data Property and Literal to expression needed: {p} {o}")
                     continue
                 else:
                     raise RuntimeError(f"Unrecognized triples to expression mappings {p}{o}")
