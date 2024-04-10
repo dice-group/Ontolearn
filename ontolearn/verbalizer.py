@@ -3,7 +3,7 @@ import requests
 
 class LLMVerbalizer:
     def __init__(self, model: str = "mixtral:8x7b",
-                 url: str = "http://diceemb.cs.upb.de:8000/api/generate"):
+                 url: str = "http://tentris-ml.cs.upb.de:8000/api/generate"):
         self.model = model
         self.url = url
 

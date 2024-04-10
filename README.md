@@ -35,38 +35,53 @@ conda create -n venv python=3.10 --no-default-packages && conda activate venv &&
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
 ```
 ```shell
-pytest -p no:warnings -x # Running 161 tests takes ~ 6 mins
+pytest -p no:warnings -x # Running 171 tests takes ~ 6 mins
 ```
 
-## Description Logic Concept Learning 
-
-### Mixtral:8x7b to verbalize DL Concepts 
+## Learning OWL Class Expression
 ```python
-from ontolearn.learners import Drill
-from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.learners import TDL
+from ontolearn.triple_store import TripleStore
 from ontolearn.learning_problem import PosNegLPStandard
-from ontolearn.verbalizer import LLMVerbalizer
 from owlapy.model import OWLNamedIndividual, IRI
 from owlapy.render import DLSyntaxObjectRenderer
-# (1) Load a knowledge graph.
-kb = KnowledgeBase(path='KGs/father.owl')
-# (2) Initialize Mixtral:8x7b based verbalizer and a DL renderer.
-verbalizer = LLMVerbalizer(model="mixtral:8x7b")
+
+# (1) Initialize Triplestore
+kb = TripleStore(path="KGs/father.owl")
+# (2) Initialize a DL renderer.
 render = DLSyntaxObjectRenderer()
 # (3) Initialize a learner.
-model = Drill(knowledge_base=kb)
+model = TDL(knowledge_base=kb)
 # (4) Define a description logic concept learning problem.
 lp = PosNegLPStandard(pos={OWLNamedIndividual(IRI.create("http://example.com/father#stefan"))},
                       neg={OWLNamedIndividual(IRI.create("http://example.com/father#heinz")),
                            OWLNamedIndividual(IRI.create("http://example.com/father#anna")),
                            OWLNamedIndividual(IRI.create("http://example.com/father#michelle"))})
+# (5) Learn description logic concepts best fitting (4).
+h = model.fit(learning_problem=lp).best_hypotheses()
+str_concept = render.render(h)
+print("Concept:", str_concept)  # Concept: ∃ hasChild.{markus}
+```
 
+## Learning OWL Class Expression over DBpedia
+```python
+from ontolearn.utils.static_funcs import save_owl_class_expressions
 
-# (5) Learn description logic concepts best fitting (3).
-for h in model.fit(learning_problem=lp).best_hypotheses(10):
-    str_concept = render.render(h.concept)
-    print("Concept:", str_concept) # Concept: ≥ 1 hasChild.{markus}
-    print("Verbalization: ", verbalizer(text=str_concept)) # Verbalization:   The concept "≥ 1 hasChild.{markus}" in Description Logic represents that  an individual belongs to the class of things that have at least one child named "markus".
+# (1) Initialize Triplestore
+kb = TripleStore(url = "http://dice-dbpedia.cs.upb.de:9080/sparql")
+# (2) Initialize a DL renderer.
+render = DLSyntaxObjectRenderer()
+# (3) Initialize a learner.
+model = TDL(knowledge_base=kb)
+# (4) Define a description logic concept learning problem.
+lp = PosNegLPStandard(pos={OWLNamedIndividual(IRI.create("http://dbpedia.org/resource/Angela_Merkel"))},
+                      neg={OWLNamedIndividual(IRI.create("http://dbpedia.org/resource/Barack_Obama"))})
+# (5) Learn description logic concepts best fitting (4).
+h = model.fit(learning_problem=lp).best_hypotheses()
+str_concept = render.render(h)
+print("Concept:", str_concept)  # Concept: ∃ predecessor.WikicatPeopleFromBerlin
+# (6) Save ∃ predecessor.WikicatPeopleFromBerlin into disk
+save_owl_class_expressions(expressions=h,path="owl_prediction")
 ```
 
 Fore more please refer to  the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder.
