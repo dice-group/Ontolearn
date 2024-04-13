@@ -324,10 +324,10 @@ class NCESNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, Abst
 class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodeParentRef['RL_State']):
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
     """RL_State node."""
-    __slots__ = '_concept', '_quality', '_heuristic', 'length','parent_node', 'is_root', '_parent_ref', '__weakref__'
+    __slots__ = '_concept', 'embeddings', '_quality', '_heuristic', 'length', 'parent_node', 'is_root', '_parent_ref', '__weakref__'
 
     def __init__(self, concept: OWLClassExpression, parent_node: Optional['RL_State'] = None,
-                 is_root: bool = False, length=None):
+                 embeddings=None, is_root: bool = False, length=None):
         _NodeConcept.__init__(self, concept)
         _NodeQuality.__init__(self)
         _NodeHeuristic.__init__(self)
@@ -336,6 +336,7 @@ class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodePa
         self.parent_node = parent_node
         self.is_root = is_root
         self.length = length
+        self.embeddings = embeddings
         self.__sanity_checking()
 
     def __sanity_checking(self):
@@ -344,13 +345,23 @@ class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodePa
             assert self.parent_node
 
     def __str__(self):
-        return "\t".join((
-            AbstractNode.__str__(self),
-            _NodeConcept.__str__(self),
-            _NodeQuality.__str__(self),
-            _NodeHeuristic.__str__(self),
-            f'Length:{self.length}',
-        ))
+        if self.embeddings is None:
+            return "\t".join((
+                AbstractNode.__str__(self),
+                _NodeConcept.__str__(self),
+                _NodeQuality.__str__(self),
+                _NodeHeuristic.__str__(self),
+                f'Length:{self.length}',
+                f'Embeddings:{self.embeddings}',
+            ))
+        else:
+            return "\t".join((
+                AbstractNode.__str__(self),
+                _NodeConcept.__str__(self),
+                _NodeQuality.__str__(self),
+                _NodeHeuristic.__str__(self),
+                f'Length:{self.length}',
+                f'Embeddings:{self.embeddings.shape}',))
 
     def __lt__(self, other):
         return self.heuristic <= other.heuristic

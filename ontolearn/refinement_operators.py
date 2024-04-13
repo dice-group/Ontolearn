@@ -14,7 +14,7 @@ from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, O
     OWLObjectIntersectionOf, OWLClassExpression, OWLNothing, OWLThing, OWLNaryBooleanClassExpression, \
     OWLObjectUnionOf, OWLClass, OWLObjectComplementOf, OWLObjectMaxCardinality, OWLObjectMinCardinality, \
     OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLLiteral, OWLObjectInverseOf, OWLDataProperty, \
-    OWLDataHasValue, OWLDataPropertyExpression
+    OWLDataHasValue, OWLDataPropertyExpression, OWLIndividual
 from .search import OENode
 from typing import Callable, Tuple
 from enum import Enum
@@ -23,6 +23,7 @@ from owlapy.model import NUMERIC_DATATYPES, OWLObjectProperty, OWLObjectExactCar
 
 from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVocabulary, Tree, escape, ind_to_string, \
     owlliteral_to_primitive_string
+import itertools
 
 
 class LengthBasedRefinement(BaseRefinement):
@@ -32,7 +33,7 @@ class LengthBasedRefinement(BaseRefinement):
                  use_inverse: bool = False,
                  use_data_properties: bool = False,
                  use_card_restrictions: bool = False,
-                 card_limit=11, use_nominals: bool = True):
+                 card_limit=3, use_nominals: bool = True):
         super().__init__(knowledge_base)
 
         self.use_inverse = use_inverse
@@ -41,11 +42,8 @@ class LengthBasedRefinement(BaseRefinement):
         self.card_limit = card_limit
         self.use_nominals = use_nominals
 
-        # 1. Number of named classes and sanity checking
-        num_of_named_classes = len(set(i for i in self.kb.ontology.classes_in_signature()))
-        assert num_of_named_classes == len(list(i for i in self.kb.ontology.classes_in_signature()))
         self.max_len_refinement_top = 5
-        self.top_refinements = None
+        self.top_refinements: set = None
 
     @staticmethod
     def from_iterables(cls, a_operands, b_operands):
@@ -67,18 +65,16 @@ class LengthBasedRefinement(BaseRefinement):
 
     def refine_top(self) -> Iterable:
         """ Refine Top Class Expression """
-        # (1) A
+        # (1) Return all named concepts (inefficient subclass hierarchy ignored)
         concepts = [i for i in self.kb.get_all_sub_concepts(self.kb.generator.thing)]
         yield from concepts
-
-        # (2) A OR A
+        # (2) A OR A s.t. A \in (1).
         yield from self.from_iterables(cls=OWLObjectUnionOf, a_operands=concepts, b_operands=concepts)
-        # (3) A AND A
+        # (3) A AND A s.t. A \in (1) [INEFFICIENT info about disjoint classes are leveraged].
         yield from self.from_iterables(cls=OWLObjectIntersectionOf, a_operands=concepts, b_operands=concepts)
-
-        # (4) Neg (1) the least general concepts
+        # (4) Neg (1) the least general concepts.
         neg_concepts = [self.kb.generator.negation(i) for i in concepts]
-        # (5) neg A
+        # (5) neg A.
         yield from neg_concepts
         # (6) neg A OR neg A
         yield from self.from_iterables(cls=OWLObjectUnionOf, a_operands=neg_concepts, b_operands=neg_concepts)
@@ -94,7 +90,7 @@ class LengthBasedRefinement(BaseRefinement):
         # (11) \for, \exist R neg A
         # (12) \for, \exist R⁻ A
         # (13) \for, \exist R⁻ neg A
-        for c in concepts + neg_concepts + [self.kb.generator.thing, self.kb.generator.nothing]:
+        for c in concepts + [self.kb.generator.thing, self.kb.generator.nothing]+neg_concepts:
             for dl_role in self.kb.get_object_properties():
                 inverse_role = dl_role.get_inverse_property()
                 restrictions.append(
@@ -106,26 +102,15 @@ class LengthBasedRefinement(BaseRefinement):
                 restrictions.append(
                     self.kb.generator.universal_restriction(filler=c, property=inverse_role))
                 # (4) All possible \for and \exist with (1) and (2) and \top and \bottom given roles and inverse roles
-                for card in range(0, self.card_limit):
-                    restrictions.extend(
-                        [self.kb.generator.min_cardinality_restriction(c, dl_role, card),
-                         self.kb.generator.max_cardinality_restriction(c, dl_role, card),
-                         self.kb.generator.exact_cardinality_restriction(c, dl_role, card),
-                         self.kb.generator.min_cardinality_restriction(c, inverse_role, card),
-                         self.kb.generator.max_cardinality_restriction(c, inverse_role, card),
-                         self.kb.generator.exact_cardinality_restriction(c, inverse_role, card)])
-
-        if self.use_nominals:
-            temp = []
-            for i in restrictions:
-                for j in self.kb.individuals(i.get_filler()):
-                    temp.append(OWLObjectSomeValuesFrom(property=i.get_property(), filler=OWLObjectOneOf(j)))
-                    temp.append(OWLObjectAllValuesFrom(property=i.get_property(), filler=OWLObjectOneOf(j)))
-                    temp.append(OWLObjectMinCardinality(cardinality=1,
-                                                        property=i.get_property(),
-                                                        filler=OWLObjectOneOf(j)))
-
-            restrictions.extend(temp)
+                if self.use_card_restrictions:
+                    for card in range(0, self.card_limit):
+                        restrictions.extend(
+                            [self.kb.generator.min_cardinality_restriction(c, dl_role, card),
+                             self.kb.generator.max_cardinality_restriction(c, dl_role, card),
+                             self.kb.generator.exact_cardinality_restriction(c, dl_role, card),
+                             self.kb.generator.min_cardinality_restriction(c, inverse_role, card),
+                             self.kb.generator.max_cardinality_restriction(c, inverse_role, card),
+                             self.kb.generator.exact_cardinality_restriction(c, inverse_role, card)])
         yield from restrictions
 
         for bool_dp in self.kb.get_boolean_data_properties():
@@ -199,31 +184,56 @@ class LengthBasedRefinement(BaseRefinement):
                 yield self.kb.generator.intersection((class_expression, i))
 
     def refine_complement_of(self, class_expression: OWLObjectComplementOf) -> Iterable[OWLClassExpression]:
-        """
-        Refine OWLObjectComplementOf
-        1- Get All direct parents,
-        2- Negate (1),
-        3- Intersection with T.
-        """
         assert isinstance(class_expression, OWLObjectComplementOf)
-        yield from self.kb.generator.negation_from_iterables(self.kb.get_direct_parents(class_expression._operand))
-        # yield self.kb.generator.intersection((class_expression, self.kb.generator.thing))
+        yield from self.kb.generator.negation_from_iterables(self.kb.get_direct_parents(class_expression.get_operand()))
 
     def refine_object_some_values_from(self, class_expression: OWLObjectSomeValuesFrom) -> Iterable[OWLClassExpression]:
         assert isinstance(class_expression, OWLObjectSomeValuesFrom)
-        # rule 1: \exists r.D = > for all r.E
-        for i in self.refine(class_expression.get_filler()):
-            yield self.kb.generator.existential_restriction(i, class_expression.get_property())
-        # rule 2: \exists r.D = > \exists r.D AND T
-        # yield self.kb.generator.intersection((class_expression, self.kb.generator.thing))
+        # Given \exists r. C
+        for C in self.refine(class_expression.get_filler()):
+            # \exists r. D s.t. D \in rho(C).
+            yield self.kb.generator.existential_restriction(filler=C, property=class_expression.get_property())
+        # Given \exists r. C,
+        if self.use_nominals:
+            # \exists r. {C_1, C_N} s.t. |Retrieval(C)| = N+1.
+            # All unique N length combination
+            filler_individuals = {i for i in self.kb.individuals(concept=class_expression.get_filler())}
+            num_filler_individuals = len(filler_individuals)
+            # itertools.html#itertools.combinations: combinations('ABCD', 2) => AB AC AD BC BD CD
+            r=num_filler_individuals - 1
+            if r<=0:
+                yield self.kb.generator.existential_restriction(
+                    filler=self.kb.generator.nothing,
+                    property=class_expression.get_property())
+            else:
+                enumeration_of_individuals: Tuple[OWLIndividual]
+                for enumeration_of_individuals in itertools.combinations(iterable=filler_individuals, r=r):
+                    yield self.kb.generator.existential_restriction(
+                        filler=OWLObjectOneOf(values=enumeration_of_individuals),
+                        property=class_expression.get_property())
 
     def refine_object_all_values_from(self, class_expression: OWLObjectAllValuesFrom) -> Iterable[OWLClassExpression]:
         assert isinstance(class_expression, OWLObjectAllValuesFrom)
-        # rule 1: \forall r.D = > \forall r.E
         for i in self.refine(class_expression.get_filler()):
             yield self.kb.generator.universal_restriction(i, class_expression.get_property())
-        # rule 2: \forall r.D = > \forall r.D AND T
-        # yield self.kb.generator.intersection((class_expression, self.kb.generator.thing))
+        # Given \exists r. C,
+        if self.use_nominals:
+            # \exists r. {C_1, C_N} s.t. |Retrieval(C)| = N+1.
+            # All unique N length combination
+            filler_individuals = {i for i in self.kb.individuals(concept=class_expression.get_filler())}
+            num_filler_individuals = len(filler_individuals)
+            # itertools.html#itertools.combinations: combinations('ABCD', 2) => AB AC AD BC BD CD
+            r=num_filler_individuals - 1
+            if r<=0:
+                yield self.kb.generator.universal_restriction(
+                    filler=self.kb.generator.nothing,
+                    property=class_expression.get_property())
+            else:
+                enumeration_of_individuals: Tuple[OWLIndividual]
+                for enumeration_of_individuals in itertools.combinations(iterable=filler_individuals, r=r):
+                    yield self.kb.generator.universal_restriction(
+                        filler=OWLObjectOneOf(values=enumeration_of_individuals),
+                        property=class_expression.get_property())
 
     def refine_object_union_of(self, class_expression: OWLObjectUnionOf) -> Iterable[OWLClassExpression]:
         """
@@ -252,7 +262,10 @@ class LengthBasedRefinement(BaseRefinement):
         assert isinstance(class_expression, OWLClassExpression)
         # (1) Initialize top refinement if it has not been initialized.
         if self.top_refinements is None:
-            self.top_refinements = {ref for ref in self.refine_top()}
+            self.top_refinements = set()
+            for i in self.refine_top():
+                self.top_refinements.add(i)
+                yield i
         # (2) Refine Top.
         if class_expression.is_owl_thing():
             yield from self.top_refinements
@@ -274,13 +287,14 @@ class LengthBasedRefinement(BaseRefinement):
             yield from self.refine_object_some_values_from(class_expression)
         elif self.len(class_expression) == 1:
             yield from self.refine_atomic_concept(class_expression)
-
         elif isinstance(class_expression, OWLObjectMaxCardinality):
             yield from (self.kb.generator.intersection((class_expression, i)) for i in self.top_refinements)
         elif isinstance(class_expression, OWLObjectExactCardinality):
             yield from (self.kb.generator.intersection((class_expression, i)) for i in self.top_refinements)
         elif isinstance(class_expression, OWLObjectMinCardinality):
             yield from (self.kb.generator.intersection((class_expression, i)) for i in self.top_refinements)
+        elif isinstance(class_expression, OWLObjectOneOf):
+            raise NotImplementedError("Remove an individual from the set of individuals, If empty use bottom.")
         else:
             raise ValueError(f"{type(class_expression)} objects are not yet supported")
 
