@@ -1,7 +1,6 @@
 """
-Run web application
+Run Web Application
 ====================================================================
-Drill -- Neuro-Symbolic Class Expression Learning
 
 # Learn Embeddings
 dicee --path_single_kg KGs/Family/family-benchmark_rich_background.owl --path_to_store_single_run embeddings --backend rdflib --save_embeddings_as_csv --model Keci --num_epoch 10
@@ -9,6 +8,7 @@ dicee --path_single_kg KGs/Family/family-benchmark_rich_background.owl --path_to
 # Start Webservice
 ontolearn --path_knowledge_base KGs/Family/family-benchmark_rich_background.owl
 
+# Send HTTP Requests
 curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://www.benchmark.org/family#F2F14"], "neg":["http://www.benchmark.org/family#F10F200"], "model":"Drill","path_embeddings":"embeddings/Keci_entity_embeddings.csv"}'
 
 curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://www.benchmark.org/family#F2F14"], "neg":["http://www.benchmark.org/family#F10F200"], "model":"Drill","pretrained":"pretrained","path_embeddings":"embeddings/Keci_entity_embeddings.csv"}'

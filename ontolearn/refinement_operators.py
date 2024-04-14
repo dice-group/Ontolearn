@@ -27,7 +27,7 @@ import itertools
 
 
 class LengthBasedRefinement(BaseRefinement):
-    """ A top-down refinement operator in ALC."""
+    """ A top-down length based ("no semantic information leveraged) refinement operator in ALC."""
 
     def __init__(self, knowledge_base: KnowledgeBase,
                  use_inverse: bool = False,

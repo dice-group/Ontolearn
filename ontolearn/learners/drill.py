@@ -53,7 +53,7 @@ class Drill(RefinementBasedConceptLearner):
         self.name = "DRILL"
         self.learning_problem = None
         # (1) Initialize KGE.
-        if os.path.isfile(path_embeddings):
+        if path_embeddings and os.path.isfile(path_embeddings):
             self.df_embeddings = pd.read_csv(path_embeddings, index_col=0).astype('float32')
             self.num_entities, self.embedding_dim = self.df_embeddings.shape
         else:
@@ -101,10 +101,12 @@ class Drill(RefinementBasedConceptLearner):
         self.search_tree = DRILLSearchTreePriorityQueue()
         self.renderer = DLSyntaxObjectRenderer()
         self.stop_at_goal = stop_at_goal
+        # @TODO:Should be deprecated if neural network not used
+        self.sample_size = 1
+        self.epsilon = 1
+        self.embedding_dim=2
 
         if self.df_embeddings is not None:
-            self.sample_size = 1
-            self.epsilon = 1
             self.heuristic_func = DrillHeuristic(mode="averaging",
                                                  model_args={'input_shape': (4 * self.sample_size, self.embedding_dim),
                                                              'first_out_channels': 32,
