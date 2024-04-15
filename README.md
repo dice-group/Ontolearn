@@ -86,6 +86,16 @@ save_owl_class_expressions(expressions=h,path="owl_prediction")
 
 Fore more please refer to  the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder.
 
+## ontolearn-webservice 
+
+```shell
+ontolearn-webservice --endpoint_triple_store 'http://dice-dbpedia.cs.upb.de:9080/sparql'
+```
+```shell
+curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://dbpedia.org/resource/Angela_Merkel"], "neg":["http://dbpedia.org/resource/Barack_Obama"], "model":"TDL"}'
+# ~3 mins => {"Prediction":"¬(≥ 1 successor.WikicatNewYorkMilitaryAcademyAlumni)"}
+```
+
 ## Benchmark Results
 ```shell
 # To download learning problems. # Benchmark learners on the Family benchmark dataset with benchmark learning problems.
