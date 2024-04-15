@@ -1,5 +1,4 @@
-"""
-StratifiedKFold Cross Validating DL Concept Learning Algorithms
+""" StratifiedKFold Cross Validating DL Concept Learning Algorithms
 python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family.owl --max_runtime 3 --report family.csv
 """
 import json
@@ -31,7 +30,7 @@ def dl_concept_learning(args):
                 max_runtime=args.max_runtime)
     celoe = CELOE(knowledge_base=kb, quality_func=F1(),
                   max_runtime=args.max_runtime)
-    drill = Drill(knowledge_base=kb, path_pretrained_kge=args.path_pretrained_kge,
+    drill = Drill(knowledge_base=kb, path_embeddings=args.path_drill_embeddings,
                   quality_func=F1(), max_runtime=args.max_runtime)
     tdl = TDL(knowledge_base=kb,
               kwargs_classifier={"random_state": 0},
@@ -263,7 +262,7 @@ if __name__ == '__main__':
     parser.add_argument("--folds", type=int, default=10, help="Number of folds of cross validation.")
     parser.add_argument("--kb", type=str, required=True,
                         help="Knowledge base")
-    parser.add_argument("--path_pretrained_kge", type=str, default=None)
+    parser.add_argument("--path_drill_embeddings", type=str, default=None)
     parser.add_argument("--path_of_nces_embeddings", type=str, default=None)
     parser.add_argument("--path_of_clip_embeddings", type=str, default=None)
     parser.add_argument("--report", type=str, default="report.csv")
