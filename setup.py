@@ -34,7 +34,9 @@ _deps = [
     "sphinxcontrib-plantuml>=0.27",
     "plantuml-local-client>=1.2022.6",
     "myst-parser>=2.0.0",
-    "flake8>=6.0.0"]
+    "flake8>=6.0.0",
+    "fastapi>=0.110.1",
+    "uvicorn>=0.29.0"]
 
 deps = {b: a for a, b in (re.findall(r"^(([^!=<>~ ]+)(?:[!=<>~ ].*)?$)", x)[0] for x in _deps)}
 
@@ -56,7 +58,8 @@ extras["min"] = deps_list(
     "tqdm", "transformers",  # NCES
     "dicee",  # Drill
     "deap",  # Evolearner
-)
+    "fastapi",
+    "uvicorn")
 
 extras["doc"] = (deps_list("sphinx",
                            "sphinx-autoapi",
@@ -82,7 +85,7 @@ setup(
         "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
         "Topic :: Scientific/Engineering :: Artificial Intelligence"],
     python_requires='>=3.10.13',
-    entry_points={"console_scripts": ["ontolearn = ontolearn.run:main"]},
+    entry_points={"console_scripts": ["ontolearn-webservice=ontolearn.scripts.run:main"]},
     long_description=long_description,
     long_description_content_type="text/markdown",
 )
