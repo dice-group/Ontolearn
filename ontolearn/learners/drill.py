@@ -59,7 +59,7 @@ class Drill(RefinementBasedConceptLearner):
         else:
             print("No pre-trained model...")
             self.df_embeddings = None
-            self.num_entities, self.embedding_dim = None, None
+            self.num_entities, self.embedding_dim = None, 1
 
         # (2) Initialize Refinement operator.
         if refinement_operator is None:
@@ -101,14 +101,11 @@ class Drill(RefinementBasedConceptLearner):
         self.search_tree = DRILLSearchTreePriorityQueue()
         self.renderer = DLSyntaxObjectRenderer()
         self.stop_at_goal = stop_at_goal
-        # @TODO:Should be deprecated if neural network not used
-        self.sample_size = 1
         self.epsilon = 1
-        self.embedding_dim=2
 
         if self.df_embeddings is not None:
             self.heuristic_func = DrillHeuristic(mode="averaging",
-                                                 model_args={'input_shape': (4 * self.sample_size, self.embedding_dim),
+                                                 model_args={'input_shape': (4, self.embedding_dim),
                                                              'first_out_channels': 32,
                                                              'second_out_channels': 16, 'third_out_channels': 8,
                                                              'kernel_size': 3})
@@ -211,8 +208,6 @@ class Drill(RefinementBasedConceptLearner):
             sum_of_rewards_per_actions = self.rl_learning_loop(num_episode=self.num_episode,
                                                                pos_uri=frozenset(positives),
                                                                neg_uri=frozenset(negatives))
-            # print(f'Sum of Rewards in last 3 trajectories:{sum_of_rewards_per_actions[:3]}')
-
             self.seen_examples.setdefault(len(self.seen_examples), dict()).update(
                 {'Concept': target_owl_ce,
                  'Positives': [i.get_iri().as_str() for i in positives],
@@ -517,15 +512,15 @@ class Drill(RefinementBasedConceptLearner):
     def get_embeddings_individuals(self, individuals: List[str]) -> torch.FloatTensor:
         assert isinstance(individuals, list)
         if len(individuals) == 0:
-            emb = torch.zeros(1, self.sample_size, self.embedding_dim)
+            emb = torch.zeros(1, 1, self.embedding_dim)
         else:
 
             if self.df_embeddings is not None:
                 assert isinstance(individuals[0], str)
                 emb = torch.mean(torch.from_numpy(self.df_embeddings.loc[individuals].values, ), dim=0)
-                emb = emb.view(1, self.sample_size, self.embedding_dim)
+                emb = emb.view(1, 1, self.embedding_dim)
             else:
-                emb = torch.zeros(1, self.sample_size, self.embedding_dim)
+                emb = torch.zeros(1, 1, self.embedding_dim)
         return emb
 
     def get_individuals(self, rl_state: RL_State) -> List[str]:
