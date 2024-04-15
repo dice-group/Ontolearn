@@ -26,11 +26,9 @@ pip install ontolearn
 ```
 or
 ```shell
-# ensure that python version >=3.9.18
 git clone https://github.com/dice-group/Ontolearn.git 
 # To create a virtual python env with conda 
-conda create -n venv python=3.10 --no-default-packages && conda activate venv && pip install -e .
-# or python -m venv venv && source venv/bin/activate && pip install -r requirements.txt 
+conda create -n venv python=3.10.14 --no-default-packages && conda activate venv && pip install -e .
 # To download knowledge graphs
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
 ```
