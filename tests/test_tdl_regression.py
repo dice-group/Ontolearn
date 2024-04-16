@@ -45,7 +45,7 @@ class TestConceptLearnerReg:
                                  g.triples((None, rdflib.namespace.RDF.type, rdflib.namespace.OWL.Class)) if
                                  isinstance(s, rdflib.term.URIRef)]
             assert len(named_owl_classes) >= 1
-            named_owl_classes.pop(0).n3() == ">https://dice-research.org/predictions#0>"
+            assert named_owl_classes.pop(0).n3() == "<https://dice-research.org/predictions#0>"
 
     def test_regression_mutagenesis(self):
         path = "KGs/Mutagenesis/mutagenesis.owl"
@@ -74,8 +74,8 @@ class TestConceptLearnerReg:
         for str_target_concept, examples in settings['problems'].items():
             # CD: Other problems take too much time due to long SPARQL Query.
             if str_target_concept not in ["Brother", "Sister"
-                                                     "Daughter", "Son"
-                                                                 "Father", "Mother",
+                                          "Daughter", "Son"
+                                          "Father", "Mother",
                                           "Grandfather"]:
                 continue
             p = set(examples['positive_examples'])

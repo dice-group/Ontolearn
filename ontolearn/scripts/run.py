@@ -20,14 +20,14 @@ import json
 import argparse
 from fastapi import FastAPI
 import uvicorn
-from typing import Dict, Iterable
+from typing import Dict, Iterable, Union
 
 from ..utils.static_funcs import compute_f1_score
 from ..knowledge_base import KnowledgeBase
 from ..triple_store import TripleStore
 from ..learning_problem import PosNegLPStandard
 from ..refinement_operators import LengthBasedRefinement
-from ..learners import Drill
+from ..learners import Drill, TDL
 from ..metrics import F1
 from owlapy.model import OWLNamedIndividual, IRI, OWLClassExpression
 from owlapy.render import DLSyntaxObjectRenderer
@@ -54,6 +54,7 @@ async def root():
     global args
     return {"response": "Ontolearn Service is Running"}
 
+
 def get_drill(data: dict) -> Drill:
     """ Initialize DRILL """
     # (1) Init DRILL.
@@ -75,14 +76,20 @@ def get_drill(data: dict) -> Drill:
         drill.save(directory="pretrained")
     return drill
 
-def get_tdl(data):
-    raise NotImplementedError(f"TDL not integrated")
 
-def get_learner(data: dict) -> Drill:
+def get_tdl(data):
+    global kb
+    return TDL(knowledge_base=kb)
+
+
+def get_learner(data: dict) -> Union[Drill, TDL]:
     if data["model"] == "Drill":
         return get_drill(data)
+    elif data["model"] == "TDL":
+        return get_tdl(data)
     else:
         raise NotImplementedError(f"There is no learner {data['model']} available")
+
 
 @app.get("/cel")
 async def cel(data: dict) -> Dict:
@@ -105,13 +112,17 @@ async def cel(data: dict) -> Dict:
         # Learning Process.
         learned_owl_expression = owl_learner.fit(lp).best_hypotheses()
         dl_learned_owl_expression = dl_render.render(learned_owl_expression)
-        # Concept Retrieval.
-        individuals = kb.individuals(learned_owl_expression)
-        train_f1 = compute_f1_score(individuals=frozenset({i for i in individuals}),
-                                    pos=lp.pos,
-                                    neg=lp.neg)
-        save_owl_class_expressions(expressions=learned_owl_expression, path="Predictions")
-        return {"Prediction": dl_learned_owl_expression, "F1": train_f1, "saved_prediction": "Predictions.owl"}
+        if data.get("compute_quality", None):
+            # Concept Retrieval.
+            individuals = kb.individuals(learned_owl_expression)
+            train_f1 = compute_f1_score(individuals=frozenset({i for i in individuals}),
+                                        pos=lp.pos,
+                                        neg=lp.neg)
+            save_owl_class_expressions(expressions=learned_owl_expression, path="Predictions")
+            return {"Prediction": dl_learned_owl_expression, "F1": train_f1, "saved_prediction": "Predictions.owl"}
+        else:
+            return {"Prediction": dl_learned_owl_expression}
+
     else:
         return {"Prediction": "No Learning Problem Given!!!", "F1": 0.0}
 
@@ -121,13 +132,13 @@ def main():
     global kb
     args = get_default_arguments()
     # (1) Init knowledge base.
-    parser=argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
     parser.add_argument("--path_knowledge_base", type=str, default=None)
     parser.add_argument("--endpoint_triple_store", type=str, default=None)
     if args.path_knowledge_base:
         kb = KnowledgeBase(path=args.path_knowledge_base)
-    elif args.endpoint_triplestore:
-        kb = TripleStore(url=args.endpoint_triplestore)
+    elif args.endpoint_triple_store:
+        kb = TripleStore(url=args.endpoint_triple_store)
     else:
         raise RuntimeError("Either --path_knowledge_base or --endpoint_triplestore must be not None")
 

@@ -39,7 +39,7 @@ class Drill(RefinementBasedConceptLearner):
                  use_nominals=True,
                  quality_func: Callable = None,
                  reward_func: object = None,
-                 batch_size=None, num_workers: int = 1, pretrained_model_name=None,
+                 batch_size=None, num_workers: int = 1,
                  iter_bound=None, max_num_of_concepts_tested=None, verbose: int = 0, terminate_on_goal=None,
                  max_len_replay_memory=256,
                  epsilon_decay: float = 0.01, epsilon_min: float = 0.0,
