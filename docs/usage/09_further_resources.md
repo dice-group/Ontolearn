@@ -95,8 +95,7 @@ address="Cham"
 
 Examples and test cases provide a good starting point to get to know
 the project better. Find them in the folders 
-[examples](https://github.com/dice-group/Ontolearn/tree/develop/examples)  
-and [tests](https://github.com/dice-group/Ontolearn/tree/develop/tests).
+[examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) and [tests](https://github.com/dice-group/Ontolearn/tree/develop/tests).
 
 ## Contribution
 
