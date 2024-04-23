@@ -747,10 +747,10 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
                 if facet_res.get_facet() == OWLFacet.MIN_INCLUSIVE and (next_idx := idx + 1) < len(splits):
                     yield self.generator.data_existential_restriction(
-                        OWLDatatypeMinInclusiveRestriction(splits[next_idx]), ce.get_property())
+                        owl_datatype_min_inclusive_restriction(splits[next_idx]), ce.get_property())
                 elif facet_res.get_facet() == OWLFacet.MAX_INCLUSIVE and (next_idx := idx - 1) >= 0:
                     yield self.generator.data_existential_restriction(
-                        OWLDatatypeMaxInclusiveRestriction(splits[next_idx]), ce.get_property())
+                        owl_datatype_max_inclusive_restriction(splits[next_idx]), ce.get_property())
 
     def refine_data_has_value(self, ce: OWLDataHasValue) -> Iterable[OWLDataHasValue]:
         """ Refine owl:hasValue.
