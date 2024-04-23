@@ -1,7 +1,8 @@
 import random
+from .helper_classes import RDFTriples, KB2Data
+
 random.seed(42)
 
-from .helper_classes import RDFTriples, KB2Data
 
 class LPGen:
     def __init__(self, kb_path, storage_dir=None, max_num_lps=1000, depth=3, max_child_length=20, refinement_expressivity=0.2,

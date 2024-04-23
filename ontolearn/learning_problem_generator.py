@@ -2,12 +2,15 @@
 import sys
 import time
 from typing import Literal, Iterable, Set, Tuple, Dict, List, Final, Generator
-
 import numpy as np
-
-from owlapy.model import OWLClassExpression, OWLOntologyManager, OWLOntology, AddImport, \
-    OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, IRI, OWLNamedIndividual, OWLAnnotationAssertionAxiom, \
-    OWLAnnotation, OWLAnnotationProperty, OWLLiteral
+from owlapy.class_expression import OWLClassExpression, OWLClass
+from owlapy.iri import IRI
+from owlapy.owl_axiom import OWLEquivalentClassesAxiom, OWLAnnotationAssertionAxiom, OWLAnnotation, \
+    OWLAnnotationProperty
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_ontology import OWLOntology
+from owlapy.owl_ontology_manager import OWLOntologyManager, AddImport, OWLImportsDeclaration
 from ontolearn.knowledge_base import KnowledgeBase
 from .refinement_operators import LengthBasedRefinement
 from .search import Node, RL_State
@@ -89,7 +92,7 @@ class LearningProblemGenerator:
                         count = len(inst)
 
             if count is not None:
-                num_inds = OWLAnnotationAssertionAxiom(cls_a.get_iri(), OWLAnnotation(
+                num_inds = OWLAnnotationAssertionAxiom(cls_a.iri, OWLAnnotation(
                     OWLAnnotationProperty(IRI.create(SNS, "covered_inds")), OWLLiteral(count)))
                 manager.add_axiom(ontology, num_inds)
 

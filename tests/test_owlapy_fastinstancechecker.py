@@ -1,21 +1,23 @@
 from datetime import date, datetime
 import unittest
 
+from owlapy.class_expression import OWLObjectOneOf, OWLObjectSomeValuesFrom, OWLThing, OWLObjectComplementOf, \
+    OWLObjectAllValuesFrom, OWLNothing, OWLObjectHasValue, OWLClass, OWLDataAllValuesFrom, OWLDataHasValue, \
+    OWLDataOneOf, OWLDataSomeValuesFrom, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectMinCardinality, \
+    OWLObjectIntersectionOf
+from owlapy.iri import IRI
+from owlapy.owl_axiom import OWLSubDataPropertyOfAxiom, OWLInverseObjectPropertiesAxiom, OWLSubObjectPropertyOfAxiom
+from owlapy.owl_data_ranges import OWLDataComplementOf, OWLDataIntersectionOf, OWLDataUnionOf
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import DoubleOWLDatatype, OWLLiteral, DurationOWLDatatype
+from owlapy.owl_property import OWLObjectInverseOf, OWLObjectProperty, OWLDataProperty
 from owlready2.prop import DataProperty
 from pandas import Timedelta
-
 from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.model import OWLObjectInverseOf, OWLObjectOneOf, OWLObjectProperty, OWLNamedIndividual, \
-    OWLObjectSomeValuesFrom, OWLThing, OWLObjectComplementOf, IRI, OWLObjectAllValuesFrom, OWLNothing, \
-    OWLObjectHasValue, DoubleOWLDatatype, OWLClass, OWLDataAllValuesFrom, OWLDataComplementOf, \
-    OWLDataHasValue, OWLDataIntersectionOf, OWLDataOneOf, OWLDataProperty, OWLDataSomeValuesFrom, \
-    OWLDataUnionOf, OWLLiteral, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectMinCardinality, \
-    OWLObjectIntersectionOf, OWLSubDataPropertyOfAxiom, OWLSubObjectPropertyOfAxiom, OWLInverseObjectPropertiesAxiom, \
-    DurationOWLDatatype
 
-from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, \
-    OWLDatatypeMinMaxInclusiveRestriction, OWLDatatypeMinMaxExclusiveRestriction, OWLDatatypeMaxExclusiveRestriction, \
-    OWLDatatypeMaxInclusiveRestriction
+from owlapy.providers import owl_datatype_min_exclusive_restriction, \
+                            owl_datatype_min_max_inclusive_restriction, owl_datatype_min_max_exclusive_restriction, \
+                            owl_datatype_max_exclusive_restriction, owl_datatype_max_inclusive_restriction
 from ontolearn.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 
 
@@ -190,7 +192,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
         self.assertEqual(inst, target_inst)
 
         # OWLDatatypeRestriction
-        restriction = OWLDatatypeMinMaxInclusiveRestriction(-3.0, -2.8)
+        restriction = owl_datatype_min_max_inclusive_restriction(-3.0, -2.8)
         inst = frozenset(reasoner.instances(OWLDataSomeValuesFrom(property=lumo, filler=restriction)))
         target_inst = frozenset({OWLNamedIndividual(IRI(NS, 'd149')),
                                  OWLNamedIndividual(IRI(NS, 'd29')),
@@ -204,7 +206,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
         self.assertEqual(inst, inst2)
 
         # OWLDataComplementOf
-        restriction = OWLDatatypeMinMaxExclusiveRestriction(-2.0, 0.88)
+        restriction = owl_datatype_min_max_exclusive_restriction(-2.0, 0.88)
         inst = frozenset(reasoner.instances(OWLDataSomeValuesFrom(property=charge,
                                                                   filler=OWLDataComplementOf(restriction))))
         target_inst = frozenset({OWLNamedIndividual(IRI(NS, 'd195_12')),
@@ -225,7 +227,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
         self.assertEqual(inst, target_inst)
 
         # OWLDataUnionOf
-        restriction = OWLDatatypeMinMaxExclusiveRestriction(5.07, 5.3)
+        restriction = owl_datatype_min_max_exclusive_restriction(5.07, 5.3)
         inst = frozenset(reasoner.instances(
             OWLDataSomeValuesFrom(property=logp,
                                   filler=OWLDataUnionOf((
@@ -285,7 +287,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
         base_reasoner = OWLReasoner_Owlready2(onto)
         reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner)
 
-        restriction = OWLDatatypeMinMaxExclusiveRestriction(date(year=1995, month=6, day=12),
+        restriction = owl_datatype_min_max_exclusive_restriction(date(year=1995, month=6, day=12),
                                                             date(year=1999, month=3, day=2))
         inst = frozenset(reasoner.instances(OWLDataSomeValuesFrom(property=birth_date,
                                                                   filler=restriction)))
@@ -297,15 +299,15 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
         target_inst = frozenset({michelle, anna, heinz, markus})
         self.assertEqual(inst, target_inst)
 
-        restriction = OWLDatatypeMaxInclusiveRestriction(datetime(year=1990, month=10, day=2, hour=10,
+        restriction = owl_datatype_max_inclusive_restriction(datetime(year=1990, month=10, day=2, hour=10,
                                                                   minute=20, second=5))
         inst = frozenset(reasoner.instances(OWLDataSomeValuesFrom(property=birth_date_time,
                                                                   filler=restriction)))
         target_inst = frozenset({markus, heinz})
         self.assertEqual(inst, target_inst)
 
-        restriction_min = OWLDatatypeMinExclusiveRestriction(Timedelta(days=8030, minutes=1))
-        restriction_max = OWLDatatypeMaxExclusiveRestriction(Timedelta(days=9490, hours=4, nanoseconds=1))
+        restriction_min = owl_datatype_min_exclusive_restriction(Timedelta(days=8030, minutes=1))
+        restriction_max = owl_datatype_max_exclusive_restriction(Timedelta(days=9490, hours=4, nanoseconds=1))
         filler = OWLDataIntersectionOf([restriction_min, restriction_max, DurationOWLDatatype])
         inst = frozenset(reasoner.instances(OWLDataSomeValuesFrom(property=age_, filler=filler)))
         target_inst = frozenset({anna, martin})

@@ -1,13 +1,11 @@
-from ontolearn.learners import Drill, TDL
-from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.learners import TDL
 from ontolearn.triple_store import TripleStore
 from ontolearn.learning_problem import PosNegLPStandard
-from ontolearn.verbalizer import LLMVerbalizer
-from owlapy.model import OWLNamedIndividual, IRI
+from owlapy.owl_individual import OWLNamedIndividual, IRI
 from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.utils.static_funcs import compute_f1_score
 from ontolearn.utils.static_funcs import save_owl_class_expressions
-from owlapy.owl2sparql.converter import Owl2SparqlConverter
+from owlapy.converter import Owl2SparqlConverter
 import json
 
 

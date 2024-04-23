@@ -2,20 +2,27 @@
 
 import logging
 import random
-from itertools import chain
 from collections import Counter
-from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict, Tuple, Generator, cast
+from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict, cast
 
 import owlapy
+from owlapy.class_expression import OWLClassExpression, OWLClass, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
+    OWLThing, OWLObjectMinCardinality, OWLObjectOneOf
+from owlapy.iri import IRI
+from owlapy.owl_axiom import OWLClassAssertionAxiom, OWLObjectPropertyAssertionAxiom, OWLDataPropertyAssertionAxiom, \
+    OWLSubClassOfAxiom, OWLEquivalentClassesAxiom
+from owlapy.owl_data_ranges import OWLDataRange
+from owlapy.owl_datatype import OWLDatatype
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import BooleanOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, OWLLiteral
+from owlapy.owl_ontology import OWLOntology
+from owlapy.owl_ontology_manager import OWLOntologyManager
+from owlapy.owl_property import OWLObjectProperty, OWLDataProperty, OWLObjectPropertyExpression, \
+    OWLDataPropertyExpression
+from owlapy.owl_reasoner import OWLReasoner
 
 from ontolearn.base import OWLOntology_Owlready2, OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, \
-    OWLNamedIndividual, OWLObjectProperty, OWLClass, OWLDataProperty, IRI, OWLDataRange, OWLObjectSomeValuesFrom, \
-    OWLObjectAllValuesFrom, OWLDatatype, BooleanOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, OWLThing, \
-    OWLObjectPropertyExpression, OWLLiteral, OWLDataPropertyExpression, OWLClassAssertionAxiom, \
-    OWLObjectPropertyAssertionAxiom, OWLDataPropertyAssertionAxiom, OWLSubClassOfAxiom, OWLEquivalentClassesAxiom, \
-    OWLObjectMinCardinality, OWLObjectOneOf
 
 from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.search import EvaluatedConcept
@@ -237,12 +244,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
                     yield from ((i, op, ind) for ind in self.get_object_property_values(i, op))
             elif mode == "iri":
                 yield from ((i.str, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-                             t.get_iri().as_str()) for t in self.get_types(ind=i, direct=True))
+                             t.str) for t in self.get_types(ind=i, direct=True))
                 for dp in self.get_data_properties_for_ind(ind=i):
-                    yield from ((i.str, dp.get_iri().as_str(), literal.get_literal()) for literal in
+                    yield from ((i.str, dp.str, literal.get_literal()) for literal in
                                 self.get_data_property_values(i, dp))
                 for op in self.get_object_properties_for_ind(ind=i):
-                    yield from ((i.str, op.get_iri().as_str(), ind.get_iri().as_str()) for ind in
+                    yield from ((i.str, op.str, ind.str) for ind in
                                 self.get_object_property_values(i, op))
             elif mode == "axiom":
                 yield from (OWLClassAssertionAxiom(i, t) for t in self.get_types(ind=i, direct=True))
@@ -347,14 +354,14 @@ class KnowledgeBase(AbstractKnowledgeBase):
                          in
                          self.get_direct_parents(concept)]
                 elif mode == 'iri':
-                    [results.add((j.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subClassOf",
-                                  concept.get_iri().as_str())) for j in self.get_direct_sub_concepts(concept)]
-                    [results.add((concept.get_iri().as_str(), "http://www.w3.org/2002/07/owl#equivalentClass",
-                                  cast(OWLClass, j).get_iri().as_str())) for j in
+                    [results.add((j.str, "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+                                  concept.str)) for j in self.get_direct_sub_concepts(concept)]
+                    [results.add((concept.str, "http://www.w3.org/2002/07/owl#equivalentClass",
+                                  cast(OWLClass, j).str)) for j in
                      self.reasoner.equivalent_classes(concept, only_named=True)]
                     if not include_all:
-                        [results.add((concept.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subClassOf",
-                                      j.get_iri().as_str())) for j in self.get_direct_parents(concept)]
+                        [results.add((concept.str, "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+                                      j.str)) for j in self.get_direct_parents(concept)]
                 elif mode == "axiom":
                     [results.add(OWLSubClassOfAxiom(super_class=concept, sub_class=j)) for j in
                      self.get_direct_sub_concepts(concept)]
@@ -384,27 +391,27 @@ class KnowledgeBase(AbstractKnowledgeBase):
                         [results.add((prop, IRI.create("http://www.w3.org/2000/01/rdf-schema#subPropertyOf"), j)) for j
                          in getattr(self.reasoner, "super_" + prop_type.lower() + "_properties")(prop, direct=True)]
                 elif mode == 'iri':
-                    [results.add((j.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subPropertyOf",
-                                  prop.get_iri().as_str())) for j in
+                    [results.add((j.str, "http://www.w3.org/2000/01/rdf-schema#subPropertyOf",
+                                  prop.str)) for j in
                      getattr(self.reasoner, "sub_" + prop_type.lower() + "_properties")(prop, direct=True)]
-                    [results.add((prop.get_iri().as_str(), "http://www.w3.org/2002/07/owl#equivalentProperty",
-                                  j.get_iri().as_str())) for j in
+                    [results.add((prop.str, "http://www.w3.org/2002/07/owl#equivalentProperty",
+                                  j.str)) for j in
                      getattr(self.reasoner, "equivalent_" + prop_type.lower() + "_properties")(prop)]
-                    [results.add((prop.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#domain",
-                                  j.get_iri().as_str())) for j in
+                    [results.add((prop.str, "http://www.w3.org/2000/01/rdf-schema#domain",
+                                  j.str)) for j in
                      getattr(self.reasoner, prop_type.lower() + "_property_domains")(prop, direct=True)]
                     if prop_type == 'Object':
-                        [results.add((prop.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#range",
-                                      j.get_iri().as_str())) for j in
+                        [results.add((prop.str, "http://www.w3.org/2000/01/rdf-schema#range",
+                                      j.str)) for j in
                          self.reasoner.object_property_ranges(prop, direct=True)]
                     # # ranges of data properties not implemented for this mode
                     # else:
-                    #     [results.add((prop.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#range",
+                    #     [results.add((prop.str, "http://www.w3.org/2000/01/rdf-schema#range",
                     #                   str(j))) for j in self.reasoner.data_property_ranges(prop, direct=True)]
 
                     if not include_all:
-                        [results.add((prop.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subPropertyOf",
-                                      j.get_iri().as_str())) for j
+                        [results.add((prop.str, "http://www.w3.org/2000/01/rdf-schema#subPropertyOf",
+                                      j.str)) for j
                          in getattr(self.reasoner, "super_" + prop_type.lower() + "_properties")(prop, direct=True)]
                 elif mode == 'axiom':
                     [results.add(getattr(owlapy.model, "OWLSub" + prop_type + "PropertyOfAxiom")(j, prop)) for j in

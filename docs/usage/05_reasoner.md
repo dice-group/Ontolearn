@@ -129,8 +129,8 @@ equivalent classes of a class in the ontology:
 <!--pytest-codeblocks:cont-->
 
 ```python
-from owlapy.model import OWLClass
-from owlapy.model import IRI
+from owlapy.class_expression import OWLClass
+from owlapy.iri import IRI
 
 namespace = "http://example.com/father#"
 male = OWLClass(IRI(namespace, "male"))
@@ -212,7 +212,7 @@ In the same way as with classes, you can also get the sub object properties or e
 <!--pytest-codeblocks:cont-->
 
 ```python
-from owlapy.model import OWLObjectProperty
+from owlapy.owl_property import OWLObjectProperty
 
 hasChild = OWLObjectProperty(IRI(namespace, "hasChild"))
 

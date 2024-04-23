@@ -6,19 +6,23 @@ from types import MappingProxyType
 from typing import Iterable, Set, Final, List
 
 import owlready2
+from owlapy.class_expression import OWLClassExpression, OWLThing, OWLClass, OWLObjectSomeValuesFrom
+from owlapy.iri import IRI
+from owlapy.owl_axiom import OWLObjectPropertyRangeAxiom, OWLAxiom, OWLObjectPropertyDomainAxiom, \
+    OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLClassAxiom, OWLSubClassOfAxiom, OWLEquivalentClassesAxiom
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import DoubleOWLDatatype, OWLLiteral, BooleanOWLDatatype, IntegerOWLDatatype, DateOWLDatatype, \
+    DateTimeOWLDatatype, DurationOWLDatatype, StringOWLDatatype
+from owlapy.owl_ontology import OWLOntologyID, OWLOntology
+from owlapy.owl_ontology_manager import OWLOntologyManager, OWLOntologyChange, AddImport
+from owlapy.owl_property import OWLDataProperty, OWLObjectPropertyExpression, OWLObjectInverseOf, OWLObjectProperty
 from owlready2 import declare_datatype
 from pandas import Timedelta
 
-from owlapy.owl2sparql.converter import Owl2SparqlConverter
+from owlapy.converter import Owl2SparqlConverter
 from ontolearn.base import axioms
 from owlapy import namespaces
 from ontolearn.base.ext import OWLReasonerEx
-from owlapy.model import OWLObjectPropertyRangeAxiom, OWLOntologyManager, OWLDataProperty, \
-    OWLNamedIndividual, OWLClassExpression, OWLObjectPropertyExpression, OWLOntologyID, OWLAxiom, OWLOntology, \
-    OWLOntologyChange, AddImport, OWLThing, DoubleOWLDatatype, OWLObjectPropertyDomainAxiom, OWLLiteral, \
-    OWLObjectInverseOf, BooleanOWLDatatype, IntegerOWLDatatype, DateOWLDatatype, DateTimeOWLDatatype, OWLClass, \
-    DurationOWLDatatype, StringOWLDatatype, IRI, OWLDataPropertyRangeAxiom, OWLDataPropertyDomainAxiom, OWLClassAxiom, \
-    OWLSubClassOfAxiom, OWLEquivalentClassesAxiom, OWLObjectSomeValuesFrom, OWLObjectProperty
 from ontolearn.base.utils import FromOwlready2
 
 logger = logging.getLogger(__name__)
@@ -91,7 +95,7 @@ class OWLOntologyManager_Owlready2(OWLOntologyManager):
             ont_x: owlready2.namespace.Ontology = self._world.get_ontology(
                 change.get_ontology().get_ontology_id().get_ontology_iri().as_str())
             ont_x.imported_ontologies.append(
-                self._world.get_ontology(change.get_import_declaration().get_iri().as_str()))
+                self._world.get_ontology(change.get_import_declaration().str))
         else:
             # TODO XXX
             raise NotImplementedError
@@ -159,7 +163,7 @@ class OWLOntology_Owlready2(OWLOntology):
             yield OWLNamedIndividual(IRI.create(i.iri))
 
     def equivalent_classes_axioms(self, c: OWLClass) -> Iterable[OWLEquivalentClassesAxiom]:
-        c_x: owlready2.ThingClass = self._world[c.get_iri().as_str()]
+        c_x: owlready2.ThingClass = self._world[c.str]
         # TODO: Should this also return EquivalentClasses general class axioms? Compare to java owlapi
         for ec_x in c_x.equivalent_to:
             yield OWLEquivalentClassesAxiom([c, _parse_concept_to_owlapy(ec_x)])
@@ -187,7 +191,7 @@ class OWLOntology_Owlready2(OWLOntology):
                              IRI.create(version_iri) if version_iri is not None else None)
 
     def data_property_domain_axioms(self, pe: OWLDataProperty) -> Iterable[OWLDataPropertyDomainAxiom]:
-        p_x: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
+        p_x: owlready2.DataPropertyClass = self._world[pe.str]
         domains = set(p_x.domains_indirect())
         if len(domains) == 0:
             yield OWLDataPropertyDomainAxiom(pe, OWLThing)
@@ -200,7 +204,7 @@ class OWLOntology_Owlready2(OWLOntology):
                     pass  # XXX TODO
 
     def data_property_range_axioms(self, pe: OWLDataProperty) -> Iterable[OWLDataPropertyRangeAxiom]:
-        p_x: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
+        p_x: owlready2.DataPropertyClass = self._world[pe.str]
         ranges = set(chain.from_iterable(super_prop.range for super_prop in p_x.ancestors()))
         if len(ranges) == 0:
             pass
@@ -216,7 +220,7 @@ class OWLOntology_Owlready2(OWLOntology):
                     pass  # XXX TODO
 
     def object_property_domain_axioms(self, pe: OWLObjectProperty) -> Iterable[OWLObjectPropertyDomainAxiom]:
-        p_x: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
+        p_x: owlready2.ObjectPropertyClass = self._world[pe.str]
         domains = set(p_x.domains_indirect())
         if len(domains) == 0:
             yield OWLObjectPropertyDomainAxiom(pe, OWLThing)
@@ -229,7 +233,7 @@ class OWLOntology_Owlready2(OWLOntology):
                     pass  # XXX TODO
 
     def object_property_range_axioms(self, pe: OWLObjectProperty) -> Iterable[OWLObjectPropertyRangeAxiom]:
-        p_x: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
+        p_x: owlready2.ObjectPropertyClass = self._world[pe.str]
         ranges = set(chain.from_iterable(super_prop.range for super_prop in p_x.ancestors()))
         if len(ranges) == 0:
             yield OWLObjectPropertyRangeAxiom(pe, OWLThing)
@@ -340,7 +344,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
     def equivalent_classes(self, ce: OWLClassExpression, only_named: bool = True) -> Iterable[OWLClassExpression]:
         seen_set = {ce}
         if isinstance(ce, OWLClass):
-            c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
+            c_x: owlready2.ThingClass = self._world[ce.str]
             for eq_x in c_x.INDIRECT_equivalent_to:
                 eq = _parse_concept_to_owlapy(eq_x)
                 if (isinstance(eq, OWLClass) or
@@ -373,7 +377,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
 
     def _find_disjoint_classes(self, ce: OWLClassExpression, only_named: bool = True, seen_set=None):
         if isinstance(ce, OWLClass):
-            c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
+            c_x: owlready2.ThingClass = self._world[ce.str]
             for d_x in chain.from_iterable(map(lambda d: d.entities, c_x.disjoints())):
                 if d_x != c_x and (isinstance(d_x, owlready2.ThingClass) or
                                    (isinstance(d_x, owlready2.ClassConstruct) and not only_named)):
@@ -404,30 +408,30 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                 yield from self._find_disjoint_classes(c, only_named=only_named, seen_set=seen_set)
 
     def different_individuals(self, ind: OWLNamedIndividual) -> Iterable[OWLNamedIndividual]:
-        i: owlready2.Thing = self._world[ind.get_iri().as_str()]
+        i: owlready2.Thing = self._world[ind.str]
         yield from (OWLNamedIndividual(IRI.create(d_i.iri))
                     for d_i in chain.from_iterable(map(lambda x: x.entities, i.differents()))
                     if isinstance(d_i, owlready2.Thing) and i != d_i)
 
     def same_individuals(self, ind: OWLNamedIndividual) -> Iterable[OWLNamedIndividual]:
-        i: owlready2.Thing = self._world[ind.get_iri().as_str()]
+        i: owlready2.Thing = self._world[ind.str]
         yield from (OWLNamedIndividual(IRI.create(d_i.iri)) for d_i in i.equivalent_to
                     if isinstance(d_i, owlready2.Thing))
 
     def data_property_values(self, ind: OWLNamedIndividual, pe: OWLDataProperty, direct: bool = True) \
             -> Iterable[OWLLiteral]:
-        i: owlready2.Thing = self._world[ind.get_iri().as_str()]
-        p: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
+        i: owlready2.Thing = self._world[ind.str]
+        p: owlready2.DataPropertyClass = self._world[pe.str]
         retrieval_func = p._get_values_for_individual if direct else p._get_indirect_values_for_individual
         for val in retrieval_func(i):
             yield OWLLiteral(val)
 
     def all_data_property_values(self, pe: OWLDataProperty, direct: bool = True) -> Iterable[OWLLiteral]:
-        p: owlready2.DataPropertyClass = self._world[pe.get_iri().as_str()]
+        p: owlready2.DataPropertyClass = self._world[pe.str]
         relations = p.get_relations()
         if not direct:
             indirect_relations = chain.from_iterable(
-                map(lambda x: self._world[x.get_iri().as_str()].get_relations(),
+                map(lambda x: self._world[x.str].get_relations(),
                     self.sub_data_properties(pe, direct=False)))
             relations = chain(relations, indirect_relations)
         for _, val in relations:
@@ -436,15 +440,15 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
     def object_property_values(self, ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression, direct: bool = False) \
             -> Iterable[OWLNamedIndividual]:
         if isinstance(pe, OWLObjectProperty):
-            i: owlready2.Thing = self._world[ind.get_iri().as_str()]
-            p: owlready2.ObjectPropertyClass = self._world[pe.get_iri().as_str()]
+            i: owlready2.Thing = self._world[ind.str]
+            p: owlready2.ObjectPropertyClass = self._world[pe.str]
             # Recommended to use direct=False because _get_values_for_individual does not give consistent result
             # for the case when there are equivalent object properties. At least until this is fixed on owlready2.
             retieval_func = p._get_values_for_individual if direct else p._get_indirect_values_for_individual
             for val in retieval_func(i):
                 yield OWLNamedIndividual(IRI.create(val.iri))
         elif isinstance(pe, OWLObjectInverseOf):
-            p: owlready2.ObjectPropertyClass = self._world[pe.get_named_property().get_iri().as_str()]
+            p: owlready2.ObjectPropertyClass = self._world[pe.get_named_property().str]
             inverse_p = p.inverse_property
             # If the inverse property is explicitly defined we can take shortcut
             if inverse_p is not None:
@@ -454,7 +458,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                     raise NotImplementedError('Indirect values of inverse properties are only implemented if the '
                                               'inverse property is explicitly defined in the ontology.'
                                               f'Property: {pe}')
-                i: owlready2.Thing = self._world[ind.get_iri().as_str()]
+                i: owlready2.Thing = self._world[ind.str]
                 for val in p._get_inverse_values_for_individual(i):
                     yield OWLNamedIndividual(IRI.create(val.iri))
         else:
@@ -466,7 +470,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
     def instances(self, ce: OWLClassExpression, direct: bool = False) -> Iterable[OWLNamedIndividual]:
         if direct:
             if isinstance(ce, OWLClass):
-                c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
+                c_x: owlready2.ThingClass = self._world[ce.str]
                 for i in self._ontology._onto.get_instances_of(c_x):
                     if isinstance(i, owlready2.Thing):
                         yield OWLNamedIndividual(IRI.create(i.iri))
@@ -476,14 +480,14 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             if ce.is_owl_thing():
                 yield from self._ontology.individuals_in_signature()
             elif isinstance(ce, OWLClass):
-                c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
+                c_x: owlready2.ThingClass = self._world[ce.str]
                 for i in c_x.instances(world=self._world):
                     if isinstance(i, owlready2.Thing):
                         yield OWLNamedIndividual(IRI.create(i.iri))
             # elif isinstance(ce, OWLObjectSomeValuesFrom) and ce.get_filler().is_owl_thing()\
             #         and isinstance(ce.get_property(), OWLProperty):
             #     seen_set = set()
-            #     p_x: owlready2.ObjectProperty = self._world[ce.get_property().get_named_property().get_iri().as_str()]
+            #     p_x: owlready2.ObjectProperty = self._world[ce.get_property().get_named_property().str]
             #     for i, _ in p_x.get_relations():
             #         if isinstance(i, owlready2.Thing) and i not in seen_set:
             #             seen_set.add(i)
@@ -510,7 +514,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                     yield from self._sub_classes_recursive(axiom.get_sub_class(), seen_set, only_named)
 
             if isinstance(c, OWLClass):
-                c_x: owlready2.EntityClass = self._world[c.get_iri().as_str()]
+                c_x: owlready2.EntityClass = self._world[c.str]
                 # Subclasses will only return named classes
                 for sc_x in c_x.subclasses(world=self._world):
                     sc = _parse_concept_to_owlapy(sc_x)
@@ -549,7 +553,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                     if isinstance(axiom, OWLSubClassOfAxiom) and axiom.get_super_class() == ce:
                         yield axiom.get_sub_class()
             if isinstance(ce, OWLClass):
-                c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
+                c_x: owlready2.ThingClass = self._world[ce.str]
                 # Subclasses will only return named classes
                 for sc in c_x.subclasses(world=self._world):
                     if isinstance(sc, owlready2.ThingClass):
@@ -570,7 +574,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                 seen_set.add(c)
                 yield c
             if isinstance(c, OWLClass):
-                c_x: owlready2.EntityClass = self._world[c.get_iri().as_str()]
+                c_x: owlready2.EntityClass = self._world[c.str]
                 for sc_x in c_x.is_a:
                     sc = _parse_concept_to_owlapy(sc_x)
                     if (isinstance(sc, OWLClass) or isinstance(sc, OWLClassExpression)) and sc not in seen_set:
@@ -608,7 +612,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             yield from self._super_classes_recursive(ce, seen_set, only_named=only_named)
         else:
             if isinstance(ce, OWLClass):
-                c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
+                c_x: owlready2.ThingClass = self._world[ce.str]
                 for sc in c_x.is_a:
                     if (isinstance(sc, owlready2.ThingClass) or
                             (not only_named and isinstance(sc, owlready2.ClassConstruct))):
@@ -632,21 +636,21 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
 
     def equivalent_object_properties(self, op: OWLObjectPropertyExpression) -> Iterable[OWLObjectPropertyExpression]:
         if isinstance(op, OWLObjectProperty):
-            p_x: owlready2.ObjectPropertyClass = self._world[op.get_iri().as_str()]
+            p_x: owlready2.ObjectPropertyClass = self._world[op.str]
             yield from (OWLObjectProperty(IRI.create(ep_x.iri)) for ep_x in p_x.INDIRECT_equivalent_to
                         if isinstance(ep_x, owlready2.ObjectPropertyClass))
         else:
             raise NotImplementedError("equivalent properties of inverse properties not yet implemented", op)
 
     def equivalent_data_properties(self, dp: OWLDataProperty) -> Iterable[OWLDataProperty]:
-        p_x: owlready2.DataPropertyClass = self._world[dp.get_iri().as_str()]
+        p_x: owlready2.DataPropertyClass = self._world[dp.str]
         yield from (OWLDataProperty(IRI.create(ep_x.iri)) for ep_x in p_x.INDIRECT_equivalent_to
                     if isinstance(ep_x, owlready2.DataPropertyClass))
 
     def _find_disjoint_object_properties(self, op: OWLObjectPropertyExpression, seen_set=None) \
             -> Iterable[OWLObjectPropertyExpression]:
         if isinstance(op, OWLObjectProperty):
-            p_x: owlready2.ObjectPropertyClass = self._world[op.get_iri().as_str()]
+            p_x: owlready2.ObjectPropertyClass = self._world[op.str]
             ont_x: owlready2.Ontology = self.get_root_ontology()._onto
             for disjoint in ont_x.disjoint_properties():
                 if p_x in disjoint.entities:
@@ -674,7 +678,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                 yield from self._find_disjoint_object_properties(o, seen_set=seen_set)
 
     def _find_disjoint_data_properties(self, dp: OWLDataProperty, seen_set=None) -> Iterable[OWLDataProperty]:
-        p_x: owlready2.DataPropertyClass = self._world[dp.get_iri().as_str()]
+        p_x: owlready2.DataPropertyClass = self._world[dp.str]
         ont_x: owlready2.Ontology = self.get_root_ontology()._onto
         for disjoint in ont_x.disjoint_properties():
             if p_x in disjoint.entities:
@@ -705,7 +709,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             if d not in seen_set:
                 seen_set.add(d)
                 yield d
-        p_x: owlready2.DataPropertyClass = self._world[dp.get_iri().as_str()]
+        p_x: owlready2.DataPropertyClass = self._world[dp.str]
         assert isinstance(p_x, owlready2.DataPropertyClass)
         if super_or_sub == "super":
             dps = set(p_x.is_a)
@@ -722,7 +726,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
     def _sup_or_sub_data_properties(self, dp: OWLDataProperty, direct: bool = False, super_or_sub=""):
         assert isinstance(dp, OWLDataProperty)
         if direct:
-            p_x: owlready2.DataPropertyClass = self._world[dp.get_iri().as_str()]
+            p_x: owlready2.DataPropertyClass = self._world[dp.str]
             if super_or_sub == "super":
                 dps = set(p_x.is_a)
             else:
@@ -756,7 +760,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             if o not in seen_set:
                 seen_set.add(o)
                 yield o
-        p_x: owlready2.ObjectPropertyClass = self._world[op.get_iri().as_str()]
+        p_x: owlready2.ObjectPropertyClass = self._world[op.str]
         assert isinstance(p_x, owlready2.ObjectPropertyClass)
         if super_or_sub == "super":
             dps = set(p_x.is_a)
@@ -774,7 +778,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
             -> Iterable[OWLObjectPropertyExpression]:
         if isinstance(op, OWLObjectProperty):
             if direct:
-                p_x: owlready2.ObjectPropertyClass = self._world[op.get_iri().as_str()]
+                p_x: owlready2.ObjectPropertyClass = self._world[op.str]
                 if super_or_sub == "super":
                     dps = set(p_x.is_a)
                 else:
@@ -786,7 +790,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
                 seen_set = set()
                 yield from self._sup_or_sub_object_properties_recursive(op, seen_set, super_or_sub)
         elif isinstance(op, OWLObjectInverseOf):
-            p: owlready2.ObjectPropertyClass = self._world[op.get_named_property().get_iri().as_str()]
+            p: owlready2.ObjectPropertyClass = self._world[op.get_named_property().str]
             inverse_p = p.inverse_property
             if inverse_p is not None:
                 yield from self._sup_or_sub_object_properties(OWLObjectProperty(IRI.create(inverse_p.iri)), direct,
@@ -819,7 +823,7 @@ class OWLReasoner_Owlready2(OWLReasonerEx):
         yield from self._sup_or_sub_object_properties(op, direct, "sub")
 
     def types(self, ind: OWLNamedIndividual, direct: bool = False) -> Iterable[OWLClass]:
-        i: owlready2.Thing = self._world[ind.get_iri().as_str()]
+        i: owlready2.Thing = self._world[ind.str]
         if direct:
             for c in i.is_a:
                 if isinstance(c, owlready2.ThingClass):

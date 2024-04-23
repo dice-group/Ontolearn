@@ -1,12 +1,17 @@
 import unittest
 
-from owlapy.model import OWLDataMinCardinality, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
-    OWLThing, OWLObjectComplementOf, OWLObjectUnionOf, OWLNamedIndividual, OWLObjectOneOf, OWLObjectHasValue, \
-    OWLObjectMinCardinality, IRI, OWLDataProperty, DoubleOWLDatatype, OWLClass, OWLDataComplementOf, \
-    OWLDataIntersectionOf, IntegerOWLDatatype, OWLDataExactCardinality, OWLDataHasValue, OWLDataAllValuesFrom, \
-    OWLDataOneOf, OWLDataSomeValuesFrom, OWLDataUnionOf, OWLLiteral, OWLObjectProperty, BooleanOWLDatatype, \
-    OWLDataMaxCardinality
-from owlapy.model.providers import OWLDatatypeMinMaxInclusiveRestriction
+from owlapy.class_expression import OWLObjectOneOf, OWLObjectSomeValuesFrom, OWLThing, OWLObjectComplementOf, \
+    OWLObjectHasValue, OWLClass, OWLDataAllValuesFrom, OWLDataHasValue, \
+    OWLDataOneOf, OWLDataSomeValuesFrom, OWLObjectMinCardinality, \
+    OWLObjectIntersectionOf, OWLDataMaxCardinality, OWLDataMinCardinality, OWLObjectUnionOf, \
+    OWLDataExactCardinality
+from owlapy.iri import IRI
+from owlapy.owl_data_ranges import OWLDataComplementOf, OWLDataIntersectionOf, OWLDataUnionOf
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import DoubleOWLDatatype, OWLLiteral, IntegerOWLDatatype, BooleanOWLDatatype
+from owlapy.owl_property import OWLObjectProperty, OWLDataProperty
+
+from owlapy.providers import owl_datatype_min_max_inclusive_restriction
 from owlapy.render import DLSyntaxObjectRenderer, ManchesterOWLSyntaxOWLObjectRenderer
 
 
@@ -61,7 +66,7 @@ class Owlapy_DLRenderer_Test(unittest.TestCase):
         print(r)
         self.assertEqual(r, "∃ hasAge.¬xsd:double")
 
-        datatype_restriction = OWLDatatypeMinMaxInclusiveRestriction(40, 80)
+        datatype_restriction = owl_datatype_min_max_inclusive_restriction(40, 80)
 
         dr = OWLDataAllValuesFrom(property=has_age, filler=OWLDataUnionOf([datatype_restriction, IntegerOWLDatatype]))
         r = renderer.render(dr)
@@ -147,7 +152,7 @@ class Owlapy_ManchesterRenderer_Test(unittest.TestCase):
         print(r)
         self.assertEqual(r, "hasAge some not xsd:double")
 
-        datatype_restriction = OWLDatatypeMinMaxInclusiveRestriction(40, 80)
+        datatype_restriction = owl_datatype_min_max_inclusive_restriction(40, 80)
 
         dr = OWLDataAllValuesFrom(property=has_age, filler=OWLDataUnionOf([datatype_restriction, IntegerOWLDatatype]))
         r = renderer.render(dr)

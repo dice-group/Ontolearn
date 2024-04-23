@@ -5,12 +5,15 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from functools import total_ordering
 from itertools import chain
+
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_property import OWLDataProperty
+from owlapy.owl_reasoner import OWLReasoner
 from pandas import Timedelta
 from scipy.stats import entropy
 from sortedcontainers import SortedDict
 from typing import Dict, List, Optional, Set, Tuple, Union
-
-from owlapy.model import OWLDataProperty, OWLLiteral, OWLNamedIndividual, OWLReasoner
 
 import math
 
@@ -133,14 +136,14 @@ class EntropyValueSplitter(AbstractValueSplitter):
             self._prop_to_values[property_] = IndividualValues(self._get_values_for_inds(reasoner, property_, pos),
                                                                self._get_values_for_inds(reasoner, property_, neg))
 
-        pos_str = [p.get_iri().get_remainder() for p in pos]
-        neg_str = [n.get_iri().get_remainder() for n in neg]
+        pos_str = [p.iri.get_remainder() for p in pos]
+        neg_str = [n.iri.get_remainder() for n in neg]
         current_splits = [Split(pos_str, neg_str, 0, set())]
         while len(properties) > 0 and len(current_splits) > 0:
             next_level_splits = []
             for property_ in properties[:]:
                 for split in current_splits:
-                    if property_.get_iri().get_remainder() not in split.used_properties:
+                    if property_.iri.get_remainder() not in split.used_properties:
                         value, new_splits = self._compute_split_value(property_, split)
 
                         if value is not None:
@@ -208,7 +211,7 @@ class EntropyValueSplitter(AbstractValueSplitter):
     def _make_split(self, pos: List[str], neg: List[str], entropy: float,
                     split: Split, property_: OWLDataProperty) -> Split:
         used_properties = deepcopy(split.used_properties)
-        used_properties.add(property_.get_iri().get_remainder())
+        used_properties.add(property_.iri.get_remainder())
         return Split(pos, neg, entropy, used_properties)
 
     def _get_inds_below_above(self, value: Values, ind_value_map: 'SortedDict[Values, List[str]]') \
@@ -224,7 +227,7 @@ class EntropyValueSplitter(AbstractValueSplitter):
         for ind in inds:
             try:
                 val = next(iter(reasoner.data_property_values(ind, property_)))
-                inds_to_value[ind.get_iri().get_remainder()] = val.to_python()
+                inds_to_value[ind.iri.get_remainder()] = val.to_python()
             except StopIteration:
                 pass
         return inds_to_value

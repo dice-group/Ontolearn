@@ -1,30 +1,17 @@
 import numpy as np
-import owlapy.model
 import pandas as pd
-import requests
-import json
-
+from owlapy.class_expression import OWLObjectIntersectionOf, OWLClassExpression, OWLObjectUnionOf, OWLDataHasValue
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_property import OWLDataProperty
 import ontolearn.triple_store
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.base import OWLOntologyManager_Owlready2
-from owlapy.model import OWLEquivalentClassesAxiom, OWLOntologyManager, OWLOntology, AddImport, OWLImportsDeclaration, \
-    IRI, OWLDataOneOf, OWLObjectProperty, OWLObjectOneOf, OWLDataProperty
-
-from typing import Dict, Set, Tuple, List, Union, TypeVar, Callable, Generator
+from typing import Dict, Set, Tuple, List, Union, Callable
 from ontolearn.learning_problem import PosNegLPStandard
-import collections
 from tqdm import tqdm
 import sklearn
 from sklearn import tree
-
-from owlapy.model import OWLObjectSomeValuesFrom, OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, \
-    OWLObjectAllValuesFrom, \
-    OWLObjectIntersectionOf, OWLClassExpression, OWLNothing, OWLThing, OWLNaryBooleanClassExpression, \
-    OWLObjectUnionOf, OWLClass, OWLObjectComplementOf, OWLObjectMaxCardinality, OWLObjectMinCardinality, \
-    OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLLiteral, OWLDataHasValue, OWLObjectHasValue, OWLNamedIndividual
 from owlapy.render import DLSyntaxObjectRenderer, ManchesterOWLSyntaxOWLObjectRenderer
-
-import time
 from ..utils.static_funcs import plot_umap_reduced_embeddings, plot_decision_tree_of_expressions
 
 
@@ -290,7 +277,6 @@ class TDL:
                     else:
                         owl_class_expression = feature
                 else:
-                    from owlapy.model import OWLDataRange
                     assert isinstance(feature, OWLDataProperty)
                     # {'decision_node': 0, 'feature': OWLDataProperty(IRI('http://dl-learner.org/mutagenesis#','act')), 'value': 4.99}
                     # We need https://www.w3.org/TR/2004/REC-owl-semantics-20040210/#owl_minCardinality
@@ -370,7 +356,7 @@ class TDL:
     def predict(self, X: List[OWLNamedIndividual], proba=True) -> np.ndarray:
         """ Predict the likelihoods of individuals belonging to the classes"""
         raise NotImplementedError("Unavailable. Predict the likelihoods of individuals belonging to the classes")
-        owl_individuals = [i.get_iri().as_str() for i in X]
+        owl_individuals = [i.str for i in X]
         hop_info, _ = self.construct_hop(owl_individuals)
         Xraw = self.built_sparse_training_data(entity_infos=hop_info,
                                                individuals=owl_individuals,

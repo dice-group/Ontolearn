@@ -4,10 +4,16 @@ import json
 import logging
 import re
 from typing import TypeVar, List, Optional, Union
+
+from owlapy.class_expression import OWLClassExpression
+from owlapy.iri import IRI
+from owlapy.owl_axiom import OWLAxiom
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_reasoner import OWLReasoner
+
 from ontolearn.abstracts import AbstractHeuristic, AbstractScorer, BaseRefinement, AbstractKnowledgeBase, \
     AbstractNode
 from ontolearn.base_concept_learner import BaseConceptLearner
-from owlapy.model import OWLReasoner, OWLNamedIndividual, OWLClassExpression, OWLAxiom, IRI
 from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
 from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, NCES
 from ontolearn.ea_algorithms import EASimple
@@ -53,7 +59,7 @@ def compute_quality(KB, solution, pos, neg, qulaity_func="f1"):
     func = metrics[qulaity_func]().score2
     instances = set(KB.individuals(solution))
     if isinstance(list(pos)[0], str):
-        instances = {ind.get_iri().as_str().split("/")[-1] for ind in instances}
+        instances = {ind.str.split("/")[-1] for ind in instances}
     tp = len(pos.intersection(instances))
     fn = len(pos.difference(instances))
     fp = len(neg.intersection(instances))

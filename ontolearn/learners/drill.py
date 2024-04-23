@@ -1,11 +1,14 @@
 import pandas as pd
 import json
+
+from owlapy.class_expression import OWLClassExpression
+from owlapy.owl_individual import OWLNamedIndividual
+
 from ontolearn.base_concept_learner import RefinementBasedConceptLearner
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.abstracts import AbstractScorer, AbstractNode
 from ontolearn.search import RL_State
 from typing import Set, List, Tuple, Optional, Generator, SupportsFloat, Iterable, FrozenSet, Callable, Union
-from owlapy.model import OWLNamedIndividual, OWLClassExpression
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 import torch
 from ontolearn.data_struct import Experience
@@ -141,8 +144,8 @@ class Drill(RefinementBasedConceptLearner):
         self.pos = pos
         self.neg = neg
 
-        self.emb_pos = self.get_embeddings_individuals(individuals=[i.get_iri().as_str() for i in self.pos])
-        self.emb_neg = self.get_embeddings_individuals(individuals=[i.get_iri().as_str() for i in self.neg])
+        self.emb_pos = self.get_embeddings_individuals(individuals=[i.str for i in self.pos])
+        self.emb_neg = self.get_embeddings_individuals(individuals=[i.str for i in self.neg])
 
         # (3) Initialize the root state of the quasi-ordered RL env.
         # print("Initializing Root RL state...", end=" ")
@@ -210,8 +213,8 @@ class Drill(RefinementBasedConceptLearner):
                                                                neg_uri=frozenset(negatives))
             self.seen_examples.setdefault(len(self.seen_examples), dict()).update(
                 {'Concept': target_owl_ce,
-                 'Positives': [i.get_iri().as_str() for i in positives],
-                 'Negatives': [i.get_iri().as_str() for i in negatives]})
+                 'Positives': [i.str for i in positives],
+                 'Negatives': [i.str for i in negatives]})
         return self.terminate_training()
 
     def save(self, directory: str) -> None:
@@ -338,11 +341,11 @@ class Drill(RefinementBasedConceptLearner):
             self.neg = neg_uri
 
             self.emb_pos = torch.from_numpy(self.df_embeddings.loc[
-                                                [owl_individual.get_iri().as_str().strip() for owl_individual in
+                                                [owl_individual.str.strip() for owl_individual in
                                                  pos_uri]].values)
             # Shape: |E^+| x d
             self.emb_neg = torch.from_numpy(self.df_embeddings.loc[
-                                                [owl_individual.get_iri().as_str().strip() for owl_individual in
+                                                [owl_individual.str.strip() for owl_individual in
                                                  neg_uri]].values)
             """ (3) Take the mean of positive and negative examples and reshape it into (1,1,embedding_dim) for mini
              batching """
@@ -524,7 +527,7 @@ class Drill(RefinementBasedConceptLearner):
         return emb
 
     def get_individuals(self, rl_state: RL_State) -> List[str]:
-        return [owl_individual.get_iri().as_str().strip() for owl_individual in self.kb.individuals(rl_state.concept)]
+        return [owl_individual.str.strip() for owl_individual in self.kb.individuals(rl_state.concept)]
 
     def get_embeddings(self, instances) -> None:
         if self.representation_mode == 'averaging':
@@ -545,7 +548,7 @@ class Drill(RefinementBasedConceptLearner):
                         emb = torch.rand(size=(1, self.sample_size, self.embedding_dim))
                 else:
                     # If|R(C)| \not= \emptyset, then take the mean of individuals.
-                    str_individuals = [i.get_iri().as_str() for i in rl_state.instances]
+                    str_individuals = [i.str for i in rl_state.instances]
                     assert len(str_individuals) > 0
                     if self.pre_trained_kge is not None:
                         emb = self.pre_trained_kge.get_entity_embeddings(str_individuals)

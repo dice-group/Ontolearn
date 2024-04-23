@@ -5,7 +5,8 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import OCEL
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.utils import setup_logging
-from owlapy.model import OWLClass, IRI, OWLNamedIndividual
+from owlapy.owl_individual import OWLNamedIndividual, IRI
+from owlapy.class_expression import OWLClass
 
 setup_logging()
 

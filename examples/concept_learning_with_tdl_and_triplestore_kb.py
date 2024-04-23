@@ -1,8 +1,7 @@
 
-from owlapy.model import IRI, OWLNamedIndividual
+from owlapy.owl_individual import OWLNamedIndividual, IRI
 from ontolearn.learners import TDL
 from ontolearn.learning_problem import PosNegLPStandard
-from ontolearn.utils.static_funcs import compute_f1_score
 from ontolearn.triple_store import TripleStore
 from ontolearn.utils.static_funcs import save_owl_class_expressions
 from owlapy.render import DLSyntaxObjectRenderer

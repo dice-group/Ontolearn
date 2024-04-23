@@ -5,8 +5,10 @@ from logging import warning
 from typing import Iterable, cast, Optional, List
 import os
 import owlready2
-
-from owlapy.model import OWLClass, OWLClassExpression, OWLNamedIndividual, IRI, OWLAxiom
+from owlapy.class_expression import OWLClassExpression
+from owlapy.iri import IRI
+from owlapy.owl_axiom import OWLAxiom
+from owlapy.owl_individual import OWLNamedIndividual
 from ontolearn.base import OWLReasoner_Owlready2, OWLOntology_Owlready2, BaseReasoner_Owlready2, \
     OWLOntologyManager_Owlready2
 from ontolearn.base.utils import ToOwlready2

@@ -1,24 +1,30 @@
 """Tentris representations."""
+
 import logging
 from functools import singledispatchmethod
 from types import MappingProxyType
 from typing import Optional, Iterable
 
 import httpx as httpx
+from owlapy.class_expression import OWLClassExpression, OWLClass, OWLThing
+from owlapy.iri import IRI
+from owlapy.owl_axiom import OWLDataPropertyRangeAxiom, OWLObjectPropertyRangeAxiom, OWLObjectPropertyDomainAxiom, \
+    OWLDataPropertyDomainAxiom
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_object import OWLEntity
+from owlapy.owl_ontology import OWLOntology, OWLOntologyID, _M
+from owlapy.owl_property import OWLObjectPropertyExpression, OWLObjectProperty, OWLDataProperty
 
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.abstracts import AbstractScorer, AbstractLearningProblem, AbstractKnowledgeBase, \
     EncodedPosNegLPStandardKind
 from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
-from ontolearn.knowledge_base import Factory, _Default_ClassExpressionLengthMetricFactory
 from ontolearn.search import EvaluatedConcept
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1, Precision, Accuracy, Recall
-from ontolearn.utils import oplogging
+from ontolearn.utils import oplogging, Factory
 from ontolearn.base.ext import OWLReasonerEx
-from owlapy.model import OWLClassExpression, OWLEntity, OWLOntology, OWLClass, OWLNamedIndividual, \
-    OWLObjectPropertyExpression, OWLDataProperty, OWLObjectProperty, OWLOntologyID, _M, OWLDataPropertyRangeAxiom, \
-    IRI, OWLThing, OWLLiteral, OWLObjectPropertyRangeAxiom, OWLObjectPropertyDomainAxiom, OWLDataPropertyDomainAxiom
 from ontolearn.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer
 from owlapy.util import LRUCache

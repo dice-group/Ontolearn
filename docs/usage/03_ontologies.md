@@ -30,7 +30,7 @@ To load an ontology as well as to manage it, you will need an
 An ontology can be loaded using the following Python code:
 
 ```python
-from owlapy.model import IRI
+from owlapy.iri import IRI
 from ontolearn.base import OWLOntologyManager_Owlready2
 
 manager = OWLOntologyManager_Owlready2()
@@ -89,8 +89,8 @@ It can be done as follows:
 <!--pytest-codeblocks:cont-->
 
 ```python
-from owlapy.model import OWLClass
-from owlapy.model import OWLDeclarationAxiom
+from owlapy.class_expression import OWLClass
+from owlapy.owl_axiom import OWLDeclarationAxiom
 
 iri = IRI('http://example.com/father#', 'child')
 child_class = OWLClass(iri)
@@ -118,8 +118,7 @@ properties you can use the class [OWLDataProperty](owlapy.model.OWLDataProperty)
 <!--pytest-codeblocks:cont-->
 
 ```python
-from owlapy.model import OWLObjectProperty
-from owlapy.model import OWLDataProperty
+from owlapy.owl_property import OWLObjectProperty, OWLDataProperty
 
 # adding the object property 'hasParent'
 hasParent_op = OWLObjectProperty(IRI('http://example.com/father#', 'hasParent'))
@@ -141,7 +140,7 @@ To assign a class to a specific individual use the following code:
 <!--pytest-codeblocks:cont-->
 
 ```python
-from owlapy.model import OWLClassAssertionAxiom
+from owlapy.owl_axiom import OWLClassAssertionAxiom
 
 individuals = list(onto.individuals_in_signature())
 heinz = individuals[1]  # get the 2nd individual in the list which is 'heinz'
@@ -164,8 +163,8 @@ heinz.
 <!--pytest-codeblocks:cont-->
 
 ```python
-from owlapy.model import OWLLiteral
-from owlapy.model import OWLDataPropertyAssertionAxiom
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_axiom import OWLDataPropertyAssertionAxiom
 
 literal_17 = OWLLiteral(17)
 dp_assertion_axiom = OWLDataPropertyAssertionAxiom(heinz, hasAge_dp, literal_17)

@@ -1,9 +1,12 @@
 import unittest
 from typing import TypeVar
 
+from owlapy.class_expression import OWLClass
+from owlapy.iri import IRI
+from owlapy.owl_property import OWLObjectProperty
+
 from ontolearn.base.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, AbstractHierarchy
 from ontolearn.utils import setup_logging
-from owlapy.model import OWLClass, OWLObjectProperty, IRI
 from ontolearn.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 
 _T = TypeVar('_T')  #:

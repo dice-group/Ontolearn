@@ -3,23 +3,28 @@ import unittest
 
 from pandas import Timedelta
 from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
-    OWLDatatypeMinMaxExclusiveRestriction, OWLDatatypeMinMaxInclusiveRestriction
+from owlapy.providers import owl_datatype_max_inclusive_restriction, owl_datatype_min_inclusive_restriction, \
+                              owl_datatype_min_max_exclusive_restriction, owl_datatype_min_max_inclusive_restriction
 
 import owlready2
-from owlapy.model import OWLObjectInverseOf, OWLObjectPropertyRangeAxiom, OWLSameIndividualAxiom, OWLClass, \
-    OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectComplementOf, IRI, OWLDataAllValuesFrom, \
-    OWLDataComplementOf, OWLDataHasValue, OWLDataIntersectionOf, OWLDataProperty, OWLDataSomeValuesFrom, \
-    OWLDataUnionOf, OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLDataOneOf, \
-    OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataMinCardinality, OWLObjectExactCardinality, \
-    OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectHasValue, OWLObjectAllValuesFrom, \
-    OWLObjectOneOf, DateOWLDatatype, DateTimeOWLDatatype, DurationOWLDatatype, OWLClassAssertionAxiom, \
-    OWLNamedIndividual, OWLEquivalentClassesAxiom, OWLSubDataPropertyOfAxiom, OWLSubObjectPropertyOfAxiom, OWLThing, \
-    OWLDifferentIndividualsAxiom, OWLDisjointClassesAxiom, OWLDisjointDataPropertiesAxiom, OWLObjectUnionOf, \
+
+from owlapy.class_expression import OWLObjectOneOf, OWLObjectSomeValuesFrom, OWLThing, OWLObjectComplementOf, \
+    OWLObjectAllValuesFrom, OWLObjectHasValue, OWLClass, OWLDataAllValuesFrom, OWLDataHasValue, \
+    OWLDataOneOf, OWLDataSomeValuesFrom, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectMinCardinality, \
+    OWLObjectIntersectionOf, OWLDataMaxCardinality, OWLDataMinCardinality, OWLObjectUnionOf, \
+    OWLDataExactCardinality
+from owlapy.iri import IRI
+from owlapy.owl_axiom import OWLSubDataPropertyOfAxiom, OWLInverseObjectPropertiesAxiom, OWLSubObjectPropertyOfAxiom, \
+    OWLObjectPropertyRangeAxiom, OWLSameIndividualAxiom, OWLClassAssertionAxiom, OWLEquivalentClassesAxiom, \
+    OWLDifferentIndividualsAxiom, OWLDisjointClassesAxiom, OWLDisjointDataPropertiesAxiom, \
     OWLDisjointObjectPropertiesAxiom, OWLEquivalentDataPropertiesAxiom, OWLEquivalentObjectPropertiesAxiom, \
-    OWLDataPropertyAssertionAxiom, OWLObjectProperty, OWLDataPropertyDomainAxiom, OWLDataPropertyRangeAxiom, \
-    OWLObjectPropertyAssertionAxiom, OWLObjectPropertyDomainAxiom, OWLInverseObjectPropertiesAxiom, OWLSubClassOfAxiom, \
-    OWLDeclarationAxiom
+    OWLDataPropertyDomainAxiom, OWLDataPropertyRangeAxiom, OWLSubClassOfAxiom, OWLObjectPropertyDomainAxiom, \
+    OWLDataPropertyAssertionAxiom, OWLObjectPropertyAssertionAxiom, OWLDeclarationAxiom
+from owlapy.owl_data_ranges import OWLDataComplementOf, OWLDataIntersectionOf, OWLDataUnionOf
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import DoubleOWLDatatype, OWLLiteral, DurationOWLDatatype, IntegerOWLDatatype, \
+    BooleanOWLDatatype, DateTimeOWLDatatype, DateOWLDatatype
+from owlapy.owl_property import OWLObjectInverseOf, OWLObjectProperty, OWLDataProperty
 
 from ontolearn.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
@@ -531,18 +536,18 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
 
         self.assertFalse(list(reasoner.same_individuals(markus)))
         mgr.add_axiom(onto, OWLSameIndividualAxiom([markus, anna, person1]))
-        self.assertEqual(set([anna, person1]), set(reasoner.same_individuals(markus)))
+        self.assertEqual({anna, person1}, set(reasoner.same_individuals(markus)))
         mgr.remove_axiom(onto, OWLSameIndividualAxiom([markus, anna, person1]))
         self.assertFalse(set(reasoner.same_individuals(markus)))
 
         self.assertFalse(list(reasoner.disjoint_classes(brother)))
         self.assertFalse(list(reasoner.disjoint_classes(person)))
         mgr.add_axiom(onto, OWLDisjointClassesAxiom([brother, sister, aerial_animal]))
-        self.assertEqual(set([sister, aerial_animal]), set(reasoner.disjoint_classes(brother)))
+        self.assertEqual({sister, aerial_animal}, set(reasoner.disjoint_classes(brother)))
         mgr.remove_axiom(onto, OWLDisjointClassesAxiom([brother, sister, aerial_animal]))
         self.assertFalse(set(reasoner.disjoint_classes(brother)))
         mgr.add_axiom(onto, OWLDisjointClassesAxiom([person, animal]))
-        self.assertEqual(set([animal, aerial_animal]), set(reasoner.disjoint_classes(person)))
+        self.assertEqual({animal, aerial_animal}, set(reasoner.disjoint_classes(person)))
         mgr.remove_axiom(onto, OWLDisjointClassesAxiom([person, animal]))
         self.assertFalse(set(reasoner.disjoint_classes(person)))
 
@@ -568,8 +573,8 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         self.assertFalse(list(reasoner.different_individuals(michelle)))
         mgr.add_axiom(onto, OWLDifferentIndividualsAxiom([markus, michelle]))
         mgr.add_axiom(onto, OWLDifferentIndividualsAxiom([markus, anna, marius]))
-        self.assertEqual(set([michelle, anna, marius]), set(reasoner.different_individuals(markus)))
-        self.assertEqual(set([markus]), set(reasoner.different_individuals(michelle)))
+        self.assertEqual({michelle, anna, marius}, set(reasoner.different_individuals(markus)))
+        self.assertEqual({markus}, set(reasoner.different_individuals(michelle)))
         mgr.remove_axiom(onto, OWLDifferentIndividualsAxiom([markus, michelle]))
         mgr.remove_axiom(onto, OWLDifferentIndividualsAxiom([markus, anna, marius]))
         self.assertFalse(set(reasoner.different_individuals(markus)))
@@ -652,19 +657,19 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         owlready_ce = onto._onto.act.some(date)
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
-        res = OWLDatatypeMinInclusiveRestriction(20)
+        res = owl_datatype_min_inclusive_restriction(20)
         ce = OWLDataAllValuesFrom(charge, OWLDataComplementOf(res))
         owlready_ce = onto._onto.charge.only(owlready2.Not(owlready2.ConstrainedDatatype(int, min_inclusive=20)))
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
-        res_both = OWLDatatypeMinMaxExclusiveRestriction(0.5, 1)
+        res_both = owl_datatype_min_max_exclusive_restriction(0.5, 1)
         ce = OWLDataAllValuesFrom(charge, OWLDataUnionOf([res, res_both]))
         owlready_ce = onto._onto.charge.only(
             owlready2.Or([owlready2.ConstrainedDatatype(int, min_inclusive=20),
                           owlready2.ConstrainedDatatype(float, min_exclusive=0.5, max_exclusive=1.0)]))
         self.assertEqual(owlready_ce, to_owlready.map_concept(ce))
 
-        res = OWLDatatypeMaxInclusiveRestriction(1.2)
+        res = owl_datatype_max_inclusive_restriction(1.2)
         oneof = OWLDataOneOf([OWLLiteral(2.3), OWLLiteral(5.9), OWLLiteral(7.2)])
         ce = OWLDataAllValuesFrom(charge, OWLDataIntersectionOf([res, oneof]))
         owlready_ce = onto._onto.charge.only(owlready2.ConstrainedDatatype(float, max_inclusive=1.2) &
@@ -755,14 +760,14 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
         ce = charge.only(owlready2.Not(owlready2.ConstrainedDatatype(int, max_inclusive=2)))
-        res = OWLDatatypeMaxInclusiveRestriction(2)
+        res = owl_datatype_max_inclusive_restriction(2)
         owl_ce = OWLDataAllValuesFrom(OWLDataProperty(IRI(ns, 'charge')), OWLDataComplementOf(res))
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))
 
         ce = charge.some(owlready2.Not(owlready2.ConstrainedDatatype(int, max_inclusive=2)) |
                          owlready2.ConstrainedDatatype(float, min_inclusive=2.1, max_inclusive=2.2))
-        res = OWLDatatypeMaxInclusiveRestriction(2)
-        res2 = OWLDatatypeMinMaxInclusiveRestriction(2.1, 2.2)
+        res = owl_datatype_max_inclusive_restriction(2)
+        res2 = owl_datatype_min_max_inclusive_restriction(2.1, 2.2)
         owl_ce = OWLDataSomeValuesFrom(OWLDataProperty(IRI(ns, 'charge')),
                                        OWLDataUnionOf([OWLDataComplementOf(res), res2]))
         self.assertEqual(owl_ce, from_owlready.map_concept(ce))

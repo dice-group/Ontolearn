@@ -1,17 +1,19 @@
 import unittest
 from itertools import repeat
 
-from ontolearn.concept_generator import ConceptGenerator
-from ontolearn.knowledge_base import KnowledgeBase
-
-from owlapy.model import OWLObjectUnionOf, OWLSubDataPropertyOfAxiom, OWLSubObjectPropertyOfAxiom, OWLThing, \
-    BooleanOWLDatatype, DoubleOWLDatatype, IntegerOWLDatatype, OWLClass, OWLDataAllValuesFrom, \
-    OWLDataHasValue, OWLDataProperty, OWLDataSomeValuesFrom, OWLLiteral, OWLNamedIndividual, \
-    OWLNothing, OWLObjectAllValuesFrom, OWLObjectComplementOf, OWLObjectExactCardinality, \
-    OWLObjectHasValue, OWLObjectIntersectionOf, OWLObjectInverseOf, OWLObjectMaxCardinality, \
-    OWLObjectMinCardinality, OWLObjectProperty, IRI, OWLObjectSomeValuesFrom, OWLClassAssertionAxiom, \
+from owlapy.class_expression import OWLObjectUnionOf, OWLThing, OWLClass, OWLDataAllValuesFrom, OWLDataHasValue, \
+    OWLNothing, OWLDataSomeValuesFrom, OWLObjectComplementOf, OWLObjectExactCardinality, OWLObjectMaxCardinality, \
+    OWLObjectAllValuesFrom, OWLObjectHasValue, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectMinCardinality
+from owlapy.iri import IRI
+from owlapy.owl_axiom import OWLSubDataPropertyOfAxiom, OWLSubObjectPropertyOfAxiom, OWLClassAssertionAxiom, \
     OWLEquivalentClassesAxiom, OWLSubClassOfAxiom, OWLObjectPropertyAssertionAxiom, OWLObjectPropertyDomainAxiom, \
     OWLObjectPropertyRangeAxiom, OWLDataPropertyDomainAxiom
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import BooleanOWLDatatype, IntegerOWLDatatype, DoubleOWLDatatype, OWLLiteral
+from owlapy.owl_property import OWLDataProperty, OWLObjectInverseOf, OWLObjectProperty
+
+from ontolearn.concept_generator import ConceptGenerator
+from ontolearn.knowledge_base import KnowledgeBase
 
 
 class KnowledgeBaseTest(unittest.TestCase):

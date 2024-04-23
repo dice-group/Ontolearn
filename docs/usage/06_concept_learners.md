@@ -139,7 +139,7 @@ and `negative_examples` to `OWLNamedIndividual`:
 
 ```python
 from ontolearn.learning_problem import PosNegLPStandard
-from owlapy.model import IRI, OWLNamedIndividual
+from owlapy.owl_individual import IRI, OWLNamedIndividual
 
 typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
 typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))

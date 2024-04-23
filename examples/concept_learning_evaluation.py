@@ -12,11 +12,11 @@ import os
 import time
 import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, NCES
+from ontolearn.concept_learner import CELOE, OCEL, EvoLearner
 from ontolearn.learners import Drill, TDL
 from ontolearn.learning_problem import PosNegLPStandard
-from ontolearn.metrics import Accuracy, F1
-from owlapy.model import OWLClass, OWLNamedIndividual, IRI
+from ontolearn.metrics import F1
+from owlapy.owl_individual import OWLNamedIndividual, IRI
 import argparse
 from rdflib import Graph
 

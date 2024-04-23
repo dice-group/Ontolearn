@@ -4,7 +4,8 @@ import os
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import EvoLearner
 from ontolearn.learning_problem import PosNegLPStandard
-from owlapy.model import OWLClass, OWLNamedIndividual, IRI
+from owlapy.owl_individual import OWLNamedIndividual, IRI
+from owlapy.class_expression import OWLClass
 from ontolearn.utils import setup_logging
 
 setup_logging()

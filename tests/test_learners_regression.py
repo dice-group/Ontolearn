@@ -1,17 +1,12 @@
 import json
-import random
-import unittest
 from ontolearn.learning_problem import PosNegLPStandard
-from owlapy.model import OWLNamedIndividual, IRI
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.iri import IRI
 
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import EvoLearner, CELOE, OCEL
 from ontolearn.learners import Drill
 from ontolearn.metrics import F1
-
-import os
-import time
-from owlapy.model import OWLNamedIndividual, IRI
 from ontolearn.utils.static_funcs import compute_f1_score
 
 

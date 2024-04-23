@@ -3,12 +3,13 @@
 import logging
 from abc import ABCMeta, abstractmethod
 from typing import Set, List, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional
-
-from owlapy.model import OWLClassExpression, OWLOntology
+from owlapy.class_expression import OWLClassExpression
+from owlapy.owl_ontology import OWLOntology
 from owlapy.util import iter_count
 from .data_struct import Experience
 from .utils import read_csv
 from collections import OrderedDict
+
 _N = TypeVar('_N')  #:
 _KB = TypeVar('_KB', bound='AbstractKnowledgeBase')  #:
 

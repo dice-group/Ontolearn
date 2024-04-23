@@ -4,14 +4,14 @@ import pandas
 import matplotlib.pyplot as plt
 import sklearn
 import numpy as np
-
+from owlapy.class_expression import OWLClass, OWLClassExpression
+from owlapy.iri import IRI
+from owlapy.owl_axiom import OWLEquivalentClassesAxiom
+from owlapy.owl_ontology import OWLOntology
+from owlapy.owl_ontology_manager import OWLOntologyManager
 from ..base.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from ..base.owl.utils import OWLClassExpressionLengthMetric
-from ..base.fast_instance_checker import OWLReasoner_FastInstanceChecker
 from owlapy.util import LRUCache
-from owlapy.model import OWLEquivalentClassesAxiom, OWLOntologyManager, OWLOntology, IRI, OWLClass
-from owlapy.model import OWLClassExpression
-from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer
 import traceback
 
 

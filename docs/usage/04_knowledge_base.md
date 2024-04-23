@@ -71,8 +71,8 @@ It can be done as follows:
 <!--pytest-codeblocks:cont-->
 
 ```python
-from owlapy.model import OWLClass
-from owlapy.model import IRI
+from owlapy.class_expression import OWLClass
+from owlapy.iri import IRI
 
 iri = IRI('http://example.com/father#', 'Father')
 father_concept = OWLClass(iri)
@@ -161,7 +161,7 @@ the positive and negative examples for the concept of 'Father'. Our positive exa
 
 <!--pytest-codeblocks:cont-->
 ```python
-from owlapy.model import OWLNamedIndividual
+from owlapy.owl_individual import OWLNamedIndividual
 
 positive_examples = {OWLNamedIndividual(IRI.create(NS, 'stefan')),
                      OWLNamedIndividual(IRI.create(NS, 'markus')),
@@ -196,7 +196,8 @@ but for now we let's construct this class expression manually:
 
 <!--pytest-codeblocks:cont-->
 ```python
-from owlapy.model import OWLObjectProperty, OWLObjectSomeValuesFrom , OWLObjectIntersectionOf
+from owlapy.owl_property import OWLObjectProperty
+from owlapy.class_expression import OWLObjectSomeValuesFrom , OWLObjectIntersectionOf
 
 female = OWLClass(IRI(NS,'female'))
 not_female = kb.generator.negation(female)
@@ -348,7 +349,7 @@ Here is another example where this time we use an LPC sampler:
 
 ```python
 from ontosample.lpc_samplers import RandomWalkerJumpsSamplerLPCentralized
-from owlapy.model import OWLNamedIndividual,IRI
+from owlapy.owl_individual import OWLNamedIndividual,IRI
 import json
 
 # 0. Load json that stores the learning problem
