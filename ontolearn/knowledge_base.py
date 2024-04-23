@@ -414,17 +414,17 @@ class KnowledgeBase(AbstractKnowledgeBase):
                                       j.str)) for j
                          in getattr(self.reasoner, "super_" + prop_type.lower() + "_properties")(prop, direct=True)]
                 elif mode == 'axiom':
-                    [results.add(getattr(owlapy.model, "OWLSub" + prop_type + "PropertyOfAxiom")(j, prop)) for j in
+                    [results.add(getattr(owlapy.owl_axiom, "OWLSub" + prop_type + "PropertyOfAxiom")(j, prop)) for j in
                      getattr(self.reasoner, "sub_" + prop_type.lower() + "_properties")(prop, direct=True)]
-                    [results.add(getattr(owlapy.model, "OWLEquivalent" + prop_type + "PropertiesAxiom")([j, prop])) for
+                    [results.add(getattr(owlapy.owl_axiom, "OWLEquivalent" + prop_type + "PropertiesAxiom")([j, prop])) for
                      j in
                      getattr(self.reasoner, "equivalent_" + prop_type.lower() + "_properties")(prop)]
-                    [results.add(getattr(owlapy.model, "OWL" + prop_type + "PropertyDomainAxiom")(prop, j)) for j in
+                    [results.add(getattr(owlapy.owl_axiom, "OWL" + prop_type + "PropertyDomainAxiom")(prop, j)) for j in
                      getattr(self.reasoner, prop_type.lower() + "_property_domains")(prop, direct=True)]
-                    [results.add(getattr(owlapy.model, "OWL" + prop_type + "PropertyRangeAxiom")(prop, j)) for j in
+                    [results.add(getattr(owlapy.owl_axiom, "OWL" + prop_type + "PropertyRangeAxiom")(prop, j)) for j in
                      getattr(self.reasoner, prop_type.lower() + "_property_ranges")(prop, direct=True)]
                     if not include_all:
-                        [results.add(getattr(owlapy.model, "OWLSub" + prop_type + "PropertyOfAxiom")(prop, j)) for j
+                        [results.add(getattr(owlapy.owl_axiom, "OWLSub" + prop_type + "PropertyOfAxiom")(prop, j)) for j
                          in getattr(self.reasoner, "super_" + prop_type.lower() + "_properties")(prop, direct=True)]
 
         return results

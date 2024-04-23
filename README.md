@@ -41,7 +41,7 @@ pytest -p no:warnings -x # Running 171 tests takes ~ 6 mins
 from ontolearn.learners import TDL
 from ontolearn.triple_store import TripleStore
 from ontolearn.learning_problem import PosNegLPStandard
-from owlapy.model import OWLNamedIndividual, IRI
+from owlapy.owl_individual import OWLNamedIndividual, IRI
 from owlapy.render import DLSyntaxObjectRenderer
 
 # (1) Initialize Triplestore
