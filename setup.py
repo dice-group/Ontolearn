@@ -18,6 +18,7 @@ _deps = [
     "pandas>=1.5.0",
     "sortedcontainers>=2.4.0",  # AB: This is required
     "deap>=1.3.1",
+    "flask>=1.1.2",
     "tqdm>=4.64.0",
     "transformers>=4.38.1",
     "pytest>=7.2.2",
