@@ -1,7 +1,7 @@
 from ontolearn.triple_store import TripleStore
 from ontolearn.learners import TDL
 from ontolearn.learners import Drill
-from owlapy.model import OWLNamedIndividual, IRI
+from owlapy.owl_individual import OWLNamedIndividual, IRI
 from ontolearn.learning_problem import PosNegLPStandard
 url = "http://dice-dbpedia.cs.upb.de:9080/sparql"
 examples = {"positive_examples": ["http://dbpedia.org/resource/Angela_Merkel"], "negative_examples": ["http://dbpedia.org/resource/Barack_Obama"]}

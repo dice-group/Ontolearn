@@ -5,8 +5,11 @@ from abc import ABCMeta, abstractmethod
 from functools import reduce
 from typing import Dict, Iterable, Tuple, overload, TypeVar, Generic, Type, cast, Optional, FrozenSet, Set
 
-from owlapy.model import OWLClass, OWLReasoner, OWLObjectProperty, OWLDataProperty, OWLTopObjectProperty, \
-    OWLBottomObjectProperty, OWLTopDataProperty, OWLBottomDataProperty, OWLThing, OWLNothing, HasIRI
+from owlapy.class_expression import OWLClass, OWLThing, OWLNothing
+from owlapy.meta_classes import HasIRI
+from owlapy.owl_literal import OWLTopObjectProperty, OWLBottomObjectProperty, OWLTopDataProperty, OWLBottomDataProperty
+from owlapy.owl_property import OWLObjectProperty, OWLDataProperty
+from owlapy.owl_reasoner import OWLReasoner
 
 _S = TypeVar('_S', bound=HasIRI)  #:
 _U = TypeVar('_U', bound='AbstractHierarchy')  #:

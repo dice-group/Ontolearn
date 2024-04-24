@@ -136,8 +136,8 @@ class DLLearnerBinder:
         if max_runtime:
             self.max_runtime = max_runtime
 
-        pathToConfig = self.write_dl_learner_config(pos=[i.get_iri().as_str() for i in lp.pos],
-                                                    neg=[i.get_iri().as_str() for i in lp.neg])
+        pathToConfig = self.write_dl_learner_config(pos=[i.str for i in lp.pos],
+                                                    neg=[i.str for i in lp.neg])
         total_runtime = time.time()
         res = subprocess.run([self.binary_path, pathToConfig], capture_output=True, universal_newlines=True)
         total_runtime = round(time.time() - total_runtime, 3)

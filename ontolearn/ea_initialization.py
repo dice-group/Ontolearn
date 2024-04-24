@@ -4,10 +4,14 @@ from dataclasses import dataclass
 from functools import lru_cache
 from enum import Enum, auto
 from itertools import chain, cycle
+
+from owlapy.class_expression import OWLClass, OWLClassExpression, OWLThing
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_property import OWLDataProperty, OWLObjectProperty
+
 from ontolearn.ea_utils import OperatorVocabulary, Tree, escape, owlliteral_to_primitive_string
 from ontolearn.knowledge_base import KnowledgeBase
-from owlapy.model import OWLClass, OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual, \
-    OWLObjectProperty, OWLThing
 import random
 from abc import ABCMeta, abstractmethod
 from typing import Any, Callable, Dict, Final, List, Set, Union
@@ -328,7 +332,7 @@ class EARandomWalkInitialization(AbstractEAInitialization):
 
     def _add_object_terminal(self, expr: Tree, pset: PrimitiveSetTyped, type_: OWLClass):
         for t in pset.terminals[OWLClassExpression]:
-            if t.name == escape(type_.get_iri().get_remainder()):
+            if t.name == escape(type_.iri.get_remainder()):
                 expr.append(t)
                 return
 
@@ -340,6 +344,6 @@ class EARandomWalkInitialization(AbstractEAInitialization):
 
     def _add_primitive(self, expr: Tree, pset: PrimitiveSetTyped, property_: Property, vocab: OperatorVocabulary):
         for p in pset.primitives[OWLClassExpression]:
-            if p.name == vocab + escape(property_.get_iri().get_remainder()):
+            if p.name == vocab + escape(property_.iri.get_remainder()):
                 expr.append(p)
                 return

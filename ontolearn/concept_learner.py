@@ -4,28 +4,28 @@ import logging
 import operator
 import random
 import time
-from collections import deque, Counter
 from contextlib import contextmanager
 from itertools import islice, chain
-from typing import Any, Callable, Dict, FrozenSet, Set, List, Tuple, Iterable, Optional, Generator, SupportsFloat, Union
+from typing import Any, Callable, Dict, FrozenSet, Set, List, Tuple, Iterable, Optional, Union
 
-import numpy as np
 import pandas as pd
 import torch
-from torch import nn
+from owlapy.class_expression import OWLClassExpression
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_property import OWLDataProperty
+from owlapy.owl_reasoner import OWLReasoner
 from torch.utils.data import DataLoader
 from torch.functional import F
 from torch.nn.utils.rnn import pad_sequence
-from torch.nn.init import xavier_normal_
 from deap import gp, tools, base, creator
 
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.abstracts import AbstractFitness, AbstractScorer, AbstractNode, BaseRefinement, \
+from ontolearn.abstracts import AbstractFitness, AbstractScorer, BaseRefinement, \
     AbstractHeuristic, EncodedPosNegLPStandardKind
 from ontolearn.base_concept_learner import BaseConceptLearner, RefinementBasedConceptLearner
 from ontolearn.base.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter, OperandSetTransform
-from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction, NCESDataLoader, \
-    NCESDataLoaderInference, CLIPDataLoader, CLIPDataLoaderInference
+from ontolearn.data_struct import NCESDataLoader, NCESDataLoaderInference, CLIPDataLoader, CLIPDataLoaderInference
 from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
 from ontolearn.ea_initialization import AbstractEAInitialization, EARandomInitialization, EARandomWalkInitialization
 from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVocabulary, Tree, escape, ind_to_string, \
@@ -33,12 +33,12 @@ from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVoca
 from ontolearn.fitness_functions import LinearPressureFitness
 from ontolearn.heuristics import OCELHeuristic
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
-from ontolearn.metrics import Accuracy, F1
-from ontolearn.refinement_operators import LengthBasedRefinement, ExpressRefinement
+from ontolearn.metrics import Accuracy
+from ontolearn.refinement_operators import ExpressRefinement
 from ontolearn.search import EvoLearnerNode, NCESNode, HeuristicOrderedNode, LBLNode, OENode, TreeNode, \
     LengthOrderedNode, \
-    QualityOrderedNode, RL_State, DRILLSearchTreePriorityQueue, EvaluatedConcept
-from ontolearn.utils import oplogging, create_experiment_folder
+    QualityOrderedNode, EvaluatedConcept
+from ontolearn.utils import oplogging
 from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter, EntropyValueSplitter
 from ontolearn.base_nces import BaseNCES
@@ -48,7 +48,6 @@ from ontolearn.clip_architectures import LengthLearner_LSTM, LengthLearner_GRU, 
 from ontolearn.nces_trainer import NCESTrainer, before_pad
 from ontolearn.clip_trainer import CLIPTrainer
 from ontolearn.nces_utils import SimpleSolution
-from owlapy.model import OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual, OWLReasoner, OWLClass
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.parser import DLSyntaxParser
 from owlapy.util import OrderedOWLObject
@@ -842,7 +841,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                           name=OperatorVocabulary.INTERSECTION)
 
         for op in self.kb.get_object_properties():
-            name = escape(op.get_iri().get_remainder())
+            name = escape(op.iri.get_remainder())
             existential, universal = factory.create_existential_universal(op)
             pset.addPrimitive(existential, [OWLClassExpression], OWLClassExpression,
                               name=OperatorVocabulary.EXISTENTIAL + name)
@@ -866,7 +865,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             pset.addTerminal(true_, Bool, name=owlliteral_to_primitive_string(true_))
 
             for bool_dp in self.kb.get_boolean_data_properties():
-                name = escape(bool_dp.get_iri().get_remainder())
+                name = escape(bool_dp.iri.get_remainder())
                 self._dp_to_prim_type[bool_dp] = Bool
 
                 data_has_value = factory.create_data_has_value(bool_dp)
@@ -874,7 +873,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                                   name=OperatorVocabulary.DATA_HAS_VALUE + name)
 
             for split_dp in chain(self.kb.get_time_data_properties(), self.kb.get_numeric_data_properties()):
-                name = escape(split_dp.get_iri().get_remainder())
+                name = escape(split_dp.iri.get_remainder())
                 type_ = type(name, (object,), {})
 
                 self._dp_to_prim_type[split_dp] = type_
@@ -894,7 +893,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             for i in range(1, self.card_limit + 1):
                 pset.addTerminal(i, int)
             for op in self.kb.get_object_properties():
-                name = escape(op.get_iri().get_remainder())
+                name = escape(op.iri.get_remainder())
                 card_min, card_max, _ = factory.create_card_restrictions(op)
                 pset.addPrimitive(card_min, [int, OWLClassExpression], OWLClassExpression,
                                   name=OperatorVocabulary.CARD_MIN + name)
@@ -904,12 +903,12 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                 #                  name=OperatorVocabulary.CARD_EXACT + name)
 
         for class_ in self.kb.get_concepts():
-            pset.addTerminal(class_, OWLClassExpression, name=escape(class_.get_iri().get_remainder()))
+            pset.addTerminal(class_, OWLClassExpression, name=escape(class_.iri.get_remainder()))
 
         pset.addTerminal(self.kb.generator.thing, OWLClassExpression,
-                         name=escape(self.kb.generator.thing.get_iri().get_remainder()))
+                         name=escape(self.kb.generator.thing.iri.get_remainder()))
         pset.addTerminal(self.kb.generator.nothing, OWLClassExpression,
-                         name=escape(self.kb.generator.nothing.get_iri().get_remainder()))
+                         name=escape(self.kb.generator.nothing.iri.get_remainder()))
         return pset
 
     def __build_toolbox(self) -> base.Toolbox:
@@ -1255,8 +1254,8 @@ class CLIP(CELOE):
 
     def pos_neg_to_tensor(self, pos: Union[Set[OWLNamedIndividual]], neg: Union[Set[OWLNamedIndividual], Set[str]]):
         if isinstance(pos[0], OWLNamedIndividual):
-            pos_str = [ind.get_iri().as_str().split("/")[-1] for ind in pos][:self.num_examples]
-            neg_str = [ind.get_iri().as_str().split("/")[-1] for ind in neg][:self.num_examples]
+            pos_str = [ind.str.split("/")[-1] for ind in pos][:self.num_examples]
+            neg_str = [ind.str.split("/")[-1] for ind in neg][:self.num_examples]
         elif isinstance(pos[0], str):
             pos_str = pos[:self.num_examples]
             neg_str = neg[:self.num_examples]
@@ -1473,8 +1472,8 @@ class NCES(BaseNCES):
     def fit_one(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]],
                 verbose=False):
         if isinstance(pos[0], OWLNamedIndividual):
-            pos_str = [ind.get_iri().as_str().split("/")[-1] for ind in pos]
-            neg_str = [ind.get_iri().as_str().split("/")[-1] for ind in neg]
+            pos_str = [ind.str.split("/")[-1] for ind in pos]
+            neg_str = [ind.str.split("/")[-1] for ind in neg]
         elif isinstance(pos[0], str):
             pos_str = pos
             neg_str = neg
@@ -1528,7 +1527,7 @@ class NCES(BaseNCES):
             concept_length = init_length_metric().length(concept)
             concept_instances = set(self.kb.individuals(concept)) if isinstance(pos_list[0],
                                                                                 OWLNamedIndividual) else set(
-                [ind.get_iri().as_str().split("/")[-1] for ind in self.kb.individuals(concept)])
+                [ind.str.split("/")[-1] for ind in self.kb.individuals(concept)])
             tp, fn, fp, tn = compute_tp_fn_fp_tn(concept_instances, pos, neg)
             quality = self.quality_func.score2(tp, fn, fp, tn)[1]
             node = NCESNode(concept, length=concept_length, individuals_count=concept_individuals_count,
@@ -1552,8 +1551,8 @@ class NCES(BaseNCES):
         pos = list(examples[0])
         neg = list(examples[1])
         if isinstance(pos[0], OWLNamedIndividual):
-            pos_str = [ind.get_iri().as_str().split("/")[-1] for ind in pos]
-            neg_str = [ind.get_iri().as_str().split("/")[-1] for ind in neg]
+            pos_str = [ind.str.split("/")[-1] for ind in pos]
+            neg_str = [ind.str.split("/")[-1] for ind in neg]
         elif isinstance(pos[0], str):
             pos_str, neg_str = list(pos), list(neg)
         else:

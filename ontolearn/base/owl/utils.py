@@ -1,14 +1,19 @@
 from collections import Counter
 from functools import singledispatchmethod
 from typing import Iterable, Generic, TypeVar, Callable, List
-
-from owlapy.model import OWLDataRange, OWLLiteral, OWLObject, OWLClass, OWLObjectProperty, \
-    OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf, OWLObjectInverseOf, \
-    OWLObjectCardinalityRestriction, OWLObjectHasSelf, OWLObjectHasValue, OWLObjectOneOf, OWLNamedIndividual, \
-    OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLClassExpression, OWLThing, \
-    OWLDataSomeValuesFrom, OWLDataOneOf, OWLDatatypeRestriction, OWLDataComplementOf, OWLDataAllValuesFrom, \
-    OWLDataCardinalityRestriction, OWLDatatype, OWLDataHasValue, OWLDataUnionOf, OWLDataIntersectionOf, \
-    OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataProperty, OWLObjectSomeValuesFrom
+from owlapy.class_expression import OWLObjectOneOf, OWLClass, OWLObjectUnionOf, OWLObjectIntersectionOf, \
+    OWLObjectSomeValuesFrom, OWLObjectComplementOf, OWLObjectAllValuesFrom, OWLDataSomeValuesFrom, \
+    OWLDatatypeRestriction, OWLClassExpression, OWLDataAllValuesFrom, OWLDataHasValue, OWLDataOneOf, \
+    OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality, \
+    OWLObjectHasValue, OWLDataExactCardinality, OWLDataMaxCardinality, \
+    OWLDataMinCardinality, OWLObjectHasSelf, OWLObjectCardinalityRestriction, \
+    OWLDataCardinalityRestriction, OWLThing
+from owlapy.owl_data_ranges import OWLDataRange, OWLDataComplementOf, OWLDataIntersectionOf, OWLDataUnionOf
+from owlapy.owl_datatype import OWLDatatype
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_object import OWLObject
+from owlapy.owl_property import OWLObjectProperty, OWLDataProperty, OWLObjectInverseOf
 
 from owlapy.util import OrderedOWLObject, iter_count
 from sortedcontainers import SortedSet

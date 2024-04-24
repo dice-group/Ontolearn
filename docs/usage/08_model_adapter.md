@@ -10,7 +10,7 @@ from ontolearn.concept_learner import CELOE
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.metrics import Accuracy
 from ontolearn.model_adapter import ModelAdapter
-from owlapy.model import OWLNamedIndividual, IRI
+from owlapy.owl_individual import OWLNamedIndividual, IRI
 from owlapy.namespaces import Namespaces
 from ontolearn.base import OWLOntologyManager_Owlready2
 from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances

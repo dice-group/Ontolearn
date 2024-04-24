@@ -8,7 +8,8 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.metrics import Accuracy
 from ontolearn.model_adapter import ModelAdapter
 from ontolearn.refinement_operators import ModifiedCELOERefinement
-from owlapy.model import IRI, OWLNamedIndividual
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.iri import IRI
 from ontolearn.base import OWLOntology_Owlready2, BaseReasoner_Owlready2
 from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
 

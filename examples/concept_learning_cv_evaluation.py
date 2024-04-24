@@ -10,9 +10,8 @@ from ontolearn.refinement_operators import ExpressRefinement
 from ontolearn.learners import Drill, TDL
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1
-from owlapy.model import OWLNamedIndividual, IRI
+from owlapy.owl_individual import OWLNamedIndividual, IRI
 import argparse
-from rdflib import Graph
 from sklearn.model_selection import StratifiedKFold
 import numpy as np
 

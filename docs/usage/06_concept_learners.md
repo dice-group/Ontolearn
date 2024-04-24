@@ -139,15 +139,15 @@ and `negative_examples` to `OWLNamedIndividual`:
 
 ```python
 from ontolearn.learning_problem import PosNegLPStandard
-from owlapy.model import IRI, OWLNamedIndividual
+from owlapy.owl_individual import IRI, OWLNamedIndividual
 
 typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
 typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
 lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
 ```
 
-To construct an [OWLNamedIndividual](owlapy.model.OWLNamedIndividual) 
-object an [IRI](owlapy.model.IRI) is required as an input. 
+To construct an [OWLNamedIndividual](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_individual/index.html#owlapy.owl_individual.OWLNamedIndividual) 
+object an [IRI](https://dice-group.github.io/owlapy/autoapi/owlapy/iri/index.html#owlapy.iri.IRI) is required as an input. 
 You can simply create an `IRI` object by calling the static method `create` 
 and passing the IRI as a `string`.
 

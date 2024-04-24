@@ -4,8 +4,9 @@ from typing import Iterable, Set
 import owlready2
 
 from owlapy import namespaces
-from owlapy.model import OWLObjectPropertyExpression, OWLObjectProperty, OWLClassExpression, OWLClass, \
-    OWLThing, IRI
+from owlapy.class_expression import OWLClassExpression, OWLClass, OWLThing
+from owlapy.iri import IRI
+from owlapy.owl_property import OWLObjectPropertyExpression, OWLObjectProperty
 from ontolearn.base import OWLReasoner_Owlready2, OWLOntology_Owlready2
 
 
@@ -21,9 +22,9 @@ class OWLReasoner_Owlready2_Plus(OWLReasoner_Owlready2):
         if isinstance(ce, OWLClass):
             if direct:
                 if ce.is_owl_thing():
-                    thing_x = self._world[OWLThing.get_iri().as_str()]
+                    thing_x = self._world[OWLThing.str]
                     for c in self._ontology.classes_in_signature():
-                        c_x: owlready2.ThingClass = self._world[c.get_iri().as_str()]
+                        c_x: owlready2.ThingClass = self._world[c.str]
                         super_classes_x = []
                         for super_class_x in c_x.is_a:
                             if isinstance(super_class_x, owlready2.ThingClass):
@@ -32,7 +33,7 @@ class OWLReasoner_Owlready2_Plus(OWLReasoner_Owlready2):
                         if super_classes_x == [thing_x]:
                             yield c
                 else:
-                    c_x: owlready2.ThingClass = self._world[ce.get_iri().as_str()]
+                    c_x: owlready2.ThingClass = self._world[ce.str]
                     sub_classes_x = set()
                     for sc_x in c_x.subclasses(world=self._world):
                         if isinstance(sc_x, owlready2.ThingClass):
@@ -68,11 +69,11 @@ class OWLReasoner_Owlready2_Plus(OWLReasoner_Owlready2):
                     owl_objectproperty_x: owlready2.ObjectPropertyClass = self._world[
                         IRI.create(namespaces.OWL, "ObjectProperty").as_str()]
                     for oop in self._ontology.object_properties_in_signature():
-                        p_x: owlready2.ObjectPropertyClass = self._world[oop.get_iri().as_str()]
+                        p_x: owlready2.ObjectPropertyClass = self._world[oop.str]
                         if p_x.is_a == [owl_objectproperty_x]:
                             yield oop
                 else:
-                    p_x: owlready2.ObjectPropertyClass = self._world[op.get_iri().as_str()]
+                    p_x: owlready2.ObjectPropertyClass = self._world[op.str]
                     for sp in p_x.subclasses(world=self._world):
                         if isinstance(sp, owlready2.ObjectPropertyClass):
                             yield OWLObjectProperty(IRI.create(sp.iri))

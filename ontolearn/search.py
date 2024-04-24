@@ -5,14 +5,12 @@ from abc import abstractmethod, ABCMeta
 from functools import total_ordering
 from queue import PriorityQueue
 from typing import List, Optional, ClassVar, Final, Iterable, TypeVar, Generic, Set, Tuple, Dict
-
-from owlapy.io import OWLObjectRenderer
-from owlapy.model import OWLClassExpression
+from owlapy.owl_object import OWLObjectRenderer
+from owlapy.class_expression import OWLClassExpression
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.util import as_index, OrderedOWLObject
 from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree, \
     AbstractConceptNode, EncodedLearningProblem, DRILLAbstractTree
-from typing import FrozenSet
 
 _N = TypeVar('_N')  #:
 

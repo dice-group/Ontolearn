@@ -1,11 +1,15 @@
 """ Test the default pipeline for structured machine learning"""
 import json
+
+from owlapy.class_expression import OWLClass
+from owlapy.iri import IRI
+from owlapy.owl_individual import OWLNamedIndividual
+
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.model_adapter import ModelAdapter
 from ontolearn.utils import setup_logging, compute_f1_score
-from owlapy.model import OWLNamedIndividual, OWLClass, IRI
 from owlapy.render import DLSyntaxObjectRenderer
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'

@@ -4,7 +4,8 @@ import unittest
 from owlready2.prop import DataProperty
 from ontolearn.value_splitter import BinningValueSplitter
 from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.model import OWLDataProperty, OWLLiteral, IRI
+from owlapy.owl_literal import OWLDataProperty, OWLLiteral
+from owlapy.iri import IRI
 from ontolearn.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 
 

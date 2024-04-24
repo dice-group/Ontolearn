@@ -20,7 +20,7 @@ from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.learners import Drill
 from ontolearn.metrics import F1
 from ontolearn.heuristics import CeloeBasedReward
-from owlapy.model import OWLNamedIndividual, IRI
+from owlapy.owl_individual import OWLNamedIndividual, IRI
 from owlapy.render import DLSyntaxObjectRenderer
 
 

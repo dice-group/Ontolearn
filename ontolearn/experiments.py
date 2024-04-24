@@ -6,9 +6,9 @@ from random import shuffle
 from typing import List, Tuple, Set, Dict, Any, Iterable
 
 import numpy as np
+from owlapy.iri import IRI
+from owlapy.owl_individual import OWLNamedIndividual
 from sklearn.model_selection import KFold
-
-from owlapy.model import OWLNamedIndividual, IRI
 
 
 class Experiments:
@@ -41,8 +41,8 @@ class Experiments:
             report = dict()
             target_class_expression, typed_positive, typed_negative = lp
             report.update(pred)
-            report['Positives'], report['Negatives'] = [owl_indv.get_iri().as_str() for owl_indv in typed_positive], \
-                                                       [owl_indv.get_iri().as_str() for owl_indv in typed_negative]
+            report['Positives'], report['Negatives'] = [owl_indv.str for owl_indv in typed_positive], \
+                                                       [owl_indv.str for owl_indv in typed_negative]
             store_json[th] = report
         print('##################')
         """ (2) Serialize classification report """

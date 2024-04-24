@@ -5,22 +5,25 @@ import types
 from typing import cast
 
 import owlready2
+from owlapy.owl_object import OWLObject
 from owlready2 import destroy_entity, AllDisjoint, AllDifferent, GeneralClassAxiom
-
-from owlapy.model import OWLDisjointUnionAxiom, OWLQuantifiedDataRestriction, \
-    OWLAnnotationAssertionAxiom, OWLClass, OWLClassAssertionAxiom, OWLEquivalentClassesAxiom, OWLObject, \
-    OWLAnnotationProperty, OWLDataHasValue, OWLDataProperty, OWLDeclarationAxiom, OWLIndividual, \
-    OWLNamedIndividual, OWLNaryBooleanClassExpression, OWLObjectComplementOf, OWLObjectHasValue, \
-    OWLObjectInverseOf, OWLObjectOneOf, OWLObjectProperty, OWLObjectPropertyAssertionAxiom, OWLAxiom, \
-    OWLSubClassOfAxiom, OWLSubPropertyAxiom, OWLSymmetricObjectPropertyAxiom, OWLThing, OWLOntology, \
-    OWLPropertyDomainAxiom, OWLPropertyRangeAxiom, OWLObjectPropertyRangeAxiom, OWLTransitiveObjectPropertyAxiom, \
+from owlapy.class_expression import OWLThing, OWLClass, \
+    OWLQuantifiedDataRestriction, OWLDataHasValue, OWLNaryBooleanClassExpression, OWLObjectOneOf, OWLObjectComplementOf, \
+    OWLObjectHasValue, OWLQuantifiedObjectRestriction
+from owlapy.owl_axiom import OWLObjectPropertyRangeAxiom, OWLAxiom, OWLSubClassOfAxiom, OWLEquivalentClassesAxiom, \
+    OWLDisjointUnionAxiom, OWLAnnotationAssertionAxiom, OWLAnnotationProperty, OWLSubPropertyAxiom, \
+    OWLPropertyRangeAxiom, OWLClassAssertionAxiom, OWLDeclarationAxiom, OWLObjectPropertyAssertionAxiom, \
+    OWLSymmetricObjectPropertyAxiom, OWLTransitiveObjectPropertyAxiom, OWLPropertyDomainAxiom, \
     OWLAsymmetricObjectPropertyAxiom, OWLDataPropertyCharacteristicAxiom, OWLFunctionalDataPropertyAxiom, \
-    OWLDataPropertyAssertionAxiom, OWLReflexiveObjectPropertyAxiom, OWLFunctionalObjectPropertyAxiom, \
-    OWLInverseFunctionalObjectPropertyAxiom, OWLIrreflexiveObjectPropertyAxiom, OWLObjectPropertyCharacteristicAxiom, \
+    OWLReflexiveObjectPropertyAxiom, OWLDataPropertyAssertionAxiom, OWLFunctionalObjectPropertyAxiom, \
+    OWLObjectPropertyCharacteristicAxiom, OWLIrreflexiveObjectPropertyAxiom, OWLInverseFunctionalObjectPropertyAxiom, \
     OWLDisjointDataPropertiesAxiom, OWLDisjointObjectPropertiesAxiom, OWLEquivalentDataPropertiesAxiom, \
     OWLEquivalentObjectPropertiesAxiom, OWLInverseObjectPropertiesAxiom, OWLNaryPropertyAxiom, OWLNaryIndividualAxiom, \
-    OWLDifferentIndividualsAxiom, OWLDisjointClassesAxiom, OWLSameIndividualAxiom, OWLProperty, \
-    OWLQuantifiedObjectRestriction
+    OWLDifferentIndividualsAxiom, OWLDisjointClassesAxiom, OWLSameIndividualAxiom
+from owlapy.owl_individual import OWLNamedIndividual, OWLIndividual
+from owlapy.owl_ontology import OWLOntology
+from owlapy.owl_property import OWLDataProperty, OWLObjectInverseOf, OWLObjectProperty, \
+    OWLProperty
 from ontolearn.base.utils import ToOwlready2
 
 
@@ -45,18 +48,18 @@ def _(axiom: OWLDeclarationAxiom, ontology: OWLOntology, world: owlready2.namesp
         if isinstance(entity, OWLClass):
             if entity.is_owl_thing() or entity.is_owl_nothing():
                 return
-            entity_x = types.new_class(name=entity.get_iri().get_remainder(), bases=(thing_x,))
+            entity_x = types.new_class(name=entity.iri.get_remainder(), bases=(thing_x,))
         elif isinstance(entity, OWLIndividual):
-            entity_x = thing_x(entity.get_iri().get_remainder())
+            entity_x = thing_x(entity.iri.get_remainder())
         elif isinstance(entity, OWLObjectProperty):
-            entity_x = types.new_class(name=entity.get_iri().get_remainder(), bases=(owlready2.ObjectProperty,))
+            entity_x = types.new_class(name=entity.iri.get_remainder(), bases=(owlready2.ObjectProperty,))
         elif isinstance(entity, OWLDataProperty):
-            entity_x = types.new_class(name=entity.get_iri().get_remainder(), bases=(owlready2.DatatypeProperty,))
+            entity_x = types.new_class(name=entity.iri.get_remainder(), bases=(owlready2.DatatypeProperty,))
         elif isinstance(entity, OWLAnnotationProperty):
-            entity_x = types.new_class(name=entity.get_iri().get_remainder(), bases=(owlready2.AnnotationProperty,))
+            entity_x = types.new_class(name=entity.iri.get_remainder(), bases=(owlready2.AnnotationProperty,))
         else:
             raise ValueError(f'Cannot add ({entity}). Not an atomic class, property, or individual.')
-        entity_x.namespace = ont_x.get_namespace(entity.get_iri().get_namespace())
+        entity_x.namespace = ont_x.get_namespace(entity.iri.get_namespace())
         entity_x.namespace.world._refactor(entity_x.storid, entity_x.iri)
 
 
@@ -208,9 +211,9 @@ def _(axiom: OWLAnnotationAssertionAxiom, ontology: OWLOntology, world: owlready
             prop_x: owlready2.annotation.AnnotationPropertyClass = cast(
                 owlready2.AnnotationProperty,
                 types.new_class(
-                    name=axiom.get_property().get_iri().get_remainder(),
+                    name=axiom.get_property().iri.get_remainder(),
                     bases=(owlready2.AnnotationProperty,)))
-            prop_x.namespace = ont_x.get_namespace(axiom.get_property().get_iri().get_namespace())
+            prop_x.namespace = ont_x.get_namespace(axiom.get_property().iri.get_namespace())
     sub_x = world[axiom.get_subject().as_iri().as_str()]
     assert sub_x is not None, f'{axiom.get_subject} not found in {ontology}'
     with ont_x:
@@ -500,7 +503,7 @@ def _(axiom: OWLAnnotationAssertionAxiom, ontology: OWLOntology, world: owlready
     sub_x = world[axiom.get_subject().as_iri().as_str()]
     if sub_x is None:
         return
-    name = axiom.get_property().get_iri().get_remainder()
+    name = axiom.get_property().iri.get_remainder()
     with ont_x:
         if axiom.get_value().is_literal():
             o_x = axiom.get_value().as_literal().to_python()

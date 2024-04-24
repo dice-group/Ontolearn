@@ -1,9 +1,12 @@
 import json
 import unittest
 
+from owlapy.class_expression import OWLClass
+from owlapy.iri import IRI
+from owlapy.owl_individual import OWLNamedIndividual
+
 from ontolearn.model_adapter import ModelAdapter
 from ontolearn.refinement_operators import ExpressRefinement
-from owlapy.model import OWLClass, OWLNamedIndividual, IRI
 
 NS = 'http://www.benchmark.org/family#'
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'

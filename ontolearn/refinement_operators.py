@@ -3,26 +3,25 @@ from collections import defaultdict
 from itertools import chain
 import random
 from typing import DefaultDict, Dict, Set, Optional, Iterable, List, Type, Final, Generator
+
+from owlapy.class_expression import OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, OWLObjectIntersectionOf, \
+    OWLClassExpression, OWLNothing, OWLThing, OWLNaryBooleanClassExpression, OWLObjectUnionOf, OWLClass, \
+    OWLObjectComplementOf, OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLDataSomeValuesFrom, \
+    OWLDatatypeRestriction, OWLDataHasValue, OWLObjectExactCardinality, OWLObjectHasValue, OWLObjectOneOf
+from owlapy.owl_individual import OWLIndividual
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_property import OWLObjectPropertyExpression, OWLObjectInverseOf, OWLDataProperty, \
+    OWLDataPropertyExpression
+
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter
-from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction
+from owlapy.providers import owl_datatype_max_inclusive_restriction, owl_datatype_min_inclusive_restriction
 from owlapy.vocab import OWLFacet
 
 from .abstracts import BaseRefinement
 from .concept_generator import ConceptGenerator
 from .knowledge_base import KnowledgeBase
-from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
-    OWLObjectIntersectionOf, OWLClassExpression, OWLNothing, OWLThing, OWLNaryBooleanClassExpression, \
-    OWLObjectUnionOf, OWLClass, OWLObjectComplementOf, OWLObjectMaxCardinality, OWLObjectMinCardinality, \
-    OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLLiteral, OWLObjectInverseOf, OWLDataProperty, \
-    OWLDataHasValue, OWLDataPropertyExpression, OWLIndividual
 from .search import OENode
-from typing import Callable, Tuple
-from enum import Enum
-from owlapy.model import NUMERIC_DATATYPES, OWLObjectProperty, OWLObjectExactCardinality, OWLObjectHasValue, \
-    OWLObjectOneOf
-
-from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVocabulary, Tree, escape, ind_to_string, \
-    owlliteral_to_primitive_string
+from typing import Tuple
 import itertools
 
 
@@ -409,9 +408,9 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
             splits = self.dp_splits[dp]
             if len(splits) > 0:
                 restrictions.append(self.generator.data_existential_restriction(
-                    filler=OWLDatatypeMinInclusiveRestriction(splits[0]), property=dp))
+                    filler=owl_datatype_min_inclusive_restriction(splits[0]), property=dp))
                 restrictions.append(self.generator.data_existential_restriction(
-                    filler=OWLDatatypeMaxInclusiveRestriction(splits[-1]), property=dp))
+                    filler=owl_datatype_max_inclusive_restriction(splits[-1]), property=dp))
         return restrictions
 
     def _get_current_domain(self, property_: OWLObjectPropertyExpression) -> OWLClassExpression:
@@ -748,10 +747,10 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
                 if facet_res.get_facet() == OWLFacet.MIN_INCLUSIVE and (next_idx := idx + 1) < len(splits):
                     yield self.generator.data_existential_restriction(
-                        OWLDatatypeMinInclusiveRestriction(splits[next_idx]), ce.get_property())
+                        owl_datatype_min_inclusive_restriction(splits[next_idx]), ce.get_property())
                 elif facet_res.get_facet() == OWLFacet.MAX_INCLUSIVE and (next_idx := idx - 1) >= 0:
                     yield self.generator.data_existential_restriction(
-                        OWLDatatypeMaxInclusiveRestriction(splits[next_idx]), ce.get_property())
+                        owl_datatype_max_inclusive_restriction(splits[next_idx]), ce.get_property())
 
     def refine_data_has_value(self, ce: OWLDataHasValue) -> Iterable[OWLDataHasValue]:
         """ Refine owl:hasValue.
@@ -1129,11 +1128,11 @@ class ExpressRefinement(ModifiedCELOERefinement):
 
                 if facet_res.get_facet() == OWLFacet.MIN_INCLUSIVE and (next_idx := idx + 1) < len(splits):
                     yield self.generator.data_existential_restriction(
-                        OWLDatatypeMinInclusiveRestriction(splits[next_idx]), ce.get_property())
+                        owl_datatype_min_inclusive_restriction(splits[next_idx]), ce.get_property())
                     any_refinement = True
                 elif facet_res.get_facet() == OWLFacet.MAX_INCLUSIVE and (next_idx := idx - 1) >= 0:
                     yield self.generator.data_existential_restriction(
-                        OWLDatatypeMaxInclusiveRestriction(splits[next_idx]), ce.get_property())
+                        owl_datatype_max_inclusive_restriction(splits[next_idx]), ce.get_property())
                     any_refinement = True
         if not any_refinement:
             yield ce

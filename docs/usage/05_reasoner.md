@@ -31,7 +31,7 @@ from. Currently, there are the following reasoners available:
    structural_reasoner = OWLReasoner_Owlready2(onto)
    ```
 
-    The structural reasoner requires an ontology ([OWLOntology](owlapy.model.OWLOntology)).
+    The structural reasoner requires an ontology ([OWLOntology](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_ontology/index.html#owlapy.owl_ontology.OWLOntology)).
   The second argument is `isolate` argument which isolates the world (therefore the ontology) where the reasoner is
   performing the reasoning. More on that on _[Reasoning Details](07_reasoning_details.md#isolated-world)_.
     
@@ -109,7 +109,7 @@ from. Currently, there are the following reasoners available:
 ## Usage of the Reasoner
 All the reasoners available in the Ontolearn library inherit from the
 class: [OWLReasonerEx](ontolearn.base.ext.OWLReasonerEx). This class provides some 
-extra convenient methods compared to its base class [OWLReasoner](owlapy.model.OWLReasoner), which is an 
+extra convenient methods compared to its base class [OWLReasoner](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_reasoner/index.html#owlapy.owl_reasoner.OWLReasoner), which is an 
 abstract class.
 Further in this guide, we use 
 [OWLReasoner_Owlready2_ComplexCEInstances](ontolearn.base.OWLReasoner_Owlready2_ComplexCEInstances).
@@ -122,15 +122,15 @@ you can find an overview of it [here](03_ontologies.md).
 
 ## Class Reasoning
 
-Using an [OWLOntology](owlapy.model.OWLOntology) you can list all the classes in the signature, 
+Using an [OWLOntology](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_ontology/index.html#owlapy.owl_ontology.OWLOntology) you can list all the classes in the signature, 
 but a reasoner can give you more than that. You can get the subclasses, superclasses or the 
 equivalent classes of a class in the ontology:
 
 <!--pytest-codeblocks:cont-->
 
 ```python
-from owlapy.model import OWLClass
-from owlapy.model import IRI
+from owlapy.class_expression import OWLClass
+from owlapy.iri import IRI
 
 namespace = "http://example.com/father#"
 male = OWLClass(IRI(namespace, "male"))
@@ -140,7 +140,7 @@ male_sub_classes = ccei_reasoner.sub_classes(male)
 male_equivalent_classes = ccei_reasoner.equivalent_classes(male)
 ```
 
-We define the _male_ class by creating an [OWLClass](owlapy.model.OWLClass) object. The 
+We define the _male_ class by creating an [OWLClass](https://dice-group.github.io/owlapy/autoapi/owlapy/class_expression/owl_class/index.html#owlapy.class_expression.owl_class.OWLClass) object. The 
 methods `super_classes` and `sub_classes` have 2 more boolean arguments: `direct` and `only_named`. 
 If `direct=True` then only the direct classes in the 
 hierarchy will be returned, else it will return every class in the hierarchy depending 
@@ -198,21 +198,21 @@ are more than 1, and we use the reasoner
 to get the values for each object property `op` of the individual `anna`. The values 
 are individuals which we store in the variable `object_properties_values` and are 
 printed in the end. The method `object_property_values` requires as the
-first argument, an [OWLNamedIndividual](owlapy.model.OWLNamedIndividual) that is the subject of the object property values and 
-the second argument an [OWLObjectProperty](owlapy.model.OWLObjectProperty) whose values are to be retrieved for the 
+first argument, an [OWLNamedIndividual](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_individual/index.html#owlapy.owl_individual.OWLNamedIndividual) that is the subject of the object property values and 
+the second argument an [OWLObjectProperty](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_property/index.html#owlapy.owl_property.OWLObjectProperty) whose values are to be retrieved for the 
 specified individual.  
 
 > **NOTE:** You can as well get all the data properties of an individual in the same way by using 
 `ind_data_properties` instead of `ind_object_properties` and `data_property_values` instead of 
 `object_property_values`. Keep in mind that `data_property_values` returns literal values 
-(type of [OWLLiteral](owlapy.model.OWLLiteral)).
+(type of [OWLLiteral](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_literal/index.html#owlapy.owl_literal.OWLLiteral)).
 
 In the same way as with classes, you can also get the sub object properties or equivalent object properties.
 
 <!--pytest-codeblocks:cont-->
 
 ```python
-from owlapy.model import OWLObjectProperty
+from owlapy.owl_property import OWLObjectProperty
 
 hasChild = OWLObjectProperty(IRI(namespace, "hasChild"))
 
@@ -237,7 +237,7 @@ hasChild_ranges = ccei_reasoner.object_property_ranges(hasChild)
 The method `instances` is a very convenient method. It takes only 1 argument that is basically
 a class expression and returns all the individuals belonging to that class expression. In Owlapy 
 we have implemented a Python class for each type of class expression.
-The argument is of type [OWLClassExpression](owlapy.model.OWLClassExpression).
+The argument is of type [OWLClassExpression](https://dice-group.github.io/owlapy/autoapi/owlapy/class_expression/class_expression/index.html#owlapy.class_expression.class_expression.OWLClassExpression).
 
 Let us now show a simple example by finding the instances of the class _male_ and printing them:
 

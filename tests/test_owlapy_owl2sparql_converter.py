@@ -2,12 +2,16 @@ import unittest
 
 import rdflib.plugins.sparql.sparql
 
+
+from owlapy.class_expression import OWLObjectSomeValuesFrom, OWLThing, \
+                                     OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectIntersectionOf
+from owlapy.iri import IRI
+from owlapy.owl_property import OWLObjectProperty
+
 from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.model import OWLObjectProperty, IRI, OWLObjectSomeValuesFrom, OWLObjectMaxCardinality, OWLThing, \
-    OWLObjectMinCardinality, OWLObjectIntersectionOf
 from ontolearn.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from owlapy.parser import DLSyntaxParser
-from owlapy.owl2sparql.converter import Owl2SparqlConverter
+from owlapy.converter import Owl2SparqlConverter
 from rdflib import Graph
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
@@ -25,9 +29,9 @@ def check_reasoner_instances_in_sparql_results(sparql_results: rdflib.query.Resu
         else:
             sparql_results_set.add(individual_iri_str.split('/')[-1])
     for result in reasoner_results:
-        if result.get_iri().get_short_form() not in sparql_results_set:
+        if result.iri.get_short_form() not in sparql_results_set:
             print()
-            print(result.get_iri().get_short_form(), "Not found in SPARQL results set")
+            print(result.iri.get_short_form(), "Not found in SPARQL results set")
             return False
     return True
 
