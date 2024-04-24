@@ -1,4 +1,4 @@
-# Ontolearn
+# About Ontolearn
 
 **Version:** ontolearn 0.7.0
 
