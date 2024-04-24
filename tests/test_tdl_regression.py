@@ -33,7 +33,7 @@ class TestConceptLearnerReg:
             else:
                 assert q == 1.00
             # If not a valid SPARQL query, it should throw an error
-            rdflib.Graph().query(owl_expression_to_sparql(root_variable="?x", ce=h))
+            rdflib.Graph().query(owl_expression_to_sparql(root_variable="?x", expression=h))
             # Save the prediction
             save_owl_class_expressions(h, path="Predictions")
             # (Load the prediction) and check the number of owl class definitions
