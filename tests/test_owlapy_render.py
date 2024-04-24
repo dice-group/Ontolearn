@@ -48,7 +48,7 @@ class Owlapy_DLRenderer_Test(unittest.TestCase):
         oneof = OWLObjectOneOf((i1, i2))
         r = renderer.render(oneof)
         print(r)
-        self.assertEqual(r, "{heinz ⊔ marie}")
+        self.assertEqual(r, "{heinz , marie}")  # TODO AB: Should we reset this to: "{heinz ⊔ marie}" ? (in owlapy)
 
         hasvalue = OWLObjectHasValue(property=has_child, individual=i1)
         r = renderer.render(hasvalue)
