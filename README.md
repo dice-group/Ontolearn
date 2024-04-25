@@ -92,18 +92,17 @@ Fore more please refer to  the [examples](https://github.com/dice-group/Ontolear
 dicee --path_single_kg KGs/Family/family-benchmark_rich_background.owl --path_to_store_single_run embeddings --backend rdflib --save_embeddings_as_csv --model Keci --num_epoch 10
 # Start a webservice
 ontolearn-webservice --path_knowledge_base KGs/Family/family-benchmark_rich_background.owl
-# Train DRILL and evaluate on a given LP
+# Train and Eval DRILL
 curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://www.benchmark.org/family#F10F175"], "neg":["http://www.benchmark.org/family#F10F177"], "model":"Drill"}'
+# Eval a pretrained DRILL
+curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://www.benchmark.org/family#F10F175"], "neg":["http://www.benchmark.org/family#F10F177"], "model":"Drill","pretrained":"pretrained"}'
 ```
 ### ontolearn-webservice on a Triplestore
 ```shell
 ontolearn-webservice --endpoint_triple_store 'http://dice-dbpedia.cs.upb.de:9080/sparql'
-```
-```shell
 curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://dbpedia.org/resource/Angela_Merkel"], "neg":["http://dbpedia.org/resource/Barack_Obama"], "model":"TDL"}'
 # ~3 mins => {"Prediction":"¬(≥ 1 successor.WikicatNewYorkMilitaryAcademyAlumni)"}
 ```
-
 ## Benchmark Results
 ```shell
 # To download learning problems. # Benchmark learners on the Family benchmark dataset with benchmark learning problems.
