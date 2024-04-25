@@ -26,7 +26,7 @@ pd.set_option("display.precision", 5)
 def get_embedding_path(ftp_link: str, embeddings_path_arg, kb_path_arg: str):
     if embeddings_path_arg is None or (embeddings_path_arg is not None and not os.path.exists(embeddings_path_arg)):
         file_name = ftp_link.split("/")[-1]
-        if os.path.exists(os.path.join(os.getcwd(), file_name)):
+        if not os.path.exists(os.path.join(os.getcwd(), file_name)):
             subprocess.run(['curl', '-O', ftp_link])
 
             if platform.system() == "Windows":
