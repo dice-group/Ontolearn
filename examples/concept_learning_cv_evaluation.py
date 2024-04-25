@@ -303,9 +303,9 @@ def dl_concept_learning(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Description Logic Concept Learning')
     parser.add_argument("--max_runtime", type=int, default=10, help="Max runtime")
-    parser.add_argument("--lps", type=str, required=False, help="Path to the learning problems", default="../LPs/Family/lps.json")
+    parser.add_argument("--lps", type=str, required=True, help="Path to the learning problems")
     parser.add_argument("--folds", type=int, default=10, help="Number of folds of cross validation.")
-    parser.add_argument("--kb", type=str, required=False, default="../KGs/Family/family-benchmark_rich_background.owl",
+    parser.add_argument("--kb", type=str, required=True,
                         help="Knowledge base")
     parser.add_argument("--path_drill_embeddings", type=str, default=None)
     parser.add_argument("--path_of_nces_embeddings", type=str, default=None)
