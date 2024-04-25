@@ -157,4 +157,7 @@ embeddings.zip
 KGs.zip
 /Fuseki/
 /KGs/
-/NCESData/
+**/NCESData*
+**/CLIPData*
+**/LPs*
+LPs.zip
