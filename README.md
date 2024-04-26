@@ -41,24 +41,22 @@ pytest -p no:warnings -x # Running 171 tests takes ~ 6 mins
 from ontolearn.learners import TDL
 from ontolearn.triple_store import TripleStore
 from ontolearn.learning_problem import PosNegLPStandard
-from owlapy.owl_individual import OWLNamedIndividual, IRI
-from owlapy.render import DLSyntaxObjectRenderer
-
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy import owl_expression_to_sparql, owl_expression_to_dl
 # (1) Initialize Triplestore
 kb = TripleStore(path="KGs/father.owl")
-# (2) Initialize a DL renderer.
-render = DLSyntaxObjectRenderer()
-# (3) Initialize a learner.
+# (2) Initialize a learner.
 model = TDL(knowledge_base=kb)
-# (4) Define a description logic concept learning problem.
-lp = PosNegLPStandard(pos={OWLNamedIndividual(IRI.create("http://example.com/father#stefan"))},
-                      neg={OWLNamedIndividual(IRI.create("http://example.com/father#heinz")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#anna")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#michelle"))})
-# (5) Learn description logic concepts best fitting (4).
+# (3) Define a description logic concept learning problem.
+lp = PosNegLPStandard(pos={OWLNamedIndividual("http://example.com/father#stefan")},
+                      neg={OWLNamedIndividual("http://example.com/father#heinz"),
+                           OWLNamedIndividual("http://example.com/father#anna"),
+                           OWLNamedIndividual("http://example.com/father#michelle")})
+# (4) Learn description logic concepts best fitting (3).
 h = model.fit(learning_problem=lp).best_hypotheses()
-str_concept = render.render(h)
-print("Concept:", str_concept)  # Concept: ∃ hasChild.{markus}
+print(h)
+print(owl_expression_to_dl(h))
+print(owl_expression_to_sparql(expression=h))
 ```
 
 ## Learning OWL Class Expression over DBpedia
@@ -66,19 +64,17 @@ print("Concept:", str_concept)  # Concept: ∃ hasChild.{markus}
 from ontolearn.utils.static_funcs import save_owl_class_expressions
 
 # (1) Initialize Triplestore
-kb = TripleStore(url = "http://dice-dbpedia.cs.upb.de:9080/sparql")
-# (2) Initialize a DL renderer.
-render = DLSyntaxObjectRenderer()
+kb = TripleStore(url="http://dice-dbpedia.cs.upb.de:9080/sparql")
 # (3) Initialize a learner.
 model = TDL(knowledge_base=kb)
 # (4) Define a description logic concept learning problem.
-lp = PosNegLPStandard(pos={OWLNamedIndividual(IRI.create("http://dbpedia.org/resource/Angela_Merkel"))},
-                      neg={OWLNamedIndividual(IRI.create("http://dbpedia.org/resource/Barack_Obama"))})
+lp = PosNegLPStandard(pos={OWLNamedIndividual("http://dbpedia.org/resource/Angela_Merkel")},
+                      neg={OWLNamedIndividual("http://dbpedia.org/resource/Barack_Obama")})
 # (5) Learn description logic concepts best fitting (4).
 h = model.fit(learning_problem=lp).best_hypotheses()
-str_concept = render.render(h)
-print("Concept:", str_concept)  # Concept: ∃ predecessor.WikicatPeopleFromBerlin
-# (6) Save ∃ predecessor.WikicatPeopleFromBerlin into disk
+print(h)
+print(owl_expression_to_dl(h))
+print(owl_expression_to_sparql(expression=h))
 save_owl_class_expressions(expressions=h,path="owl_prediction")
 ```
 
