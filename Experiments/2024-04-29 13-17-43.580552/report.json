@@ -1,0 +1,11 @@
+{
+    "num_train_triples": 58,
+    "num_entities": 17,
+    "num_relations": 14,
+    "max_length_subword_tokens": null,
+    "runtime_kg_loading": 0.39946746826171875,
+    "EstimatedSizeMB": 0.015137672424316406,
+    "NumParam": 15873,
+    "path_experiment_folder": "/home/luke/Documents/GitHub/Ontolearn/Experiments/2024-04-29 13-17-43.580552",
+    "Runtime": 2.7066264152526855
+}
