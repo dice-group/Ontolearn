@@ -1,5 +1,7 @@
 """ StratifiedKFold Cross Validating DL Concept Learning Algorithms
 python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family.owl --max_runtime 3 --report family.csv
+python examples/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 3 --report carcinogenesis.csv
+
 """
 import json
 import time
@@ -71,7 +73,7 @@ def dl_concept_learning(args):
     celoe = CELOE(knowledge_base=kb, quality_func=F1(),
                   max_runtime=args.max_runtime)
     drill = Drill(knowledge_base=kb, path_embeddings=args.path_drill_embeddings,
-                  quality_func=F1(), max_runtime=args.max_runtime)
+                  quality_func=F1(), max_runtime=args.max_runtime,verbose=0)
     tdl = TDL(knowledge_base=kb,
               kwargs_classifier={"random_state": 0},
               max_runtime=args.max_runtime)
@@ -80,19 +82,19 @@ def dl_concept_learning(args):
         "https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip",
         args.path_of_nces_embeddings, args.kb)
 
+    nces = NCES(knowledge_base_path=args.kb, quality_func=F1(), path_of_embeddings=args.path_of_nces_embeddings,
+                pretrained_model_name=["LSTM", "GRU", "SetTransformer"], num_predictions=5)
+    """
     args.path_of_clip_embeddings = get_embedding_path(
         "https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip",
         args.path_of_clip_embeddings, args.kb)
-
-    nces = NCES(knowledge_base_path=args.kb, quality_func=F1(), path_of_embeddings=args.path_of_nces_embeddings,
-                pretrained_model_name=["LSTM", "GRU", "SetTransformer"], num_predictions=5)
-
+    
     clip = CLIP(knowledge_base=kb,
                 refinement_operator=ExpressRefinement(kb, use_inverse=False, use_numeric_datatypes=False), quality_func=F1(),
                 max_num_of_concepts_tested=int(1e9), max_runtime=args.max_runtime,
                 path_of_embeddings=args.path_of_clip_embeddings,
                 pretrained_predictor_name=["LSTM", "GRU", "SetTransformer", "CNN"], load_pretrained=True)
-
+    """
     # dictionary to store the data
     data = dict()
     if "problems" in settings:
@@ -131,11 +133,12 @@ def dl_concept_learning(args):
             # Sanity checking for individuals used for testing.
             assert test_pos.issubset(examples[positives_key])
             assert test_neg.issubset(examples[negatives_key])
-            train_lp = PosNegLPStandard(pos=set(map(OWLNamedIndividual, map(IRI.create, train_pos))),
-                                        neg=set(map(OWLNamedIndividual, map(IRI.create, train_neg))))
+            train_lp = PosNegLPStandard(pos= {OWLNamedIndividual(i) for i in train_pos},
+                                        neg={OWLNamedIndividual(i) for i in train_neg})
 
-            test_lp = PosNegLPStandard(pos=set(map(OWLNamedIndividual, map(IRI.create, test_pos))),
-                                       neg=set(map(OWLNamedIndividual, map(IRI.create, test_neg))))
+            test_lp = PosNegLPStandard(pos= {OWLNamedIndividual(i) for i in test_pos},
+                                        neg={OWLNamedIndividual(i) for i in test_neg})
+
             print("OCEL starts..", end="\t")
             start_time = time.time()
             pred_ocel = ocel.fit(train_lp).best_hypotheses()
@@ -255,11 +258,11 @@ def dl_concept_learning(args):
             rt_nces = time.time() - start_time
 
             # () Quality on the training data
-            train_f1_nces = compute_f1_score(individuals={i for i in kb.individuals(pred_nces)},
+            train_f1_nces = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_nces)}),
                                             pos=train_lp.pos,
                                             neg=train_lp.neg)
             # () Quality on test data
-            test_f1_nces = compute_f1_score(individuals={i for i in kb.individuals(pred_nces)},
+            test_f1_nces = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_nces)}),
                                            pos=test_lp.pos,
                                            neg=test_lp.neg)
 
@@ -269,7 +272,7 @@ def dl_concept_learning(args):
             print(f"NCES Train Quality: {train_f1_nces:.3f}", end="\t")
             print(f"NCES Test Quality: {test_f1_nces:.3f}", end="\t")
             print(f"NCES Runtime: {rt_nces:.3f}")
-            
+            """
             
             print("CLIP starts..", end="\t")
             start_time = time.time()
@@ -291,6 +294,8 @@ def dl_concept_learning(args):
             print(f"CLIP Train Quality: {train_f1_clip:.3f}", end="\t")
             print(f"CLIP Test Quality: {test_f1_clip:.3f}", end="\t")
             print(f"CLIP Runtime: {rt_clip:.3f}")
+            """
+
 
 
 

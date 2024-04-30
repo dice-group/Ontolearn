@@ -44,7 +44,10 @@ from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy import owl_expression_to_sparql, owl_expression_to_dl
 # (1) Initialize Triplestore
-kb = TripleStore(path="KGs/father.owl")
+# sudo docker run -p 3030:3030 -e ADMIN_PASSWORD=pw123 stain/jena-fuseki
+# Login http://localhost:3030/#/ with admin and pw123
+# Create a new dataset called family and upload KGs/Family/family.owl
+kb = TripleStore(url="http://localhost:3030/family")
 # (2) Initialize a learner.
 model = TDL(knowledge_base=kb)
 # (3) Define a description logic concept learning problem.
@@ -86,12 +89,38 @@ Fore more please refer to  the [examples](https://github.com/dice-group/Ontolear
 ```shell
 # train a KGE
 dicee --path_single_kg KGs/Family/family-benchmark_rich_background.owl --path_to_store_single_run embeddings --backend rdflib --save_embeddings_as_csv --model Keci --num_epoch 10
-# Start a webservice
+# Start a webservice and load a KG into memory
 ontolearn-webservice --path_knowledge_base KGs/Family/family-benchmark_rich_background.owl
 # Train DRILL and evaluate on a given LP
 curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://www.benchmark.org/family#F10F175"], "neg":["http://www.benchmark.org/family#F10F177"], "model":"Drill"}'
 ```
 ### ontolearn-webservice on a Triplestore
+```shell
+# sudo docker run -p 3030:3030 -e ADMIN_PASSWORD=pw123 stain/jena-fuseki
+# Login http://localhost:3030/#/ with admin and pw123
+# Create a new dataset called family and upload KGs/Family/family-benchmark_rich_background.owl
+ontolearn-webservice --endpoint_triple_store 'http://localhost:3030/family'
+```
+
+Sending learning problems to the endpoint via curl:
+```shell
+curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://www.benchmark.org/family#F10F175"], "neg":["http://www.benchmark.org/family#F10F177"], "model":"Drill"}'
+```
+Sending learning problems to the endpoint via the HTTP request:
+```python
+import json
+import requests
+with open("LPs/Family/lps.json") as json_file:
+    settings = json.load(json_file)
+for str_target_concept, examples in settings['problems'].items():
+    response = requests.get('http://0.0.0.0:8000/cel', headers={'accept': 'application/json', 'Content-Type': 'application/json'}, json={
+        "pos":  examples['positive_examples'],
+        "neg":  examples['negative_examples'],
+        "model": "Drill"
+    })
+    print(response.json())
+```
+ontolearn-webservice also works with a remote endpoint as well.
 ```shell
 ontolearn-webservice --endpoint_triple_store 'http://dice-dbpedia.cs.upb.de:9080/sparql'
 ```
