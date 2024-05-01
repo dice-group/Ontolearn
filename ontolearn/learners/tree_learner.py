@@ -26,6 +26,7 @@ import scipy
 from owlapy import owl_expression_to_dl, owl_expression_to_sparql
 from owlapy.class_expression import OWLObjectSomeValuesFrom, OWLObjectMinCardinality
 
+
 def is_float(value):
     try:
         float(value)
@@ -47,10 +48,11 @@ def compute_quality(instances, pos, neg, conf_matrix=False, quality_func=None):
         return f1_score, f"TP:{tp}\tFN:{fn}\tFP:{fp}\tTN:{tn}"
     return f1_score
 
-def make_iterable_verbose(iterable_object,verbose,desc="Default")->Iterable:
-    if verbose>0:
+
+def make_iterable_verbose(iterable_object, verbose, desc="Default") -> Iterable:
+    if verbose > 0:
         return tqdm(iterable_object, desc=desc)
-    else :
+    else:
         return iterable_object
 
 
@@ -177,7 +179,6 @@ class TDL:
         self.report_classification = report_classification
         self.plot_tree = plot_tree
         self.plot_embeddings = plot_embeddings
-        self.dl_render = DLSyntaxObjectRenderer()
         self.manchester_render = ManchesterOWLSyntaxOWLObjectRenderer()
         # Keyword arguments for sklearn Decision tree.
         # Initialize classifier
@@ -211,7 +212,6 @@ class TDL:
         positive_examples = [i for i in learning_problem.pos]
         negative_examples = [i for i in learning_problem.neg]
         examples = positive_examples + negative_examples
-
 
         for i in make_iterable_verbose(examples,
                                        verbose=self.verbose,
@@ -251,15 +251,14 @@ class TDL:
         X = []
         y = []
         for ith_row, i in enumerate(make_iterable_verbose(examples,
-                                       verbose=self.verbose,
-                                       desc="Creating supervised binary classification data")):
+                                                          verbose=self.verbose,
+                                                          desc="Creating supervised binary classification data")):
             # IMPORTANT: None existence is described as 0.0 features.
             X_i = [0.0 for _ in range(len(mapping_features))]
 
-            expression: [OWLClassExpression, OWLDataSomeValuesFrom]
+            expression: [OWLClass, OWLObjectSomeValuesFrom, OWLObjectMinCardinality, OWLDataSomeValuesFrom]
             # Filling the features
             for expression in self.knowledge_base.abox(individual=i, mode="expression"):
-                assert isinstance(expression, OWLClassExpression)
 
                 if isinstance(expression, OWLDataSomeValuesFrom):
                     filler: OWLDataOneOf[OWLLiteral]
@@ -278,9 +277,13 @@ class TDL:
                         raise RuntimeError(
                             f"Type of literal in OWLDataSomeValuesFrom is not understood:{owlliteral_values_in_filler}")
                     X_i[mapping_features[expression.get_property()]] = v
-                else:
+                elif isinstance(expression, OWLClass) or isinstance(expression, OWLObjectSomeValuesFrom):
                     assert expression in mapping_features, expression
                     X_i[mapping_features[expression]] = 1.0
+                elif isinstance(expression, OWLObjectMinCardinality):
+                    X_i[mapping_features[expression]] = expression.get_cardinality()
+                else:
+                    raise RuntimeError(f"Unrecognized type:{expression}-{type(expression)}")
 
             X.append(X_i)
             # Filling the label
@@ -341,7 +344,8 @@ class TDL:
                     else:
                         raise NotImplementedError
                         # DONE!
-                else:
+
+                elif type(i["feature"]) in [OWLClass, OWLObjectSomeValuesFrom, OWLObjectMinCardinality]:
                     ####################################################################################################
                     # DONE
                     # Feature: Female, ≥ 3 hasStructure.owl:NamedIndividual
@@ -353,11 +357,13 @@ class TDL:
                         owl_class_expression = i["feature"].get_object_complement_of()
                     else:
                         owl_class_expression = i["feature"]
+                else:
+                    raise RuntimeError(f"Unrecognized feature:{i['feature']}-{type(i['feature'])}")
 
-                ####################################################################################################
-                # Expensive Sanity Checking:
-                # The respective positive example should be one of the the retrieved individuals
-                ########################################################################################################
+                    ####################################################################################################
+                    # Expensive Sanity Checking:
+                    # The respective positive example should be one of the the retrieved individuals
+                    ########################################################################################################
                     """
                     try:
                         indvs={_ for _ in self.knowledge_base.individuals(owl_class_expression)}
@@ -419,7 +425,7 @@ class TDL:
             print(sklearn.metrics.classification_report(y.values, self.clf.predict(X.values),
                                                         target_names=["Negative", "Positive"]))
         if self.plot_tree:
-            plot_decision_tree_of_expressions(feature_names=[self.dl_render.render(f) for f in self.features],
+            plot_decision_tree_of_expressions(feature_names=[owl_expression_to_dl(f) for f in self.features],
                                               cart_tree=self.clf, topk=10)
 
         self.owl_class_expressions.clear()

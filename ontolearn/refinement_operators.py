@@ -69,10 +69,10 @@ class LengthBasedRefinement(BaseRefinement):
         """
         # (1) Return most general concepts.
         # most_general_named_concepts
-        most_general_concepts = [i for i in self.kb.get_concepts()]
+        most_general_concepts = [i for i in self.kb.get^()]
         yield from most_general_concepts
         # (2) Return least general concepts.
-        neg_concepts = [OWLObjectComplementOf(i) for i in self.kb.least_general_named_concepts()]
+        neg_concepts = [OWLObjectComplementOf(i) for i in self.kb.get_least_general_named_concepts()]
         yield from neg_concepts
 
         yield from self.from_iterables(cls=OWLObjectUnionOf,

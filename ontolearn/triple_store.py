@@ -755,19 +755,8 @@ class TripleStore:
                         "expression"], "Valid modes are: 'native', 'iri' or 'axiom', 'expression'"
         if mode == "native":
             yield from self.g.abox(str_iri=individual.str)
-
-        elif mode == "iri":
-            raise NotImplementedError("Mode==iri has not been implemented yet.")
-            yield from ((i.str, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-                         t.str) for t in self.get_types(ind=i, direct=True))
-            for dp in self.get_data_properties_for_ind(ind=i):
-                yield from ((i.str, dp.str, literal.get_literal()) for literal in
-                            self.get_data_property_values(i, dp))
-            for op in self.get_object_properties_for_ind(ind=i):
-                yield from ((i.str, op.str, ind.str) for ind in
-                            self.get_object_property_values(i, op))
         elif mode == "expression":
-            mapping = dict()
+            object_property_to_individuals = dict()
             # To no return duplicate objects.
             quantifier_gate = set()
             # (1) Iterate over triples where individual is in the subject position.
@@ -781,7 +770,7 @@ class TripleStore:
                     ##############################################################
                     # Store for \exist r. {o} and  cardinality
                     ##############################################################
-                    mapping.setdefault(p, []).append(o)
+                    object_property_to_individuals.setdefault(p, []).append(o)
                 elif isinstance(p, OWLDataProperty) and isinstance(o, OWLLiteral):
                     ##############################################################
                     # IGNORE OWLDataProperty
@@ -790,41 +779,36 @@ class TripleStore:
                 else:
                     raise RuntimeError(f"Unrecognized triples to expression mappings {p}{o}")
 
-            for k, list_owl_individuals in mapping.items():
-                for owl_individual in list_owl_individuals:
-                    ##############################################################
-                    # RETURN: \exists r. {x} => Existential restriction over nominals
-                    ##############################################################
-                    assert isinstance(owl_individual, OWLNamedIndividual)
-                    yield OWLObjectSomeValuesFrom(property=k, filler=OWLObjectOneOf(owl_individual))
+            for object_property, list_owl_individuals in object_property_to_individuals.items():
+                # RETURN: \exists r. {x1,x33, .., x8} => Existential restriction over nominals
+                yield OWLObjectSomeValuesFrom(property=object_property, filler=OWLObjectOneOf(list_owl_individuals))
 
                 owl_class: OWLClass
                 count: int
                 for owl_class, count in Counter(
                         [type_i for i in list_owl_individuals for type_i in
                          self.get_types(ind=i, direct=True)]).items():
-                    existential_quantifier = OWLObjectSomeValuesFrom(property=k, filler=owl_class)
+                    existential_quantifier = OWLObjectSomeValuesFrom(property=object_property, filler=owl_class)
+
                     if existential_quantifier in quantifier_gate:
-                        continue
+                        "Do nothing"
                     else:
                         ##############################################################
                         # RETURN: \exists r. C => Existential quantifiers over Named OWL Class
                         ##############################################################
                         quantifier_gate.add(existential_quantifier)
                         yield existential_quantifier
-                    # @todo: We need to doublecheck it.
-                    """
-                    if count > 1:
-                        min_cardinality_item = OWLObjectMinCardinality(cardinality=count, property=k, filler=type_)
-                        if min_cardinality_item in quantifier_gate:
-                            continue
-                        else:
-                            quantifier_gate.add(min_cardinality_item)
-                            ##############################################################
-                            # RETURN: \ge r. C => Minimum Cardinality restriction over Named OWL Class
-                            ##############################################################
-                            yield min_cardinality_item
-                    """
+
+                    object_min_cardinality=OWLObjectMinCardinality(cardinality=count,property=object_property,filler=owl_class)
+
+                    if object_min_cardinality in quantifier_gate:
+                        "Do nothing"
+                    else:
+                        ##############################################################
+                        # RETURN: ≥ c  r. C => OWLObjectMinCardinality over Named OWL Class
+                        ##############################################################
+                        quantifier_gate.add(object_min_cardinality)
+                        yield object_min_cardinality
 
         elif mode == "axiom":
             raise NotImplementedError("Axioms should be checked.")

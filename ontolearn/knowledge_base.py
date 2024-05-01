@@ -3,7 +3,7 @@
 import logging
 import random
 from collections import Counter
-from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict, cast
+from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict, cast, Generator
 
 import owlapy
 from owlapy.class_expression import OWLClassExpression, OWLClass, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
@@ -297,7 +297,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                             # RETURN Existential Quantifiers over Concepts: \exists r. C
                             quantifier_gate.add(existential_quantifier)
                             yield existential_quantifier
-                        if count>1:
+                        if count > 1:
                             min_cardinality_item = OWLObjectMinCardinality(cardinality=count, property=k, filler=type_)
                             if min_cardinality_item in quantifier_gate:
                                 continue
@@ -747,16 +747,18 @@ class KnowledgeBase(AbstractKnowledgeBase):
         assert isinstance(concept, OWLClass)
         yield from self.class_hierarchy.leaves(of=concept)
 
-    def least_general_named_concepts(self):
+    def get_least_general_named_concepts(self) -> Generator[OWLClass, None, None]:
         """Get leaf classes.
-
-        Args:
-            concept: Atomic class for which to find leaf classes.
-
+        @TODO: Docstring needed
         Returns:
-            Leaf classes { x \\| (x subClassOf concept) AND not exist y: y subClassOf x )}. """
+        """
         yield from self.class_hierarchy.leaves()
 
+    def get_most_general_named_concepts(self) -> Generator[OWLClass, None, None]:
+        """Get most general named concepts classes.
+        @TODO: Docstring needed
+        Returns:"""
+        yield from self.get_concepts()
 
     def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
         """Direct sub-classes of atomic class.
