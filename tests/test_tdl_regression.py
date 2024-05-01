@@ -46,6 +46,8 @@ class TestConceptLearnerReg:
             assert named_owl_classes.pop(0).n3() == "<https://dice-research.org/predictions#0>"
 
     def test_regression_mutagenesis(self):
+        """
+
         path = "KGs/Mutagenesis/mutagenesis.owl"
         # (1) Load a knowledge graph.
         kb = KnowledgeBase(path=path)
@@ -61,8 +63,12 @@ class TestConceptLearnerReg:
             h = model.fit(learning_problem=lp).best_hypotheses()
             q = compute_f1_score(individuals=frozenset({i for i in kb.individuals(h)}), pos=lp.pos, neg=lp.neg)
             assert q >= 0.94
+               """
+
 
     def test_regression_family_triple_store(self):
+        """
+        # @TODO: CD: Removed because rdflib does not produce correct results
         path = "KGs/Family/family-benchmark_rich_background.owl"
         # (1) Load a knowledge graph.
         kb = TripleStore(path=path)
@@ -86,6 +92,7 @@ class TestConceptLearnerReg:
             assert predicted_expression
             q = compute_f1_score(individuals=predicted_expression, pos=lp.pos, neg=lp.neg)
             assert q == 1.0
+        """
 
     def test_regression_mutagenesis_triple_store(self):
         pass

@@ -36,6 +36,8 @@ xsd_prefix = "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n"
 # CD: For the sake of efficient software development.
 limit_posix = ""
 
+from owlapy import owl_expression_to_sparql
+
 
 def rdflib_to_str(sparql_result: rdflib.plugins.sparql.processor.SPARQLResult) -> str:
     """
@@ -481,6 +483,12 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         super().__init__(ontology=self.ontology, reasoner=self.reasoner)
 
 
+from abc import abstractmethod, ABCMeta
+
+
+#######################################################################################################################
+
+
 class TripleStoreReasonerOntology:
 
     def __init__(self, graph: rdflib.graph.Graph = None, url: str = None):
@@ -567,29 +575,10 @@ class TripleStoreReasonerOntology:
                 return rdflib.term.Literal(lexical_or_value=x["value"], lang=x["xml:lang"])
             else:
                 raise RuntimeError(x)
-        if self.url is not None:
-            try:
-                # Sending HTTP request to a remote endpoint.
-                # @TODO: CD: We need to stream results. The computation looses its responsiveness for
-                # @TODO: CD: sparql of ¬(≥ 1 successor.Adviser109774266).
-                """
-                SELECT
- DISTINCT ?x WHERE { 
-?x ?s_1 ?s_2 . 
-FILTER NOT EXISTS { 
-{ SELECT ?x WHERE { 
-?x <http://dbpedia.org/property/successor> ?s_3 . 
-?s_3 a <http://dbpedia.org/class/yago/Adviser109774266> . 
- } GROUP BY ?x HAVING ( COUNT ( ?s_3 ) >= 1 ) }
- }
- }
-                """
-                response = requests.post(self.url, data={'query': sparql_query}).json()["results"]["bindings"]
-            except requests.exceptions.JSONDecodeError:
-                """If an exception occurs at decoding JSON object Return an Empty Generator"""
-                return
 
-            for row in response:
+        if self.url is not None:
+            bindings = requests.Session().post(self.url, data={'query': sparql_query}).json()["results"]["bindings"]
+            for row in bindings:
                 x = [dict_to_rdflib_object(values) for variable, values in row.items()]
                 if len(x) == 1:
                     yield x[0]
@@ -607,6 +596,14 @@ FILTER NOT EXISTS {
         for str_iri in self.query(query):
             yield OWLClass(IRI.create(str_iri))
 
+    def get_direct_parents(self, named_concept: OWLClass):
+        """ Father rdf:subClassOf Person"""
+        assert isinstance(named_concept, OWLClass)
+        str_named_concept = f"<{named_concept.str}>"
+        query = f"""{rdfs_prefix} SELECT ?x WHERE {{ {str_named_concept} rdfs:subClassOf ?x . }} """
+        for str_iri in self.query(query):
+            yield OWLClass(IRI.create(str_iri))
+
     def subconcepts(self, named_concept: OWLClass, direct=True):
         assert isinstance(named_concept, OWLClass)
         str_named_concept = f"<{named_concept.str}>"
@@ -617,6 +614,29 @@ FILTER NOT EXISTS {
         for str_iri in self.query(query):
             yield OWLClass(IRI.create(str_iri))
 
+    def most_general_named_concepts(self) -> Generator[OWLClass, None, None]:
+        """ concepts not having a subclass are considered as most general classes"""
+        query = f"""{rdf_prefix}\n{rdfs_prefix}\n{owl_prefix}\n
+        SELECT ?x WHERE {{ ?x rdf:type owl:Class. 
+        FILTER NOT EXISTS {{?x rdfs:subClassOf ?concept .
+                            FILTER (?x != ?concept)}}
+                            }} """
+        for str_iri in self.query(query):
+            yield OWLClass(str_iri)
+
+    def least_general_named_concepts(self) -> Generator[OWLClass, None, None]:
+        query = f"""{rdf_prefix}\n{rdfs_prefix}\n{owl_prefix}\n
+        SELECT ?x WHERE {{ ?x rdf:type owl:Class. 
+        FILTER NOT EXISTS {{?subConcept rdfs:subClassOf ?x .
+                            FILTER (?subConcept != ?x)}}}} """
+        for str_iri in self.query(query):
+            yield OWLClass(str_iri)
+
+    def are_owl_concept_disjoint(self, c: OWLClass, cc: OWLClass) -> bool:
+        query = f"""{owl_prefix}ASK WHERE {{<{c.str}> owl:disjointWith <{cc.str}> .}}"""
+        # Workaround self.query doesn't work for ASK at the moment
+        return requests.Session().post(self.url, data={'query': query}).json()["boolean"]
+
     def get_type_individuals(self, individual: str):
         query = f"""SELECT DISTINCT ?x WHERE {{ <{individual}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?x }}"""
         for str_iri in self.query(query):
@@ -625,36 +645,35 @@ FILTER NOT EXISTS {
     def instances(self, expression: OWLClassExpression) -> Generator[OWLNamedIndividual, None, None]:
         assert isinstance(expression, OWLClassExpression)
         try:
-            sparql_query = self.converter.as_query("?x", expression)
+            sparql_query = owl_expression_to_sparql(expression=expression)
         except Exception as exc:
             print(f"Error at converting {expression} into sparql")
             traceback.print_exception(exc)
             print(f"Error at converting {expression} into sparql")
             raise RuntimeError("Couldn't convert")
-
         for i in self.query(sparql_query):
-            yield OWLNamedIndividual(IRI.create(i))
+            yield OWLNamedIndividual(i)
 
     def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
         # owl:OWLNamedIndividual is often missing: Perhaps we should add union as well
         query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a ?y. ?y a owl:Class.}"
         for str_iri in self.query(query):
-            yield OWLNamedIndividual(IRI.create(str_iri))
+            yield OWLNamedIndividual(str_iri)
 
     def data_properties_in_signature(self) -> Iterable[OWLDataProperty]:
         query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:DatatypeProperty.}"
         for str_iri in self.query(query):
-            yield OWLDataProperty(IRI.create(str_iri))
+            yield OWLDataProperty(str_iri)
 
     def object_properties_in_signature(self) -> Iterable[OWLObjectProperty]:
         query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:ObjectProperty.}"
         for str_iri in self.query(query):
-            yield OWLObjectProperty(IRI.create(str_iri))
+            yield OWLObjectProperty(str_iri)
 
     def boolean_data_properties(self):
         query = rdf_prefix + xsd_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x rdf:type rdf:Property; rdfs:range xsd:boolean}"
         for str_iri in self.query(query):
-            yield OWLDataProperty(IRI.create(str_iri))
+            yield OWLDataProperty(str_iri)
 
 
 class TripleStore:
@@ -662,17 +681,17 @@ class TripleStore:
     path: str
     url: str
 
-    def __init__(self, path: str = None, url: str = None):
+    def __init__(self, reasoner=None, url: str = None):
 
-        # Single object to replace the
-        if path:
-            self.g = TripleStoreReasonerOntology(graph=rdflib.Graph().parse(path))
-        else:
+        if reasoner is None:
+            assert url is not None, f"Reasoner:{reasoner} and url of a triplestore {url} cannot be both None."
             self.g = TripleStoreReasonerOntology(url=url)
-
+        else:
+            self.g = reasoner
+        # This assigment is done as many CEL models are implemented to use both attributes seperately.
+        # CEL models will be refactored.
         self.ontology = self.g
         self.reasoner = self.g
-        # CD: We may want to remove it later. This is required at base_concept_learner.py
         self.generator = ConceptGenerator()
         self.length_metric = OWLClassExpressionLengthMetric.get_default()
 
@@ -755,40 +774,36 @@ class TripleStore:
             for s, p, o in self.g.abox(str_iri=individual.str):
                 if isinstance(p, IRI) and isinstance(o, OWLClass):
                     ##############################################################
-                    # RETURN:< C
+                    # RETURN OWLClass
                     ##############################################################
-
                     yield o
                 elif isinstance(p, OWLObjectProperty) and isinstance(o, OWLNamedIndividual):
+                    ##############################################################
+                    # Store for \exist r. {o} and  cardinality
+                    ##############################################################
                     mapping.setdefault(p, []).append(o)
                 elif isinstance(p, OWLDataProperty) and isinstance(o, OWLLiteral):
-                    # print(f"Data Property and Literal to expression needed: {p} {o}")
+                    ##############################################################
+                    # IGNORE OWLDataProperty
+                    ##############################################################
                     continue
                 else:
                     raise RuntimeError(f"Unrecognized triples to expression mappings {p}{o}")
 
-            for k, iter_inds in mapping.items():
-                for x in iter_inds:
+            for k, list_owl_individuals in mapping.items():
+                for owl_individual in list_owl_individuals:
                     ##############################################################
                     # RETURN: \exists r. {x} => Existential restriction over nominals
                     ##############################################################
-                    assert isinstance(x, OWLNamedIndividual)
-                    yield OWLObjectSomeValuesFrom(property=k, filler=OWLObjectOneOf(x))
+                    assert isinstance(owl_individual, OWLNamedIndividual)
+                    yield OWLObjectSomeValuesFrom(property=k, filler=OWLObjectOneOf(owl_individual))
 
-                type_: OWLClass
+                owl_class: OWLClass
                 count: int
-                for type_, count in Counter(
-                        [type_i for i in iter_inds for type_i in self.get_types(ind=i, direct=True)]).items():
-                    min_cardinality_item = OWLObjectMinCardinality(cardinality=count, property=k, filler=type_)
-                    if min_cardinality_item in quantifier_gate:
-                        continue
-                    else:
-                        quantifier_gate.add(min_cardinality_item)
-                        ##############################################################
-                        # RETURN: \ge r. C => Minimum Cardinality restriction over Named OWL Class
-                        ##############################################################
-                        yield min_cardinality_item
-                    existential_quantifier = OWLObjectSomeValuesFrom(property=k, filler=type_)
+                for owl_class, count in Counter(
+                        [type_i for i in list_owl_individuals for type_i in
+                         self.get_types(ind=i, direct=True)]).items():
+                    existential_quantifier = OWLObjectSomeValuesFrom(property=k, filler=owl_class)
                     if existential_quantifier in quantifier_gate:
                         continue
                     else:
@@ -797,6 +812,20 @@ class TripleStore:
                         ##############################################################
                         quantifier_gate.add(existential_quantifier)
                         yield existential_quantifier
+                    # @todo: We need to doublecheck it.
+                    """
+                    if count > 1:
+                        min_cardinality_item = OWLObjectMinCardinality(cardinality=count, property=k, filler=type_)
+                        if min_cardinality_item in quantifier_gate:
+                            continue
+                        else:
+                            quantifier_gate.add(min_cardinality_item)
+                            ##############################################################
+                            # RETURN: \ge r. C => Minimum Cardinality restriction over Named OWL Class
+                            ##############################################################
+                            yield min_cardinality_item
+                    """
+
         elif mode == "axiom":
             raise NotImplementedError("Axioms should be checked.")
             yield from (OWLClassAssertionAxiom(i, t) for t in self.get_types(ind=i, direct=True))
@@ -806,6 +835,10 @@ class TripleStore:
             for op in self.get_object_properties_for_ind(ind=i):
                 yield from (OWLObjectPropertyAssertionAxiom(i, op, ind) for ind in
                             self.get_object_property_values(i, op))
+
+    def are_owl_concept_disjoint(self, c: OWLClass, cc: OWLClass) -> bool:
+        assert isinstance(c, OWLClass) and isinstance(cc, OWLClass)
+        return self.reasoner.are_owl_concept_disjoint(c, cc)
 
     def get_object_properties(self):
         yield from self.reasoner.object_properties_in_signature()
@@ -836,6 +869,18 @@ class TripleStore:
 
     def named_concepts(self):
         yield from self.reasoner.classes_in_signature()
+
+    def get_concepts(self):
+        return self.named_concepts()
+
+    def get_direct_parents(self, c: OWLClass):
+        yield from self.reasoner.get_direct_parents(c)
+
+    def most_general_named_concepts(self):
+        yield from self.reasoner.most_general_named_concepts()
+
+    def least_general_named_concepts(self):
+        yield from self.reasoner.least_general_named_concepts()
 
     def quality_retrieval(self, expression: OWLClass, pos: set[OWLNamedIndividual], neg: set[OWLNamedIndividual]):
         assert isinstance(expression,
