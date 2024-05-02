@@ -37,6 +37,7 @@ xsd_prefix = "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n"
 limit_posix = ""
 
 from owlapy import owl_expression_to_sparql
+from owlapy.class_expression import OWLObjectHasValue, OWLDataHasValue, OWLDataSomeValuesFrom, OWLDataOneOf
 
 
 def rdflib_to_str(sparql_result: rdflib.plugins.sparql.processor.SPARQLResult) -> str:
@@ -546,50 +547,61 @@ class TripleStoreReasonerOntology:
         """
         sparql_query = f"SELECT DISTINCT ?p ?o WHERE {{ <{str_iri}> ?p ?o }}"
         # CD: Although subject_ is not required. Arguably, it is more in to return also the subject_
-        subject_ = OWLNamedIndividual(IRI.create(str_iri))
+        subject_ = OWLNamedIndividual(str_iri)
+        from typing import List
+        List[dict]
+        bindings = self.query(sparql_query)
+        binding: dict
+        for binding in bindings:
+            p = binding["p"]
+            o = binding["o"]
 
-        for predicate_and_object_pairs in self.query(sparql_query):
-            p, o = predicate_and_object_pairs
-            str_p = p.n3()
-            str_o = o.n3()
-            # CD:
             # From STR to owlapy mapping.
-            if str_p == self.type_predicate:
+            if p["value"] == self.type_predicate:
                 # Remove the brackets <>,<>
-                yield subject_, IRI.create(str_p[1:-1]), OWLClass(IRI.create(str_o[1:-1]))
-            elif isinstance(o, rdflib.term.Literal):
-                yield subject_, OWLDataProperty(IRI.create(str_p[1:-1])), OWLLiteral(value=str_o)
-            elif isinstance(o, rdflib.term.URIRef):
-                yield subject_, OWLObjectProperty(IRI.create(str_p[1:-1])), OWLNamedIndividual(IRI.create(str_o[1:-1]))
+                print(subject_, p, o)
+                raise ValueError()
+                yield subject_, p, o
+            elif o["type"] == "uri":
+                # Is this even correct ?!
+                # OWLNamedIndividual, p, URI, then o must be an OWLObjectProperty
+                yield subject_, OWLObjectProperty(p["value"]), OWLNamedIndividual(o["value"])
+            elif o["type"] == "literal":
+                if o["datatype"]=="http://www.w3.org/2001/XMLSchema#boolean":
+                    yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=True if o["value"]=="true" else False)
+                else:
+                    raise RuntimeError(o)
             else:
-                raise RuntimeError(f"Unrecognized type {str_p} ({str_p}) {str_o} ({type(str_o)})")
+                raise RuntimeError(f"Unrecognized type {subject_} ({p}) ({o})")
 
     def query(self, sparql_query: str):
+        """
         def dict_to_rdflib_object(x):
             if x["type"] == "uri":
+                print(x)
+                raise RuntimeError
                 return rdflib.term.URIRef(x["value"])
             elif x["type"] == "literal" and "datatype" in x:
                 # e.g. {'type': 'literal', 'value': '--11-07', 'datatype': 'http://www.w3.org/2001/XMLSchema#gMonthDay'}
-                return rdflib.term.Literal(lexical_or_value=x["value"], datatype=x["datatype"])
+                if x["datatype"]=='http://www.w3.org/2001/XMLSchema#boolean':
+                    from owlapy.owl_literal import BooleanOWLDatatype
+                    if x["value"]=="true":
+                        return OWLLiteral(value=True,type_=BooleanOWLDatatype)
+                    elif x["value"]=="false":
+                        return OWLLiteral(value=False,type_=BooleanOWLDatatype)
+                    else:
+                        raise RuntimeError(f"incoregnorzed{x}")
+                else:
+                    raise RuntimeError(f"incoregnorzed{x}")
             elif x["type"] == "literal" and "xml:lang" in x:
+                print(x)
+
+                raise RuntimeError
                 return rdflib.term.Literal(lexical_or_value=x["value"], lang=x["xml:lang"])
             else:
                 raise RuntimeError(x)
-
-        if self.url is not None:
-            bindings = requests.Session().post(self.url, data={'query': sparql_query}).json()["results"]["bindings"]
-            for row in bindings:
-                x = [dict_to_rdflib_object(values) for variable, values in row.items()]
-                if len(x) == 1:
-                    yield x[0]
-                else:
-                    yield x
-        else:
-            for x in self.g.query(sparql_query):
-                if len(x) == 1:
-                    yield x[0]
-                else:
-                    yield x
+        """
+        return requests.Session().post(self.url, data={'query': sparql_query}).json()["results"]["bindings"]
 
     def classes_in_signature(self) -> Iterable[OWLClass]:
         query = owl_prefix + """SELECT DISTINCT ?x WHERE { ?x a owl:Class }"""
@@ -639,8 +651,8 @@ class TripleStoreReasonerOntology:
 
     def get_type_individuals(self, individual: str):
         query = f"""SELECT DISTINCT ?x WHERE {{ <{individual}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?x }}"""
-        for str_iri in self.query(query):
-            yield OWLClass(IRI.create(str_iri))
+        for binding in self.query(query):
+            yield OWLClass(binding["x"]["value"])
 
     def instances(self, expression: OWLClassExpression) -> Generator[OWLNamedIndividual, None, None]:
         assert isinstance(expression, OWLClassExpression)
@@ -694,6 +706,8 @@ class TripleStore:
         self.reasoner = self.g
         self.generator = ConceptGenerator()
         self.length_metric = OWLClassExpressionLengthMetric.get_default()
+
+        # TODO: Check whether the connection is available.
 
     def concise_bounded_description(self, individual: OWLNamedIndividual, mode: str = "native") -> Generator[
         Tuple[OWLNamedIndividual, Union[IRI, OWLObjectProperty], Union[OWLClass, OWLNamedIndividual]], None, None]:
@@ -757,6 +771,7 @@ class TripleStore:
             yield from self.g.abox(str_iri=individual.str)
         elif mode == "expression":
             object_property_to_individuals = dict()
+            data_property_to_individuals = dict()
             # To no return duplicate objects.
             quantifier_gate = set()
             # (1) Iterate over triples where individual is in the subject position.
@@ -768,14 +783,15 @@ class TripleStore:
                     yield o
                 elif isinstance(p, OWLObjectProperty) and isinstance(o, OWLNamedIndividual):
                     ##############################################################
-                    # Store for \exist r. {o} and  cardinality
+                    # Store for \exist r. {i, ..., j} and OWLObjectMinCardinality over type counts
                     ##############################################################
                     object_property_to_individuals.setdefault(p, []).append(o)
+
                 elif isinstance(p, OWLDataProperty) and isinstance(o, OWLLiteral):
                     ##############################################################
-                    # IGNORE OWLDataProperty
+                    # Store for  \exist r. {literal, ..., another literal}
                     ##############################################################
-                    continue
+                    data_property_to_individuals.setdefault(p, []).append(o)
                 else:
                     raise RuntimeError(f"Unrecognized triples to expression mappings {p}{o}")
 
@@ -799,7 +815,9 @@ class TripleStore:
                         quantifier_gate.add(existential_quantifier)
                         yield existential_quantifier
 
-                    object_min_cardinality=OWLObjectMinCardinality(cardinality=count,property=object_property,filler=owl_class)
+                    object_min_cardinality = OWLObjectMinCardinality(cardinality=count,
+                                                                     property=object_property,
+                                                                     filler=owl_class)
 
                     if object_min_cardinality in quantifier_gate:
                         "Do nothing"
@@ -809,6 +827,15 @@ class TripleStore:
                         ##############################################################
                         quantifier_gate.add(object_min_cardinality)
                         yield object_min_cardinality
+
+            for data_property, list_owl_literal in data_property_to_individuals.items():
+                ##############################################################
+                # RETURN: \exists r. {literal, ..., another literal} => Existential quantifiers over Named OWL Class
+                ##############################################################
+                # if list_owl_literal is {True, False) doesn't really make sense OWLDataSomeValuesFrom
+                # Perhaps, if
+                yield OWLDataSomeValuesFrom(property=data_property, filler=OWLDataOneOf(list_owl_literal))
+
 
         elif mode == "axiom":
             raise NotImplementedError("Axioms should be checked.")

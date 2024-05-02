@@ -204,40 +204,40 @@ class TDL:
         return X, y
         """
         # (1) Initialize features.
-        features: Set[OWLClassExpression]
-        features = set()
+        features: List[OWLClassExpression]
+        features = list()
         # (2) Initialize ordered examples.
         positive_examples: List[OWLNamedIndividual]
         negative_examples: List[OWLNamedIndividual]
         positive_examples = [i for i in learning_problem.pos]
         negative_examples = [i for i in learning_problem.neg]
         examples = positive_examples + negative_examples
-
+        # TODO: Asyncio ?!
         for i in make_iterable_verbose(examples,
                                        verbose=self.verbose,
                                        desc="Extracting information about examples"):
-            features_of_i = {expression for expression in self.knowledge_base.abox(individual=i, mode="expression")}
-            features = features | features_of_i
+            for expression in self.knowledge_base.abox(individual=i, mode="expression"):
+                features.append(expression)
         assert len(
             features) > 0, f"First hop features cannot be extracted. Ensure that there are axioms about the examples."
+        print("Total extracted features:", len(features))
+        features = set(features)
+        print("Unique features:", len(features))
+
         binary_features = []
         unique_data_properties = set()
         # IMPORTANT: our features either
         for i in features:
             if isinstance(i, OWLClass) or isinstance(i, OWLObjectSomeValuesFrom) or isinstance(i,
                                                                                                OWLObjectMinCardinality):
+                # Person, \exist hasChild Female, < 2
                 binary_features.append(i)
             elif isinstance(i, OWLDataSomeValuesFrom):
-                unique_data_properties.add(i.get_property())
-            elif isinstance(i, OWLDataSomeValuesFrom):
-                filler: OWLDataOneOf[OWLLiteral]
-                filler = i.get_filler()
-                data_property = i.get_property()
-                owl_literals = [_ for _ in filler.operands()]
-                assert len(owl_literals) == 1
+                # (Currently) \exist r. {True, False} =>
+                fillers: OWLDataOneOf[List[OWLLiteral]]
+                owl_literals = [i for i in i.get_filler().operands()]
                 if owl_literals[0].is_boolean():
-                    print(owl_literals)
-                    binary_features.append(data_property)
+                    binary_features.append(i)
                 else:
                     raise RuntimeError(f"Unrecognized type:{i}")
             else:
@@ -246,37 +246,29 @@ class TDL:
         features = binary_features + list(unique_data_properties)
         # (4) Order features: create a mapping from tuple of predicate and objects to integers starting from 0.
         mapping_features = {predicate_object_pair: index_ for index_, predicate_object_pair in enumerate(features)}
-        print(f"\n{len(mapping_features)} features are extracted")
         # (5) Creating a tabular data for the binary classification problem.
-        X = []
-        y = []
+        X ,y = [], []
         for ith_row, i in enumerate(make_iterable_verbose(examples,
                                                           verbose=self.verbose,
                                                           desc="Creating supervised binary classification data")):
             # IMPORTANT: None existence is described as 0.0 features.
             X_i = [0.0 for _ in range(len(mapping_features))]
-
             expression: [OWLClass, OWLObjectSomeValuesFrom, OWLObjectMinCardinality, OWLDataSomeValuesFrom]
             # Filling the features
             for expression in self.knowledge_base.abox(individual=i, mode="expression"):
-
                 if isinstance(expression, OWLDataSomeValuesFrom):
-                    filler: OWLDataOneOf[OWLLiteral]
-                    filler = expression.get_filler()
-                    datavalues_in_filler = list(filler.values())
-                    #
-                    assert len(datavalues_in_filler) == 1
-                    owl_literal_values_in_filler = datavalues_in_filler.pop()
+                    fillers: OWLDataOneOf[OWLLiteral]
+                    fillers = expression.get_filler()
+                    datavalues_in_fillers = list(fillers.values())
+                    owl_literal_values_in_filler = datavalues_in_fillers.pop()
                     if owl_literal_values_in_filler.is_boolean():
-                        self.data_property_cast[expression.get_property()] = bool
-                        v = float(owl_literal_values_in_filler.parse_boolean())
+                        X_i[mapping_features[expression]] = 1
                     elif owl_literal_values_in_filler.is_double():
                         self.data_property_cast[expression.get_property()] = float
                         v = owl_literal_values_in_filler.parse_double()
                     else:
                         raise RuntimeError(
-                            f"Type of literal in OWLDataSomeValuesFrom is not understood:{owlliteral_values_in_filler}")
-                    X_i[mapping_features[expression.get_property()]] = v
+                            f"Type of literal in OWLDataSomeValuesFrom is not understood:{owl_literal_values_in_filler}")
                 elif isinstance(expression, OWLClass) or isinstance(expression, OWLObjectSomeValuesFrom):
                     assert expression in mapping_features, expression
                     X_i[mapping_features[expression]] = 1.0
@@ -354,6 +346,11 @@ class TDL:
                     if i["feature_value_of_individual"] <= i["threshold_value"]:
                         # Condition holds: Feature(individual)==0.0
                         # Therefore, neg Feature(individual)==1.0
+                        owl_class_expression = i["feature"].get_object_complement_of()
+                    else:
+                        owl_class_expression = i["feature"]
+                elif type(i["feature"])==OWLDataSomeValuesFrom:
+                    if i["feature_value_of_individual"] <= i["threshold_value"]:
                         owl_class_expression = i["feature"].get_object_complement_of()
                     else:
                         owl_class_expression = i["feature"]
