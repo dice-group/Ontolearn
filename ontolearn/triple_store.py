@@ -485,6 +485,7 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         self.reasoner = TripleStoreReasoner(self.ontology)
         super().__init__(ontology=self.ontology, reasoner=self.reasoner)
 
+
 #######################################################################################################################
 
 
@@ -495,7 +496,7 @@ class TripleStoreReasonerOntology:
         self.url = url
 
     def query(self, sparql_query: str):
-        return requests.Session().post(self.url, data={'query': sparql_query}) #.json()["results"]["bindings"]
+        return requests.Session().post(self.url, data={'query': sparql_query})  #.json()["results"]["bindings"]
 
     def are_owl_concept_disjoint(self, c: OWLClass, cc: OWLClass) -> bool:
         query = f"""{owl_prefix}ASK WHERE {{<{c.str}> owl:disjointWith <{cc.str}> .}}"""
@@ -535,7 +536,6 @@ class TripleStoreReasonerOntology:
         query = owl_prefix + """SELECT DISTINCT ?x WHERE { ?x a owl:Class }"""
         for binding in self.query(query).json()["results"]["bindings"]:
             yield OWLClass(binding["x"]["value"])
-
 
     def get_direct_parents(self, named_concept: OWLClass):
         """ Father rdf:subClassOf Person"""
@@ -592,7 +592,7 @@ class TripleStoreReasonerOntology:
                 yield OWLNamedIndividual(binding["x"]["value"])
         except:
             print(self.query(sparql_query).text)
-            exit(1)
+            raise RuntimeError
 
     def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
         # owl:OWLNamedIndividual is often missing: Perhaps we should add union as well
@@ -601,19 +601,34 @@ class TripleStoreReasonerOntology:
             yield OWLNamedIndividual(binding["x"]["value"])
 
     def data_properties_in_signature(self) -> Iterable[OWLDataProperty]:
-        query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:DatatypeProperty.}"
+        query = owl_prefix + "SELECT DISTINCT ?x " + "WHERE {?x a owl:DatatypeProperty.}"
         for binding in self.query(query).json()["results"]["bindings"]:
             yield OWLDataProperty(binding["x"]["value"])
 
     def object_properties_in_signature(self) -> Iterable[OWLObjectProperty]:
-        query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:ObjectProperty.}"
+        query = owl_prefix + "SELECT DISTINCT ?x " + "WHERE {?x a owl:ObjectProperty.}"
         for binding in self.query(query).json()["results"]["bindings"]:
             yield OWLObjectProperty(binding["x"]["value"])
 
     def boolean_data_properties(self):
-        query = rdf_prefix + xsd_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x rdf:type rdf:Property; rdfs:range xsd:boolean}"
-        for str_iri in self.query(query):
-            yield OWLDataProperty(str_iri)
+        query = f"{rdf_prefix}\n{rdfs_prefix}\n{xsd_prefix}SELECT DISTINCT ?x WHERE {{?x rdfs:range xsd:boolean}}"
+        for binding in self.query(query).json()["results"]["bindings"]:
+            yield OWLDataProperty(binding["x"]["value"])
+
+    def double_data_properties(self):
+        query = f"{rdf_prefix}\n{rdfs_prefix}\n{xsd_prefix}SELECT DISTINCT ?x WHERE {{?x rdfs:range xsd:double}}"
+        for binding in self.query(query).json()["results"]["bindings"]:
+            yield OWLDataProperty(binding["x"]["value"])
+
+    def range_of_double_data_properties(self, prop: OWLDataProperty):
+        query = f"{rdf_prefix}\n{rdfs_prefix}\n{xsd_prefix}SELECT DISTINCT ?x WHERE {{?z <{prop.str}> ?x}}"
+        for binding in self.query(query).json()["results"]["bindings"]:
+            yield OWLLiteral(value=float(binding["x"]["value"]))
+
+    def domain_of_double_data_properties(self, prop: OWLDataProperty):
+        query = f"{rdf_prefix}\n{rdfs_prefix}\n{xsd_prefix}SELECT DISTINCT ?x WHERE {{?x <{prop.str}> ?z}}"
+        for binding in self.query(query).json()["results"]["bindings"]:
+            yield OWLNamedIndividual(binding["x"]["value"])
 
 
 class TripleStore:
@@ -740,8 +755,20 @@ class TripleStore:
     def get_object_properties(self):
         yield from self.reasoner.object_properties_in_signature()
 
+    def get_data_properties(self):
+        yield from self.reasoner.data_properties_in_signature()
+
+    def get_classes_in_signature(self) -> OWLClass:
+        yield from self.reasoner.classes_in_signature()
+
     def get_boolean_data_properties(self):
         yield from self.reasoner.boolean_data_properties()
+
+    def get_double_data_properties(self):
+        yield from self.reasoner.double_data_properties()
+
+    def get_range_of_double_data_properties(self, prop: OWLDataProperty):
+        yield from self.reasoner.range_of_double_data_properties(prop)
 
     def individuals(self, concept: Optional[OWLClassExpression] = None) -> Generator[OWLNamedIndividual, None, None]:
         """Given an OWL class expression, retrieve all individuals belonging to it.
