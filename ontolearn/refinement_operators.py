@@ -69,10 +69,10 @@ class LengthBasedRefinement(BaseRefinement):
         """
         # (1) Return most general concepts.
         # most_general_named_concepts
-        most_general_concepts = [i for i in self.kb.get^()]
+        most_general_concepts = [i for i in self.kb.classes_in_signature()]
         yield from most_general_concepts
         # (2) Return least general concepts.
-        neg_concepts = [OWLObjectComplementOf(i) for i in self.kb.get_least_general_named_concepts()]
+        neg_concepts = [OWLObjectComplementOf(i) for i in self.kb.least_general_named_concepts()]
         yield from neg_concepts
 
         yield from self.from_iterables(cls=OWLObjectUnionOf,
@@ -82,7 +82,7 @@ class LengthBasedRefinement(BaseRefinement):
         yield from self.from_iterables(cls=OWLObjectUnionOf, a_operands=neg_concepts, b_operands=neg_concepts)
 
         restrictions = []
-        for c in most_general_concepts + [self.kb.generator.thing, self.kb.generator.nothing] + neg_concepts:
+        for c in most_general_concepts + [OWLThing, OWLNothing] + neg_concepts:
             dl_role: OWLObjectProperty
             for dl_role in self.kb.get_object_properties():
                 # TODO: Check whether the range of OWLObjectProperty contains the respective ce.
@@ -120,15 +120,15 @@ class LengthBasedRefinement(BaseRefinement):
         for i in self.top_refinements:
             if i.is_owl_nothing() is False:
                 if isinstance(i, OWLClass) and self.kb.are_owl_concept_disjoint(class_expression, i) is False:
-                    yield self.kb.generator.intersection((class_expression, i))
+                    yield OWLObjectIntersectionOf((class_expression, i))
                 else:
-                    yield self.kb.generator.intersection((class_expression, i))
+                    yield OWLObjectIntersectionOf((class_expression, i))
 
     def refine_complement_of(self, class_expression: OWLObjectComplementOf) -> Generator[
         OWLObjectComplementOf, None, None]:
         assert isinstance(class_expression, OWLObjectComplementOf)
         # not Father => Not Person given Father subclass of Person
-        yield from self.kb.generator.negation_from_iterables(self.kb.get_direct_parents(class_expression.get_operand()))
+        yield from (OWLObjectComplementOf(i) for i in self.kb.get_direct_parents(class_expression.get_operand()))
         yield OWLObjectIntersectionOf((class_expression, OWLThing))
 
     def refine_object_some_values_from(self, class_expression: OWLObjectSomeValuesFrom) -> Iterable[OWLClassExpression]:
@@ -157,7 +157,7 @@ class LengthBasedRefinement(BaseRefinement):
                     continue
                 yield OWLObjectUnionOf(operands[:i] + [refinement_of_concept] + operands[i + 1:])
 
-        yield self.kb.generator.intersection((class_expression, OWLThing))
+        yield OWLObjectIntersectionOf((class_expression, OWLThing))
 
     def refine_object_intersection_of(self, class_expression: OWLObjectIntersectionOf) -> Iterable[OWLClassExpression]:
         """ Refine OWLObjectIntersectionOf by refining each operands:"""
@@ -170,7 +170,7 @@ class LengthBasedRefinement(BaseRefinement):
                     continue
                 yield OWLObjectIntersectionOf(operands[:i] + [refinement_of_concept] + operands[i + 1:])
 
-        yield self.kb.generator.intersection((class_expression, OWLThing))
+        yield OWLObjectIntersectionOf((class_expression, OWLThing))
 
     def refine(self, class_expression) -> Iterable[OWLClassExpression]:
         assert isinstance(class_expression, OWLClassExpression)

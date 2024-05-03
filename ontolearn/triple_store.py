@@ -533,16 +533,17 @@ class TripleStoreReasonerOntology:
 
     def classes_in_signature(self) -> Iterable[OWLClass]:
         query = owl_prefix + """SELECT DISTINCT ?x WHERE { ?x a owl:Class }"""
-        for str_iri in self.query(query):
-            yield OWLClass(str_iri)
+        for binding in self.query(query).json()["results"]["bindings"]:
+            yield OWLClass(binding["x"]["value"])
+
 
     def get_direct_parents(self, named_concept: OWLClass):
         """ Father rdf:subClassOf Person"""
         assert isinstance(named_concept, OWLClass)
         str_named_concept = f"<{named_concept.str}>"
         query = f"""{rdfs_prefix} SELECT ?x WHERE {{ {str_named_concept} rdfs:subClassOf ?x . }} """
-        for str_iri in self.query(query):
-            yield OWLClass(str_iri)
+        for binding in self.query(query).json()["results"]["bindings"]:
+            yield OWLClass(binding["x"]["value"])
 
     def subconcepts(self, named_concept: OWLClass, direct=True):
         assert isinstance(named_concept, OWLClass)
@@ -561,16 +562,16 @@ class TripleStoreReasonerOntology:
         FILTER NOT EXISTS {{?x rdfs:subClassOf ?concept .
                             FILTER (?x != ?concept)}}
                             }} """
-        for str_iri in self.query(query):
-            yield OWLClass(str_iri)
+        for binding in self.query(query).json()["results"]["bindings"]:
+            yield OWLClass(binding["x"]["value"])
 
     def least_general_named_concepts(self) -> Generator[OWLClass, None, None]:
         query = f"""{rdf_prefix}\n{rdfs_prefix}\n{owl_prefix}\n
         SELECT ?x WHERE {{ ?x rdf:type owl:Class. 
         FILTER NOT EXISTS {{?subConcept rdfs:subClassOf ?x .
                             FILTER (?subConcept != ?x)}}}} """
-        for str_iri in self.query(query):
-            yield OWLClass(str_iri)
+        for binding in self.query(query).json()["results"]["bindings"]:
+            yield OWLClass(binding["x"]["value"])
 
     def get_type_individuals(self, individual: str):
         query = f"""SELECT DISTINCT ?x WHERE {{ <{individual}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?x }}"""
@@ -586,24 +587,28 @@ class TripleStoreReasonerOntology:
             traceback.print_exception(exc)
             print(f"Error at converting {expression} into sparql")
             raise RuntimeError("Couldn't convert")
-        for i in self.query(sparql_query):
-            yield OWLNamedIndividual(i)
+        try:
+            for binding in self.query(sparql_query).json()["results"]["bindings"]:
+                yield OWLNamedIndividual(binding["x"]["value"])
+        except:
+            print(self.query(sparql_query).text)
+            exit(1)
 
     def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
         # owl:OWLNamedIndividual is often missing: Perhaps we should add union as well
         query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a ?y. ?y a owl:Class.}"
-        for str_iri in self.query(query):
-            yield OWLNamedIndividual(str_iri)
+        for binding in self.query(query).json()["results"]["bindings"]:
+            yield OWLNamedIndividual(binding["x"]["value"])
 
     def data_properties_in_signature(self) -> Iterable[OWLDataProperty]:
         query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:DatatypeProperty.}"
-        for str_iri in self.query(query):
-            yield OWLDataProperty(str_iri)
+        for binding in self.query(query).json()["results"]["bindings"]:
+            yield OWLDataProperty(binding["x"]["value"])
 
     def object_properties_in_signature(self) -> Iterable[OWLObjectProperty]:
         query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:ObjectProperty.}"
-        for str_iri in self.query(query):
-            yield OWLObjectProperty(str_iri)
+        for binding in self.query(query).json()["results"]["bindings"]:
+            yield OWLObjectProperty(binding["x"]["value"])
 
     def boolean_data_properties(self):
         query = rdf_prefix + xsd_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x rdf:type rdf:Property; rdfs:range xsd:boolean}"
@@ -612,8 +617,7 @@ class TripleStoreReasonerOntology:
 
 
 class TripleStore:
-    """ triple store """
-    path: str
+    """ Connecting a triple store"""
     url: str
 
     def __init__(self, reasoner=None, url: str = None):
@@ -627,48 +631,6 @@ class TripleStore:
         # CEL models will be refactored.
         self.ontology = self.g
         self.reasoner = self.g
-        self.generator = ConceptGenerator()
-        # TODO: Check whether the connection is available.
-
-    def concise_bounded_description(self, individual: OWLNamedIndividual, mode: str = "native") -> Generator[
-        Tuple[OWLNamedIndividual, Union[IRI, OWLObjectProperty], Union[OWLClass, OWLNamedIndividual]], None, None]:
-        """
-
-        Get the CBD (https://www.w3.org/submissions/CBD/) of a named individual.
-
-        Args:
-            individual (OWLNamedIndividual): Individual to get the abox axioms from.
-            mode (str): The return format.
-             1) 'native' -> returns triples as tuples of owlapy objects,
-             2) 'iri' -> returns triples as tuples of IRIs as string,
-             3) 'axiom' -> triples are represented by owlapy axioms.
-
-        Returns: Iterable of tuples or owlapy axiom, depending on the mode.
-        """
-        assert mode in ['native', 'iri', 'axiom'], "Valid modes are: 'native', 'iri' or 'axiom'"
-        if mode == "native":
-            yield from self.g.concise_bounded_description(str_iri=individual.str)
-
-        elif mode == "iri":
-            raise NotImplementedError("Mode==iri has not been implemented yet.")
-            yield from ((i.str, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-                         t.str) for t in self.get_types(ind=i, direct=True))
-            for dp in self.get_data_properties_for_ind(ind=i):
-                yield from ((i.str, dp.str, literal.get_literal()) for literal in
-                            self.get_data_property_values(i, dp))
-            for op in self.get_object_properties_for_ind(ind=i):
-                yield from ((i.str, op.str, ind.str) for ind in
-                            self.get_object_property_values(i, op))
-        elif mode == "axiom":
-            raise NotImplementedError("Mode==axiom has not been implemented yet.")
-
-            yield from (OWLClassAssertionAxiom(i, t) for t in self.get_types(ind=i, direct=True))
-            for dp in self.get_data_properties_for_ind(ind=i):
-                yield from (OWLDataPropertyAssertionAxiom(i, dp, literal) for literal in
-                            self.get_data_property_values(i, dp))
-            for op in self.get_object_properties_for_ind(ind=i):
-                yield from (OWLObjectPropertyAssertionAxiom(i, op, ind) for ind in
-                            self.get_object_property_values(i, op))
 
     def __abox_expression(self, individual: OWLNamedIndividual) -> Generator[
         Union[OWLClass, OWLObjectSomeValuesFrom, OWLObjectMinCardinality, OWLDataSomeValuesFrom], None, None]:
@@ -802,11 +764,8 @@ class TripleStore:
     def get_all_sub_concepts(self, concept: OWLClass, direct=True):
         yield from self.reasoner.subconcepts(concept, direct)
 
-    def named_concepts(self):
+    def classes_in_signature(self):
         yield from self.reasoner.classes_in_signature()
-
-    def get_concepts(self):
-        return self.named_concepts()
 
     def get_direct_parents(self, c: OWLClass):
         yield from self.reasoner.get_direct_parents(c)
@@ -817,70 +776,5 @@ class TripleStore:
     def least_general_named_concepts(self):
         yield from self.reasoner.least_general_named_concepts()
 
-    def quality_retrieval(self, expression: OWLClass, pos: set[OWLNamedIndividual], neg: set[OWLNamedIndividual]):
-        assert isinstance(expression,
-                          OWLClass), "Currently we can only compute the F1 score of a named concepts given pos and neg"
-
-        sparql_str = f"{self.dbo_prefix}{self.rdf_prefix}"
-        num_pos = len(pos)
-        str_concept_reminder = expression.iri.get_remainder()
-
-        str_concept = expression.str
-        str_pos = " ".join(("<" + i.str + ">" for i in pos))
-        str_neg = " ".join(("<" + i.str + ">" for i in neg))
-
-        # TODO
-        sparql_str += f"""
-        SELECT ?tp ?fp ?fn
-        WHERE {{ 
-
-        {{SELECT DISTINCT (COUNT(?var) as ?tp) ( {num_pos}-COUNT(?var) as ?fn) 
-        WHERE {{ VALUES ?var {{ {str_pos} }} ?var rdf:type dbo:{str_concept_reminder} .}} }}
-
-        {{SELECT DISTINCT (COUNT(?var) as ?fp)
-        WHERE {{ VALUES ?var  {{ {str_neg} }} ?var rdf:type dbo:{str_concept_reminder} .}} }}
-
-        }}
-        """
-
-        response = requests.post('http://dice-dbpedia.cs.upb.de:9080/sparql', auth=("", ""),
-                                 data=sparql_str,
-                                 headers={"Content-Type": "application/sparql-query"})
-        bindings = response.json()["results"]["bindings"]
-        assert len(bindings) == 1
-        results = bindings.pop()
-        assert len(results) == 3
-        tp = int(results["tp"]["value"])
-        fp = int(results["fp"]["value"])
-        fn = int(results["fn"]["value"])
-        # Compute recall (Sensitivity): Relevant retrieved instances / all relevant instances.
-        recall = 0 if (tp + fn) == 0 else tp / (tp + fn)
-        # Compute recall (Sensitivity): Relevant retrieved instances / all retrieved instances.
-        precision = 0 if (tp + fp) == 0 else tp / (tp + fp)
-        f1 = 0 if precision == 0 or recall == 0 else 2 * ((precision * recall) / (precision + recall))
-
-        return f1
-
     def query(self, sparql: str) -> rdflib.plugins.sparql.processor.SPARQLResult:
         yield from self.g.query(sparql_query=sparql)
-
-    def individuals_set(self,
-                        arg: Union[Iterable[OWLNamedIndividual], OWLNamedIndividual, OWLClassExpression]) -> FrozenSet:
-        """Retrieve the individuals specified in the arg as a frozenset. If `arg` is an OWLClassExpression then this
-        method behaves as the method "individuals" but will return the final result as a frozenset.
-
-        Args:
-            arg: more than one individual/ single individual/ class expression of which to list individuals.
-        Returns:
-            Frozenset of the individuals depending on the arg type.
-
-        UPDATE: CD: This function should be deprecated it does not introduce any new functionality but coves a rewriting
-        ,e .g. if args needs to be a frozen set, doing frozenset(arg) solves this need without introducing this function
-        """
-
-        if isinstance(arg, OWLClassExpression):
-            return frozenset(self.individuals(arg))
-        elif isinstance(arg, OWLNamedIndividual):
-            return frozenset({arg})
-        else:
-            return frozenset(arg)

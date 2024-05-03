@@ -524,6 +524,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Length of the concept.
         """
+        # @TODO: CD: Computing the length of a concept should be disantangled from KB
+        # @TODO: CD: Ideally, this should be a static function
 
         return self.length_metric.length(ce)
 
