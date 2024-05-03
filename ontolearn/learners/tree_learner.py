@@ -25,6 +25,7 @@ from owlapy.providers import owl_datatype_min_exclusive_restriction, \
 import scipy
 from owlapy import owl_expression_to_dl, owl_expression_to_sparql
 from owlapy.class_expression import OWLObjectSomeValuesFrom, OWLObjectMinCardinality
+from owlapy.providers import owl_datatype_min_max_exclusive_restriction
 
 
 def is_float(value):
@@ -223,9 +224,7 @@ class TDL:
         print("Total extracted features:", len(features))
         features = set(features)
         print("Unique features:", len(features))
-
         binary_features = []
-        unique_data_properties = set()
         # IMPORTANT: our features either
         for i in features:
             if isinstance(i, OWLClass) or isinstance(i, OWLObjectSomeValuesFrom) or isinstance(i,
@@ -234,20 +233,22 @@ class TDL:
                 binary_features.append(i)
             elif isinstance(i, OWLDataSomeValuesFrom):
                 # (Currently) \exist r. {True, False} =>
-                fillers: OWLDataOneOf[List[OWLLiteral]]
                 owl_literals = [i for i in i.get_filler().operands()]
                 if owl_literals[0].is_boolean():
                     binary_features.append(i)
+                elif owl_literals[0].is_double():
+                    binary_features.append(i)
+
                 else:
                     raise RuntimeError(f"Unrecognized type:{i}")
             else:
                 raise RuntimeError(f"Unrecognized type:{i}")
 
-        features = binary_features + list(unique_data_properties)
+        features = binary_features
         # (4) Order features: create a mapping from tuple of predicate and objects to integers starting from 0.
         mapping_features = {predicate_object_pair: index_ for index_, predicate_object_pair in enumerate(features)}
         # (5) Creating a tabular data for the binary classification problem.
-        X ,y = [], []
+        X, y = [], []
         for ith_row, i in enumerate(make_iterable_verbose(examples,
                                                           verbose=self.verbose,
                                                           desc="Creating supervised binary classification data")):
@@ -260,15 +261,13 @@ class TDL:
                     fillers: OWLDataOneOf[OWLLiteral]
                     fillers = expression.get_filler()
                     datavalues_in_fillers = list(fillers.values())
-                    owl_literal_values_in_filler = datavalues_in_fillers.pop()
-                    if owl_literal_values_in_filler.is_boolean():
+                    if datavalues_in_fillers[0].is_boolean():
                         X_i[mapping_features[expression]] = 1
-                    elif owl_literal_values_in_filler.is_double():
-                        self.data_property_cast[expression.get_property()] = float
-                        v = owl_literal_values_in_filler.parse_double()
+                    elif datavalues_in_fillers[0].is_double():
+                        X_i[mapping_features[expression]] = 1.0
                     else:
                         raise RuntimeError(
-                            f"Type of literal in OWLDataSomeValuesFrom is not understood:{owl_literal_values_in_filler}")
+                            f"Type of literal in OWLDataSomeValuesFrom is not understood:{datavalues_in_fillers}")
                 elif isinstance(expression, OWLClass) or isinstance(expression, OWLObjectSomeValuesFrom):
                     assert expression in mapping_features, expression
                     X_i[mapping_features[expression]] = 1.0
@@ -349,7 +348,7 @@ class TDL:
                         owl_class_expression = i["feature"].get_object_complement_of()
                     else:
                         owl_class_expression = i["feature"]
-                elif type(i["feature"])==OWLDataSomeValuesFrom:
+                elif type(i["feature"]) == OWLDataSomeValuesFrom:
                     if i["feature_value_of_individual"] <= i["threshold_value"]:
                         owl_class_expression = i["feature"].get_object_complement_of()
                     else:
