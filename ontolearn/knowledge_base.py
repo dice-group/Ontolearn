@@ -14,7 +14,7 @@ from owlapy.owl_axiom import OWLClassAssertionAxiom, OWLObjectPropertyAssertionA
 from owlapy.owl_data_ranges import OWLDataRange
 from owlapy.owl_datatype import OWLDatatype
 from owlapy.owl_individual import OWLNamedIndividual
-from owlapy.owl_literal import BooleanOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, OWLLiteral
+from owlapy.owl_literal import BooleanOWLDatatype, NUMERIC_DATATYPES, DoubleOWLDatatype,TIME_DATATYPES, OWLLiteral
 from owlapy.owl_ontology import OWLOntology
 from owlapy.owl_ontology_manager import OWLOntologyManager
 from owlapy.owl_property import OWLObjectProperty, OWLDataProperty, OWLObjectPropertyExpression, \
@@ -994,6 +994,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
         yield from self.class_hierarchy.items()
 
+    def get_classes_in_signature(self):
+        return self.get_concepts()
+
     @property
     def concepts(self) -> Iterable[OWLClass]:
         """Get all concepts of this concept generator.
@@ -1062,6 +1065,15 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Numeric data properties.
         """
         yield from self.get_data_properties(NUMERIC_DATATYPES)
+
+    def get_double_data_properties(self) -> Iterable[OWLDataProperty]:
+        """Get all numeric data properties of this concept generator.
+
+        Returns:
+            Numeric data properties.
+        """
+        yield from self.get_data_properties(DoubleOWLDatatype)
+
 
     def get_time_data_properties(self) -> Iterable[OWLDataProperty]:
         """Get all time data properties of this concept generator.
