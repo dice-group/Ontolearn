@@ -38,7 +38,6 @@ class Drill(RefinementBasedConceptLearner):
                  use_inverse=True,
                  use_data_properties=True,
                  use_card_restrictions=True,
-                 card_limit=3,
                  use_nominals=True,
                  quality_func: Callable = None,
                  reward_func: object = None,
