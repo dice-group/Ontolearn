@@ -27,7 +27,7 @@ from ontolearn.heuristics import CeloeBasedReward
 import torch
 from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
 from tqdm import tqdm
-
+from ..base.owl.utils import OWLClassExpressionLengthMetric
 
 class Drill(RefinementBasedConceptLearner):
     """ Neuro-Symbolic Class Expression Learning (https://www.ijcai.org/proceedings/2023/0403.pdf)"""
@@ -391,7 +391,8 @@ class Drill(RefinementBasedConceptLearner):
                         is_root: bool = False) -> RL_State:
         """ Create an RL_State instance."""
         rl_state = RL_State(c, parent_node=parent_node, is_root=is_root)
-        rl_state.length = self.kb.concept_len(c)
+        # TODO: Will be fixed by https://github.com/dice-group/owlapy/issues/35
+        rl_state.length=OWLClassExpressionLengthMetric.get_default().length(c)
         return rl_state
 
     def compute_quality_of_class_expression(self, state: RL_State) -> None:

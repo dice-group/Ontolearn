@@ -534,7 +534,7 @@ class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
             self.heuristic_func = CELOEHeuristic()
 
         if self.start_class is None:
-            self.start_class = self.kb.generator.thing
+            self.start_class = OWLThing
         if self.iter_bound is None:
             self.iter_bound = 10_000
 
