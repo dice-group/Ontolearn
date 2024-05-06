@@ -17,7 +17,7 @@ from owlapy.render import DLSyntaxObjectRenderer
 class TestBaseConceptLearner(unittest.TestCase):
 
     def setUp(self):
-        kb = KnowledgeBase(path='KGs/Father/father/father.owl')
+        kb = KnowledgeBase(path='KGs/Father/father.owl')
         self.model = CELOE(knowledge_base=kb)
         self.namespace = 'http://example.com/father#'
 
