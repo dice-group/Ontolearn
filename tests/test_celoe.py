@@ -14,7 +14,7 @@ from owlapy.render import DLSyntaxObjectRenderer
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 PATH_MUTAGENESIS = 'KGs/Mutagenesis/mutagenesis.owl'
-PATH_DATA_FATHER = 'KGs/father.owl'
+PATH_DATA_FATHER = 'KGs/Father/father.owl'
 
 with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)

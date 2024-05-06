@@ -17,7 +17,7 @@ from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
 from owlapy.render import DLSyntaxObjectRenderer
 
 manager = OWLOntologyManager_Owlready2()
-onto = manager.load_ontology(IRI.create("KGs/father.owl"))
+onto = manager.load_ontology(IRI.create("KGs/Father/father.owl"))
 complex_ce_reasoner = OWLReasoner_Owlready2_ComplexCEInstances(onto)
 
 NS = Namespaces('ex', 'http://example.com/father#')
@@ -32,7 +32,7 @@ negative_examples = {OWLNamedIndividual(IRI.create(NS, 'heinz')),
 # Only the class of the learning algorithm is specified
 model = ModelAdapter(learner_type=CELOE,
                      reasoner=complex_ce_reasoner,  # (*)
-                     path="KGs/father.owl",
+                     path="KGs/Father/father.owl",
                      quality_type=Accuracy,
                      heuristic_type=CELOEHeuristic,  # (*)
                      expansionPenaltyFactor=0.05,

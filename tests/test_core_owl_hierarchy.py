@@ -68,7 +68,7 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
     def test_class_hierarchy_children(self):
         NS = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
         reasoner = OWLReasoner_Owlready2(onto)
 
         ch = ClassHierarchy(reasoner)

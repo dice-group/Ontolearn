@@ -63,7 +63,7 @@ def setup_prerequisites(individuals, pos_ex, neg_ex, random_ex: bool, size_of_ex
     return lp, s
 
 
-# kb: ../KGs/father.owl
+# kb: ../KGs/Father/father.owl
 # pos: http://example.com/father#markus,http://example.com/father#martin,http://example.com/father#stefan
 # neg: http://example.com/father#anna,http://example.com/father#heinz,http://example.com/father#michelle
 
