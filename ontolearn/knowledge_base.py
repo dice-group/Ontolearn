@@ -104,6 +104,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
     def __init__(self, *,
                  ontology: OWLOntology,
                  reasoner: OWLReasoner,
+                 load_class_hierarchy: bool = True,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
                  length_metric_factory: Optional[Callable[[], OWLClassExpressionLengthMetric]] = None,
                  individuals_cache_size=128):
@@ -123,6 +124,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  individuals_cache_size=128,
                  backend_store: bool = False,
                  class_hierarchy: Optional[ClassHierarchy] = None,
+                 load_class_hierarchy: bool = True,
                  object_property_hierarchy: Optional[ObjectPropertyHierarchy] = None,
                  data_property_hierarchy: Optional[DatatypePropertyHierarchy] = None,
                  include_implicit_individuals=False
@@ -163,15 +165,16 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
         self.length_metric = init_length_metric(length_metric, length_metric_factory)
 
-        self.class_hierarchy: ClassHierarchy
-        self.object_property_hierarchy: ObjectPropertyHierarchy
-        self.data_property_hierarchy: DatatypePropertyHierarchy
-        (self.class_hierarchy,
-         self.object_property_hierarchy,
-         self.data_property_hierarchy) = init_hierarchy_instances(self.reasoner,
-                                                                  class_hierarchy=class_hierarchy,
-                                                                  object_property_hierarchy=object_property_hierarchy,
-                                                                  data_property_hierarchy=data_property_hierarchy)
+        if load_class_hierarchy:
+            self.class_hierarchy: ClassHierarchy
+            self.object_property_hierarchy: ObjectPropertyHierarchy
+            self.data_property_hierarchy: DatatypePropertyHierarchy
+            (self.class_hierarchy,
+             self.object_property_hierarchy,
+             self.data_property_hierarchy) = init_hierarchy_instances(self.reasoner,
+                                                                      class_hierarchy=class_hierarchy,
+                                                                      object_property_hierarchy=object_property_hierarchy,
+                                                                      data_property_hierarchy=data_property_hierarchy)
         # Object property domain and range:
         self.op_domains: Dict[OWLObjectProperty, OWLClassExpression]
         self.op_domains = dict()
