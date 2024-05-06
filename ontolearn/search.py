@@ -14,6 +14,8 @@ from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, Abstract
 
 _N = TypeVar('_N')  #:
 
+from owlapy import owl_expression_to_dl
+
 
 # Due to a bug in Python, we cannot use the slots like we should be able to. Hence, the attribute access is also
 # invalid but there is nothing we can do. See https://mail.python.org/pipermail/python-list/2002-December/126637.html
@@ -291,7 +293,7 @@ class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality
             _NodeIndividualsCount.__str__(self),
         ))
 
-    
+
 class NCESNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, AbstractNode, AbstractConceptNode):
     """
     EvoLearner search tree node.
@@ -317,7 +319,7 @@ class NCESNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, Abst
             f'Length:{self._len}',
             _NodeIndividualsCount.__str__(self),
         ))
-    
+
 
 class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodeParentRef['RL_State']):
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
@@ -349,9 +351,7 @@ class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodePa
                 _NodeConcept.__str__(self),
                 _NodeQuality.__str__(self),
                 _NodeHeuristic.__str__(self),
-                f'Length:{self.length}',
-                f'Embeddings:{self.embeddings}',
-            ))
+                f'Length:{self.length}'))
         else:
             return "\t".join((
                 AbstractNode.__str__(self),
@@ -718,10 +718,29 @@ class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
         """
         assert node.quality > 0
         assert node.heuristic is not None
-        self.items_in_queue.put((-node.heuristic, node))  # gets the smallest one.
-        self.nodes[node] = node
+        dl_representation = owl_expression_to_dl(node.concept.get_nnf())
+        if dl_representation in self.nodes:
+            """Do nothing"""
+        else:
+            self.items_in_queue.put(
+                (-node.heuristic, len(owl_expression_to_dl(node.concept)), dl_representation))  # gets the smallest one.
+            self.nodes[dl_representation] = node
 
-    def get_most_promising(self) -> Node:
+    def show_current_search_tree(self, top_n=10):
+        """
+        Show search tree.
+        """
+        predictions = sorted(
+            [(neg_heuristic, length, self.nodes[dl_representation]) for neg_heuristic, length, dl_representation in
+             self.items_in_queue.queue])[:top_n]
+        print('\n######## Current Search Tree ###########\n')
+        for ith, (_, __, node) in enumerate(predictions):
+            print(
+                f"{ith + 1}-\t{owl_expression_to_dl(node.concept)} | Quality:{node.quality:.3f}| Heuristic:{node.heuristic:.3f}")
+        print('\n######## Current Search Tree ###########\n')
+        return predictions
+
+    def get_most_promising(self) -> RL_State:
         """
         Gets the current most promising node from Queue.
 
@@ -729,18 +748,11 @@ class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
         -------
         node: A node object
         """
-        _, most_promising_str = self.items_in_queue.get()  # get
-        try:
-            node = self.nodes[most_promising_str]
-            # We do not need to put the node again into the queue.
-            # self.items_in_queue.put((-node.heuristic, node.concept.name))
-            return node
-        except KeyError:
-            print(most_promising_str, 'is not found')
-            print('####')
-            for k, v in self.nodes.items():
-                print(k)
-            exit(1)
+        assert len(self.items_in_queue.queue) > 0
+        _, __, dl_representation = self.items_in_queue.get(timeout=1.0)
+        # R
+        node = self.nodes[dl_representation]
+        return node
 
     def get_top_n(self, n: int, key='quality') -> List[Node]:
         """
