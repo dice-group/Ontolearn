@@ -10,7 +10,7 @@ For this guide we will also consider the 'Father' ontology that we slightly desc
 from ontolearn.base import OWLOntologyManager_Owlready2
 
 manager = OWLOntologyManager_Owlready2()
-onto = manager.load_ontology(IRI.create("KGs/Father/father.owl"))
+onto = manager.load_ontology(IRI.create("KGs/Family/father.owl"))
 ```
 
 In our Ontolearn library, we provide several **reasoners** to choose

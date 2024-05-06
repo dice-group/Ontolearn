@@ -9,7 +9,7 @@ understanding we describe some of Owlapy classes in this guide as well. Owlapy r
 whereas Ontolearn references link to the [API Documentation](ontolearn) of Ontolearn.
 
 We will frequently **use a sample ontology** to give examples. You can find it in  
-`KGs/Father/father.owl` after you [download the datasets](02_installation.md#download-external-files). Here is a hierarchical 
+`KGs/Family/father.owl` after you [download the datasets](02_installation.md#download-external-files). Here is a hierarchical 
 diagram that shows the classes and their relationships:
 
              Thing
@@ -34,7 +34,7 @@ from owlapy.iri import IRI
 from ontolearn.base import OWLOntologyManager_Owlready2
 
 manager = OWLOntologyManager_Owlready2()
-onto = manager.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+onto = manager.load_ontology(IRI.create("file://KGs/Family/father.owl"))
 ```
 
 First, we import the `IRI` class and a suitable OWLOntologyManager. To
@@ -83,7 +83,7 @@ the axioms classes [here](https://github.com/dice-group/owlapy/blob/main/owlapy/
 
 #### Add a new Class
 
-Let's suppose you want to add a new class in our example ontology `KGs/Father/father.owl` 
+Let's suppose you want to add a new class in our example ontology `KGs/Family/father.owl` 
 It can be done as follows:
 
 <!--pytest-codeblocks:cont-->
