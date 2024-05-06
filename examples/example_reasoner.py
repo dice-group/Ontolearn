@@ -8,7 +8,7 @@ from ontolearn.base import OWLReasoner_Owlready2, BaseReasoner_Owlready2
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
 
-data_file = '../KGs/test_ontology.owl'
+data_file = '../KGs/Test/test_ontology.owl'
 NS = 'http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#'
 
 """

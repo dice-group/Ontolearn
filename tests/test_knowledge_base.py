@@ -372,7 +372,7 @@ class KnowledgeBaseTest(unittest.TestCase):
 
     def test_tbox_abox(self):
 
-        kb = KnowledgeBase(path="KGs/test_ontology.owl")
+        kb = KnowledgeBase(path="KGs/Test/test_ontology.owl")
         ind1 = OWLNamedIndividual(
             IRI.create('http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#b'))
         ind2 = OWLNamedIndividual(
