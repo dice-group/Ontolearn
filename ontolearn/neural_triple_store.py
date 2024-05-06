@@ -10,6 +10,7 @@ from .triple_store import TripleStoreReasonerOntology, TripleStore
 class NeuralTripleStore(TripleStore):
 
     def __init__(self, path: str = None, model: str = "Keci"):
+        super().__init__(path=path)
         self.path = path
         self.model = model
 
@@ -73,6 +74,12 @@ class NeuralTripleStoreReasonerOntology(TripleStoreReasonerOntology):
         Returns:
             Iterable of tuples or owlapy axiom, depending on the configured mode.
         """
+        print(
+            self.model.find_missing_triples(
+                confidence=0.5,
+                entities=[str_iri],
+            )
+        )
         for triple in super().abox(str_iri=str_iri):
             print("Triple:", triple)
             yield triple

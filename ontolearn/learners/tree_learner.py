@@ -208,8 +208,11 @@ class TDL:
             }
         else:
             grid_search_over = dict()
-        # assert isinstance(knowledge_base, KnowledgeBase) or isinstance(knowledge_base,
-        #                                                               ontolearn.triple_store.TripleStore) or isinstance(knowledge_base), "knowledge_base must be a KnowledgeBase instance"
+        assert (
+            isinstance(knowledge_base, KnowledgeBase)
+            or isinstance(knowledge_base, ontolearn.triple_store.TripleStore)
+            or isinstance(knowledge_base)
+        ), "knowledge_base must be a KnowledgeBase instance"
         print(f"Knowledge Base: {knowledge_base}")
         self.grid_search_over = grid_search_over
         self.knowledge_base = knowledge_base
