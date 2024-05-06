@@ -1,11 +1,13 @@
 import pandas as pd
 import json
+from owlapy.class_expression import OWLClassExpression
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy import owl_expression_to_dl
 from ontolearn.base_concept_learner import RefinementBasedConceptLearner
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.abstracts import AbstractScorer, AbstractNode
 from ontolearn.search import RL_State
 from typing import Set, List, Tuple, Optional, Generator, SupportsFloat, Iterable, FrozenSet, Callable, Union
-from owlapy.model import OWLNamedIndividual, OWLClassExpression
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 import torch
 from ontolearn.data_struct import Experience
@@ -24,7 +26,8 @@ import random
 from ontolearn.heuristics import CeloeBasedReward
 import torch
 from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
-
+from tqdm import tqdm
+from ..base.owl.utils import OWLClassExpressionLengthMetric
 
 class Drill(RefinementBasedConceptLearner):
     """ Neuro-Symbolic Class Expression Learning (https://www.ijcai.org/proceedings/2023/0403.pdf)"""
@@ -63,11 +66,9 @@ class Drill(RefinementBasedConceptLearner):
 
         # (2) Initialize Refinement operator.
         if refinement_operator is None:
-            refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base,
+            refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base, use_inverse=use_inverse,
                                                         use_data_properties=use_data_properties,
                                                         use_card_restrictions=use_card_restrictions,
-                                                        card_limit=card_limit,
-                                                        use_inverse=use_inverse,
                                                         use_nominals=use_nominals)
         else:
             refinement_operator = refinement_operator
@@ -98,6 +99,7 @@ class Drill(RefinementBasedConceptLearner):
         self.start_time = None
         self.goal_found = False
         self.storage_path, _ = create_experiment_folder()
+        # Move to here
         self.search_tree = DRILLSearchTreePriorityQueue()
         self.renderer = DLSyntaxObjectRenderer()
         self.stop_at_goal = stop_at_goal
@@ -110,7 +112,6 @@ class Drill(RefinementBasedConceptLearner):
                                                              'second_out_channels': 16, 'third_out_channels': 8,
                                                              'kernel_size': 3})
             self.experiences = Experience(maxlen=self.max_len_replay_memory)
-
             if self.learning_rate:
                 self.optimizer = torch.optim.Adam(self.heuristic_func.net.parameters(), lr=self.learning_rate)
         else:
@@ -141,8 +142,8 @@ class Drill(RefinementBasedConceptLearner):
         self.pos = pos
         self.neg = neg
 
-        self.emb_pos = self.get_embeddings_individuals(individuals=[i.get_iri().as_str() for i in self.pos])
-        self.emb_neg = self.get_embeddings_individuals(individuals=[i.get_iri().as_str() for i in self.neg])
+        self.emb_pos = self.get_embeddings_individuals(individuals=[i.str for i in self.pos])
+        self.emb_neg = self.get_embeddings_individuals(individuals=[i.str for i in self.neg])
 
         # (3) Initialize the root state of the quasi-ordered RL env.
         # print("Initializing Root RL state...", end=" ")
@@ -200,18 +201,29 @@ class Drill(RefinementBasedConceptLearner):
         (2) For each learning problem, perform the RL loop
 
         """
+        if isinstance(self.heuristic_func, CeloeBasedReward):
+            print("No training")
+            return self.terminate_training()
         examples = []
-        for (target_owl_ce, positives, negatives) in self.generate_learning_problems(dataset,
-                                                                                     num_of_target_concepts,
-                                                                                     num_learning_problems):
+
+        if self.verbose > 0:
+            training_data = tqdm(self.generate_learning_problems(dataset,
+                                                                 num_of_target_concepts,
+                                                                 num_learning_problems),
+                                 desc="Training over learning problems")
+        else:
+            training_data = self.generate_learning_problems(dataset,
+                                                            num_of_target_concepts,
+                                                            num_learning_problems)
+        for (target_owl_ce, positives, negatives) in training_data:
             # print(f"Goal Concept:\t {target_owl_ce}\tE^+:[{len(positives)}]\t E^-:[{len(negatives)}]")
             sum_of_rewards_per_actions = self.rl_learning_loop(num_episode=self.num_episode,
                                                                pos_uri=frozenset(positives),
                                                                neg_uri=frozenset(negatives))
             self.seen_examples.setdefault(len(self.seen_examples), dict()).update(
                 {'Concept': target_owl_ce,
-                 'Positives': [i.get_iri().as_str() for i in positives],
-                 'Negatives': [i.get_iri().as_str() for i in negatives]})
+                 'Positives': [i.str for i in positives],
+                 'Negatives': [i.str for i in negatives]})
         return self.terminate_training()
 
     def save(self, directory: str) -> None:
@@ -228,11 +240,14 @@ class Drill(RefinementBasedConceptLearner):
         """ load weights of the deep Q-network"""
         if directory:
             os.path.isdir(directory)
-            self.heuristic_func.net.load_state_dict(torch.load(directory + "/drill.pth", torch.device('cpu')))
+            if isinstance(self.heuristic_func, CeloeBasedReward):
+                print("No loading because embeddings not provided")
+            else:
+                self.heuristic_func.net.load_state_dict(torch.load(directory + "/drill.pth", torch.device('cpu')))
 
     def fit(self, learning_problem: PosNegLPStandard, max_runtime=None):
         if max_runtime:
-            assert isinstance(max_runtime, float)
+            assert isinstance(max_runtime, float) or isinstance(max_runtime, int)
             self.max_runtime = max_runtime
 
         self.clean()
@@ -242,28 +257,33 @@ class Drill(RefinementBasedConceptLearner):
         # (2) Two mappings from a unique OWL Concept to integer, where a unique concept represents the type info
         # C(x) s.t. x \in E^+ and  C(y) s.t. y \in E^-.
         # print("Counting types of positive examples..")
-        pos_type_counts = Counter(
-            [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.pos))])
+        pos_type_counts = Counter([i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.pos))])
         # print("Counting types of negative examples..")
-        neg_type_counts = Counter(
-            [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.neg))])
+        neg_type_counts = Counter([i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.neg))])
         # (3) Favor some OWLClass over others
         type_bias = pos_type_counts - neg_type_counts
         # (4) Initialize learning problem
         root_state = self.initialize_training_class_expression_learning_problem(pos=learning_problem.pos,
                                                                                 neg=learning_problem.neg)
+        self.operator.set_input_examples(pos=learning_problem.pos, neg=learning_problem.neg)
+
         # (5) Add root state into search tree
         root_state.heuristic = root_state.quality
         self.search_tree.add(root_state)
+        best_found_quality = 0
         # (6) Inject Type Bias/Favor
-        # print("Starting search..")
         for x in (self.create_rl_state(i, parent_node=root_state) for i in type_bias):
             self.compute_quality_of_class_expression(x)
             x.heuristic = x.quality
+            if x.quality>best_found_quality:
+                best_found_quality=x.quality
             self.search_tree.add(x)
 
-        # (6) Search
-        for i in range(1, self.iter_bound):
+        for _ in tqdm(range(0, self.iter_bound),
+                      desc=f"Learning OWL Class Expression at most {self.iter_bound} iteration"):
+            assert len(self.search_tree) > 0
+            self.search_tree.show_current_search_tree()
+
             # (6.1) Get the most fitting RL-state.
             most_promising = self.next_node_to_expand()
             next_possible_states = []
@@ -271,14 +291,21 @@ class Drill(RefinementBasedConceptLearner):
             if time.time() - self.start_time > self.max_runtime:
                 return self.terminate()
             # (6.3) Refine (6.1)
-            for ref in self.apply_refinement(most_promising):
+            # Convert this into tqdm with an update ?!
+            for ref in (tqdm_bar := tqdm(self.apply_refinement(most_promising), position=0, leave=True)):
                 # (6.3.1) Checking the runtime termination criterion.
                 if time.time() - self.start_time > self.max_runtime:
-                    return self.terminate()
+                    break
                 # (6.3.2) Compute the quality stored in the RL state
                 self.compute_quality_of_class_expression(ref)
                 if ref.quality == 0:
                     continue
+                tqdm_bar.set_description_str(
+                    f"Step {_} | Refining {owl_expression_to_dl(most_promising.concept)} | {owl_expression_to_dl(ref.concept)} | Quality:{ref.quality:.4f}")
+
+                if ref.quality > best_found_quality:
+                    print("\nBest Found:", ref)
+                    best_found_quality = ref.quality
                 # (6.3.3) Consider qualifying RL states as next possible states to transition.
                 next_possible_states.append(ref)
                 # (6.3.4) Checking the goal termination criterion.
@@ -295,6 +322,7 @@ class Drill(RefinementBasedConceptLearner):
             if self.goal_found:
                 if self.terminate_on_goal:
                     return self.terminate()
+        return self.terminate()
 
     def fit_from_iterable(self,
                           dataset: List[Tuple[object, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]],
@@ -338,11 +366,11 @@ class Drill(RefinementBasedConceptLearner):
             self.neg = neg_uri
 
             self.emb_pos = torch.from_numpy(self.df_embeddings.loc[
-                                                [owl_individual.get_iri().as_str().strip() for owl_individual in
+                                                [owl_individual.str.strip() for owl_individual in
                                                  pos_uri]].values)
             # Shape: |E^+| x d
             self.emb_neg = torch.from_numpy(self.df_embeddings.loc[
-                                                [owl_individual.get_iri().as_str().strip() for owl_individual in
+                                                [owl_individual.str.strip() for owl_individual in
                                                  neg_uri]].values)
             """ (3) Take the mean of positive and negative examples and reshape it into (1,1,embedding_dim) for mini
              batching """
@@ -363,7 +391,8 @@ class Drill(RefinementBasedConceptLearner):
                         is_root: bool = False) -> RL_State:
         """ Create an RL_State instance."""
         rl_state = RL_State(c, parent_node=parent_node, is_root=is_root)
-        rl_state.length = self.kb.concept_len(c)
+        # TODO: Will be fixed by https://github.com/dice-group/owlapy/issues/35
+        rl_state.length=OWLClassExpressionLengthMetric.get_default().length(c)
         return rl_state
 
     def compute_quality_of_class_expression(self, state: RL_State) -> None:
@@ -381,7 +410,7 @@ class Drill(RefinementBasedConceptLearner):
 
     def apply_refinement(self, rl_state: RL_State) -> Generator:
         """ Downward refinements"""
-        assert isinstance(rl_state, RL_State)
+        assert isinstance(rl_state, RL_State), f"It must be rl state {rl_state}"
         assert isinstance(rl_state.concept, OWLClassExpression)
         self.operator: LengthBasedRefinement
         for i in self.operator.refine(rl_state.concept):  # O(N)
@@ -436,6 +465,10 @@ class Drill(RefinementBasedConceptLearner):
         """
         Learning by replaying memory.
         """
+
+        if isinstance(self.heuristic_func, CeloeBasedReward):
+            return None
+
         # print('learn_from_replay_memory', end="\t|\t")
         current_state_batch: List[torch.FloatTensor]
         next_state_batch: List[torch.FloatTensor]
@@ -524,7 +557,7 @@ class Drill(RefinementBasedConceptLearner):
         return emb
 
     def get_individuals(self, rl_state: RL_State) -> List[str]:
-        return [owl_individual.get_iri().as_str().strip() for owl_individual in self.kb.individuals(rl_state.concept)]
+        return [owl_individual.str.strip() for owl_individual in self.kb.individuals(rl_state.concept)]
 
     def get_embeddings(self, instances) -> None:
         if self.representation_mode == 'averaging':
@@ -545,7 +578,7 @@ class Drill(RefinementBasedConceptLearner):
                         emb = torch.rand(size=(1, self.sample_size, self.embedding_dim))
                 else:
                     # If|R(C)| \not= \emptyset, then take the mean of individuals.
-                    str_individuals = [i.get_iri().as_str() for i in rl_state.instances]
+                    str_individuals = [i.str for i in rl_state.instances]
                     assert len(str_individuals) > 0
                     if self.pre_trained_kge is not None:
                         emb = self.pre_trained_kge.get_entity_embeddings(str_individuals)
@@ -585,7 +618,10 @@ class Drill(RefinementBasedConceptLearner):
         else:
             path = f"{self.storage_path}/{self.heuristic_func.name}.pth"
 
-        torch.save(self.heuristic_func.net.state_dict(), path)
+        if isinstance(self.heuristic_func, CeloeBasedReward):
+            print("No saving..")
+        else:
+            torch.save(self.heuristic_func.net.state_dict(), path)
 
     def exploration_exploitation_tradeoff(self,
                                           current_state: AbstractNode,

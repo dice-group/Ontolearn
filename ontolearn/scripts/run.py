@@ -16,12 +16,13 @@ curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Conte
 
 ====================================================================
 """
-import json
 import argparse
 from fastapi import FastAPI
 import uvicorn
 from typing import Dict, Iterable, Union
-
+from owlapy.class_expression import OWLClassExpression
+from owlapy.iri import IRI
+from owlapy.owl_individual import OWLNamedIndividual
 from ..utils.static_funcs import compute_f1_score
 from ..knowledge_base import KnowledgeBase
 from ..triple_store import TripleStore
@@ -29,10 +30,8 @@ from ..learning_problem import PosNegLPStandard
 from ..refinement_operators import LengthBasedRefinement
 from ..learners import Drill, TDL
 from ..metrics import F1
-from owlapy.model import OWLNamedIndividual, IRI, OWLClassExpression
 from owlapy.render import DLSyntaxObjectRenderer
 from ..utils.static_funcs import save_owl_class_expressions
-from fastapi.responses import StreamingResponse
 
 app = FastAPI()
 args = None

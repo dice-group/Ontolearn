@@ -1,13 +1,18 @@
 import unittest
 
+from owlapy.class_expression import OWLObjectUnionOf, OWLObjectComplementOf, OWLObjectIntersectionOf, OWLThing, \
+    OWLObjectOneOf, OWLObjectHasValue, OWLObjectMinCardinality, OWLClass, OWLObjectSomeValuesFrom, OWLDataAllValuesFrom, \
+    OWLDataExactCardinality, OWLDataHasValue, OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataOneOf, \
+    OWLDataSomeValuesFrom
+from owlapy.iri import IRI
+from owlapy.owl_data_ranges import OWLDataUnionOf, OWLDataComplementOf, OWLDataIntersectionOf
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import OWLLiteral, DoubleOWLDatatype, IntegerOWLDatatype
+from owlapy.owl_property import OWLObjectProperty, OWLDataProperty
+
 from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
 from ontolearn.utils import setup_logging
-from owlapy.model.providers import OWLDatatypeMinMaxInclusiveRestriction
-from owlapy.model import OWLDataUnionOf, OWLLiteral, OWLObjectProperty, OWLObjectUnionOf, \
-    OWLObjectComplementOf, OWLObjectIntersectionOf, OWLThing, OWLNamedIndividual, OWLObjectOneOf, OWLObjectHasValue, \
-    OWLObjectMinCardinality, IRI, DoubleOWLDatatype, IntegerOWLDatatype, OWLClass, OWLObjectSomeValuesFrom, \
-    OWLDataAllValuesFrom, OWLDataComplementOf, OWLDataExactCardinality, OWLDataHasValue, OWLDataIntersectionOf, \
-    OWLDataMaxCardinality, OWLDataMinCardinality, OWLDataOneOf, OWLDataProperty, OWLDataSomeValuesFrom
+from owlapy.providers import owl_datatype_min_max_inclusive_restriction
 
 setup_logging("ontolearn/logging_test.conf")
 
@@ -64,7 +69,7 @@ class Core_OWLClassExpressionLengthMetric_Test(unittest.TestCase):
         # ∃ hasAge.¬xsd:double
         self.assertEqual(le, 4)
 
-        datatype_restriction = OWLDatatypeMinMaxInclusiveRestriction(40, 80)
+        datatype_restriction = owl_datatype_min_max_inclusive_restriction(40, 80)
 
         ce = OWLDataSomeValuesFrom(property=has_age, filler=OWLDataUnionOf([datatype_restriction, IntegerOWLDatatype]))
         le = cl.length(ce)

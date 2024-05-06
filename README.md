@@ -41,24 +41,25 @@ pytest -p no:warnings -x # Running 171 tests takes ~ 6 mins
 from ontolearn.learners import TDL
 from ontolearn.triple_store import TripleStore
 from ontolearn.learning_problem import PosNegLPStandard
-from owlapy.model import OWLNamedIndividual, IRI
-from owlapy.render import DLSyntaxObjectRenderer
-
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy import owl_expression_to_sparql, owl_expression_to_dl
 # (1) Initialize Triplestore
-kb = TripleStore(path="KGs/father.owl")
-# (2) Initialize a DL renderer.
-render = DLSyntaxObjectRenderer()
-# (3) Initialize a learner.
+# sudo docker run -p 3030:3030 -e ADMIN_PASSWORD=pw123 stain/jena-fuseki
+# Login http://localhost:3030/#/ with admin and pw123
+# Create a new dataset called family and upload KGs/Family/family.owl
+kb = TripleStore(url="http://localhost:3030/family")
+# (2) Initialize a learner.
 model = TDL(knowledge_base=kb)
-# (4) Define a description logic concept learning problem.
-lp = PosNegLPStandard(pos={OWLNamedIndividual(IRI.create("http://example.com/father#stefan"))},
-                      neg={OWLNamedIndividual(IRI.create("http://example.com/father#heinz")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#anna")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#michelle"))})
-# (5) Learn description logic concepts best fitting (4).
+# (3) Define a description logic concept learning problem.
+lp = PosNegLPStandard(pos={OWLNamedIndividual("http://example.com/father#stefan")},
+                      neg={OWLNamedIndividual("http://example.com/father#heinz"),
+                           OWLNamedIndividual("http://example.com/father#anna"),
+                           OWLNamedIndividual("http://example.com/father#michelle")})
+# (4) Learn description logic concepts best fitting (3).
 h = model.fit(learning_problem=lp).best_hypotheses()
-str_concept = render.render(h)
-print("Concept:", str_concept)  # Concept: ∃ hasChild.{markus}
+print(h)
+print(owl_expression_to_dl(h))
+print(owl_expression_to_sparql(expression=h))
 ```
 
 ## Learning OWL Class Expression over DBpedia
@@ -66,19 +67,17 @@ print("Concept:", str_concept)  # Concept: ∃ hasChild.{markus}
 from ontolearn.utils.static_funcs import save_owl_class_expressions
 
 # (1) Initialize Triplestore
-kb = TripleStore(url = "http://dice-dbpedia.cs.upb.de:9080/sparql")
-# (2) Initialize a DL renderer.
-render = DLSyntaxObjectRenderer()
+kb = TripleStore(url="http://dice-dbpedia.cs.upb.de:9080/sparql")
 # (3) Initialize a learner.
 model = TDL(knowledge_base=kb)
 # (4) Define a description logic concept learning problem.
-lp = PosNegLPStandard(pos={OWLNamedIndividual(IRI.create("http://dbpedia.org/resource/Angela_Merkel"))},
-                      neg={OWLNamedIndividual(IRI.create("http://dbpedia.org/resource/Barack_Obama"))})
+lp = PosNegLPStandard(pos={OWLNamedIndividual("http://dbpedia.org/resource/Angela_Merkel")},
+                      neg={OWLNamedIndividual("http://dbpedia.org/resource/Barack_Obama")})
 # (5) Learn description logic concepts best fitting (4).
 h = model.fit(learning_problem=lp).best_hypotheses()
-str_concept = render.render(h)
-print("Concept:", str_concept)  # Concept: ∃ predecessor.WikicatPeopleFromBerlin
-# (6) Save ∃ predecessor.WikicatPeopleFromBerlin into disk
+print(h)
+print(owl_expression_to_dl(h))
+print(owl_expression_to_sparql(expression=h))
 save_owl_class_expressions(expressions=h,path="owl_prediction")
 ```
 
@@ -86,14 +85,49 @@ Fore more please refer to  the [examples](https://github.com/dice-group/Ontolear
 
 ## ontolearn-webservice 
 
+### ontolearn-webservice on a locally available KG
+```shell
+# train a KGE
+dicee --path_single_kg KGs/Family/family-benchmark_rich_background.owl --path_to_store_single_run embeddings --backend rdflib --save_embeddings_as_csv --model Keci --num_epoch 10
+# Start a webservice and load a KG into memory
+ontolearn-webservice --path_knowledge_base KGs/Family/family-benchmark_rich_background.owl
+# Train and Eval DRILL
+curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://www.benchmark.org/family#F10F175"], "neg":["http://www.benchmark.org/family#F10F177"], "model":"Drill"}'
+# Eval a pretrained DRILL
+curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://www.benchmark.org/family#F10F175"], "neg":["http://www.benchmark.org/family#F10F177"], "model":"Drill","pretrained":"pretrained"}'
+```
+### ontolearn-webservice on a Triplestore
+```shell
+# sudo docker run -p 3030:3030 -e ADMIN_PASSWORD=pw123 stain/jena-fuseki
+# Login http://localhost:3030/#/ with admin and pw123
+# Create a new dataset called family and upload KGs/Family/family-benchmark_rich_background.owl
+ontolearn-webservice --endpoint_triple_store 'http://localhost:3030/family'
+```
+
+Sending learning problems to the endpoint via curl:
+```shell
+curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://www.benchmark.org/family#F10F175"], "neg":["http://www.benchmark.org/family#F10F177"], "model":"Drill"}'
+```
+Sending learning problems to the endpoint via the HTTP request:
+```python
+import json
+import requests
+with open("LPs/Family/lps.json") as json_file:
+    settings = json.load(json_file)
+for str_target_concept, examples in settings['problems'].items():
+    response = requests.get('http://0.0.0.0:8000/cel', headers={'accept': 'application/json', 'Content-Type': 'application/json'}, json={
+        "pos":  examples['positive_examples'],
+        "neg":  examples['negative_examples'],
+        "model": "Drill"
+    })
+    print(response.json())
+```
+ontolearn-webservice also works with a remote endpoint as well.
 ```shell
 ontolearn-webservice --endpoint_triple_store 'http://dice-dbpedia.cs.upb.de:9080/sparql'
-```
-```shell
 curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://dbpedia.org/resource/Angela_Merkel"], "neg":["http://dbpedia.org/resource/Barack_Obama"], "model":"TDL"}'
 # ~3 mins => {"Prediction":"¬(≥ 1 successor.WikicatNewYorkMilitaryAcademyAlumni)"}
 ```
-
 ## Benchmark Results
 ```shell
 # To download learning problems. # Benchmark learners on the Family benchmark dataset with benchmark learning problems.

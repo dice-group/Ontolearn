@@ -8,15 +8,19 @@ import xml.etree.ElementTree as ET
 import numpy as np
 import pandas as pd
 import os
+
+from owlapy.class_expression import OWLClass, OWLClassExpression, OWLThing
+from owlapy.iri import IRI
+from owlapy.owl_axiom import OWLDeclarationAxiom, OWLEquivalentClassesAxiom, OWLAxiom
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_ontology import OWLOntology
+from owlapy.owl_ontology_manager import OWLOntologyManager, AddImport, OWLImportsDeclaration
+from owlapy.owl_reasoner import OWLReasoner
+
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.metrics import F1, Accuracy
+from ontolearn.metrics import F1
 from ontolearn.refinement_operators import ModifiedCELOERefinement
-from ontolearn.search import _NodeQuality
-
-from owlapy.model import OWLDeclarationAxiom, OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport, \
-    OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, OWLAnnotationAssertionAxiom, OWLAnnotation, \
-    OWLAnnotationProperty, OWLLiteral, IRI, OWLClassExpression, OWLReasoner, OWLAxiom, OWLThing
 from ontolearn.base import OWLOntologyManager_Owlready2, OWLOntology_Owlready2
 from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
 from owlapy.render import DLSyntaxObjectRenderer
@@ -29,6 +33,7 @@ _X = TypeVar('_X', bound=AbstractLearningProblem)  #:
 Factory = Callable
 
 logger = logging.getLogger(__name__)
+
 
 class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     """
@@ -344,11 +349,11 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             except AttributeError:
                 quality = None
             if isinstance(self.quality_func, Accuracy):
-                accuracy = OWLAnnotationAssertionAxiom(cls_a.get_iri(), OWLAnnotation(
+                accuracy = OWLAnnotationAssertionAxiom(cls_a.iri, OWLAnnotation(
                     OWLAnnotationProperty(IRI.create(SNS, "accuracy")), OWLLiteral(quality)))
                 manager.add_axiom(ontology, accuracy)
             elif isinstance(self.quality_func, F1):
-                f1_score = OWLAnnotationAssertionAxiom(cls_a.get_iri(), OWLAnnotation(
+                f1_score = OWLAnnotationAssertionAxiom(cls_a.iri, OWLAnnotation(
                     OWLAnnotationProperty(IRI.create(SNS, "f1_score")), OWLLiteral(quality)))
                 manager.add_axiom(ontology, f1_score)
             """
@@ -529,7 +534,7 @@ class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
             self.heuristic_func = CELOEHeuristic()
 
         if self.start_class is None:
-            self.start_class = self.kb.generator.thing
+            self.start_class = OWLThing
         if self.iter_bound is None:
             self.iter_bound = 10_000
 

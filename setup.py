@@ -16,17 +16,17 @@ _deps = [
     "torch>=1.7.1,<2.2.0",
     "rdflib>=6.0.2",
     "pandas>=1.5.0",
-    "sortedcontainers>=2.4.0",  # @TODO: CD: can we remove ?
-    "flask>=1.1.2",  # @TODO: CD: can we remove ?
+    "sortedcontainers>=2.4.0",  # AB: This is required
     "deap>=1.3.1",
-    "httpx>=0.25.2",  # @TODO: CD: can we remove ?
+    "flask>=1.1.2",
+    "httpx>=0.25.2",
+    "gradio>=4.11.0",
     "tqdm>=4.64.0",
     "transformers>=4.38.1",
     "pytest>=7.2.2",
-    "owlapy==0.1.2",
+    "owlapy==1.0.2",
     "dicee>=0.1.2",
     "ontosample>=0.2.2",
-    "gradio>=4.11.0",  # @TODO: CD: can we remove ?
     "sphinx>=7.2.6",
     "sphinx-autoapi>=3.0.0",
     "sphinx_rtd_theme>=2.0.0",

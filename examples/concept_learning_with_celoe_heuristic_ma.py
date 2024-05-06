@@ -5,7 +5,8 @@ import random
 from ontolearn.concept_learner import CELOE
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.model_adapter import ModelAdapter, Trainer
-from owlapy.model import OWLClass, OWLNamedIndividual, IRI
+from owlapy.owl_individual import OWLNamedIndividual, IRI
+from owlapy.class_expression import OWLClass
 from ontolearn.utils import setup_logging
 from ontolearn.base import BaseReasoner_Owlready2, OWLOntology_Owlready2
 from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances

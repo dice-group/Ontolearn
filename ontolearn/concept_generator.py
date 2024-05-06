@@ -2,12 +2,16 @@
 
 from typing import Iterable, List, Generator
 
+from owlapy.class_expression import OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectSomeValuesFrom, \
+    OWLObjectAllValuesFrom, OWLObjectIntersectionOf, OWLObjectUnionOf, OWLThing, OWLNothing, OWLClass, \
+    OWLClassExpression, OWLObjectComplementOf, OWLObjectExactCardinality, OWLDataAllValuesFrom, OWLDataSomeValuesFrom, \
+    OWLDataHasValue, OWLObjectHasValue
+from owlapy.owl_data_ranges import OWLDataRange
+from owlapy.owl_individual import OWLIndividual
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_property import OWLObjectPropertyExpression, OWLDataPropertyExpression
+
 from ontolearn.utils import parametrized_performance_debugger
-from owlapy.model import OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectSomeValuesFrom, \
-    OWLObjectAllValuesFrom, OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectPropertyExpression, OWLThing, \
-    OWLNothing, OWLClass, OWLClassExpression, OWLObjectComplementOf, \
-    OWLObjectExactCardinality, OWLDataAllValuesFrom, OWLDataPropertyExpression, OWLDataRange, OWLDataSomeValuesFrom, \
-    OWLDataHasValue, OWLIndividual, OWLLiteral, OWLObjectHasValue
 
 
 class ConceptGenerator:

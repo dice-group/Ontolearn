@@ -8,15 +8,21 @@ from itertools import repeat, chain
 from types import MappingProxyType, FunctionType
 from typing import DefaultDict, Iterable, Dict, Mapping, Set, Type, TypeVar, Optional, FrozenSet, cast
 
-from ontolearn.base import OWLReasoner_Owlready2
+from owlapy.class_expression import OWLObjectOneOf, OWLClass, OWLObjectUnionOf, OWLObjectIntersectionOf, \
+    OWLObjectSomeValuesFrom, OWLObjectComplementOf, OWLObjectAllValuesFrom, OWLDataSomeValuesFrom, \
+    OWLDatatypeRestriction, OWLClassExpression, OWLDataAllValuesFrom, OWLDataHasValue, OWLDataOneOf, \
+    OWLObjectCardinalityRestriction, OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality, \
+    OWLObjectHasValue, OWLFacetRestriction
+from owlapy.iri import IRI
+from owlapy.owl_data_ranges import OWLDataRange, OWLDataComplementOf, OWLDataIntersectionOf, OWLDataUnionOf
+from owlapy.owl_datatype import OWLDatatype
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_ontology import OWLOntology
+from owlapy.owl_property import OWLObjectProperty, OWLDataProperty, OWLObjectPropertyExpression, OWLObjectInverseOf, \
+    OWLDataPropertyExpression, OWLPropertyExpression
+from owlapy.owl_reasoner import OWLReasoner
 from ontolearn.base.ext import OWLReasonerEx
-from owlapy.model import OWLDataRange, OWLObjectOneOf, OWLOntology, OWLNamedIndividual, OWLClass, \
-    OWLObjectProperty, OWLDataProperty, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, \
-    OWLObjectPropertyExpression, OWLObjectComplementOf, OWLObjectAllValuesFrom, IRI, OWLObjectInverseOf, \
-    OWLDataSomeValuesFrom, OWLDataPropertyExpression, OWLDatatypeRestriction, OWLLiteral, OWLClassExpression, \
-    OWLDataComplementOf, OWLDataAllValuesFrom, OWLDatatype, OWLDataHasValue, OWLDataOneOf, OWLReasoner, \
-    OWLDataIntersectionOf, OWLDataUnionOf, OWLObjectCardinalityRestriction, OWLObjectMinCardinality, \
-    OWLObjectMaxCardinality, OWLObjectExactCardinality, OWLObjectHasValue, OWLPropertyExpression, OWLFacetRestriction
 from owlapy.util import LRUCache
 
 logger = logging.getLogger(__name__)
@@ -584,16 +590,16 @@ class OWLReasoner_FastInstanceChecker(OWLReasonerEx):
 
         if isinstance(pe, OWLObjectPropertyExpression):
             retrieval_func = self.sub_object_properties
-            p_x: owlready2.ObjectProperty = self._ontology._world[pe.get_named_property().get_iri().as_str()]
+            p_x: owlready2.ObjectProperty = self._ontology._world[pe.get_named_property().str]
         else:
             retrieval_func = self.sub_data_properties
-            p_x: owlready2.DataProperty = self._ontology._world[pe.get_iri().as_str()]
+            p_x: owlready2.DataProperty = self._ontology._world[pe.str]
 
         relations = p_x.get_relations()
         if self._sub_properties:
             # Retrieve the subject/object pairs for all sub properties of pe
             indirect_relations = chain.from_iterable(
-                map(lambda x: self._ontology._world[x.get_iri().as_str()].get_relations(),
+                map(lambda x: self._ontology._world[x.str].get_relations(),
                     retrieval_func(pe, direct=False)))
             # If pe is an OWLObjectInverseOf we need to swap the pairs
             if isinstance(pe, OWLObjectInverseOf):

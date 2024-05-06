@@ -5,9 +5,11 @@ import pickle
 import random
 import time
 from typing import Callable, Set, TypeVar, Tuple, Union
-
+from owlapy.class_expression import OWLClass
+from owlapy.iri import IRI
+from owlapy.meta_classes import HasIRI
+from owlapy.owl_individual import OWLNamedIndividual
 from ontolearn.utils.log_config import setup_logging  # noqa: F401
-from owlapy.model import OWLNamedIndividual, IRI, OWLClass, HasIRI
 import pandas as pd
 from .static_funcs import compute_f1_score
 Factory = Callable

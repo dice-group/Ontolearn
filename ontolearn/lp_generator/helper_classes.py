@@ -164,8 +164,8 @@ class KB2Data:
             neg = set(self.kb.individuals())-pos
             if len(neg) == 0:
                 continue
-            pos = [ind.get_iri().as_str().split("/")[-1] for ind in pos]
-            neg = [ind.get_iri().as_str().split("/")[-1] for ind in neg]
+            pos = [ind.str.split("/")[-1] for ind in pos]
+            neg = [ind.str.split("/")[-1] for ind in neg]
             positive, negative = self.sample_examples(pos, neg)
             concept_name = self.dl_syntax_renderer.render(concept.get_nnf())
             data[concept_name] = {'positive examples': positive, 'negative examples': negative}

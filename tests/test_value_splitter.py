@@ -4,7 +4,8 @@ import unittest
 from owlready2.prop import DataProperty
 from ontolearn.value_splitter import BinningValueSplitter
 from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.model import OWLDataProperty, OWLLiteral, IRI
+from owlapy.owl_literal import OWLDataProperty, OWLLiteral
+from owlapy.iri import IRI
 from ontolearn.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 
 
@@ -13,7 +14,7 @@ class BinningValueSplitter_Test(unittest.TestCase):
     def test_binning_splitter_numeric(self):
         namespace_ = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/Family/father.owl"))
 
         with onto._onto:
             class test_int(DataProperty):
@@ -45,7 +46,7 @@ class BinningValueSplitter_Test(unittest.TestCase):
     def test_binning_splitter_time(self):
         namespace_ = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/Family/father.owl"))
 
         with onto._onto:
             class test_time(DataProperty):

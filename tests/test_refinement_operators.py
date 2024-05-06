@@ -9,12 +9,16 @@ from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.base.owl.utils import ConceptOperandSorter
 from ontolearn.utils import setup_logging
-from owlapy.model.providers import OWLDatatypeMaxInclusiveRestriction, OWLDatatypeMinInclusiveRestriction
+from owlapy.providers import owl_datatype_max_inclusive_restriction, owl_datatype_min_inclusive_restriction
 from owlapy.render import DLSyntaxObjectRenderer
-from owlapy.model import OWLObjectMinCardinality, OWLObjectProperty, OWLObjectSomeValuesFrom, \
-    OWLClass, IRI, OWLDataHasValue, OWLDataProperty, OWLDataSomeValuesFrom, OWLLiteral, OWLObjectAllValuesFrom, \
-    OWLObjectCardinalityRestriction, OWLObjectComplementOf, OWLObjectIntersectionOf, OWLObjectMaxCardinality, \
-    OWLObjectUnionOf
+
+from owlapy.class_expression import OWLObjectSomeValuesFrom, OWLObjectComplementOf, \
+    OWLObjectAllValuesFrom, OWLClass, OWLDataHasValue, OWLDataSomeValuesFrom, OWLObjectMaxCardinality, \
+    OWLObjectMinCardinality, OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectCardinalityRestriction
+from owlapy.iri import IRI
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_property import OWLObjectProperty, OWLDataProperty
+
 from ontolearn.refinement_operators import ModifiedCELOERefinement, LengthBasedRefinement, \
     ExpressRefinement
 
@@ -130,10 +134,10 @@ class ModifiedCELOERefinementTest(unittest.TestCase):
         rho.dp_splits = {p: splits for p in rho.dp_splits}
 
         # numeric
-        true_act = {OWLDataSomeValuesFrom(self.act, OWLDatatypeMinInclusiveRestriction(1)),
-                    OWLDataSomeValuesFrom(self.act, OWLDatatypeMaxInclusiveRestriction(9))}
-        true_charge = {OWLDataSomeValuesFrom(self.charge, OWLDatatypeMinInclusiveRestriction(1)),
-                       OWLDataSomeValuesFrom(self.charge, OWLDatatypeMaxInclusiveRestriction(9))}
+        true_act = {OWLDataSomeValuesFrom(self.act, owl_datatype_min_inclusive_restriction(1)),
+                    OWLDataSomeValuesFrom(self.act, owl_datatype_max_inclusive_restriction(9))}
+        true_charge = {OWLDataSomeValuesFrom(self.charge, owl_datatype_min_inclusive_restriction(1)),
+                       OWLDataSomeValuesFrom(self.charge, owl_datatype_max_inclusive_restriction(9))}
         thing_refs = set(rho.refine(self.generator.thing, max_length=3, current_domain=self.generator.thing))
         compound_refs = set(rho.refine(self.compound, max_length=3, current_domain=self.compound))
         bond_refs = set(rho.refine(self.bond, max_length=3, current_domain=self.bond))
@@ -237,24 +241,24 @@ class ModifiedCELOERefinementTest(unittest.TestCase):
         rho.dp_splits = {p: splits for p in rho.dp_splits}
 
         # min inclusive
-        refs = set(rho.refine(OWLDataSomeValuesFrom(self.charge, OWLDatatypeMinInclusiveRestriction(4)),
+        refs = set(rho.refine(OWLDataSomeValuesFrom(self.charge, owl_datatype_min_inclusive_restriction(4)),
                               max_length=0, current_domain=self.generator.thing))
-        true_refs = {OWLDataSomeValuesFrom(self.charge, OWLDatatypeMinInclusiveRestriction(5))}
+        true_refs = {OWLDataSomeValuesFrom(self.charge, owl_datatype_min_inclusive_restriction(5))}
         self.assertEqual(refs, true_refs)
 
         # test empty
-        refs = set(rho.refine(OWLDataSomeValuesFrom(self.act, OWLDatatypeMinInclusiveRestriction(9)),
+        refs = set(rho.refine(OWLDataSomeValuesFrom(self.act, owl_datatype_min_inclusive_restriction(9)),
                               max_length=0, current_domain=self.generator.thing))
         self.assertFalse(refs)
 
         # max inclusive
-        refs = set(rho.refine(OWLDataSomeValuesFrom(self.charge, OWLDatatypeMaxInclusiveRestriction(8)),
+        refs = set(rho.refine(OWLDataSomeValuesFrom(self.charge, owl_datatype_max_inclusive_restriction(8)),
                               max_length=0, current_domain=self.generator.thing))
-        true_refs = {OWLDataSomeValuesFrom(self.charge, OWLDatatypeMaxInclusiveRestriction(7))}
+        true_refs = {OWLDataSomeValuesFrom(self.charge, owl_datatype_max_inclusive_restriction(7))}
         self.assertEqual(refs, true_refs)
 
         # test empty
-        refs = set(rho.refine(OWLDataSomeValuesFrom(self.act, OWLDatatypeMaxInclusiveRestriction(1)),
+        refs = set(rho.refine(OWLDataSomeValuesFrom(self.act, owl_datatype_max_inclusive_restriction(1)),
                               max_length=0, current_domain=self.generator.thing))
         self.assertFalse(refs)
 

@@ -8,7 +8,7 @@ def quality(KB, solution, pos, neg):
     recall = Recall().score2
     instances = set(KB.individuals(solution))
     if isinstance(list(pos)[0], str):
-        instances = {ind.get_iri().as_str().split("/")[-1] for ind in instances}
+        instances = {ind.str.split("/")[-1] for ind in instances}
     tp = len(pos.intersection(instances))
     fn = len(pos.difference(instances))
     fp = len(neg.intersection(instances))

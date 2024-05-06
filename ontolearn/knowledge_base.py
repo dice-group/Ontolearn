@@ -2,20 +2,27 @@
 
 import logging
 import random
-from itertools import chain
 from collections import Counter
-from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict, Tuple, Generator, cast
+from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict, cast, Generator
 
 import owlapy
+from owlapy.class_expression import OWLClassExpression, OWLClass, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
+    OWLThing, OWLObjectMinCardinality, OWLObjectOneOf
+from owlapy.iri import IRI
+from owlapy.owl_axiom import OWLClassAssertionAxiom, OWLObjectPropertyAssertionAxiom, OWLDataPropertyAssertionAxiom, \
+    OWLSubClassOfAxiom, OWLEquivalentClassesAxiom
+from owlapy.owl_data_ranges import OWLDataRange
+from owlapy.owl_datatype import OWLDatatype
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import BooleanOWLDatatype, NUMERIC_DATATYPES, DoubleOWLDatatype,TIME_DATATYPES, OWLLiteral
+from owlapy.owl_ontology import OWLOntology
+from owlapy.owl_ontology_manager import OWLOntologyManager
+from owlapy.owl_property import OWLObjectProperty, OWLDataProperty, OWLObjectPropertyExpression, \
+    OWLDataPropertyExpression
+from owlapy.owl_reasoner import OWLReasoner
 
 from ontolearn.base import OWLOntology_Owlready2, OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
 from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
-from owlapy.model import OWLOntologyManager, OWLOntology, OWLReasoner, OWLClassExpression, \
-    OWLNamedIndividual, OWLObjectProperty, OWLClass, OWLDataProperty, IRI, OWLDataRange, OWLObjectSomeValuesFrom, \
-    OWLObjectAllValuesFrom, OWLDatatype, BooleanOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, OWLThing, \
-    OWLObjectPropertyExpression, OWLLiteral, OWLDataPropertyExpression, OWLClassAssertionAxiom, \
-    OWLObjectPropertyAssertionAxiom, OWLDataPropertyAssertionAxiom, OWLSubClassOfAxiom, OWLEquivalentClassesAxiom, \
-    OWLObjectMinCardinality, OWLObjectOneOf
 
 from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.search import EvaluatedConcept
@@ -28,6 +35,11 @@ from ontolearn.base.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy
 
 from .utils.static_funcs import (init_length_metric, init_hierarchy_instances,
                                  init_named_individuals, init_individuals_from_concepts)
+
+from owlapy.class_expression import OWLDataMaxCardinality, OWLDataSomeValuesFrom
+from owlapy import owl_expression_to_sparql, owl_expression_to_dl
+from owlapy.owl_data_ranges import OWLDataRange
+from owlapy.class_expression import OWLDataOneOf
 
 logger = logging.getLogger(__name__)
 
@@ -237,12 +249,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
                     yield from ((i, op, ind) for ind in self.get_object_property_values(i, op))
             elif mode == "iri":
                 yield from ((i.str, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-                             t.get_iri().as_str()) for t in self.get_types(ind=i, direct=True))
+                             t.str) for t in self.get_types(ind=i, direct=True))
                 for dp in self.get_data_properties_for_ind(ind=i):
-                    yield from ((i.str, dp.get_iri().as_str(), literal.get_literal()) for literal in
+                    yield from ((i.str, dp.str, literal.get_literal()) for literal in
                                 self.get_data_property_values(i, dp))
                 for op in self.get_object_properties_for_ind(ind=i):
-                    yield from ((i.str, op.get_iri().as_str(), ind.get_iri().as_str()) for ind in
+                    yield from ((i.str, op.str, ind.str) for ind in
                                 self.get_object_property_values(i, op))
             elif mode == "axiom":
                 yield from (OWLClassAssertionAxiom(i, t) for t in self.get_types(ind=i, direct=True))
@@ -253,23 +265,24 @@ class KnowledgeBase(AbstractKnowledgeBase):
                     yield from (OWLObjectPropertyAssertionAxiom(i, op, ind) for ind in
                                 self.get_object_property_values(i, op))
             elif mode == "expression":
-                mapping = dict()
+                object_restrictions_quantifiers = dict()
                 # To no return duplicate objects.
                 quantifier_gate = set()
                 # (1) Iterate over triples where individual is in the subject position. Recursion
                 for s, p, o in self.abox(individual=individual, mode="native"):
                     if isinstance(p, IRI) and isinstance(o, OWLClass):
-                        # RETURN MEMBERSHIP/Type INFORMATION: C(s)
+                        """ Return OWLClass """
                         yield o
                     elif isinstance(p, OWLObjectProperty) and isinstance(o, OWLNamedIndividual):
-                        mapping.setdefault(p, []).append(o)
+                        """ STORE: ObjectSomeValuesFrom with ObjectOneOf over OWLNamedIndividual"""
+                        object_restrictions_quantifiers.setdefault(p, []).append(o)
                     elif isinstance(p, OWLDataProperty) and isinstance(o, OWLLiteral):
-                        assert isinstance(o, OWLLiteral), f"OWL Data Property should map to Literal right ! {o}"
-                        yield p, o
+                        """ RETURN: OWLDataSomeValuesFrom with OWLDataOneOf over OWLLiteral"""
+                        yield OWLDataSomeValuesFrom(property=p, filler=OWLDataOneOf(o))
                     else:
                         raise RuntimeError("Unrecognized triples to expression mappings")
 
-                for k, iter_inds in mapping.items():
+                for k, iter_inds in object_restrictions_quantifiers.items():
                     # RETURN Existential Quantifiers over Nominals: \exists r. {x....y}
                     for x in iter_inds:
                         yield OWLObjectSomeValuesFrom(property=k, filler=OWLObjectOneOf(values=x))
@@ -277,13 +290,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
                     count: int
                     for type_, count in Counter(
                             [type_i for i in iter_inds for type_i in self.get_types(ind=i, direct=True)]).items():
-                        min_cardinality_item = OWLObjectMinCardinality(cardinality=count, property=k, filler=type_)
-                        if min_cardinality_item in quantifier_gate:
-                            continue
-                        else:
-                            quantifier_gate.add(min_cardinality_item)
-                            # RETURN \ge number r. C
-                            yield min_cardinality_item
                         existential_quantifier = OWLObjectSomeValuesFrom(property=k, filler=type_)
                         if existential_quantifier in quantifier_gate:
                             continue
@@ -291,6 +297,16 @@ class KnowledgeBase(AbstractKnowledgeBase):
                             # RETURN Existential Quantifiers over Concepts: \exists r. C
                             quantifier_gate.add(existential_quantifier)
                             yield existential_quantifier
+                        if count > 1:
+                            min_cardinality_item = OWLObjectMinCardinality(cardinality=count, property=k, filler=type_)
+                            if min_cardinality_item in quantifier_gate:
+                                continue
+                            else:
+                                quantifier_gate.add(min_cardinality_item)
+                                # RETURN \ge number r. C
+                                yield min_cardinality_item
+
+
             else:
                 raise RuntimeError(f"Unrecognized mode:{mode}")
 
@@ -347,14 +363,14 @@ class KnowledgeBase(AbstractKnowledgeBase):
                          in
                          self.get_direct_parents(concept)]
                 elif mode == 'iri':
-                    [results.add((j.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subClassOf",
-                                  concept.get_iri().as_str())) for j in self.get_direct_sub_concepts(concept)]
-                    [results.add((concept.get_iri().as_str(), "http://www.w3.org/2002/07/owl#equivalentClass",
-                                  cast(OWLClass, j).get_iri().as_str())) for j in
+                    [results.add((j.str, "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+                                  concept.str)) for j in self.get_direct_sub_concepts(concept)]
+                    [results.add((concept.str, "http://www.w3.org/2002/07/owl#equivalentClass",
+                                  cast(OWLClass, j).str)) for j in
                      self.reasoner.equivalent_classes(concept, only_named=True)]
                     if not include_all:
-                        [results.add((concept.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subClassOf",
-                                      j.get_iri().as_str())) for j in self.get_direct_parents(concept)]
+                        [results.add((concept.str, "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+                                      j.str)) for j in self.get_direct_parents(concept)]
                 elif mode == "axiom":
                     [results.add(OWLSubClassOfAxiom(super_class=concept, sub_class=j)) for j in
                      self.get_direct_sub_concepts(concept)]
@@ -384,40 +400,41 @@ class KnowledgeBase(AbstractKnowledgeBase):
                         [results.add((prop, IRI.create("http://www.w3.org/2000/01/rdf-schema#subPropertyOf"), j)) for j
                          in getattr(self.reasoner, "super_" + prop_type.lower() + "_properties")(prop, direct=True)]
                 elif mode == 'iri':
-                    [results.add((j.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subPropertyOf",
-                                  prop.get_iri().as_str())) for j in
+                    [results.add((j.str, "http://www.w3.org/2000/01/rdf-schema#subPropertyOf",
+                                  prop.str)) for j in
                      getattr(self.reasoner, "sub_" + prop_type.lower() + "_properties")(prop, direct=True)]
-                    [results.add((prop.get_iri().as_str(), "http://www.w3.org/2002/07/owl#equivalentProperty",
-                                  j.get_iri().as_str())) for j in
+                    [results.add((prop.str, "http://www.w3.org/2002/07/owl#equivalentProperty",
+                                  j.str)) for j in
                      getattr(self.reasoner, "equivalent_" + prop_type.lower() + "_properties")(prop)]
-                    [results.add((prop.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#domain",
-                                  j.get_iri().as_str())) for j in
+                    [results.add((prop.str, "http://www.w3.org/2000/01/rdf-schema#domain",
+                                  j.str)) for j in
                      getattr(self.reasoner, prop_type.lower() + "_property_domains")(prop, direct=True)]
                     if prop_type == 'Object':
-                        [results.add((prop.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#range",
-                                      j.get_iri().as_str())) for j in
+                        [results.add((prop.str, "http://www.w3.org/2000/01/rdf-schema#range",
+                                      j.str)) for j in
                          self.reasoner.object_property_ranges(prop, direct=True)]
                     # # ranges of data properties not implemented for this mode
                     # else:
-                    #     [results.add((prop.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#range",
+                    #     [results.add((prop.str, "http://www.w3.org/2000/01/rdf-schema#range",
                     #                   str(j))) for j in self.reasoner.data_property_ranges(prop, direct=True)]
 
                     if not include_all:
-                        [results.add((prop.get_iri().as_str(), "http://www.w3.org/2000/01/rdf-schema#subPropertyOf",
-                                      j.get_iri().as_str())) for j
+                        [results.add((prop.str, "http://www.w3.org/2000/01/rdf-schema#subPropertyOf",
+                                      j.str)) for j
                          in getattr(self.reasoner, "super_" + prop_type.lower() + "_properties")(prop, direct=True)]
                 elif mode == 'axiom':
-                    [results.add(getattr(owlapy.model, "OWLSub" + prop_type + "PropertyOfAxiom")(j, prop)) for j in
+                    [results.add(getattr(owlapy.owl_axiom, "OWLSub" + prop_type + "PropertyOfAxiom")(j, prop)) for j in
                      getattr(self.reasoner, "sub_" + prop_type.lower() + "_properties")(prop, direct=True)]
-                    [results.add(getattr(owlapy.model, "OWLEquivalent" + prop_type + "PropertiesAxiom")([j, prop])) for
+                    [results.add(getattr(owlapy.owl_axiom, "OWLEquivalent" + prop_type + "PropertiesAxiom")([j, prop]))
+                     for
                      j in
                      getattr(self.reasoner, "equivalent_" + prop_type.lower() + "_properties")(prop)]
-                    [results.add(getattr(owlapy.model, "OWL" + prop_type + "PropertyDomainAxiom")(prop, j)) for j in
+                    [results.add(getattr(owlapy.owl_axiom, "OWL" + prop_type + "PropertyDomainAxiom")(prop, j)) for j in
                      getattr(self.reasoner, prop_type.lower() + "_property_domains")(prop, direct=True)]
-                    [results.add(getattr(owlapy.model, "OWL" + prop_type + "PropertyRangeAxiom")(prop, j)) for j in
+                    [results.add(getattr(owlapy.owl_axiom, "OWL" + prop_type + "PropertyRangeAxiom")(prop, j)) for j in
                      getattr(self.reasoner, prop_type.lower() + "_property_ranges")(prop, direct=True)]
                     if not include_all:
-                        [results.add(getattr(owlapy.model, "OWLSub" + prop_type + "PropertyOfAxiom")(prop, j)) for j
+                        [results.add(getattr(owlapy.owl_axiom, "OWLSub" + prop_type + "PropertyOfAxiom")(prop, j)) for j
                          in getattr(self.reasoner, "super_" + prop_type.lower() + "_properties")(prop, direct=True)]
 
         return results
@@ -507,6 +524,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Length of the concept.
         """
+        # @TODO: CD: Computing the length of a concept should be disantangled from KB
+        # @TODO: CD: Ideally, this should be a static function
 
         return self.length_metric.length(ce)
 
@@ -729,6 +748,19 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Leaf classes { x \\| (x subClassOf concept) AND not exist y: y subClassOf x )}. """
         assert isinstance(concept, OWLClass)
         yield from self.class_hierarchy.leaves(of=concept)
+
+    def get_least_general_named_concepts(self) -> Generator[OWLClass, None, None]:
+        """Get leaf classes.
+        @TODO: Docstring needed
+        Returns:
+        """
+        yield from self.class_hierarchy.leaves()
+
+    def get_most_general_named_concepts(self) -> Generator[OWLClass, None, None]:
+        """Get most general named concepts classes.
+        @TODO: Docstring needed
+        Returns:"""
+        yield from self.get_concepts()
 
     def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
         """Direct sub-classes of atomic class.
@@ -962,6 +994,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
         yield from self.class_hierarchy.items()
 
+    def get_classes_in_signature(self):
+        return self.get_concepts()
+
     @property
     def concepts(self) -> Iterable[OWLClass]:
         """Get all concepts of this concept generator.
@@ -1030,6 +1065,15 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Numeric data properties.
         """
         yield from self.get_data_properties(NUMERIC_DATATYPES)
+
+    def get_double_data_properties(self) -> Iterable[OWLDataProperty]:
+        """Get all numeric data properties of this concept generator.
+
+        Returns:
+            Numeric data properties.
+        """
+        yield from self.get_data_properties(DoubleOWLDatatype)
+
 
     def get_time_data_properties(self) -> Iterable[OWLDataProperty]:
         """Get all time data properties of this concept generator.

@@ -3,12 +3,13 @@
 import logging
 from abc import ABCMeta, abstractmethod
 from typing import Set, List, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional
-
-from owlapy.model import OWLClassExpression, OWLOntology
+from owlapy.class_expression import OWLClassExpression
+from owlapy.owl_ontology import OWLOntology
 from owlapy.util import iter_count
 from .data_struct import Experience
 from .utils import read_csv
 from collections import OrderedDict
+
 _N = TypeVar('_N')  #:
 _KB = TypeVar('_KB', bound='AbstractKnowledgeBase')  #:
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # @TODO:CD: Each Class definiton in abstract.py should share a prefix, e.g., BaseX or AbstractX.
 # @TODO:CD: All imports must be located on top of the script
-
+from owlapy import owl_expression_to_dl
 class EncodedLearningProblem(metaclass=ABCMeta):
     """Encoded Abstract learning problem for use in Scorers."""
     __slots__ = ()
@@ -599,16 +600,18 @@ class DRILLAbstractTree:
         assert len(self.search_tree) > 1
         return [i for i in self.search_tree.get_top_n_nodes(n)]
 
-    def show_search_tree(self, th, top_n=10):
+    def show_search_tree(self, top_n=100):
         """
         Show search tree.
         """
-        print(f'######## {th}.step\t Top 10 nodes in Search Tree \t |Search Tree|={self.__len__()} ###########')
         predictions = list(self.get_top_n_nodes(top_n))
-        for ith, node in enumerate(predictions):
-            print(f'{ith + 1}-\t{node}')
         print('######## Search Tree ###########\n')
+        for ith, node in enumerate(predictions):
+            print(f"{ith + 1}-\t{owl_expression_to_dl(node.concept)} | Quality:{node.quality}| Heuristic:{node.heuristic}")
+        print('\n######## Search Tree ###########\n')
         return predictions
+
+
 
     def show_best_nodes(self, top_n, key=None):
         assert key
