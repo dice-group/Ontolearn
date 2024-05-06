@@ -26,7 +26,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
     def test_instances(self):
         NS = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/Family/father.owl"))
 
         male = OWLClass(IRI.create(NS, 'male'))
         female = OWLClass(IRI.create(NS, 'female'))
@@ -77,7 +77,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
     def test_complement(self):
         NS = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
 
         male = OWLClass(IRI.create(NS, 'male'))
         female = OWLClass(IRI.create(NS, 'female'))
@@ -105,7 +105,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
     def test_all_values(self):
         NS = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
 
         has_child = OWLObjectProperty(IRI(NS, 'hasChild'))
 
@@ -121,7 +121,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
     def test_complement2(self):
         NS = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
 
         male = OWLClass(IRI.create(NS, 'male'))
         female = OWLClass(IRI.create(NS, 'female'))
@@ -243,7 +243,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
     def test_data_properties_time(self):
         NS = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
 
         with onto._onto:
             class birthDate(DataProperty):
@@ -362,7 +362,7 @@ class Owlapy_FastInstanceChecker_Test(unittest.TestCase):
     def test_inverse(self):
         ns = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
 
         has_child = OWLObjectProperty(IRI(ns, 'hasChild'))
         has_child_inverse = OWLObjectProperty(IRI.create(ns, 'hasChild_inverse'))

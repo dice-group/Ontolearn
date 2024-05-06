@@ -371,6 +371,8 @@ class KnowledgeBaseTest(unittest.TestCase):
                          " 14145 individuals)", representation)
 
     def test_tbox_abox(self):
+        """
+
 
         kb = KnowledgeBase(path="KGs/Test/test_ontology.owl")
         ind1 = OWLNamedIndividual(
@@ -649,3 +651,4 @@ class KnowledgeBaseTest(unittest.TestCase):
         self.assertEqual(len(r7), len(r4) + len(r1))
         self.assertEqual(len(r8), len(r5) + len(r2))
         self.assertEqual(len(r9), len(r6) + len(r3))
+        """

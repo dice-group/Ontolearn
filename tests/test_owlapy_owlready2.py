@@ -218,7 +218,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
     def test_instances(self):
         ns = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/Family/father.owl"))
         reasoner = OWLReasoner_Owlready2(onto)
 
         inst = frozenset(reasoner.instances(OWLThing))
@@ -238,7 +238,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
     def test_types(self):
         ns = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
         reasoner = OWLReasoner_Owlready2(onto)
 
         types = frozenset(reasoner.types(OWLNamedIndividual(IRI.create(ns, 'stefan'))))
@@ -248,7 +248,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
     def test_object_values(self):
         ns = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
         reasoner = OWLReasoner_Owlready2(onto)
 
         stefan = OWLNamedIndividual(IRI.create(ns, 'stefan'))
@@ -359,7 +359,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
     def test_ind_object_properties(self):
         ns = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
         base_reasoner = OWLReasoner_Owlready2(onto)
         reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner)
 
@@ -401,7 +401,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
     def test_add_remove_axiom(self):
         ns = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
         reasoner = OWLReasoner_Owlready2(onto)
 
         markus = OWLNamedIndividual(IRI.create(ns, 'markus'))
@@ -583,7 +583,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
     def test_mapping(self):
         ns = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
 
         male = OWLClass(IRI.create(ns, 'male'))
         female = OWLClass(IRI.create(ns, 'female'))
@@ -696,7 +696,7 @@ class Owlapy_Owlready2_Test(unittest.TestCase):
     def test_mapping_rev(self):
         ns = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
 
         male = onto._onto.male
         female = onto._onto.female
@@ -805,7 +805,7 @@ class Owlapy_Owlready2_ComplexCEInstances_Test(unittest.TestCase):
     def test_instances(self):
         ns = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
 
         male = OWLClass(IRI.create(ns, 'male'))
         female = OWLClass(IRI.create(ns, 'female'))
@@ -833,7 +833,7 @@ class Owlapy_Owlready2_ComplexCEInstances_Test(unittest.TestCase):
 
         ns = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/father.owl"))
 
         reasoner1 = OWLReasoner_Owlready2(onto)
         ccei_reasoner = OWLReasoner_Owlready2_ComplexCEInstances(onto, isolate=True)
