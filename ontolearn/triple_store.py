@@ -791,6 +791,27 @@ class TripleStoreReasonerOntology:
         for binding in self.query(query).json()["results"]["bindings"]:
             yield OWLClass(binding["x"]["value"])
 
+    def most_general_classes(self) -> Iterable[OWLClass]:
+        """At least it has single subclass and there is no superclass"""
+        query = f"""{rdf_prefix}{rdfs_prefix}{owl_prefix} SELECT ?x WHERE {{
+        ?concept rdf:type owl:Class .
+        FILTER EXISTS {{ ?x rdfs:subClassOf ?z . }}
+        FILTER NOT EXISTS {{ ?y rdfs:subClassOf ?x . }}
+        }}
+        """
+        for binding in self.query(query).json()["results"]["bindings"]:
+            yield OWLClass(binding["x"]["value"])
+
+    def least_general_named_concepts(self) -> Generator[OWLClass, None, None]:
+        """At least it has single superclass and there is no subclass"""
+        query = f"""{rdf_prefix}{rdfs_prefix}{owl_prefix} SELECT ?concept WHERE {{
+        ?concept rdf:type owl:Class .
+        FILTER EXISTS {{ ?concept rdfs:subClassOf ?x . }}
+        FILTER NOT EXISTS {{ ?y rdfs:subClassOf ?concept . }}
+        }}"""
+        for binding in self.query(query).json()["results"]["bindings"]:
+            yield OWLClass(binding["concept"]["value"])
+
     def get_direct_parents(self, named_concept: OWLClass):
         """Father rdf:subClassOf Person"""
         assert isinstance(named_concept, OWLClass)
@@ -808,24 +829,6 @@ class TripleStoreReasonerOntology:
             query = f"""{rdf_prefix} SELECT ?x WHERE {{ ?x rdf:subClassOf {str_named_concept}. }} """
         for str_iri in self.query(query):
             yield OWLClass(str_iri)
-
-    def most_general_named_concepts(self) -> Generator[OWLClass, None, None]:
-        """concepts not having a subclass are considered as most general classes"""
-        query = f"""{rdf_prefix}\n{rdfs_prefix}\n{owl_prefix}\n
-        SELECT ?x WHERE {{ ?x rdf:type owl:Class. 
-        FILTER NOT EXISTS {{?x rdfs:subClassOf ?concept .
-                            FILTER (?x != ?concept)}}
-                            }} """
-        for binding in self.query(query).json()["results"]["bindings"]:
-            yield OWLClass(binding["x"]["value"])
-
-    def least_general_named_concepts(self) -> Generator[OWLClass, None, None]:
-        query = f"""{rdf_prefix}\n{rdfs_prefix}\n{owl_prefix}\n
-        SELECT ?x WHERE {{ ?x rdf:type owl:Class. 
-        FILTER NOT EXISTS {{?subConcept rdfs:subClassOf ?x .
-                            FILTER (?subConcept != ?x)}}}} """
-        for binding in self.query(query).json()["results"]["bindings"]:
-            yield OWLClass(binding["x"]["value"])
 
     def get_type_individuals(self, individual: str):
         query = f"""SELECT DISTINCT ?x WHERE {{ <{individual}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?x }}"""
@@ -1048,8 +1051,14 @@ class TripleStore:
     def get_data_properties(self):
         yield from self.reasoner.data_properties_in_signature()
 
+    def get_concepts(self) -> OWLClass:
+        yield from self.reasoner.classes_in_signature()
+
     def get_classes_in_signature(self) -> OWLClass:
         yield from self.reasoner.classes_in_signature()
+
+    def get_most_general_classes(self):
+        yield from self.reasoner.most_general_classes()
 
     def get_boolean_data_properties(self):
         yield from self.reasoner.boolean_data_properties()
