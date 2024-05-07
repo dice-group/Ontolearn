@@ -684,6 +684,8 @@ class TreeNode(Generic[_N]):
 class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
     """
 
+    #@TODO Move to learners/drill.py
+
     Search tree based on priority queue.
 
     Parameters
@@ -733,7 +735,7 @@ class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
         predictions = sorted(
             [(neg_heuristic, length, self.nodes[dl_representation]) for neg_heuristic, length, dl_representation in
              self.items_in_queue.queue])[:top_n]
-        print('\n######## Current Search Tree ###########\n')
+        print(f"\n######## Current Search Tree {len(self.items_in_queue.queue)} ###########\n")
         for ith, (_, __, node) in enumerate(predictions):
             print(
                 f"{ith + 1}-\t{owl_expression_to_dl(node.concept)} | Quality:{node.quality:.3f}| Heuristic:{node.heuristic:.3f}")

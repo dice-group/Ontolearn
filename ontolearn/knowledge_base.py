@@ -3,7 +3,7 @@
 import logging
 import random
 from collections import Counter
-from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict, cast
+from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict, cast, Generator
 
 import owlapy
 from owlapy.class_expression import OWLClassExpression, OWLClass, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
@@ -14,7 +14,7 @@ from owlapy.owl_axiom import OWLClassAssertionAxiom, OWLObjectPropertyAssertionA
 from owlapy.owl_data_ranges import OWLDataRange
 from owlapy.owl_datatype import OWLDatatype
 from owlapy.owl_individual import OWLNamedIndividual
-from owlapy.owl_literal import BooleanOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, OWLLiteral
+from owlapy.owl_literal import BooleanOWLDatatype, NUMERIC_DATATYPES, DoubleOWLDatatype, TIME_DATATYPES, OWLLiteral
 from owlapy.owl_ontology import OWLOntology
 from owlapy.owl_ontology_manager import OWLOntologyManager
 from owlapy.owl_property import OWLObjectProperty, OWLDataProperty, OWLObjectPropertyExpression, \
@@ -300,7 +300,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                             # RETURN Existential Quantifiers over Concepts: \exists r. C
                             quantifier_gate.add(existential_quantifier)
                             yield existential_quantifier
-                        if count>1:
+                        if count > 1:
                             min_cardinality_item = OWLObjectMinCardinality(cardinality=count, property=k, filler=type_)
                             if min_cardinality_item in quantifier_gate:
                                 continue
@@ -527,6 +527,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Length of the concept.
         """
+        # @TODO: CD: Computing the length of a concept should be disantangled from KB
+        # @TODO: CD: Ideally, this should be a static function
 
         return self.length_metric.length(ce)
 
@@ -750,16 +752,25 @@ class KnowledgeBase(AbstractKnowledgeBase):
         assert isinstance(concept, OWLClass)
         yield from self.class_hierarchy.leaves(of=concept)
 
-    def least_general_named_concepts(self):
+    def get_least_general_named_concepts(self) -> Generator[OWLClass, None, None]:
         """Get leaf classes.
-
-        Args:
-            concept: Atomic class for which to find leaf classes.
-
+        @TODO: Docstring needed
         Returns:
-            Leaf classes { x \\| (x subClassOf concept) AND not exist y: y subClassOf x )}. """
+        """
         yield from self.class_hierarchy.leaves()
 
+    def least_general_named_concepts(self) -> Generator[OWLClass, None, None]:
+        """Get leaf classes.
+        @TODO: Docstring needed
+        Returns:
+        """
+        yield from self.class_hierarchy.leaves()
+
+    def get_most_general_classes(self) -> Generator[OWLClass, None, None]:
+        """Get most general named concepts classes.
+        @TODO: Docstring needed
+        Returns:"""
+        yield from self.class_hierarchy.roots()
 
     def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
         """Direct sub-classes of atomic class.
@@ -993,6 +1004,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
         yield from self.class_hierarchy.items()
 
+    def get_classes_in_signature(self):
+        return self.get_concepts()
+
     @property
     def concepts(self) -> Iterable[OWLClass]:
         """Get all concepts of this concept generator.
@@ -1061,6 +1075,14 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Numeric data properties.
         """
         yield from self.get_data_properties(NUMERIC_DATATYPES)
+
+    def get_double_data_properties(self) -> Iterable[OWLDataProperty]:
+        """Get all numeric data properties of this concept generator.
+
+        Returns:
+            Numeric data properties.
+        """
+        yield from self.get_data_properties(DoubleOWLDatatype)
 
     def get_time_data_properties(self) -> Iterable[OWLDataProperty]:
         """Get all time data properties of this concept generator.

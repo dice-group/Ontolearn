@@ -14,7 +14,7 @@ class BinningValueSplitter_Test(unittest.TestCase):
     def test_binning_splitter_numeric(self):
         namespace_ = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/Family/father.owl"))
 
         with onto._onto:
             class test_int(DataProperty):
@@ -46,7 +46,7 @@ class BinningValueSplitter_Test(unittest.TestCase):
     def test_binning_splitter_time(self):
         namespace_ = "http://example.com/father#"
         mgr = OWLOntologyManager_Owlready2()
-        onto = mgr.load_ontology(IRI.create("file://KGs/Father/father.owl"))
+        onto = mgr.load_ontology(IRI.create("file://KGs/Family/father.owl"))
 
         with onto._onto:
             class test_time(DataProperty):

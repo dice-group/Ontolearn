@@ -18,7 +18,7 @@ from itertools import chain
 import time
 import dicee
 import os
-from owlapy.render import DLSyntaxObjectRenderer
+from owlapy import owl_expression_to_dl
 # F1 class will be deprecated to become compute_f1_score function.
 from ontolearn.metrics import F1
 from ontolearn.utils.static_funcs import compute_f1_score
@@ -27,6 +27,7 @@ from ontolearn.heuristics import CeloeBasedReward
 import torch
 from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
 from tqdm import tqdm
+from ..base.owl.utils import OWLClassExpressionLengthMetric
 
 
 class Drill(RefinementBasedConceptLearner):
@@ -38,18 +39,18 @@ class Drill(RefinementBasedConceptLearner):
                  use_inverse=True,
                  use_data_properties=True,
                  use_card_restrictions=True,
-                 card_limit=3,
                  use_nominals=True,
                  quality_func: Callable = None,
                  reward_func: object = None,
                  batch_size=None, num_workers: int = 1,
-                 iter_bound=None, max_num_of_concepts_tested=None, verbose: int = 0, terminate_on_goal=None,
+                 iter_bound=None, max_num_of_concepts_tested=None, verbose: int = 1, terminate_on_goal=None,
                  max_len_replay_memory=256,
                  epsilon_decay: float = 0.01, epsilon_min: float = 0.0,
-                 num_epochs_per_replay: int = 100,
-                 num_episodes_per_replay: int = 2, learning_rate: float = 0.001,
+                 num_epochs_per_replay: int = 2,
+                 num_episodes_per_replay: int = 2,
+                 learning_rate: float = 0.001,
                  max_runtime=None,
-                 num_of_sequential_actions=1,
+                 num_of_sequential_actions=3,
                  stop_at_goal=True,
                  num_episode=10):
 
@@ -101,7 +102,6 @@ class Drill(RefinementBasedConceptLearner):
         self.storage_path, _ = create_experiment_folder()
         # Move to here
         self.search_tree = DRILLSearchTreePriorityQueue()
-        self.renderer = DLSyntaxObjectRenderer()
         self.stop_at_goal = stop_at_goal
         self.epsilon = 1
 
@@ -175,13 +175,17 @@ class Drill(RefinementBasedConceptLearner):
 
         # (2) Reinforcement Learning offline training loop
         for th in range(num_episode):
-            # print(f"Episode {th + 1}: ", end=" ")
+            if self.verbose > 0:
+                print(f"Episode {th + 1}: ", end=" ")
             # Sequence of decisions
             start_time = time.time()
+            if self.verbose > 0:
+                print(f"Taking {self.num_of_sequential_actions} actions...", end="  ")
+
             sequence_of_states, rewards = self.sequence_of_actions(root_rl_state)
-            # print(f"Runtime {time.time() - start_time:.3f} secs", end=" | ")
-            # print(f"Max reward: {max(rewards)}", end=" | ")
-            # print(f"Epsilon : {self.epsilon}")
+            if self.verbose > 0:
+                print(f"Runtime {time.time() - start_time:.3f} secs | Max reward: {max(rewards):.3f} | Prob of Explore {self.epsilon:.3f}",
+                    end=" | ")
             # Form experiences
             self.form_experiences(sequence_of_states, rewards)
             sum_of_rewards_per_actions.append(sum(rewards))
@@ -194,8 +198,9 @@ class Drill(RefinementBasedConceptLearner):
 
         return sum_of_rewards_per_actions
 
-    def train(self, dataset: Optional[Iterable[Tuple[str, Set, Set]]] = None, num_of_target_concepts: int = 3,
-              num_learning_problems: int = 3):
+    def train(self, dataset: Optional[Iterable[Tuple[str, Set, Set]]] = None,
+              num_of_target_concepts: int = 1,
+              num_learning_problems: int = 1):
         """ Training RL agent
         (1) Generate Learning Problems
         (2) For each learning problem, perform the RL loop
@@ -204,22 +209,23 @@ class Drill(RefinementBasedConceptLearner):
         if isinstance(self.heuristic_func, CeloeBasedReward):
             print("No training")
             return self.terminate_training()
-        examples = []
 
         if self.verbose > 0:
-            training_data = tqdm(self.generate_learning_problems(dataset,
-                                                                 num_of_target_concepts,
+            training_data = tqdm(self.generate_learning_problems(num_of_target_concepts,
                                                                  num_learning_problems),
                                  desc="Training over learning problems")
         else:
-            training_data = self.generate_learning_problems(dataset,
-                                                            num_of_target_concepts,
+            training_data = self.generate_learning_problems(num_of_target_concepts,
                                                             num_learning_problems)
+
         for (target_owl_ce, positives, negatives) in training_data:
-            # print(f"Goal Concept:\t {target_owl_ce}\tE^+:[{len(positives)}]\t E^-:[{len(negatives)}]")
+            print(f"\nGoal Concept:\t {target_owl_ce}\tE^+:[{len(positives)}]\t E^-:[{len(negatives)}]")
             sum_of_rewards_per_actions = self.rl_learning_loop(num_episode=self.num_episode,
                                                                pos_uri=frozenset(positives),
                                                                neg_uri=frozenset(negatives))
+            if self.verbose > 0:
+                print("Sum of rewards for each trial", sum_of_rewards_per_actions)
+
             self.seen_examples.setdefault(len(self.seen_examples), dict()).update(
                 {'Concept': target_owl_ce,
                  'Positives': [i.str for i in positives],
@@ -257,9 +263,11 @@ class Drill(RefinementBasedConceptLearner):
         # (2) Two mappings from a unique OWL Concept to integer, where a unique concept represents the type info
         # C(x) s.t. x \in E^+ and  C(y) s.t. y \in E^-.
         # print("Counting types of positive examples..")
-        pos_type_counts = Counter([i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.pos))])
+        pos_type_counts = Counter(
+            [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.pos))])
         # print("Counting types of negative examples..")
-        neg_type_counts = Counter([i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.neg))])
+        neg_type_counts = Counter(
+            [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.neg))])
         # (3) Favor some OWLClass over others
         type_bias = pos_type_counts - neg_type_counts
         # (4) Initialize learning problem
@@ -275,8 +283,8 @@ class Drill(RefinementBasedConceptLearner):
         for x in (self.create_rl_state(i, parent_node=root_state) for i in type_bias):
             self.compute_quality_of_class_expression(x)
             x.heuristic = x.quality
-            if x.quality>best_found_quality:
-                best_found_quality=x.quality
+            if x.quality > best_found_quality:
+                best_found_quality = x.quality
             self.search_tree.add(x)
 
         for _ in tqdm(range(0, self.iter_bound),
@@ -391,7 +399,8 @@ class Drill(RefinementBasedConceptLearner):
                         is_root: bool = False) -> RL_State:
         """ Create an RL_State instance."""
         rl_state = RL_State(c, parent_node=parent_node, is_root=is_root)
-        rl_state.length = self.kb.concept_len(c)
+        # TODO: Will be fixed by https://github.com/dice-group/owlapy/issues/35
+        rl_state.length = OWLClassExpressionLengthMetric.get_default().length(c)
         return rl_state
 
     def compute_quality_of_class_expression(self, state: RL_State) -> None:
@@ -503,21 +512,24 @@ class Drill(RefinementBasedConceptLearner):
             self.emb_pos.repeat((num_next_states, 1, 1)),
             self.emb_neg.repeat((num_next_states, 1, 1))], 1)
 
-        # print(f'Experiences:{X.shape}', end="\t|\t")
         self.heuristic_func.net.train()
         total_loss = 0
+        if self.verbose > 0:
+            print(f"Experience replay Experiences ({X.shape})", end=" | ")
         for m in range(self.num_epochs_per_replay):
             self.optimizer.zero_grad()  # zero the gradient buffers
             # forward: n by 4, dim
             predicted_q = self.heuristic_func.net.forward(X)
             # loss
             loss = self.heuristic_func.net.loss(predicted_q, y)
+            if self.verbose > 0:
+                print(f"{m} Replay loss: {loss.item():.5f}", end=" | ")
             total_loss += loss.item()
             # compute the derivative of the loss w.r.t. the parameters using backpropagation
             loss.backward()
             # clip gradients if gradients are killed. =>torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
             self.optimizer.step()
-        # print(f'Average loss during training: {total_loss / self.num_epochs_per_replay:0.5f}')
+        print(f'Avg loss: {total_loss / self.num_epochs_per_replay:0.5f}')
         self.heuristic_func.net.eval()
 
     def update_search(self, concepts, predicted_Q_values=None):
@@ -690,9 +702,9 @@ class Drill(RefinementBasedConceptLearner):
             hierarchy.appendleft(rl_state)
         return list(hierarchy)
 
-    def generate_learning_problems(self, dataset: Optional[Iterable[Tuple[str, Set, Set]]] = None,
-                                   num_of_target_concepts: int = 3,
-                                   num_learning_problems: int = 5) -> Iterable[
+    def generate_learning_problems(self,
+                                   num_of_target_concepts,
+                                   num_learning_problems) -> List[
         Tuple[str, Set, Set]]:
         """ Generate learning problems if none is provided.
 
@@ -700,29 +712,56 @@ class Drill(RefinementBasedConceptLearner):
         """
         counter = 0
         size_of_examples = 3
+        examples=[]
+        # C: Iterate over all named OWL concepts
         for i in self.kb.get_concepts():
+            # Retrieve(C)
             individuals_i = set(self.kb.individuals(i))
+            if len(individuals_i)<size_of_examples:
+                continue
+            for j in self.kb.get_concepts():
+                if i == j:
+                    continue
+                str_dl_concept_i = owl_expression_to_dl(i)
+                individuals_j = set(self.kb.individuals(j))
+                if len(individuals_j) < size_of_examples:
+                    continue
+                # Generate Learning problems from a single target
+                for _ in range(num_of_target_concepts):
+                    lp = (str_dl_concept_i,
+                          set(random.sample(individuals_i, size_of_examples)),
+                          set(random.sample(individuals_j, size_of_examples)))
+                    examples.append(lp)
+                    counter += 1
+                    if counter == num_learning_problems:
+                        break
 
+                if counter == num_learning_problems:
+                    break
+
+
+            return examples
+            """
+            # if |Retrieve(C|>3
             if len(individuals_i) > size_of_examples:
-                str_dl_concept_i = self.renderer.render(i)
+                str_dl_concept_i = owl_expression_to_dl(i)
                 for j in self.kb.get_concepts():
                     if i == j:
                         continue
                     individuals_j = set(self.kb.individuals(j))
-                    if len(individuals_j) < size_of_examples:
-                        continue
-                    for _ in range(num_learning_problems):
-                        lp = (str_dl_concept_i,
-                              set(random.sample(individuals_i, size_of_examples)),
-                              set(random.sample(individuals_j, size_of_examples)))
-                        yield lp
+                    if len(individuals_j) > size_of_examples:
+                        for _ in range(num_learning_problems):
+                            lp = (str_dl_concept_i,
+                                  set(random.sample(individuals_i, size_of_examples)),
+                                  set(random.sample(individuals_j, size_of_examples)))
+                            yield lp
 
                     counter += 1
-
                     if counter == num_of_target_concepts:
                         break
                 if counter == num_of_target_concepts:
                     break
+            """
 
     def learn_from_illustration(self, sequence_of_goal_path: List[RL_State]):
         """
@@ -794,7 +833,8 @@ class Drill(RefinementBasedConceptLearner):
         assert ValueError('show_search_tree')
 
     def terminate_training(self):
-
+        if self.verbose > 0:
+            print("Training is completed..")
         # Save the weights
         self.save_weights()
         with open(f"{self.storage_path}/seen_examples.json", 'w', encoding='utf-8') as f:

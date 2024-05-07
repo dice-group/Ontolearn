@@ -60,18 +60,17 @@ def get_drill(data: dict) -> Drill:
     global kb
     drill = Drill(knowledge_base=kb,
                   path_embeddings=data.get("path_embeddings", None),
-                  refinement_operator=LengthBasedRefinement(knowledge_base=kb),
                   quality_func=F1(),
-                  num_of_sequential_actions=data.get("num_of_sequential_actions", 2),
-                  iter_bound=data.get("iter_bound", 100),
-                  max_runtime=data.get("max_runtime", 3))
+                  iter_bound=data.get("iter_bound", 10),  # total refinement operation applied
+                  max_runtime=data.get("max_runtime", 60),  # seconds
+                  verbose=1)
     # (2) Either load the weights of DRILL or train it.
     if data.get("pretrained", None):
         drill.load(directory=data["pretrained"])
     else:
         # Train & Save
         drill.train(num_of_target_concepts=data.get("num_of_target_concepts", 1),
-                    num_learning_problems=data.get("num_of_training_learning_problems", 3))
+                    num_learning_problems=data.get("num_of_training_learning_problems", 1))
         drill.save(directory="pretrained")
     return drill
 
@@ -94,6 +93,8 @@ def get_learner(data: dict) -> Union[Drill, TDL]:
 async def cel(data: dict) -> Dict:
     global args
     global kb
+    print("Initialized:", kb)
+    print(args)
     # (1) Initialize OWL CEL
     owl_learner = get_learner(data)
     # (2) Read Positives and Negatives.
@@ -140,7 +141,6 @@ def main():
         kb = TripleStore(url=args.endpoint_triple_store)
     else:
         raise RuntimeError("Either --path_knowledge_base or --endpoint_triplestore must be not None")
-
     uvicorn.run(app, host=args.host, port=args.port)
 
 
