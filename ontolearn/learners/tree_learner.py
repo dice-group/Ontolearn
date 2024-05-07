@@ -156,7 +156,7 @@ class TDL:
                  report_classification: bool = False,
                  plot_tree: bool = False,
                  plot_embeddings: bool = False,
-                 verbose: int = 0):
+                 verbose: int = 1):
         assert use_inverse is False, "use_inverse not implemented"
         assert use_data_properties is False, "use_data_properties not implemented"
         assert use_card_restrictions is False, "use_card_restrictions not implemented"
