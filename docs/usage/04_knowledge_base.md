@@ -43,7 +43,7 @@ The simplest way is to use the path of your _.owl_ file as follows:
 ```python 
 from ontolearn.knowledge_base import KnowledgeBase
 
-kb = KnowledgeBase(path="file://KGs/father.owl")
+kb = KnowledgeBase(path="file://KGs/Family/father.owl")
 ```
 
 What happens in the background is that the ontology located in this path will be loaded
@@ -62,7 +62,7 @@ have the opportunity to ignore specific concepts. Since we pass a `KnowledgeBase
 object to the concept learner, we set this ignored concept using the method 
 `ignore_and_copy` of the `KnowledgeBase` class.
 
-We don't have such concept in our example ontology `KGs/father.owl` but suppose that 
+We don't have such concept in our example ontology `KGs/Family/father.owl` but suppose that 
 there is a class(concept) "Father" that we want to ignore, because we are trying
 to learn this a meaningful class expression for 'Father' using other classes(e.g. male, female, ∃ hasChild.⊤... ).
 So we need to ignore this concept before fitting a model (model fitting is covered in [concept learning](06_concept_learners.md)).

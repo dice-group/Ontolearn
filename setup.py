@@ -73,7 +73,7 @@ extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "gradio", "ontosa
 setup(
     name="ontolearn",
     description="Ontolearn is an open-source software library for structured machine learning in Python. Ontolearn includes modules for processing knowledge bases, inductive logic programming and ontology engineering.",
-    version="0.7.0",
+    version="0.7.1",
     packages=find_packages(),
     install_requires=extras["min"],
     extras_require=extras,
@@ -82,7 +82,7 @@ setup(
     url='https://github.com/dice-group/Ontolearn',
     classifiers=[
         "Programming Language :: Python :: 3.10",
-        "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+        "License :: OSI Approved :: MIT License",
         "Topic :: Scientific/Engineering :: Artificial Intelligence"],
     python_requires='>=3.10.13',
     entry_points={"console_scripts": ["ontolearn-webservice=ontolearn.scripts.run:main"]},

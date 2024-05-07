@@ -14,7 +14,7 @@ from owlapy.owl_axiom import OWLClassAssertionAxiom, OWLObjectPropertyAssertionA
 from owlapy.owl_data_ranges import OWLDataRange
 from owlapy.owl_datatype import OWLDatatype
 from owlapy.owl_individual import OWLNamedIndividual
-from owlapy.owl_literal import BooleanOWLDatatype, NUMERIC_DATATYPES, DoubleOWLDatatype,TIME_DATATYPES, OWLLiteral
+from owlapy.owl_literal import BooleanOWLDatatype, NUMERIC_DATATYPES, DoubleOWLDatatype, TIME_DATATYPES, OWLLiteral
 from owlapy.owl_ontology import OWLOntology
 from owlapy.owl_ontology_manager import OWLOntologyManager
 from owlapy.owl_property import OWLObjectProperty, OWLDataProperty, OWLObjectPropertyExpression, \
@@ -756,11 +756,18 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
         yield from self.class_hierarchy.leaves()
 
-    def get_most_general_named_concepts(self) -> Generator[OWLClass, None, None]:
+    def least_general_named_concepts(self) -> Generator[OWLClass, None, None]:
+        """Get leaf classes.
+        @TODO: Docstring needed
+        Returns:
+        """
+        yield from self.class_hierarchy.leaves()
+
+    def get_most_general_classes(self) -> Generator[OWLClass, None, None]:
         """Get most general named concepts classes.
         @TODO: Docstring needed
         Returns:"""
-        yield from self.get_concepts()
+        yield from self.class_hierarchy.roots()
 
     def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
         """Direct sub-classes of atomic class.
@@ -1073,7 +1080,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Numeric data properties.
         """
         yield from self.get_data_properties(DoubleOWLDatatype)
-
 
     def get_time_data_properties(self) -> Iterable[OWLDataProperty]:
         """Get all time data properties of this concept generator.

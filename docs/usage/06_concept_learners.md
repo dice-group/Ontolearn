@@ -382,7 +382,7 @@ Now just load the 'father' ontology using the following commands:
 ```shell
 cd ..
 
-Fuseki/apache-jena-4.7.0/bin/tdb2.tdbloader --loader=parallel --loc Fuseki/apache-jena-fuseki-4.7.0/databases/father/ KGs/father.owl
+Fuseki/apache-jena-4.7.0/bin/tdb2.tdbloader --loader=parallel --loc Fuseki/apache-jena-fuseki-4.7.0/databases/father/ KGs/Family/father.owl
 ```
 
 Launch the server, and it will be waiting eagerly for your queries.
