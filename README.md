@@ -85,49 +85,61 @@ Fore more please refer to  the [examples](https://github.com/dice-group/Ontolear
 
 ## ontolearn-webservice 
 
-### ontolearn-webservice on a locally available KG
-```shell
-# train a KGE
-dicee --path_single_kg KGs/Family/family-benchmark_rich_background.owl --path_to_store_single_run embeddings --backend rdflib --save_embeddings_as_csv --model Keci --num_epoch 10
-# Start a webservice and load a KG into memory
-ontolearn-webservice --path_knowledge_base KGs/Family/family-benchmark_rich_background.owl
-# Train and Eval DRILL
-curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://www.benchmark.org/family#F10F175"], "neg":["http://www.benchmark.org/family#F10F177"], "model":"Drill"}'
-# Eval a pretrained DRILL
-curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://www.benchmark.org/family#F10F175"], "neg":["http://www.benchmark.org/family#F10F177"], "model":"Drill","pretrained":"pretrained"}'
-```
-### ontolearn-webservice on a Triplestore
-```shell
-# sudo docker run -p 3030:3030 -e ADMIN_PASSWORD=pw123 stain/jena-fuseki
-# Login http://localhost:3030/#/ with admin and pw123
-# Create a new dataset called family and upload KGs/Family/family-benchmark_rich_background.owl
-ontolearn-webservice --endpoint_triple_store 'http://localhost:3030/family'
-```
+<details><summary> Click me! </summary>
 
-Sending learning problems to the endpoint via curl:
+Load an RDF knowledge graph 
 ```shell
-curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://www.benchmark.org/family#F10F175"], "neg":["http://www.benchmark.org/family#F10F177"], "model":"Drill"}'
+ontolearn-webservice --path_knowledge_base KGs/Mutagenesis/mutagenesis.owl
 ```
-Sending learning problems to the endpoint via the HTTP request:
+or launch a Tentris instance https://github.com/dice-group/tentris over Mutagenesis.
+```shell
+ontolearn-webservice --endpoint_triple_store http://0.0.0.0:9080/sparql
+```
+The below code will generate 6 learning problems to Train DRILL. 
+Thereafter, trained DRILL will be stored in a created file called pretrained.
+Finally, trained DRILL will learn an OWL class expression.
 ```python
 import json
 import requests
-with open("LPs/Family/lps.json") as json_file:
+with open(f"LPs/Mutagenesis/lps.json") as json_file:
     settings = json.load(json_file)
 for str_target_concept, examples in settings['problems'].items():
-    response = requests.get('http://0.0.0.0:8000/cel', headers={'accept': 'application/json', 'Content-Type': 'application/json'}, json={
-        "pos":  examples['positive_examples'],
-        "neg":  examples['negative_examples'],
-        "model": "Drill"
-    })
+    response = requests.get('http://0.0.0.0:8000/cel',
+                            headers={'accept': 'application/json', 'Content-Type': 'application/json'},
+                            json={ "pos": examples['positive_examples'],
+                                   "neg": examples['negative_examples'],
+                                   "model": "Drill",
+                                   "path_embeddings": "mutagenesis_embeddings/Keci_entity_embeddings.csv",
+                                   "num_of_training_learning_problems": 2,
+                                   "num_of_target_concepts":3,
+                                   "max_runtime": 10, # seconds
+                                   "iter_bound": 100 # number of iterations/applied refinement opt.
+                                   })
+    print(response.json())# {'Prediction': '∀ hasStructure.(¬Hetero_aromatic_5_ring)'}
+```
+The below code will upload pretrained DRILL and learn an OWL Class expression
+```python
+import json
+import requests
+with open(f"LPs/Mutagenesis/lps.json") as json_file:
+    settings = json.load(json_file)
+for str_target_concept, examples in settings['problems'].items():
+    response = requests.get('http://0.0.0.0:8000/cel',
+                            headers={'accept': 'application/json', 'Content-Type': 'application/json'}, json={
+            "pos": examples['positive_examples'],
+            "neg": examples['negative_examples'],
+            "model": "Drill",
+            "path_embeddings": "mutagenesis_embeddings/Keci_entity_embeddings.csv",
+            "pretrained":"pretrained",
+            "max_runtime": 10,
+            "iter_bound": 100,
+        })
     print(response.json())
 ```
-ontolearn-webservice also works with a remote endpoint as well.
-```shell
-ontolearn-webservice --endpoint_triple_store 'http://dice-dbpedia.cs.upb.de:9080/sparql'
-curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://dbpedia.org/resource/Angela_Merkel"], "neg":["http://dbpedia.org/resource/Barack_Obama"], "model":"TDL"}'
-# ~3 mins => {"Prediction":"¬(≥ 1 successor.WikicatNewYorkMilitaryAcademyAlumni)"}
-```
+
+
+</details>
+
 ## Benchmark Results
 ```shell
 # To download learning problems. # Benchmark learners on the Family benchmark dataset with benchmark learning problems.

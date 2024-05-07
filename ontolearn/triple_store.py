@@ -576,7 +576,6 @@ class TripleStoreReasonerOntology:
         for str_iri in self.query(query):
             yield OWLClass(str_iri)
 
-
     def get_type_individuals(self, individual: str):
         query = f"""SELECT DISTINCT ?x WHERE {{ <{individual}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?x }}"""
         for binding in self.query(query).json()["results"]["bindings"]:
@@ -762,12 +761,14 @@ class TripleStore:
     def get_data_properties(self):
         yield from self.reasoner.data_properties_in_signature()
 
+    def get_concepts(self) -> OWLClass:
+        yield from self.reasoner.classes_in_signature()
+
     def get_classes_in_signature(self) -> OWLClass:
         yield from self.reasoner.classes_in_signature()
 
     def get_most_general_classes(self):
         yield from self.reasoner.most_general_classes()
-
 
     def get_boolean_data_properties(self):
         yield from self.reasoner.boolean_data_properties()

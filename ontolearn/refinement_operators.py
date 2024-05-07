@@ -130,7 +130,8 @@ class LengthBasedRefinement(BaseRefinement):
         assert isinstance(class_expression, OWLClass), class_expression
         for i in self.top_refinements:
             if i.is_owl_nothing() is False:
-                if isinstance(i, OWLClass) and self.kb.are_owl_concept_disjoint(class_expression, i) is False:
+                # TODO: Include are_owl_concept_disjoint into Knowledgebase class
+                if isinstance(i, OWLClass):  #:and self.kb.are_owl_concept_disjoint(class_expression, i) is False:
                     yield OWLObjectIntersectionOf((class_expression, i))
                 else:
                     yield OWLObjectIntersectionOf((class_expression, i))
