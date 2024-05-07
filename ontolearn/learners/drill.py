@@ -259,7 +259,6 @@ class Drill(RefinementBasedConceptLearner):
         self.clean()
         # (1) Initialize the start time
         self.start_time = time.time()
-
         # (2) Two mappings from a unique OWL Concept to integer, where a unique concept represents the type info
         # C(x) s.t. x \in E^+ and  C(y) s.t. y \in E^-.
         # print("Counting types of positive examples..")
@@ -274,7 +273,7 @@ class Drill(RefinementBasedConceptLearner):
         root_state = self.initialize_training_class_expression_learning_problem(pos=learning_problem.pos,
                                                                                 neg=learning_problem.neg)
         self.operator.set_input_examples(pos=learning_problem.pos, neg=learning_problem.neg)
-
+        assert root_state.quality>0, f"Root state {root_state} must have quality >0"
         # (5) Add root state into search tree
         root_state.heuristic = root_state.quality
         self.search_tree.add(root_state)

@@ -32,6 +32,7 @@ from ..learners import Drill, TDL
 from ..metrics import F1
 from owlapy.render import DLSyntaxObjectRenderer
 from ..utils.static_funcs import save_owl_class_expressions
+from owlapy import owl_expression_to_dl
 
 app = FastAPI()
 args = None
@@ -54,7 +55,7 @@ async def root():
     return {"response": "Ontolearn Service is Running"}
 
 
-def get_drill(data: dict) -> Drill:
+def get_drill(data: dict):
     """ Initialize DRILL """
     # (1) Init DRILL.
     global kb
@@ -67,17 +68,19 @@ def get_drill(data: dict) -> Drill:
     # (2) Either load the weights of DRILL or train it.
     if data.get("pretrained", None):
         drill.load(directory=data["pretrained"])
+        data = dict()
     else:
         # Train & Save
         drill.train(num_of_target_concepts=data.get("num_of_target_concepts", 1),
                     num_learning_problems=data.get("num_of_training_learning_problems", 1))
         drill.save(directory="pretrained")
-    return drill
+        data = {"path_pretrained_model": "pretrained_drill"}
+    return drill, data
 
 
 def get_tdl(data):
     global kb
-    return TDL(knowledge_base=kb)
+    return TDL(knowledge_base=kb), dict()
 
 
 def get_learner(data: dict) -> Union[Drill, TDL]:
@@ -96,33 +99,35 @@ async def cel(data: dict) -> Dict:
     print("Initialized:", kb)
     print(args)
     # (1) Initialize OWL CEL
-    owl_learner = get_learner(data)
+    owl_learner, owl_kwargs = get_learner(data)
     # (2) Read Positives and Negatives.
     positives = {OWLNamedIndividual(IRI.create(i)) for i in data['pos']}
     negatives = {OWLNamedIndividual(IRI.create(i)) for i in data['neg']}
     # (5)
     if len(positives) > 0 and len(negatives) > 0:
-        dl_render = DLSyntaxObjectRenderer()
+        # () LP
         lp = PosNegLPStandard(pos=positives, neg=negatives)
         # Few variable definitions for the sake of the readability.
         learned_owl_expression: OWLClassExpression
         dl_learned_owl_expression: str
         individuals: Iterable[OWLNamedIndividual]
         train_f1: float
-        # Learning Process.
+        # ()Learning Process.
         learned_owl_expression = owl_learner.fit(lp).best_hypotheses()
-        dl_learned_owl_expression = dl_render.render(learned_owl_expression)
-        if data.get("compute_quality", None):
-            # Concept Retrieval.
-            individuals = kb.individuals(learned_owl_expression)
-            train_f1 = compute_f1_score(individuals=frozenset({i for i in individuals}),
-                                        pos=lp.pos,
-                                        neg=lp.neg)
-            save_owl_class_expressions(expressions=learned_owl_expression, path="Predictions")
-            return {"Prediction": dl_learned_owl_expression, "F1": train_f1, "saved_prediction": "Predictions.owl"}
-        else:
-            return {"Prediction": dl_learned_owl_expression}
-
+        # () OWL to DL
+        dl_learned_owl_expression = owl_expression_to_dl(learned_owl_expression)
+        # () Get Individuals
+        print("Retrieval of prediction... (it can be take time")
+        individuals = kb.individuals(learned_owl_expression)
+        # () F1 score training
+        train_f1 = compute_f1_score(individuals=frozenset({i for i in individuals}),
+                                    pos=lp.pos,
+                                    neg=lp.neg)
+        save_owl_class_expressions(expressions=learned_owl_expression, path="Predictions")
+        return {"Prediction": dl_learned_owl_expression,
+                "F1": train_f1,
+                "path_pretrained_model": owl_kwargs.get("path_pretrained_model", None),
+                "saved_prediction": "Predictions.owl"}
     else:
         return {"Prediction": "No Learning Problem Given!!!", "F1": 0.0}
 
