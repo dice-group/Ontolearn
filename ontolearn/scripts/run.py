@@ -1,18 +1,5 @@
 """
-Run Web Application
 ====================================================================
-
-dicee --path_single_kg KGs/Family/family-benchmark_rich_background.owl --path_to_store_single_run embeddings --backend rdflib --save_embeddings_as_csv --model Keci --num_epoch 10
-
-# Start Webservice
-ontolearn-webservice --path_knowledge_base KGs/Family/family-benchmark_rich_background.owl
-
-# Send HTTP Get Request to train DRILL and evaluate it on provided pos and neg
-curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://www.benchmark.org/family#F2F14"], "neg":["http://www.benchmark.org/family#F10F200"], "model":"Drill","path_embeddings":"embeddings/Keci_entity_embeddings.csv"}'
-
-# Send HTTP Get Request to load a pretrained DRILL and evaluate it on provided pos and neg
-curl -X 'GET' 'http://0.0.0.0:8000/cel'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"pos":["http://www.benchmark.org/family#F2F14"], "neg":["http://www.benchmark.org/family#F10F200"], "model":"Drill","pretrained":"pretrained","path_embeddings":"embeddings/Keci_entity_embeddings.csv"}'
-
 
 ====================================================================
 """
@@ -33,6 +20,7 @@ from ..metrics import F1
 from owlapy.render import DLSyntaxObjectRenderer
 from ..utils.static_funcs import save_owl_class_expressions
 from owlapy import owl_expression_to_dl
+import os
 
 app = FastAPI()
 args = None
@@ -66,21 +54,19 @@ def get_drill(data: dict):
                   max_runtime=data.get("max_runtime", 60),  # seconds
                   verbose=1)
     # (2) Either load the weights of DRILL or train it.
-    if data.get("pretrained", None):
-        drill.load(directory=data["pretrained"])
-        data = dict()
+    if data.get("path_to_pretrained_drill", None) and os.path.isdir(data["path_to_pretrained_drill"]):
+        drill.load(directory=data["path_to_pretrained_drill"])
     else:
         # Train & Save
         drill.train(num_of_target_concepts=data.get("num_of_target_concepts", 1),
                     num_learning_problems=data.get("num_of_training_learning_problems", 1))
-        drill.save(directory="pretrained")
-        data = {"path_pretrained_model": "pretrained_drill"}
-    return drill, data
+        drill.save(directory=data["path_to_pretrained_drill"])
+    return drill
 
 
-def get_tdl(data):
+def get_tdl(data)->TDL:
     global kb
-    return TDL(knowledge_base=kb), dict()
+    return TDL(knowledge_base=kb)
 
 
 def get_learner(data: dict) -> Union[Drill, TDL]:
@@ -96,10 +82,13 @@ def get_learner(data: dict) -> Union[Drill, TDL]:
 async def cel(data: dict) -> Dict:
     global args
     global kb
-    print("Initialized:", kb)
-    print(args)
+    print("######### CEL Arguments ###############")
+    print(f"Knowledgebase/Triplestore:{kb}")
+    print("Input data:", data)
+    print("######### CEL Arguments ###############")
+
     # (1) Initialize OWL CEL
-    owl_learner, owl_kwargs = get_learner(data)
+    owl_learner = get_learner(data)
     # (2) Read Positives and Negatives.
     positives = {OWLNamedIndividual(IRI.create(i)) for i in data['pos']}
     negatives = {OWLNamedIndividual(IRI.create(i)) for i in data['neg']}
@@ -117,16 +106,16 @@ async def cel(data: dict) -> Dict:
         # () OWL to DL
         dl_learned_owl_expression = owl_expression_to_dl(learned_owl_expression)
         # () Get Individuals
-        print("Retrieval of prediction... (it can be take time")
+        print(f"Retrieving individuals of {dl_learned_owl_expression}...")
         individuals = kb.individuals(learned_owl_expression)
         # () F1 score training
         train_f1 = compute_f1_score(individuals=frozenset({i for i in individuals}),
                                     pos=lp.pos,
                                     neg=lp.neg)
         save_owl_class_expressions(expressions=learned_owl_expression, path="Predictions")
+        print("Done: )")
         return {"Prediction": dl_learned_owl_expression,
                 "F1": train_f1,
-                "path_pretrained_model": owl_kwargs.get("path_pretrained_model", None),
                 "saved_prediction": "Predictions.owl"}
     else:
         return {"Prediction": "No Learning Problem Given!!!", "F1": 0.0}

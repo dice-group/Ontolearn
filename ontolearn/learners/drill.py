@@ -245,11 +245,13 @@ class Drill(RefinementBasedConceptLearner):
     def load(self, directory: str = None) -> None:
         """ load weights of the deep Q-network"""
         if directory:
-            os.path.isdir(directory)
-            if isinstance(self.heuristic_func, CeloeBasedReward):
-                print("No loading because embeddings not provided")
+            if os.path.isdir(directory):
+                if isinstance(self.heuristic_func, CeloeBasedReward):
+                    print("No loading because embeddings not provided")
+                else:
+                    self.heuristic_func.net.load_state_dict(torch.load(directory + "/drill.pth", torch.device('cpu')))
             else:
-                self.heuristic_func.net.load_state_dict(torch.load(directory + "/drill.pth", torch.device('cpu')))
+                print(f"{directory} is not found...")
 
     def fit(self, learning_problem: PosNegLPStandard, max_runtime=None):
         if max_runtime:
