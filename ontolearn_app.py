@@ -1,3 +1,6 @@
+"""
+@TODO:CD: we should introduce ontolearn keyword to learn OWL Class expression from the command line.
+"""
 from ontolearn.model_adapter import execute
 from main import get_default_arguments
 

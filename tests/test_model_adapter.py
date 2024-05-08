@@ -8,12 +8,13 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.metrics import Accuracy
 from ontolearn.model_adapter import ModelAdapter
 from ontolearn.refinement_operators import ModifiedCELOERefinement
-from owlapy.model import IRI, OWLNamedIndividual
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.iri import IRI
 from ontolearn.base import OWLOntology_Owlready2, BaseReasoner_Owlready2
 from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
 
 
-class ModelAdapterTest(unittest.TestCase):
+class TestModelAdapter(unittest.TestCase):
 
     def test_celoe_quality_variant_1(self):
         with open('examples/synthetic_problems.json') as json_file:
@@ -38,8 +39,8 @@ class ModelAdapterTest(unittest.TestCase):
                              refinement_operator=op)
 
         model = model.fit(pos=typed_pos, neg=typed_neg)
-        hypothesis = model.best_hypotheses(n=1)
-        self.assertGreaterEqual(hypothesis.quality, 0.86)
+        hypothesis = model.best_hypotheses(n=1, return_node=True)
+        assert hypothesis.quality >= 0.86
 
     def test_celoe_quality_variant_2(self):
         with open('examples/synthetic_problems.json') as json_file:
@@ -69,8 +70,8 @@ class ModelAdapterTest(unittest.TestCase):
                              )
 
         model = model.fit(pos=typed_pos, neg=typed_neg)
-        hypothesis = model.best_hypotheses(n=1)
-        self.assertGreaterEqual(hypothesis.quality, 0.59)
+        hypothesis = model.best_hypotheses(n=1, return_node=True)
+        assert hypothesis.quality >= 0.59
 
     def test_evolearner_quality(self):
         with open('examples/synthetic_problems.json') as json_file:
@@ -88,9 +89,5 @@ class ModelAdapterTest(unittest.TestCase):
                              reasoner=reasoner)
 
         model = model.fit(pos=typed_pos, neg=typed_neg)
-        hypothesis = model.best_hypotheses(n=1)
-        self.assertGreaterEqual(hypothesis.quality, 0.9)
-
-
-if __name__ == '__main__':
-    unittest.main()
+        hypothesis = model.best_hypotheses(n=1,return_node=True)
+        assert hypothesis.quality >= 0.9

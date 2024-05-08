@@ -1,20 +1,23 @@
 import unittest
 import tempfile
 import pandas as pd
+from owlapy.class_expression import OWLClass, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLThing
+from owlapy.iri import IRI
+from owlapy.owl_axiom import OWLClassAssertionAxiom, OWLObjectPropertyAssertionAxiom
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_property import OWLObjectProperty
 
 from ontolearn.concept_learner import CELOE
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.search import EvoLearnerNode
-from owlapy.model import OWLClass, OWLClassAssertionAxiom, OWLNamedIndividual, IRI, OWLObjectIntersectionOf, \
-                         OWLObjectProperty, OWLObjectPropertyAssertionAxiom, OWLObjectSomeValuesFrom, OWLThing
 from owlapy.render import DLSyntaxObjectRenderer
 
 
 class TestBaseConceptLearner(unittest.TestCase):
 
     def setUp(self):
-        kb = KnowledgeBase(path='KGs/father.owl')
+        kb = KnowledgeBase(path='KGs/Family/father.owl')
         self.model = CELOE(knowledge_base=kb)
         self.namespace = 'http://example.com/father#'
 

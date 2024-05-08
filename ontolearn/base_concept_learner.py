@@ -8,15 +8,19 @@ import xml.etree.ElementTree as ET
 import numpy as np
 import pandas as pd
 import os
+
+from owlapy.class_expression import OWLClass, OWLClassExpression, OWLThing
+from owlapy.iri import IRI
+from owlapy.owl_axiom import OWLDeclarationAxiom, OWLEquivalentClassesAxiom, OWLAxiom
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_ontology import OWLOntology
+from owlapy.owl_ontology_manager import OWLOntologyManager, AddImport, OWLImportsDeclaration
+from owlapy.owl_reasoner import OWLReasoner
+
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.metrics import F1, Accuracy
+from ontolearn.metrics import F1
 from ontolearn.refinement_operators import ModifiedCELOERefinement
-from ontolearn.search import _NodeQuality
-
-from owlapy.model import OWLDeclarationAxiom, OWLNamedIndividual, OWLOntologyManager, OWLOntology, AddImport,\
-    OWLImportsDeclaration, OWLClass, OWLEquivalentClassesAxiom, OWLAnnotationAssertionAxiom, OWLAnnotation, \
-    OWLAnnotationProperty, OWLLiteral, IRI, OWLClassExpression, OWLReasoner, OWLAxiom, OWLThing
 from ontolearn.base import OWLOntologyManager_Owlready2, OWLOntology_Owlready2
 from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
 from owlapy.render import DLSyntaxObjectRenderer
@@ -33,6 +37,9 @@ logger = logging.getLogger(__name__)
 
 class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     """
+    @TODO: CD: Why should this class inherit from AbstractConceptNode ?
+    @TODO: CD: This class should be redefined. An owl class expression learner does not need to be a search based model.
+
     Base class for Concept Learning approaches.
 
     Learning problem definition, Let
@@ -63,7 +70,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
                             takes to execute.
     """
     __slots__ = 'kb', 'reasoner', 'quality_func', 'max_num_of_concepts_tested', 'terminate_on_goal', 'max_runtime', \
-                'start_time', '_goal_found', '_number_of_tested_concepts'
+        'start_time', '_goal_found', '_number_of_tested_concepts'
 
     name: ClassVar[str]
 
@@ -197,7 +204,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def best_hypotheses(self, n=10) -> Iterable[_N]:
+    def best_hypotheses(self, n=10) -> Iterable[OWLClassExpression]:
         """Get the current best found hypotheses according to the quality.
 
         Args:
@@ -205,6 +212,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         Returns:
             Iterable with hypotheses in form of search tree nodes.
+
         """
         pass
 
@@ -233,10 +241,16 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         return labels
 
     def predict(self, individuals: List[OWLNamedIndividual],
-                hypotheses: Optional[ Union[OWLClassExpression, List[Union[_N, OWLClassExpression]]]] = None,
+                hypotheses: Optional[Union[OWLClassExpression, List[Union[_N, OWLClassExpression]]]] = None,
                 axioms: Optional[List[OWLAxiom]] = None,
                 n: int = 10) -> pd.DataFrame:
-        """Creates a binary data frame showing for each individual whether it is entailed in the given hypotheses
+        """
+        @TODO: CD: Predicting an individual can be done by a retrieval function not a concept learner
+        @TODO: A concept learner learns an owl class expression.
+        @TODO: This learned expression can be used as a binary predictor.
+
+
+        Creates a binary data frame showing for each individual whether it is entailed in the given hypotheses
         (class expressions). The individuals do not have to be in the ontology/knowledge base yet. In that case,
         axioms describing these individuals must be provided.
 
@@ -273,10 +287,10 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         if hypotheses is None:
             hypotheses = [hyp.concept for hyp in self.best_hypotheses(n)]
-        elif isinstance(hypotheses,list):
-                hypotheses = [(hyp.concept if isinstance(hyp, AbstractConceptNode) else hyp) for hyp in hypotheses]
+        elif isinstance(hypotheses, list):
+            hypotheses = [(hyp.concept if isinstance(hyp, AbstractConceptNode) else hyp) for hyp in hypotheses]
         else:
-            hypotheses=[hypotheses]
+            hypotheses = [hypotheses]
 
         renderer = DLSyntaxObjectRenderer()
         predictions = pd.DataFrame(data=self._assign_labels_to_individuals(individuals, hypotheses, reasoner),
@@ -298,6 +312,8 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
     def save_best_hypothesis(self, n: int = 10, path: str = 'Predictions', rdf_format: str = 'rdfxml') -> None:
         """Serialise the best hypotheses to a file.
+        @TODO: CD: This function should be deprecated.
+        @TODO: CD: Saving owl class expressions into disk should be disentangled from a concept earner
 
         Args:
             n: Maximum number of hypotheses to save.
@@ -323,28 +339,34 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         manager.apply_change(AddImport(ontology, OWLImportsDeclaration(IRI.create('file://' + self.kb.path))))
         for ith, h in enumerate(self.best_hypotheses(n=n)):
             cls_a: OWLClass = OWLClass(IRI.create(NS, "Pred_" + str(ith)))
-            equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, h.concept])
+            equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, h])
             manager.add_axiom(ontology, equivalent_classes_axiom)
-
+            # @TODO:CD: We should find a way to include information (F1score etc) outside of OWL class expression instances
+            """
             try:
                 assert isinstance(h, _NodeQuality)
                 quality = h.quality
             except AttributeError:
                 quality = None
-
             if isinstance(self.quality_func, Accuracy):
-                accuracy = OWLAnnotationAssertionAxiom(cls_a.get_iri(), OWLAnnotation(
+                accuracy = OWLAnnotationAssertionAxiom(cls_a.iri, OWLAnnotation(
                     OWLAnnotationProperty(IRI.create(SNS, "accuracy")), OWLLiteral(quality)))
                 manager.add_axiom(ontology, accuracy)
             elif isinstance(self.quality_func, F1):
-                f1_score = OWLAnnotationAssertionAxiom(cls_a.get_iri(), OWLAnnotation(
+                f1_score = OWLAnnotationAssertionAxiom(cls_a.iri, OWLAnnotation(
                     OWLAnnotationProperty(IRI.create(SNS, "f1_score")), OWLLiteral(quality)))
                 manager.add_axiom(ontology, f1_score)
+            """
 
         manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))
 
     def load_hypotheses(self, path: str) -> Iterable[OWLClassExpression]:
-        """Loads hypotheses (class expressions) from a file saved by :func:`BaseConceptLearner.save_best_hypothesis`.
+        """
+        @TODO: CD: This function should be deprecated.
+        @TODO: CD: Loading owl class expressions from disk should be disentangled from a concept earner
+
+
+        Loads hypotheses (class expressions) from a file saved by :func:`BaseConceptLearner.save_best_hypothesis`.
 
         Args:
             path: Path to the file containing hypotheses.
@@ -359,6 +381,10 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
     @staticmethod
     def verbalize(predictions_file_path: str):
+        """
+        @TODO:CD: this function should be removed from this class. This should be defined at best as a static func.
+
+        """
 
         tree = ET.parse(predictions_file_path)
         root = tree.getroot()
@@ -508,7 +534,7 @@ class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
             self.heuristic_func = CELOEHeuristic()
 
         if self.start_class is None:
-            self.start_class = self.kb.generator.thing
+            self.start_class = OWLThing
         if self.iter_bound is None:
             self.iter_bound = 10_000
 

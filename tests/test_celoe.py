@@ -1,22 +1,26 @@
 """ Test the default pipeline for structured machine learning"""
 import json
+
+from owlapy.class_expression import OWLClass
+from owlapy.iri import IRI
+from owlapy.owl_individual import OWLNamedIndividual
+
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.model_adapter import ModelAdapter
-from ontolearn.utils import setup_logging
-from owlapy.model import OWLNamedIndividual, OWLClass, IRI
+from ontolearn.utils import setup_logging, compute_f1_score
 from owlapy.render import DLSyntaxObjectRenderer
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 PATH_MUTAGENESIS = 'KGs/Mutagenesis/mutagenesis.owl'
-PATH_DATA_FATHER = 'KGs/father.owl'
+PATH_DATA_FATHER = 'KGs/Family/father.owl'
 
 with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 
 
-class Celoe_Test:
+class Test_Celoe:
     def test_celoe(self):
         kb = KnowledgeBase(path=PATH_FAMILY)
 
@@ -44,17 +48,15 @@ class Celoe_Test:
             model = CELOE(knowledge_base=target_kb, max_runtime=60, max_num_of_concepts_tested=3000)
 
             returned_val = model.fit(learning_problem=lp)
-            self.assertEqual(returned_val, model, "fit should return its self")
+            assert returned_val==model, "fit should return its self"
             hypotheses = model.best_hypotheses(n=3)
+            f1_qualities=[compute_f1_score(individuals=frozenset({i for i in kb.individuals(owl)}),pos=lp.pos,neg=lp.neg)  for owl in hypotheses]
             tested[str_target_concept] = model.number_of_tested_concepts
-            found_qualities[str_target_concept] = hypotheses[0].quality
-            self.assertGreaterEqual(hypotheses[0].quality, exp_qualities[str_target_concept],
-                                    "we only ever improve the quality")
-            self.assertGreaterEqual(hypotheses[0].quality, hypotheses[1].quality, "the hypotheses are quality ordered")
-            self.assertGreaterEqual(hypotheses[1].quality, hypotheses[2].quality)
-        print(exp_qualities)
-        print(tested)
-        print(found_qualities)
+            found_qualities[str_target_concept] = f1_qualities[0]
+            assert f1_qualities[0]>=exp_qualities[str_target_concept]
+            assert f1_qualities[0]>= f1_qualities[1]
+            assert f1_qualities[1]>= f1_qualities[2]
+
 
     def test_celoe_mutagenesis(self):
         kb = KnowledgeBase(path=PATH_MUTAGENESIS)
@@ -71,16 +73,14 @@ class Celoe_Test:
         model = CELOE(knowledge_base=kb, max_runtime=60, max_num_of_concepts_tested=3000)
         returned_model = model.fit(learning_problem=lp)
         best_pred = returned_model.best_hypotheses(n=1)
-        self.assertGreaterEqual(best_pred.quality, 0.96)
+
+        assert compute_f1_score(individuals=frozenset({i for i in kb.individuals(best_pred)}), pos=lp.pos, neg=lp.neg)>=0.96
 
         r = DLSyntaxObjectRenderer()
-        self.assertEqual(r.render(best_pred.concept), '∃ act.xsd:double[≥ 0.325]')
+        assert r.render(best_pred)== '∃ act.xsd:double[≥ 0.325]'
 
     def test_celoe_father(self):
         kb = KnowledgeBase(path=PATH_DATA_FATHER)
-        # with (kb.onto):
-        #    sync_reasoner()
-        # sync_reasoner()
 
         examples = {
             'positive_examples': [
@@ -101,10 +101,10 @@ class Celoe_Test:
 
         model.fit(learning_problem=lp)
         best_pred = model.best_hypotheses(n=1)
-        print(best_pred)
-        self.assertEqual(best_pred.quality, 1.0)
+
+        assert compute_f1_score(individuals=frozenset({i for i in kb.individuals(best_pred)}), pos=lp.pos, neg=lp.neg)==1.0
         r = DLSyntaxObjectRenderer()
-        self.assertEqual(r.render(best_pred.concept), '(¬female) ⊓ (∃ hasChild.⊤)')
+        assert r.render(best_pred)=='(¬female) ⊓ (∃ hasChild.⊤)'
 
     def test_multiple_fits(self):
         kb = KnowledgeBase(path=PATH_FAMILY)
@@ -130,7 +130,8 @@ class Celoe_Test:
 
         print("First fitted on Aunt then on Uncle:")
         hypotheses = list(model.best_hypotheses(n=2))
-        q, str_concept = hypotheses[0].quality, hypotheses[0].concept
+
+        q, str_concept = compute_f1_score(individuals={i for i in kb.individuals(hypotheses[0])}, pos=pos_uncle, neg=neg_uncle), hypotheses[0]
         kb.clean()
         kb = KnowledgeBase(path=PATH_FAMILY)
         model = ModelAdapter(learner_type=CELOE, knowledge_base=kb, max_runtime=1000, max_num_of_concepts_tested=100)
@@ -138,8 +139,9 @@ class Celoe_Test:
 
         print("Only fitted on Uncle:")
         hypotheses = list(model.best_hypotheses(n=2))
-        q2, str_concept2 = hypotheses[0].quality, hypotheses[0].concept
 
-        self.assertEqual(q, q2)
-        self.assertEqual(str_concept, str_concept2)
+        q2, str_concept2 = compute_f1_score(individuals={i for i in kb.individuals(hypotheses[0])}, pos=pos_uncle, neg=neg_uncle), hypotheses[0]
+
+        assert q==q2
+        assert str_concept==str_concept2
 

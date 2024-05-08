@@ -3,9 +3,11 @@ import logging
 from abc import ABCMeta
 from typing import Iterable
 
-from owlapy.model import OWLNamedIndividual, OWLObjectProperty, OWLReasoner, OWLDataProperty, OWLDataRange, \
-    OWLLiteral
-
+from owlapy.owl_data_ranges import OWLDataRange
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_property import OWLObjectProperty, OWLDataProperty
+from owlapy.owl_reasoner import OWLReasoner
 
 logger = logging.getLogger(__name__)
 

@@ -4,16 +4,18 @@ from enum import Enum
 from typing import Callable, Final, List, Optional, Tuple, Union
 
 from deap.gp import Primitive, Terminal
+from owlapy.class_expression import OWLObjectSomeValuesFrom, OWLObjectUnionOf, OWLClassExpression, OWLDataHasValue, \
+    OWLDataSomeValuesFrom, OWLObjectAllValuesFrom, OWLObjectIntersectionOf, OWLObjectExactCardinality, \
+    OWLObjectMaxCardinality, OWLObjectMinCardinality
+from owlapy.owl_literal import OWLLiteral, NUMERIC_DATATYPES
+from owlapy.owl_property import OWLObjectPropertyExpression, OWLDataPropertyExpression, OWLDataProperty, \
+    OWLObjectProperty
 
 from ontolearn.concept_generator import ConceptGenerator
-from owlapy.model import OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, OWLObjectUnionOf, \
-    OWLClassExpression, OWLDataHasValue, OWLDataPropertyExpression, OWLDataSomeValuesFrom, OWLLiteral, \
-    OWLObjectAllValuesFrom, OWLObjectIntersectionOf, NUMERIC_DATATYPES, OWLDataProperty, OWLObjectProperty, \
-    OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectMinCardinality
 import re
 
-from owlapy.model.providers import OWLDatatypeMinExclusiveRestriction, OWLDatatypeMinInclusiveRestriction, \
-    OWLDatatypeMaxExclusiveRestriction, OWLDatatypeMaxInclusiveRestriction
+from owlapy.providers import owl_datatype_min_exclusive_restriction, owl_datatype_min_inclusive_restriction, \
+    owl_datatype_max_exclusive_restriction, owl_datatype_max_inclusive_restriction
 
 
 Tree = List[Union[Primitive, Terminal]]
@@ -73,19 +75,19 @@ class PrimitiveFactory:
                      Callable[[OWLLiteral], OWLDataSomeValuesFrom], Callable[[OWLLiteral], OWLDataSomeValuesFrom]]:
 
         def data_some_min_inclusive(value: OWLLiteral) -> OWLDataSomeValuesFrom:
-            filler = OWLDatatypeMinInclusiveRestriction(value)
+            filler = owl_datatype_min_inclusive_restriction(value)
             return self.generator.data_existential_restriction(filler, property_)
 
         def data_some_max_inclusive(value: OWLLiteral) -> OWLDataSomeValuesFrom:
-            filler = OWLDatatypeMaxInclusiveRestriction(value)
+            filler = owl_datatype_max_inclusive_restriction(value)
             return self.generator.data_existential_restriction(filler, property_)
 
         def data_some_min_exclusive(value: OWLLiteral) -> OWLDataSomeValuesFrom:
-            filler = OWLDatatypeMinExclusiveRestriction(value)
+            filler = owl_datatype_min_exclusive_restriction(value)
             return self.generator.data_existential_restriction(filler, property_)
 
         def data_some_max_exclusive(value: OWLLiteral) -> OWLDataSomeValuesFrom:
-            filler = OWLDatatypeMaxExclusiveRestriction(value)
+            filler = owl_datatype_max_exclusive_restriction(value)
             return self.generator.data_existential_restriction(filler, property_)
 
         return data_some_min_inclusive, data_some_max_inclusive, data_some_min_exclusive, data_some_max_exclusive
@@ -140,5 +142,5 @@ def owlliteral_to_primitive_string(lit: OWLLiteral, pe: Optional[Union[OWLDataPr
     str_ = type(lit.to_python()).__name__ + escape(lit.get_literal())
     if lit.get_datatype() in NUMERIC_DATATYPES:
         assert pe is not None
-        return escape(pe.get_iri().get_remainder()) + str_
+        return escape(pe.iri.get_remainder()) + str_
     return str_

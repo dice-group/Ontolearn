@@ -3,7 +3,7 @@ import json
 from ontolearn.concept_learner import CELOE
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.learning_problem import PosNegLPStandard
-from owlapy.model import IRI, OWLNamedIndividual
+from owlapy.owl_individual import IRI, OWLNamedIndividual
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.triple_store import TripleStoreKnowledgeBase
 

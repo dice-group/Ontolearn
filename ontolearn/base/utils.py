@@ -5,21 +5,28 @@ from types import MappingProxyType
 from typing import Union
 
 import owlready2
+from owlapy.class_expression import OWLObjectOneOf, OWLClass, OWLObjectUnionOf, OWLObjectIntersectionOf, \
+    OWLObjectSomeValuesFrom, OWLObjectComplementOf, OWLObjectAllValuesFrom, OWLDataSomeValuesFrom, \
+    OWLDatatypeRestriction, OWLClassExpression, OWLDataAllValuesFrom, OWLDataHasValue, OWLDataOneOf, \
+    OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality, \
+    OWLObjectHasValue, OWLFacetRestriction, OWLObjectRestriction, OWLDataExactCardinality, OWLDataMaxCardinality, \
+    OWLDataMinCardinality, OWLRestriction, OWLDataRestriction
+from owlapy.iri import IRI
+from owlapy.owl_axiom import OWLAnnotationProperty
+from owlapy.owl_data_ranges import OWLDataRange, OWLDataComplementOf, OWLDataIntersectionOf, OWLDataUnionOf
+from owlapy.owl_datatype import OWLDatatype
+from owlapy.owl_individual import OWLNamedIndividual, OWLIndividual
+from owlapy.owl_literal import OWLLiteral, IntegerOWLDatatype, DoubleOWLDatatype, BooleanOWLDatatype, DateOWLDatatype, \
+    DateTimeOWLDatatype, DurationOWLDatatype, StringOWLDatatype
+from owlapy.owl_object import OWLObject
+from owlapy.owl_ontology import OWLOntology
+from owlapy.owl_property import OWLObjectProperty, OWLDataProperty, OWLObjectPropertyExpression, OWLObjectInverseOf, \
+    OWLDataPropertyExpression, OWLPropertyExpression
+
 from pandas import Timedelta
 
-from owlapy.model import OWLObjectMinCardinality, OWLObjectOneOf, OWLObjectRestriction, \
-    OWLObjectComplementOf, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
-    OWLObjectPropertyExpression, OWLObject, OWLOntology, OWLAnnotationProperty, IRI, OWLObjectInverseOf, \
-    DoubleOWLDatatype, IntegerOWLDatatype, OWLClassExpression, OWLDataAllValuesFrom, OWLDataComplementOf, \
-    OWLDataIntersectionOf, OWLDataProperty, OWLDataRange, OWLDataSomeValuesFrom, OWLDataUnionOf, OWLDatatype, \
-    BooleanOWLDatatype, OWLDataHasValue, OWLDataExactCardinality, OWLDataMaxCardinality, OWLDataMinCardinality, \
-    OWLDataPropertyExpression, OWLDatatypeRestriction, OWLFacetRestriction, OWLLiteral, OWLObjectHasValue, \
-    OWLNamedIndividual, OWLObjectExactCardinality, OWLObjectMaxCardinality, OWLObjectProperty, OWLClass, \
-    DateOWLDatatype, DateTimeOWLDatatype, DurationOWLDatatype, OWLRestriction, OWLDataOneOf, OWLDataRestriction, \
-    OWLIndividual, StringOWLDatatype, OWLPropertyExpression
 
 from owlapy.vocab import OWLFacet
-
 
 OWLREADY2_FACET_KEYS = MappingProxyType({
     OWLFacet.MIN_INCLUSIVE: "min_inclusive",
@@ -36,7 +43,6 @@ OWLREADY2_FACET_KEYS = MappingProxyType({
 
 
 class ToOwlready2:
-
     __slots__ = '_world'
 
     _world: owlready2.World
@@ -61,13 +67,14 @@ class ToOwlready2:
     @map_object.register
     def _(self, ont: OWLOntology) -> owlready2.namespace.Ontology:
         return self._world.get_ontology(
-                ont.get_ontology_id().get_ontology_iri().as_str()
-            )
+            ont.get_ontology_id().get_ontology_iri().as_str()
+        )
 
     @map_object.register
     def _(self, ap: OWLAnnotationProperty) -> owlready2.annotation.AnnotationPropertyClass:
-        return self._world[ap.get_iri().as_str()]
+        return self._world[ap.str]
 
+    # @TODO CD: map_object is buggy. and it can return None
     # single dispatch is still not implemented in mypy, see https://github.com/python/mypy/issues/2904
     @singledispatchmethod
     def map_concept(self, o: OWLClassExpression) \
@@ -86,11 +93,11 @@ class ToOwlready2:
 
     @_to_owlready2_property.register
     def _(self, p: OWLObjectProperty) -> owlready2.prop.ObjectPropertyClass:
-        return self._world[p.get_iri().as_str()]
+        return self._world[p.str]
 
     @_to_owlready2_property.register
     def _(self, p: OWLDataProperty) -> owlready2.prop.DataPropertyClass:
-        return self._world[p.get_iri().as_str()]
+        return self._world[p.str]
 
     @singledispatchmethod
     def _to_owlready2_individual(self, i: OWLIndividual) -> owlready2.Thing:
@@ -98,11 +105,17 @@ class ToOwlready2:
 
     @_to_owlready2_individual.register
     def _(self, i: OWLNamedIndividual):
-        return self._world[i.get_iri().as_str()]
+        return self._world[i.str]
 
     @map_concept.register
     def _(self, c: OWLClass) -> owlready2.ThingClass:
-        return self._world[c.get_iri().as_str()]
+        x = self._world[c.str]
+        try:
+            assert x is not None
+        except AssertionError:
+            print(f"The world attribute{self._world} maps {c} into None")
+
+        return x
 
     @map_concept.register
     def _(self, c: OWLObjectComplementOf) -> owlready2.class_construct.Not:
@@ -119,6 +132,8 @@ class ToOwlready2:
     @map_concept.register
     def _(self, ce: OWLObjectSomeValuesFrom) -> owlready2.class_construct.Restriction:
         prop = self._to_owlready2_property(ce.get_property())
+        assert isinstance(ce.get_filler(),
+                          OWLClassExpression), f"{ce.get_filler()} is not an OWL Class expression and cannot be serialized at the moment"
         return prop.some(self.map_concept(ce.get_filler()))
 
     @map_concept.register

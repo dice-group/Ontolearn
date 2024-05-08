@@ -4,28 +4,28 @@ import logging
 import operator
 import random
 import time
-from collections import deque, Counter
 from contextlib import contextmanager
 from itertools import islice, chain
-from typing import Any, Callable, Dict, FrozenSet, Set, List, Tuple, Iterable, Optional, Generator, SupportsFloat, Union
+from typing import Any, Callable, Dict, FrozenSet, Set, List, Tuple, Iterable, Optional, Union
 
-import numpy as np
 import pandas as pd
 import torch
-from torch import nn
+from owlapy.class_expression import OWLClassExpression
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_property import OWLDataProperty
+from owlapy.owl_reasoner import OWLReasoner
 from torch.utils.data import DataLoader
 from torch.functional import F
 from torch.nn.utils.rnn import pad_sequence
-from torch.nn.init import xavier_normal_
 from deap import gp, tools, base, creator
 
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.abstracts import AbstractFitness, AbstractScorer, AbstractNode, BaseRefinement, \
+from ontolearn.abstracts import AbstractFitness, AbstractScorer, BaseRefinement, \
     AbstractHeuristic, EncodedPosNegLPStandardKind
 from ontolearn.base_concept_learner import BaseConceptLearner, RefinementBasedConceptLearner
 from ontolearn.base.owl.utils import EvaluatedDescriptionSet, ConceptOperandSorter, OperandSetTransform
-from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction, NCESDataLoader, \
-    NCESDataLoaderInference, CLIPDataLoader, CLIPDataLoaderInference
+from ontolearn.data_struct import NCESDataLoader, NCESDataLoaderInference, CLIPDataLoader, CLIPDataLoaderInference
 from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
 from ontolearn.ea_initialization import AbstractEAInitialization, EARandomInitialization, EARandomWalkInitialization
 from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVocabulary, Tree, escape, ind_to_string, \
@@ -33,25 +33,27 @@ from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVoca
 from ontolearn.fitness_functions import LinearPressureFitness
 from ontolearn.heuristics import OCELHeuristic
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
-from ontolearn.metrics import Accuracy, F1
-from ontolearn.refinement_operators import LengthBasedRefinement, ExpressRefinement
-from ontolearn.search import EvoLearnerNode, NCESNode, HeuristicOrderedNode, LBLNode, OENode, TreeNode, LengthOrderedNode, \
-    QualityOrderedNode, RL_State, DRILLSearchTreePriorityQueue, EvaluatedConcept
-from ontolearn.utils import oplogging, create_experiment_folder
+from ontolearn.metrics import Accuracy
+from ontolearn.refinement_operators import ExpressRefinement
+from ontolearn.search import EvoLearnerNode, NCESNode, HeuristicOrderedNode, LBLNode, OENode, TreeNode, \
+    LengthOrderedNode, \
+    QualityOrderedNode, EvaluatedConcept
+from ontolearn.utils import oplogging
 from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter, EntropyValueSplitter
 from ontolearn.base_nces import BaseNCES
 from ontolearn.nces_architectures import LSTM, GRU, SetTransformer
-from ontolearn.clip_architectures import LengthLearner_LSTM, LengthLearner_GRU, LengthLearner_CNN, LengthLearner_SetTransformer
+from ontolearn.clip_architectures import LengthLearner_LSTM, LengthLearner_GRU, LengthLearner_CNN, \
+    LengthLearner_SetTransformer
 from ontolearn.nces_trainer import NCESTrainer, before_pad
 from ontolearn.clip_trainer import CLIPTrainer
 from ontolearn.nces_utils import SimpleSolution
-from owlapy.model import OWLClassExpression, OWLDataProperty, OWLLiteral, OWLNamedIndividual, OWLReasoner, OWLClass
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.parser import DLSyntaxParser
 from owlapy.util import OrderedOWLObject
 from sortedcontainers import SortedSet
 import os
+
 logger = logging.getLogger(__name__)
 
 _concept_operand_sorter = ConceptOperandSorter()
@@ -181,12 +183,19 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
         #     return n
         # raise ValueError('Search Tree can not be empty.')
 
-    def best_hypotheses(self, n=10) -> Union[OENode, Iterable[OENode]]:
+    def best_hypotheses(self, n: int = 1, return_node: bool = False) -> Union[Union[
+        OWLClassExpression, Iterable[OWLClassExpression]], Union[OENode, Iterable[OENode]]]:
         x = islice(self.best_descriptions, n)
         if n == 1:
-            return next(x)
+            if return_node:
+                return next(x)
+            else:
+                return next(x).concept
         else:
-            return list(x)
+            if return_node:
+                return [i for i in x]
+            else:
+                return [i.concept for i in x]
 
     def make_node(self, c: OWLClassExpression, parent_node: Optional[OENode] = None, is_root: bool = False) -> OENode:
         """
@@ -459,7 +468,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
     def _log_current_best(self, heading_step, top_n: int = 10) -> None:
         logger.debug('######## %s step Best Hypotheses ###########', heading_step)
 
-        predictions = list(self.best_hypotheses(top_n))
+        predictions = list(self.best_hypotheses(top_n, return_node=True))
         for ith, node in enumerate(predictions):
             logger.debug('{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(
                 ith + 1, DLSyntaxObjectRenderer().render(node.concept),
@@ -509,7 +518,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
 
         print('######## ', heading_step, 'step Best Hypotheses ###########')
 
-        predictions = list(self.best_hypotheses(top_n))
+        predictions = list(self.best_hypotheses(top_n, return_node=True))
         for ith, node in enumerate(predictions):
             print('{0}-\t{1}\t{2}:{3}\tHeuristic:{4}:'.format(ith + 1, rdr.render(node.concept),
                                                               type(self.quality_func).name, node.quality,
@@ -651,8 +660,6 @@ class OCEL(CELOE):
         if parent_node is not None:
             parent_node.add_child(r)
         return r
-
-
 
 
 class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
@@ -834,7 +841,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                           name=OperatorVocabulary.INTERSECTION)
 
         for op in self.kb.get_object_properties():
-            name = escape(op.get_iri().get_remainder())
+            name = escape(op.iri.get_remainder())
             existential, universal = factory.create_existential_universal(op)
             pset.addPrimitive(existential, [OWLClassExpression], OWLClassExpression,
                               name=OperatorVocabulary.EXISTENTIAL + name)
@@ -858,7 +865,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             pset.addTerminal(true_, Bool, name=owlliteral_to_primitive_string(true_))
 
             for bool_dp in self.kb.get_boolean_data_properties():
-                name = escape(bool_dp.get_iri().get_remainder())
+                name = escape(bool_dp.iri.get_remainder())
                 self._dp_to_prim_type[bool_dp] = Bool
 
                 data_has_value = factory.create_data_has_value(bool_dp)
@@ -866,7 +873,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                                   name=OperatorVocabulary.DATA_HAS_VALUE + name)
 
             for split_dp in chain(self.kb.get_time_data_properties(), self.kb.get_numeric_data_properties()):
-                name = escape(split_dp.get_iri().get_remainder())
+                name = escape(split_dp.iri.get_remainder())
                 type_ = type(name, (object,), {})
 
                 self._dp_to_prim_type[split_dp] = type_
@@ -886,7 +893,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             for i in range(1, self.card_limit + 1):
                 pset.addTerminal(i, int)
             for op in self.kb.get_object_properties():
-                name = escape(op.get_iri().get_remainder())
+                name = escape(op.iri.get_remainder())
                 card_min, card_max, _ = factory.create_card_restrictions(op)
                 pset.addPrimitive(card_min, [int, OWLClassExpression], OWLClassExpression,
                                   name=OperatorVocabulary.CARD_MIN + name)
@@ -896,12 +903,12 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                 #                  name=OperatorVocabulary.CARD_EXACT + name)
 
         for class_ in self.kb.get_concepts():
-            pset.addTerminal(class_, OWLClassExpression, name=escape(class_.get_iri().get_remainder()))
+            pset.addTerminal(class_, OWLClassExpression, name=escape(class_.iri.get_remainder()))
 
         pset.addTerminal(self.kb.generator.thing, OWLClassExpression,
-                         name=escape(self.kb.generator.thing.get_iri().get_remainder()))
+                         name=escape(self.kb.generator.thing.iri.get_remainder()))
         pset.addTerminal(self.kb.generator.nothing, OWLClassExpression,
-                         name=escape(self.kb.generator.nothing.get_iri().get_remainder()))
+                         name=escape(self.kb.generator.nothing.iri.get_remainder()))
         return pset
 
     def __build_toolbox(self) -> base.Toolbox:
@@ -1021,13 +1028,21 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             population = self.toolbox.population(population_size=self.population_size)
         return population
 
-    def best_hypotheses(self, n: int = 5, key: str = 'fitness') -> Union[EvoLearnerNode, Iterable[EvoLearnerNode]]:
+    def best_hypotheses(self, n: int = 1, key: str = 'fitness', return_node: bool = False) -> Union[OWLClassExpression,
+    Iterable[OWLClassExpression]]:
         assert self._result_population is not None
         assert len(self._result_population) > 0
         if n > 1:
-            return [i for i in self._get_top_hypotheses(self._result_population, n, key)]
+            if return_node:
+                return [i for i in self._get_top_hypotheses(self._result_population, n, key)]
+
+            else:
+                return [i.concept for i in self._get_top_hypotheses(self._result_population, n, key)]
         else:
-            return next(self._get_top_hypotheses(self._result_population, n, key))
+            if return_node:
+                return next(self._get_top_hypotheses(self._result_population, n, key))
+            else:
+                return next(self._get_top_hypotheses(self._result_population, n, key)).concept
 
     def _get_top_hypotheses(self, population: List[Tree], n: int = 5, key: str = 'fitness') \
             -> Iterable[EvoLearnerNode]:
@@ -1081,8 +1096,8 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             self._split_properties = []
             self.pset = self.__build_primitive_set()
             self.toolbox = self.__build_toolbox()
-        
-        
+
+
 class CLIP(CELOE):
     """Concept Learner with Integrated Length Prediction.
     This algorithm extends the CELOE algorithm by using concept length predictors and a different refinement operator, i.e., ExpressRefinement
@@ -1114,13 +1129,14 @@ class CLIP(CELOE):
     """
     __slots__ = 'best_descriptions', 'max_he', 'min_he', 'best_only', 'calculate_min_max', 'heuristic_queue', \
         'search_tree', '_learning_problem', '_max_runtime', '_seen_norm_concepts', 'predictor_name', 'pretrained_predictor_name', \
-    'load_pretrained', 'output_size', 'num_examples', 'path_of_embeddings', 'instance_embeddings', 'input_size', 'device', 'length_predictor', \
-    'num_workers', 'knowledge_base_path'
+        'load_pretrained', 'output_size', 'num_examples', 'path_of_embeddings', 'instance_embeddings', 'input_size', 'device', 'length_predictor', \
+        'num_workers', 'knowledge_base_path'
 
     name = 'clip'
+
     def __init__(self,
                  knowledge_base: KnowledgeBase,
-                 knowledge_base_path = '',
+                 knowledge_base_path='',
                  reasoner: Optional[OWLReasoner] = None,
                  refinement_operator: Optional[BaseRefinement[OENode]] = ExpressRefinement,
                  quality_func: Optional[AbstractScorer] = None,
@@ -1133,13 +1149,13 @@ class CLIP(CELOE):
                  best_only: bool = False,
                  calculate_min_max: bool = True,
                  path_of_embeddings="",
-                 predictor_name = None,
-                 pretrained_predictor_name = ["SetTransformer", "LSTM", "GRU", "CNN"],
-                 load_pretrained = False,
-                 num_workers = 4,
-                 num_examples = 1000,
-                 output_size = 15
-                ):
+                 predictor_name=None,
+                 pretrained_predictor_name=["SetTransformer", "LSTM", "GRU", "CNN"],
+                 load_pretrained=False,
+                 num_workers=4,
+                 num_examples=1000,
+                 output_size=15
+                 ):
         super().__init__(knowledge_base,
                          reasoner,
                          refinement_operator,
@@ -1152,7 +1168,8 @@ class CLIP(CELOE):
                          max_results,
                          best_only,
                          calculate_min_max)
-        assert hasattr(refinement_operator, "expressivity"), f"CLIP was developed to run more efficiently with ExpressRefinement, not {refinement_operator}"
+        assert hasattr(refinement_operator,
+                       "expressivity"), f"CLIP was developed to run more efficiently with ExpressRefinement, not {refinement_operator}"
         self.predictor_name = predictor_name
         self.pretrained_predictor_name = pretrained_predictor_name
         self.knowledge_base_path = knowledge_base_path
@@ -1166,36 +1183,41 @@ class CLIP(CELOE):
         self.input_size = self.instance_embeddings.shape[1]
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.length_predictor = self.get_length_predictor()
-        
+
     def get_length_predictor(self):
         def load_model(predictor_name, load_pretrained):
             if predictor_name is None:
                 return []
             if predictor_name == 'SetTransformer':
-                model = LengthLearner_SetTransformer(self.input_size, self.output_size, proj_dim=256, num_heads=4, num_seeds=1, num_inds=32)
+                model = LengthLearner_SetTransformer(self.input_size, self.output_size, proj_dim=256, num_heads=4,
+                                                     num_seeds=1, num_inds=32)
             elif predictor_name == 'GRU':
-                model = LengthLearner_GRU(self.input_size, self.output_size, proj_dim=256, rnn_n_layers=2, drop_prob=0.2)
+                model = LengthLearner_GRU(self.input_size, self.output_size, proj_dim=256, rnn_n_layers=2,
+                                          drop_prob=0.2)
             elif predictor_name == 'LSTM':
-                model = LengthLearner_LSTM(self.input_size, self.output_size, proj_dim=256, rnn_n_layers=2, drop_prob=0.2)
+                model = LengthLearner_LSTM(self.input_size, self.output_size, proj_dim=256, rnn_n_layers=2,
+                                           drop_prob=0.2)
             elif predictor_name == 'CNN':
-                model = LengthLearner_CNN(self.input_size, self.output_size, self.num_examples, proj_dim=256, kernel_size=[[5,7], [5,7]], stride=[[3,3], [3,3]])
-            pretrained_model_path = self.path_of_embeddings.split("embeddings")[0] + "trained_models/trained_" + predictor_name + ".pt"
+                model = LengthLearner_CNN(self.input_size, self.output_size, self.num_examples, proj_dim=256,
+                                          kernel_size=[[5, 7], [5, 7]], stride=[[3, 3], [3, 3]])
+            pretrained_model_path = self.path_of_embeddings.split("embeddings")[
+                                        0] + "trained_models/trained_" + predictor_name + ".pt"
             if load_pretrained and os.path.isfile(pretrained_model_path):
                 model.load_state_dict(torch.load(pretrained_model_path, map_location=self.device))
                 model.eval()
                 print("\n Loaded length predictor!")
             return model
-        
+
         if not self.load_pretrained:
             return [load_model(self.predictor_name, self.load_pretrained)]
         elif self.load_pretrained and isinstance(self.pretrained_predictor_name, str):
             return [load_model(self.pretrained_predictor_name, self.load_pretrained)]
         elif self.load_pretrained and isinstance(self.pretrained_predictor_name, list):
             return [load_model(name, self.load_pretrained) for name in self.pretrained_predictor_name]
-        
+
     def refresh(self):
         self.length_predictor = self.get_length_predictor()
-        
+
     def collate_batch(self, batch):
         pos_emb_list = []
         neg_emb_list = []
@@ -1213,7 +1235,7 @@ class CLIP(CELOE):
         neg_emb_list[0] = F.pad(neg_emb_list[0], (0, 0, 0, self.num_examples - neg_emb_list[0].shape[0]), "constant", 0)
         neg_emb_list = pad_sequence(neg_emb_list, batch_first=True, padding_value=0)
         return pos_emb_list, neg_emb_list, torch.LongTensor(target_labels)
-    
+
     def collate_batch_inference(self, batch):
         pos_emb_list = []
         neg_emb_list = []
@@ -1229,11 +1251,11 @@ class CLIP(CELOE):
         neg_emb_list[0] = F.pad(neg_emb_list[0], (0, 0, 0, self.num_examples - neg_emb_list[0].shape[0]), "constant", 0)
         neg_emb_list = pad_sequence(neg_emb_list, batch_first=True, padding_value=0)
         return pos_emb_list, neg_emb_list
-    
+
     def pos_neg_to_tensor(self, pos: Union[Set[OWLNamedIndividual]], neg: Union[Set[OWLNamedIndividual], Set[str]]):
         if isinstance(pos[0], OWLNamedIndividual):
-            pos_str = [ind.get_iri().as_str().split("/")[-1] for ind in pos][:self.num_examples]
-            neg_str = [ind.get_iri().as_str().split("/")[-1] for ind in neg][:self.num_examples]
+            pos_str = [ind.str.split("/")[-1] for ind in pos][:self.num_examples]
+            neg_str = [ind.str.split("/")[-1] for ind in neg][:self.num_examples]
         elif isinstance(pos[0], str):
             pos_str = pos[:self.num_examples]
             neg_str = neg[:self.num_examples]
@@ -1264,7 +1286,7 @@ class CLIP(CELOE):
         prediction = int(scores.argmax(1).cpu())
         print(f"\n***** Predicted length: {prediction} *****\n")
         return prediction
-    
+
     def fit(self, *args, **kwargs):
         """
         Find hypotheses that explain pos and neg.
@@ -1280,16 +1302,16 @@ class CLIP(CELOE):
             self._max_runtime = max_runtime
         else:
             self._max_runtime = self.max_runtime
-        
+
         if (self.pretrained_predictor_name is not None) and (self.length_predictor is not None):
-            x_pos, x_neg = self.pos_neg_to_tensor(list(self._learning_problem.kb_pos)[:self.num_examples], list(self._learning_problem.kb_neg)[:self.num_examples])
+            x_pos, x_neg = self.pos_neg_to_tensor(list(self._learning_problem.kb_pos)[:self.num_examples],
+                                                  list(self._learning_problem.kb_neg)[:self.num_examples])
             max_length = self.predict_length(self.length_predictor, x_pos, x_neg)
             self.operator.max_child_length = max_length
             print(f'***** Predicted length: {max_length} *****')
         else:
             print('\n!!! No length predictor provided, running CLIP without length predictor !!!')
 
-            
         root = self.make_node(_concept_operand_sorter.sort(self.start_class), is_root=True)
         self._add_node(root, None)
         assert len(self.heuristic_queue) == 1
@@ -1332,11 +1354,12 @@ class CLIP(CELOE):
                 self._log_current_best(j)
 
         return self.terminate()
-    
+
     def train(self, data: Iterable[List[Tuple]], epochs=300, batch_size=256, learning_rate=1e-3, decay_rate=0.0,
               clip_value=5.0, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True,
               example_sizes=None, shuffle_examples=False):
-        train_dataset = CLIPDataLoader(data, self.instance_embeddings, shuffle_examples=shuffle_examples, example_sizes=example_sizes)
+        train_dataset = CLIPDataLoader(data, self.instance_embeddings, shuffle_examples=shuffle_examples,
+                                       example_sizes=example_sizes)
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=self.num_workers,
                                       collate_fn=self.collate_batch, shuffle=True)
         if storage_path is None:
@@ -1351,7 +1374,7 @@ class CLIP(CELOE):
 class NCES(BaseNCES):
     """Neural Class Expression Synthesis."""
 
-    def __init__(self, knowledge_base_path, 
+    def __init__(self, knowledge_base_path,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
                  learner_name="SetTransformer", path_of_embeddings="", proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
                  num_heads=4, num_seeds=1, num_inds=32, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0,
@@ -1445,11 +1468,12 @@ class NCES(BaseNCES):
         scores = scores / len(models)
         prediction = model.inv_vocab[scores.argmax(1).cpu()]
         return prediction
-    
-    def fit_one(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]], verbose=False):
+
+    def fit_one(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]],
+                verbose=False):
         if isinstance(pos[0], OWLNamedIndividual):
-            pos_str = [ind.get_iri().as_str().split("/")[-1] for ind in pos]
-            neg_str = [ind.get_iri().as_str().split("/")[-1] for ind in neg]
+            pos_str = [ind.str.split("/")[-1] for ind in pos]
+            neg_str = [ind.str.split("/")[-1] for ind in neg]
         elif isinstance(pos[0], str):
             pos_str = pos
             neg_str = neg
@@ -1461,7 +1485,8 @@ class NCES(BaseNCES):
         assert self.load_pretrained and self.pretrained_model_name, \
             "No pretrained model found. Please first train NCES, see the <<train>> method below"
 
-        dataset = NCESDataLoaderInference([("", Pos_str, Neg_str) for (Pos_str, Neg_str) in zip(Pos, Neg)], self.instance_embeddings,
+        dataset = NCESDataLoaderInference([("", Pos_str, Neg_str) for (Pos_str, Neg_str) in zip(Pos, Neg)],
+                                          self.instance_embeddings,
                                           self.vocab, self.inv_vocab, False, self.sorted_examples)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers,
                                 collate_fn=self.collate_batch_inference, shuffle=False)
@@ -1481,7 +1506,8 @@ class NCES(BaseNCES):
             predictions.append(concept)
         return predictions
 
-    def fit(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]], verbose=False, **kwargs):
+    def fit(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]],
+            verbose=False, **kwargs):
         if isinstance(pos, set) or isinstance(pos, frozenset):
             pos_list = list(pos)
             neg_list = list(neg)
@@ -1499,21 +1525,24 @@ class NCES(BaseNCES):
                 concept = self.dl_parser.parse('⊤')
                 concept_individuals_count = self.kb.individuals_count(concept)
             concept_length = init_length_metric().length(concept)
-            concept_instances = set(self.kb.individuals(concept)) if isinstance(pos_list[0], OWLNamedIndividual) else set([ind.get_iri().as_str().split("/")[-1] for ind in self.kb.individuals(concept)])
+            concept_instances = set(self.kb.individuals(concept)) if isinstance(pos_list[0],
+                                                                                OWLNamedIndividual) else set(
+                [ind.str.split("/")[-1] for ind in self.kb.individuals(concept)])
             tp, fn, fp, tn = compute_tp_fn_fp_tn(concept_instances, pos, neg)
             quality = self.quality_func.score2(tp, fn, fp, tn)[1]
-            node = NCESNode(concept, length=concept_length, individuals_count=concept_individuals_count, quality=quality)
+            node = NCESNode(concept, length=concept_length, individuals_count=concept_individuals_count,
+                            quality=quality)
             predictions_as_nodes.append(node)
         predictions_as_nodes = sorted(predictions_as_nodes, key=lambda x: -x.quality)
         self.best_predictions = predictions_as_nodes
         return self
-    
-    def best_hypotheses(self, n=1)->Union[NCESNode, Iterable[NCESNode]]:
+
+    def best_hypotheses(self, n=1) -> Union[OWLClassExpression, Iterable[OWLClassExpression]]:
         if self.best_predictions is None:
             print("NCES needs to be fitted to a problem first")
             return None
         elif len(self.best_predictions) == 1 or n == 1:
-            return self.best_predictions[0]
+            return self.best_predictions[0].concept
         else:
             return self.best_predictions[:n]
 
@@ -1522,8 +1551,8 @@ class NCES(BaseNCES):
         pos = list(examples[0])
         neg = list(examples[1])
         if isinstance(pos[0], OWLNamedIndividual):
-            pos_str = [ind.get_iri().as_str().split("/")[-1] for ind in pos]
-            neg_str = [ind.get_iri().as_str().split("/")[-1] for ind in neg]
+            pos_str = [ind.str.split("/")[-1] for ind in pos]
+            neg_str = [ind.str.split("/")[-1] for ind in neg]
         elif isinstance(pos[0], str):
             pos_str, neg_str = list(pos), list(neg)
         else:
@@ -1543,7 +1572,8 @@ class NCES(BaseNCES):
         assert self.load_pretrained and self.pretrained_model_name, \
             "No pretrained model found. Please first train NCES, refer to the <<train>> method"
         dataset = [self.convert_to_list_str_from_iterable(datapoint) for datapoint in dataset]
-        dataset = NCESDataLoaderInference(dataset, self.instance_embeddings, self.vocab, self.inv_vocab, shuffle_examples)
+        dataset = NCESDataLoaderInference(dataset, self.instance_embeddings, self.vocab, self.inv_vocab,
+                                          shuffle_examples)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers,
                                 collate_fn=self.collate_batch_inference, shuffle=False)
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)

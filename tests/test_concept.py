@@ -1,8 +1,11 @@
 """ Test the concept module"""
 import json
+
+from owlapy.class_expression import OWLClass
+from owlapy.iri import IRI
+
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.utils import setup_logging
-from owlapy.model import OWLClass, IRI
 from ontolearn.base import OWLReasoner_Owlready2
 
 setup_logging("ontolearn/logging_test.conf")

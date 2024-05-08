@@ -3,7 +3,7 @@ from ontolearn.concept_learner import EvoLearner
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1, Accuracy
-from owlapy.model import OWLNamedIndividual, IRI
+from owlapy.owl_individual import OWLNamedIndividual, IRI
 from ontolearn.utils import setup_logging
 from ontosample.lpc_samplers import RandomWalkerJumpsSamplerLPCentralized
 setup_logging()
@@ -29,7 +29,7 @@ sampled_kb = sampler.sample(3000)  # create a sample with 3000 individuals
 # size is less than the number of lp individuals then it is important to remove the excluded individuals from the lp set
 removed_individuals = set(kb.individuals()) - set(sampled_kb.individuals())
 for individual in removed_individuals:
-    individual_as_str = individual.get_iri().as_str()
+    individual_as_str = individual.str
     if individual_as_str in p:
         p.remove(individual_as_str)
     if individual_as_str in n:

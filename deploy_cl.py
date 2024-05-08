@@ -3,6 +3,10 @@ import torch
 from argparse import ArgumentParser
 import random
 import os
+
+from owlapy.iri import IRI
+from owlapy.owl_individual import OWLNamedIndividual
+
 from ontolearn.model_adapter import compute_quality
 from ontolearn.ea_algorithms import EASimple
 from ontolearn.ea_initialization import EARandomWalkInitialization, RandomInitMethod, EARandomInitialization
@@ -14,7 +18,6 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.value_splitter import EntropyValueSplitter, BinningValueSplitter
-from owlapy.model import OWLNamedIndividual, IRI
 from owlapy.render import DLSyntaxObjectRenderer
 
 try:
@@ -42,8 +45,8 @@ def setup_prerequisites(individuals, pos_ex, neg_ex, random_ex: bool, size_of_ex
         typed_pos = set(random.sample(individuals, int(size_of_ex)))
         remaining = list(set(individuals)-typed_pos)
         typed_neg = set(random.sample(remaining, min(len(remaining), int(size_of_ex))))
-        pos_str = [pos_ind.get_iri().as_str() for pos_ind in typed_pos]
-        neg_str = [neg_ind.get_iri().as_str() for neg_ind in typed_neg]
+        pos_str = [pos_ind.str for pos_ind in typed_pos]
+        neg_str = [neg_ind.str for neg_ind in typed_neg]
     else:
         pos_str = pos_ex.replace(" ", "").replace("\n", "").replace("\"", "").split(",")
         neg_str = neg_ex.replace(" ", "").replace("\n", "").replace("\"", "").split(",")
@@ -60,7 +63,7 @@ def setup_prerequisites(individuals, pos_ex, neg_ex, random_ex: bool, size_of_ex
     return lp, s
 
 
-# kb: ../KGs/father.owl
+# kb: ../KGs/Family/father.owl
 # pos: http://example.com/father#markus,http://example.com/father#martin,http://example.com/father#stefan
 # neg: http://example.com/father#anna,http://example.com/father#heinz,http://example.com/father#michelle
 

@@ -1,35 +1,31 @@
+from typing import Dict, Set, Tuple, List, Union, Callable, Iterable
 import numpy as np
-import owlapy.model
 import pandas as pd
-import requests
-import json
+from owlapy.class_expression import OWLObjectIntersectionOf, OWLClassExpression, OWLObjectUnionOf, OWLDataHasValue, \
+    OWLDataSomeValuesFrom, OWLClass
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_property import OWLDataProperty
+import ontolearn.triple_store
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.base import OWLOntologyManager_Owlready2
-from owlapy.model import OWLEquivalentClassesAxiom, OWLOntologyManager, OWLOntology, AddImport, OWLImportsDeclaration, \
-    IRI, OWLDataOneOf
-
-# mv best_pred.owl
-# (base) demir@demir:~/Desktop/Softwares/Ontolearn/LD2NL/owl2nl$ ./owl2nl.sh -a ./src/test/resources/best_pred.owl             -u false -o ./src/test/resources/family.owl             -t json -s test_out.json -m rule
-# ./owl2nl.sh -a ./home/demir/Desktop/Softwares/Ontolearn/examples/best_pred.owl -u false -o ./home/demir/Desktop/Softwares/Ontolearn/KGs/Family/family.owl -t json -s test_out.json -m rule
-
-from typing import Dict, Set, Tuple, List, Union, TypeVar, Callable
+from owlapy.class_expression import OWLDataOneOf
 from ontolearn.learning_problem import PosNegLPStandard
-import collections
-import matplotlib.pyplot as plt
+from tqdm import tqdm
 import sklearn
 from sklearn import tree
-
-from owlapy.model import OWLObjectSomeValuesFrom, OWLObjectPropertyExpression, OWLObjectSomeValuesFrom, \
-    OWLObjectAllValuesFrom, \
-    OWLObjectIntersectionOf, OWLClassExpression, OWLNothing, OWLThing, OWLNaryBooleanClassExpression, \
-    OWLObjectUnionOf, OWLClass, OWLObjectComplementOf, OWLObjectMaxCardinality, OWLObjectMinCardinality, \
-    OWLDataSomeValuesFrom, OWLDatatypeRestriction, OWLLiteral, OWLDataHasValue, OWLObjectHasValue, OWLNamedIndividual
 from owlapy.render import DLSyntaxObjectRenderer, ManchesterOWLSyntaxOWLObjectRenderer
-from sklearn.model_selection import GridSearchCV
-
-import time
-
-from sklearn.tree import export_text
+from ..utils.static_funcs import plot_umap_reduced_embeddings, plot_decision_tree_of_expressions
+import itertools
+from owlapy.class_expression import OWLDataMinCardinality, OWLDataMaxCardinality, \
+    OWLObjectOneOf
+from owlapy.class_expression import OWLDataMinCardinality, OWLDataOneOf, OWLDataSomeValuesFrom
+from owlapy.providers import owl_datatype_min_inclusive_restriction, owl_datatype_max_inclusive_restriction
+from owlapy.providers import owl_datatype_min_exclusive_restriction, \
+    owl_datatype_max_exclusive_restriction, owl_datatype_min_inclusive_restriction
+import scipy
+from owlapy import owl_expression_to_dl, owl_expression_to_sparql
+from owlapy.class_expression import OWLObjectSomeValuesFrom, OWLObjectMinCardinality
+from owlapy.providers import owl_datatype_min_max_exclusive_restriction
 
 
 def is_float(value):
@@ -54,6 +50,13 @@ def compute_quality(instances, pos, neg, conf_matrix=False, quality_func=None):
     return f1_score
 
 
+def make_iterable_verbose(iterable_object, verbose, desc="Default") -> Iterable:
+    if verbose > 0:
+        return tqdm(iterable_object, desc=desc)
+    else:
+        return iterable_object
+
+
 def extract_cbd(dataframe) -> Dict[str, List[Tuple[str, str]]]:
     """
     Extract concise bounded description for each entity, where the entity is a subject entity.
@@ -69,54 +72,57 @@ def extract_cbd(dataframe) -> Dict[str, List[Tuple[str, str]]]:
     return data
 
 
-def explain_inference(clf, X_test, features, only_shared):
+def explain_inference(clf, X_test: pd.DataFrame):
+    """
+    Given a trained Decision Tree, extract the paths from root to leaf nodes for each entities
+    https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html#understanding-the-decision-tree-structure
+
+    """
     reports = []
-    n_nodes = clf.tree_.node_count
-    children_left = clf.tree_.children_left
-    children_right = clf.tree_.children_right
-    feature = clf.tree_.feature
-    threshold = clf.tree_.threshold
-    values = clf.tree_.value
+
+    # i-th feature_tree represent a feature used in the i-th node
+    feature_tree = clf.tree_.feature
+
+    # i-th item denotes the threshold in the i-th node.
+    threshold_value_in_nodes = clf.tree_.threshold
     # Positives
+    node_indicator: scipy.sparse._csr.csr_matrix
     node_indicator = clf.decision_path(X_test)
+    #  the summary of the training samples that reached node i for class j and output k
+
+    features: List[Tuple[OWLClassExpression, OWLDataProperty]]
+    features = X_test.columns.to_list()
+    # Leaf id for each example
+    leaf_id: np.ndarray
     leaf_id = clf.apply(X_test)
+    # node_indicator: tuple of integers denotes the index of example and the index of node.
+    # the last integer denotes the class
+    #   (0, 0)	1
+    #   (0, 8)	1
+    #   (0, 9)	1
+    #   (0, 10)	1
+    # i-th item in leaf_id denotes the leaf node of the i-th example [10, ...., 10]
 
-    if only_shared:
-        sample_ids = range(len(X_test))
-        # boolean array indicating the nodes both samples go through
-        common_nodes = node_indicator.toarray()[sample_ids].sum(axis=0) == len(sample_ids)
-        # obtain node ids using position in array
-        common_node_id = np.arange(n_nodes)[common_nodes]
+    np_X_test = X_test.values
 
-        print(
-            "The following samples {samples} share the node(s) {nodes} in the tree.".format(
-                samples=sample_ids, nodes=common_node_id
-            )
-        )
-        print("This is {prop}% of all nodes.".format(prop=100 * len(common_node_id) / n_nodes))
-        return None
+    for i, np_individual in enumerate(np_X_test):
+        # (1) Extract nodes relating to the classification of the i-th example
+        node_indices = node_indicator.indices[node_indicator.indptr[i]: node_indicator.indptr[i + 1]]
 
-    for sample_id in range(len(X_test)):
-        # obtain ids of the nodes `sample_id` goes through, i.e., row `sample_id`
-        node_index = node_indicator.indices[
-                     node_indicator.indptr[sample_id]: node_indicator.indptr[sample_id + 1]
-                     ]
-        # print("Rules used to predict sample {id}:\n".format(id=sample_id))
         decision_path = []
-        for node_id in node_index:
-            # continue to the next node if it is a leaf node
-            if leaf_id[sample_id] == node_id:
+        for th_node, node_id in enumerate(node_indices):
+            if leaf_id[i] == node_id:
                 continue
+            index_of_feature_owl_ce = feature_tree[node_id]
 
-            # check if value of the split feature for sample 0 is below threshold
-            if X_test[sample_id, feature[node_id]] <= threshold[node_id]:
-                threshold_sign = "<="
-            else:
-                threshold_sign = ">"
-
-            # report = f"decision node {node_id} : ({features[feature[node_id]]} = {X_test[sample_id, feature[node_id]]}) {threshold_sign} {threshold[node_id]})"
-            decision_path.append({"decision_node": node_id, "feature": features[feature[node_id]],
-                                  "value": X_test[sample_id, feature[node_id]]})
+            decision_path.append({  # "decision_node": node_id,
+                # OWLClassExpression or OWLDataProperty
+                "feature": features[index_of_feature_owl_ce],
+                # Feature value of an individual, e.g. 1.0 or 0.0 for booleans
+                "feature_value_of_individual": np_individual[index_of_feature_owl_ce],
+                #
+                "threshold_value": threshold_value_in_nodes[node_id],
+            })
         reports.append(decision_path)
     return reports
 
@@ -138,334 +144,242 @@ class TDL:
     """Tree-based Description Logic Concept Learner"""
 
     def __init__(self, knowledge_base,
-                 dataframe_triples: pd.DataFrame,
-                 kwargs_classifier:dict,
+                 use_inverse: bool = False,
+                 use_data_properties: bool = False,
+                 use_nominals: bool = False,
+                 use_card_restrictions: bool = False,
+                 quality_func: Callable = None,
+                 kwargs_classifier: dict = None,
                  max_runtime: int = 1,
-                 grid_search_over=None,
+                 grid_search_over: dict = None,
+                 grid_search_apply: bool = False,
                  report_classification: bool = False,
-                 plot_built_tree: bool = False,
-                 plotembeddings: bool = False):
-        if grid_search_over is None:
+                 plot_tree: bool = False,
+                 plot_embeddings: bool = False,
+                 verbose: int = 1):
+        assert use_inverse is False, "use_inverse not implemented"
+        assert use_data_properties is False, "use_data_properties not implemented"
+        assert use_card_restrictions is False, "use_card_restrictions not implemented"
+
+        self.use_nominals = use_nominals
+        self.use_card_restrictions = use_card_restrictions
+
+        if grid_search_over is None and grid_search_apply:
             grid_search_over = {'criterion': ["entropy", "gini", "log_loss"],
                                 "splitter": ["random", "best"],
                                 "max_features": [None, "sqrt", "log2"],
                                 "min_samples_leaf": [1, 2, 3, 4, 5, 10],
                                 "max_depth": [1, 2, 3, 4, 5, 10, None]}
-        assert isinstance(dataframe_triples, pd.DataFrame), "dataframe_triples must be a Pandas DataFrame"
-        assert isinstance(knowledge_base, KnowledgeBase), "knowledge_base must be a KnowledgeBase instance"
-        assert len(dataframe_triples) > 0, f"length of the dataframe must be greater than 0:{dataframe_triples.shape}"
+        else:
+            grid_search_over = dict()
+        assert isinstance(knowledge_base, KnowledgeBase) or isinstance(knowledge_base,
+                                                                       ontolearn.triple_store.TripleStore), "knowledge_base must be a KnowledgeBase instance"
         print(f"Knowledge Base: {knowledge_base}")
-        print(f"Matrix representation of knowledge base: {dataframe_triples.shape}")
         self.grid_search_over = grid_search_over
         self.knowledge_base = knowledge_base
-        self.dataframe_triples = dataframe_triples
         self.report_classification = report_classification
-        self.plot_built_tree = plot_built_tree
-        self.plotembeddings = plotembeddings
-        # Mappings from string of IRI to named concepts.
-        self.owl_classes_dict = {c.get_iri().as_str(): c for c in self.knowledge_base.get_concepts()}
-        # Mappings from string of IRI to object properties.
-        self.owl_object_property_dict = {p.get_iri().as_str(): p for p in self.knowledge_base.get_object_properties()}
-        # Mappings from string of IRI to data properties.
-        self.owl_data_property_dict = {p.get_iri().as_str(): p for p in self.knowledge_base.get_data_properties()}
-        # Mappings from string of IRI to individuals.
-        self.owl_individuals = {i.get_iri().as_str(): i for i in self.knowledge_base.individuals()}
-        self.dl_render = DLSyntaxObjectRenderer()
+        self.plot_tree = plot_tree
+        self.plot_embeddings = plot_embeddings
         self.manchester_render = ManchesterOWLSyntaxOWLObjectRenderer()
         # Keyword arguments for sklearn Decision tree.
         # Initialize classifier
         self.clf = None
-        self.feature_names = None
-        self.kwargs_classifier = kwargs_classifier
+        self.kwargs_classifier = kwargs_classifier if kwargs_classifier else dict()
         self.max_runtime = max_runtime
+        self.features = None
         # best pred
         self.disjunction_of_conjunctive_concepts = None
         self.conjunctive_concepts = None
-        # Remove uninformative triples if exists.
-        # print("Removing uninformative triples...")
-        self.dataframe_triples = self.dataframe_triples[
-            ~((self.dataframe_triples["relation"] == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") & (
-                    (self.dataframe_triples["object"] == "http://www.w3.org/2002/07/owl#NamedIndividual") | (
-                    self.dataframe_triples["object"] == "http://www.w3.org/2002/07/owl#Thing") | (
-                            self.dataframe_triples["object"] == "Ontology")))]
-        # print(f"Matrix representation of knowledge base: {dataframe_triples.shape}")
+        self.owl_class_expressions = set()
         self.cbd_mapping: Dict[str, Set[Tuple[str, str]]]
-        self.cbd_mapping = extract_cbd(self.dataframe_triples)
-        self.str_type = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-        # Fix an ordering: Not quite sure whether we needed
-        self.str_individuals = list(self.owl_individuals)
-        # An entity to a list of tuples of predicate and objects
-        self.first_hop = {k: v for k, v in self.cbd_mapping.items() if k in self.str_individuals}
         self.types_of_individuals = dict()
+        self.verbose = verbose
+        self.data_property_cast = dict()
 
-        for k, v in self.first_hop.items():
-            for relation, tail in v:
-                if relation == self.str_type:
-                    self.types_of_individuals.setdefault(k, set()).add(tail)
+    def create_training_data(self, learning_problem: PosNegLPStandard) -> Tuple[pd.DataFrame, pd.Series]:
+        """
+        Create a training data (X:pandas.DataFrame of (n,d) , y:pandas.Series of (n,1)) for binary class problem.
+        n denotes the number of examples
+        d denotes the number of features extracted from n examples.
 
-        self.Xraw = None
+        return X, y
+        """
+        # (1) Initialize features.
+        features: List[OWLClassExpression]
+        features = list()
+        # (2) Initialize ordered examples.
+        positive_examples: List[OWLNamedIndividual]
+        negative_examples: List[OWLNamedIndividual]
+        positive_examples = [i for i in learning_problem.pos]
+        negative_examples = [i for i in learning_problem.neg]
+        examples = positive_examples + negative_examples
+        # TODO: Asyncio ?!
+        for i in make_iterable_verbose(examples,
+                                       verbose=self.verbose,
+                                       desc="Extracting information about examples"):
+            for expression in self.knowledge_base.abox(individual=i, mode="expression"):
+                features.append(expression)
+        assert len(
+            features) > 0, f"First hop features cannot be extracted. Ensure that there are axioms about the examples."
+        print("Total extracted features:", len(features))
+        features = set(features)
+        print("Unique features:", len(features))
+        binary_features = []
+        # IMPORTANT: our features either
+        for i in features:
+            if isinstance(i, OWLClass) or isinstance(i, OWLObjectSomeValuesFrom) or isinstance(i,
+                                                                                               OWLObjectMinCardinality):
+                # Person, \exist hasChild Female, < 2
+                binary_features.append(i)
+            elif isinstance(i, OWLDataSomeValuesFrom):
+                # (Currently) \exist r. {True, False} =>
+                owl_literals = [i for i in i.get_filler().operands()]
+                if owl_literals[0].is_boolean():
+                    binary_features.append(i)
+                elif owl_literals[0].is_double():
+                    binary_features.append(i)
 
-    def built_sparse_training_data(self, entity_infos: Dict[str, Dict], individuals: List[str],
-                                   feature_names: List[Tuple[str, Union[str, None]]]):
-        """ Construct a tabular representations from fixed features """
-        assert entity_infos is not None, "No entity_infos"
-        result = []
-        # () Iterate over individuals.
-        for s in individuals:
-            # () Initialize an empty row.
-            representation_of_s = [0.0 for _ in feature_names]
-            # All info about s should be in the features.
-            for relation, hop_info in entity_infos[s].items():
-                assert isinstance(relation, str), "Relation must be string"
-                for t in hop_info:
-                    if isinstance(t, str):
-                        if relation == self.str_type:
-                            assert t in self.owl_classes_dict
-                            # Boolean feature : (type, CLASS):
-                            representation_of_s[feature_names.index((relation, t))] = 1.0
-                        elif relation == self.owl_object_property_dict:
-                            # Boolean feature : (hasChild, Individual)
-                            assert t in self.str_individuals
-                            representation_of_s[feature_names.index((relation, t))] = 1.0
-                        elif relation == self.owl_object_property_dict:
-                            # Numerical Feature : (hasCharge, None)
-                            assert t not in self.str_individuals
-                            assert is_float(t)
+                else:
+                    raise RuntimeError(f"Unrecognized type:{i}")
+            else:
+                raise RuntimeError(f"Unrecognized type:{i}")
 
-                            print("hereee")
-                            print(s, relation, t)
-                            representation_of_s[feature_names.index((relation, None))] = t
-                            exit(1)
-                    elif isinstance(t, tuple):
-                        if len(t) == 2:
-                            rr, oo = t
-                            if rr in self.owl_data_property_dict:
-                                # Feature : hasSibling, hasCharge, NUMBER
-                                assert is_float(oo)
+        features = binary_features
+        # (4) Order features: create a mapping from tuple of predicate and objects to integers starting from 0.
+        mapping_features = {predicate_object_pair: index_ for index_, predicate_object_pair in enumerate(features)}
+        # (5) Creating a tabular data for the binary classification problem.
+        X, y = [], []
+        for ith_row, i in enumerate(make_iterable_verbose(examples,
+                                                          verbose=self.verbose,
+                                                          desc="Creating supervised binary classification data")):
+            # IMPORTANT: None existence is described as 0.0 features.
+            X_i = [0.0 for _ in range(len(mapping_features))]
+            expression: [OWLClass, OWLObjectSomeValuesFrom, OWLObjectMinCardinality, OWLDataSomeValuesFrom]
+            # Filling the features
+            for expression in self.knowledge_base.abox(individual=i, mode="expression"):
+                if isinstance(expression, OWLDataSomeValuesFrom):
+                    fillers: OWLDataOneOf[OWLLiteral]
+                    fillers = expression.get_filler()
+                    datavalues_in_fillers = list(fillers.values())
+                    if datavalues_in_fillers[0].is_boolean():
+                        X_i[mapping_features[expression]] = 1
+                    elif datavalues_in_fillers[0].is_double():
+                        X_i[mapping_features[expression]] = 1.0
+                    else:
+                        raise RuntimeError(
+                            f"Type of literal in OWLDataSomeValuesFrom is not understood:{datavalues_in_fillers}")
+                elif isinstance(expression, OWLClass) or isinstance(expression, OWLObjectSomeValuesFrom):
+                    assert expression in mapping_features, expression
+                    X_i[mapping_features[expression]] = 1.0
+                elif isinstance(expression, OWLObjectMinCardinality):
+                    X_i[mapping_features[expression]] = expression.get_cardinality()
+                else:
+                    raise RuntimeError(f"Unrecognized type:{expression}-{type(expression)}")
 
-                                representation_of_s[feature_names.index((relation, rr, None))] = eval(oo)
+            X.append(X_i)
+            # Filling the label
+            if ith_row < len(positive_examples):
+                # Sanity checking for positive examples.
+                assert i in positive_examples and i not in negative_examples
+                label = 1.0
+            else:
+                # Sanity checking for negative examples.
+                assert i in negative_examples and i not in positive_examples
+                label = 0.0
+            y.append(label)
+
+        self.features = features
+        X = pd.DataFrame(data=X, index=examples, columns=self.features)
+        y = pd.DataFrame(data=y, index=examples, columns=["label"])
+        return X, y
+
+    def construct_owl_expression_from_tree(self, X: pd.DataFrame, y: pd.DataFrame) -> List[OWLObjectIntersectionOf]:
+        """ Construct an OWL class expression from a decision tree """
+        positive_examples: List[OWLNamedIndividual]
+        positive_examples = y[y.label == 1].index.tolist()
+
+        prediction_per_example = []
+        # () Iterate over reasoning steps of predicting a positive example
+        pos: OWLNamedIndividual
+        for sequence_of_reasoning_steps, pos in zip(
+                explain_inference(self.clf,
+                                  X_test=X.loc[positive_examples]), positive_examples):
+            concepts_per_reasoning_step = []
+            for i in sequence_of_reasoning_steps:
+                # sanity checking about the decision.
+                if isinstance(i["feature"], OWLDataProperty):
+                    # Detect the type of literal
+                    owl_literal = OWLLiteral(self.data_property_cast[i["feature"]](i["feature_value_of_individual"]))
+                    if owl_literal.is_boolean():
+                        # Feature: Dataproperty amesTestPositive
+                        # Condition value: {False, True}
+                        assert i["feature_value_of_individual"] in [0.0, 1.0]
+                        assert i["threshold_value"] == 0.5
+                        if i["feature_value_of_individual"] <= 0.5:
+                            # Two options for conditions holding:
+                            # (1) Either (pos amesTestPositive False) in KG.
+                            # (2) Or (pos amesTestPositive, ?) not in KG
+                            owl_class_expression = OWLDataHasValue(property=i["feature"], value=OWLLiteral(False))
+                            # Checking whether (1) holds
+                            if pos in {i in self.knowledge_base.individuals(owl_class_expression)}:
+                                "p \in Retrieval(∃ amesTestPositive.{False})"
                             else:
-                                assert rr in self.owl_object_property_dict
-                                assert relation in self.owl_object_property_dict
-                                assert oo in self.owl_classes_dict
-                                representation_of_s[feature_names.index((relation, rr, oo))] = 1.0
-
+                                "p \in Retrieval(\not(∃ amesTestPositive.{False}))"
+                                owl_class_expression = owl_class_expression.get_object_complement_of()
                         else:
-                            print(t)
-                            print("ASDAD")
-                            exit(1)
-                            representation_of_s[feature_names.index((relation, *t))] = 1.0
-                    else:
-                        print("asda")
-                        print(s, relation, t)
-                        print(t)
-                        print("BURASI")
-                        exit(1)
-            result.append(representation_of_s)
-        result = pd.DataFrame(data=result, index=individuals, columns=feature_names)  # , dtype=np.float32)
-        # result = result.loc[:, (result != False).any(axis=0)]
-
-        return result
-
-    def construct_hop(self, individuals: List[str]) -> Dict[str, Dict]:
-        assert len(individuals) == len(set(individuals)), "There are duplicate individuals"
-
-        # () Nested dictionary
-        hop = dict()
-        # () Unique features/DL concepts.
-        features = set()
-        # () Iterate over individuals.
-        for s in individuals:
-            temp = dict()
-            # () iterate over triples of (s,p,o)
-            for p, o in self.first_hop[s]:
-                ##### SAVE FEATURE: (type, PERSON) #####
-                if p == self.str_type:
-                    # For example, (hasChild Male).
-                    assert o in self.owl_classes_dict
-                    temp.setdefault(p, set()).add(o)
-                    features.add((p, o))
-                else:
-                    # o can be an individual,
-                    #          a literal or
-                    #          blank node
-
-                    # If o is an individual
-                    if o in self.str_individuals:
-                        # () iterate over triples of (o,pp,oo)
-                        for (pp, oo) in self.first_hop[o]:
-                            if pp == self.str_type:
-                                # (s, p=hasChild, o)
-                                # (o, pp=TYPE, oo=Person)
-                                ##### SAVE FEATURE: (hasChild, PERSON) #####
-                                assert oo in self.owl_classes_dict
-                                temp.setdefault(p, set()).add(oo)
-                                features.add((p, oo))
-                            else:
-                                # (s, p=hasChild, o)
-                                # (o, pp=hasChild, oo=Person)
-                                # if oo is an individual.
-                                if oo in self.str_individuals:
-                                    ##### SAVE FEATURE: (hasChild, married, Father) #####
-                                    for c in self.types_of_individuals[oo]:
-                                        temp.setdefault(p, set()).add((pp, c))
-                                        features.add((p, pp, c))
-                                else:
-                                    # oo is  or literal
-                                    # print(s, p, o)
-                                    # print(o, pp, oo)
-                                    assert isinstance(eval(oo), float)
-                                    assert o in self.str_individuals
-                                    assert pp in self.owl_data_property_dict
-                                    temp.setdefault(p, set()).add((pp, oo))
-                                    features.add((p, pp, None))
+                            # Two options for conditions not holding:
+                            # (1) (pos amesTestPositive True) in KG.
+                            # (2) (pos amesTestPositive, ?) not in.
+                            owl_class_expression = OWLDataHasValue(property=i["feature"], value=OWLLiteral(True))
 
                     else:
-                        # given s, p,32.1
-                        # Feature (hasBond ?)
-                        # p hasBond 32.1
+                        raise NotImplementedError
+                        # DONE!
 
-                        temp.setdefault(p, set()).add(o)
-                        features.add((p, None))
-
-            hop[s] = temp
-        return hop, features
-
-    @staticmethod
-    def labeling(Xraw, pos, neg, apply_dummy=False):
-        """ Labelling """
-        # (5) Labeling: Label each row/node
-        # Drop "label" if exists
-
-        Xraw.loc[:, "label"] = 0  # unknowns
-        Xraw.loc[pos, "label"] = 1  # positives
-        Xraw.loc[neg, "label"] = -1  # negatives
-        # (5.1) drop unknowns although unknowns provide info
-        X = Xraw  # self.Xraw[self.Xraw.label != 0]
-
-        raw_features = X.columns.tolist()
-        raw_features.remove("label")
-        if apply_dummy:
-            X_train_sparse = pd.get_dummies(X[raw_features])
-        else:
-            X_train_sparse = X[raw_features]
-        y_train_sparse = X.loc[:, "label"]
-
-        # print(f"Train data shape:{X_train_sparse.shape}")
-        return X_train_sparse, y_train_sparse
-
-    def decision_to_owl_class_exp(self, reasoning_step: dict):
-        """ """
-        # tail can be individual or class
-        feature = reasoning_step["feature"]
-        # relation, tail_info = reasoning_step["feature"]
-        if len(feature) == 2:
-            relation, tail_info = feature
-            if relation == self.str_type:
-                assert isinstance(tail_info, str), "Tail must be a string"
-                assert tail_info in self.owl_classes_dict, "a defined OWL class"
-                assert reasoning_step["value"] == 0.0 or reasoning_step["value"] == 1.0
-                if bool(reasoning_step["value"]):
-                    owl_class = self.owl_classes_dict[tail_info]
+                elif type(i["feature"]) in [OWLClass, OWLObjectSomeValuesFrom, OWLObjectMinCardinality]:
+                    ####################################################################################################
+                    # DONE
+                    # Feature: Female, ≥ 3 hasStructure.owl:NamedIndividual
+                    # Condition Feature(individual) <= 0.5
+                    # Explanation: Feature does not hold for the individual
+                    if i["feature_value_of_individual"] <= i["threshold_value"]:
+                        # Condition holds: Feature(individual)==0.0
+                        # Therefore, neg Feature(individual)==1.0
+                        owl_class_expression = i["feature"].get_object_complement_of()
+                    else:
+                        owl_class_expression = i["feature"]
+                elif type(i["feature"]) == OWLDataSomeValuesFrom:
+                    if i["feature_value_of_individual"] <= i["threshold_value"]:
+                        owl_class_expression = i["feature"].get_object_complement_of()
+                    else:
+                        owl_class_expression = i["feature"]
                 else:
-                    owl_class = self.owl_classes_dict[tail_info].get_object_complement_of()
-            elif relation in self.owl_data_property_dict:
-                # To capture this ('http://dl-learner.org/mutagenesis#hasThreeOrMoreFusedRings', None)
-                print("HEREEEE")
-                print(relation)
-                raise RuntimeError("UNCLEAR")
-            else:
-                rel1, tail = feature
-                if rel1 in self.owl_object_property_dict:
-                    owl_class = OWLObjectSomeValuesFrom(property=self.owl_object_property_dict[rel1],
-                                                        filler=self.owl_classes_dict[tail])
-                else:
-                    owl_class = OWLDataHasValue(property=self.owl_data_property_dict[rel1], value=OWLLiteral(tail))
+                    raise RuntimeError(f"Unrecognized feature:{i['feature']}-{type(i['feature'])}")
 
-                print("WHAT SHOULD BE")
-                print(feature)
-                print(reasoning_step["value"])
-                raise RuntimeError("UNCLEAR")
-        else:
-            assert len(feature) == 3
-            rel1, rel2, concept = feature
+                    ####################################################################################################
+                    # Expensive Sanity Checking:
+                    # The respective positive example should be one of the the retrieved individuals
+                    ########################################################################################################
+                    """
+                    try:
+                        indvs={_ for _ in self.knowledge_base.individuals(owl_class_expression)}
+                        assert pos in {_ for _ in self.knowledge_base.individuals(owl_class_expression)}
+                    except AssertionError:
+                        print(i)
+                        raise AssertionError(f"{pos} is not founded in the retrieval of {owl_expression_to_dl(owl_class_expression)}\n{owl_expression_to_sparql(expression=owl_class_expression)}\nSize:{len(indvs)}")
 
-            if concept is None:
-                assert rel2 in self.owl_data_property_dict
-                assert is_float(reasoning_step["value"])
-                owl_class = OWLObjectSomeValuesFrom(property=self.owl_object_property_dict[rel1],
-                                                    filler=OWLDataHasValue(property=self.owl_data_property_dict[rel2],
-                                                                           value=OWLLiteral(
-                                                                               float(reasoning_step["value"]))))
-            elif rel2 in self.owl_object_property_dict:
-                filler = OWLObjectSomeValuesFrom(property=self.owl_object_property_dict[rel2],
-                                                 filler=self.owl_classes_dict[concept])
-                owl_class = OWLObjectSomeValuesFrom(property=self.owl_object_property_dict[rel1], filler=filler)
+                    """
 
-                assert reasoning_step["value"] == 0.0 or reasoning_step["value"] == 1.0
-                if bool(reasoning_step["value"]):
-                    pass
-                else:
-                    owl_class = owl_class.get_object_complement_of()
+                concepts_per_reasoning_step.append(owl_class_expression)
 
-            else:
+            pred = concepts_reducer(concepts=concepts_per_reasoning_step, reduced_cls=OWLObjectIntersectionOf)
+            prediction_per_example.append((pred, pos))
 
-                raise RuntimeError("UNCLEAR")
-                assert rel2 in self.owl_data_property_dict
-                print(reasoning_step)
+        # From list to set to remove identical paths from the root to leafs.
+        prediction_per_example = {pred for pred, positive_example in prediction_per_example}
+        return list(prediction_per_example)
 
-                owl_class = OWLObjectSomeValuesFrom(property=self.owl_object_property_dict[rel1],
-                                                    filler=OWLDataSomeValuesFrom(
-                                                        property=self.owl_data_property_dict[rel2],
-                                                        filler=OWLLiteral(float(reasoning_step["value"]))))
-
-        return owl_class
-
-    def feature_pretify(self):
-        pretified_feature_names = []
-        for i in self.feature_names:
-            feature = ""
-            for x in i:
-                x = x.replace("http://www.benchmark.org/family#", "")
-                x = x.replace("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "")
-                feature += x + " "
-            pretified_feature_names.append(feature)
-        return pretified_feature_names
-
-    def plot(self):
-        """
-        # plt.figure(figsize=(30, 30))
-        # tree.plot_tree(self.clf, fontsize=10, feature_names=X.columns.to_list())
-        # plt.show()
-
-        """
-        pretified_feature_names = []
-        for i in self.feature_names:
-            f = []
-            for x in i:
-                x = x.replace("http://www.benchmark.org/family#", "")
-                x = x.replace("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "")
-                f.append(x)
-            pretified_feature_names.append(f)
-
-        plt.figure(figsize=(10, 10))
-        tree.plot_tree(self.clf, fontsize=10, feature_names=pretified_feature_names,
-                       class_names=["Negative", "Positive"],
-                       filled=True)
-        plt.savefig('Aunt_Tree.pdf')
-        plt.show()
-
-        feature_importance = pd.Series(np.array(self.clf.feature_importances_),
-                                       index=[",".join(i) for i in pretified_feature_names])
-        feature_importance = feature_importance[feature_importance > 0.0]
-        fig, ax = plt.subplots()
-        feature_importance.plot.bar(ax=ax)
-        ax.set_title("Feature Importance")
-        fig.tight_layout()
-        plt.savefig('feature_importance.pdf')
-        plt.show()
-
-    def fit(self, lp: PosNegLPStandard = None, max_runtime: int = None):
+    def fit(self, learning_problem: PosNegLPStandard = None, max_runtime: int = None):
         """ Fit the learner to the given learning problem
 
         (1) Extract multi-hop information about E^+ and E^- denoted by \mathcal{F}.
@@ -475,87 +389,67 @@ class TDL:
 
         (4) Construct a set of DL concept for each e \in E^+
         (5) Union (4)
-        :param lp: The learning problem
+
+        :param learning_problem: The learning problem
         :param max_runtime:total runtime of the learning
 
         """
-        assert lp is not None, "Learning problem cannot be None."
+        assert learning_problem is not None, "Learning problem cannot be None."
+        assert isinstance(learning_problem,
+                          PosNegLPStandard), f"Learning problem must be PosNegLPStandard. Currently:{learning_problem}."
+
         if max_runtime is not None:
             self.max_runtime = max_runtime
+        X: pd.DataFrame
+        y: Union[pd.DataFrame, pd.Series]
+        X, y = self.create_training_data(learning_problem=learning_problem)
 
-        str_pos_examples = [i.get_iri().as_str() for i in lp.pos]
-        str_neg_examples = [i.get_iri().as_str() for i in lp.neg]
+        if self.plot_embeddings:
+            plot_umap_reduced_embeddings(X, y.label.to_list(), "umap_visualization.pdf")
 
-        """self.features.extend([(str_r, None) for str_r in self.owl_data_property_dict])"""
-        # Nested dictionary [inv][relation]: => [] Dict[str, Dict]
-        hop_info, features = self.construct_hop(str_pos_examples + str_neg_examples)
-
-        # list of tuples having length 2 or 3
-        features = list(features)
-
-        Xraw = self.built_sparse_training_data(entity_infos=hop_info,
-                                               individuals=str_pos_examples + str_neg_examples,
-                                               feature_names=features)
-        X, y = self.labeling(Xraw=Xraw, pos=str_pos_examples, neg=str_neg_examples)
-
-        if self.plotembeddings:
-            import umap
-            print("Fitting")
-            reducer = umap.UMAP(random_state=1)
-            embedding = reducer.fit_transform(X)
-            plt.scatter(embedding[:, 0], embedding[:, 1],
-                        c=["r" if x == 1 else "b" for x in y])
-            plt.grid()
-            plt.gca().set_aspect('equal', 'datalim')
-            plt.savefig("UMAP_AUNT.pdf")
-            plt.show()
-
-        if self.grid_search_over is not None:
-            grid_search = GridSearchCV(tree.DecisionTreeClassifier(**self.kwargs_classifier),
-                                       param_grid=self.grid_search_over, cv=10).fit(X.values, y.values)
+        if self.grid_search_over:
+            grid_search = sklearn.model_selection.GridSearchCV(tree.DecisionTreeClassifier(**self.kwargs_classifier),
+                                                               param_grid=self.grid_search_over, cv=10).fit(X.values,
+                                                                                                            y.values)
             print(grid_search.best_params_)
             self.kwargs_classifier.update(grid_search.best_params_)
 
         self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=X.values, y=y.values)
-        self.feature_names = X.columns.to_list()
+
         if self.report_classification:
             print("Classification Report: Negatives: -1 and Positives 1 ")
             print(sklearn.metrics.classification_report(y.values, self.clf.predict(X.values),
                                                         target_names=["Negative", "Positive"]))
-        if self.plot_built_tree:
-            self.plot()
+        if self.plot_tree:
+            plot_decision_tree_of_expressions(feature_names=[owl_expression_to_dl(f) for f in self.features],
+                                              cart_tree=self.clf, topk=10)
 
-        prediction_per_example = []
-        # () Iterate over E^+
-        for sequence_of_reasoning_steps, pos in zip(
-                explain_inference(self.clf,
-                                  X_test=X.loc[str_pos_examples].values,
-                                  features=X.columns.to_list(),
-                                  only_shared=False), str_pos_examples):
-            sequence_of_concept_path_of_tree = [self.decision_to_owl_class_exp(reasoning_step) for
-                                                reasoning_step in
-                                                sequence_of_reasoning_steps]
-
-            pred = concepts_reducer(concepts=sequence_of_concept_path_of_tree, reduced_cls=OWLObjectIntersectionOf)
-
-            prediction_per_example.append((pred, pos))
-
-        # Remove paths from the root to leafs if overallping
-        prediction_per_example = {p for p, indv in prediction_per_example}
-        self.conjunctive_concepts = [pred for pred in prediction_per_example]
+        self.owl_class_expressions.clear()
+        # Each item can be considered is a path of OWL Class Expressions
+        # starting from the root node in the decision tree and
+        # ending in a leaf node.
+        self.conjunctive_concepts: List[OWLObjectIntersectionOf]
+        self.conjunctive_concepts = self.construct_owl_expression_from_tree(X, y)
+        for i in self.conjunctive_concepts:
+            self.owl_class_expressions.add(i)
 
         self.disjunction_of_conjunctive_concepts = concepts_reducer(concepts=self.conjunctive_concepts,
                                                                     reduced_cls=OWLObjectUnionOf)
+
         return self
 
-    def best_hypotheses(self, n=1):
+    def best_hypotheses(self, n=1) -> Tuple[OWLClassExpression, List[OWLClassExpression]]:
         """ Return the prediction"""
-        assert n == 1, "Only one hypothesis is supported"
-        return self.disjunction_of_conjunctive_concepts
+        if n == 1:
+            return self.disjunction_of_conjunctive_concepts
+        else:
+            return [self.disjunction_of_conjunctive_concepts] + [i for i in
+                                                                 itertools.islice(self.owl_class_expressions, n)]
 
     def predict(self, X: List[OWLNamedIndividual], proba=True) -> np.ndarray:
         """ Predict the likelihoods of individuals belonging to the classes"""
-        owl_individuals = [i.get_iri().as_str() for i in X]
+        raise NotImplementedError("Unavailable. Predict the likelihoods of individuals belonging to the classes")
+        owl_individuals = [i.str for i in X]
         hop_info, _ = self.construct_hop(owl_individuals)
         Xraw = self.built_sparse_training_data(entity_infos=hop_info,
                                                individuals=owl_individuals,
@@ -567,105 +461,3 @@ class TDL:
             return self.clf.predict_proba(Xraw_numpy)
         else:
             return self.clf.predict(Xraw_numpy)
-
-    @staticmethod
-    def llm(prompt, llm_name: str):
-        """ We need to refactor it"""
-        assert llm_name in ["mistral", "llama2"]
-        data = {"model": llm_name,
-                "prompt": prompt,
-                "content": "You are an expert. Be concise in your answers",
-                "options": {  # "num_keep": 5,
-                    "seed": 1,
-                    # "num_predict": 100,
-                    # "top_k": 20,
-                    # "top_p": 0.9,
-                    # "tfs_z": 0.5,
-                    # "typical_p": 0.7,
-                    # "repeat_last_n": 33,
-                    "temperature": 0.0,
-                    "repeat_penalty": 1.2,
-                    # "presence_penalty": 1.5,
-                    # "frequency_penalty": 1.0,
-                    # "mirostat": 1,
-                    # "mirostat_tau": 0.8,
-                    # "mirostat_eta": 0.6,
-                    # "penalize_newline": true,
-                    # "stop": ["\n", "user:"],
-                    # "numa": false,
-                    # "num_ctx": 1024,
-                    # "num_batch": 2,
-                    # "num_gqa": 1,
-                    # "num_gpu": 1,
-                    # "main_gpu": 0,
-                    # "low_vram": false,
-                    # "f16_kv": true,
-                    # "vocab_only": false,
-                    # "use_mmap": true,
-                    # "use_mlock": false,
-                    # "embedding_only": false,
-                    # "rope_frequency_base": 1.1,
-                    # "rope_frequency_scale": 0.8,
-                    # "num_thread": 8
-                }}
-
-        text = ""
-        response = requests.post("http://localhost:11434/api/generate", json=data, stream=True)
-        response.raise_for_status()
-
-        for line in response.iter_lines():
-            body = json.loads(line)
-            response_part = body.get('response', '')
-            # print(response_part, end='', flush=True)
-            text += response_part
-            if 'error' in body:
-                raise Exception(body['error'])
-
-            if body.get('done', False):
-                break
-        return text
-
-    def verbalize(self):
-        """
-        Ensure that Ollama is running athttp://localhost:11434/
-
-        """
-
-        """ Map a DL concept into natural languages """
-        # https://github.com/jmorganca/ollama/blob/main/docs/api.md#generate-a-completion
-        # Save the best prediction
-        self.save_best_hypothesis(concepts=self.conjunctive_concepts, path="best_pred")
-        for i in self.conjunctive_concepts:
-            prompt = f"Translate this description logic concept into english sentences. Provide no explanations: {self.dl_render.render(i)}"
-            print(f"PROMPT:{prompt}")
-            full_text_mistral = self.llm(prompt, llm_name="mistral")
-            print("RESPONSE:", full_text_mistral)
-            # full_text_llama2 = self.__post_request_llm(prompt, llm_name="llama2")
-
-    def save_best_hypothesis(self, concepts: List[OWLClassExpression],
-                             path: str = 'Predictions',
-                             rdf_format: str = 'rdfxml') -> None:
-        """Serialise the best hypotheses to a file.
-        @TODO: This should be a single static function We need to refactor it
-
-
-        Args:
-            concepts:
-            path: Filename base (extension will be added automatically).
-            rdf_format: Serialisation format. currently supported: "rdfxml".
-        """
-        # NS: Final = 'https://dice-research.org/predictions/' + str(time.time()) + '#'
-        NS: Final = 'https://dice-research.org/predictions#'
-        if rdf_format != 'rdfxml':
-            raise NotImplementedError(f'Format {rdf_format} not implemented.')
-        # ()
-        manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
-        # ()
-        ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
-        # () Iterate over concepts
-        for i in concepts:
-            cls_a: OWLClass = OWLClass(IRI.create(NS, self.manchester_render.render(i)))
-            equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, i])
-            manager.add_axiom(ontology, equivalent_classes_axiom)
-
-        manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))

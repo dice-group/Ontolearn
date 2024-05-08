@@ -1,9 +1,13 @@
-# Ontolearn
+# Ontolearn: Learning OWL Class Expression
 
-*Ontolearn* is an open-source software library for description logic learning problem.
-Find more in the [Documentation](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction).
+*Ontolearn* is an open-source software library for learning owl class expressions at large scale.
 
-Learning algorithms: 
+Given positive and negative [OWL named individual](https://www.w3.org/TR/owl2-syntax/#Individuals) examples
+$E^+$ and $E^-$, learning [OWL Class expression](https://www.w3.org/TR/owl2-syntax/#Class_Expressions) problem refers to the following supervised Machine Learning problem
+
+$$\forall p \in E^+\ \mathcal{K} \models H(p) \wedge \forall n \in E^-\ \mathcal{K} \not \models H(n).$$
+
+To tackle this supervised learnign problem, ontolearn offers many symbolic, neuro-sybmoloc and deep learning based Learning algorithms: 
 - **Drill** &rarr; [Neuro-Symbolic Class Expression Learning](https://www.ijcai.org/proceedings/2023/0403.pdf)
 - **EvoLearner** &rarr; [EvoLearner: Learning Description Logics with Evolutionary Algorithms](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
 - **NCES2** &rarr; (soon) [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
@@ -13,6 +17,8 @@ Learning algorithms:
 - **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
 - **OCEL** &rarr; A limited version of CELOE
 
+Find more in the [Documentation](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction).
+
 ## Installation
 
 ```shell
@@ -20,101 +26,122 @@ pip install ontolearn
 ```
 or
 ```shell
-# ensure that python version >=3.9.18
 git clone https://github.com/dice-group/Ontolearn.git 
 # To create a virtual python env with conda 
-conda create -n venv python=3.10 --no-default-packages && conda activate venv && pip install -e .
-# or python -m venv venv && source venv/bin/activate && pip install -r requirements.txt 
+conda create -n venv python=3.10.14 --no-default-packages && conda activate venv && pip install -e .
 # To download knowledge graphs
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
 ```
 ```shell
-pytest -p no:warnings -x # Running 158 tests takes ~ 3 mins
+pytest -p no:warnings -x # Running 171 tests takes ~ 6 mins
 ```
 
-## Description Logic Concept Learning 
+## Learning OWL Class Expression
 ```python
-from ontolearn.learners import Drill
-from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.learners import TDL
+from ontolearn.triple_store import TripleStore
 from ontolearn.learning_problem import PosNegLPStandard
-from owlapy.model import OWLNamedIndividual, IRI
-# (1) Load a knowledge graph.
-kb = KnowledgeBase(path='KGs/father.owl')
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy import owl_expression_to_sparql, owl_expression_to_dl
+# (1) Initialize Triplestore
+# sudo docker run -p 3030:3030 -e ADMIN_PASSWORD=pw123 stain/jena-fuseki
+# Login http://localhost:3030/#/ with admin and pw123
+# Create a new dataset called family and upload KGs/Family/family.owl
+kb = TripleStore(url="http://localhost:3030/family")
 # (2) Initialize a learner.
-model = Drill(knowledge_base=kb)
+model = TDL(knowledge_base=kb)
 # (3) Define a description logic concept learning problem.
-lp = PosNegLPStandard(pos={OWLNamedIndividual(IRI.create("http://example.com/father#stefan")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#markus")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#martin"))},
-                      neg={OWLNamedIndividual(IRI.create("http://example.com/father#heinz")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#anna")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#michelle"))})
+lp = PosNegLPStandard(pos={OWLNamedIndividual("http://example.com/father#stefan")},
+                      neg={OWLNamedIndividual("http://example.com/father#heinz"),
+                           OWLNamedIndividual("http://example.com/father#anna"),
+                           OWLNamedIndividual("http://example.com/father#michelle")})
 # (4) Learn description logic concepts best fitting (3).
-for h in model.fit(learning_problem=lp).best_hypotheses(3):
-    print(h)
+h = model.fit(learning_problem=lp).best_hypotheses()
+print(h)
+print(owl_expression_to_dl(h))
+print(owl_expression_to_sparql(expression=h))
 ```
-Learned hypothesis can be used as a binary classifier as shown below.
+
+## Learning OWL Class Expression over DBpedia
 ```python
-from ontolearn.concept_learner import CELOE
-from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.learning_problem import PosNegLPStandard
-from ontolearn.search import EvoLearnerNode
-from owlapy.model import OWLClass, OWLClassAssertionAxiom, OWLNamedIndividual, IRI, OWLObjectProperty, OWLObjectPropertyAssertionAxiom
-from owlapy.render import DLSyntaxObjectRenderer
-# (1) Load a knowledge graph.
-kb = KnowledgeBase(path='KGs/father.owl')
-# (2) Initialize a learner.
-model = CELOE(knowledge_base=kb)
-# (3) Define a description logic concept learning problem.
-lp = PosNegLPStandard(pos={OWLNamedIndividual(IRI.create("http://example.com/father#stefan")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#markus")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#martin"))},
-                      neg={OWLNamedIndividual(IRI.create("http://example.com/father#heinz")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#anna")),
-                           OWLNamedIndividual(IRI.create("http://example.com/father#michelle"))})
-# (4) Learn description logic concepts best fitting (3).
-dl_classifiers=model.fit(learning_problem=lp).best_hypotheses(2)
+from ontolearn.utils.static_funcs import save_owl_class_expressions
 
-# (5) Inference over unseen individuals
-namespace = 'http://example.com/father#'
-# (6) New Individuals
-julia = OWLNamedIndividual(IRI.create(namespace, 'julia'))
-julian = OWLNamedIndividual(IRI.create(namespace, 'julian'))
-thomas = OWLNamedIndividual(IRI.create(namespace, 'thomas'))
-# (7) OWLClassAssertionAxiom  about (6)
-male = OWLClass(IRI.create(namespace, 'male'))
-female = OWLClass(IRI.create(namespace, 'female'))
-axiom1 = OWLClassAssertionAxiom(individual=julia, class_expression=female)
-axiom2 = OWLClassAssertionAxiom(individual=julian, class_expression=male)
-axiom3 = OWLClassAssertionAxiom(individual=thomas, class_expression=male)
-# (8) OWLObjectPropertyAssertionAxiom about (6)
-has_child = OWLObjectProperty(IRI.create(namespace, 'hasChild'))
-# Existing Individuals
-anna = OWLNamedIndividual(IRI.create(namespace, 'anna'))
-markus = OWLNamedIndividual(IRI.create(namespace, 'markus'))
-michelle = OWLNamedIndividual(IRI.create(namespace, 'michelle'))
-axiom4 = OWLObjectPropertyAssertionAxiom(subject=thomas, property_=has_child, object_=julian)
-axiom5 = OWLObjectPropertyAssertionAxiom(subject=julia, property_=has_child, object_=julian)
-
-# 4. Use loaded class expressions for predictions
-predictions = model.predict(individuals=[julia, julian, thomas, anna, markus, michelle],
-                            axioms=[axiom1, axiom2, axiom3, axiom4, axiom5],
-                            hypotheses=dl_classifiers)
-print(predictions)
-"""
-          (¬female) ⊓ (∃ hasChild.⊤)  male
-julia                            0.0   0.0
-julian                           0.0   1.0
-thomas                           1.0   1.0
-anna                             0.0   0.0
-markus                           1.0   1.0
-michelle                         0.0   0.0
-"""
+# (1) Initialize Triplestore
+kb = TripleStore(url="http://dice-dbpedia.cs.upb.de:9080/sparql")
+# (3) Initialize a learner.
+model = TDL(knowledge_base=kb)
+# (4) Define a description logic concept learning problem.
+lp = PosNegLPStandard(pos={OWLNamedIndividual("http://dbpedia.org/resource/Angela_Merkel")},
+                      neg={OWLNamedIndividual("http://dbpedia.org/resource/Barack_Obama")})
+# (5) Learn description logic concepts best fitting (4).
+h = model.fit(learning_problem=lp).best_hypotheses()
+print(h)
+print(owl_expression_to_dl(h))
+print(owl_expression_to_sparql(expression=h))
+save_owl_class_expressions(expressions=h,path="owl_prediction")
 ```
 
 Fore more please refer to  the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder.
 
+## ontolearn-webservice 
+
+<details><summary> Click me! </summary>
+
+Load an RDF knowledge graph 
+```shell
+ontolearn-webservice --path_knowledge_base KGs/Mutagenesis/mutagenesis.owl
+```
+or launch a Tentris instance https://github.com/dice-group/tentris over Mutagenesis.
+```shell
+ontolearn-webservice --endpoint_triple_store http://0.0.0.0:9080/sparql
+```
+The below code trains DRILL with 6 randomly generated learning problems
+provided that **path_to_pretrained_drill** does not lead to a directory containing pretrained DRILL.
+Thereafter, trained DRILL is saved in the directory **path_to_pretrained_drill**.
+Finally, trained DRILL will learn an OWL class expression.
+```python
+import json
+import requests
+with open(f"LPs/Mutagenesis/lps.json") as json_file:
+    learning_problems = json.load(json_file)["problems"]
+for str_target_concept, examples in learning_problems.items():
+    response = requests.get('http://0.0.0.0:8000/cel',
+                            headers={'accept': 'application/json', 'Content-Type': 'application/json'},
+                            json={"pos": examples['positive_examples'],
+                                  "neg": examples['negative_examples'],
+                                  "model": "Drill",
+                                  "path_embeddings": "mutagenesis_embeddings/Keci_entity_embeddings.csv",
+                                  "path_to_pretrained_drill": "pretrained_drill",
+                                  # if pretrained_drill exists, upload, otherwise train one and save it there
+                                  "num_of_training_learning_problems": 2,
+                                  "num_of_target_concepts": 3,
+                                  "max_runtime": 60000,  # seconds
+                                  "iter_bound": 1  # number of iterations/applied refinement opt.
+                                  })
+    print(response.json())  # {'Prediction': '∀ hasAtom.(¬Nitrogen-34)', 'F1': 0.7283582089552239, 'saved_prediction': 'Predictions.owl'}
+```
+TDL (a more scalable learner) can also be used as follows
+```python
+import json
+import requests
+with open(f"LPs/Mutagenesis/lps.json") as json_file:
+    learning_problems = json.load(json_file)["problems"]
+for str_target_concept, examples in learning_problems.items():
+    response = requests.get('http://0.0.0.0:8000/cel',
+                            headers={'accept': 'application/json', 'Content-Type': 'application/json'},
+                            json={"pos": examples['positive_examples'],
+                                  "neg": examples['negative_examples'],
+                                  "model": "TDL"})
+    print(response.json())
+```
+
+
+</details>
+
 ## Benchmark Results
+
+<details> <summary> To see the results </summary>
+
 ```shell
 # To download learning problems. # Benchmark learners on the Family benchmark dataset with benchmark learning problems.
 wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
@@ -124,7 +151,6 @@ wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && 
 # To download learning problems and benchmark learners on the Family benchmark dataset with benchmark learning problems.
 python examples/concept_learning_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 60 --report family_results.csv  && python -c 'import pandas as pd; print(pd.read_csv("family_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
 ```
-<details> <summary> To see the results </summary>
 
 Below, we report the average results of 5 runs.
 Each model has 60 second to find a fitting answer. DRILL results are obtained by using F1 score as heuristic function.
@@ -179,6 +205,8 @@ Use `python examples/concept_learning_cv_evaluation.py` to apply stratified k-fo
 
 ## Deployment 
 
+<details> <summary> To see the results </summary>
+
 ```shell
 pip install gradio # (check `pip show gradio` first)
 ```
@@ -194,16 +222,21 @@ Run the help command to see the description on this script usage:
 python deploy_cl.py --help
 ```
 
+</details>
 
 ## Development
 
+<details> <summary> To see the results </summary>
+  
 Creating a feature branch **refactoring** from development branch
 
 ```shell
 git branch refactoring develop
 ```
 
-### Citing
+</details>
+
+## References
 Currently, we are working on our manuscript describing our framework. 
 If you find our work useful in your research, please consider citing the respective paper:
 ```
