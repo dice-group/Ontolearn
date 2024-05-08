@@ -226,11 +226,15 @@ python deploy_cl.py --help
 
 ## Development
 
+<details> <summary> To see the results </summary>
+  
 Creating a feature branch **refactoring** from development branch
 
 ```shell
 git branch refactoring develop
 ```
+
+</details>
 
 ## References
 Currently, we are working on our manuscript describing our framework. 
