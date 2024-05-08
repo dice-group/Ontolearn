@@ -95,45 +95,43 @@ or launch a Tentris instance https://github.com/dice-group/tentris over Mutagene
 ```shell
 ontolearn-webservice --endpoint_triple_store http://0.0.0.0:9080/sparql
 ```
-The below code will generate 6 learning problems to Train DRILL. 
-Thereafter, trained DRILL will be stored in a created file called pretrained.
+The below code trains DRILL with 6 randomly generated learning problems
+provided that **path_to_pretrained_drill** does not lead to a directory containing pretrained DRILL.
+Thereafter, trained DRILL is saved in the directory **path_to_pretrained_drill**.
 Finally, trained DRILL will learn an OWL class expression.
 ```python
 import json
 import requests
 with open(f"LPs/Mutagenesis/lps.json") as json_file:
-    settings = json.load(json_file)
-for str_target_concept, examples in settings['problems'].items():
+    learning_problems = json.load(json_file)["problems"]
+for str_target_concept, examples in learning_problems.items():
     response = requests.get('http://0.0.0.0:8000/cel',
                             headers={'accept': 'application/json', 'Content-Type': 'application/json'},
-                            json={ "pos": examples['positive_examples'],
-                                   "neg": examples['negative_examples'],
-                                   "model": "Drill",
-                                   "path_embeddings": "mutagenesis_embeddings/Keci_entity_embeddings.csv",
-                                   "num_of_training_learning_problems": 2,
-                                   "num_of_target_concepts":3,
-                                   "max_runtime": 10, # seconds
-                                   "iter_bound": 100 # number of iterations/applied refinement opt.
-                                   })
-    print(response.json())# {'Prediction': '∀ hasStructure.(¬Hetero_aromatic_5_ring)'}
+                            json={"pos": examples['positive_examples'],
+                                  "neg": examples['negative_examples'],
+                                  "model": "Drill",
+                                  "path_embeddings": "mutagenesis_embeddings/Keci_entity_embeddings.csv",
+                                  "path_to_pretrained_drill": "pretrained_drill",
+                                  # if pretrained_drill exists, upload, otherwise train one and save it there
+                                  "num_of_training_learning_problems": 2,
+                                  "num_of_target_concepts": 3,
+                                  "max_runtime": 60000,  # seconds
+                                  "iter_bound": 1  # number of iterations/applied refinement opt.
+                                  })
+    print(response.json())  # {'Prediction': '∀ hasAtom.(¬Nitrogen-34)', 'F1': 0.7283582089552239, 'saved_prediction': 'Predictions.owl'}
 ```
-The below code will upload pretrained DRILL and learn an OWL Class expression
+TDL (a more scalable learner) can also be used as follows
 ```python
 import json
 import requests
 with open(f"LPs/Mutagenesis/lps.json") as json_file:
-    settings = json.load(json_file)
-for str_target_concept, examples in settings['problems'].items():
+    learning_problems = json.load(json_file)["problems"]
+for str_target_concept, examples in learning_problems.items():
     response = requests.get('http://0.0.0.0:8000/cel',
-                            headers={'accept': 'application/json', 'Content-Type': 'application/json'}, json={
-            "pos": examples['positive_examples'],
-            "neg": examples['negative_examples'],
-            "model": "Drill",
-            "path_embeddings": "mutagenesis_embeddings/Keci_entity_embeddings.csv",
-            "pretrained":"pretrained",
-            "max_runtime": 10,
-            "iter_bound": 100,
-        })
+                            headers={'accept': 'application/json', 'Content-Type': 'application/json'},
+                            json={"pos": examples['positive_examples'],
+                                  "neg": examples['negative_examples'],
+                                  "model": "TDL"})
     print(response.json())
 ```
 
