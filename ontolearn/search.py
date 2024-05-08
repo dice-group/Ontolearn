@@ -718,7 +718,7 @@ class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
         -------
         None
         """
-        assert node.quality > 0
+        assert node.quality > 0, f"{RL_State.concept} cannot be added into the search tree"
         assert node.heuristic is not None
         dl_representation = owl_expression_to_dl(node.concept.get_nnf())
         if dl_representation in self.nodes:
