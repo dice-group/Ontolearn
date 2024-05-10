@@ -139,6 +139,9 @@ for str_target_concept, examples in learning_problems.items():
 </details>
 
 ## Benchmark Results
+
+<details> <summary> To see the results </summary>
+
 ```shell
 # To download learning problems. # Benchmark learners on the Family benchmark dataset with benchmark learning problems.
 wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
@@ -148,7 +151,6 @@ wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && 
 # To download learning problems and benchmark learners on the Family benchmark dataset with benchmark learning problems.
 python examples/concept_learning_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 60 --report family_results.csv  && python -c 'import pandas as pd; print(pd.read_csv("family_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
 ```
-<details> <summary> To see the results </summary>
 
 Below, we report the average results of 5 runs.
 Each model has 60 second to find a fitting answer. DRILL results are obtained by using F1 score as heuristic function.
@@ -203,6 +205,8 @@ Use `python examples/concept_learning_cv_evaluation.py` to apply stratified k-fo
 
 ## Deployment 
 
+<details> <summary> To see the results </summary>
+
 ```shell
 pip install gradio # (check `pip show gradio` first)
 ```
@@ -218,16 +222,21 @@ Run the help command to see the description on this script usage:
 python deploy_cl.py --help
 ```
 
+</details>
 
 ## Development
 
+<details> <summary> To see the results </summary>
+  
 Creating a feature branch **refactoring** from development branch
 
 ```shell
 git branch refactoring develop
 ```
 
-### Citing
+</details>
+
+## References
 Currently, we are working on our manuscript describing our framework. 
 If you find our work useful in your research, please consider citing the respective paper:
 ```
