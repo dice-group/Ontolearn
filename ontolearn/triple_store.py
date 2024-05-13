@@ -5,7 +5,7 @@ from itertools import chain
 from typing import Iterable, Set, Optional, Generator, Union, FrozenSet, Tuple, Callable
 import requests
 from owlapy.class_expression import OWLClassExpression, OWLThing, OWLClass, OWLObjectSomeValuesFrom, OWLObjectOneOf, \
-    OWLObjectMinCardinality
+    OWLObjectMinCardinality, OWLDataSomeValuesFrom
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLObjectPropertyRangeAxiom, OWLObjectPropertyDomainAxiom, OWLDataPropertyRangeAxiom, \
     OWLDataPropertyDomainAxiom, OWLClassAxiom, OWLEquivalentClassesAxiom
@@ -112,7 +112,7 @@ def unwrap(result: Response):
                 continue
             elif b[v]['type'] == 'literal' and "datatype" in b[v]:
                 val.append(OWLLiteral(b[v]['value'], OWLDatatype(IRI.create(b[v]['datatype']))))
-            elif b[v]['type'] == 'literal' and "xml:lang" in b[v]:
+            elif b[v]['type'] == 'literal' and "datatype" not in b[v]:
                 continue
             else:
                 raise NotImplementedError(f"Seems like this kind of data is not handled: {b[v]}")
@@ -169,8 +169,14 @@ class TripleStoreOntology(OWLOntology):
             for dom in domains:
                 yield OWLDataPropertyDomainAxiom(pe, dom)
 
-    def data_property_range_axioms(self, pe: OWLDataProperty) -> Iterable[OWLDataPropertyRangeAxiom]:
-        raise NotImplementedError
+    def data_property_range_axioms(self, pe: OWLDataProperty):  # -> Iterable[OWLDataPropertyRangeAxiom]:
+        query = rdfs_prefix + "SELECT DISTINCT ?x WHERE { " + f"<{pe.str}>" + " rdfs:range ?x. }"
+        ranges = set(get_results_from_ts(self.url, query, OWLDatatype))
+        if len(ranges) == 0:
+            pass
+        else:
+            for rng in ranges:
+                yield OWLDataPropertyRangeAxiom(pe, rng)
 
     def object_property_domain_axioms(self, pe: OWLObjectProperty) -> Iterable[OWLObjectPropertyDomainAxiom]:
         domains = self._get_property_domains(pe)
