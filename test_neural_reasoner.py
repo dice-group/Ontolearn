@@ -23,6 +23,34 @@ class DemoNeuralReasoner:
         self.model = KGE(path=KGE_path)
         self.default_confidence_threshold = default_confidence_threshold
 
+    def get_predictions(
+        self,
+        h: str = None,
+        r: str = None,
+        t: str = None,
+        topk: int = 10,
+        confidence_threshold: float = None,
+    ):
+        if h is not None:
+            h = [h]
+        if r is not None:
+            r = [r]
+        if t is not None:
+            t = [t]
+
+        if confidence_threshold is None:
+            confidence_threshold = self.default_confidence_threshold
+        try:
+            predictions = self.model.predict_topk(h=h, r=r, t=t, topk=topk)
+            for prediction in predictions:
+                confidence = prediction[1]
+                predicted_iri_str = prediction[0]
+                if confidence >= confidence_threshold:
+                    yield (predicted_iri_str, confidence)
+        except Exception as e:
+            print(f"Error: {e}")
+            return
+
     def abox(self, str_iri: str) -> Generator[
         Tuple[
             Tuple[OWLNamedIndividual, OWLProperty, OWLClass],
@@ -53,80 +81,52 @@ class DemoNeuralReasoner:
     def classes_in_signature(
         self, confidence_threshold: float = None
     ) -> Generator[OWLClass, None, None]:
-        if confidence_threshold is None:
-            confidence_threshold = self.default_confidence_threshold
-        try:
-            predictions = self.model.predict_topk(
-                h=None,
-                r=["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],
-                t=["http://www.w3.org/2002/07/owl#Class"],
-                topk=10,
-            )
-        except Exception as e:
-            return
-        for prediction in predictions:
-            confidence = prediction[1]
-            predicted_iri_str = prediction[0]
+        for prediction in self.get_predictions(
+            h=None,
+            r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+            t="http://www.w3.org/2002/07/owl#Class",
+            confidence_threshold=confidence_threshold,
+        ):
             try:
                 owl_class = OWLClass(prediction[0])
-                if confidence >= confidence_threshold:
-                    yield owl_class
+                yield owl_class
             except Exception as e:
                 # Log the invalid IRI
-                print(f"Invalid IRI detected: {predicted_iri_str}, error: {e}")
+                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
     def get_type_individuals(
         self, individual: str, confidence_threshold: float = None
     ) -> Generator[OWLClass, None, None]:
-        if confidence_threshold is None:
-            confidence_threshold = self.default_confidence_threshold
-        try:
-            predictions = self.model.predict_topk(
-                h=[individual],
-                r=["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],
-                t=None,
-                topk=10,
-            )
-        except Exception as e:
-            return
-        for prediction in predictions:
-            confidence = prediction[1]
-            predicted_iri_str = prediction[0]
+        for prediction in self.get_predictions(
+            h=individual,
+            r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+            t=None,
+            confidence_threshold=confidence_threshold,
+        ):
             try:
                 owl_class = OWLClass(prediction[0])
-                if confidence >= confidence_threshold:
-                    yield owl_class
+                yield owl_class
             except Exception as e:
                 # Log the invalid IRI
-                print(f"Invalid IRI detected: {predicted_iri_str}, error: {e}")
+                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
     def instances(
         self, owl_class: OWLClassExpression, confidence_threshold: float = None
     ) -> Generator[OWLNamedIndividual, None, None]:
-        if confidence_threshold is None:
-            confidence_threshold = self.default_confidence_threshold
-        try:
-            predictions = self.model.predict_topk(
-                h=None,
-                r=["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],
-                t=[owl_class.str],
-                topk=10,
-            )
-        except Exception as e:
-            return
-        for prediction in predictions:
-            confidence = prediction[1]
-            predicted_iri_str = prediction[0]
+        for prediction in self.get_predictions(
+            h=None,
+            r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+            t=owl_class.str,
+            confidence_threshold=confidence_threshold,
+        ):
             try:
-                owl_named_individual = OWLNamedIndividual(predicted_iri_str)
-                if confidence >= confidence_threshold:
-                    print("confidence: ", confidence)
-                    yield owl_named_individual
+                owl_named_individual = OWLNamedIndividual(prediction[0])
+                yield owl_named_individual
             except Exception as e:
                 # Log the invalid IRI
-                print(f"Invalid IRI detected: {predicted_iri_str}, error: {e}")
+                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
     def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
@@ -135,54 +135,35 @@ class DemoNeuralReasoner:
     def data_properties_in_signature(
         self, confidence_threshold: float = None
     ) -> Generator[OWLDataProperty, None, None]:
-        if confidence_threshold is None:
-            confidence_threshold = self.default_confidence_threshold
-        try:
-            predictions = self.model.predict_topk(
-                h=None,
-                r=["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],
-                t=["http://www.w3.org/2002/07/owl#DatatypeProperty"],
-                topk=10,
-            )
-        except Exception as e:
-            return
-        for prediction in predictions:
-            confidence = prediction[1]
-            predicted_iri_str = prediction[0]
+        for prediction in self.get_predictions(
+            h=None,
+            r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+            t="http://www.w3.org/2002/07/owl#DatatypeProperty",
+            confidence_threshold=confidence_threshold,
+        ):
             try:
-                owl_data_property = OWLDataProperty(predicted_iri_str)
-
-                if confidence >= confidence_threshold:
-                    yield owl_data_property
+                owl_data_property = OWLDataProperty(prediction[0])
+                yield owl_data_property
             except Exception as e:
                 # Log the invalid IRI
-                print(f"Invalid IRI detected: {predicted_iri_str}, error: {e}")
+                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
     def object_properties_in_signature(
         self, confidence_threshold: float = None
     ) -> Generator[OWLObjectProperty, None, None]:
-        if confidence_threshold is None:
-            confidence_threshold = self.default_confidence_threshold
-        try:
-            predictions = self.model.predict_topk(
-                h=None,
-                r=["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],
-                t=["http://www.w3.org/2002/07/owl#ObjectProperty"],
-                topk=10,
-            )
-        except Exception as e:
-            return
-        for prediction in predictions:
-            confidence = prediction[1]
-            predicted_iri_str = prediction[0]
+        for prediction in self.get_predictions(
+            h=None,
+            r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+            t="http://www.w3.org/2002/07/owl#ObjectProperty",
+            confidence_threshold=confidence_threshold,
+        ):
             try:
-                owl_object_property = OWLObjectProperty(predicted_iri_str)
-                if confidence >= confidence_threshold:
-                    yield owl_object_property
+                owl_object_property = OWLObjectProperty(prediction[0])
+                yield owl_object_property
             except Exception as e:
                 # Log the invalid IRI
-                print(f"Invalid IRI detected: {predicted_iri_str}, error: {e}")
+                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
     ### additional functions for neural reasoner
@@ -193,27 +174,18 @@ class DemoNeuralReasoner:
         object_property: OWLObjectProperty,
         confidence_threshold: float = None,
     ) -> Generator[OWLNamedIndividual, None, None]:
-        if confidence_threshold is None:
-            confidence_threshold = self.default_confidence_threshold
-        try:
-            predictions = self.model.predict_topk(
-                h=[subject],
-                r=[object_property.str],
-                t=None,
-                topk=10,
-            )
-        except Exception as e:
-            return
-        for prediction in predictions:
-            confidence = prediction[1]
-            predicted_iri_str = prediction[0]
+        for prediction in self.get_predictions(
+            h=subject,
+            r=object_property.str,
+            t=None,
+            confidence_threshold=confidence_threshold,
+        ):
             try:
-                owl_named_individual = OWLNamedIndividual(predicted_iri_str)
-                if confidence >= confidence_threshold:
-                    yield owl_named_individual
+                owl_named_individual = OWLNamedIndividual(prediction[0])
+                yield owl_named_individual
             except Exception as e:
                 # Log the invalid IRI
-                print(f"Invalid IRI detected: {predicted_iri_str}, error: {e}")
+                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
     def get_data_property_values(
@@ -222,29 +194,23 @@ class DemoNeuralReasoner:
         data_property: OWLDataProperty,
         confidence_threshold: float = None,
     ) -> Generator[OWLLiteral, None, None]:
-        if confidence_threshold is None:
-            confidence_threshold = self.default_confidence_threshold
-        try:
-            predictions = self.model.predict_topk(
-                h=[subject],
-                r=[data_property.str],
-                t=None,
-                topk=10,
-            )
-        except Exception as e:
-            return
-        for prediction in predictions:
-            confidence = prediction[1]
-            predicted_literal_str = prediction[0]
+        for prediction in self.get_predictions(
+            h=subject,
+            r=data_property.str,
+            t=None,
+            confidence_threshold=confidence_threshold,
+        ):
             try:
                 # TODO: check the datatype and convert it to the correct type
                 # like in abox triplestore line 773ff
-                owl_literal = OWLLiteral(predicted_literal_str)
-                if confidence_threshold >= confidence_threshold:
-                    yield owl_literal
+
+                # Extract the value from the IRI
+                value = re.search(r"\"(.+?)\"", prediction[0]).group(1)
+                owl_literal = OWLLiteral(value)
+                yield owl_literal
             except Exception as e:
                 # Log the invalid IRI
-                print(f"Invalid literal detected: {predicted_literal_str}, error: {e}")
+                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
 
@@ -255,7 +221,7 @@ class DemoNeuralReasoner:
 # Login http://localhost:3030/#/ with admin and pw123
 # Create a new dataset called family and upload KGs/Family/family.owl
 # kb = TripleStore(DemoNeuralReasoner(KGE_path="./Pykeen_QuatEFamilyRun"))
-kb = TripleStore(url="http://localhost:3030/family")
+kb = TripleStore(DemoNeuralReasoner(KGE_path="./Pykeen_QuatEFamilyRun"))
 # (2) Initialize a learner.
 model = TDL(knowledge_base=kb)
 # (3) Define a description logic concept learning problem.
@@ -304,6 +270,7 @@ lp = PosNegLPStandard(
 )
 # (4) Learn description logic concepts best fitting (3).
 h = model.fit(learning_problem=lp).best_hypotheses()
+print("------------------- Neural Reasoner lp results -------------------")
 print(h)
 print(owl_expression_to_dl(h))
 print(owl_expression_to_sparql(expression=h))
