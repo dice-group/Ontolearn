@@ -19,11 +19,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip3 install -e .
-          
 
-      - name: Test with pytest
+      - name: Download datasets
         run: |
           wget https://files.dice-research.org/projects/Ontolearn/KGs.zip
           wget https://files.dice-research.org/projects/Ontolearn/LPs.zip
           unzip KGs.zip && unzip LPs.zip
-          pytest -p no:warnings -x
+
+      - name: Setup sparql endpoint
+        run: |
+          sudo docker run --name fuseki-data -v /fuseki busybox
+          sudo docker run -d --name fuseki -p 3030:3030 --volumes-from fuseki-data stain/jena-fuseki
+          sudo docker run --volumes-from fuseki-data -v /KGs/Mutagenesis:/staging stain/jena-fuseki ./load.sh mutagenesis mutagenesis.owl
+          curl -X POST -H "Content-Type: application/x-www-form-urlencoded" -d "query=SELECT * WHERE {?s ?p ?o}" http://localhost:3030/mutagenesis/sparql
