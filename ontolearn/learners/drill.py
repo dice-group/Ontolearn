@@ -245,11 +245,13 @@ class Drill(RefinementBasedConceptLearner):
     def load(self, directory: str = None) -> None:
         """ load weights of the deep Q-network"""
         if directory:
-            os.path.isdir(directory)
-            if isinstance(self.heuristic_func, CeloeBasedReward):
-                print("No loading because embeddings not provided")
+            if os.path.isdir(directory):
+                if isinstance(self.heuristic_func, CeloeBasedReward):
+                    print("No loading because embeddings not provided")
+                else:
+                    self.heuristic_func.net.load_state_dict(torch.load(directory + "/drill.pth", torch.device('cpu')))
             else:
-                self.heuristic_func.net.load_state_dict(torch.load(directory + "/drill.pth", torch.device('cpu')))
+                print(f"{directory} is not found...")
 
     def fit(self, learning_problem: PosNegLPStandard, max_runtime=None):
         if max_runtime:
@@ -259,7 +261,6 @@ class Drill(RefinementBasedConceptLearner):
         self.clean()
         # (1) Initialize the start time
         self.start_time = time.time()
-
         # (2) Two mappings from a unique OWL Concept to integer, where a unique concept represents the type info
         # C(x) s.t. x \in E^+ and  C(y) s.t. y \in E^-.
         # print("Counting types of positive examples..")
@@ -274,7 +275,7 @@ class Drill(RefinementBasedConceptLearner):
         root_state = self.initialize_training_class_expression_learning_problem(pos=learning_problem.pos,
                                                                                 neg=learning_problem.neg)
         self.operator.set_input_examples(pos=learning_problem.pos, neg=learning_problem.neg)
-
+        assert root_state.quality>0, f"Root state {root_state} must have quality >0"
         # (5) Add root state into search tree
         root_state.heuristic = root_state.quality
         self.search_tree.add(root_state)

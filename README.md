@@ -95,45 +95,43 @@ or launch a Tentris instance https://github.com/dice-group/tentris over Mutagene
 ```shell
 ontolearn-webservice --endpoint_triple_store http://0.0.0.0:9080/sparql
 ```
-The below code will generate 6 learning problems to Train DRILL. 
-Thereafter, trained DRILL will be stored in a created file called pretrained.
+The below code trains DRILL with 6 randomly generated learning problems
+provided that **path_to_pretrained_drill** does not lead to a directory containing pretrained DRILL.
+Thereafter, trained DRILL is saved in the directory **path_to_pretrained_drill**.
 Finally, trained DRILL will learn an OWL class expression.
 ```python
 import json
 import requests
 with open(f"LPs/Mutagenesis/lps.json") as json_file:
-    settings = json.load(json_file)
-for str_target_concept, examples in settings['problems'].items():
+    learning_problems = json.load(json_file)["problems"]
+for str_target_concept, examples in learning_problems.items():
     response = requests.get('http://0.0.0.0:8000/cel',
                             headers={'accept': 'application/json', 'Content-Type': 'application/json'},
-                            json={ "pos": examples['positive_examples'],
-                                   "neg": examples['negative_examples'],
-                                   "model": "Drill",
-                                   "path_embeddings": "mutagenesis_embeddings/Keci_entity_embeddings.csv",
-                                   "num_of_training_learning_problems": 2,
-                                   "num_of_target_concepts":3,
-                                   "max_runtime": 10, # seconds
-                                   "iter_bound": 100 # number of iterations/applied refinement opt.
-                                   })
-    print(response.json())# {'Prediction': '∀ hasStructure.(¬Hetero_aromatic_5_ring)'}
+                            json={"pos": examples['positive_examples'],
+                                  "neg": examples['negative_examples'],
+                                  "model": "Drill",
+                                  "path_embeddings": "mutagenesis_embeddings/Keci_entity_embeddings.csv",
+                                  "path_to_pretrained_drill": "pretrained_drill",
+                                  # if pretrained_drill exists, upload, otherwise train one and save it there
+                                  "num_of_training_learning_problems": 2,
+                                  "num_of_target_concepts": 3,
+                                  "max_runtime": 60000,  # seconds
+                                  "iter_bound": 1  # number of iterations/applied refinement opt.
+                                  })
+    print(response.json())  # {'Prediction': '∀ hasAtom.(¬Nitrogen-34)', 'F1': 0.7283582089552239, 'saved_prediction': 'Predictions.owl'}
 ```
-The below code will upload pretrained DRILL and learn an OWL Class expression
+TDL (a more scalable learner) can also be used as follows
 ```python
 import json
 import requests
 with open(f"LPs/Mutagenesis/lps.json") as json_file:
-    settings = json.load(json_file)
-for str_target_concept, examples in settings['problems'].items():
+    learning_problems = json.load(json_file)["problems"]
+for str_target_concept, examples in learning_problems.items():
     response = requests.get('http://0.0.0.0:8000/cel',
-                            headers={'accept': 'application/json', 'Content-Type': 'application/json'}, json={
-            "pos": examples['positive_examples'],
-            "neg": examples['negative_examples'],
-            "model": "Drill",
-            "path_embeddings": "mutagenesis_embeddings/Keci_entity_embeddings.csv",
-            "pretrained":"pretrained",
-            "max_runtime": 10,
-            "iter_bound": 100,
-        })
+                            headers={'accept': 'application/json', 'Content-Type': 'application/json'},
+                            json={"pos": examples['positive_examples'],
+                                  "neg": examples['negative_examples'],
+                                  "model": "TDL"})
     print(response.json())
 ```
 
@@ -141,6 +139,9 @@ for str_target_concept, examples in settings['problems'].items():
 </details>
 
 ## Benchmark Results
+
+<details> <summary> To see the results </summary>
+
 ```shell
 # To download learning problems. # Benchmark learners on the Family benchmark dataset with benchmark learning problems.
 wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
@@ -150,7 +151,6 @@ wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && 
 # To download learning problems and benchmark learners on the Family benchmark dataset with benchmark learning problems.
 python examples/concept_learning_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 60 --report family_results.csv  && python -c 'import pandas as pd; print(pd.read_csv("family_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
 ```
-<details> <summary> To see the results </summary>
 
 Below, we report the average results of 5 runs.
 Each model has 60 second to find a fitting answer. DRILL results are obtained by using F1 score as heuristic function.
@@ -205,6 +205,8 @@ Use `python examples/concept_learning_cv_evaluation.py` to apply stratified k-fo
 
 ## Deployment 
 
+<details> <summary> To see the results </summary>
+
 ```shell
 pip install gradio # (check `pip show gradio` first)
 ```
@@ -220,16 +222,21 @@ Run the help command to see the description on this script usage:
 python deploy_cl.py --help
 ```
 
+</details>
 
 ## Development
 
+<details> <summary> To see the results </summary>
+  
 Creating a feature branch **refactoring** from development branch
 
 ```shell
 git branch refactoring develop
 ```
 
-### Citing
+</details>
+
+## References
 Currently, we are working on our manuscript describing our framework. 
 If you find our work useful in your research, please consider citing the respective paper:
 ```
