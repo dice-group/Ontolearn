@@ -313,13 +313,15 @@ class KnowledgeBase(AbstractKnowledgeBase):
             else:
                 raise RuntimeError(f"Unrecognized mode:{mode}")
 
+    # @TODO: entities or namedindividuals ?!
+    # AB: This method is to ask for tbox axioms related with the given entity, which can be a class or a property.
+    # For named individuals there is the method `get_types`.
     def tbox(self, entities: Union[Iterable[OWLClass], Iterable[OWLDataProperty], Iterable[OWLObjectProperty], OWLClass,
     OWLDataProperty, OWLObjectProperty, None] = None, mode='native'):
         """Get all the tbox axioms for the given concept-s|propert-y/ies.
          If no concept-s|propert-y/ies are given, get all tbox axioms.
 
          Args:
-             @TODO: entities or namedindividuals ?!
              entities: Entities to obtain tbox axioms from. This can be a single
               OWLClass/OWLDataProperty/OWLObjectProperty object, a list of those objects or None. If you enter a list
               that combines classes and properties (which we don't recommend doing), only axioms for one type will be
