@@ -2,10 +2,10 @@
 import logging
 import re
 from itertools import chain
-from typing import Iterable, Set, Optional, Generator, Union, FrozenSet, Tuple
+from typing import Iterable, Set, Optional, Generator, Union, FrozenSet, Tuple, Callable
 import requests
 from owlapy.class_expression import OWLClassExpression, OWLThing, OWLClass, OWLObjectSomeValuesFrom, OWLObjectOneOf, \
-    OWLObjectMinCardinality
+    OWLObjectMinCardinality, OWLDataSomeValuesFrom, OWLDataOneOf
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLObjectPropertyRangeAxiom, OWLObjectPropertyDomainAxiom, OWLDataPropertyRangeAxiom, \
     OWLDataPropertyDomainAxiom, OWLClassAxiom, OWLEquivalentClassesAxiom
@@ -37,9 +37,6 @@ xsd_prefix = "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n"
 limit_posix = ""
 
 from owlapy import owl_expression_to_sparql
-from owlapy.class_expression import OWLObjectHasValue, OWLDataHasValue, OWLDataSomeValuesFrom, OWLDataOneOf
-from typing import List
-from owlapy.owl_property import OWLProperty
 
 
 def rdflib_to_str(sparql_result: rdflib.plugins.sparql.processor.SPARQLResult) -> str:
@@ -113,9 +110,12 @@ def unwrap(result: Response):
                 val.append(IRI.create(b[v]['value']))
             elif b[v]['type'] == 'bnode':
                 continue
-            else:
-                print(b[v]['type'])
+            elif b[v]['type'] == 'literal' and "datatype" in b[v]:
                 val.append(OWLLiteral(b[v]['value'], OWLDatatype(IRI.create(b[v]['datatype']))))
+            elif b[v]['type'] == 'literal' and "datatype" not in b[v]:
+                continue
+            else:
+                raise NotImplementedError(f"Seems like this kind of data is not handled: {b[v]}")
         if len(val) == 1:
             yield val.pop()
         else:
@@ -169,8 +169,14 @@ class TripleStoreOntology(OWLOntology):
             for dom in domains:
                 yield OWLDataPropertyDomainAxiom(pe, dom)
 
-    def data_property_range_axioms(self, pe: OWLDataProperty) -> Iterable[OWLDataPropertyRangeAxiom]:
-        raise NotImplementedError
+    def data_property_range_axioms(self, pe: OWLDataProperty):  # -> Iterable[OWLDataPropertyRangeAxiom]:
+        query = rdfs_prefix + "SELECT DISTINCT ?x WHERE { " + f"<{pe.str}>" + " rdfs:range ?x. }"
+        ranges = set(get_results_from_ts(self.url, query, OWLDatatype))
+        if len(ranges) == 0:
+            pass
+        else:
+            for rng in ranges:
+                yield OWLDataPropertyRangeAxiom(pe, rng)
 
     def object_property_domain_axioms(self, pe: OWLObjectProperty) -> Iterable[OWLObjectPropertyDomainAxiom]:
         domains = self._get_property_domains(pe)
@@ -483,7 +489,64 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         self.url = triplestore_address
         self.ontology = TripleStoreOntology(triplestore_address)
         self.reasoner = TripleStoreReasoner(self.ontology)
-        super().__init__(ontology=self.ontology, reasoner=self.reasoner)
+        super().__init__(ontology=self.ontology, reasoner=self.reasoner, load_class_hierarchy=False)
+
+    def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
+        assert isinstance(concept, OWLClass)
+        yield from self.reasoner.sub_classes(concept, direct=True)
+
+    def get_direct_parents(self, concept: OWLClassExpression) -> Iterable[OWLClass]:
+        assert isinstance(concept, OWLClass)
+        yield from self.reasoner.super_classes(concept, direct=True)
+
+    def get_all_direct_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
+        assert isinstance(concept, OWLClass)
+        yield from self.reasoner.sub_classes(concept, direct=True)
+
+    def get_all_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
+        assert isinstance(concept, OWLClass)
+        yield from self.reasoner.sub_classes(concept, direct=False)
+
+    def get_concepts(self) -> Iterable[OWLClass]:
+        yield from self.ontology.classes_in_signature()
+
+    @property
+    def concepts(self) -> Iterable[OWLClass]:
+        yield from self.ontology.classes_in_signature()
+
+    def contains_class(self, concept: OWLClassExpression) -> bool:
+        assert isinstance(concept, OWLClass)
+        return concept in self.ontology.classes_in_signature()
+
+    def most_general_object_properties(self, *, domain: OWLClassExpression, inverse: bool = False) \
+            -> Iterable[OWLObjectProperty]:
+        assert isinstance(domain, OWLClassExpression)
+        func: Callable
+        func = self.get_object_property_ranges if inverse else self.get_object_property_domains
+
+        inds_domain = self.individuals_set(domain)
+        for prop in self.ontology.object_properties_in_signature():
+            if domain.is_owl_thing() or inds_domain <= self.individuals_set(func(prop)):
+                yield prop
+
+    @property
+    def object_properties(self) -> Iterable[OWLObjectProperty]:
+        yield from self.ontology.object_properties_in_signature()
+
+    def get_object_properties(self) -> Iterable[OWLObjectProperty]:
+        yield from self.ontology.object_properties_in_signature()
+
+    @property
+    def data_properties(self) -> Iterable[OWLDataProperty]:
+        yield from self.ontology.data_properties_in_signature()
+
+    def get_data_properties(self, ranges: Set[OWLDatatype] = None) -> Iterable[OWLDataProperty]:
+        if ranges is not None:
+            for dp in self.ontology.data_properties_in_signature():
+                if self.get_data_property_ranges(dp) & ranges:
+                    yield dp
+        else:
+            yield from self.ontology.data_properties_in_signature()
 
 
 #######################################################################################################################

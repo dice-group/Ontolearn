@@ -104,6 +104,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
     def __init__(self, *,
                  ontology: OWLOntology,
                  reasoner: OWLReasoner,
+                 load_class_hierarchy: bool = True,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
                  length_metric_factory: Optional[Callable[[], OWLClassExpressionLengthMetric]] = None,
                  individuals_cache_size=128):
@@ -123,6 +124,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  individuals_cache_size=128,
                  backend_store: bool = False,
                  class_hierarchy: Optional[ClassHierarchy] = None,
+                 load_class_hierarchy: bool = True,
                  object_property_hierarchy: Optional[ObjectPropertyHierarchy] = None,
                  data_property_hierarchy: Optional[DatatypePropertyHierarchy] = None,
                  include_implicit_individuals=False
@@ -163,15 +165,16 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
         self.length_metric = init_length_metric(length_metric, length_metric_factory)
 
-        self.class_hierarchy: ClassHierarchy
-        self.object_property_hierarchy: ObjectPropertyHierarchy
-        self.data_property_hierarchy: DatatypePropertyHierarchy
-        (self.class_hierarchy,
-         self.object_property_hierarchy,
-         self.data_property_hierarchy) = init_hierarchy_instances(self.reasoner,
-                                                                  class_hierarchy=class_hierarchy,
-                                                                  object_property_hierarchy=object_property_hierarchy,
-                                                                  data_property_hierarchy=data_property_hierarchy)
+        if load_class_hierarchy:
+            self.class_hierarchy: ClassHierarchy
+            self.object_property_hierarchy: ObjectPropertyHierarchy
+            self.data_property_hierarchy: DatatypePropertyHierarchy
+            (self.class_hierarchy,
+             self.object_property_hierarchy,
+             self.data_property_hierarchy) = init_hierarchy_instances(self.reasoner,
+                                                                      class_hierarchy=class_hierarchy,
+                                                                      object_property_hierarchy=object_property_hierarchy,
+                                                                      data_property_hierarchy=data_property_hierarchy)
         # Object property domain and range:
         self.op_domains: Dict[OWLObjectProperty, OWLClassExpression]
         self.op_domains = dict()
@@ -310,13 +313,15 @@ class KnowledgeBase(AbstractKnowledgeBase):
             else:
                 raise RuntimeError(f"Unrecognized mode:{mode}")
 
+    # @TODO: entities or namedindividuals ?!
+    # AB: This method is to ask for tbox axioms related with the given entity, which can be a class or a property.
+    # For named individuals there is the method `get_types`.
     def tbox(self, entities: Union[Iterable[OWLClass], Iterable[OWLDataProperty], Iterable[OWLObjectProperty], OWLClass,
     OWLDataProperty, OWLObjectProperty, None] = None, mode='native'):
         """Get all the tbox axioms for the given concept-s|propert-y/ies.
          If no concept-s|propert-y/ies are given, get all tbox axioms.
 
          Args:
-             @TODO: entities or namedindividuals ?!
              entities: Entities to obtain tbox axioms from. This can be a single
               OWLClass/OWLDataProperty/OWLObjectProperty object, a list of those objects or None. If you enter a list
               that combines classes and properties (which we don't recommend doing), only axioms for one type will be
