@@ -121,22 +121,23 @@ class DemoNeuralReasoner:
     def instances(
         self, owl_class: OWLClassExpression, confidence_threshold: float = None
     ) -> Generator[OWLNamedIndividual, None, None]:
-        for prediction in self.get_predictions(
-            h=None,
-            r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-            t=owl_class.str,
-            confidence_threshold=confidence_threshold,
-        ):
-            try:
-                owl_named_individual = OWLNamedIndividual(prediction[0])
-                yield owl_named_individual
-            except Exception as e:
-                # Log the invalid IRI
-                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
-                continue
+        pass
 
     def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
-        pass
+        for cl in self.classes_in_signature():
+            for prediction in self.get_predictions(
+                h=None,
+                r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+                t=cl.str,
+                confidence_threshold=self.default_confidence_threshold,
+            ):
+                try:
+                    owl_named_individual = OWLNamedIndividual(prediction[0])
+                    yield owl_named_individual
+                except Exception as e:
+                    # Log the invalid IRI
+                    print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                    continue
 
     def data_properties_in_signature(
         self, confidence_threshold: float = None
@@ -167,6 +168,40 @@ class DemoNeuralReasoner:
             try:
                 owl_object_property = OWLObjectProperty(prediction[0])
                 yield owl_object_property
+            except Exception as e:
+                # Log the invalid IRI
+                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                continue
+
+    def boolean_data_properties(
+        self, confidence_threshold: float = None
+    ) -> Generator[OWLDataProperty, None, None]:
+        for prediction in self.get_predictions(
+            h=None,
+            r="http://www.w3.org/2000/01/rdf-schema#range",
+            t="http://www.w3.org/2001/XMLSchema#boolean",
+            confidence_threshold=confidence_threshold,
+        ):
+            try:
+                owl_data_property = OWLDataProperty(prediction[0])
+                yield owl_data_property
+            except Exception as e:
+                # Log the invalid IRI
+                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                continue
+
+    def double_data_properties(
+        self, confidence_threshold: float = None
+    ) -> Generator[OWLDataProperty, None, None]:
+        for prediction in self.get_predictions(
+            h=None,
+            r="http://www.w3.org/2000/01/rdf-schema#range",
+            t="http://www.w3.org/2001/XMLSchema#double",
+            confidence_threshold=confidence_threshold,
+        ):
+            try:
+                owl_data_property = OWLDataProperty(prediction[0])
+                yield owl_data_property
             except Exception as e:
                 # Log the invalid IRI
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
@@ -222,110 +257,22 @@ class DemoNeuralReasoner:
 
 ###testing
 
-# (1) Initialize Triplestore
-# sudo docker run -p 3030:3030 -e ADMIN_PASSWORD=pw123 stain/jena-fuseki
-# Login http://localhost:3030/#/ with admin and pw123
-# Create a new dataset called family and upload KGs/Family/family.owl
 
-# kb = TripleStore(url="http://localhost:3030/family")
-kb = TripleStore(DemoNeuralReasoner(KGE_path="./embeddings/Pykeen_QuatEFamilyRun"))
+# classic reasoner
+kb = TripleStore(url="http://localhost:3030/nctrer")
+
 for dp in kb.g.data_properties_in_signature():
-    print(dp)
+    print("data properties in signature: ", dp)
 
-assert True == False
-# (2) Initialize a learner.
-model = TDL(knowledge_base=kb)
-# (3) Define a description logic concept learning problem.
-lp = PosNegLPStandard(
-    pos={
-        OWLNamedIndividual("http://www.benchmark.org/family#F2F14"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F2F12"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F2F19"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F2F26"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F2F28"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F2F36"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F3F52"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F3F53"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F5F62"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F6F72"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F6F79"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F6F77"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F6F86"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F6F91"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F6F84"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F6F96"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F6F101"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F6F93"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F7F114"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F7F106"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F7F116"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F7F119"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F7F126"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F7F121"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9F148"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9F150"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9F143"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9F152"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9F154"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9F141"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9F160"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9F163"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9F158"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9F168"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F10F174"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F10F179"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F10F181"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F10F192"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F10F193"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F10F186"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F10F195"),
-    },
-    neg={
-        OWLNamedIndividual("http://www.benchmark.org/family#F6M99"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F10F200"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9F156"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F6M69"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F2F15"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F6M100"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F8F133"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F3F48"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F2F30"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F4F55"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F6F74"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F10M199"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F7M104"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9M146"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F6M71"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F2F22"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F2M13"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9F169"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F5F65"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F6M81"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F7M131"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F7F129"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F7M107"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F10F189"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F8F135"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F8M136"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F10M188"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9F164"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F7F118"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F2F10"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F6F97"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F7F111"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9M151"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F4M59"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F2M37"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F1M1"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9M142"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F4M57"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9M170"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F5M66"),
-        OWLNamedIndividual("http://www.benchmark.org/family#F9F145"),
-    },
-)
-# (4) Learn description logic concepts best fitting (3).
-h = model.fit(learning_problem=lp).best_hypotheses()
-print(h)
-print(owl_expression_to_dl(h))
-print(owl_expression_to_sparql(expression=h))
+for booldp in kb.g.boolean_data_properties():
+    print("boolean data properties: ", booldp)
+
+for doubledp in kb.g.double_data_properties():
+    print("double data properties: ", doubledp.str)
+
+
+# neural reasoner
+print("--- Neural Reasoner ---")
+kb_neural = TripleStore(DemoNeuralReasoner("embeddings/Pykeen_QuatENctrerRun/"))
+for tripel in kb_neural.g.abox("http://dl-learner.org/nctrer/bond887"):
+    print(tripel)
