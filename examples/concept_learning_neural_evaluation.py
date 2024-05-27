@@ -207,9 +207,10 @@ def dl_concept_learning(args):
             start_time = time.time()
             # () Fit model training dataset
             pred_tdl = tdl.fit(train_lp).best_hypotheses(n=1)
+            print(pred_tdl)
             print("TDL ends..", end="\t")
             rt_tdl = time.time() - start_time
-
+            return
             # () Quality on the training data
             train_f1_tdl = compute_f1_score(
                 individuals=frozenset({i for i in kb.individuals(pred_tdl)}),

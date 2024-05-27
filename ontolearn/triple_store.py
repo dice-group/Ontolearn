@@ -1214,22 +1214,23 @@ class TripleStoreNeuralReasoner:
     def instances(
         self, owl_class: OWLClassExpression, confidence_threshold: float = None
     ) -> Generator[OWLNamedIndividual, None, None]:
-        for prediction in self.get_predictions(
-            h=None,
-            r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-            t=owl_class.str,
-            confidence_threshold=confidence_threshold,
-        ):
-            try:
-                owl_named_individual = OWLNamedIndividual(prediction[0])
-                yield owl_named_individual
-            except Exception as e:
-                # Log the invalid IRI
-                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
-                continue
+        yield
 
     def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
-        pass
+        for cl in self.classes_in_signature():
+            for prediction in self.get_predictions(
+                h=None,
+                r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+                t=cl.str,
+                confidence_threshold=self.default_confidence_threshold,
+            ):
+                try:
+                    owl_named_individual = OWLNamedIndividual(prediction[0])
+                    yield owl_named_individual
+                except Exception as e:
+                    # Log the invalid IRI
+                    print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                    continue
 
     def data_properties_in_signature(
         self, confidence_threshold: float = None
@@ -1260,6 +1261,40 @@ class TripleStoreNeuralReasoner:
             try:
                 owl_object_property = OWLObjectProperty(prediction[0])
                 yield owl_object_property
+            except Exception as e:
+                # Log the invalid IRI
+                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                continue
+
+    def boolean_data_properties(
+        self, confidence_threshold: float = None
+    ) -> Generator[OWLDataProperty, None, None]:
+        for prediction in self.get_predictions(
+            h=None,
+            r="http://www.w3.org/2000/01/rdf-schema#range",
+            t="http://www.w3.org/2001/XMLSchema#boolean",
+            confidence_threshold=confidence_threshold,
+        ):
+            try:
+                owl_data_property = OWLDataProperty(prediction[0])
+                yield owl_data_property
+            except Exception as e:
+                # Log the invalid IRI
+                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                continue
+
+    def double_data_properties(
+        self, confidence_threshold: float = None
+    ) -> Generator[OWLDataProperty, None, None]:
+        for prediction in self.get_predictions(
+            h=None,
+            r="http://www.w3.org/2000/01/rdf-schema#range",
+            t="http://www.w3.org/2001/XMLSchema#double",
+            confidence_threshold=confidence_threshold,
+        ):
+            try:
+                owl_data_property = OWLDataProperty(prediction[0])
+                yield owl_data_property
             except Exception as e:
                 # Log the invalid IRI
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
