@@ -42,11 +42,16 @@ class LengthBasedRefinement(BaseRefinement):
         self.top_refinements: set = None
         self.pos = None
         self.neg = None
+        self.property_to_individuals_mapping = dict()
 
-    def set_input_examples(self, pos, neg):
-        # TODO: Later, depending on pos and neg, we will not return some refinements
+    def set_input_examples(self, pos: frozenset, neg: frozenset):
+        assert isinstance(pos, frozenset)
         self.pos = {i for i in pos}
         self.neg = {i for i in neg}
+        for i in self.pos:
+            for s, p, o in self.kb.abox(i):
+                if isinstance(o, OWLIndividual):
+                    self.property_to_individuals_mapping.setdefault(p, set()).add(o)
 
     def refine_top(self) -> Iterable:
         """ Refine Top Class Expression
@@ -125,6 +130,12 @@ class LengthBasedRefinement(BaseRefinement):
                     del temp_res
         yield from restrictions
 
+        if self.use_nominals:
+            # ∃ P1365.{}
+            yield from (OWLObjectSomeValuesFrom(property=object_property,
+                                                filler=OWLObjectOneOf(set_of_individuals))
+                        for object_property, set_of_individuals in self.property_to_individuals_mapping.items())
+
     def refine_atomic_concept(self, class_expression: OWLClass) -> Generator[
         Tuple[OWLObjectIntersectionOf, OWLObjectOneOf], None, None]:
         assert isinstance(class_expression, OWLClass), class_expression
@@ -150,6 +161,10 @@ class LengthBasedRefinement(BaseRefinement):
         yield from (OWLObjectSomeValuesFrom(filler=C,
                                             property=class_expression.get_property()) for C in
                     self.refine(class_expression.get_filler()))
+        if self.use_nominals:
+            # # Given \exists r. C return \exists r. C {x,y,z}, where i \in E^+ (i,r,k) \in KG s.t. k \in {x,y,z}
+            yield OWLObjectSomeValuesFrom(property=class_expression.get_property(),
+                                          filler=OWLObjectOneOf(self.property_to_individuals_mapping[p]))
 
     def refine_object_all_values_from(self, class_expression: OWLObjectAllValuesFrom) -> Iterable[OWLClassExpression]:
         assert isinstance(class_expression, OWLObjectAllValuesFrom)
