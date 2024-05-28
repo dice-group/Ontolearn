@@ -42,39 +42,76 @@ class LengthBasedRefinement(BaseRefinement):
         self.top_refinements: set = None
         self.pos = None
         self.neg = None
-        self.property_to_individuals_mapping = dict()
 
     def set_input_examples(self, pos: frozenset, neg: frozenset):
         assert isinstance(pos, frozenset)
         self.pos = {i for i in pos}
         self.neg = {i for i in neg}
+        """
         for i in self.pos:
             for s, p, o in self.kb.abox(i):
                 if isinstance(o, OWLIndividual):
                     self.property_to_individuals_mapping.setdefault(p, set()).add(o)
+        """
 
     def refine_top(self) -> Iterable:
         """ Refine Top Class Expression
 
         rho(T)
 
-        1- Named concepts
+        1. Most General OWL Named Concepts
+        2. Complement of Least General OWL Named Concepts General
+        3- Intersection and Union of (1) and (2)
+        4. Restriction: SomeValuesFrom and AllValuesFrom
+        4.1. For each object property, return SomeValuesFrom AllValuesFrom with (1) / (2) as fillers
+        4.2. For each inverse of object property, return SomeValuesFrom AllValuesFrom with (1) / (2) as fillers
+        4.3. For each object property, return OWLObjectMinCardinality
+        4.4. For each inverse of object property, return OWLObjectMinCardinality
 
-        2- Negated leaf Concepts if max_len_refinement_top >2
 
-        3- Union of (1) if max_len_refinement_top>=3
-
-        4- Intersection of not disjoint of (1) if max_len_refinement_top>=3
-
-        5) Restrictions:   \forall \exist R (1)
-                           \forall \exist R neg (1)
-                           \forall \exist R⁻ (1)
-                           \forall \exist R⁻ (1)
 
         """
-        # (1) Return all named concepts:Later get most general  classes
+        # (1) Most General OWL Named Concepts
         most_general_concepts = [i for i in self.kb.get_most_general_classes()]
         yield from most_general_concepts
+        # (2) Complement of Least General OWL Named Concepts General
+        neg_concepts = [OWLObjectComplementOf(i) for i in self.kb.least_general_named_concepts()]
+        yield from neg_concepts
+        # (3) Intersection and Union of (1) and (2)
+        yield from self.from_iterables(cls=OWLObjectUnionOf,
+                                       a_operands=most_general_concepts,
+                                       b_operands=most_general_concepts)
+        yield from self.from_iterables(cls=OWLObjectUnionOf, a_operands=most_general_concepts, b_operands=neg_concepts)
+
+        # (4) Restriction: SomeValuesFrom and AllValuesFrom
+        restrictions = []
+        for c in most_general_concepts + [OWLThing, OWLNothing] + neg_concepts:
+            owl_obj_property: OWLObjectProperty
+            for owl_obj_property in self.kb.get_object_properties():
+                # TODO: CD: We need to ignore those expressions where the filler does not match with the range of the property
+                # (4.1) For each object property, return SomeValuesFrom AllValuesFrom with (1) / (2) as fillers
+                restrictions.append(OWLObjectSomeValuesFrom(property=owl_obj_property, filler=c))
+                restrictions.append(OWLObjectAllValuesFrom(property=owl_obj_property, filler=c))
+                if self.use_inverse:
+                    # (4.2) For each inverse of object property, return SomeValuesFrom AllValuesFrom with (1) / (2) as fillers
+                    inverse_owl_obj_property = owl_obj_property.get_inverse_property()
+                    restrictions.append(OWLObjectSomeValuesFrom(property=inverse_owl_obj_property, filler=c))
+                    restrictions.append(OWLObjectAllValuesFrom(property=inverse_owl_obj_property, filler=c))
+
+                # Move the card limit into existantial restrictions.
+                if self.use_card_restrictions:
+                    for card in range(1, 2):
+                        temp_res = [OWLObjectMinCardinality(cardinality=card,
+                                                            property=owl_obj_property,
+                                                            filler=c)]
+                        if self.use_inverse:
+                            temp_res.extend([OWLObjectMinCardinality(cardinality=card,
+                                                                     property=inverse_owl_obj_property,
+                                                                     filler=c
+                                                                     )])
+                        restrictions.extend(temp_res)
+                    del temp_res
+        yield from restrictions
 
         # (2) OWLDataSomeValuesFrom over double values fillers
         # Two ce for each property returned. Mean value extracted-
@@ -94,50 +131,7 @@ class LengthBasedRefinement(BaseRefinement):
             yield OWLDataHasValue(property=i, value=OWLLiteral(True))
             yield OWLDataHasValue(property=i, value=OWLLiteral(False))
 
-        # (4) Return least general concepts.
-        neg_concepts = [OWLObjectComplementOf(i) for i in self.kb.least_general_named_concepts()]
-        yield from neg_concepts
-        yield from self.from_iterables(cls=OWLObjectUnionOf,
-                                       a_operands=most_general_concepts,
-                                       b_operands=most_general_concepts)
-        yield from self.from_iterables(cls=OWLObjectUnionOf, a_operands=most_general_concepts, b_operands=neg_concepts)
-
-        restrictions = []
-        for c in most_general_concepts + [OWLThing, OWLNothing] + neg_concepts:
-            dl_role: OWLObjectProperty
-            for dl_role in self.kb.get_object_properties():
-                # TODO: Check whether the range of OWLObjectProperty contains the respective ce.
-                restrictions.append(OWLObjectSomeValuesFrom(filler=c, property=dl_role))
-                restrictions.append(OWLObjectAllValuesFrom(filler=c, property=dl_role))
-                if self.use_inverse:
-                    # TODO: Check whether we can only invert the most specific object properties.
-                    inverse_role = dl_role.get_inverse_property()
-                    restrictions.append(OWLObjectSomeValuesFrom(filler=c, property=inverse_role))
-                    restrictions.append(OWLObjectAllValuesFrom(filler=c, property=inverse_role))
-
-                # Move the card limit into existantial restrictions.
-                if self.use_card_restrictions:
-                    for card in range(1, 2):
-                        temp_res = [OWLObjectMinCardinality(cardinality=card,
-                                                            property=dl_role,
-                                                            filler=c)]
-                        if self.use_inverse:
-                            temp_res.extend([OWLObjectMinCardinality(cardinality=card,
-                                                                     property=inverse_role,
-                                                                     filler=c
-                                                                     )])
-                        restrictions.extend(temp_res)
-                    del temp_res
-        yield from restrictions
-
-        if self.use_nominals:
-            # ∃ P1365.{}
-            yield from (OWLObjectSomeValuesFrom(property=object_property,
-                                                filler=OWLObjectOneOf(set_of_individuals))
-                        for object_property, set_of_individuals in self.property_to_individuals_mapping.items())
-
-    def refine_atomic_concept(self, class_expression: OWLClass) -> Generator[
-        Tuple[OWLObjectIntersectionOf, OWLObjectOneOf], None, None]:
+    def refine_atomic_concept(self, class_expression: OWLClass) -> Generator[OWLObjectIntersectionOf, None, None]:
         assert isinstance(class_expression, OWLClass), class_expression
         for i in self.top_refinements:
             if i.is_owl_nothing() is False:
@@ -158,20 +152,26 @@ class LengthBasedRefinement(BaseRefinement):
         assert isinstance(class_expression, OWLObjectSomeValuesFrom)
         # Given \exists r. C
         yield OWLObjectIntersectionOf((class_expression, OWLThing))
-        yield from (OWLObjectSomeValuesFrom(filler=C,
-                                            property=class_expression.get_property()) for C in
-                    self.refine(class_expression.get_filler()))
+        owl_obj_property = class_expression.get_property()
+        yield from (OWLObjectSomeValuesFrom(property=owl_obj_property,
+                                            filler=C) for C in self.refine(class_expression.get_filler()))
         if self.use_nominals:
-            # # Given \exists r. C return \exists r. C {x,y,z}, where i \in E^+ (i,r,k) \in KG s.t. k \in {x,y,z}
-            yield OWLObjectSomeValuesFrom(property=class_expression.get_property(),
-                                          filler=OWLObjectOneOf(self.property_to_individuals_mapping[p]))
+            for owl_named_individual in self.kb.individuals(class_expression, named_individuals=True):
+                assert isinstance(owl_named_individual, OWLIndividual)
+                yield OWLObjectUnionOf(
+                    (class_expression, OWLObjectSomeValuesFrom(property=owl_obj_property, filler=OWLObjectOneOf(owl_named_individual))))
 
     def refine_object_all_values_from(self, class_expression: OWLObjectAllValuesFrom) -> Iterable[OWLClassExpression]:
         assert isinstance(class_expression, OWLObjectAllValuesFrom)
         yield OWLObjectIntersectionOf((class_expression, OWLThing))
-        yield from (OWLObjectAllValuesFrom(filler=C,
-                                           property=class_expression.get_property()) for C in
+        owl_obj_property = class_expression.get_property()
+        yield from (OWLObjectAllValuesFrom(property=owl_obj_property, filler=C) for C in
                     self.refine(class_expression.get_filler()))
+        if self.use_nominals:
+            for owl_named_individual in self.kb.individuals(class_expression, named_individuals=True):
+                assert isinstance(owl_named_individual, OWLIndividual)
+                yield OWLObjectUnionOf(
+                    (class_expression, OWLObjectAllValuesFrom(property=owl_obj_property, filler=OWLObjectOneOf(owl_named_individual))))
 
     def refine_object_union_of(self, class_expression: OWLObjectUnionOf) -> Iterable[OWLClassExpression]:
         """ Refine OWLObjectUnionof by refining each operands:"""
@@ -240,7 +240,7 @@ class LengthBasedRefinement(BaseRefinement):
         elif isinstance(class_expression, OWLDataHasValue):
             yield from (OWLObjectIntersectionOf((class_expression, i)) for i in self.top_refinements)
         elif isinstance(class_expression, OWLObjectOneOf):
-            raise NotImplementedError("Remove an individual from the set of individuals, If empty use bottom.")
+            yield class_expression
         else:
             raise ValueError(f"{type(class_expression)} objects are not yet supported")
 
