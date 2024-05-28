@@ -234,15 +234,16 @@ class Drill(RefinementBasedConceptLearner):
                  'Negatives': [i.str for i in negatives]})
         return self.terminate_training()
 
-    def save(self, directory: str) -> None:
+    def save(self, directory: str=None) -> None:
         """ save weights of the deep Q-network"""
         # (1) Create a folder
-        os.makedirs(directory, exist_ok=True)
-        # (2) Save the weights
-        self.save_weights(path=directory + "/drill.pth")
-        # (3) Save seen examples
-        with open(f"{directory}/seen_examples.json", 'w', encoding='utf-8') as f:
-            json.dump(self.seen_examples, f, ensure_ascii=False, indent=4)
+        if directory:
+            os.makedirs(directory, exist_ok=True)
+            # (2) Save the weights
+            self.save_weights(path=directory + "/drill.pth")
+            # (3) Save seen examples
+            with open(f"{directory}/seen_examples.json", 'w', encoding='utf-8') as f:
+                json.dump(self.seen_examples, f, ensure_ascii=False, indent=4)
 
     def load(self, directory: str = None) -> None:
         """ load weights of the deep Q-network"""

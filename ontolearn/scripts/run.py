@@ -66,7 +66,7 @@ def get_drill(data: dict):
         # Train & Save
         drill.train(num_of_target_concepts=data.get("num_of_target_concepts", 1),
                     num_learning_problems=data.get("num_of_training_learning_problems", 1))
-        drill.save(directory=data["path_to_pretrained_drill"])
+        drill.save(directory=data.get("path_to_pretrained_drill", None))
     return drill
 
 
@@ -106,7 +106,12 @@ async def cel(data: dict) -> Dict:
         # ()Learning Process.
         results = []
         learned_owl_expression: OWLClassExpression
-        for ith, learned_owl_expression in enumerate(owl_learner.fit(lp).best_hypotheses(n=data.get("topk", 3))):
+
+        predictions = owl_learner.fit(lp).best_hypotheses(n=data.get("topk", 3))
+        if not isinstance(predictions, List):
+            predictions = [predictions]
+
+        for ith, learned_owl_expression in enumerate(predictions):
             # () OWL to DL
             dl_learned_owl_expression: str
             dl_learned_owl_expression = owl_expression_to_dl(learned_owl_expression)
