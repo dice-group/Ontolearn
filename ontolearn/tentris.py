@@ -25,7 +25,7 @@ from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1, Precision, Accuracy, Recall
 from ontolearn.utils import oplogging, Factory
 from ontolearn.base.ext import OWLReasonerEx
-from ontolearn.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from ontolearn.base import OntologyManager, OntologyReasoner
 from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer
 from owlapy.util import LRUCache
 
@@ -70,7 +70,7 @@ class TentrisOntology(OWLOntology):
         self._path = path
         self._endpoint_url = endpoint_url
         self._endpoint_timeout = timeout
-        self._backing_mgr = OWLOntologyManager_Owlready2()
+        self._backing_mgr = OntologyManager()
         self._backing_onto = self._backing_mgr.load_ontology(IRI.create('file://' + self._path))
 
     def classes_in_signature(self) -> Iterable[OWLClass]:
@@ -129,7 +129,7 @@ class TentrisReasoner(OWLReasonerEx):
 
     def __init__(self, ontology: TentrisOntology):
         self._ontology = ontology
-        self._backing_reasoner = OWLReasoner_Owlready2(self._ontology._backing_onto)
+        self._backing_reasoner = OntologyReasoner(self._ontology._backing_onto)
 
     def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClass]:
         raise NotImplementedError

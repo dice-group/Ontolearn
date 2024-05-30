@@ -10,7 +10,7 @@ from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral, DoubleOWLDatatype, IntegerOWLDatatype
 from owlapy.owl_property import OWLObjectProperty, OWLDataProperty
 
-from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
+from owlapy.utils import OWLClassExpressionLengthMetric
 from ontolearn.utils import setup_logging
 from owlapy.providers import owl_datatype_min_max_inclusive_restriction
 

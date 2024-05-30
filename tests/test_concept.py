@@ -6,14 +6,14 @@ from owlapy.iri import IRI
 
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.utils import setup_logging
-from ontolearn.base import OWLReasoner_Owlready2
+from owlapy.owl_reasoner import OntologyReasoner
 
 setup_logging("ontolearn/logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)
-kb = KnowledgeBase(path=PATH_FAMILY, reasoner_factory=OWLReasoner_Owlready2)
+kb = KnowledgeBase(path=PATH_FAMILY, reasoner_factory=OntologyReasoner)
 
 
 def test_concept():

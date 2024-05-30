@@ -27,7 +27,7 @@ from ontolearn.heuristics import CeloeBasedReward
 import torch
 from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
 from tqdm import tqdm
-from ..base.owl.utils import OWLClassExpressionLengthMetric
+from owlapy.utils import OWLClassExpressionLengthMetric
 
 
 class Drill(RefinementBasedConceptLearner):

@@ -70,8 +70,8 @@ class LearningProblemGenerator:
 
         assert isinstance(self.kb, KnowledgeBase)
 
-        from ontolearn.base import OWLOntologyManager_Owlready2
-        manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
+        from owlapy.owl_ontology_manager import OntologyManager
+        manager: OWLOntologyManager = OntologyManager()
 
         ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
         manager.load_ontology(IRI.create(self.kb.path))

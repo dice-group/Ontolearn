@@ -18,11 +18,11 @@ from owlapy.owl_property import OWLDataProperty, OWLObjectPropertyExpression, OW
 from requests import Response
 from requests.exceptions import RequestException, JSONDecodeError
 from owlapy.converter import Owl2SparqlConverter
-from ontolearn.base.ext import OWLReasonerEx
+from owlapy.owl_reasoner import OWLReasonerEx
 from ontolearn.knowledge_base import KnowledgeBase
 import rdflib
 from ontolearn.concept_generator import ConceptGenerator
-from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
+from owlapy.utils import OWLClassExpressionLengthMetric
 import traceback
 from collections import Counter
 

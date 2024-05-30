@@ -8,8 +8,8 @@ from ontolearn.model_adapter import ModelAdapter, Trainer
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 from owlapy.class_expression import OWLClass
 from ontolearn.utils import setup_logging
-from ontolearn.base import BaseReasoner_Owlready2, OWLOntology_Owlready2
-from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
+from owlapy.owl_ontology import Ontology
+from owlapy.owl_reasoner import SyncReasoner, BaseReasoner
 from typing import cast
 setup_logging()
 
@@ -55,8 +55,7 @@ for str_target_concept, examples in settings['problems'].items():
     typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
 
     kb = KnowledgeBase(path=settings['data_path'])
-    reasoner = OWLReasoner_Owlready2_ComplexCEInstances(cast(OWLOntology_Owlready2, kb.ontology()),
-                                                        BaseReasoner_Owlready2.HERMIT)
+    reasoner = SyncReasoner(cast(Ontology, kb.ontology()), BaseReasoner.HERMIT)
 
     model = ModelAdapter(path=settings['data_path'],
                          ignore=concepts_to_ignore,

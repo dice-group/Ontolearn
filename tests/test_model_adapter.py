@@ -10,8 +10,8 @@ from ontolearn.model_adapter import ModelAdapter
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.iri import IRI
-from ontolearn.base import OWLOntology_Owlready2, BaseReasoner_Owlready2
-from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
+from owlapy.owl_ontology import Ontology
+from owlapy.owl_reasoner import SyncReasoner, BaseReasoner
 
 
 class TestModelAdapter(unittest.TestCase):
@@ -21,8 +21,7 @@ class TestModelAdapter(unittest.TestCase):
             settings = json.load(json_file)
         kb_path = "KGs/Family/family-benchmark_rich_background.owl"
         kb = KnowledgeBase(path=kb_path)
-        reasoner = OWLReasoner_Owlready2_ComplexCEInstances(cast(OWLOntology_Owlready2, kb.ontology),
-                                                            BaseReasoner_Owlready2.HERMIT)
+        reasoner = SyncReasoner(cast(Ontology, kb.ontology), BaseReasoner.HERMIT)
         op = ModifiedCELOERefinement(knowledge_base=kb, use_negation=False, use_all_constructor=False)
         p = set(settings['problems']['Uncle']['positive_examples'])
         n = set(settings['problems']['Uncle']['negative_examples'])
@@ -47,8 +46,7 @@ class TestModelAdapter(unittest.TestCase):
             settings = json.load(json_file)
         kb_path = "KGs/Family/family-benchmark_rich_background.owl"
         kb = KnowledgeBase(path=kb_path)
-        reasoner = OWLReasoner_Owlready2_ComplexCEInstances(cast(OWLOntology_Owlready2, kb.ontology),
-                                                            BaseReasoner_Owlready2.PELLET)
+        reasoner = SyncReasoner(cast(Ontology, kb.ontology), BaseReasoner.PELLET)
         op = ModifiedCELOERefinement(knowledge_base=kb, use_negation=False, use_all_constructor=False)
         p = set(settings['problems']['Uncle']['positive_examples'])
         n = set(settings['problems']['Uncle']['negative_examples'])
@@ -77,8 +75,7 @@ class TestModelAdapter(unittest.TestCase):
         with open('examples/synthetic_problems.json') as json_file:
             settings = json.load(json_file)
         kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
-        reasoner = OWLReasoner_Owlready2_ComplexCEInstances(cast(OWLOntology_Owlready2, kb.ontology),
-                                                            BaseReasoner_Owlready2.HERMIT)
+        reasoner = SyncReasoner(cast(Ontology, kb.ontology), BaseReasoner.HERMIT)
         p = set(settings['problems']['Uncle']['positive_examples'])
         n = set(settings['problems']['Uncle']['negative_examples'])
         typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))

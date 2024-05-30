@@ -4,9 +4,8 @@ from owlapy.owl_axiom import OWLSubClassOfAxiom, OWLObjectPropertyDomainAxiom, O
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_property import OWLDataProperty, OWLObjectProperty
 
-from ontolearn.base import OWLReasoner_Owlready2, BaseReasoner_Owlready2
+from owlapy.owl_reasoner import OntologyReasoner, BaseReasoner, SyncReasoner
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
 
 data_file = '../KGs/Test/test_ontology.owl'
 NS = 'http://www.semanticweb.org/stefan/ontologies/2023/1/untitled-ontology-11#'
@@ -128,14 +127,14 @@ manager.add_axiom(onto, OWLSubClassOfAxiom(ST, U))
 
 # manager.save_ontology(onto, IRI.create('file:/' + 'test' + '.owl'))
 
-base_reasoner = OWLReasoner_Owlready2(onto)
-# reasoner = OWLReasoner_FastInstanceChecker(
+base_reasoner = OntologyReasoner(onto)
+# reasoner = FastInstanceCheckerReasoner(
 #                     onto,
 #                     base_reasoner,
 #                     negation_default=True,
 #                     sub_properties=True)
 
-reasoner = OWLReasoner_Owlready2_ComplexCEInstances(onto, BaseReasoner_Owlready2.HERMIT)
+reasoner = SyncReasoner(onto, BaseReasoner.HERMIT)
 
 t1 = list(reasoner.instances(N))
 t2 = list(reasoner.instances(r7E))
