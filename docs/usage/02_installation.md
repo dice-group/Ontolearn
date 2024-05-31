@@ -177,5 +177,5 @@ Additionally, you can specify the path where you want to flake8 to run.
 
 ----------------------------------------------------------------------
 
-In the next guide, we explore about ontologies in Ontolearn and how you can modify them
-using axioms.
+In the next guide we will explore the [KnowledgeBase](ontolearn.knowledge_base.KnowledgeBase) class that is needed to 
+run a concept learner.

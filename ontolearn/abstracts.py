@@ -5,7 +5,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Set, List, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional
 from owlapy.class_expression import OWLClassExpression
 from owlapy.owl_ontology import OWLOntology
-from owlapy.util import iter_count
+from owlapy.utils import iter_count
 from .data_struct import Experience
 from .utils import read_csv
 from collections import OrderedDict

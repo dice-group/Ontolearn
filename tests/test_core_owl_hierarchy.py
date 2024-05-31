@@ -5,9 +5,10 @@ from owlapy.class_expression import OWLClass
 from owlapy.iri import IRI
 from owlapy.owl_property import OWLObjectProperty
 
-from ontolearn.base.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, AbstractHierarchy
+from owlapy.owl_hierarchy import ClassHierarchy, ObjectPropertyHierarchy, AbstractHierarchy
 from ontolearn.utils import setup_logging
-from ontolearn.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from owlapy.owl_reasoner import OntologyReasoner
+from owlapy.owl_ontology_manager import OntologyManager
 
 _T = TypeVar('_T')  #:
 
@@ -17,9 +18,9 @@ setup_logging("ontolearn/logging_test.conf")
 class Owl_Core_PropertyHierarchy_Test(unittest.TestCase):
     def test_object_property_hierarchy(self):
         NS = "http://www.biopax.org/examples/glycolysis#"
-        mgr = OWLOntologyManager_Owlready2()
+        mgr = OntologyManager()
         onto = mgr.load_ontology(IRI.create("file://KGs/Biopax/biopax.owl"))
-        reasoner = OWLReasoner_Owlready2(onto)
+        reasoner = OntologyReasoner(onto)
 
         oph = ObjectPropertyHierarchy(reasoner)
         # for k in sorted(oph.roots()):
@@ -53,9 +54,9 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
 
     def test_class_hierarchy_restrict(self):
         NS = "http://www.benchmark.org/family#"
-        mgr = OWLOntologyManager_Owlready2()
+        mgr = OntologyManager()
         onto = mgr.load_ontology(IRI.create("file://KGs/Family/family-benchmark_rich_background.owl"))
-        reasoner = OWLReasoner_Owlready2(onto)
+        reasoner = OntologyReasoner(onto)
 
         ch = ClassHierarchy(reasoner).restrict_and_copy(remove=frozenset({OWLClass(IRI(NS, 'Grandchild'))}))
 
@@ -67,9 +68,9 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
 
     def test_class_hierarchy_children(self):
         NS = "http://example.com/father#"
-        mgr = OWLOntologyManager_Owlready2()
+        mgr = OntologyManager()
         onto = mgr.load_ontology(IRI.create("file://KGs/Family/father.owl"))
-        reasoner = OWLReasoner_Owlready2(onto)
+        reasoner = OntologyReasoner(onto)
 
         ch = ClassHierarchy(reasoner)
         # for k in sorted(ch.roots()):
@@ -81,9 +82,9 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
 
     def test_class_hierarchy_parents_roots(self):
         NS = "http://www.benchmark.org/family#"
-        mgr = OWLOntologyManager_Owlready2()
+        mgr = OntologyManager()
         onto = mgr.load_ontology(IRI.create("file://KGs/Family/family-benchmark_rich_background.owl"))
-        reasoner = OWLReasoner_Owlready2(onto)
+        reasoner = OntologyReasoner(onto)
 
         ch = ClassHierarchy(reasoner)
         grandmother = OWLClass(IRI(NS, 'Grandmother'))
@@ -98,9 +99,9 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
 
     def test_class_hierarchy_siblings(self):
         NS = "http://www.benchmark.org/family#"
-        mgr = OWLOntologyManager_Owlready2()
+        mgr = OntologyManager()
         onto = mgr.load_ontology(IRI.create("file://KGs/Family/family-benchmark_rich_background.owl"))
-        reasoner = OWLReasoner_Owlready2(onto)
+        reasoner = OntologyReasoner(onto)
 
         ch = ClassHierarchy(reasoner)
         child = OWLClass(IRI(NS, 'Child'))
@@ -112,9 +113,9 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
 
     def test_class_hierarchy_leaves(self):
         NS = "http://www.benchmark.org/family#"
-        mgr = OWLOntologyManager_Owlready2()
+        mgr = OntologyManager()
         onto = mgr.load_ontology(IRI.create("file://KGs/Family/family-benchmark_rich_background.owl"))
-        reasoner = OWLReasoner_Owlready2(onto)
+        reasoner = OntologyReasoner(onto)
 
         ch = ClassHierarchy(reasoner)
         # for k in sorted(ch.roots()):

@@ -11,11 +11,11 @@ Ontology-related attributes required for the Structured Machine Learning library
 ## Knowledge Base vs Ontology
 
 These terms may be used interchangeably sometimes but in Ontolearn they are not the same thing,
-although they share a lot of similarities. An ontology in Ontolearn, as we explained in the
-[previous guide](03_ontologies.md) is the object where we load the OWL 2.0 ontologies from
-a _.owl_ file containing the ontology in an RDF/XML or OWL/XML format. On the other side
-a KnowledgeBase is a class which combines an ontology and a reasoner together. Therefore,
-differently from the ontology you can use methods that require reasoning. You can check 
+although they share a lot of similarities. An ontology in owlapy, as explained 
+[here](https://dice-group.github.io/owlapy/usage/ontologies.html) is the object where we load 
+the OWL 2.0 ontologies from a _.owl_ file containing the ontology in an RDF/XML or OWL/XML format.
+On the other side a KnowledgeBase is a class which combines an ontology and a reasoner together.
+Therefore, differently from the ontology you can use methods that require reasoning. You can check 
 the methods for each in the links below:
 
 - [KnowledgeBase](ontolearn.knowledge_base.KnowledgeBase)
@@ -47,7 +47,7 @@ kb = KnowledgeBase(path="file://KGs/Family/father.owl")
 ```
 
 What happens in the background is that the ontology located in this path will be loaded
-in the `OWLOntology` object of `kb` as done [here](03_ontologies.md#loading-an-ontology).
+in the `OWLOntology` object of `kb` as done [here](https://dice-group.github.io/owlapy/usage/ontologies.html#loading-an-ontology).
 
 In our recent version you can also initialize a knowledge base using a dataset hosted in a triplestore.
 Since that knowledge base is mainly used for executing a concept learner, we cover that matter more in depth 
@@ -103,7 +103,7 @@ male_concept = OWLClass(IRI(NS,'male'))
 male_individuals = kb.individuals(male_concept)
 ```
 Note that the namespace has to match the Namespace/IRI that is defined
-in the Ontology document.
+in the Ontology.
 
 `male_individuals` will contain all the individuals of type 'male'.
 Keep in mind that `OWLClass` inherit from `OWLClassExpression`. Depending on 
@@ -392,7 +392,5 @@ to check all the methods that this class has to offer. You will find convenient 
 access the class/property hierarchy, methods that use the reasoner indirectly and 
 a lot more.
 
-Speaking of the reasoner, it is important that an ontology 
-is associated with a reasoner which is used to inferring knowledge 
-from the ontology, i.e. to perform ontology reasoning.
-In the next guide we will see how to use a reasoner in Ontolearn. 
+In the next guide we will walk through how to use concept learners to learn class expressions in a 
+knowledge base for a certain learning problem.

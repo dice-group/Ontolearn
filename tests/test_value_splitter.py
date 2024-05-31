@@ -3,17 +3,17 @@ import unittest
 
 from owlready2.prop import DataProperty
 from ontolearn.value_splitter import BinningValueSplitter
-from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
+from owlapy.owl_reasoner import FastInstanceCheckerReasoner, OntologyReasoner
 from owlapy.owl_literal import OWLDataProperty, OWLLiteral
 from owlapy.iri import IRI
-from ontolearn.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from owlapy.owl_ontology_manager import OntologyManager
 
 
 class BinningValueSplitter_Test(unittest.TestCase):
 
     def test_binning_splitter_numeric(self):
         namespace_ = "http://example.com/father#"
-        mgr = OWLOntologyManager_Owlready2()
+        mgr = OntologyManager()
         onto = mgr.load_ontology(IRI.create("file://KGs/Family/father.owl"))
 
         with onto._onto:
@@ -28,8 +28,8 @@ class BinningValueSplitter_Test(unittest.TestCase):
         onto._onto.markus.test_int = values_int
         onto._onto.markus.test_float = values_float
 
-        base_reasoner = OWLReasoner_Owlready2(onto)
-        reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner)
+        base_reasoner = OntologyReasoner(onto)
+        reasoner = FastInstanceCheckerReasoner(onto, base_reasoner=base_reasoner)
 
         test_int_dp = OWLDataProperty(IRI(namespace_, 'test_int'))
         test_float_dp = OWLDataProperty(IRI(namespace_, 'test_float'))
@@ -45,7 +45,7 @@ class BinningValueSplitter_Test(unittest.TestCase):
 
     def test_binning_splitter_time(self):
         namespace_ = "http://example.com/father#"
-        mgr = OWLOntologyManager_Owlready2()
+        mgr = OntologyManager()
         onto = mgr.load_ontology(IRI.create("file://KGs/Family/father.owl"))
 
         with onto._onto:
@@ -57,8 +57,8 @@ class BinningValueSplitter_Test(unittest.TestCase):
                            date(1985, 4, 6), date(1999, 9, 9)]
         onto._onto.markus.test_time = values_datetime
 
-        base_reasoner = OWLReasoner_Owlready2(onto)
-        reasoner = OWLReasoner_FastInstanceChecker(onto, base_reasoner=base_reasoner)
+        base_reasoner = OntologyReasoner(onto)
+        reasoner = FastInstanceCheckerReasoner(onto, base_reasoner=base_reasoner)
 
         test_time_dp = OWLDataProperty(IRI(namespace_, 'test_time'))
 

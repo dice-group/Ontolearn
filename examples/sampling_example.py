@@ -5,7 +5,7 @@ from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1, Accuracy
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 from ontolearn.utils import setup_logging
-from ontosample.lpc_samplers import RandomWalkerJumpsSamplerLPCentralized
+from ontosample.lpc_samplers import RandomWalkerJumpsSamplerLPCentralized # pip install ontosample
 setup_logging()
 
 with open('carcinogenesis_lp.json') as json_file:
