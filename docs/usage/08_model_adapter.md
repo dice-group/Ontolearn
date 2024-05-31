@@ -12,13 +12,13 @@ from ontolearn.metrics import Accuracy
 from ontolearn.model_adapter import ModelAdapter
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 from owlapy.namespaces import Namespaces
-from ontolearn.base import OWLOntologyManager_Owlready2
-from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
+from owlapy.owl_ontology_manager import OntologyManager
+from owlapy.owl_reasoner import SyncReasoner
 from owlapy.render import DLSyntaxObjectRenderer
 
-manager = OWLOntologyManager_Owlready2()
+manager = OntologyManager()
 onto = manager.load_ontology(IRI.create("KGs/Family/father.owl"))
-complex_ce_reasoner = OWLReasoner_Owlready2_ComplexCEInstances(onto)
+complex_ce_reasoner = SyncReasoner(onto)
 
 NS = Namespaces('ex', 'http://example.com/father#')
 
