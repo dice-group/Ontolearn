@@ -644,10 +644,11 @@ class TripleStoreReasonerOntology:
         for binding in self.query(query).json()["results"]["bindings"]:
             yield OWLClass(binding["x"]["value"])
 
-    def instances(self, expression: OWLClassExpression) -> Generator[OWLNamedIndividual, None, None]:
+    def instances(self, expression: OWLClassExpression, named_individuals: bool = False) -> Generator[
+        OWLNamedIndividual, None, None]:
         assert isinstance(expression, OWLClassExpression)
         try:
-            sparql_query = owl_expression_to_sparql(expression=expression)
+            sparql_query = owl_expression_to_sparql(expression=expression, named_individuals=named_individuals)
         except Exception as exc:
             print(f"Error at converting {expression} into sparql")
             traceback.print_exception(exc)
@@ -842,10 +843,12 @@ class TripleStore:
     def get_range_of_double_data_properties(self, prop: OWLDataProperty):
         yield from self.reasoner.range_of_double_data_properties(prop)
 
-    def individuals(self, concept: Optional[OWLClassExpression] = None) -> Generator[OWLNamedIndividual, None, None]:
+    def individuals(self, concept: Optional[OWLClassExpression] = None, named_individuals: bool = False) -> Generator[
+        OWLNamedIndividual, None, None]:
         """Given an OWL class expression, retrieve all individuals belonging to it.
         Args:
             concept: Class expression of which to list individuals.
+            named_individuals: flag for returning only owl named individuals in the SPARQL mapping
         Returns:
             Generator of individuals belonging to the given class.
         """
@@ -853,7 +856,7 @@ class TripleStore:
         if concept is None or concept.is_owl_thing():
             yield from self.reasoner.individuals_in_signature()
         else:
-            yield from self.reasoner.instances(concept)
+            yield from self.reasoner.instances(concept, named_individuals=named_individuals)
 
     def get_types(self, ind: OWLNamedIndividual, direct: True) -> Generator[OWLClass, None, None]:
         if not direct:

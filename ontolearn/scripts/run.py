@@ -6,7 +6,7 @@
 import argparse
 from fastapi import FastAPI
 import uvicorn
-from typing import Dict, Iterable, Union
+from typing import Dict, Iterable, Union, List
 from owlapy.class_expression import OWLClassExpression
 from owlapy.iri import IRI
 from owlapy.owl_individual import OWLNamedIndividual
@@ -21,6 +21,7 @@ from owlapy.render import DLSyntaxObjectRenderer
 from ..utils.static_funcs import save_owl_class_expressions
 from owlapy import owl_expression_to_dl
 import os
+from ..verbalizer import LLMVerbalizer
 
 app = FastAPI()
 args = None
@@ -52,6 +53,11 @@ def get_drill(data: dict):
                   quality_func=F1(),
                   iter_bound=data.get("iter_bound", 10),  # total refinement operation applied
                   max_runtime=data.get("max_runtime", 60),  # seconds
+                  num_episode=data.get("num_episode", 2),  # for the training
+                  use_inverse=True,
+                  use_data_properties=True,
+                  use_card_restrictions=True,
+                  use_nominals=True,
                   verbose=1)
     # (2) Either load the weights of DRILL or train it.
     if data.get("path_to_pretrained_drill", None) and os.path.isdir(data["path_to_pretrained_drill"]):
@@ -60,11 +66,11 @@ def get_drill(data: dict):
         # Train & Save
         drill.train(num_of_target_concepts=data.get("num_of_target_concepts", 1),
                     num_learning_problems=data.get("num_of_training_learning_problems", 1))
-        drill.save(directory=data["path_to_pretrained_drill"])
+        drill.save(directory=data.get("path_to_pretrained_drill", None))
     return drill
 
 
-def get_tdl(data)->TDL:
+def get_tdl(data) -> TDL:
     global kb
     return TDL(knowledge_base=kb)
 
@@ -83,12 +89,12 @@ async def cel(data: dict) -> Dict:
     global args
     global kb
     print("######### CEL Arguments ###############")
-    print(f"Knowledgebase/Triplestore:{kb}")
-    print("Input data:", data)
-    print("######### CEL Arguments ###############")
-
-    # (1) Initialize OWL CEL
+    print(f"Knowledgebase/Triplestore:{kb}\n")
+    print(f"Input data:{data}\n")
+    print("######### CEL Arguments ###############\n")
+    # (1) Initialize OWL CEL and verbalizer
     owl_learner = get_learner(data)
+    verbalizer = LLMVerbalizer()
     # (2) Read Positives and Negatives.
     positives = {OWLNamedIndividual(IRI.create(i)) for i in data['pos']}
     negatives = {OWLNamedIndividual(IRI.create(i)) for i in data['neg']}
@@ -97,28 +103,35 @@ async def cel(data: dict) -> Dict:
         # () LP
         lp = PosNegLPStandard(pos=positives, neg=negatives)
         # Few variable definitions for the sake of the readability.
-        learned_owl_expression: OWLClassExpression
-        dl_learned_owl_expression: str
-        individuals: Iterable[OWLNamedIndividual]
-        train_f1: float
         # ()Learning Process.
-        learned_owl_expression = owl_learner.fit(lp).best_hypotheses()
-        # () OWL to DL
-        dl_learned_owl_expression = owl_expression_to_dl(learned_owl_expression)
-        # () Get Individuals
-        print(f"Retrieving individuals of {dl_learned_owl_expression}...")
-        individuals = kb.individuals(learned_owl_expression)
-        # () F1 score training
-        train_f1 = compute_f1_score(individuals=frozenset({i for i in individuals}),
-                                    pos=lp.pos,
-                                    neg=lp.neg)
-        save_owl_class_expressions(expressions=learned_owl_expression, path="Predictions")
-        print("Done: )")
-        return {"Prediction": dl_learned_owl_expression,
-                "F1": train_f1,
-                "saved_prediction": "Predictions.owl"}
+        results = []
+        learned_owl_expression: OWLClassExpression
+
+        predictions = owl_learner.fit(lp).best_hypotheses(n=data.get("topk", 3))
+        if not isinstance(predictions, List):
+            predictions = [predictions]
+
+        for ith, learned_owl_expression in enumerate(predictions):
+            # () OWL to DL
+            dl_learned_owl_expression: str
+            dl_learned_owl_expression = owl_expression_to_dl(learned_owl_expression)
+            # () Get Individuals
+            print(f"Retrieving individuals of {dl_learned_owl_expression}...")
+            individuals: Iterable[OWLNamedIndividual]
+            individuals = kb.individuals(learned_owl_expression)
+            # () F1 score training
+            train_f1: float
+            train_f1 = compute_f1_score(individuals=frozenset({i for i in individuals}),
+                                        pos=lp.pos,
+                                        neg=lp.neg)
+            results.append({"Rank": ith + 1,
+                            "Prediction": dl_learned_owl_expression,
+                            "Verbalization": verbalizer(dl_learned_owl_expression),
+                            "F1": train_f1})
+
+        return {"Results": results}
     else:
-        return {"Prediction": "No Learning Problem Given!!!", "F1": 0.0}
+        return {"Results": "Error no valid learning problem"}
 
 
 def main():
