@@ -15,6 +15,8 @@ Concept Learning:
 Sampling:
 - **OntoSample** &rarr; [Accelerating Concept Learning via Sampling](https://dl.acm.org/doi/10.1145/3583780.3615158)
 
+Also check OWLAPY's documentation [here](https://dice-group.github.io/owlapy/usage/main.html).
+
 ## Citing
 
 Currently, we are working on our manuscript describing our framework. 

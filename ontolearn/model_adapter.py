@@ -14,7 +14,7 @@ from owlapy.owl_reasoner import OWLReasoner
 from ontolearn.abstracts import AbstractHeuristic, AbstractScorer, BaseRefinement, AbstractKnowledgeBase, \
     AbstractNode
 from ontolearn.base_concept_learner import BaseConceptLearner
-from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
+from owlapy.owl_reasoner import SyncReasoner
 from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, NCES
 from ontolearn.ea_algorithms import EASimple
 from ontolearn.ea_initialization import EARandomWalkInitialization, EARandomInitialization, RandomInitMethod
@@ -166,7 +166,7 @@ def ModelAdapter(*args, **kwargs):  # noqa: C901
     else:
         reasoner_type = kwargs.pop("reasoner_type", None)
         if reasoner_type is None:
-            reasoner_type = OWLReasoner_Owlready2_ComplexCEInstances
+            reasoner_type = SyncReasoner
         assert issubclass(reasoner_type, OWLReasoner)
         reasoner = reasoner_type(**_get_matching_opts(
             reasoner_type, {'ontology': target_kb.ontology}, kwargs))

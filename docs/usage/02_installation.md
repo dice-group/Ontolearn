@@ -5,10 +5,8 @@ your system. Python comes in various versions and with different,
 sometimes conflicting dependencies. Hence, most guides will recommend
 to set up a "virtual environment" to work in.
 
-One such system for virtual python environments is python
-[venv](https://docs.python.org/3/library/venv.html). Since the command comes 
-together with python, you don't need to install any external tool.
-
+One such system for virtual python environments is 
+[conda](https://conda.io/projects/conda/en/latest/index.html).
 
 ## Installation via _pip_
 
@@ -25,7 +23,7 @@ and all its dependencies from <https://pypi.org/project/ontolearn/>.
 ## Installation From Source
 
 To download the Ontolearn source code, you will also need to have a
-copy of the [Git](https://git-scm.com/) version control system.
+copy of the [Git](https://git-scm.com/) version control system conda installed.
 
 Install java and curl:
 ```shell
@@ -36,24 +34,22 @@ sudo apt install curl
 ```
 
 Once you have the done previous step, you can continue setting up a virtual
-environment and installing the dependencies. You may as well use your IDE interface
-to set up your venv.
+environment and installing the dependencies.
 
-* ->First download (clone) the source code
+* -> First download (clone) the source code
   ```shell
   git clone https://github.com/dice-group/Ontolearn.git
   cd Ontolearn
   ```
   
-* ->Create a python virtual environment. (We are not using conda anymore)
+* -> Create and activate a conda virtual environment.
   ```shell
-  python -m venv venv 
-  source venv/bin/activate # --> for Unix systems
-  # .\venv\Scripts\activate  --> for Windows
+  conda create -n venv python=3.10.14 --no-default-packages
+  conda activate venv
   ```
-* ->Install the dependencies
+* -> Install the dependencies
   ```shell
-  pip install -r requirements.txt
+  pip install -e .
   ```
   
 Now you are ready to develop on Ontolearn or use the library!
@@ -181,5 +177,5 @@ Additionally, you can specify the path where you want to flake8 to run.
 
 ----------------------------------------------------------------------
 
-In the next guide, we explore about ontologies in Ontolearn and how you can modify them
-using axioms.
+In the next guide we will explore the [KnowledgeBase](ontolearn.knowledge_base.KnowledgeBase) class that is needed to 
+run a concept learner.

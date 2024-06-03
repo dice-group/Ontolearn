@@ -73,6 +73,7 @@ therefore we have stored the ontology path like that.
 
 > Note: The KGs directory contains datasets, and it's not part of the project.
 > They have to be downloaded first, see [Download External Files](02_installation.md#download-external-files).
+> You can also download some ready to use learning problem json files by clicking [here](https://files.dice-research.org/projects/Ontolearn/LPs.zip).
 
 ## Configuring Input Parameters 
 
@@ -253,7 +254,7 @@ This will return a data frame where 1 means True and 0 means False.
 
 ### Verbalization
 
-You can as well verbalize or visualize the generated hypotheses by using the
+You can as well verbalize or visualize the generated hypotheses into images by using the
 static method `verbalize`. This functionality requires an external package which
 is not part of the required packages for Ontolearn as well as _**graphviz**_. 
 

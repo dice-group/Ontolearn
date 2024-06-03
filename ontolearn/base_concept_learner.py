@@ -21,8 +21,9 @@ from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.metrics import F1
 from ontolearn.refinement_operators import ModifiedCELOERefinement
-from ontolearn.base import OWLOntologyManager_Owlready2, OWLOntology_Owlready2
-from ontolearn.base import OWLReasoner_Owlready2_ComplexCEInstances
+from owlapy.owl_ontology import Ontology
+from owlapy.owl_ontology_manager import OntologyManager
+from owlapy.owl_reasoner import SyncReasoner
 from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
     AbstractConceptNode, AbstractLearningProblem
@@ -278,12 +279,12 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         # If axioms are provided they need to be added to the ontology
         if axioms is not None:
-            ontology: OWLOntology = cast(OWLOntology_Owlready2, self.kb.ontology)
+            ontology: OWLOntology = cast(Ontology, self.kb.ontology)
             manager: OWLOntologyManager = ontology.get_owl_ontology_manager()
             for axiom in axioms:
                 manager.add_axiom(ontology, axiom)
             if reasoner is None:
-                reasoner = OWLReasoner_Owlready2_ComplexCEInstances(ontology)
+                reasoner = SyncReasoner(ontology)
 
         if hypotheses is None:
             hypotheses = [hyp.concept for hyp in self.best_hypotheses(n)]
@@ -332,7 +333,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         if len(best) >= n:
             logger.warning("There was/were only %d unique result/-s found", len(best))
 
-        manager: OWLOntologyManager = OWLOntologyManager_Owlready2()
+        manager: OWLOntologyManager = OntologyManager()
 
         ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
         manager.load_ontology(IRI.create(self.kb.path))
@@ -371,8 +372,8 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         Args:
             path: Path to the file containing hypotheses.
         """
-        manager: OWLOntologyManager_Owlready2 = OWLOntologyManager_Owlready2()
-        ontology: OWLOntology_Owlready2 = manager.load_ontology(IRI.create('file://' + path))
+        manager: OntologyManager = OntologyManager()
+        ontology: Ontology = manager.load_ontology(IRI.create('file://' + path))
         for c in ontology.classes_in_signature():
             for equivalent_classes in ontology.equivalent_classes_axioms(c):
                 for equivalent_c in equivalent_classes.class_expressions():
