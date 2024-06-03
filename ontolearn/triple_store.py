@@ -1383,7 +1383,10 @@ class TripleStoreNeuralReasoner:
                 continue
 
     def instances(
-        self, expression: OWLClassExpression, confidence_threshold: float = None
+        self,
+        expression: OWLClassExpression,
+        named_individuals=False,
+        confidence_threshold: float = None,
     ) -> Generator[OWLNamedIndividual, None, None]:
         if expression.is_owl_thing():
             yield from self.individuals_in_signature()

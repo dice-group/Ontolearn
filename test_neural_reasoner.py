@@ -348,19 +348,6 @@ class DemoNeuralReasoner:
 ###testing
 
 
-# classic reasoner
-kb = TripleStore(url="http://localhost:3030/nctrer")
-
-for dp in kb.g.data_properties_in_signature():
-    print("data properties in signature: ", dp)
-
-for booldp in kb.g.boolean_data_properties():
-    print("boolean data properties: ", booldp)
-
-for doubledp in kb.g.double_data_properties():
-    print("double data properties: ", doubledp.str)
-
-
 # neural reasoner
 print("--- Neural Reasoner ---")
 kb_neural = TripleStore(DemoNeuralReasoner("embeddings/Pykeen_QuatENctrerRun/"))
