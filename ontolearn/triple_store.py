@@ -5,13 +5,26 @@ import re
 from itertools import chain
 from typing import Iterable, Set, Optional, Generator, Union, FrozenSet, Tuple
 import requests
+
 from owlapy.class_expression import (
-    OWLClassExpression,
-    OWLThing,
-    OWLClass,
     OWLObjectSomeValuesFrom,
-    OWLObjectOneOf,
+    OWLObjectAllValuesFrom,
+    OWLObjectIntersectionOf,
+    OWLClassExpression,
+    OWLNothing,
+    OWLThing,
+    OWLNaryBooleanClassExpression,
+    OWLObjectUnionOf,
+    OWLClass,
+    OWLObjectComplementOf,
+    OWLObjectMaxCardinality,
     OWLObjectMinCardinality,
+    OWLDataSomeValuesFrom,
+    OWLDatatypeRestriction,
+    OWLDataHasValue,
+    OWLObjectExactCardinality,
+    OWLObjectHasValue,
+    OWLObjectOneOf,
 )
 from owlapy.iri import IRI
 from owlapy.owl_axiom import (
@@ -1145,7 +1158,7 @@ class TripleStoreNeuralReasoner:
                 if confidence >= confidence_threshold:
                     yield (predicted_iri_str, confidence)
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Error at getting predictions: {e}")
             return
 
     def abox(self, str_iri: str) -> Generator[
@@ -1194,6 +1207,71 @@ class TripleStoreNeuralReasoner:
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
+    def most_general_classes(
+        self, confidence_threshold: float = None
+    ) -> Generator[OWLClass, None, None]:
+        """At least it has single subclass and there is no superclass"""
+        for _class in self.classes_in_signature(confidence_threshold):
+            for concept in self.get_direct_parents(_class, confidence_threshold):
+                break
+            else:
+                # checks if subconcepts is not empty -> there is at least one subclass
+                if subconcepts := list(
+                    self.subconcepts(
+                        named_concept=_class, confidence_threshold=confidence_threshold
+                    )
+                ):
+                    yield _class
+
+    def least_general_named_concepts(
+        self, confidence_threshold: float = None
+    ) -> Generator[OWLClass, None, None]:
+        """At least it has single superclass and there is no subclass"""
+        for _class in self.classes_in_signature(confidence_threshold):
+            for concept in self.subconcepts(
+                named_concept=_class, confidence_threshold=confidence_threshold
+            ):
+                break
+            else:
+                if superclasses := list(
+                    self.get_direct_parents(_class, confidence_threshold)
+                ):
+                    yield _class
+
+    def get_direct_parents(
+        self, named_concept: OWLClass, confidence_threshold: float = None
+    ) -> Generator[OWLClass, None, None]:
+        for prediction in self.get_predictions(
+            h=None,
+            r="http://www.w3.org/2000/01/rdf-schema#subClassOf",
+            t=named_concept.str,
+            confidence_threshold=confidence_threshold,
+        ):
+            try:
+                owl_class = OWLClass(prediction[0])
+                yield owl_class
+            except Exception as e:
+                # Log the invalid IRI
+                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                continue
+
+    def subconcepts(
+        self, named_concept: OWLClass, direct=True, confidence_threshold: float = None
+    ):
+        for prediction in self.get_predictions(
+            h=named_concept.str,
+            r="http://www.w3.org/2000/01/rdf-schema#subClassOf",
+            t=None,
+            confidence_threshold=confidence_threshold,
+        ):
+            try:
+                owl_class = OWLClass(prediction[0])
+                yield owl_class
+            except Exception as e:
+                # Log the invalid IRI
+                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                continue
+
     def get_type_individuals(
         self, individual: str, confidence_threshold: float = None
     ) -> Generator[OWLClass, None, None]:
@@ -1212,9 +1290,110 @@ class TripleStoreNeuralReasoner:
                 continue
 
     def instances(
-        self, owl_class: OWLClassExpression, confidence_threshold: float = None
+        self, expression: OWLClassExpression, confidence_threshold: float = None
     ) -> Generator[OWLNamedIndividual, None, None]:
-        yield
+        if expression.is_owl_thing():
+            yield from self.individuals_in_signature()
+
+        if isinstance(expression, OWLNamedIndividual):
+            yield expression
+
+        if isinstance(expression, OWLClass):
+            yield from self.get_individuals_of_class(
+                owl_class=expression, confidence_threshold=confidence_threshold
+            )
+
+        # Handling intersection of class expressions
+        elif isinstance(expression, OWLObjectIntersectionOf):
+            # Get the class expressions
+            operands = list(expression.operands())
+            print("operands: ", operands)
+            sets_of_individuals = [
+                set(
+                    self.instances(
+                        expression=operand, confidence_threshold=confidence_threshold
+                    )
+                )
+                for operand in operands
+            ]
+
+            if sets_of_individuals:
+                # Start with the set of individuals from the first operand
+                common_individuals = sets_of_individuals[0]
+
+                # Update the common individuals set with the intersection of subsequent sets
+                for individuals in sets_of_individuals[1:]:
+                    common_individuals.intersection_update(individuals)
+
+                # Yield individuals that are common across all operands
+                for individual in common_individuals:
+                    yield individual
+
+        # Handling complement of class expressions
+        elif isinstance(expression, OWLObjectComplementOf):
+            # This case is tricky because it needs the complement within a specific domain
+            # It's generally non-trivial to implement without knowing the domain of discourse
+            all_individuals = list(
+                self.individuals_in_signature()
+            )  # Assume this retrieves all individuals
+            excluded_individuals = set(
+                self.instances(expression.get_operand(), confidence_threshold)
+            )
+            for individual in all_individuals:
+                if individual not in excluded_individuals:
+                    yield individual
+
+        elif isinstance(expression, OWLObjectAllValuesFrom):
+            # Get the object property
+            object_property = expression.get_property()
+            # Get the filler class -> the individual that the object property should point to
+
+            filler_expression = expression.get_filler()
+
+            candidate_individuals = self.instances(
+                filler_expression, confidence_threshold
+            )
+
+            # check if the individuals that have a property to that indivdual ONLY have this connection (using this property) - if so yield them
+            # dont yield those that have other connections with this property - more info: https://www.w3.org/TR/owl2-syntax/#Universal_Quantification
+            for individual in candidate_individuals:
+                for comparison_individual in self.get_object_property_values(
+                    subject=individual,
+                    object_property=object_property,
+                    confidence_threshold=confidence_threshold,
+                ):
+                    if individual != comparison_individual:
+                        break
+                else:  # this else is run if the for loop doesnot break - e.g. there is only "indvidual==comparison_individual"
+                    yield individual
+
+        elif isinstance(expression, OWLObjectSomeValuesFrom):
+            # Get the object property
+            object_property = expression.get_property()
+            # Get the filler class -> the individual/ or expression that the object property should point to
+            filler_expression = expression.get_filler()
+
+            candidate_individuals = self.instances(
+                filler_expression, confidence_threshold
+            )
+
+            for individual in candidate_individuals:
+                yield from self.get_individuals_with_object_property(
+                    object_property=object_property,
+                    owl_class=individual,
+                    confidence_threshold=confidence_threshold,
+                )
+
+        # Handling union of class expressions
+        elif isinstance(expression, OWLObjectUnionOf):
+            # Get the class expressions
+            operands = list(expression.operands())
+            seen = set()
+            for operand in operands:
+                for individual in self.instances(operand, confidence_threshold):
+                    if individual not in seen:
+                        seen.add(individual)
+                        yield individual
 
     def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
         for cl in self.classes_in_signature():
@@ -1308,10 +1487,12 @@ class TripleStoreNeuralReasoner:
         object_property: OWLObjectProperty,
         confidence_threshold: float = None,
     ) -> Generator[OWLNamedIndividual, None, None]:
+        if is_inverse := isinstance(object_property, OWLObjectInverseOf):
+            object_property = object_property.get_inverse()
         for prediction in self.get_predictions(
-            h=subject,
+            h=None if is_inverse else subject,
             r=object_property.str,
-            t=None,
+            t=subject if is_inverse else None,
             confidence_threshold=confidence_threshold,
         ):
             try:
@@ -1342,6 +1523,45 @@ class TripleStoreNeuralReasoner:
                 value = re.search(r"\"(.+?)\"", prediction[0]).group(1)
                 owl_literal = OWLLiteral(value)
                 yield owl_literal
+            except Exception as e:
+                # Log the invalid IRI
+                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                continue
+
+    def get_individuals_of_class(
+        self, owl_class: OWLClass, confidence_threshold: float = None
+    ) -> Generator[OWLNamedIndividual, None, None]:
+        for prediction in self.get_predictions(
+            h=None,
+            r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+            t=owl_class.str,
+            confidence_threshold=confidence_threshold,
+        ):
+            try:
+                owl_named_individual = OWLNamedIndividual(prediction[0])
+                yield owl_named_individual
+            except Exception as e:
+                # Log the invalid IRI
+                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                continue
+
+    def get_individuals_with_object_property(
+        self,
+        object_property: OWLObjectProperty,
+        owl_class: OWLClass,
+        confidence_threshold: float = None,
+    ) -> Generator[OWLNamedIndividual, None, None]:
+        if is_inverse := isinstance(object_property, OWLObjectInverseOf):
+            object_property = object_property.get_inverse()
+        for prediction in self.get_predictions(
+            h=owl_class.str if is_inverse else None,
+            r=object_property.str,
+            t=None if is_inverse else owl_class.str,
+            confidence_threshold=confidence_threshold,
+        ):
+            try:
+                owl_named_individual = OWLNamedIndividual(prediction[0])
+                yield owl_named_individual
             except Exception as e:
                 # Log the invalid IRI
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")

@@ -7,6 +7,27 @@ from owlapy.owl_literal import OWLLiteral
 from typing import Generator, Tuple
 import re
 
+from owlapy.class_expression import (
+    OWLObjectSomeValuesFrom,
+    OWLObjectAllValuesFrom,
+    OWLObjectIntersectionOf,
+    OWLClassExpression,
+    OWLNothing,
+    OWLThing,
+    OWLNaryBooleanClassExpression,
+    OWLObjectUnionOf,
+    OWLClass,
+    OWLObjectComplementOf,
+    OWLObjectMaxCardinality,
+    OWLObjectMinCardinality,
+    OWLDataSomeValuesFrom,
+    OWLDatatypeRestriction,
+    OWLDataHasValue,
+    OWLObjectExactCardinality,
+    OWLObjectHasValue,
+    OWLObjectOneOf,
+)
+
 # from concept learner test
 from ontolearn.learners import TDL
 from ontolearn.triple_store import TripleStore
@@ -119,9 +140,61 @@ class DemoNeuralReasoner:
                 continue
 
     def instances(
-        self, owl_class: OWLClassExpression, confidence_threshold: float = None
+        self, expression: OWLClassExpression, confidence_threshold: float = None
     ) -> Generator[OWLNamedIndividual, None, None]:
-        pass
+        if expression.is_owl_thing():
+            yield from self.individuals_in_signature()
+        if isinstance(expression, OWLClass):
+            yield from self.get_individuals_of_class(
+                owl_class=expression, confidence_threshold=confidence_threshold
+            )
+
+        # Handling intersection of class expressions
+        elif isinstance(expression, OWLObjectIntersectionOf):
+            # Get the class expressions
+            operands = list(expression.operands())
+            sets_of_individuals = [
+                list(
+                    self.instances(
+                        expression=operand, confidence_threshold=confidence_threshold
+                    )
+                )
+                for operand in operands
+            ]
+            if sets_of_individuals:
+                # Get the intersection of the sets
+                common_individuals = set(sets_of_individuals[0])
+                for individuals in sets_of_individuals[1:]:
+                    common_individuals = common_individuals.intersection_update(
+                        individuals
+                    )
+                for individual in common_individuals:
+                    yield individual
+
+        # Handling union of class expressions
+        elif isinstance(expression, OWLObjectUnionOf):
+            # Get the class expressions
+            operands = list(expression.operands())
+            seen = set()
+            for operand in operands:
+                for individual in self.instances(operand, confidence_threshold):
+                    if individual not in seen:
+                        seen.add(individual)
+                        yield individual
+
+        # Handling complement of class expressions
+        elif isinstance(expression, OWLObjectComplementOf):
+            # This case is tricky because it needs the complement within a specific domain
+            # It's generally non-trivial to implement without knowing the domain of discourse
+            all_individuals = list(
+                self.individuals_in_signature()
+            )  # Assume this retrieves all individuals
+            excluded_individuals = set(
+                self.instances(expression.get_operand(), confidence_threshold)
+            )
+            for individual in all_individuals:
+                if individual not in excluded_individuals:
+                    yield individual
 
     def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
         for cl in self.classes_in_signature():
@@ -249,6 +322,23 @@ class DemoNeuralReasoner:
                 value = re.search(r"\"(.+?)\"", prediction[0]).group(1)
                 owl_literal = OWLLiteral(value)
                 yield owl_literal
+            except Exception as e:
+                # Log the invalid IRI
+                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                continue
+
+    def get_individuals_of_class(
+        self, owl_class: OWLClass, confidence_threshold: float = None
+    ) -> Generator[OWLNamedIndividual, None, None]:
+        for prediction in self.get_predictions(
+            h=None,
+            r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+            t=owl_class.str,
+            confidence_threshold=confidence_threshold,
+        ):
+            try:
+                owl_named_individual = OWLNamedIndividual(prediction[0])
+                yield owl_named_individual
             except Exception as e:
                 # Log the invalid IRI
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
