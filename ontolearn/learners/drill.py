@@ -36,10 +36,12 @@ class Drill(RefinementBasedConceptLearner):
     def __init__(self, knowledge_base,
                  path_embeddings: str = None,
                  refinement_operator: LengthBasedRefinement = None,
-                 use_inverse=True,
-                 use_data_properties=True,
-                 use_card_restrictions=True,
-                 use_nominals=True,
+                 use_inverse:bool=True,
+                 use_data_properties:bool=True,
+                 use_card_restrictions:bool=True,
+                 use_nominals:bool=True,
+                 min_cardinality_restriction: int = 2,
+                 max_cardinality_restriction: int = 5,
                  quality_func: Callable = None,
                  reward_func: object = None,
                  batch_size=None, num_workers: int = 1,
@@ -58,7 +60,7 @@ class Drill(RefinementBasedConceptLearner):
         self.learning_problem = None
         # (1) Initialize KGE.
         if path_embeddings and os.path.isfile(path_embeddings):
-            print("Reading Embeddings...",end="\t")
+            print("Reading Embeddings...", end="\t")
             self.df_embeddings = pd.read_csv(path_embeddings, index_col=0).astype('float32')
             self.num_entities, self.embedding_dim = self.df_embeddings.shape
             print(self.df_embeddings.shape)
@@ -69,10 +71,13 @@ class Drill(RefinementBasedConceptLearner):
 
         # (2) Initialize Refinement operator.
         if refinement_operator is None:
-            refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base, use_inverse=use_inverse,
+            refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base,
+                                                        use_inverse=use_inverse,
                                                         use_data_properties=use_data_properties,
                                                         use_card_restrictions=use_card_restrictions,
-                                                        use_nominals=use_nominals)
+                                                        use_nominals=use_nominals,
+                                                        min_cardinality_restriction=min_cardinality_restriction,
+                                                        max_cardinality_restriction=max_cardinality_restriction)
         else:
             refinement_operator = refinement_operator
 
@@ -234,7 +239,7 @@ class Drill(RefinementBasedConceptLearner):
                  'Negatives': [i.str for i in negatives]})
         return self.terminate_training()
 
-    def save(self, directory: str=None) -> None:
+    def save(self, directory: str = None) -> None:
         """ save weights of the deep Q-network"""
         # (1) Create a folder
         if directory:
@@ -252,7 +257,7 @@ class Drill(RefinementBasedConceptLearner):
                 if isinstance(self.heuristic_func, CeloeBasedReward):
                     print("No loading because embeddings not provided")
                 else:
-                    print("Loading pretrained DQL Agent...",end="")
+                    print("Loading pretrained DQL Agent...", end="")
                     self.heuristic_func.net.load_state_dict(torch.load(directory + "/drill.pth", torch.device('cpu')))
                     print(self.heuristic_func.net)
             else:
@@ -336,10 +341,10 @@ class Drill(RefinementBasedConceptLearner):
                 preds = self.predict_values(current_state=most_promising,
                                             next_states=next_possible_states)
             else:
-                preds=None
+                preds = None
             # (6.5) Add next possible states into search tree based on predicted Q values
             self.goal_found = self.update_search(next_possible_states, preds)
-            if self.goal_found:
+            if self.goal_found and self.stop_at_goal:
                 if self.terminate_on_goal:
                     return self.terminate()
         return self.terminate()
@@ -526,7 +531,7 @@ class Drill(RefinementBasedConceptLearner):
                     return child_node
         else:
             for child_node in concepts:
-                child_node.heuristic = child_node.quality
+                child_node.heuristic = child_node.quality/child_node.length
                 if child_node.quality > 0:  # > too weak, ignore.
                     self.search_tree.add(child_node)
                 if child_node.quality == 1:
