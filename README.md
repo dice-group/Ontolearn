@@ -33,7 +33,7 @@ conda create -n venv python=3.10.14 --no-default-packages && conda activate venv
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
 ```
 ```shell
-pytest -p no:warnings -x # Running 171 tests takes ~ 6 mins
+pytest -p no:warnings -x # Running 64 tests takes ~ 6 mins
 ```
 
 ## Learning OWL Class Expression
