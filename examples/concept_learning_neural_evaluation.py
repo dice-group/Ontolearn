@@ -171,7 +171,6 @@ def dl_concept_learning(args):
                 pos={OWLNamedIndividual(i) for i in test_pos},
                 neg={OWLNamedIndividual(i) for i in test_neg},
             )
-
             print("DRILL starts..", end="\t")
             start_time = time.time()
             pred_drill = drill.fit(train_lp).best_hypotheses()
@@ -196,7 +195,6 @@ def dl_concept_learning(args):
             print(f"DRILL Train Quality: {train_f1_drill:.3f}", end="\t")
             print(f"DRILL Test Quality: {test_f1_drill:.3f}", end="\t")
             print(f"DRILL Runtime: {rt_drill:.3f}")
-
             # Reporting
 
             # Reporting

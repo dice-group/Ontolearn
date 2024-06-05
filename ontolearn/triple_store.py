@@ -1222,7 +1222,7 @@ class TripleStoreNeuralReasoner:
     model: KGE
     default_confidence_threshold: float
 
-    def __init__(self, KGE_path: str, default_confidence_threshold: float = 0.8):
+    def __init__(self, KGE_path: str, default_confidence_threshold: float = 0.1):
         self.model = KGE(path=KGE_path)
         self.default_confidence_threshold = default_confidence_threshold
 
@@ -1231,18 +1231,30 @@ class TripleStoreNeuralReasoner:
         h: str = None,
         r: str = None,
         t: str = None,
-        topk: int = 10,
         confidence_threshold: float = None,
     ):
+
         if h is not None:
+            if (self.model.entity_to_idx.get(h, None)) is None:
+                return
             h = [h]
+
         if r is not None:
+            if (self.model.relation_to_idx.get(r, None)) is None:
+                return
             r = [r]
         if t is not None:
+            if (self.model.entity_to_idx.get(t, None)) is None:
+                return
             t = [t]
 
         if confidence_threshold is None:
             confidence_threshold = self.default_confidence_threshold
+        # TODO: set topk by checking lenght of self.model.entity_to_idx and self.model.relation_to_idx depening on the input
+        if r is None:
+            topk = len(self.model.relation_to_idx)
+        else:
+            topk = len(self.model.entity_to_idx)
         try:
             predictions = self.model.predict_topk(h=h, r=r, t=t, topk=topk)
             for prediction in predictions:
@@ -1250,9 +1262,10 @@ class TripleStoreNeuralReasoner:
                 predicted_iri_str = prediction[0]
                 if confidence >= confidence_threshold:
                     yield (predicted_iri_str, confidence)
+                else:
+                    return
         except Exception as e:
             print(f"Error at getting predictions: {e}")
-            return
 
     def abox(self, str_iri: str) -> Generator[
         Tuple[
@@ -1326,6 +1339,7 @@ class TripleStoreNeuralReasoner:
             ):
                 break
             else:
+                # checks if superclasses is not empty -> there is at least one superclass
                 if superclasses := list(
                     self.get_direct_parents(_class, confidence_threshold)
                 ):
@@ -1403,7 +1417,6 @@ class TripleStoreNeuralReasoner:
         elif isinstance(expression, OWLObjectIntersectionOf):
             # Get the class expressions
             operands = list(expression.operands())
-            print("operands: ", operands)
             sets_of_individuals = [
                 set(
                     self.instances(
@@ -1442,43 +1455,119 @@ class TripleStoreNeuralReasoner:
         elif isinstance(expression, OWLObjectAllValuesFrom):
             # Get the object property
             object_property = expression.get_property()
-            # Get the filler class -> the individual that the object property should point to
+            # Get the filler expression -> the individuals that the object property should point to (for at least one instance)
 
             filler_expression = expression.get_filler()
 
-            candidate_individuals = self.instances(
-                filler_expression, confidence_threshold
-            )
-
-            # check if the individuals that have a property to that indivdual ONLY have this connection (using this property) - if so yield them
-            # dont yield those that have other connections with this property - more info: https://www.w3.org/TR/owl2-syntax/#Universal_Quantification
-            for individual in candidate_individuals:
-                for comparison_individual in self.get_object_property_values(
-                    subject=individual,
+            object_individuals = self.instances(filler_expression, confidence_threshold)
+            # get individuals that are connected to one instance of the filler expression
+            subject_generators = [
+                self.get_individuals_with_object_property(
+                    obj=object_individual,
                     object_property=object_property,
                     confidence_threshold=confidence_threshold,
-                ):
-                    if individual != comparison_individual:
-                        break
-                else:  # this else is run if the for loop doesnot break - e.g. there is only "indvidual==comparison_individual"
-                    yield individual
+                )
+                for object_individual in object_individuals
+            ]
+            if subject_generators:
+                # eleminate duplicates
+                result = set.union(*[set(g) for g in subject_generators])
+                for individual in result:
+                    # check if there are not connected to other objects with this object property - e.g. needs to be subset of object_individuals
+                    if set(
+                        self.get_object_property_values(individual.str, object_property)
+                    ) <= set(object_individuals):
+                        yield individual
 
+        # NOTE: Might want to replace this with OWLMinCardinality(1, object_property, filler_expression)? - as it is equivalent
+        # NOTE: Also want to move some logic into a seperate method for reusability between OWLObjectAllValuesFrom and OWLObjectSomeValuesFrom!
         elif isinstance(expression, OWLObjectSomeValuesFrom):
             # Get the object property
             object_property = expression.get_property()
             # Get the filler class -> the individual/ or expression that the object property should point to
             filler_expression = expression.get_filler()
 
-            candidate_individuals = self.instances(
-                filler_expression, confidence_threshold
-            )
+            # NOTE: These individuals are instances of the filler expression! -> so it is suffiecient for the object property to point to any of these individuals
+            object_individuals = self.instances(filler_expression, confidence_threshold)
 
-            for individual in candidate_individuals:
-                yield from self.get_individuals_with_object_property(
+            subject_generators = [
+                self.get_individuals_with_object_property(
+                    obj=object_individual,
                     object_property=object_property,
-                    owl_class=individual,
                     confidence_threshold=confidence_threshold,
                 )
+                for object_individual in object_individuals
+            ]
+            # find all individuals that are connected to all the required individuals with the object property
+            if subject_generators:
+                # eleminate duplicates
+                result = set.union(*[set(g) for g in subject_generators])
+                for individual in result:
+                    yield individual
+
+        elif isinstance(expression, OWLObjectMinCardinality):
+            # Get the object property
+            object_property = expression.get_property()
+            # Get the filler class -> the individual/ or expression that the object property should point to
+            filler_expression = expression.get_filler()
+            # Get the cardinality
+            cardinality = expression.get_cardinality()
+
+            # Get all individuals that are instances of the filler expression
+            object_individuals = self.instances(filler_expression, confidence_threshold)
+
+            # Get all individuals that are connected to the object by the object property
+            subject_generators = [
+                self.get_individuals_with_object_property(
+                    obj=object_individual,
+                    object_property=object_property,
+                    confidence_threshold=confidence_threshold,
+                )
+                for object_individual in object_individuals
+            ]
+
+            if subject_generators:
+                # count in how many generators the individual is present and check if it is present in at least cardinality generators
+                result = Counter(
+                    individual
+                    for generator in subject_generators
+                    for individual in generator
+                )
+                for individual, count in result.items():
+                    if count >= cardinality:
+                        yield individual
+
+        elif isinstance(expression, OWLObjectMaxCardinality):
+            # Get the object property
+            object_property = expression.get_property()
+            # Get the filler class -> the individual/ or expression that the object property should point to
+            filler_expression = expression.get_filler()
+            # Get the cardinality
+            cardinality = expression.get_cardinality()
+
+            # Get all individuals that are instances of the filler expression
+            object_individuals = self.instances(filler_expression, confidence_threshold)
+
+            # Get all individuals that are connected to the object by the object property
+            subject_generators = [
+                self.get_individuals_with_object_property(
+                    obj=object_individual,
+                    object_property=object_property,
+                    confidence_threshold=confidence_threshold,
+                )
+                for object_individual in object_individuals
+            ]
+
+            if subject_generators:
+                # count in how many generators the individual is present and check if it is present in at least cardinality generators
+                result = Counter(
+                    individual
+                    for generator in subject_generators
+                    for individual in generator
+                )
+                for individual, count in result.items():
+                    if count <= cardinality:
+                        yield individual
 
         # Handling union of class expressions
         elif isinstance(expression, OWLObjectUnionOf):
@@ -1490,6 +1579,16 @@ class TripleStoreNeuralReasoner:
                     if individual not in seen:
                         seen.add(individual)
                         yield individual
+
+        elif isinstance(expression, OWLObjectOneOf):
+            # Get the individuals
+            individuals = expression.individuals()
+            for individual in individuals:
+                yield individual
+        else:
+            raise NotImplementedError(
+                f"Instances for {expression} are not implemented yet"
+            )
 
     def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
         for cl in self.classes_in_signature():
@@ -1644,15 +1743,15 @@ class TripleStoreNeuralReasoner:
     def get_individuals_with_object_property(
         self,
         object_property: OWLObjectProperty,
-        owl_class: OWLClass,
+        obj: OWLClass,
         confidence_threshold: float = None,
     ) -> Generator[OWLNamedIndividual, None, None]:
         if is_inverse := isinstance(object_property, OWLObjectInverseOf):
             object_property = object_property.get_inverse()
         for prediction in self.get_predictions(
-            h=owl_class.str if is_inverse else None,
+            h=obj.str if is_inverse else None,
             r=object_property.str,
-            t=None if is_inverse else owl_class.str,
+            t=None if is_inverse else obj.str,
             confidence_threshold=confidence_threshold,
         ):
             try:
