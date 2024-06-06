@@ -28,6 +28,7 @@ import torch
 from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
 from tqdm import tqdm
 from owlapy.utils import OWLClassExpressionLengthMetric
+from ..utils.static_funcs import make_iterable_verbose
 
 
 class Drill(RefinementBasedConceptLearner):
@@ -60,15 +61,19 @@ class Drill(RefinementBasedConceptLearner):
                  num_episode: int = 10):
 
         self.name = "DRILL"
+        self.verbose = verbose
         self.learning_problem = None
         # (1) Initialize KGE.
         if path_embeddings and os.path.isfile(path_embeddings):
-            print("Reading Embeddings...", end="\t")
+            if self.verbose > 0:
+                print("Reading Embeddings...", end="\t")
             self.df_embeddings = pd.read_csv(path_embeddings, index_col=0).astype('float32')
             self.num_entities, self.embedding_dim = self.df_embeddings.shape
-            print(self.df_embeddings.shape)
+            if self.verbose > 0:
+                print(self.df_embeddings.shape)
         else:
-            print("No pre-trained model...")
+            if self.verbose > 0:
+                print("No pre-trained model...")
             self.df_embeddings = None
             self.num_entities, self.embedding_dim = None, 1
 
@@ -100,7 +105,6 @@ class Drill(RefinementBasedConceptLearner):
         self.epsilon_decay = epsilon_decay
         self.epsilon_min = epsilon_min
         self.batch_size = batch_size
-        self.verbose = verbose
         self.num_episodes_per_replay = num_episodes_per_replay
         self.seen_examples = dict()
         self.emb_pos, self.emb_neg = None, None
@@ -306,8 +310,9 @@ class Drill(RefinementBasedConceptLearner):
             if ith_bias == self.positive_type_bias:
                 break
 
-        for _ in tqdm(range(0, self.iter_bound),
-                      desc=f"Learning OWL Class Expression at most {self.iter_bound} iteration"):
+        for _ in make_iterable_verbose(range(0, self.iter_bound),
+                                       verbose=self.verbose,
+                                       desc=f"Learning OWL Class Expression at most {self.iter_bound} iteration"):
             assert len(self.search_tree) > 0
             self.search_tree.show_current_search_tree()
             # (6.1) Get the most fitting RL-state.
@@ -318,7 +323,9 @@ class Drill(RefinementBasedConceptLearner):
                 return self.terminate()
             # (6.3) Refine (6.1)
             # Convert this into tqdm with an update ?!
-            for ref in (tqdm_bar := tqdm(self.apply_refinement(most_promising), position=0, leave=True)):
+            for ref in (tqdm_bar := make_iterable_verbose(self.apply_refinement(most_promising),
+                                                          verbose=self.verbose,
+                                                          position=0, leave=True)):
                 # (6.3.1) Checking the runtime termination criterion.
                 if time.time() - self.start_time > self.max_runtime:
                     break
@@ -326,11 +333,11 @@ class Drill(RefinementBasedConceptLearner):
                 self.compute_quality_of_class_expression(ref)
                 if ref.quality == 0:
                     continue
-                if self.verbose>0:
+                if self.verbose > 0:
                     tqdm_bar.set_description_str(
                         f"Step {_} | Refining {owl_expression_to_dl(most_promising.concept)} | {owl_expression_to_dl(ref.concept)} | Quality:{ref.quality:.4f}")
                 if ref.quality > best_found_quality:
-                    if self.verbose>0:
+                    if self.verbose > 0:
                         print("\nBest Found:", ref)
                     best_found_quality = ref.quality
                 # (6.3.3) Consider qualifying RL states as next possible states to transition.

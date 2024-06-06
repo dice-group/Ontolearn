@@ -1378,8 +1378,8 @@ class NCES(BaseNCES):
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
                  learner_name="SetTransformer", path_of_embeddings="", proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
                  num_heads=4, num_seeds=1, num_inds=32, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0,
-                 batch_size=256, num_workers=8, max_length=48, load_pretrained=True, sorted_examples=False,
-                 pretrained_model_name=None,verbose:int=0):
+                 batch_size=256, num_workers=4, max_length=48, load_pretrained=True, sorted_examples=False,
+                 pretrained_model_name=None, verbose: int = 0):
         super().__init__(knowledge_base_path, learner_name, path_of_embeddings, batch_size, learning_rate, decay_rate,
                          clip_value, num_workers)
         self.quality_func = quality_func
@@ -1419,7 +1419,7 @@ class NCES(BaseNCES):
                                  0] + "trained_models/trained_" + learner_name + ".pt"
                 model.load_state_dict(torch.load(model_path, map_location=self.device))
                 model.eval()
-                if self.verbose>0:
+                if self.verbose > 0:
                     print("\n Loaded synthesizer model!")
             return model
 
@@ -1471,8 +1471,7 @@ class NCES(BaseNCES):
         prediction = model.inv_vocab[scores.argmax(1).cpu()]
         return prediction
 
-    def fit_one(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]],
-                verbose=False):
+    def fit_one(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]]):
         if isinstance(pos[0], OWLNamedIndividual):
             pos_str = [ind.str.split("/")[-1] for ind in pos]
             neg_str = [ind.str.split("/")[-1] for ind in neg]
@@ -1490,11 +1489,14 @@ class NCES(BaseNCES):
         dataset = NCESDataLoaderInference([("", Pos_str, Neg_str) for (Pos_str, Neg_str) in zip(Pos, Neg)],
                                           self.instance_embeddings,
                                           self.vocab, self.inv_vocab, False, self.sorted_examples)
-        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers,
+
+        dataloader = DataLoader(dataset, batch_size=self.batch_size,
+                                num_workers=self.num_workers,
                                 collate_fn=self.collate_batch_inference, shuffle=False)
         x_pos, x_neg = next(iter(dataloader))
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions_raw = self.get_prediction(self.model, x_pos, x_neg)
+
         predictions = []
         for prediction in predictions_raw:
             try:
@@ -1503,13 +1505,12 @@ class NCES(BaseNCES):
             except:
                 prediction_str = simpleSolution.predict("".join(before_pad(prediction.squeeze())))
                 concept = self.dl_parser.parse(prediction_str)
-                if verbose:
+                if self.verbose>0:
                     print("Prediction: ", prediction_str)
             predictions.append(concept)
         return predictions
 
-    def fit(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]],
-            verbose=False, **kwargs):
+    def fit(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]], **kwargs):
         if isinstance(pos, set) or isinstance(pos, frozenset):
             pos_list = list(pos)
             neg_list = list(neg)
@@ -1518,7 +1519,8 @@ class NCES(BaseNCES):
                 neg_list = sorted(neg_list)
         else:
             raise ValueError(f"Expected pos and neg to be sets, got {type(pos)} and {type(neg)}")
-        predictions = self.fit_one(pos_list, neg_list, verbose=verbose)
+        predictions = self.fit_one(pos_list, neg_list)
+
         predictions_as_nodes = []
         for concept in predictions:
             try:

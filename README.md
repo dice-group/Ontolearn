@@ -147,56 +147,41 @@ for str_target_concept, examples in learning_problems.items():
 wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
 ```
 
+
+### 10-Fold Cross Validation Family Benchmark Results
+
+The following script will apply 10-fold cross validation on  each benchmark learning problem.
 ```shell
 # To download learning problems and benchmark learners on the Family benchmark dataset with benchmark learning problems.
-python examples/concept_learning_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 60 --report family_results.csv  && python -c 'import pandas as pd; print(pd.read_csv("family_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
+python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 3 --report family.csv 
+```
+```python
+import pandas as pd
+df=pd.read_csv("family.csv").groupby("LP").mean()
+filter_col = [col for col in df if col.startswith('Test-F1') or col.startswith('RT')]
+print(df[filter_col].to_markdown(floatfmt=".3f"))
 ```
 
-Below, we report the average results of 5 runs.
-Each model has 60 second to find a fitting answer. DRILL results are obtained by using F1 score as heuristic function.
-Note that F1 scores denote the quality of the find/constructed concept w.r.t. E^+ and E^-.
-
-### Family Benchmark Results
-
-| LP                 |   Train-F1-OCEL |   Test-F1-OCEL |   RT-OCEL |   Train-F1-CELOE |   Test-F1-CELOE |   RT-CELOE |   Train-F1-Evo |   Test-F1-Evo |   RT-Evo |   Train-F1-DRILL |   Test-F1-DRILL |   RT-DRILL |   Train-F1-TDL |   Test-F1-TDL |   RT-TDL |   Train-F1-NCES |   Test-F1-NCES |   RT-NCES |   Train-F1-CLIP |   Test-F1-CLIP |   RT-CLIP |
-|:-------------------|----------------:|---------------:|----------:|-----------------:|----------------:|-----------:|---------------:|--------------:|---------:|-----------------:|----------------:|-----------:|---------------:|--------------:|---------:|----------------:|---------------:|----------:|----------------:|---------------:|----------:|
-| Aunt               |           0.848 |          0.637 |     9.206 |            0.918 |           0.855 |      9.206 |          0.996 |         0.969 |    3.390 |            0.886 |           0.799 |     60.243 |          0.971 |         0.949 |    6.366 |           0.721 |          0.635 |     0.552 |           0.899 |          0.891 |     5.763 |
-| Brother            |           1.000 |          1.000 |     0.005 |            1.000 |           1.000 |      0.005 |          1.000 |         1.000 |    0.281 |            1.000 |           1.000 |      0.020 |          1.000 |         1.000 |    6.216 |           0.978 |          0.975 |     0.450 |           1.000 |          1.000 |     0.692 |
-| Cousin             |           0.740 |          0.708 |     7.336 |            0.796 |           0.789 |      7.336 |          1.000 |         1.000 |    1.653 |            0.831 |           0.784 |     60.416 |          0.978 |         0.941 |    7.073 |           0.667 |          0.667 |     0.465 |           0.774 |          0.761 |     6.671 |
-| Daughter           |           1.000 |          1.000 |     0.006 |            1.000 |           1.000 |      0.006 |          1.000 |         1.000 |    0.309 |            1.000 |           1.000 |      0.033 |          1.000 |         1.000 |    6.459 |           0.993 |          0.977 |     0.534 |           1.000 |          1.000 |     0.716 |
-| Father             |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.411 |            1.000 |           1.000 |      0.004 |          1.000 |         1.000 |    6.522 |           0.897 |          0.903 |     0.448 |           1.000 |          1.000 |     0.588 |
-| Granddaughter      |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.320 |            1.000 |           1.000 |      0.003 |          1.000 |         1.000 |    6.233 |           0.911 |          0.916 |     0.497 |           1.000 |          1.000 |     0.646 |
-| Grandfather        |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.314 |            1.000 |           1.000 |      0.003 |          1.000 |         1.000 |    6.185 |           0.743 |          0.717 |     0.518 |           1.000 |          1.000 |     0.721 |
-| Grandgranddaughter |           1.000 |          1.000 |     0.004 |            1.000 |           1.000 |      0.004 |          1.000 |         1.000 |    0.293 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    5.858 |           0.837 |          0.840 |     0.518 |           1.000 |          1.000 |     0.710 |
-| Grandgrandfather   |           1.000 |          1.000 |     0.668 |            1.000 |           1.000 |      0.668 |          1.000 |         1.000 |    0.341 |            1.000 |           1.000 |      0.243 |          0.951 |         0.947 |    5.915 |           0.759 |          0.677 |     0.511 |           1.000 |          1.000 |     1.964 |
-| Grandgrandmother   |           1.000 |          1.000 |     0.381 |            1.000 |           1.000 |      0.381 |          1.000 |         1.000 |    0.258 |            1.000 |           1.000 |      0.243 |          0.944 |         0.947 |    5.918 |           0.721 |          0.687 |     0.498 |           0.997 |          1.000 |     2.620 |
-| Grandgrandson      |           1.000 |          1.000 |     0.341 |            1.000 |           1.000 |      0.341 |          1.000 |         1.000 |    0.276 |            1.000 |           1.000 |      0.122 |          0.938 |         0.911 |    6.093 |           0.779 |          0.809 |     0.460 |           1.000 |          1.000 |     2.555 |
-| Grandmother        |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.385 |            1.000 |           1.000 |      0.003 |          1.000 |         1.000 |    6.135 |           0.762 |          0.725 |     0.480 |           1.000 |          1.000 |     0.628 |
-| Grandson           |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.299 |            1.000 |           1.000 |      0.003 |          1.000 |         1.000 |    6.301 |           0.896 |          0.903 |     0.552 |           1.000 |          1.000 |     0.765 |
-| Mother             |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.327 |            1.000 |           1.000 |      0.004 |          1.000 |         1.000 |    6.570 |           0.967 |          0.972 |     0.555 |           1.000 |          1.000 |     0.779 |
-| PersonWithASibling |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.377 |            0.737 |           0.725 |     60.194 |          1.000 |         1.000 |    6.548 |           0.927 |          0.928 |     0.648 |           1.000 |          1.000 |     0.999 |
-| Sister             |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.356 |            1.000 |           1.000 |      0.017 |          1.000 |         1.000 |    6.315 |           0.866 |          0.876 |     0.512 |           1.000 |          1.000 |     0.616 |
-| Son                |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.317 |            1.000 |           1.000 |      0.004 |          1.000 |         1.000 |    6.579 |           0.892 |          0.855 |     0.537 |           1.000 |          1.000 |     0.700 |
-| Uncle              |           0.903 |          0.891 |    12.441 |            0.907 |           0.891 |     12.441 |          1.000 |         0.971 |    1.675 |            0.951 |           0.894 |     60.337 |          0.894 |         0.896 |    6.310 |           0.667 |          0.665 |     0.619 |           0.928 |          0.942 |     5.577 |
-
-
-### Mutagenesis Benchmark Results
-```shell
-python examples/concept_learning_cv_evaluation.py --path_of_nces_embeddings NCESData/mutagenesis/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings CLIPData/mutagenesis/embeddings/ConEx_entity_embeddings.csv --folds 10 --kb KGs/Mutagenesis/mutagenesis.owl --lps LPs/Mutagenesis/lps.json --max_runtime 60 --report mutagenesis_results.csv && python -c 'import pandas as pd; print(pd.read_csv("mutagenesis_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
-```
-| LP       |   Train-F1-OCEL |   Test-F1-OCEL |   RT-OCEL |   Train-F1-CELOE |   Test-F1-CELOE |   RT-CELOE |   Train-F1-Evo |   Test-F1-Evo |   RT-Evo |   Train-F1-DRILL |   Test-F1-DRILL |   RT-DRILL |   Train-F1-TDL |   Test-F1-TDL |   RT-TDL |   Train-F1-NCES |   Test-F1-NCES |   RT-NCES |   Train-F1-CLIP |   Test-F1-CLIP |   RT-CLIP |
-|:---------|----------------:|---------------:|----------:|-----------------:|----------------:|-----------:|---------------:|--------------:|---------:|-----------------:|----------------:|-----------:|---------------:|--------------:|---------:|----------------:|---------------:|----------:|----------------:|---------------:|----------:|
-| NotKnown |           0.916 |          0.918 |    58.328 |            0.916 |           0.918 |     58.328 |          0.724 |         0.729 |   49.281 |            0.704 |           0.704 |     60.052 |          0.879 |         0.771 |    7.763 |           0.564 |          0.560 |     0.493 |           0.814 |          0.807 |     5.622 |
-
-### Carcinogenesis Benchmark Results
-```shell
-python examples/concept_learning_cv_evaluation.py --path_of_nces_embeddings NCESData/carcinogenesis/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings CLIPData/carcinogenesis/embeddings/ConEx_entity_embeddings.csv --folds 10 --kb KGs/Carcinogenesis/carcinogenesis.owl --lps LPs/Carcinogenesis/lps.json --max_runtime 60 --report carcinogenesis_results.csv && python -c 'import pandas as pd; print(pd.read_csv("carcinogenesis_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
-```
-
-| LP       |   Train-F1-OCEL |   Test-F1-OCEL |   RT-OCEL |   Train-F1-CELOE |   Test-F1-CELOE |   RT-CELOE |   Train-F1-Evo |   Test-F1-Evo |   RT-Evo |   Train-F1-DRILL |   Test-F1-DRILL |   RT-DRILL |   Train-F1-TDL |   Test-F1-TDL |   RT-TDL |   Train-F1-NCES |   Test-F1-NCES |   RT-NCES |   Train-F1-CLIP |   Test-F1-CLIP |   RT-CLIP |
-|:---------|----------------:|---------------:|----------:|-----------------:|----------------:|-----------:|---------------:|--------------:|---------:|-----------------:|----------------:|-----------:|---------------:|--------------:|---------:|----------------:|---------------:|----------:|----------------:|---------------:|----------:|
-| NOTKNOWN |           0.738 |          0.711 |    42.936 |            0.740 |           0.701 |     42.936 |          0.744 |         0.733 |   63.465 |            0.705 |           0.704 |     60.069 |          0.879 |         0.682 |    7.260 |           0.415 |          0.396 |     1.911 |           0.720 |          0.700 |    85.037 |
-
+| LP                 |   Test-F1-OCEL |   RT-OCEL |   Test-F1-CELOE |   RT-CELOE |   Test-F1-Evo |   RT-Evo |   Test-F1-DRILL |   RT-DRILL |   Test-F1-TDL |   RT-TDL |   Test-F1-NCES |   RT-NCES |
+|:-------------------|---------------:|----------:|----------------:|-----------:|--------------:|---------:|----------------:|-----------:|--------------:|---------:|---------------:|----------:|
+| Aunt               |          0.641 |     3.037 |           0.834 |      3.037 |         0.947 |    2.265 |           0.841 |      3.061 |         0.967 |    0.135 |          0.692 |     0.254 |
+| Brother            |          1.000 |     0.005 |           1.000 |      0.005 |         1.000 |    0.495 |           1.000 |      0.006 |         1.000 |    0.106 |          0.947 |     0.235 |
+| Cousin             |          0.723 |     3.023 |           0.795 |      3.023 |         0.979 |    2.780 |           0.711 |      3.040 |         0.797 |    0.169 |          0.667 |     0.225 |
+| Daughter           |          1.000 |     0.005 |           1.000 |      0.005 |         1.000 |    0.499 |           1.000 |      0.006 |         1.000 |    0.163 |          0.942 |     0.217 |
+| Father             |          1.000 |     0.003 |           1.000 |      0.003 |         1.000 |    0.511 |           1.000 |      0.016 |         1.000 |    0.149 |          0.900 |     0.222 |
+| Granddaughter      |          1.000 |     0.003 |           1.000 |      0.003 |         1.000 |    0.478 |           0.971 |      3.033 |         1.000 |    0.124 |          0.905 |     0.218 |
+| Grandfather        |          1.000 |     0.003 |           1.000 |      0.003 |         0.986 |    0.599 |           1.000 |      0.016 |         1.000 |    0.116 |          0.672 |     0.273 |
+| Grandgranddaughter |          1.000 |     0.008 |           1.000 |      0.008 |         1.000 |    0.458 |           0.967 |      2.794 |         1.000 |    0.057 |          0.847 |     0.254 |
+| Grandgrandfather   |          1.000 |     1.011 |           1.000 |      1.011 |         1.000 |    0.485 |           0.847 |      3.038 |         0.947 |    0.056 |          0.743 |     0.255 |
+| Grandgrandmother   |          1.000 |     0.661 |           1.000 |      0.661 |         0.980 |    0.484 |           0.810 |      3.090 |         0.880 |    0.053 |          0.657 |     0.236 |
+| Grandgrandson      |          1.000 |     0.547 |           1.000 |      0.547 |         1.000 |    0.471 |           0.891 |      3.032 |         0.878 |    0.071 |          0.835 |     0.244 |
+| Grandmother        |          1.000 |     0.004 |           1.000 |      0.004 |         1.000 |    0.513 |           0.958 |      1.524 |         1.000 |    0.110 |          0.795 |     0.237 |
+| Grandson           |          1.000 |     0.004 |           1.000 |      0.004 |         1.000 |    0.530 |           0.867 |      2.784 |         1.000 |    0.112 |          0.960 |     0.236 |
+| Mother             |          1.000 |     0.003 |           1.000 |      0.003 |         1.000 |    0.546 |           1.000 |      0.017 |         1.000 |    0.154 |          0.966 |     0.229 |
+| PersonWithASibling |          1.000 |     0.003 |           1.000 |      0.003 |         1.000 |    0.586 |           1.000 |      0.207 |         1.000 |    0.207 |          0.904 |     0.236 |
+| Sister             |          1.000 |     0.003 |           1.000 |      0.003 |         1.000 |    0.639 |           0.986 |      0.076 |         1.000 |    0.150 |          0.942 |     0.247 |
+| Son                |          1.000 |     0.004 |           1.000 |      0.004 |         1.000 |    0.596 |           0.907 |      3.044 |         1.000 |    0.144 |          0.920 |     0.240 |
+| Uncle              |          0.891 |     3.064 |           0.891 |      3.064 |         0.949 |    2.620 |           0.863 |      3.089 |         0.922 |    0.102 |          0.693 |     0.253 |
 
 
 Use `python examples/concept_learning_cv_evaluation.py` to apply stratified k-fold cross validation on learning problems. 

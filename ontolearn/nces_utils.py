@@ -16,7 +16,7 @@ class SimpleSolution:
         self.name = 'SimpleSolution'
         self.atomic_concept_names = atomic_concept_names
         tokenizer = Tokenizer(BPE(unk_token='[UNK]'))
-        trainer = BpeTrainer(special_tokens=["[UNK]", "[CLS]", "[SEP]", "[PAD]", "[MASK]"])
+        trainer = BpeTrainer(special_tokens=["[UNK]", "[CLS]", "[SEP]", "[PAD]", "[MASK]"],show_progress=False)
         tokenizer.pre_tokenizer = WhitespaceSplit()
         tokenizer.train_from_iterator(vocab, trainer)
         self.tokenizer = PreTrainedTokenizerFast(tokenizer_object=tokenizer)
