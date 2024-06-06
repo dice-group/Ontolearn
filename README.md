@@ -152,6 +152,7 @@ wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && 
 The following script will apply 10-fold cross validation on each benchmark learning problem with max runtime of 60 seconds.
 Results will be stored in family.csv.
 lps_difficult.json contains OWL Class Expression learning problems whose goal answers cannot be found by searching the named concepts.
+  
 ```shell
 # To download learning problems and benchmark learners on the Family benchmark dataset with benchmark learning problems.
 python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps_difficult.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 60 --report family.csv 
@@ -163,6 +164,7 @@ df=pd.read_csv("family.csv").groupby("LP").mean()
 filter_col = [col for col in df if col.startswith('Test-F1') or col.startswith('RT')]
 print(df[filter_col].to_markdown(floatfmt=".3f"))
 ```
+
 Note that DRILL is untrained and we simply used accuracy driven heuristics.
 
 |         LP         | Train-F1-OCEL | Test-F1-OCEL | RT-OCEL | Train-F1-CELOE | Test-F1-CELOE | RT-CELOE | Train-F1-Evo | Test-F1-Evo | RT-Evo | Train-F1-DRILL | Test-F1-DRILL | RT-DRILL | Train-F1-TDL | Test-F1-TDL | RT-TDL | Train-F1-NCES | Test-F1-NCES | RT-NCES |
