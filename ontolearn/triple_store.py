@@ -558,8 +558,11 @@ class TripleStoreReasonerOntology:
         assert url is not None, "URL cannot be None"
         self.url = url
 
+    def __str__(self):
+        return f"TripleStoreReasonerOntology:{self.url}"
+
     def query(self, sparql_query: str):
-        return requests.Session().post(self.url, data={'query': sparql_query})  #.json()["results"]["bindings"]
+        return requests.Session().post(self.url, data={'query': sparql_query})
 
     def are_owl_concept_disjoint(self, c: OWLClass, cc: OWLClass) -> bool:
         query = f"""{owl_prefix}ASK WHERE {{<{c.str}> owl:disjointWith <{cc.str}> .}}"""
@@ -713,6 +716,9 @@ class TripleStore:
         # CEL models will be refactored.
         self.ontology = self.g
         self.reasoner = self.g
+
+    def __str__(self):
+        return f"TripleStore:{self.g}"
 
     def __abox_expression(self, individual: OWLNamedIndividual) -> Generator[
         Union[OWLClass, OWLObjectSomeValuesFrom, OWLObjectMinCardinality, OWLDataSomeValuesFrom], None, None]:
@@ -878,5 +884,5 @@ class TripleStore:
     def least_general_named_concepts(self):
         yield from self.reasoner.least_general_named_concepts()
 
-    def query(self, sparql: str) -> rdflib.plugins.sparql.processor.SPARQLResult:
+    def query(self, sparql: str):
         yield from self.g.query(sparql_query=sparql)
