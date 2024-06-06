@@ -5,7 +5,8 @@ from itertools import chain
 from typing import Iterable, Set, Optional, Generator, Union, FrozenSet, Tuple, Callable
 import requests
 from owlapy.class_expression import OWLClassExpression, OWLThing, OWLClass, OWLObjectSomeValuesFrom, OWLObjectOneOf, \
-    OWLObjectMinCardinality, OWLDataSomeValuesFrom, OWLDataOneOf
+    OWLObjectMinCardinality, OWLDataSomeValuesFrom, OWLDataOneOf, OWLObjectComplementOf, OWLObjectUnionOf, \
+    OWLObjectIntersectionOf
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLObjectPropertyRangeAxiom, OWLObjectPropertyDomainAxiom, OWLDataPropertyRangeAxiom, \
     OWLDataPropertyDomainAxiom, OWLClassAxiom, OWLEquivalentClassesAxiom
@@ -699,6 +700,187 @@ class TripleStoreReasonerOntology:
         query = f"{rdf_prefix}\n{rdfs_prefix}\n{xsd_prefix}SELECT DISTINCT ?x WHERE {{?x <{prop.str}> ?z}}"
         for binding in self.query(query).json()["results"]["bindings"]:
             yield OWLNamedIndividual(binding["x"]["value"])
+
+
+class NeuralReasoner:
+    def __init__(self, neural_link_predictor: None):
+        self.neural_link_predictor = neural_link_predictor
+
+        self.owl_individuals = {i for i in self.individuals_in_signature()}
+        print(self.neural_link_predictor.entity_to_idx)
+        print(self.neural_link_predictor.relation_to_idx)
+        self.object_properties = {OWLObjectProperty(k) for k, v in self.neural_link_predictor.relation_to_idx.items() if
+                                  k not in ["http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+                                            "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+                                            "http://www.w3.org/2002/07/owl#equivalentClass",
+                                            "http://www.w3.org/2002/07/owl#complementOf",
+                                            "http://www.w3.org/2000/01/rdf-schema#domain",
+                                            "http://www.w3.org/2000/01/rdf-schema#range"]}
+
+    def abox(self, str_iri: str = None):
+        assert str_iri, f"{str_iri} cannot be None"
+
+        assert self.neural_link_predictor.entity_to_idx.get(str_iri), f"{str_iri} must occur in the knowledge graph"
+        sparql_query = f"SELECT DISTINCT ?p ?o WHERE {{ <{str_iri}> ?p ?o }}"
+
+        for k, _ in self.neural_link_predictor.entity_to_idx.items():
+            for kk, __ in self.neural_link_predictor.relation_to_idx.items():
+                print(str_iri, kk, k)
+                self.neural_link_predictor
+
+                exit(1)
+
+        subject_ = OWLNamedIndividual(str_iri)
+        for binding in self.query(sparql_query).json()["results"]["bindings"]:
+            p, o = binding["p"], binding["o"]
+            # ORDER MATTERS
+            if p["value"] == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type":
+                yield subject_, OWLProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), OWLClass(o["value"])
+            elif o["type"] == "uri":
+                #################################################################
+                # IMPORTANT
+                # Can we assume that if o has URI and is not owl class, then o can be considered as an individual ?
+                #################################################################
+                yield subject_, OWLObjectProperty(p["value"]), OWLNamedIndividual(o["value"])
+            elif o["type"] == "literal":
+                if o["datatype"] == "http://www.w3.org/2001/XMLSchema#boolean":
+                    yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=bool(o["value"]))
+                elif o["datatype"] == "http://www.w3.org/2001/XMLSchema#double":
+                    yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=float(o["value"]))
+                else:
+                    raise NotImplementedError(f"Currently this type of literal is not supported:{o} "
+                                              f"but can done easily let us know :)")
+            else:
+                raise RuntimeError(f"Unrecognized type {subject_} ({p}) ({o})")
+
+    def get_type_individuals(self, individual: str) -> OWLClass:
+        """Return the named classes"""
+        assert individual, f"{individual} cannot be None"
+        # TODO: Check whether input is in the entity_to_idx
+        assert self.neural_link_predictor.entity_to_idx.get(individual, None) is not None
+
+        #    individual, None), f"{individual} must occur in the knowledge graph!!!"
+        # Important to find a good scalar value.
+        gamma_for_nc = 0.1
+        scores = self.neural_link_predictor.predict(h=[individual],
+                                                    r=["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],
+                                                    within=None,
+                                                    logits=False).tolist()
+        top_candidate_iris = sorted(
+            [(ei, s) for ei, s in zip(self.neural_link_predictor.entity_to_idx.keys(), scores) if s > gamma_for_nc],
+            reverse=True)
+        # Caution: http://www.w3.org/2002/07/owl#Thing or properties
+        for str_iri, _ in top_candidate_iris:
+            yield OWLClass(str_iri)
+
+    def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
+        """ Neural Retrieval of NamedIndividuals """
+        gamma_for_owl_individuals = 0.1
+        # phi(?,r,t)
+
+        scores = self.neural_link_predictor.predict(r=["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],
+                                                    t=["http://www.w3.org/2002/07/owl#NamedIndividual"],
+                                                    within=None,
+                                                    logits=False).tolist()
+        top_candidate_iris = sorted(
+            [(ei, s) for ei, s in zip(self.neural_link_predictor.entity_to_idx.keys(), scores) if
+             s > gamma_for_owl_individuals],
+            reverse=True)
+        # Caution: http://www.w3.org/2002/07/owl#ObjectProperty or http://www.w3.org/2002/07/owl#NamedIndividual
+        for str_iri, _ in top_candidate_iris:
+            yield OWLNamedIndividual(str_iri)
+
+    def object_properties_in_signature(self) -> Iterable[OWLObjectProperty]:
+        return self.object_properties
+
+    def most_general_classes(self) -> Iterable[OWLClass]:
+        """ At least it has single subclass and there is no superclass """
+        gamma_for_nc = 0.1
+        scores = self.neural_link_predictor.predict(r=["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],
+                                                    t=["http://www.w3.org/2002/07/owl#Class"],
+                                                    within=None,
+                                                    logits=False).tolist()
+        top_candidate_iris = sorted(
+            [(ei, s) for ei, s in zip(self.neural_link_predictor.entity_to_idx.keys(), scores) if s > gamma_for_nc],
+            reverse=True)
+        # TODO: After detecting ?concept rdf:type owl:Class ., we need to person two AND operations
+        # query = f"""{rdf_prefix}{rdfs_prefix}{owl_prefix} SELECT ?x WHERE {{
+        # ?concept rdf:type owl:Class .
+        # FILTER EXISTS {{ ?x rdfs:subClassOf ?z . }}
+        # FILTER NOT EXISTS {{ ?y rdfs:subClassOf ?x . }}
+        # }}
+        for str_iri, _ in top_candidate_iris:
+            try:
+                yield OWLClass(str_iri)
+            except:
+                print(f"Could not convert to OWLClass {str_iri}")
+
+    def least_general_named_concepts(self) -> Generator[OWLClass, None, None]:
+        """ At least it has single superclass and there is no subclass """
+        yield from self.most_general_classes()
+
+    def instances(self, expression: OWLClassExpression, named_individuals: bool = False) -> Generator[
+        OWLNamedIndividual, None, None]:
+        assert isinstance(expression, OWLClassExpression)
+
+        if isinstance(expression, OWLClass):
+            gamma_for_nc = 0.1
+            assert self.neural_link_predictor.entity_to_idx.get(expression.str, None) is not None
+
+            scores = self.neural_link_predictor.predict(r=["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],
+                                                        t=[expression.str],
+                                                        within=None,
+                                                        logits=False).tolist()
+            top_candidate_iris = sorted(
+                [(ei, s) for ei, s in zip(self.neural_link_predictor.entity_to_idx.keys(), scores) if s > gamma_for_nc],
+                reverse=True)
+            for i, _ in top_candidate_iris:
+                try:
+                    yield OWLNamedIndividual(i)
+                except:
+                    print(f"Could not convert to OWLNamedIndividual {i}")
+        elif isinstance(expression, OWLObjectComplementOf):
+            # Given Concept C = ~neg A s.t. A \in AllnamedClasses
+            # Return individuals/instance of A denoted by R(A)
+            owl_individuals_of_a = {i for i in self.instances(expression.get_operand())}
+            # All individuals - R(A)
+            return self.owl_individuals - owl_individuals_of_a
+        elif isinstance(expression, OWLObjectUnionOf):
+            # Given Concept C = A OR B
+            # R(C) UNION R(B)
+            results = set()
+            retrieval_of_i: Set[OWLNamedIndividual]
+            operand: OWLClassExpression
+            for operand in expression.operands():
+                retrieval_of_i = {_ for _ in self.instances(operand)}
+                results = results.union(retrieval_of_i)
+            yield from results
+        elif isinstance(expression, OWLObjectIntersectionOf):
+            # Given Concept C = A AND B
+            # R(C) AND R(B)
+            results = set()
+            retrieval_of_i: Set[OWLNamedIndividual]
+            operand: OWLClassExpression
+            for operand in expression.operands():
+                retrieval_of_i = {_ for _ in self.instances(operand)}
+                results = results.intersection(retrieval_of_i)
+            yield from results
+        elif isinstance(expression, OWLObjectSomeValuesFrom):
+            """ \exists r.C  { x \mid \exists y. (x,y) \in r^I \land y \in C^I }
+
+            ∃ hasSibling.Female
+                    {?var r ?s.} ∪ {?s type C}
+
+            SELECT DISTINCT ?var
+            WHERE {
+                        ?var <http://www.benchmark.org/family#hasSibling> ?s_1 .
+                        (1) ?s_1 a <http://www.benchmark.org/family#Female> .  }
+
+
+            """
+        elif isinstance(expression, OWLObjectSomeValuesFrom):
+            """Retrieval(\neg \exists r. \neg C)"""
+            raise NotImplementedError()
 
 
 class TripleStore:
