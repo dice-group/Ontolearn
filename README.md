@@ -150,7 +150,6 @@ wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && 
 
 ### 10-Fold Cross Validation Family Benchmark Results
 
-The following script will apply 10-fold cross validation on  each benchmark learning problem.
 ```shell
 # To download learning problems and benchmark learners on the Family benchmark dataset with benchmark learning problems.
 python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 3 --report family.csv 
@@ -161,6 +160,18 @@ df=pd.read_csv("family.csv").groupby("LP").mean()
 filter_col = [col for col in df if col.startswith('Test-F1') or col.startswith('RT')]
 print(df[filter_col].to_markdown(floatfmt=".3f"))
 ```
+Average Test F1 scores over the 10-fold CV over learning problems.
+|               |  Avg. Test-F1 | Avg. RT |
+|:--------------|--------------:|--------:|
+| OCEL          | 0.959         | 0.633   |
+| CELOE         | 0.973         | 0.633   |
+| EvoLearner    | **0.991**     | 0.864   |
+| DRILL         | 0.923         | 1.771   |
+| TDL           | 0.966         | **0.121** |
+| NCES          | 0.833         | 0.239     |
+
+
+The 10-fold CV over each single learning problem.
 
 | LP                 |   Test-F1-OCEL |   RT-OCEL |   Test-F1-CELOE |   RT-CELOE |   Test-F1-Evo |   RT-Evo |   Test-F1-DRILL |   RT-DRILL |   Test-F1-TDL |   RT-TDL |   Test-F1-NCES |   RT-NCES |
 |:-------------------|---------------:|----------:|----------------:|-----------:|--------------:|---------:|----------------:|-----------:|--------------:|---------:|---------------:|----------:|
