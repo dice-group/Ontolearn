@@ -36,12 +36,13 @@ class Drill(RefinementBasedConceptLearner):
     def __init__(self, knowledge_base,
                  path_embeddings: str = None,
                  refinement_operator: LengthBasedRefinement = None,
-                 use_inverse:bool=True,
-                 use_data_properties:bool=True,
-                 use_card_restrictions:bool=True,
-                 use_nominals:bool=True,
+                 use_inverse: bool = True,
+                 use_data_properties: bool = True,
+                 use_card_restrictions: bool = True,
+                 use_nominals: bool = True,
                  min_cardinality_restriction: int = 2,
                  max_cardinality_restriction: int = 5,
+                 positive_type_bias: int = 1,
                  quality_func: Callable = None,
                  reward_func: object = None,
                  batch_size=None, num_workers: int = 1,
@@ -103,6 +104,7 @@ class Drill(RefinementBasedConceptLearner):
         self.emb_pos, self.emb_neg = None, None
         self.pos: FrozenSet[OWLNamedIndividual] = None
         self.neg: FrozenSet[OWLNamedIndividual] = None
+        self.positive_type_bias = positive_type_bias
 
         self.start_time = None
         self.goal_found = False
@@ -299,8 +301,8 @@ class Drill(RefinementBasedConceptLearner):
             if x.quality > best_found_quality:
                 best_found_quality = x.quality
             self.search_tree.add(x)
-            "Do not add the all bias only the best one"
-            break
+            if ith_bias == self.positive_type_bias:
+                break
 
         for _ in tqdm(range(0, self.iter_bound),
                       desc=f"Learning OWL Class Expression at most {self.iter_bound} iteration"):
@@ -531,7 +533,7 @@ class Drill(RefinementBasedConceptLearner):
                     return child_node
         else:
             for child_node in concepts:
-                child_node.heuristic = child_node.quality/child_node.length
+                child_node.heuristic = child_node.quality / child_node.length
                 if child_node.quality > 0:  # > too weak, ignore.
                     self.search_tree.add(child_node)
                 if child_node.quality == 1:

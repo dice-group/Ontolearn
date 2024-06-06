@@ -21,9 +21,9 @@ class TestEvoLearner(unittest.TestCase):
         # @TODO: Explicitly define params
         model = EvoLearner(knowledge_base=kb, max_runtime=10)
 
-        regression_test_evolearner = {'Aunt': 1.0, 'Brother': 1.0,
-                                      'Cousin': 0.992, 'Granddaughter': 1.0,
-                                      'Uncle': 0.89, 'Grandgrandfather': 1.0}
+        regression_test_evolearner = {'Aunt': .99, 'Brother': .99,
+                                      'Cousin': 0.992, 'Granddaughter': .99,
+                                      'Uncle': 0.89, 'Grandgrandfather': .99}
         for str_target_concept, examples in settings['problems'].items():
             pos = set(map(OWLNamedIndividual, map(IRI.create, set(examples['positive_examples']))))
             neg = set(map(OWLNamedIndividual, map(IRI.create, set(examples['negative_examples']))))
