@@ -199,7 +199,6 @@ def dl_concept_learning(args):
             pred_evo = evolearner.fit(train_lp).best_hypotheses()
             rt_evo = time.time() - start_time
             print("Evo ends..", end="\t")
-
             # () Quality on the training data
             train_f1_evo = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_evo)}),
                                             pos=train_lp.pos,
@@ -237,6 +236,8 @@ def dl_concept_learning(args):
             print(f"DRILL Train Quality: {train_f1_drill:.3f}", end="\t")
             print(f"DRILL Test Quality: {test_f1_drill:.3f}", end="\t")
             print(f"DRILL Runtime: {rt_drill:.3f}")
+
+
             print("TDL starts..", end="\t")
             start_time = time.time()
             # () Fit model training dataset
@@ -281,8 +282,8 @@ def dl_concept_learning(args):
             print(f"NCES Train Quality: {train_f1_nces:.3f}", end="\t")
             print(f"NCES Test Quality: {test_f1_nces:.3f}", end="\t")
             print(f"NCES Runtime: {rt_nces:.3f}")
+
             """
-            
             print("CLIP starts..", end="\t")
             start_time = time.time()
             pred_clip = clip.fit(train_lp).best_hypotheses()
