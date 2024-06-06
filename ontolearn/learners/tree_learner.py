@@ -26,7 +26,7 @@ import scipy
 from owlapy import owl_expression_to_dl, owl_expression_to_sparql
 from owlapy.class_expression import OWLObjectSomeValuesFrom, OWLObjectMinCardinality
 from owlapy.providers import owl_datatype_min_max_exclusive_restriction
-
+from ..utils.static_funcs import make_iterable_verbose
 
 def is_float(value):
     try:
@@ -49,12 +49,6 @@ def compute_quality(instances, pos, neg, conf_matrix=False, quality_func=None):
         return f1_score, f"TP:{tp}\tFN:{fn}\tFP:{fp}\tTN:{tn}"
     return f1_score
 
-
-def make_iterable_verbose(iterable_object, verbose, desc="Default") -> Iterable:
-    if verbose > 0:
-        return tqdm(iterable_object, desc=desc)
-    else:
-        return iterable_object
 
 
 def extract_cbd(dataframe) -> Dict[str, List[Tuple[str, str]]]:
@@ -212,7 +206,6 @@ class TDL:
         positive_examples = [i for i in learning_problem.pos]
         negative_examples = [i for i in learning_problem.neg]
         examples = positive_examples + negative_examples
-        # TODO: Asyncio ?!
         for i in make_iterable_verbose(examples,
                                        verbose=self.verbose,
                                        desc="Extracting information about examples"):
@@ -220,9 +213,11 @@ class TDL:
                 features.append(expression)
         assert len(
             features) > 0, f"First hop features cannot be extracted. Ensure that there are axioms about the examples."
-        print("Total extracted features:", len(features))
+        if self.verbose>0:
+            print("Total extracted features:", len(features))
         features = set(features)
-        print("Unique features:", len(features))
+        if self.verbose > 0:
+            print("Unique features:", len(features))
         binary_features = []
         # IMPORTANT: our features either
         for i in features:
@@ -416,7 +411,8 @@ class TDL:
         self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=X.values, y=y.values)
 
         if self.report_classification:
-            print("Classification Report: Negatives: -1 and Positives 1 ")
+            if self.verbose > 0:
+                print("Classification Report: Negatives: -1 and Positives 1 ")
             print(sklearn.metrics.classification_report(y.values, self.clf.predict(X.values),
                                                         target_names=["Negative", "Positive"]))
         if self.plot_tree:

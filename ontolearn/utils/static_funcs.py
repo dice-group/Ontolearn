@@ -12,7 +12,13 @@ from owlapy.owl_ontology_manager import OWLOntologyManager, OntologyManager
 from owlapy.owl_hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from owlapy.utils import OWLClassExpressionLengthMetric, LRUCache
 import traceback
-
+from typing import Iterable
+from tqdm import tqdm
+def make_iterable_verbose(iterable_object, verbose, desc="Default",position=None, leave=True) -> Iterable:
+    if verbose > 0:
+        return tqdm(iterable_object, desc=desc,position=position, leave=leave)
+    else:
+        return iterable_object
 
 def init_length_metric(length_metric: Optional[OWLClassExpressionLengthMetric] = None,
                        length_metric_factory: Optional[Callable[[], OWLClassExpressionLengthMetric]] = None):

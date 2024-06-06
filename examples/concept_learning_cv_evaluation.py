@@ -25,9 +25,9 @@ from ontolearn.utils.static_funcs import compute_f1_score
 pd.set_option("display.precision", 5)
 
 
-def get_embedding_path(ftp_link: str, embeddings_path_arg:str, kb_path_arg: str):
+def get_embedding_path(ftp_link: str, embeddings_path_arg: str, kb_path_arg: str)->str:
     """
-
+    ftp_link: ftp link to download data
     embeddings_path_arg:local path of an embedding file
     kb_path_arg:local path of an RDF KG
     """
@@ -73,23 +73,23 @@ def dl_concept_learning(args):
         settings = json.load(json_file)
 
     kb = KnowledgeBase(path=args.kb)
-    ocel = OCEL(knowledge_base=kb, quality_func=F1(),
+    ocel = OCEL(knowledge_base=kb,
+                quality_func=F1(),
                 max_runtime=args.max_runtime)
-    celoe = CELOE(knowledge_base=kb, quality_func=F1(),
+    celoe = CELOE(knowledge_base=kb,
+                  quality_func=F1(),
                   max_runtime=args.max_runtime)
-    drill = Drill(knowledge_base=kb, path_embeddings=args.path_drill_embeddings,
-                  quality_func=F1(), max_runtime=args.max_runtime, verbose=0)
+    drill = Drill(knowledge_base=kb,
+                  path_embeddings=args.path_drill_embeddings,
+                  quality_func=F1(),
+                  max_runtime=args.max_runtime, verbose=0)
     tdl = TDL(knowledge_base=kb,
               kwargs_classifier={"random_state": 0},
-              max_runtime=args.max_runtime)
-
-    args.path_of_nces_embeddings = get_embedding_path(
-        "https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip",
-        args.path_of_nces_embeddings, args.kb)
-
+              max_runtime=args.max_runtime,
+              verbose=0)
     nces = NCES(knowledge_base_path=args.kb,
                 quality_func=F1(),
-                path_of_embeddings=args.path_of_nces_embeddings,
+                path_of_embeddings=get_embedding_path("https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip",args.path_of_nces_embeddings, args.kb),
                 pretrained_model_name=["LSTM", "GRU", "SetTransformer"],
                 num_predictions=5,
                 verbose=0)
