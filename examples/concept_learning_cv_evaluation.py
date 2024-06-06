@@ -25,7 +25,13 @@ from ontolearn.utils.static_funcs import compute_f1_score
 pd.set_option("display.precision", 5)
 
 
-def get_embedding_path(ftp_link: str, embeddings_path_arg, kb_path_arg: str):
+def get_embedding_path(ftp_link: str, embeddings_path_arg:str, kb_path_arg: str):
+    """
+
+    embeddings_path_arg:local path of an embedding file
+    kb_path_arg:local path of an RDF KG
+    """
+
     if embeddings_path_arg is None or (embeddings_path_arg is not None and not os.path.exists(embeddings_path_arg)):
         file_name = ftp_link.split("/")[-1]
         if not os.path.exists(os.path.join(os.getcwd(), file_name)):
@@ -38,7 +44,6 @@ def get_embedding_path(ftp_link: str, embeddings_path_arg, kb_path_arg: str):
             os.remove(os.path.join(os.getcwd(), file_name))
 
         embeddings_path = os.path.join(os.getcwd(), file_name[:-4] + '/')
-
         if "family" in kb_path_arg:
             embeddings_path += "family/embeddings/ConEx_entity_embeddings.csv"
         elif "carcinogenesis" in kb_path_arg:
@@ -73,7 +78,7 @@ def dl_concept_learning(args):
     celoe = CELOE(knowledge_base=kb, quality_func=F1(),
                   max_runtime=args.max_runtime)
     drill = Drill(knowledge_base=kb, path_embeddings=args.path_drill_embeddings,
-                  quality_func=F1(), max_runtime=args.max_runtime,verbose=0)
+                  quality_func=F1(), max_runtime=args.max_runtime, verbose=0)
     tdl = TDL(knowledge_base=kb,
               kwargs_classifier={"random_state": 0},
               max_runtime=args.max_runtime)
@@ -82,8 +87,12 @@ def dl_concept_learning(args):
         "https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip",
         args.path_of_nces_embeddings, args.kb)
 
-    nces = NCES(knowledge_base_path=args.kb, quality_func=F1(), path_of_embeddings=args.path_of_nces_embeddings,
-                pretrained_model_name=["LSTM", "GRU", "SetTransformer"], num_predictions=5)
+    nces = NCES(knowledge_base_path=args.kb,
+                quality_func=F1(),
+                path_of_embeddings=args.path_of_nces_embeddings,
+                pretrained_model_name=["LSTM", "GRU", "SetTransformer"],
+                num_predictions=5,
+                verbose=0)
     """
     args.path_of_clip_embeddings = get_embedding_path(
         "https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip",
@@ -133,11 +142,11 @@ def dl_concept_learning(args):
             # Sanity checking for individuals used for testing.
             assert test_pos.issubset(examples[positives_key])
             assert test_neg.issubset(examples[negatives_key])
-            train_lp = PosNegLPStandard(pos= {OWLNamedIndividual(i) for i in train_pos},
+            train_lp = PosNegLPStandard(pos={OWLNamedIndividual(i) for i in train_pos},
                                         neg={OWLNamedIndividual(i) for i in train_neg})
 
-            test_lp = PosNegLPStandard(pos= {OWLNamedIndividual(i) for i in test_pos},
-                                        neg={OWLNamedIndividual(i) for i in test_neg})
+            test_lp = PosNegLPStandard(pos={OWLNamedIndividual(i) for i in test_pos},
+                                       neg={OWLNamedIndividual(i) for i in test_neg})
 
             print("OCEL starts..", end="\t")
             start_time = time.time()
@@ -259,12 +268,12 @@ def dl_concept_learning(args):
 
             # () Quality on the training data
             train_f1_nces = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_nces)}),
-                                            pos=train_lp.pos,
-                                            neg=train_lp.neg)
+                                             pos=train_lp.pos,
+                                             neg=train_lp.neg)
             # () Quality on test data
             test_f1_nces = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_nces)}),
-                                           pos=test_lp.pos,
-                                           neg=test_lp.neg)
+                                            pos=test_lp.pos,
+                                            neg=test_lp.neg)
 
             data.setdefault("Train-F1-NCES", []).append(train_f1_nces)
             data.setdefault("Test-F1-NCES", []).append(test_f1_nces)
@@ -295,9 +304,6 @@ def dl_concept_learning(args):
             print(f"CLIP Test Quality: {test_f1_clip:.3f}", end="\t")
             print(f"CLIP Runtime: {rt_clip:.3f}")
             """
-
-
-
 
     df = pd.DataFrame.from_dict(data)
     df.to_csv(args.report, index=False)

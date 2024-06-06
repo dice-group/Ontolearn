@@ -1379,7 +1379,7 @@ class NCES(BaseNCES):
                  learner_name="SetTransformer", path_of_embeddings="", proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
                  num_heads=4, num_seeds=1, num_inds=32, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0,
                  batch_size=256, num_workers=8, max_length=48, load_pretrained=True, sorted_examples=False,
-                 pretrained_model_name=None):
+                 pretrained_model_name=None,verbose:int=0):
         super().__init__(knowledge_base_path, learner_name, path_of_embeddings, batch_size, learning_rate, decay_rate,
                          clip_value, num_workers)
         self.quality_func = quality_func
@@ -1397,6 +1397,7 @@ class NCES(BaseNCES):
         self.load_pretrained = load_pretrained
         self.sorted_examples = sorted_examples
         self.pretrained_model_name = pretrained_model_name
+        self.verbose = verbose
         self.model = self.get_synthesizer()
         self.dl_parser = DLSyntaxParser(namespace=self.kb_namespace)
         self.best_predictions = None
@@ -1418,7 +1419,8 @@ class NCES(BaseNCES):
                                  0] + "trained_models/trained_" + learner_name + ".pt"
                 model.load_state_dict(torch.load(model_path, map_location=self.device))
                 model.eval()
-                print("\n Loaded synthesizer model!")
+                if self.verbose>0:
+                    print("\n Loaded synthesizer model!")
             return model
 
         if not self.load_pretrained:

@@ -46,7 +46,9 @@ class Drill(RefinementBasedConceptLearner):
                  quality_func: Callable = None,
                  reward_func: object = None,
                  batch_size=None, num_workers: int = 1,
-                 iter_bound=None, max_num_of_concepts_tested=None, verbose: int = 1, terminate_on_goal=None,
+                 iter_bound=None, max_num_of_concepts_tested=None,
+                 verbose: int = 0,
+                 terminate_on_goal=None,
                  max_len_replay_memory=256,
                  epsilon_decay: float = 0.01, epsilon_min: float = 0.0,
                  num_epochs_per_replay: int = 2,
@@ -110,7 +112,7 @@ class Drill(RefinementBasedConceptLearner):
         self.goal_found = False
         self.storage_path, _ = create_experiment_folder()
         # Move to here
-        self.search_tree = DRILLSearchTreePriorityQueue()
+        self.search_tree = DRILLSearchTreePriorityQueue(verbose=verbose)
         self.stop_at_goal = stop_at_goal
         self.epsilon = 1
 
@@ -324,11 +326,12 @@ class Drill(RefinementBasedConceptLearner):
                 self.compute_quality_of_class_expression(ref)
                 if ref.quality == 0:
                     continue
-                tqdm_bar.set_description_str(
-                    f"Step {_} | Refining {owl_expression_to_dl(most_promising.concept)} | {owl_expression_to_dl(ref.concept)} | Quality:{ref.quality:.4f}")
-
+                if self.verbose>0:
+                    tqdm_bar.set_description_str(
+                        f"Step {_} | Refining {owl_expression_to_dl(most_promising.concept)} | {owl_expression_to_dl(ref.concept)} | Quality:{ref.quality:.4f}")
                 if ref.quality > best_found_quality:
-                    print("\nBest Found:", ref)
+                    if self.verbose>0:
+                        print("\nBest Found:", ref)
                     best_found_quality = ref.quality
                 # (6.3.3) Consider qualifying RL states as next possible states to transition.
                 next_possible_states.append(ref)

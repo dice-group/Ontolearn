@@ -148,7 +148,6 @@ class TDL:
                  use_data_properties: bool = False,
                  use_nominals: bool = False,
                  use_card_restrictions: bool = False,
-                 quality_func: Callable = None,
                  kwargs_classifier: dict = None,
                  max_runtime: int = 1,
                  grid_search_over: dict = None,

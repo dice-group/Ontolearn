@@ -704,8 +704,9 @@ class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
     str_to_obj_instance_mapping: not being used.
     """
 
-    def __init__(self):
+    def __init__(self, verbose):
         super().__init__()
+        self.verbose = verbose
         self.items_in_queue = PriorityQueue()
 
     def add(self, node: RL_State):
@@ -733,12 +734,16 @@ class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
         predictions = sorted(
             [(neg_heuristic, length, self.nodes[dl_representation]) for neg_heuristic, length, dl_representation in
              self.items_in_queue.queue])[:top_n]
-        print(f"\n######## Most Promising {top_n} Concepts out of {len(self.items_in_queue.queue)} Concepts ###########\n")
-        for ith, (_, __, node) in enumerate(predictions):
+        if self.verbose>0:
             print(
-                f"{ith + 1}-\t{owl_expression_to_dl(node.concept)} | Quality:{node.quality:.3f}| Heuristic:{node.heuristic:.3f}")
+                f"\n######## Most Promising {top_n} Concepts out of {len(self.items_in_queue.queue)} Concepts ###########\n")
+        for ith, (_, __, node) in enumerate(predictions):
+            if self.verbose:
+                print(
+                    f"{ith + 1}-\t{owl_expression_to_dl(node.concept)} | Quality:{node.quality:.3f}| Heuristic:{node.heuristic:.3f}")
         # print('\n######## Current Search Tree ###########\n')
-        print('\n')
+        if self.verbose:
+            print('\n')
 
         return predictions
 
