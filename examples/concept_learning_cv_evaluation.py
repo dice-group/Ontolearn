@@ -84,7 +84,7 @@ def dl_concept_learning(args):
                   quality_func=F1(),
                   max_runtime=args.max_runtime, verbose=0)
     tdl = TDL(knowledge_base=kb,
-              kwargs_classifier={"random_state": 0},
+              kwargs_classifier={"random_state": 1},
               max_runtime=args.max_runtime,
               verbose=0)
     nces = NCES(knowledge_base_path=args.kb,
@@ -147,7 +147,7 @@ def dl_concept_learning(args):
 
             test_lp = PosNegLPStandard(pos={OWLNamedIndividual(i) for i in test_pos},
                                        neg={OWLNamedIndividual(i) for i in test_neg})
-
+            """
             print("OCEL starts..", end="\t")
             start_time = time.time()
             pred_ocel = ocel.fit(train_lp).best_hypotheses()
@@ -237,6 +237,7 @@ def dl_concept_learning(args):
             print(f"DRILL Test Quality: {test_f1_drill:.3f}", end="\t")
             print(f"DRILL Runtime: {rt_drill:.3f}")
 
+            """
 
             print("TDL starts..", end="\t")
             start_time = time.time()
@@ -261,12 +262,13 @@ def dl_concept_learning(args):
             print(f"TDL Test Quality: {test_f1_tdl:.3f}", end="\t")
             print(f"TDL Runtime: {rt_tdl:.3f}")
 
+            """
             start_time = time.time()
             # () Fit model training dataset
             pred_nces = nces.fit(train_lp.pos, train_lp.neg).best_hypotheses(n=1)
             print("NCES ends..", end="\t")
             rt_nces = time.time() - start_time
-
+            
             # () Quality on the training data
             train_f1_nces = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_nces)}),
                                              pos=train_lp.pos,
@@ -282,6 +284,7 @@ def dl_concept_learning(args):
             print(f"NCES Train Quality: {train_f1_nces:.3f}", end="\t")
             print(f"NCES Test Quality: {test_f1_nces:.3f}", end="\t")
             print(f"NCES Runtime: {rt_nces:.3f}")
+            """
 
             """
             print("CLIP starts..", end="\t")

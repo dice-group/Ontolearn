@@ -156,12 +156,12 @@ To compute the test performance, we compute F1-score of H w.r.t. test positive a
   
 ```shell
 # To download learning problems and benchmark learners on the Family benchmark dataset with benchmark learning problems.
-python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps_difficult.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 60 --report family.csv 
+python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps_difficult.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 60 --report family_results.csv 
 ```
 In the following python script, the results are summarized and the markdown displayed below generated.
 ```python
 import pandas as pd
-df=pd.read_csv("family.csv").groupby("LP").mean()
+df=pd.read_csv("family_results.csv").groupby("LP").mean()
 print(df[[col for col in df if col.startswith('Test-F1') or col.startswith('RT')]].to_markdown(floatfmt=".3f"))
 ```
 **Note that DRILL is untrained and we simply used accuracy driven heuristics to learn an OWL class expression.**
@@ -170,13 +170,13 @@ Below, we report the average test F1 score and the average runtimes of learners.
 
 |         LP         | Test-F1-OCEL | RT-OCEL | Test-F1-CELOE | RT-CELOE | Test-F1-Evo | RT-Evo | Test-F1-DRILL | RT-DRILL | Test-F1-TDL | RT-TDL | Test-F1-NCES | RT-NCES |
 |:------------------:|-------------:|--------:|--------------:|---------:|------------:|-------:|--------------:|---------:|------------:|-------:|-------------:|--------:|
-|        Aunt        |        0.614 |  13.697 |         0.855 |   13.697 |       0.978 |  5.278 |         0.811 |   60.351 |       0.967 |  0.131 |        0.681 |   0.234 |
-|       Cousin       |        0.712 |  10.846 |         0.789 |   10.846 |       0.993 |  3.311 |         0.701 |   60.485 |       0.825 |  0.191 |        0.667 |   0.232 |
-| Grandgranddaughter |        1.000 |   0.013 |         1.000 |    0.013 |       1.000 |  0.426 |         0.980 |   17.486 |       1.000 |  0.052 |        0.800 |   0.224 |
-|  Grandgrandfather  |        1.000 |   0.897 |         1.000 |    0.897 |       1.000 |  0.404 |         0.947 |   55.728 |       0.947 |  0.053 |        0.707 |   0.231 |
-|  Grandgrandmother  |        1.000 |   4.173 |         1.000 |    4.173 |       1.000 |  0.442 |         0.893 |   50.329 |       0.947 |  0.052 |        0.707 |   0.229 |
-|   Grandgrandson    |        1.000 |   1.632 |         1.000 |    1.632 |       1.000 |  0.452 |         0.931 |   60.358 |       0.911 |  0.072 |        0.817 |   0.235 |
-|       Uncle        |        0.876 |  16.244 |         0.891 |   16.244 |       0.964 |  4.516 |         0.876 |   60.416 |       0.922 |  0.103 |        0.687 |   0.253 |
+|        Aunt        |        0.614 |  13.697 |         0.855 |   13.697 |       0.978 |  5.278 |         0.811 |   60.351 |       0.956 |  0.118 |        0.681 |   0.234 |
+|       Cousin       |        0.712 |  10.846 |         0.789 |   10.846 |       0.993 |  3.311 |         0.701 |   60.485 |       0.820 |  0.176 |        0.667 |   0.232 |
+| Grandgranddaughter |        1.000 |   0.013 |         1.000 |    0.013 |       1.000 |  0.426 |         0.980 |   17.486 |       1.000 |  0.050 |        0.800 |   0.224 |
+|  Grandgrandfather  |        1.000 |   0.897 |         1.000 |    0.897 |       1.000 |  0.404 |         0.947 |   55.728 |       0.947 |  0.059 |        0.707 |   0.231 |
+|  Grandgrandmother  |        1.000 |   4.173 |         1.000 |    4.173 |       1.000 |  0.442 |         0.893 |   50.329 |       0.947 |  0.060 |        0.707 |   0.229 |
+|   Grandgrandson    |        1.000 |   1.632 |         1.000 |    1.632 |       1.000 |  0.452 |         0.931 |   60.358 |       0.911 |  0.070 |        0.817 |   0.235 |
+|       Uncle        |        0.876 |  16.244 |         0.891 |   16.244 |       0.964 |  4.516 |         0.876 |   60.416 |       0.933 |  0.098 |        0.687 |   0.253 |
 
 
 |         LP         | Train-F1-OCEL | Train-F1-CELOE | Train-F1-Evo | Train-F1-DRILL | Train-F1-TDL | Train-F1-NCES | 
@@ -191,11 +191,20 @@ Below, we report the average test F1 score and the average runtimes of learners.
 
 
 ### 10-Fold Cross Validation Mutagenesis Benchmark Results
-TODO:
+
+| LP       |   Train-F1-TDL |   Test-F1-TDL |   RT-TDL |
+|:---------|---------------:|--------------:|---------:|
+| NotKnown |          1.000 |         0.855 |   12.327 |
+
+
 ### 10-Fold Cross Validation Carcinogenesis Benchmark Results
-TODO:
+| LP       |   Fold |   Train-F1-TDL |   Test-F1-TDL |   RT-TDL |
+|:---------|-------:|---------------:|--------------:|---------:|
+| NOTKNOWN |  4.500 |          1.000 |         0.647 |    3.866 |
+
 ### 10-Fold Cross Validation Vicodi Benchmark Results
 TODO:
+
 </details>
 
 ## Deployment 
