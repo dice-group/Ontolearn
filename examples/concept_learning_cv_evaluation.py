@@ -147,7 +147,7 @@ def dl_concept_learning(args):
 
             test_lp = PosNegLPStandard(pos={OWLNamedIndividual(i) for i in test_pos},
                                        neg={OWLNamedIndividual(i) for i in test_neg})
-            """
+
             print("OCEL starts..", end="\t")
             start_time = time.time()
             pred_ocel = ocel.fit(train_lp).best_hypotheses()
@@ -237,7 +237,6 @@ def dl_concept_learning(args):
             print(f"DRILL Test Quality: {test_f1_drill:.3f}", end="\t")
             print(f"DRILL Runtime: {rt_drill:.3f}")
 
-            """
 
             print("TDL starts..", end="\t")
             start_time = time.time()
@@ -262,7 +261,6 @@ def dl_concept_learning(args):
             print(f"TDL Test Quality: {test_f1_tdl:.3f}", end="\t")
             print(f"TDL Runtime: {rt_tdl:.3f}")
 
-            """
             start_time = time.time()
             # () Fit model training dataset
             pred_nces = nces.fit(train_lp.pos, train_lp.neg).best_hypotheses(n=1)
@@ -284,7 +282,6 @@ def dl_concept_learning(args):
             print(f"NCES Train Quality: {train_f1_nces:.3f}", end="\t")
             print(f"NCES Test Quality: {test_f1_nces:.3f}", end="\t")
             print(f"NCES Runtime: {rt_nces:.3f}")
-            """
 
             """
             print("CLIP starts..", end="\t")
