@@ -13,12 +13,14 @@ kb = TripleStore(reasoner=NeuralReasoner(KGE("KeciFatherRun")))
 
 # (2) Initialize a learner.
 model = Drill(knowledge_base=kb)
+
 # (3) Define a description logic concept learning problem.
 lp = PosNegLPStandard(pos={OWLNamedIndividual("http://example.com/father#stefan")},
                       neg={OWLNamedIndividual("http://example.com/father#heinz"),
                            OWLNamedIndividual("http://example.com/father#anna"),
                            OWLNamedIndividual("http://example.com/father#michelle")})
-# (4) Learn description logic concepts best fitting (3).
+
+# (4) Learn description logic concepts best fitting (3). 
 h = model.fit(learning_problem=lp).best_hypotheses()
 print(h)
 print(owl_expression_to_dl(h))
