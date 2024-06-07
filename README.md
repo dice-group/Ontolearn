@@ -149,9 +149,10 @@ wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && 
 
 ### 10-Fold Cross Validation Family Benchmark Results
 
-The following script will apply 10-fold cross validation on each benchmark learning problem with max runtime of 60 seconds.
-Results will be stored in family.csv.
-lps_difficult.json contains OWL Class Expression learning problems whose goal answers cannot be found by searching the named concepts.
+Here we apply 10-fold cross validation technique on each benchmark learning problem with max runtime of 60 seconds to measure the training and testing performance of learners.
+In the evaluation, from a given single learning problem (a set of positive and negative examples), a learner learns an OWL Class Expression (H) on a given 9 fold of positive and negative examples.
+To compute the training performance, We compute F1-score of H train positive and negative examples.
+To compute the test performance, we compute F1-score of H w.r.t. test positive and negative examples.
   
 ```shell
 # To download learning problems and benchmark learners on the Family benchmark dataset with benchmark learning problems.
@@ -161,24 +162,40 @@ In the following python script, the results are summarized and the markdown disp
 ```python
 import pandas as pd
 df=pd.read_csv("family.csv").groupby("LP").mean()
-filter_col = [col for col in df if col.startswith('Test-F1') or col.startswith('RT')]
-print(df[filter_col].to_markdown(floatfmt=".3f"))
+print(df[[col for col in df if col.startswith('Test-F1') or col.startswith('RT')]].to_markdown(floatfmt=".3f"))
 ```
+**Note that DRILL is untrained and we simply used accuracy driven heuristics to learn an OWL class expression.**
 
-Note that DRILL is untrained and we simply used accuracy driven heuristics.
+Below, we report the average test F1 score and the average runtimes of learners.
 
-|         LP         | Train-F1-OCEL | Test-F1-OCEL | RT-OCEL | Train-F1-CELOE | Test-F1-CELOE | RT-CELOE | Train-F1-Evo | Test-F1-Evo | RT-Evo | Train-F1-DRILL | Test-F1-DRILL | RT-DRILL | Train-F1-TDL | Test-F1-TDL | RT-TDL | Train-F1-NCES | Test-F1-NCES | RT-NCES |
-|:------------------:|--------------:|-------------:|--------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|--------------:|-------------:|--------:|
-|        Aunt        |         0.835 |        0.614 |  13.697 |          0.918 |         0.855 |   13.697 |        0.995 |       0.978 |  5.278 |          0.837 |         0.811 |   60.351 |        1.000 |       0.967 |  0.131 |         0.712 |        0.681 |   0.234 |
-|       Cousin       |         0.746 |        0.712 |  10.846 |          0.796 |         0.789 |   10.846 |        1.000 |       0.993 |  3.311 |          0.732 |         0.701 |   60.485 |        1.000 |       0.825 |  0.191 |         0.667 |        0.667 |   0.232 |
-| Grandgranddaughter |         1.000 |        1.000 |   0.013 |          1.000 |         1.000 |    0.013 |        1.000 |       1.000 |  0.426 |          1.000 |         0.980 |   17.486 |        1.000 |       1.000 |  0.052 |         0.825 |        0.800 |   0.224 |
-|  Grandgrandfather  |         1.000 |        1.000 |   0.897 |          1.000 |         1.000 |    0.897 |        1.000 |       1.000 |  0.404 |          0.968 |         0.947 |   55.728 |        1.000 |       0.947 |  0.053 |         0.741 |        0.707 |   0.231 |
-|  Grandgrandmother  |         1.000 |        1.000 |   4.173 |          1.000 |         1.000 |    4.173 |        1.000 |       1.000 |  0.442 |          0.975 |         0.893 |   50.329 |        1.000 |       0.947 |  0.052 |         0.702 |        0.707 |   0.229 |
-|   Grandgrandson    |         1.000 |        1.000 |   1.632 |          1.000 |         1.000 |    1.632 |        1.000 |       1.000 |  0.452 |          0.962 |         0.931 |   60.358 |        1.000 |       0.911 |  0.072 |         0.824 |        0.817 |   0.235 |
-|       Uncle        |         0.904 |        0.876 |  16.244 |          0.907 |         0.891 |   16.244 |        0.996 |       0.964 |  4.516 |          0.908 |         0.876 |   60.416 |        1.000 |       0.922 |  0.103 |         0.696 |        0.687 |   0.253 |
+|         LP         | Test-F1-OCEL | RT-OCEL | Test-F1-CELOE | RT-CELOE | Test-F1-Evo | RT-Evo | Test-F1-DRILL | RT-DRILL | Test-F1-TDL | RT-TDL | Test-F1-NCES | RT-NCES |
+|:------------------:|-------------:|--------:|--------------:|---------:|------------:|-------:|--------------:|---------:|------------:|-------:|-------------:|--------:|
+|        Aunt        |        0.614 |  13.697 |         0.855 |   13.697 |       0.978 |  5.278 |         0.811 |   60.351 |       0.967 |  0.131 |        0.681 |   0.234 |
+|       Cousin       |        0.712 |  10.846 |         0.789 |   10.846 |       0.993 |  3.311 |         0.701 |   60.485 |       0.825 |  0.191 |        0.667 |   0.232 |
+| Grandgranddaughter |        1.000 |   0.013 |         1.000 |    0.013 |       1.000 |  0.426 |         0.980 |   17.486 |       1.000 |  0.052 |        0.800 |   0.224 |
+|  Grandgrandfather  |        1.000 |   0.897 |         1.000 |    0.897 |       1.000 |  0.404 |         0.947 |   55.728 |       0.947 |  0.053 |        0.707 |   0.231 |
+|  Grandgrandmother  |        1.000 |   4.173 |         1.000 |    4.173 |       1.000 |  0.442 |         0.893 |   50.329 |       0.947 |  0.052 |        0.707 |   0.229 |
+|   Grandgrandson    |        1.000 |   1.632 |         1.000 |    1.632 |       1.000 |  0.452 |         0.931 |   60.358 |       0.911 |  0.072 |        0.817 |   0.235 |
+|       Uncle        |        0.876 |  16.244 |         0.891 |   16.244 |       0.964 |  4.516 |         0.876 |   60.416 |       0.922 |  0.103 |        0.687 |   0.253 |
 
 
+|         LP         | Train-F1-OCEL | Train-F1-CELOE | Train-F1-Evo | Train-F1-DRILL | Train-F1-TDL | Train-F1-NCES | 
+|:------------------:|--------------:|---------------:|-------------:|---------------:|-------------:|--------------:|
+|        Aunt        |         0.835 |          0.918 |        0.995 |          0.837 |        1.000 |         0.712 |
+|       Cousin       |         0.746 |          0.796 |        1.000 |          0.732 |        1.000 |         0.667 |
+| Grandgranddaughter |         1.000 |          1.000 |        1.000 |          1.000 |        1.000 |         0.825 |
+|  Grandgrandfather  |         1.000 |          1.000 |        1.000 |          0.968 |        1.000 |         0.741 |
+|  Grandgrandmother  |         1.000 |          1.000 |        1.000 |          0.975 |        1.000 |         0.702 |
+|   Grandgrandson    |         1.000 |          1.000 |        1.000 |          0.962 |        1.000 |         0.824 |
+|       Uncle        |         0.904 |          0.907 |        0.996 |          0.908 |        1.000 |         0.696 |
 
+
+### 10-Fold Cross Validation Mutagenesis Benchmark Results
+TODO:
+### 10-Fold Cross Validation Carcinogenesis Benchmark Results
+TODO:
+### 10-Fold Cross Validation Vicodi Benchmark Results
+TODO:
 </details>
 
 ## Deployment 
