@@ -84,7 +84,7 @@ def dl_concept_learning(args):
                   quality_func=F1(),
                   max_runtime=args.max_runtime, verbose=0)
     tdl = TDL(knowledge_base=kb,
-              kwargs_classifier={"random_state": 0},
+              kwargs_classifier={"random_state": 1},
               max_runtime=args.max_runtime,
               verbose=0)
     nces = NCES(knowledge_base_path=args.kb,
@@ -266,7 +266,7 @@ def dl_concept_learning(args):
             pred_nces = nces.fit(train_lp.pos, train_lp.neg).best_hypotheses(n=1)
             print("NCES ends..", end="\t")
             rt_nces = time.time() - start_time
-
+            
             # () Quality on the training data
             train_f1_nces = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_nces)}),
                                              pos=train_lp.pos,
