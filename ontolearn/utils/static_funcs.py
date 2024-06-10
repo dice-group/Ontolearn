@@ -12,6 +12,15 @@ from owlapy.owl_ontology_manager import OWLOntologyManager, OntologyManager
 from owlapy.owl_hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from owlapy.utils import OWLClassExpressionLengthMetric, LRUCache
 import traceback
+from typing import Iterable
+from tqdm import tqdm
+
+
+def make_iterable_verbose(iterable_object, verbose, desc="Default", position=None, leave=True) -> Iterable:
+    if verbose > 0:
+        return tqdm(iterable_object, desc=desc, position=position, leave=leave)
+    else:
+        return iterable_object
 
 
 def init_length_metric(length_metric: Optional[OWLClassExpressionLengthMetric] = None,
@@ -120,20 +129,46 @@ def plot_umap_reduced_embeddings(X: pandas.DataFrame, y: List[float], name: str 
     plt.show()
 
 
-def plot_decision_tree_of_expressions(feature_names, cart_tree, topk: int = 10)->None:
-    """ Plot the built CART Decision Tree and feature importance"""
-    # Plot the built CART Tree
+def plot_decision_tree_of_expressions(feature_names, cart_tree) -> None:
+    """
+    Plot the built CART Decision Tree and feature importance.
+
+    Parameters:
+        feature_names (list): A list of feature names used in the decision tree.
+        cart_tree: The trained CART Decision Tree model.
+
+    Returns:
+        None
+
+    Notes:
+        This function plots the decision tree using matplotlib and saves it to a PDF file named 'cart_decision_tree.pdf'.
+        It also displays the plot.
+    """
     plt.figure(figsize=(10, 10))
     sklearn.tree.plot_tree(cart_tree, fontsize=10, feature_names=feature_names, class_names=["Negative", "Positive"],
                            filled=True)
     plt.savefig('cart_decision_tree.pdf')
     plt.show()
-    # Plot the features
-    # feature importance is computed as the (normalized) total reduction of the criterion brought by that feature.
-    fig, ax = plt.subplots()
-    #
-    topk_id = np.argsort(cart_tree.feature_importances_)[-topk:]
 
+def plot_topk_feature_importance(feature_names, cart_tree, topk: int = 10)->None:
+    """
+    Plot the feature importance of the CART Decision Tree.
+
+    Parameters:
+        feature_names (list): A list of feature names used in the decision tree.
+        cart_tree: The trained CART Decision Tree model.
+        topk (int, optional): The number of top features to display. Defaults to 10.
+
+    Returns:
+        None
+
+    Notes:
+        This function plots a bar chart showing the importance of each feature in the decision tree,
+        with the top k features displayed. The importance is measured by the normalized total reduction.
+        The plot is displayed using matplotlib.
+    """
+    fig, ax = plt.subplots()
+    topk_id = np.argsort(cart_tree.feature_importances_)[-topk:]
     expressions = [feature_names[i] for i in topk_id.tolist()]
     feature_importance = cart_tree.feature_importances_[topk_id]
     ax.bar(x=expressions, height=feature_importance)

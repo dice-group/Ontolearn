@@ -33,7 +33,7 @@ conda create -n venv python=3.10.14 --no-default-packages && conda activate venv
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
 ```
 ```shell
-pytest -p no:warnings -x # Running 171 tests takes ~ 6 mins
+pytest -p no:warnings -x # Running 64 tests takes ~ 6 mins
 ```
 
 ## Learning OWL Class Expression
@@ -147,59 +147,63 @@ for str_target_concept, examples in learning_problems.items():
 wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
 ```
 
+### 10-Fold Cross Validation Family Benchmark Results
+
+Here we apply 10-fold cross validation technique on each benchmark learning problem with max runtime of 60 seconds to measure the training and testing performance of learners.
+In the evaluation, from a given single learning problem (a set of positive and negative examples), a learner learns an OWL Class Expression (H) on a given 9 fold of positive and negative examples.
+To compute the training performance, We compute F1-score of H train positive and negative examples.
+To compute the test performance, we compute F1-score of H w.r.t. test positive and negative examples.
+  
 ```shell
 # To download learning problems and benchmark learners on the Family benchmark dataset with benchmark learning problems.
-python examples/concept_learning_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 60 --report family_results.csv  && python -c 'import pandas as pd; print(pd.read_csv("family_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
+python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps_difficult.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 60 --report family_results.csv 
 ```
-
-Below, we report the average results of 5 runs.
-Each model has 60 second to find a fitting answer. DRILL results are obtained by using F1 score as heuristic function.
-Note that F1 scores denote the quality of the find/constructed concept w.r.t. E^+ and E^-.
-
-### Family Benchmark Results
-
-| LP                 |   Train-F1-OCEL |   Test-F1-OCEL |   RT-OCEL |   Train-F1-CELOE |   Test-F1-CELOE |   RT-CELOE |   Train-F1-Evo |   Test-F1-Evo |   RT-Evo |   Train-F1-DRILL |   Test-F1-DRILL |   RT-DRILL |   Train-F1-TDL |   Test-F1-TDL |   RT-TDL |   Train-F1-NCES |   Test-F1-NCES |   RT-NCES |   Train-F1-CLIP |   Test-F1-CLIP |   RT-CLIP |
-|:-------------------|----------------:|---------------:|----------:|-----------------:|----------------:|-----------:|---------------:|--------------:|---------:|-----------------:|----------------:|-----------:|---------------:|--------------:|---------:|----------------:|---------------:|----------:|----------------:|---------------:|----------:|
-| Aunt               |           0.848 |          0.637 |     9.206 |            0.918 |           0.855 |      9.206 |          0.996 |         0.969 |    3.390 |            0.886 |           0.799 |     60.243 |          0.971 |         0.949 |    6.366 |           0.721 |          0.635 |     0.552 |           0.899 |          0.891 |     5.763 |
-| Brother            |           1.000 |          1.000 |     0.005 |            1.000 |           1.000 |      0.005 |          1.000 |         1.000 |    0.281 |            1.000 |           1.000 |      0.020 |          1.000 |         1.000 |    6.216 |           0.978 |          0.975 |     0.450 |           1.000 |          1.000 |     0.692 |
-| Cousin             |           0.740 |          0.708 |     7.336 |            0.796 |           0.789 |      7.336 |          1.000 |         1.000 |    1.653 |            0.831 |           0.784 |     60.416 |          0.978 |         0.941 |    7.073 |           0.667 |          0.667 |     0.465 |           0.774 |          0.761 |     6.671 |
-| Daughter           |           1.000 |          1.000 |     0.006 |            1.000 |           1.000 |      0.006 |          1.000 |         1.000 |    0.309 |            1.000 |           1.000 |      0.033 |          1.000 |         1.000 |    6.459 |           0.993 |          0.977 |     0.534 |           1.000 |          1.000 |     0.716 |
-| Father             |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.411 |            1.000 |           1.000 |      0.004 |          1.000 |         1.000 |    6.522 |           0.897 |          0.903 |     0.448 |           1.000 |          1.000 |     0.588 |
-| Granddaughter      |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.320 |            1.000 |           1.000 |      0.003 |          1.000 |         1.000 |    6.233 |           0.911 |          0.916 |     0.497 |           1.000 |          1.000 |     0.646 |
-| Grandfather        |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.314 |            1.000 |           1.000 |      0.003 |          1.000 |         1.000 |    6.185 |           0.743 |          0.717 |     0.518 |           1.000 |          1.000 |     0.721 |
-| Grandgranddaughter |           1.000 |          1.000 |     0.004 |            1.000 |           1.000 |      0.004 |          1.000 |         1.000 |    0.293 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    5.858 |           0.837 |          0.840 |     0.518 |           1.000 |          1.000 |     0.710 |
-| Grandgrandfather   |           1.000 |          1.000 |     0.668 |            1.000 |           1.000 |      0.668 |          1.000 |         1.000 |    0.341 |            1.000 |           1.000 |      0.243 |          0.951 |         0.947 |    5.915 |           0.759 |          0.677 |     0.511 |           1.000 |          1.000 |     1.964 |
-| Grandgrandmother   |           1.000 |          1.000 |     0.381 |            1.000 |           1.000 |      0.381 |          1.000 |         1.000 |    0.258 |            1.000 |           1.000 |      0.243 |          0.944 |         0.947 |    5.918 |           0.721 |          0.687 |     0.498 |           0.997 |          1.000 |     2.620 |
-| Grandgrandson      |           1.000 |          1.000 |     0.341 |            1.000 |           1.000 |      0.341 |          1.000 |         1.000 |    0.276 |            1.000 |           1.000 |      0.122 |          0.938 |         0.911 |    6.093 |           0.779 |          0.809 |     0.460 |           1.000 |          1.000 |     2.555 |
-| Grandmother        |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.385 |            1.000 |           1.000 |      0.003 |          1.000 |         1.000 |    6.135 |           0.762 |          0.725 |     0.480 |           1.000 |          1.000 |     0.628 |
-| Grandson           |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.299 |            1.000 |           1.000 |      0.003 |          1.000 |         1.000 |    6.301 |           0.896 |          0.903 |     0.552 |           1.000 |          1.000 |     0.765 |
-| Mother             |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.327 |            1.000 |           1.000 |      0.004 |          1.000 |         1.000 |    6.570 |           0.967 |          0.972 |     0.555 |           1.000 |          1.000 |     0.779 |
-| PersonWithASibling |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.377 |            0.737 |           0.725 |     60.194 |          1.000 |         1.000 |    6.548 |           0.927 |          0.928 |     0.648 |           1.000 |          1.000 |     0.999 |
-| Sister             |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.356 |            1.000 |           1.000 |      0.017 |          1.000 |         1.000 |    6.315 |           0.866 |          0.876 |     0.512 |           1.000 |          1.000 |     0.616 |
-| Son                |           1.000 |          1.000 |     0.002 |            1.000 |           1.000 |      0.002 |          1.000 |         1.000 |    0.317 |            1.000 |           1.000 |      0.004 |          1.000 |         1.000 |    6.579 |           0.892 |          0.855 |     0.537 |           1.000 |          1.000 |     0.700 |
-| Uncle              |           0.903 |          0.891 |    12.441 |            0.907 |           0.891 |     12.441 |          1.000 |         0.971 |    1.675 |            0.951 |           0.894 |     60.337 |          0.894 |         0.896 |    6.310 |           0.667 |          0.665 |     0.619 |           0.928 |          0.942 |     5.577 |
-
-
-### Mutagenesis Benchmark Results
-```shell
-python examples/concept_learning_cv_evaluation.py --path_of_nces_embeddings NCESData/mutagenesis/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings CLIPData/mutagenesis/embeddings/ConEx_entity_embeddings.csv --folds 10 --kb KGs/Mutagenesis/mutagenesis.owl --lps LPs/Mutagenesis/lps.json --max_runtime 60 --report mutagenesis_results.csv && python -c 'import pandas as pd; print(pd.read_csv("mutagenesis_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
+In the following python script, the results are summarized and the markdown displayed below generated.
+```python
+import pandas as pd
+df=pd.read_csv("family_results.csv").groupby("LP").mean()
+print(df[[col for col in df if col.startswith('Test-F1') or col.startswith('RT')]].to_markdown(floatfmt=".3f"))
 ```
-| LP       |   Train-F1-OCEL |   Test-F1-OCEL |   RT-OCEL |   Train-F1-CELOE |   Test-F1-CELOE |   RT-CELOE |   Train-F1-Evo |   Test-F1-Evo |   RT-Evo |   Train-F1-DRILL |   Test-F1-DRILL |   RT-DRILL |   Train-F1-TDL |   Test-F1-TDL |   RT-TDL |   Train-F1-NCES |   Test-F1-NCES |   RT-NCES |   Train-F1-CLIP |   Test-F1-CLIP |   RT-CLIP |
-|:---------|----------------:|---------------:|----------:|-----------------:|----------------:|-----------:|---------------:|--------------:|---------:|-----------------:|----------------:|-----------:|---------------:|--------------:|---------:|----------------:|---------------:|----------:|----------------:|---------------:|----------:|
-| NotKnown |           0.916 |          0.918 |    58.328 |            0.916 |           0.918 |     58.328 |          0.724 |         0.729 |   49.281 |            0.704 |           0.704 |     60.052 |          0.879 |         0.771 |    7.763 |           0.564 |          0.560 |     0.493 |           0.814 |          0.807 |     5.622 |
+**Note that DRILL is untrained and we simply used accuracy driven heuristics to learn an OWL class expression.**
 
-### Carcinogenesis Benchmark Results
-```shell
-python examples/concept_learning_cv_evaluation.py --path_of_nces_embeddings NCESData/carcinogenesis/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings CLIPData/carcinogenesis/embeddings/ConEx_entity_embeddings.csv --folds 10 --kb KGs/Carcinogenesis/carcinogenesis.owl --lps LPs/Carcinogenesis/lps.json --max_runtime 60 --report carcinogenesis_results.csv && python -c 'import pandas as pd; print(pd.read_csv("carcinogenesis_results.csv", index_col=0).to_markdown(floatfmt=".3f"))'
-```
+Below, we report the average test F1 score and the average runtimes of learners.
 
-| LP       |   Train-F1-OCEL |   Test-F1-OCEL |   RT-OCEL |   Train-F1-CELOE |   Test-F1-CELOE |   RT-CELOE |   Train-F1-Evo |   Test-F1-Evo |   RT-Evo |   Train-F1-DRILL |   Test-F1-DRILL |   RT-DRILL |   Train-F1-TDL |   Test-F1-TDL |   RT-TDL |   Train-F1-NCES |   Test-F1-NCES |   RT-NCES |   Train-F1-CLIP |   Test-F1-CLIP |   RT-CLIP |
-|:---------|----------------:|---------------:|----------:|-----------------:|----------------:|-----------:|---------------:|--------------:|---------:|-----------------:|----------------:|-----------:|---------------:|--------------:|---------:|----------------:|---------------:|----------:|----------------:|---------------:|----------:|
-| NOTKNOWN |           0.738 |          0.711 |    42.936 |            0.740 |           0.701 |     42.936 |          0.744 |         0.733 |   63.465 |            0.705 |           0.704 |     60.069 |          0.879 |         0.682 |    7.260 |           0.415 |          0.396 |     1.911 |           0.720 |          0.700 |    85.037 |
+|         LP         | Test-F1-OCEL | RT-OCEL | Test-F1-CELOE | RT-CELOE | Test-F1-Evo | RT-Evo | Test-F1-DRILL | RT-DRILL | Test-F1-TDL | RT-TDL | Test-F1-NCES | RT-NCES |
+|:------------------:|-------------:|--------:|--------------:|---------:|------------:|-------:|--------------:|---------:|------------:|-------:|-------------:|--------:|
+|        Aunt        |        0.614 |  13.697 |         0.855 |   13.697 |       0.978 |  5.278 |         0.811 |   60.351 |       0.956 |  0.118 |        0.681 |   0.234 |
+|       Cousin       |        0.712 |  10.846 |         0.789 |   10.846 |       0.993 |  3.311 |         0.701 |   60.485 |       0.820 |  0.176 |        0.667 |   0.232 |
+| Grandgranddaughter |        1.000 |   0.013 |         1.000 |    0.013 |       1.000 |  0.426 |         0.980 |   17.486 |       1.000 |  0.050 |        0.800 |   0.224 |
+|  Grandgrandfather  |        1.000 |   0.897 |         1.000 |    0.897 |       1.000 |  0.404 |         0.947 |   55.728 |       0.947 |  0.059 |        0.707 |   0.231 |
+|  Grandgrandmother  |        1.000 |   4.173 |         1.000 |    4.173 |       1.000 |  0.442 |         0.893 |   50.329 |       0.947 |  0.060 |        0.707 |   0.229 |
+|   Grandgrandson    |        1.000 |   1.632 |         1.000 |    1.632 |       1.000 |  0.452 |         0.931 |   60.358 |       0.911 |  0.070 |        0.817 |   0.235 |
+|       Uncle        |        0.876 |  16.244 |         0.891 |   16.244 |       0.964 |  4.516 |         0.876 |   60.416 |       0.933 |  0.098 |        0.687 |   0.253 |
 
 
+|         LP         | Train-F1-OCEL | Train-F1-CELOE | Train-F1-Evo | Train-F1-DRILL | Train-F1-TDL | Train-F1-NCES | 
+|:------------------:|--------------:|---------------:|-------------:|---------------:|-------------:|--------------:|
+|        Aunt        |         0.835 |          0.918 |        0.995 |          0.837 |        1.000 |         0.712 |
+|       Cousin       |         0.746 |          0.796 |        1.000 |          0.732 |        1.000 |         0.667 |
+| Grandgranddaughter |         1.000 |          1.000 |        1.000 |          1.000 |        1.000 |         0.825 |
+|  Grandgrandfather  |         1.000 |          1.000 |        1.000 |          0.968 |        1.000 |         0.741 |
+|  Grandgrandmother  |         1.000 |          1.000 |        1.000 |          0.975 |        1.000 |         0.702 |
+|   Grandgrandson    |         1.000 |          1.000 |        1.000 |          0.962 |        1.000 |         0.824 |
+|       Uncle        |         0.904 |          0.907 |        0.996 |          0.908 |        1.000 |         0.696 |
 
-Use `python examples/concept_learning_cv_evaluation.py` to apply stratified k-fold cross validation on learning problems. 
+
+### 10-Fold Cross Validation Mutagenesis Benchmark Results
+
+| LP       |   Train-F1-TDL |   Test-F1-TDL |   RT-TDL |
+|:---------|---------------:|--------------:|---------:|
+| NotKnown |          1.000 |         0.855 |   12.327 |
+
+
+### 10-Fold Cross Validation Carcinogenesis Benchmark Results
+| LP       |   Fold |   Train-F1-TDL |   Test-F1-TDL |   RT-TDL |
+|:---------|-------:|---------------:|--------------:|---------:|
+| NOTKNOWN |  4.500 |          1.000 |         0.647 |    3.866 |
+
+### 10-Fold Cross Validation Vicodi Benchmark Results
+TODO:
 
 </details>
 

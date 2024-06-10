@@ -29,6 +29,9 @@ from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPredicti
 from tqdm import tqdm
 from owlapy.utils import OWLClassExpressionLengthMetric
 
+from ..utils.static_funcs import make_iterable_verbose
+
+
 
 class Drill(RefinementBasedConceptLearner):
     """ Neuro-Symbolic Class Expression Learning (https://www.ijcai.org/proceedings/2023/0403.pdf)"""
@@ -36,14 +39,19 @@ class Drill(RefinementBasedConceptLearner):
     def __init__(self, knowledge_base,
                  path_embeddings: str = None,
                  refinement_operator: LengthBasedRefinement = None,
-                 use_inverse=True,
-                 use_data_properties=True,
-                 use_card_restrictions=True,
-                 use_nominals=True,
+                 use_inverse: bool = True,
+                 use_data_properties: bool = True,
+                 use_card_restrictions: bool = True,
+                 use_nominals: bool = True,
+                 min_cardinality_restriction: int = 2,
+                 max_cardinality_restriction: int = 5,
+                 positive_type_bias: int = 1,
                  quality_func: Callable = None,
                  reward_func: object = None,
                  batch_size=None, num_workers: int = 1,
-                 iter_bound=None, max_num_of_concepts_tested=None, verbose: int = 1, terminate_on_goal=None,
+                 iter_bound=None, max_num_of_concepts_tested=None,
+                 verbose: int = 0,
+                 terminate_on_goal=None,
                  max_len_replay_memory=256,
                  epsilon_decay: float = 0.01, epsilon_min: float = 0.0,
                  num_epochs_per_replay: int = 2,
@@ -55,24 +63,33 @@ class Drill(RefinementBasedConceptLearner):
                  num_episode: int = 10):
 
         self.name = "DRILL"
+        self.verbose = verbose
         self.learning_problem = None
         # (1) Initialize KGE.
         if path_embeddings and os.path.isfile(path_embeddings):
-            print("Reading Embeddings...",end="\t")
+
+            if self.verbose > 0:
+                print("Reading Embeddings...", end="\t")
             self.df_embeddings = pd.read_csv(path_embeddings, index_col=0).astype('float32')
             self.num_entities, self.embedding_dim = self.df_embeddings.shape
-            print(self.df_embeddings.shape)
+            if self.verbose > 0:
+                print(self.df_embeddings.shape)
+
         else:
-            print("No pre-trained model...")
+            if self.verbose > 0:
+                print("No pre-trained model...")
             self.df_embeddings = None
             self.num_entities, self.embedding_dim = None, 1
 
         # (2) Initialize Refinement operator.
         if refinement_operator is None:
-            refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base, use_inverse=use_inverse,
+            refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base,
+                                                        use_inverse=use_inverse,
                                                         use_data_properties=use_data_properties,
                                                         use_card_restrictions=use_card_restrictions,
-                                                        use_nominals=use_nominals)
+                                                        use_nominals=use_nominals,
+                                                        min_cardinality_restriction=min_cardinality_restriction,
+                                                        max_cardinality_restriction=max_cardinality_restriction)
         else:
             refinement_operator = refinement_operator
 
@@ -92,18 +109,18 @@ class Drill(RefinementBasedConceptLearner):
         self.epsilon_decay = epsilon_decay
         self.epsilon_min = epsilon_min
         self.batch_size = batch_size
-        self.verbose = verbose
         self.num_episodes_per_replay = num_episodes_per_replay
         self.seen_examples = dict()
         self.emb_pos, self.emb_neg = None, None
         self.pos: FrozenSet[OWLNamedIndividual] = None
         self.neg: FrozenSet[OWLNamedIndividual] = None
+        self.positive_type_bias = positive_type_bias
 
         self.start_time = None
         self.goal_found = False
         self.storage_path, _ = create_experiment_folder()
         # Move to here
-        self.search_tree = DRILLSearchTreePriorityQueue()
+        self.search_tree = DRILLSearchTreePriorityQueue(verbose=verbose)
         self.stop_at_goal = stop_at_goal
         self.epsilon = 1
 
@@ -234,7 +251,9 @@ class Drill(RefinementBasedConceptLearner):
                  'Negatives': [i.str for i in negatives]})
         return self.terminate_training()
 
-    def save(self, directory: str=None) -> None:
+
+    def save(self, directory: str = None) -> None:
+
         """ save weights of the deep Q-network"""
         # (1) Create a folder
         if directory:
@@ -252,7 +271,9 @@ class Drill(RefinementBasedConceptLearner):
                 if isinstance(self.heuristic_func, CeloeBasedReward):
                     print("No loading because embeddings not provided")
                 else:
-                    print("Loading pretrained DQL Agent...",end="")
+
+                    print("Loading pretrained DQL Agent...", end="")
+
                     self.heuristic_func.net.load_state_dict(torch.load(directory + "/drill.pth", torch.device('cpu')))
                     print(self.heuristic_func.net)
             else:
@@ -294,11 +315,14 @@ class Drill(RefinementBasedConceptLearner):
             if x.quality > best_found_quality:
                 best_found_quality = x.quality
             self.search_tree.add(x)
-            "Do not add the all bias only the best one"
-            break
 
-        for _ in tqdm(range(0, self.iter_bound),
-                      desc=f"Learning OWL Class Expression at most {self.iter_bound} iteration"):
+            if ith_bias == self.positive_type_bias:
+                break
+
+
+        for _ in make_iterable_verbose(range(0, self.iter_bound),
+                                       verbose=self.verbose,
+                                       desc=f"Learning OWL Class Expression at most {self.iter_bound} iteration"):
             assert len(self.search_tree) > 0
             self.search_tree.show_current_search_tree()
             # (6.1) Get the most fitting RL-state.
@@ -309,7 +333,9 @@ class Drill(RefinementBasedConceptLearner):
                 return self.terminate()
             # (6.3) Refine (6.1)
             # Convert this into tqdm with an update ?!
-            for ref in (tqdm_bar := tqdm(self.apply_refinement(most_promising), position=0, leave=True)):
+            for ref in (tqdm_bar := make_iterable_verbose(self.apply_refinement(most_promising),
+                                                          verbose=self.verbose,
+                                                          position=0, leave=True)):
                 # (6.3.1) Checking the runtime termination criterion.
                 if time.time() - self.start_time > self.max_runtime:
                     break
@@ -317,11 +343,12 @@ class Drill(RefinementBasedConceptLearner):
                 self.compute_quality_of_class_expression(ref)
                 if ref.quality == 0:
                     continue
-                tqdm_bar.set_description_str(
-                    f"Step {_} | Refining {owl_expression_to_dl(most_promising.concept)} | {owl_expression_to_dl(ref.concept)} | Quality:{ref.quality:.4f}")
-
+                if self.verbose > 0:
+                    tqdm_bar.set_description_str(
+                        f"Step {_} | Refining {owl_expression_to_dl(most_promising.concept)} | {owl_expression_to_dl(ref.concept)} | Quality:{ref.quality:.4f}")
                 if ref.quality > best_found_quality:
-                    print("\nBest Found:", ref)
+                    if self.verbose > 0:
+                        print("\nBest Found:", ref)
                     best_found_quality = ref.quality
                 # (6.3.3) Consider qualifying RL states as next possible states to transition.
                 next_possible_states.append(ref)
@@ -336,10 +363,12 @@ class Drill(RefinementBasedConceptLearner):
                 preds = self.predict_values(current_state=most_promising,
                                             next_states=next_possible_states)
             else:
-                preds=None
+
+                preds = None
+
             # (6.5) Add next possible states into search tree based on predicted Q values
             self.goal_found = self.update_search(next_possible_states, preds)
-            if self.goal_found:
+            if self.goal_found and self.stop_at_goal:
                 if self.terminate_on_goal:
                     return self.terminate()
         return self.terminate()
@@ -526,7 +555,7 @@ class Drill(RefinementBasedConceptLearner):
                     return child_node
         else:
             for child_node in concepts:
-                child_node.heuristic = child_node.quality
+                child_node.heuristic = child_node.quality / child_node.length
                 if child_node.quality > 0:  # > too weak, ignore.
                     self.search_tree.add(child_node)
                 if child_node.quality == 1:

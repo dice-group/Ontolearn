@@ -6,26 +6,9 @@ from itertools import chain
 from typing import Iterable, Set, Optional, Generator, Union, FrozenSet, Tuple, Callable
 import requests
 
-from owlapy.class_expression import (
-    OWLObjectSomeValuesFrom,
-    OWLObjectAllValuesFrom,
-    OWLObjectIntersectionOf,
-    OWLClassExpression,
-    OWLNothing,
-    OWLThing,
-    OWLNaryBooleanClassExpression,
-    OWLObjectUnionOf,
-    OWLClass,
-    OWLObjectComplementOf,
-    OWLObjectMaxCardinality,
-    OWLObjectMinCardinality,
-    OWLDataSomeValuesFrom,
-    OWLDatatypeRestriction,
-    OWLDataHasValue,
-    OWLObjectExactCardinality,
-    OWLObjectHasValue,
-    OWLObjectOneOf,
-)
+from owlapy.class_expression import OWLClassExpression, OWLThing, OWLClass, OWLObjectSomeValuesFrom, OWLObjectOneOf, \
+    OWLObjectMinCardinality, OWLDataSomeValuesFrom, OWLDataOneOf
+
 from owlapy.iri import IRI
 from owlapy.owl_axiom import (
     OWLObjectPropertyRangeAxiom,
@@ -68,15 +51,7 @@ xsd_prefix = "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n"
 limit_posix = ""
 
 from owlapy import owl_expression_to_sparql
-from owlapy.class_expression import (
-    OWLObjectHasValue,
-    OWLDataHasValue,
-    OWLDataSomeValuesFrom,
-    OWLDataOneOf,
-)
-from typing import List
-from owlapy.owl_property import OWLProperty
-from dicee import KGE
+
 
 
 def rdflib_to_str(sparql_result: rdflib.plugins.sparql.processor.SPARQLResult) -> str:
@@ -162,10 +137,14 @@ def unwrap(result: Response):
                 )
             elif b[v]["type"] == "literal" and "datatype" not in b[v]:
                 continue
+
+            elif b[v]['type'] == 'literal' and "datatype" in b[v]:
+                val.append(OWLLiteral(b[v]['value'], OWLDatatype(IRI.create(b[v]['datatype']))))
+            elif b[v]['type'] == 'literal' and "datatype" not in b[v]:
+                continue
             else:
-                raise NotImplementedError(
-                    f"Seems like this kind of data is not handled: {b[v]}"
-                )
+                raise NotImplementedError(f"Seems like this kind of data is not handled: {b[v]}")
+
         if len(val) == 1:
             yield val.pop()
         else:
@@ -236,15 +215,10 @@ class TripleStoreOntology(OWLOntology):
             for dom in domains:
                 yield OWLDataPropertyDomainAxiom(pe, dom)
 
-    def data_property_range_axioms(
-        self, pe: OWLDataProperty
-    ):  # -> Iterable[OWLDataPropertyRangeAxiom]:
-        query = (
-            rdfs_prefix
-            + "SELECT DISTINCT ?x WHERE { "
-            + f"<{pe.str}>"
-            + " rdfs:range ?x. }"
-        )
+
+    def data_property_range_axioms(self, pe: OWLDataProperty):  # -> Iterable[OWLDataPropertyRangeAxiom]:
+        query = rdfs_prefix + "SELECT DISTINCT ?x WHERE { " + f"<{pe.str}>" + " rdfs:range ?x. }"
+
         ranges = set(get_results_from_ts(self.url, query, OWLDatatype))
         if len(ranges) == 0:
             pass
@@ -748,9 +722,9 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         self.url = triplestore_address
         self.ontology = TripleStoreOntology(triplestore_address)
         self.reasoner = TripleStoreReasoner(self.ontology)
-        super().__init__(
-            ontology=self.ontology, reasoner=self.reasoner, load_class_hierarchy=False
-        )
+
+        super().__init__(ontology=self.ontology, reasoner=self.reasoner, load_class_hierarchy=False)
+
 
     def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
         assert isinstance(concept, OWLClass)
@@ -760,15 +734,13 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         assert isinstance(concept, OWLClass)
         yield from self.reasoner.super_classes(concept, direct=True)
 
-    def get_all_direct_sub_concepts(
-        self, concept: OWLClassExpression
-    ) -> Iterable[OWLClassExpression]:
+
+    def get_all_direct_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
         assert isinstance(concept, OWLClass)
         yield from self.reasoner.sub_classes(concept, direct=True)
 
-    def get_all_sub_concepts(
-        self, concept: OWLClassExpression
-    ) -> Iterable[OWLClassExpression]:
+    def get_all_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
+
         assert isinstance(concept, OWLClass)
         yield from self.reasoner.sub_classes(concept, direct=False)
 
@@ -783,16 +755,13 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         assert isinstance(concept, OWLClass)
         return concept in self.ontology.classes_in_signature()
 
-    def most_general_object_properties(
-        self, *, domain: OWLClassExpression, inverse: bool = False
-    ) -> Iterable[OWLObjectProperty]:
+
+    def most_general_object_properties(self, *, domain: OWLClassExpression, inverse: bool = False) \
+            -> Iterable[OWLObjectProperty]:
         assert isinstance(domain, OWLClassExpression)
         func: Callable
-        func = (
-            self.get_object_property_ranges
-            if inverse
-            else self.get_object_property_domains
-        )
+        func = self.get_object_property_ranges if inverse else self.get_object_property_domains
+
 
         inds_domain = self.individuals_set(domain)
         for prop in self.ontology.object_properties_in_signature():
@@ -810,9 +779,9 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
     def data_properties(self) -> Iterable[OWLDataProperty]:
         yield from self.ontology.data_properties_in_signature()
 
-    def get_data_properties(
-        self, ranges: Set[OWLDatatype] = None
-    ) -> Iterable[OWLDataProperty]:
+
+    def get_data_properties(self, ranges: Set[OWLDatatype] = None) -> Iterable[OWLDataProperty]:
+
         if ranges is not None:
             for dp in self.ontology.data_properties_in_signature():
                 if self.get_data_property_ranges(dp) & ranges:
@@ -830,10 +799,13 @@ class TripleStoreReasonerOntology:
         assert url is not None, "URL cannot be None"
         self.url = url
 
+    def __str__(self):
+        return f"TripleStoreReasonerOntology:{self.url}"
+
     def query(self, sparql_query: str):
-        return requests.Session().post(
-            self.url, data={"query": sparql_query}
-        )  # .json()["results"]["bindings"]
+
+        return requests.Session().post(self.url, data={'query': sparql_query})
+
 
     def are_owl_concept_disjoint(self, c: OWLClass, cc: OWLClass) -> bool:
         query = f"""{owl_prefix}ASK WHERE {{<{c.str}> owl:disjointWith <{cc.str}> .}}"""
@@ -935,14 +907,13 @@ class TripleStoreReasonerOntology:
         for binding in self.query(query).json()["results"]["bindings"]:
             yield OWLClass(binding["x"]["value"])
 
-    def instances(
-        self, expression: OWLClassExpression, named_individuals: bool = False
-    ) -> Generator[OWLNamedIndividual, None, None]:
+
+    def instances(self, expression: OWLClassExpression, named_individuals: bool = False) -> Generator[
+        OWLNamedIndividual, None, None]:
         assert isinstance(expression, OWLClassExpression)
         try:
-            sparql_query = owl_expression_to_sparql(
-                expression=expression, named_individuals=named_individuals
-            )
+            sparql_query = owl_expression_to_sparql(expression=expression, named_individuals=named_individuals)
+
         except Exception as exc:
             print(f"Error at converting {expression} into sparql")
             traceback.print_exception(exc)
@@ -1014,6 +985,9 @@ class TripleStore:
         # CEL models will be refactored.
         self.ontology = self.g
         self.reasoner = self.g
+
+    def __str__(self):
+        return f"TripleStore:{self.g}"
 
     def __abox_expression(self, individual: OWLNamedIndividual) -> Generator[
         Union[
@@ -1171,11 +1145,10 @@ class TripleStore:
     def get_range_of_double_data_properties(self, prop: OWLDataProperty):
         yield from self.reasoner.range_of_double_data_properties(prop)
 
-    def individuals(
-        self,
-        concept: Optional[OWLClassExpression] = None,
-        named_individuals: bool = False,
-    ) -> Generator[OWLNamedIndividual, None, None]:
+
+    def individuals(self, concept: Optional[OWLClassExpression] = None, named_individuals: bool = False) -> Generator[
+        OWLNamedIndividual, None, None]:
+
         """Given an OWL class expression, retrieve all individuals belonging to it.
         Args:
             concept: Class expression of which to list individuals.
@@ -1187,9 +1160,9 @@ class TripleStore:
         if concept is None or concept.is_owl_thing():
             yield from self.reasoner.individuals_in_signature()
         else:
-            yield from self.reasoner.instances(
-                concept, named_individuals=named_individuals
-            )
+
+            yield from self.reasoner.instances(concept, named_individuals=named_individuals)
+
 
     def get_types(
         self, ind: OWLNamedIndividual, direct: True
@@ -1213,7 +1186,7 @@ class TripleStore:
     def least_general_named_concepts(self):
         yield from self.reasoner.least_general_named_concepts()
 
-    def query(self, sparql: str) -> rdflib.plugins.sparql.processor.SPARQLResult:
+    def query(self, sparql: str):
         yield from self.g.query(sparql_query=sparql)
 
 

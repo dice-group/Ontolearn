@@ -12,7 +12,7 @@ from abc import abstractmethod
 class BaseNCES:
 
     def __init__(self, knowledge_base_path, learner_name, path_of_embeddings, batch_size=256, learning_rate=1e-4,
-                 decay_rate=0.0, clip_value=5.0, num_workers=8):
+                 decay_rate=0.0, clip_value=5.0, num_workers=4):
         self.name = "NCES"
         kb = KnowledgeBase(path=knowledge_base_path)
         self.kb_namespace = list(kb.ontology.classes_in_signature())[0].iri.get_namespace()

@@ -32,7 +32,12 @@ class LengthBasedRefinement(BaseRefinement):
                  use_inverse: bool = True,
                  use_data_properties: bool = False,
                  use_card_restrictions: bool = True,
-                 use_nominals: bool = True):
+                 use_nominals: bool = True,
+                 min_cardinality_restriction: int = 2,
+                 max_cardinality_restriction: int = 5):
+        """
+
+        """
         super().__init__(knowledge_base)
 
         self.use_inverse = use_inverse
@@ -42,6 +47,11 @@ class LengthBasedRefinement(BaseRefinement):
         self.top_refinements: set = None
         self.pos = None
         self.neg = None
+        if self.use_card_restrictions:
+            assert max_cardinality_restriction > min_cardinality_restriction > 0, \
+                f"max_cardinality_restriction:{max_cardinality_restriction} must be greater than min_cardinality_restriction:{min_cardinality_restriction}"
+            self.min_cardinality_restriction = min_cardinality_restriction
+            self.max_cardinality_restriction = max_cardinality_restriction
 
     def set_input_examples(self, pos: frozenset, neg: frozenset):
         assert isinstance(pos, frozenset)
@@ -67,6 +77,8 @@ class LengthBasedRefinement(BaseRefinement):
         4.2. For each inverse of object property, return SomeValuesFrom AllValuesFrom with (1) / (2) as fillers
         4.3. For each object property, return OWLObjectMinCardinality
         4.4. For each inverse of object property, return OWLObjectMinCardinality
+
+
 
 
 
@@ -100,7 +112,7 @@ class LengthBasedRefinement(BaseRefinement):
 
                 # Move the card limit into existantial restrictions.
                 if self.use_card_restrictions:
-                    for card in range(1, 2):
+                    for card in range(self.min_cardinality_restriction, self.max_cardinality_restriction):
                         temp_res = [OWLObjectMinCardinality(cardinality=card,
                                                             property=owl_obj_property,
                                                             filler=c)]
@@ -159,7 +171,10 @@ class LengthBasedRefinement(BaseRefinement):
             for owl_named_individual in self.kb.individuals(class_expression, named_individuals=True):
                 assert isinstance(owl_named_individual, OWLIndividual)
                 yield OWLObjectUnionOf(
-                    (class_expression, OWLObjectSomeValuesFrom(property=owl_obj_property, filler=OWLObjectOneOf(owl_named_individual))))
+
+                    (class_expression,
+                     OWLObjectSomeValuesFrom(property=owl_obj_property, filler=OWLObjectOneOf(owl_named_individual))))
+
 
     def refine_object_all_values_from(self, class_expression: OWLObjectAllValuesFrom) -> Iterable[OWLClassExpression]:
         assert isinstance(class_expression, OWLObjectAllValuesFrom)
@@ -171,7 +186,10 @@ class LengthBasedRefinement(BaseRefinement):
             for owl_named_individual in self.kb.individuals(class_expression, named_individuals=True):
                 assert isinstance(owl_named_individual, OWLIndividual)
                 yield OWLObjectUnionOf(
-                    (class_expression, OWLObjectAllValuesFrom(property=owl_obj_property, filler=OWLObjectOneOf(owl_named_individual))))
+
+                    (class_expression,
+                     OWLObjectAllValuesFrom(property=owl_obj_property, filler=OWLObjectOneOf(owl_named_individual))))
+
 
     def refine_object_union_of(self, class_expression: OWLObjectUnionOf) -> Iterable[OWLClassExpression]:
         """ Refine OWLObjectUnionof by refining each operands:"""
