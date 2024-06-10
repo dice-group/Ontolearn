@@ -1187,14 +1187,52 @@ class TripleStoreNeuralReasoner:
     model: KGE
     default_confidence_threshold: float
 
-    def __init__(self, path: str, default_confidence_threshold: float = 0.1):
-        assert os.path.isdir(path), f"A path to Neural Model {path}"
+    def __init__(self, path_of_kb: str = None,
+                 path_neural_embedding: str = None, gamma: float = 0.1):
 
-        self.model = KGE(path=path)
-        self.default_confidence_threshold = default_confidence_threshold
+        if path_neural_embedding:
+            assert os.path.isdir(
+                path_neural_embedding), f"The given path ({path_neural_embedding}) does not lead to a directory"
+            self.model = KGE(path=path_neural_embedding)
+        elif path_of_kb:
+            assert os.path.isfile(path_of_kb), f"The given path ({path_of_kb}) does not lead to an RDF Knowledge Graph."
+            # Check we have already a trained model for a given path of a knowledge base
+            dir_of_potential_neural_embedding_model = path_of_kb.replace("/", "_").replace(".", "_")
+            if os.path.isdir(dir_of_potential_neural_embedding_model):
+                self.model = KGE(path=dir_of_potential_neural_embedding_model)
+            else:
+                # Train a KGE on the fly
+                from dicee.executer import Execute
+                from dicee.config import Namespace
 
-    def get_predictions(self,h: str = None, r: str = None, t: str = None, confidence_threshold: float = None,
-    ):
+                args = Namespace()
+                args.model = 'Keci'
+                args.scoring_technique = "AllvsAll"
+                args.path_single_kg = path_of_kb
+                path_of_kb = path_of_kb.replace("/", "_")
+                path_of_kb = path_of_kb.replace(".", "_")
+                args.path_to_store_single_run = path_of_kb
+                args.num_epochs = 500
+                args.embedding_dim = 256
+                args.batch_size = 1024
+                args.backend = "rdflib"
+                reports = Execute(args).start()
+                path_neural_embedding = reports["path_experiment_folder"]
+                self.model = KGE(path=path_neural_embedding)
+        else:
+            raise RuntimeError(
+                f"path_neural_embedding {path_neural_embedding} and path_of_kb {path_of_kb} cannot be both None")
+
+        self.gamma = gamma
+
+    def __str__(self):
+        return f"TripleStoreNeuralReasoner:{self.model} with likelihood threshold gamma : {self.gamma}"
+
+    def get_predictions(self, h: str = None, r: str = None, t: str = None, confidence_threshold: float = None,
+                        ):
+        """
+        TODO: Write docstring and define the type of returned object
+        """
 
         if h is not None:
             if (self.model.entity_to_idx.get(h, None)) is None:
@@ -1211,7 +1249,7 @@ class TripleStoreNeuralReasoner:
             t = [t]
 
         if confidence_threshold is None:
-            confidence_threshold = self.default_confidence_threshold
+            confidence_threshold = self.gamma
         # TODO: set topk by checking lenght of self.model.entity_to_idx and self.model.relation_to_idx depening on the input
         if r is None:
             topk = len(self.model.relation_to_idx)
@@ -1223,7 +1261,7 @@ class TripleStoreNeuralReasoner:
                 confidence = prediction[1]
                 predicted_iri_str = prediction[0]
                 if confidence >= confidence_threshold:
-                    yield (predicted_iri_str, confidence)
+                    yield predicted_iri_str, confidence
                 else:
                     return
         except Exception as e:
@@ -1355,7 +1393,8 @@ class TripleStoreNeuralReasoner:
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
-    def instances(self, expression: OWLClassExpression, named_individuals=False, confidence_threshold: float = None,) -> Generator[OWLNamedIndividual, None, None]:
+    def instances(self, expression: OWLClassExpression, named_individuals=False,
+                  confidence_threshold: float = None, ) -> Generator[OWLNamedIndividual, None, None]:
         if expression.is_owl_thing():
             yield from self.individuals_in_signature()
 

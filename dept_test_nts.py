@@ -1,3 +1,5 @@
+""" CD: I guess we can delete this script """
+
 ### test file for neural tripel store
 from ontolearn.learners import TDL
 from ontolearn.learning_problem import PosNegLPStandard

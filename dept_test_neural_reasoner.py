@@ -1,3 +1,4 @@
+""" CD: I guess we can delete this script """
 from ontolearn.triple_store import TripleStore, TripleStoreReasonerOntology
 from dicee import KGE
 from owlapy.class_expression import OWLClass, OWLClassExpression
