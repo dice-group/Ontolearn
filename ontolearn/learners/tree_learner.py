@@ -1,8 +1,14 @@
 from typing import Dict, Set, Tuple, List, Union, Callable, Iterable
 import numpy as np
 import pandas as pd
-from owlapy.class_expression import OWLObjectIntersectionOf, OWLClassExpression, OWLObjectUnionOf, OWLDataHasValue, \
-    OWLDataSomeValuesFrom, OWLClass
+from owlapy.class_expression import (
+    OWLObjectIntersectionOf,
+    OWLClassExpression,
+    OWLObjectUnionOf,
+    OWLDataHasValue,
+    OWLDataSomeValuesFrom,
+    OWLClass,
+)
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_property import OWLDataProperty
@@ -14,15 +20,30 @@ from tqdm import tqdm
 import sklearn
 from sklearn import tree
 from owlapy.render import DLSyntaxObjectRenderer, ManchesterOWLSyntaxOWLObjectRenderer
+
 from ..utils.static_funcs import plot_umap_reduced_embeddings, plot_decision_tree_of_expressions, \
     plot_topk_feature_importance
+
 import itertools
-from owlapy.class_expression import OWLDataMinCardinality, OWLDataMaxCardinality, \
-    OWLObjectOneOf
-from owlapy.class_expression import OWLDataMinCardinality, OWLDataOneOf, OWLDataSomeValuesFrom
-from owlapy.providers import owl_datatype_min_inclusive_restriction, owl_datatype_max_inclusive_restriction
-from owlapy.providers import owl_datatype_min_exclusive_restriction, \
-    owl_datatype_max_exclusive_restriction, owl_datatype_min_inclusive_restriction
+from owlapy.class_expression import (
+    OWLDataMinCardinality,
+    OWLDataMaxCardinality,
+    OWLObjectOneOf,
+)
+from owlapy.class_expression import (
+    OWLDataMinCardinality,
+    OWLDataOneOf,
+    OWLDataSomeValuesFrom,
+)
+from owlapy.providers import (
+    owl_datatype_min_inclusive_restriction,
+    owl_datatype_max_inclusive_restriction,
+)
+from owlapy.providers import (
+    owl_datatype_min_exclusive_restriction,
+    owl_datatype_max_exclusive_restriction,
+    owl_datatype_min_inclusive_restriction,
+)
 import scipy
 from owlapy import owl_expression_to_dl, owl_expression_to_sparql
 from owlapy.class_expression import OWLObjectSomeValuesFrom, OWLObjectMinCardinality
@@ -53,6 +74,7 @@ def explain_inference(clf, X: pd.DataFrame):
     #   (0, 8)	1
     #   (0, 9)	1
     #   (0, 10)	1
+
     # Explanation of selection over csr_matrix
     # The column indices for row i are stored in indices[indptr[i]:indptr[i+1]]
     # For more :https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html
@@ -65,11 +87,13 @@ def explain_inference(clf, X: pd.DataFrame):
                      ]
 
         # print("Rules used to predict sample {id}:\n".format(id=sample_id))
+
         decision_path = []
         for node_id in node_index:
             # continue to the next node if it is a leaf node
             if leaf_id[sample_id] == node_id:
                 continue
+
 
             # check if value of the split feature for sample 0 is below threshold
             if np_X[sample_id, feature[node_id]] <= threshold[node_id]:
@@ -96,13 +120,15 @@ def explain_inference(clf, X: pd.DataFrame):
                                   "inequality": threshold_sign,
                                   "threshold_value": threshold[node_id],
                                   "owl_expression": owl_class_expression_features[feature[node_id]]})
+
         reports.append(decision_path)
     return reports
 
 
-def concepts_reducer(concepts: List[OWLClassExpression], reduced_cls: Callable) -> Union[
-    OWLObjectUnionOf, OWLObjectIntersectionOf]:
-    """ Reduces a list of OWLClassExpression instances into a single instance of OWLObjectUnionOf or OWLObjectIntersectionOf """
+def concepts_reducer(
+    concepts: List[OWLClassExpression], reduced_cls: Callable
+) -> Union[OWLObjectUnionOf, OWLObjectIntersectionOf]:
+    """Reduces a list of OWLClassExpression instances into a single instance of OWLObjectUnionOf or OWLObjectIntersectionOf"""
     dl_concept_path = None
     for c in concepts:
         assert isinstance(c, OWLClassExpression), f"c is not OWL: {type(c)}"
@@ -115,6 +141,7 @@ def concepts_reducer(concepts: List[OWLClassExpression], reduced_cls: Callable) 
 
 class TDL:
     """Tree-based Description Logic Concept Learner"""
+
 
     def __init__(self, knowledge_base,
                  use_inverse: bool = False,
@@ -130,6 +157,7 @@ class TDL:
                  plot_embeddings: bool = False,
                  plot_feature_importance: bool = False,
                  verbose: int = 1):
+
         assert use_inverse is False, "use_inverse not implemented"
         assert use_data_properties is False, "use_data_properties not implemented"
         assert use_card_restrictions is False, "use_card_restrictions not implemented"
@@ -138,15 +166,20 @@ class TDL:
         self.use_card_restrictions = use_card_restrictions
 
         if grid_search_over is None and grid_search_apply:
-            grid_search_over = {'criterion': ["entropy", "gini", "log_loss"],
-                                "splitter": ["random", "best"],
-                                "max_features": [None, "sqrt", "log2"],
-                                "min_samples_leaf": [1, 2, 3, 4, 5, 10],
-                                "max_depth": [1, 2, 3, 4, 5, 10, None]}
+            grid_search_over = {
+                "criterion": ["entropy", "gini", "log_loss"],
+                "splitter": ["random", "best"],
+                "max_features": [None, "sqrt", "log2"],
+                "min_samples_leaf": [1, 2, 3, 4, 5, 10],
+                "max_depth": [1, 2, 3, 4, 5, 10, None],
+            }
         else:
             grid_search_over = dict()
-        assert isinstance(knowledge_base, KnowledgeBase) or isinstance(knowledge_base,
-                                                                       ontolearn.triple_store.TripleStore), "knowledge_base must be a KnowledgeBase instance"
+        assert (
+            isinstance(knowledge_base, KnowledgeBase)
+            or isinstance(knowledge_base, ontolearn.triple_store.TripleStore)
+            or isinstance(knowledge_base)
+        ), "knowledge_base must be a KnowledgeBase instance"
         print(f"Knowledge Base: {knowledge_base}")
         self.grid_search_over = grid_search_over
         self.knowledge_base = knowledge_base
@@ -168,6 +201,7 @@ class TDL:
         self.types_of_individuals = dict()
         self.verbose = verbose
         self.data_property_cast = dict()
+
 
     def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> List[
         OWLClassExpression]:
@@ -200,6 +234,7 @@ class TDL:
             for e in examples:
                 if e in feature_retrieval:
                     feature_value_per_example.append(1.0)
+
                 else:
                     feature_value_per_example.append(0.0)
             X.append(feature_value_per_example)
@@ -221,6 +256,7 @@ class TDL:
         # (4) Creating a tabular data for the binary classification problem.
         X = self.construct_sparse_binary_representations(features, examples)
 
+
         self.features = features
         X = pd.DataFrame(data=X, index=examples, columns=self.features)
         y = pd.DataFrame(data=y, index=examples, columns=["label"])
@@ -234,9 +270,15 @@ class TDL:
         for ith_row, i in enumerate(make_iterable_verbose(examples,
                                                           verbose=self.verbose,
                                                           desc="Creating supervised binary classification data")):
+
             # IMPORTANT: None existence is described as 0.0 features.
             X_i = [0.0 for _ in range(len(mapping_features))]
-            expression: [OWLClass, OWLObjectSomeValuesFrom, OWLObjectMinCardinality, OWLDataSomeValuesFrom]
+            expression: [
+                OWLClass,
+                OWLObjectSomeValuesFrom,
+                OWLObjectMinCardinality,
+                OWLDataSomeValuesFrom,
+            ]
             # Filling the features
             for expression in self.knowledge_base.abox(individual=i, mode="expression"):
                 if isinstance(expression, OWLDataSomeValuesFrom):
@@ -249,14 +291,19 @@ class TDL:
                         X_i[mapping_features[expression]] = 1.0
                     else:
                         raise RuntimeError(
-                            f"Type of literal in OWLDataSomeValuesFrom is not understood:{datavalues_in_fillers}")
-                elif isinstance(expression, OWLClass) or isinstance(expression, OWLObjectSomeValuesFrom):
+                            f"Type of literal in OWLDataSomeValuesFrom is not understood:{datavalues_in_fillers}"
+                        )
+                elif isinstance(expression, OWLClass) or isinstance(
+                    expression, OWLObjectSomeValuesFrom
+                ):
                     assert expression in mapping_features, expression
                     X_i[mapping_features[expression]] = 1.0
                 elif isinstance(expression, OWLObjectMinCardinality):
                     X_i[mapping_features[expression]] = expression.get_cardinality()
                 else:
-                    raise RuntimeError(f"Unrecognized type:{expression}-{type(expression)}")
+                    raise RuntimeError(
+                        f"Unrecognized type:{expression}-{type(expression)}"
+                    )
 
             X.append(X_i)
             # Filling the label
@@ -278,6 +325,7 @@ class TDL:
 
     def construct_owl_expression_from_tree(self, X: pd.DataFrame, y: pd.DataFrame) -> List[OWLObjectIntersectionOf]:
         """ Construct an OWL class expression from a decision tree"""
+
         positive_examples: List[OWLNamedIndividual]
         positive_examples = y[y.label == 1].index.tolist()
         vector_representation_of_positive_examples = X.loc[positive_examples]
@@ -285,6 +333,7 @@ class TDL:
         # () Iterate over reasoning steps of predicting a positive example
         pos: OWLNamedIndividual
         for sequence_of_reasoning_steps, pos in zip(
+
                 explain_inference(self.clf,
                                   X=vector_representation_of_positive_examples), positive_examples):
             concepts_per_reasoning_step = []
@@ -295,6 +344,7 @@ class TDL:
                 else:
                     owl_class_expression = i["owl_expression"].get_object_complement_of()
 
+
                 retrival_result = pos in {_ for _ in self.knowledge_base.individuals(owl_class_expression)}
 
                 if retrival_result:
@@ -302,15 +352,20 @@ class TDL:
                 else:
                     raise RuntimeError("Incorrect retrival")
 
-            pred = concepts_reducer(concepts=concepts_per_reasoning_step, reduced_cls=OWLObjectIntersectionOf)
+            pred = concepts_reducer(
+                concepts=concepts_per_reasoning_step,
+                reduced_cls=OWLObjectIntersectionOf,
+            )
             prediction_per_example.append((pred, pos))
 
         # From list to set to remove identical paths from the root to leafs.
-        prediction_per_example = {pred for pred, positive_example in prediction_per_example}
+        prediction_per_example = {
+            pred for pred, positive_example in prediction_per_example
+        }
         return list(prediction_per_example)
 
     def fit(self, learning_problem: PosNegLPStandard = None, max_runtime: int = None):
-        """ Fit the learner to the given learning problem
+        """Fit the learner to the given learning problem
 
         (1) Extract multi-hop information about E^+ and E^- denoted by \mathcal{F}.
         (1.1) E = list of (E^+ \sqcup E^-).
@@ -325,8 +380,9 @@ class TDL:
 
         """
         assert learning_problem is not None, "Learning problem cannot be None."
-        assert isinstance(learning_problem,
-                          PosNegLPStandard), f"Learning problem must be PosNegLPStandard. Currently:{learning_problem}."
+        assert isinstance(
+            learning_problem, PosNegLPStandard
+        ), f"Learning problem must be PosNegLPStandard. Currently:{learning_problem}."
 
         if max_runtime is not None:
             self.max_runtime = max_runtime
@@ -338,15 +394,20 @@ class TDL:
             plot_umap_reduced_embeddings(X, y.label.to_list(), "umap_visualization.pdf")
 
         if self.grid_search_over:
-            grid_search = sklearn.model_selection.GridSearchCV(tree.DecisionTreeClassifier(**self.kwargs_classifier),
-                                                               param_grid=self.grid_search_over, cv=10).fit(X.values,
-                                                                                                            y.values)
+            grid_search = sklearn.model_selection.GridSearchCV(
+                tree.DecisionTreeClassifier(**self.kwargs_classifier),
+                param_grid=self.grid_search_over,
+                cv=10,
+            ).fit(X.values, y.values)
             print(grid_search.best_params_)
             self.kwargs_classifier.update(grid_search.best_params_)
 
-        self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=X.values, y=y.values)
+        self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(
+            X=X.values, y=y.values
+        )
 
         if self.report_classification:
+
             if self.verbose > 0:
                 print("Classification Report: Negatives: -1 and Positives 1 ")
             print(sklearn.metrics.classification_report(y.values, self.clf.predict(X.values),
@@ -358,6 +419,7 @@ class TDL:
             plot_topk_feature_importance(feature_names=[owl_expression_to_dl(f) for f in self.features],
                                          cart_tree=self.clf)
 
+
         self.owl_class_expressions.clear()
         # Each item can be considered is a path of OWL Class Expressions
         # starting from the root node in the decision tree and
@@ -367,19 +429,25 @@ class TDL:
         for i in self.conjunctive_concepts:
             self.owl_class_expressions.add(i)
 
-        self.disjunction_of_conjunctive_concepts = concepts_reducer(concepts=self.conjunctive_concepts,
-                                                                    reduced_cls=OWLObjectUnionOf)
+        self.disjunction_of_conjunctive_concepts = concepts_reducer(
+            concepts=self.conjunctive_concepts, reduced_cls=OWLObjectUnionOf
+        )
 
         return self
 
-    def best_hypotheses(self, n=1) -> Tuple[OWLClassExpression, List[OWLClassExpression]]:
-        """ Return the prediction"""
+    def best_hypotheses(
+        self, n=1
+    ) -> Tuple[OWLClassExpression, List[OWLClassExpression]]:
+        """Return the prediction"""
         if n == 1:
             return self.disjunction_of_conjunctive_concepts
         else:
-            return [self.disjunction_of_conjunctive_concepts] + [i for i in
-                                                                 itertools.islice(self.owl_class_expressions, n)]
+            return [self.disjunction_of_conjunctive_concepts] + [
+                i for i in itertools.islice(self.owl_class_expressions, n)
+            ]
 
     def predict(self, X: List[OWLNamedIndividual], proba=True) -> np.ndarray:
+
         """ Predict the likelihoods of individuals belonging to the classes"""
         raise NotImplementedError("Unavailable. Predict the likelihoods of individuals belonging to the classes")
+

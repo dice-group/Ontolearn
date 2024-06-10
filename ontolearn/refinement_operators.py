@@ -80,6 +80,8 @@ class LengthBasedRefinement(BaseRefinement):
 
 
 
+
+
         """
         # (1) Most General OWL Named Concepts
         most_general_concepts = [i for i in self.kb.get_most_general_classes()]
@@ -169,8 +171,10 @@ class LengthBasedRefinement(BaseRefinement):
             for owl_named_individual in self.kb.individuals(class_expression, named_individuals=True):
                 assert isinstance(owl_named_individual, OWLIndividual)
                 yield OWLObjectUnionOf(
+
                     (class_expression,
                      OWLObjectSomeValuesFrom(property=owl_obj_property, filler=OWLObjectOneOf(owl_named_individual))))
+
 
     def refine_object_all_values_from(self, class_expression: OWLObjectAllValuesFrom) -> Iterable[OWLClassExpression]:
         assert isinstance(class_expression, OWLObjectAllValuesFrom)
@@ -182,8 +186,10 @@ class LengthBasedRefinement(BaseRefinement):
             for owl_named_individual in self.kb.individuals(class_expression, named_individuals=True):
                 assert isinstance(owl_named_individual, OWLIndividual)
                 yield OWLObjectUnionOf(
+
                     (class_expression,
                      OWLObjectAllValuesFrom(property=owl_obj_property, filler=OWLObjectOneOf(owl_named_individual))))
+
 
     def refine_object_union_of(self, class_expression: OWLObjectUnionOf) -> Iterable[OWLClassExpression]:
         """ Refine OWLObjectUnionof by refining each operands:"""
