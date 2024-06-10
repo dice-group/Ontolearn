@@ -126,20 +126,21 @@ class LengthBasedRefinement(BaseRefinement):
         # (2) OWLDataSomeValuesFrom over double values fillers
         # Two ce for each property returned. Mean value extracted-
         # TODO: Most general_double_data_pro
-        if not isinstance(self.kb, KnowledgeBase):
-            for i in self.kb.get_double_data_properties():
-                doubles = [i.parse_double() for i in self.kb.get_range_of_double_data_properties(i)]
-                mean_doubles = sum(doubles) / len(doubles)
-                yield OWLDataSomeValuesFrom(property=i,
-                                            filler=owl_datatype_min_inclusive_restriction(
-                                                min_=OWLLiteral(mean_doubles)))
-                yield OWLDataSomeValuesFrom(property=i,
-                                            filler=owl_datatype_max_inclusive_restriction(
-                                                max_=OWLLiteral(mean_doubles)))
-        # (3) Boolean Valued OWLDataHasValue: TODO: Most general_boolean_data_pro
-        for i in self.kb.get_boolean_data_properties():
-            yield OWLDataHasValue(property=i, value=OWLLiteral(True))
-            yield OWLDataHasValue(property=i, value=OWLLiteral(False))
+        if self.use_data_properties:
+            if not isinstance(self.kb, KnowledgeBase):
+                for i in self.kb.get_double_data_properties():
+                    doubles = [i.parse_double() for i in self.kb.get_range_of_double_data_properties(i)]
+                    mean_doubles = sum(doubles) / len(doubles)
+                    yield OWLDataSomeValuesFrom(property=i,
+                                                filler=owl_datatype_min_inclusive_restriction(
+                                                    min_=OWLLiteral(mean_doubles)))
+                    yield OWLDataSomeValuesFrom(property=i,
+                                                filler=owl_datatype_max_inclusive_restriction(
+                                                    max_=OWLLiteral(mean_doubles)))
+            # (3) Boolean Valued OWLDataHasValue: TODO: Most general_boolean_data_pro
+            for i in self.kb.get_boolean_data_properties():
+                yield OWLDataHasValue(property=i, value=OWLLiteral(True))
+                yield OWLDataHasValue(property=i, value=OWLLiteral(False))
 
     def refine_atomic_concept(self, class_expression: OWLClass) -> Generator[OWLObjectIntersectionOf, None, None]:
         assert isinstance(class_expression, OWLClass), class_expression

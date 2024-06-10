@@ -6,7 +6,7 @@ from typing import Iterable, Set, Optional, Generator, Union, FrozenSet, Tuple, 
 import requests
 from owlapy.class_expression import OWLClassExpression, OWLThing, OWLClass, OWLObjectSomeValuesFrom, OWLObjectOneOf, \
     OWLObjectMinCardinality, OWLDataSomeValuesFrom, OWLDataOneOf, OWLObjectComplementOf, OWLObjectUnionOf, \
-    OWLObjectIntersectionOf
+    OWLObjectIntersectionOf, OWLObjectAllValuesFrom, OWLObjectMaxCardinality
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLObjectPropertyRangeAxiom, OWLObjectPropertyDomainAxiom, OWLDataPropertyRangeAxiom, \
     OWLDataPropertyDomainAxiom, OWLClassAxiom, OWLEquivalentClassesAxiom
@@ -707,8 +707,9 @@ class NeuralReasoner:
         self.neural_link_predictor = neural_link_predictor
 
         self.owl_individuals = {i for i in self.individuals_in_signature()}
-        print(self.neural_link_predictor.entity_to_idx)
-        print(self.neural_link_predictor.relation_to_idx)
+        self.gamma_for_nc = 0.1
+        # print(self.neural_link_predictor.entity_to_idx)
+        # print(self.neural_link_predictor.relation_to_idx)
         self.object_properties = {OWLObjectProperty(k) for k, v in self.neural_link_predictor.relation_to_idx.items() if
                                   k not in ["http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
                                             "http://www.w3.org/2000/01/rdf-schema#subClassOf",
@@ -716,6 +717,7 @@ class NeuralReasoner:
                                             "http://www.w3.org/2002/07/owl#complementOf",
                                             "http://www.w3.org/2000/01/rdf-schema#domain",
                                             "http://www.w3.org/2000/01/rdf-schema#range"]}
+
 
     def abox(self, str_iri: str = None):
         assert str_iri, f"{str_iri} cannot be None"
@@ -725,10 +727,10 @@ class NeuralReasoner:
 
         for k, _ in self.neural_link_predictor.entity_to_idx.items():
             for kk, __ in self.neural_link_predictor.relation_to_idx.items():
-                print(str_iri, kk, k)
+                # print(str_iri, kk, k)
                 self.neural_link_predictor
 
-                exit(1)
+                # exit(1)
 
         subject_ = OWLNamedIndividual(str_iri)
         for binding in self.query(sparql_query).json()["results"]["bindings"]:
@@ -772,6 +774,16 @@ class NeuralReasoner:
         # Caution: http://www.w3.org/2002/07/owl#Thing or properties
         for str_iri, _ in top_candidate_iris:
             yield OWLClass(str_iri)
+
+
+    # def double_data_properties(self):
+    #     yield
+
+    # def range_of_double_data_properties(self, prop: OWLDataProperty):
+        
+    #     yield
+
+
 
     def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
         """ Neural Retrieval of NamedIndividuals """
@@ -819,12 +831,20 @@ class NeuralReasoner:
         """ At least it has single superclass and there is no subclass """
         yield from self.most_general_classes()
 
+    
+
     def instances(self, expression: OWLClassExpression, named_individuals: bool = False) -> Generator[
         OWLNamedIndividual, None, None]:
+
         assert isinstance(expression, OWLClassExpression)
 
         if isinstance(expression, OWLClass):
-            gamma_for_nc = 0.1
+
+            
+            # print("\n")
+            # print("#"*50)
+            # print(expression.str)
+           
             assert self.neural_link_predictor.entity_to_idx.get(expression.str, None) is not None
 
             scores = self.neural_link_predictor.predict(r=["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],
@@ -832,19 +852,21 @@ class NeuralReasoner:
                                                         within=None,
                                                         logits=False).tolist()
             top_candidate_iris = sorted(
-                [(ei, s) for ei, s in zip(self.neural_link_predictor.entity_to_idx.keys(), scores) if s > gamma_for_nc],
+                [(ei, s) for ei, s in zip(self.neural_link_predictor.entity_to_idx.keys(), scores) if s > self.gamma_for_nc],
                 reverse=True)
             for i, _ in top_candidate_iris:
                 try:
                     yield OWLNamedIndividual(i)
                 except:
                     print(f"Could not convert to OWLNamedIndividual {i}")
+
         elif isinstance(expression, OWLObjectComplementOf):
             # Given Concept C = ~neg A s.t. A \in AllnamedClasses
             # Return individuals/instance of A denoted by R(A)
             owl_individuals_of_a = {i for i in self.instances(expression.get_operand())}
             # All individuals - R(A)
             return self.owl_individuals - owl_individuals_of_a
+        
         elif isinstance(expression, OWLObjectUnionOf):
             # Given Concept C = A OR B
             # R(C) UNION R(B)
@@ -855,6 +877,7 @@ class NeuralReasoner:
                 retrieval_of_i = {_ for _ in self.instances(operand)}
                 results = results.union(retrieval_of_i)
             yield from results
+
         elif isinstance(expression, OWLObjectIntersectionOf):
             # Given Concept C = A AND B
             # R(C) AND R(B)
@@ -864,24 +887,156 @@ class NeuralReasoner:
             for operand in expression.operands():
                 retrieval_of_i = {_ for _ in self.instances(operand)}
                 results = results.intersection(retrieval_of_i)
+                # print(operand)
+                # exit(0)
             yield from results
+
         elif isinstance(expression, OWLObjectSomeValuesFrom):
-            """ \exists r.C  { x \mid \exists y. (x,y) \in r^I \land y \in C^I }
 
-            ∃ hasSibling.Female
-                    {?var r ?s.} ∪ {?s type C}
+            property_expression = expression.get_property() #relation
+            filler_expression = expression.get_filler()
 
-            SELECT DISTINCT ?var
-            WHERE {
-                        ?var <http://www.benchmark.org/family#hasSibling> ?s_1 .
-                        (1) ?s_1 a <http://www.benchmark.org/family#Female> .  }
+            results =  self.existential_restriction(filler_expression, property_expression)
+            # Convert the ids back to IRIs and yield  
+            for idx in results:
+                iri = self.neural_link_predictor.idx_to_entity[idx]
+                try:
+                    yield OWLNamedIndividual(iri)
+                except:
+                    print(f"Could not convert to OWLNamedIndividual {iri}")
+
+        elif isinstance(expression, OWLObjectAllValuesFrom):
+
+            # NB: ∀ r.C = ∃r.¬C = NI \ {x | ∃ y : φ(y, type, ¬C) ≥ γ ∧ φ(x, r, y) ≥ γ} hence, deduction from above.
+
+            property_expression = expression.get_property() #relation
+            filler_expression = expression.get_filler()
+
+            # 1) find y that are not from type C i.e.  φ(y, type, ¬C) ≥ γ 
+            neg_expression = OWLObjectComplementOf(filler_expression)
+
+            # 2) use existential
+            results =  self.owl_individuals - self.existential_restriction(neg_expression, property_expression)
+
+            # Convert the IRIs to OWLNamedIndividual and yield
+            for iri in results:
+                try:
+                    yield OWLNamedIndividual(iri)
+                except:
+                    print(f"Could not convert to OWLNamedIndividual {iri}")
 
 
-            """
-        elif isinstance(expression, OWLObjectSomeValuesFrom):
-            """Retrieval(\neg \exists r. \neg C)"""
-            raise NotImplementedError()
 
+        elif isinstance(expression, OWLObjectMinCardinality):
+
+            property_expression = expression.get_property()
+            filler_expression = expression.get_filler()
+
+            # 1) set min cardinality
+            min_cardinality = expression.get_cardinality()
+
+
+            # (2) Iterative (1) and return entities whose predicted score satisfies the condition.
+            results = set()
+            for individual in self.owl_individuals:
+                scores = self.neural_link_predictor.predict(r=[property_expression.str],
+                                                                         t=[individual.str],
+                                                                         within=None,
+                                                                         logits=False).tolist()
+                
+                count = sum(1 for idx, score in enumerate(scores) if score >= self.gamma_for_nc and
+                            self.is_instance(self.neural_link_predictor.idx_to_entity[idx], filler_expression))
+                
+                # print("\n")
+                # print("#"*50)
+                # print(count)
+                # exit(0)
+                if count >= min_cardinality:
+                    results.add(individual)
+
+            yield from results
+
+        elif isinstance(expression, OWLObjectMaxCardinality):
+
+            # ≤ n r.C, {x, \| {y, φ(x, r, y) ≥ γ ∧ φ(y, type, C) ≥ γ} }\| ≤ n}
+
+            property_expression = expression.get_property()
+            filler_expression = expression.get_filler()
+
+            # 1) define max cardinality
+            max_cardinality = expression.get_cardinality()
+
+            # (2) Iterative (1) and return entities whose predicted score satisfies the condition.
+            results = set()
+            for individual in self.owl_individuals:
+                scores = self.neural_link_predictor.predict(r=[property_expression.str],
+                                                                         t=[individual.str],
+                                                                         within=None,
+                                                                         logits=False).tolist()
+                count = sum(1 for idx, score in enumerate(scores) if score >= self.gamma_for_nc and
+                            self.is_instance(self.neural_link_predictor.idx_to_entity[idx], filler_expression))
+                if count <= max_cardinality:
+                    results.add(individual)
+
+            yield from results
+
+        elif isinstance(expression, OWLObjectOneOf):
+            # Logic for nominals
+            for individual in expression.get_individuals():
+                try:
+                    yield OWLNamedIndividual(individual.str)
+                except Exception as e:
+                    print(f"Could not convert to OWLNamedIndividual {individual}: {e}")
+
+
+    def is_instance(self, individual_iri: str, class_expression: OWLClassExpression) -> bool:
+
+        #check if a specific individual is an instance of the given class expression.
+        for instance in self.instances(class_expression):
+            if instance.str == individual_iri:
+                return True
+        return False
+
+
+    def existential_restriction(self, filler_expression, property_expression):
+
+        # print("\n")
+        # print("#"*50)
+        # print(property_expression.str)
+        # exit(0)
+
+        #  (1) Find individuals that are likeliy y \in C^I, i.e. φ(y, type, C) 
+
+        filler_individuals = {i for i in self.instances(filler_expression)}
+
+        # print("\n")
+        # print("###############"*50)
+        # print(filler_individuals)
+        # exit(0) 
+
+        # (2) For each filler individual, 
+        results = set()
+        for i in filler_individuals:
+            # (2.1) Assign scores for all subjects and check (x, r, y) ≥ γ
+            scores_for_all = self.neural_link_predictor.predict(r=[property_expression.str],
+                                                                t=[i.str],
+                                                                within=None,
+                                                                logits=False).tolist()
+            # print("\n")
+            # print("##################"*50)
+            # print(scores_for_all)
+            # exit(0)
+            ids = [idx for idx, score in enumerate(scores_for_all) if score >= self.gamma_for_nc]
+            if ids:
+                results.update(ids)
+
+        return results
+    
+
+
+
+
+        
 
 class TripleStore:
     """ Connecting a triple store"""
