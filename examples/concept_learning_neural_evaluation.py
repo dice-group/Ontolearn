@@ -1,6 +1,10 @@
 """ StratifiedKFold Cross Validating DL Concept Learning Algorithms
-python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family.owl --max_runtime 3 --report family.csv
-python examples/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 3 --report carcinogenesis.csv
+
+dicee --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --path_to_store_single_run KeciFamilyRun --backend rdflib
+
+
+python examples/concept_learning_neural_evaluation.py --lps LPs/Family/lps_difficult.json --kb KGs/Family/family-benchmark_rich_background.owl --kge KeciFamilyRun --max_runtime 3 --report family.csv
+
 
 """
 
@@ -29,7 +33,7 @@ pd.set_option("display.precision", 5)
 
 def get_embedding_path(ftp_link: str, embeddings_path_arg, kb_path_arg: str):
     if embeddings_path_arg is None or (
-        embeddings_path_arg is not None and not os.path.exists(embeddings_path_arg)
+            embeddings_path_arg is not None and not os.path.exists(embeddings_path_arg)
     ):
         file_name = ftp_link.split("/")[-1]
         if not os.path.exists(os.path.join(os.getcwd(), file_name)):
@@ -71,49 +75,25 @@ def dl_concept_learning(args):
     with open(args.lps) as json_file:
         settings = json.load(json_file)
 
-    kb = TripleStore(TripleStoreNeuralReasoner(KGE_path=args.kbe))
-    # ocel = OCEL(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
-    # celoe = CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
+    # To compute the "original quality". RDF KGs provied in ontolearn are complete and consistent.
+    # So we can use kb to compute the original quality
+    kb = KnowledgeBase(path=args.kb)
+
+    neural_kb = TripleStore(reasoner=TripleStoreNeuralReasoner(path=args.kge))
+
     drill = Drill(
-        knowledge_base=kb,
+        knowledge_base=neural_kb,
         path_embeddings=args.path_drill_embeddings,
         quality_func=F1(),
         max_runtime=args.max_runtime,
         verbose=0,
     )
     tdl = TDL(
-        knowledge_base=kb,
+        knowledge_base=neural_kb,
         kwargs_classifier={"random_state": 0},
         max_runtime=args.max_runtime,
     )
 
-    """
-    args.path_of_nces_embeddings = get_embedding_path(
-        "https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip",
-        args.path_of_nces_embeddings,
-        args.kb,
-    )
-
-    nces = NCES(
-        knowledge_base_path=args.kb,
-        quality_func=F1(),
-        path_of_embeddings=args.path_of_nces_embeddings,
-        pretrained_model_name=["LSTM", "GRU", "SetTransformer"],
-        num_predictions=5,
-    )
-
-    """
-    """
-    args.path_of_clip_embeddings = get_embedding_path(
-        "https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip",
-        args.path_of_clip_embeddings, args.kb)
-    
-    clip = CLIP(knowledge_base=kb,
-                refinement_operator=ExpressRefinement(kb, use_inverse=False, use_numeric_datatypes=False), quality_func=F1(),
-                max_num_of_concepts_tested=int(1e9), max_runtime=args.max_runtime,
-                path_of_embeddings=args.path_of_clip_embeddings,
-                pretrained_predictor_name=["LSTM", "GRU", "SetTransformer", "CNN"], load_pretrained=True)
-    """
     # dictionary to store the data
     data = dict()
     if "problems" in settings:
@@ -177,27 +157,49 @@ def dl_concept_learning(args):
             rt_drill = time.time() - start_time
             print("DRILL ends..", end="\t")
 
-            # () Quality on the training data
+            # () Quality of an OWL class expression on the training examples via neural retrieval
+            neural_train_f1_drill = compute_f1_score(
+                individuals=frozenset({i for i in neural_kb.individuals(pred_drill)}),
+                pos=train_lp.pos,
+                neg=train_lp.neg,
+            )
+            # () Quality of an OWL class expression on the test examples via neural retrieval
+            neural_test_f1_drill = compute_f1_score(
+                individuals=frozenset({i for i in neural_kb.individuals(pred_drill)}),
+                pos=test_lp.pos,
+                neg=test_lp.neg,
+            )
+
+            # () Quality of an OWL class expression on the training examples via symbolic retrieval
             train_f1_drill = compute_f1_score(
                 individuals=frozenset({i for i in kb.individuals(pred_drill)}),
                 pos=train_lp.pos,
                 neg=train_lp.neg,
             )
-            # () Quality on test data
+            # () Quality of an OWL class expression on the test examples via symbolic retrieval
             test_f1_drill = compute_f1_score(
                 individuals=frozenset({i for i in kb.individuals(pred_drill)}),
                 pos=test_lp.pos,
                 neg=test_lp.neg,
             )
+
             data.setdefault("Train-F1-DRILL", []).append(train_f1_drill)
             data.setdefault("Test-F1-DRILL", []).append(test_f1_drill)
+            data.setdefault("Neural-Train-F1-DRILL", []).append(neural_train_f1_drill)
+            data.setdefault("Neural-Test-F1-DRILL", []).append(neural_test_f1_drill)
+
+
             data.setdefault("RT-DRILL", []).append(rt_drill)
             print(f"DRILL Train Quality: {train_f1_drill:.3f}", end="\t")
             print(f"DRILL Test Quality: {test_f1_drill:.3f}", end="\t")
+            print(f"DRILL Neural Train Quality: {neural_train_f1_drill:.3f}", end="\t")
+            print(f"DRILL Neural Test Quality: {neural_test_f1_drill:.3f}", end="\t")
+
             print(f"DRILL Runtime: {rt_drill:.3f}")
-            # Reporting
 
             # Reporting
+
+            """
             # Reporting
             print("TDL starts..", end="\t")
             start_time = time.time()
@@ -225,32 +227,8 @@ def dl_concept_learning(args):
             print(f"TDL Train Quality: {train_f1_tdl:.3f}", end="\t")
             print(f"TDL Test Quality: {test_f1_tdl:.3f}", end="\t")
             print(f"TDL Runtime: {rt_tdl:.3f}")
-
-            start_time = time.time()
-
             """
-            
-            print("CLIP starts..", end="\t")
-            start_time = time.time()
-            pred_clip = clip.fit(train_lp).best_hypotheses()
-            rt_clip = time.time() - start_time
-            print("CLIP ends..", end="\t")
-            # () Quality on the training data
-            train_f1_clip = compute_f1_score(individuals={i for i in kb.individuals(pred_clip)},
-                                              pos=train_lp.pos,
-                                              neg=train_lp.neg)
-            # () Quality on test data
-            test_f1_clip = compute_f1_score(individuals={i for i in kb.individuals(pred_clip)},
-                                             pos=test_lp.pos,
-                                             neg=test_lp.neg)
-            
-            data.setdefault("Train-F1-CLIP", []).append(train_f1_clip)
-            data.setdefault("Test-F1-CLIP", []).append(test_f1_clip)
-            data.setdefault("RT-CLIP", []).append(rt_clip)
-            print(f"CLIP Train Quality: {train_f1_clip:.3f}", end="\t")
-            print(f"CLIP Test Quality: {test_f1_clip:.3f}", end="\t")
-            print(f"CLIP Runtime: {rt_clip:.3f}")
-            """
+
 
     df = pd.DataFrame.from_dict(data)
     df.to_csv(args.report, index=False)
@@ -259,20 +237,18 @@ def dl_concept_learning(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Description Logic Concept Learning")
-    parser.add_argument("--max_runtime", type=int, default=10, help="Max runtime")
-    parser.add_argument(
-        "--lps", type=str, required=True, help="Path to the learning problems"
-    )
-    parser.add_argument(
-        "--folds", type=int, default=10, help="Number of folds of cross validation."
-    )
-    parser.add_argument(
-        "--kbe", type=str, required=True, help="Knowledge base embedding path"
-    )
+
+    parser = argparse.ArgumentParser(description='OWL Class Expression Learning with Neural Reasoner')
+    parser.add_argument("--lps", type=str, required=True, help="Path to the learning problems")
+    parser.add_argument("--folds", type=int, default=10, help="Number of folds of cross validation.")
+    parser.add_argument("--kb", type=str, required=True,
+                        help="Knowledge base")
+    parser.add_argument("--kge", type=str, required=True, default=None, help="Knowledge Graph Embedding Path")
+
     parser.add_argument("--path_drill_embeddings", type=str, default=None)
     parser.add_argument("--path_of_nces_embeddings", type=str, default=None)
     parser.add_argument("--path_of_clip_embeddings", type=str, default=None)
     parser.add_argument("--report", type=str, default="report.csv")
+    parser.add_argument("--max_runtime", type=int, default=10, help="Max runtime")
     parser.add_argument("--random_seed", type=int, default=1)
     dl_concept_learning(parser.parse_args())

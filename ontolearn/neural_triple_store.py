@@ -2,14 +2,23 @@ from typing import Generator, Tuple, Union
 from dicee.executer import Execute
 from dicee.config import Namespace
 from dicee.knowledge_graph_embeddings import KGE
-from owlapy.model import IRI, OWLNamedIndividual, OWLObjectProperty, OWLClass
+from owlapy.iri import IRI
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.class_expression import OWLClass
+from owlapy.owl_property import OWLObjectProperty
 import rdflib
 from .triple_store import TripleStoreReasonerOntology, TripleStore
 
 
 class NeuralTripleStore(TripleStore):
+    """
+
+    """
 
     def __init__(self, path: str = None, model: str = "Keci"):
+        """
+
+        """
         super().__init__(path=path)
         self.path = path
         self.model = model

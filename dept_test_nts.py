@@ -1,7 +1,8 @@
 ### test file for neural tripel store
 from ontolearn.learners import TDL
 from ontolearn.learning_problem import PosNegLPStandard
-from owlapy.model import IRI, OWLNamedIndividual
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.iri import IRI
 from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.neural_triple_store import NeuralTripleStore
 from ontolearn.triple_store import TripleStore

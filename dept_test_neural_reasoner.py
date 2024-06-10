@@ -349,7 +349,7 @@ class DemoNeuralReasoner:
 
 
 # neural reasoner
-print("--- Neural Reasoner ---")
-kb_neural = TripleStore(DemoNeuralReasoner("embeddings/Pykeen_QuatENctrerRun/"))
-for tripel in kb_neural.g.abox("http://dl-learner.org/nctrer/bond887"):
-    print(tripel)
+# print("--- Neural Reasoner ---")
+# kb_neural = TripleStore(DemoNeuralReasoner("embeddings/Pykeen_QuatENctrerRun/"))
+# for tripel in kb_neural.g.abox("http://dl-learner.org/nctrer/bond887"):
+#     print(tripel)
