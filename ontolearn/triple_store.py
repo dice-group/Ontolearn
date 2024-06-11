@@ -1185,7 +1185,7 @@ class TripleStore:
 class TripleStoreNeuralReasoner:
     """ OWL Neural Reasoner uses a neural link predictor to retrieve instances of an OWL Class Expression"""
     model: KGE
-    default_confidence_threshold: float
+    gamma: float
 
     def __init__(self, path_of_kb: str = None,
                  path_neural_embedding: str = None, gamma: float = 0.1):
@@ -1623,7 +1623,7 @@ class TripleStoreNeuralReasoner:
                     h=None,
                     r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
                     t=cl.str,
-                    confidence_threshold=self.default_confidence_threshold,
+                    confidence_threshold=self.gamma,
             ):
                 try:
                     owl_named_individual = OWLNamedIndividual(prediction[0])

@@ -3,7 +3,7 @@
 dicee --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --path_to_store_single_run KeciFamilyRun --backend rdflib
 
 
-python examples/concept_learning_neural_evaluation.py --lps LPs/Family/lps_difficult.json --kb KGs/Family/family-benchmark_rich_background.owl --kge KeciFamilyRun --max_runtime 3 --report family.csv
+python examples/concept_learning_neural_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --kge KeciFamilyRun --max_runtime 3 --report family.csv
 
 
 """
@@ -27,6 +27,8 @@ import numpy as np
 
 from ontolearn.utils.static_funcs import compute_f1_score
 from ontolearn.triple_store import TripleStoreNeuralReasoner, TripleStore
+
+from owlapy import owl_expression_to_dl
 
 pd.set_option("display.precision", 5)
 
@@ -78,20 +80,22 @@ def dl_concept_learning(args):
     # To compute the "original quality". RDF KGs provied in ontolearn are complete and consistent.
     # So we can use kb to compute the original quality
     kb = KnowledgeBase(path=args.kb)
-
-    neural_kb = TripleStore(reasoner=TripleStoreNeuralReasoner(path=args.kge))
-
-    drill = Drill(
-        knowledge_base=neural_kb,
+    drill_with_symbolic_retriever = Drill(
+        knowledge_base=kb,
         path_embeddings=args.path_drill_embeddings,
         quality_func=F1(),
         max_runtime=args.max_runtime,
         verbose=0,
     )
-    tdl = TDL(
+
+    neural_kb = TripleStore(reasoner=TripleStoreNeuralReasoner(path_neural_embedding=args.kge))
+
+    drill_with_neural_retriever = Drill(
         knowledge_base=neural_kb,
-        kwargs_classifier={"random_state": 0},
+        path_embeddings=args.path_drill_embeddings,
+        quality_func=F1(),
         max_runtime=args.max_runtime,
+        verbose=0,
     )
 
     # dictionary to store the data
@@ -151,84 +155,76 @@ def dl_concept_learning(args):
                 pos={OWLNamedIndividual(i) for i in test_pos},
                 neg={OWLNamedIndividual(i) for i in test_neg},
             )
-            print("DRILL starts..", end="\t")
+            print("DRILL Symbolic starts..", end=" ")
             start_time = time.time()
-            pred_drill = drill.fit(train_lp).best_hypotheses()
-            rt_drill = time.time() - start_time
-            print("DRILL ends..", end="\t")
+            # Prediction of DRILL through symbolic retriever.
+            pred_symbolic_drill = drill_with_symbolic_retriever.fit(train_lp).best_hypotheses()
+            symbolic_rt_drill = time.time() - start_time
+            print("DRILL Symbolic ends..", end="\t")
+            # Quality of prediction through symbolic retriever on the train split.
+            symbolic_train_f1_drill = compute_f1_score(
+                individuals=frozenset({i for i in kb.individuals(pred_symbolic_drill)}), pos=train_lp.pos,
+                neg=train_lp.neg)
+            # Quality of prediction through symbolic retriever on the test split.
+            symbolic_test_f1_drill = compute_f1_score(
+                individuals=frozenset({i for i in kb.individuals(pred_symbolic_drill)}), pos=test_lp.pos,
+                neg=test_lp.neg)
+            print(f"DRILL Symbolic Train Quality: {symbolic_train_f1_drill:.3f}", end="\t")
+            print(f"DRILL Symbolic Test Quality: {symbolic_test_f1_drill:.3f}", end="\t")
+            print(f"DRILL Symbolic Runtime: {symbolic_rt_drill:.3f}", end="\t")
+            print(f"Prediction: {owl_expression_to_dl(pred_symbolic_drill)}")
 
-            # () Quality of an OWL class expression on the training examples via neural retrieval
+            data.setdefault("Train-F1-Symbolic-DRILL", []).append(symbolic_train_f1_drill)
+            data.setdefault("Test-F1-Symbolic-DRILL", []).append(symbolic_test_f1_drill)
+            data.setdefault("RT-Symbolic-DRILL", []).append(symbolic_rt_drill)
+            data.setdefault("Prediction-Symbolic-DRILL", []).append(owl_expression_to_dl(pred_symbolic_drill))
+
+            print("DRILL Neural starts..", end="\t")
+            start_time = time.time()
+            # Prediction of DRILL through neural retriever.
+            pred_neural_drill = drill_with_neural_retriever.fit(train_lp).best_hypotheses()
+            neural_rt_drill = time.time() - start_time
+            print("DRILL Neural ends..", end="\t")
+            # Quality of prediction through neural retriever on the train split.
             neural_train_f1_drill = compute_f1_score(
-                individuals=frozenset({i for i in neural_kb.individuals(pred_drill)}),
+                individuals=frozenset({i for i in neural_kb.individuals(pred_neural_drill)}),
                 pos=train_lp.pos,
-                neg=train_lp.neg,
-            )
-            # () Quality of an OWL class expression on the test examples via neural retrieval
+                neg=train_lp.neg)
+            # Quality of prediction through neural retriever on the test split.
             neural_test_f1_drill = compute_f1_score(
-                individuals=frozenset({i for i in neural_kb.individuals(pred_drill)}),
+                individuals=frozenset({i for i in neural_kb.individuals(pred_neural_drill)}),
                 pos=test_lp.pos,
-                neg=test_lp.neg,
-            )
+                neg=test_lp.neg)
+            # Quality of prediction through symbolic retriever on the train split.
+            neural_symbolic_train_f1_drill = compute_f1_score(
+                individuals=frozenset({i for i in kb.individuals(pred_neural_drill)}), pos=train_lp.pos,
+                neg=train_lp.neg)
+            # Quality of prediction through symbolic retriever on the test split.
+            neural_symbolic_test_f1_drill = compute_f1_score(
+                individuals=frozenset({i for i in kb.individuals(pred_neural_drill)}), pos=test_lp.pos,
+                neg=test_lp.neg)
 
-            # () Quality of an OWL class expression on the training examples via symbolic retrieval
-            train_f1_drill = compute_f1_score(
-                individuals=frozenset({i for i in kb.individuals(pred_drill)}),
-                pos=train_lp.pos,
-                neg=train_lp.neg,
-            )
-            # () Quality of an OWL class expression on the test examples via symbolic retrieval
-            test_f1_drill = compute_f1_score(
-                individuals=frozenset({i for i in kb.individuals(pred_drill)}),
-                pos=test_lp.pos,
-                neg=test_lp.neg,
-            )
-
-            data.setdefault("Train-F1-DRILL", []).append(train_f1_drill)
-            data.setdefault("Test-F1-DRILL", []).append(test_f1_drill)
-            data.setdefault("Neural-Train-F1-DRILL", []).append(neural_train_f1_drill)
-            data.setdefault("Neural-Test-F1-DRILL", []).append(neural_test_f1_drill)
-
-
-            data.setdefault("RT-DRILL", []).append(rt_drill)
-            print(f"DRILL Train Quality: {train_f1_drill:.3f}", end="\t")
-            print(f"DRILL Test Quality: {test_f1_drill:.3f}", end="\t")
+            # Quality of prediction w.r.t. neural retriever on the train split.
             print(f"DRILL Neural Train Quality: {neural_train_f1_drill:.3f}", end="\t")
+            # Quality of prediction w.r.t. neural retriever on the test split.
             print(f"DRILL Neural Test Quality: {neural_test_f1_drill:.3f}", end="\t")
 
-            print(f"DRILL Runtime: {rt_drill:.3f}")
+            # Quality of prediction w.r.t. symbolic retriever on the train split.
+            print(f"DRILL Neural-Symbolic-Train Quality: {neural_symbolic_train_f1_drill:.3f}", end="\t")
+            # Quality of prediction w.r.t. symbolic retriever on the test split.
+            print(f"DRILL Neural-Symbolic-Test Quality: {neural_symbolic_test_f1_drill:.3f}", end="\t")
 
-            # Reporting
+            print(f"DRILL Neural Runtime: {neural_rt_drill:.3f}", end="\t")
+            print(f"Prediction: {owl_expression_to_dl(pred_neural_drill)}")
 
-            """
-            # Reporting
-            print("TDL starts..", end="\t")
-            start_time = time.time()
-            # () Fit model training dataset
-            pred_tdl = tdl.fit(train_lp).best_hypotheses(n=1)
-            print(pred_tdl)
-            print("TDL ends..", end="\t")
-            rt_tdl = time.time() - start_time
-            # () Quality on the training data
-            train_f1_tdl = compute_f1_score(
-                individuals=frozenset({i for i in kb.individuals(pred_tdl)}),
-                pos=train_lp.pos,
-                neg=train_lp.neg,
-            )
-            # () Quality on test data
-            test_f1_tdl = compute_f1_score(
-                individuals=frozenset({i for i in kb.individuals(pred_tdl)}),
-                pos=test_lp.pos,
-                neg=test_lp.neg,
-            )
+            data.setdefault("Train-F1-Neural-Symbolic-DRILL", []).append(neural_symbolic_train_f1_drill)
+            data.setdefault("Test-F1-Neural-Symbolic-DRILL", []).append(neural_symbolic_test_f1_drill)
 
-            data.setdefault("Train-F1-TDL", []).append(train_f1_tdl)
-            data.setdefault("Test-F1-TDL", []).append(test_f1_tdl)
-            data.setdefault("RT-TDL", []).append(rt_tdl)
-            print(f"TDL Train Quality: {train_f1_tdl:.3f}", end="\t")
-            print(f"TDL Test Quality: {test_f1_tdl:.3f}", end="\t")
-            print(f"TDL Runtime: {rt_tdl:.3f}")
-            """
+            data.setdefault("Train-F1-Neural-DRILL", []).append(neural_train_f1_drill)
+            data.setdefault("Test-F1-Neural-DRILL", []).append(neural_test_f1_drill)
 
+            data.setdefault("RT-Neural-DRILL", []).append(neural_rt_drill)
+            data.setdefault("Prediction-Symbolic-DRILL", []).append(owl_expression_to_dl(pred_neural_drill))
 
     df = pd.DataFrame.from_dict(data)
     df.to_csv(args.report, index=False)
@@ -237,7 +233,6 @@ def dl_concept_learning(args):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description='OWL Class Expression Learning with Neural Reasoner')
     parser.add_argument("--lps", type=str, required=True, help="Path to the learning problems")
     parser.add_argument("--folds", type=int, default=10, help="Number of folds of cross validation.")
