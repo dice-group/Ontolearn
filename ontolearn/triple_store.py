@@ -1404,13 +1404,46 @@ class TripleStoreNeuralReasoner:
             yield expression
 
         if isinstance(expression, OWLClass):
+            """ Given an OWLClass A, retrieve its instances Retrieval(A)={ x | phi(x, type, A) ≥ γ } """
             yield from self.get_individuals_of_class(
                 owl_class=expression, confidence_threshold=confidence_threshold
             )
+        # Handling complement of class expressions
+        elif isinstance(expression, OWLObjectComplementOf):
+            """ Given an OWLObjectComplementOf ¬A, hence (A is an OWLClass),
+            retrieve its instances => Retrieval(¬A)= All Instance \ { x | phi(x, type, A) ≥ γ } """
+
+            # This case is tricky because it needs the complement within a specific domain
+            # It's generally non-trivial to implement without knowing the domain of discourse
+            all_individuals = list(
+                self.individuals_in_signature()
+            )  # Assume this retrieves all individuals
+            excluded_individuals = set(
+                self.instances(expression.get_operand(), confidence_threshold)
+            )
+            for individual in all_individuals:
+                if individual not in excluded_individuals:
+                    yield individual
 
         # Handling intersection of class expressions
         elif isinstance(expression, OWLObjectIntersectionOf):
+            """ Given an OWLObjectIntersectionOf (C ⊓ D),  
+            retrieve its instances by intersecting the instance of each operands.
+            {x | phi(x, type, C) ≥ γ} ∩ {x | phi(x, type, D) ≥ γ}
+            """
             # Get the class expressions
+            #
+            """
+            result=None 
+            for op in expression.operands():
+                retrieval_of_op={_ for _ in self.instances(expression=op,  confidence_threshold=confidence_threshold)}
+                if result is None:
+                    result=retrieval_of_op
+                else:
+                    result=result.intersection(retrieval_of_op)
+            yield from result
+            """
+
             operands = list(expression.operands())
             sets_of_individuals = [
                 set(
@@ -1433,25 +1466,49 @@ class TripleStoreNeuralReasoner:
                 for individual in common_individuals:
                     yield individual
 
-        # Handling complement of class expressions
-        elif isinstance(expression, OWLObjectComplementOf):
-            # This case is tricky because it needs the complement within a specific domain
-            # It's generally non-trivial to implement without knowing the domain of discourse
-            all_individuals = list(
-                self.individuals_in_signature()
-            )  # Assume this retrieves all individuals
-            excluded_individuals = set(
-                self.instances(expression.get_operand(), confidence_threshold)
-            )
-            for individual in all_individuals:
-                if individual not in excluded_individuals:
+        # NOTE: Might want to replace this with OWLMinCardinality(1, object_property, filler_expression)? - as it is equivalent
+        # NOTE: Also want to move some logic into a seperate method for reusability between OWLObjectAllValuesFrom and OWLObjectSomeValuesFrom!
+        elif isinstance(expression, OWLObjectSomeValuesFrom):
+            """
+            Given an OWLObjectSomeValuesFrom ∃ r.C, retrieve its instances => 
+            Retrieval(∃ r.C) = 
+            {x | ∃ y : phi(y, type, C) ≥ \gamma AND phi(x, r, y) ≥ \gamma }  
+            """
+
+            # Get the object property
+            object_property = expression.get_property()
+            # Get the filler class -> the individual/ or expression that the object property should point to
+            filler_expression = expression.get_filler()
+
+            # NOTE: These individuals are instances of the filler expression! -> so it is suffiecient for the object property to point to any of these individuals
+            object_individuals = self.instances(filler_expression, confidence_threshold)
+            # (x, object_property, y)
+            subject_generators = [
+                self.get_individuals_with_object_property(
+                    obj=object_individual,
+                    object_property=object_property,
+                    confidence_threshold=confidence_threshold,
+                )
+                for object_individual in object_individuals
+            ]
+            # find all individuals that are connected to all the required individuals with the object property
+            if subject_generators:
+                # eleminate duplicates
+                result = set.union(*[set(g) for g in subject_generators])
+                for individual in result:
                     yield individual
 
         elif isinstance(expression, OWLObjectAllValuesFrom):
+            """
+            Given an OWLObjectAllValuesFrom ∀ r.C, retrieve its instances => 
+            Retrieval(¬∃ r.¬C) =             
+            Entities \setminus {x | ∃ y: \phi(y, type, C) < \gamma AND \phi(x,r,y)  ≥ \gamma } 
+            """
+
+            # ∀ r.C == \neg (∃ r. \neg C)
             # Get the object property
             object_property = expression.get_property()
             # Get the filler expression -> the individuals that the object property should point to (for at least one instance)
-
             filler_expression = expression.get_filler()
 
             object_individuals = self.instances(filler_expression, confidence_threshold)
@@ -1474,31 +1531,6 @@ class TripleStoreNeuralReasoner:
                     ) <= set(object_individuals):
                         yield individual
 
-        # NOTE: Might want to replace this with OWLMinCardinality(1, object_property, filler_expression)? - as it is equivalent
-        # NOTE: Also want to move some logic into a seperate method for reusability between OWLObjectAllValuesFrom and OWLObjectSomeValuesFrom!
-        elif isinstance(expression, OWLObjectSomeValuesFrom):
-            # Get the object property
-            object_property = expression.get_property()
-            # Get the filler class -> the individual/ or expression that the object property should point to
-            filler_expression = expression.get_filler()
-
-            # NOTE: These individuals are instances of the filler expression! -> so it is suffiecient for the object property to point to any of these individuals
-            object_individuals = self.instances(filler_expression, confidence_threshold)
-
-            subject_generators = [
-                self.get_individuals_with_object_property(
-                    obj=object_individual,
-                    object_property=object_property,
-                    confidence_threshold=confidence_threshold,
-                )
-                for object_individual in object_individuals
-            ]
-            # find all individuals that are connected to all the required individuals with the object property
-            if subject_generators:
-                # eleminate duplicates
-                result = set.union(*[set(g) for g in subject_generators])
-                for individual in result:
-                    yield individual
 
         elif isinstance(expression, OWLObjectMinCardinality):
             # Get the object property
