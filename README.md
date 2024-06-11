@@ -191,10 +191,14 @@ Below, we report the average test F1 score and the average runtimes of learners.
 
 
 ### 10-Fold Cross Validation Mutagenesis Benchmark Results
+```shell
+python examples/concept_learning_cv_evaluation.py --lps LPs/Mutagenesis/lps.json --kb KGs/Mutagenesis/mutagenesis.owl --max_runtime 60 --report mutagenesis_results.csv 
+```
 
-| LP       |   Train-F1-TDL |   Test-F1-TDL |   RT-TDL |
-|:---------|---------------:|--------------:|---------:|
-| NotKnown |          1.000 |         0.855 |   12.327 |
+| LP       |   Fold |   Train-F1-OCEL |   Test-F1-OCEL |   RT-OCEL |   Train-F1-CELOE |   Test-F1-CELOE |   RT-CELOE |   Train-F1-Evo |   Test-F1-Evo |   RT-Evo |   Train-F1-DRILL |   Test-F1-DRILL |   RT-DRILL |   Train-F1-TDL |   Test-F1-TDL |   RT-TDL |   Train-F1-NCES |   Test-F1-NCES |   RT-NCES |
+|:---------|-------:|----------------:|---------------:|----------:|-----------------:|----------------:|-----------:|---------------:|--------------:|---------:|-----------------:|----------------:|-----------:|---------------:|--------------:|---------:|----------------:|---------------:|----------:|
+| NotKnown |  4.500 |           0.916 |          0.918 |    60.705 |            0.916 |           0.918 |     60.705 |          0.975 |         0.970 |   51.870 |            0.809 |           0.804 |     60.140 |          1.000 |         0.852 |   13.569 |           0.634 |          0.632 |     1.223 |
+
 
 
 ### 10-Fold Cross Validation Carcinogenesis Benchmark Results
