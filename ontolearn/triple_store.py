@@ -708,8 +708,6 @@ class NeuralReasoner:
 
         self.owl_individuals = {i for i in self.individuals_in_signature()}
         self.gamma_for_nc = 0.1
-        # print(self.neural_link_predictor.entity_to_idx)
-        # print(self.neural_link_predictor.relation_to_idx)
         self.object_properties = {OWLObjectProperty(k) for k, v in self.neural_link_predictor.relation_to_idx.items() if
                                   k not in ["http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
                                             "http://www.w3.org/2000/01/rdf-schema#subClassOf",
@@ -775,16 +773,6 @@ class NeuralReasoner:
         for str_iri, _ in top_candidate_iris:
             yield OWLClass(str_iri)
 
-
-    # def double_data_properties(self):
-    #     yield
-
-    # def range_of_double_data_properties(self, prop: OWLDataProperty):
-        
-    #     yield
-
-
-
     def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
         """ Neural Retrieval of NamedIndividuals """
         gamma_for_owl_individuals = 0.1
@@ -830,8 +818,6 @@ class NeuralReasoner:
     def least_general_named_concepts(self) -> Generator[OWLClass, None, None]:
         """ At least it has single superclass and there is no subclass """
         yield from self.most_general_classes()
-
-    
 
     def instances(self, expression: OWLClassExpression, named_individuals: bool = False) -> Generator[
         OWLNamedIndividual, None, None]:
@@ -924,8 +910,6 @@ class NeuralReasoner:
                     yield OWLNamedIndividual(iri)
                 except:
                     print(f"Could not convert to OWLNamedIndividual {iri}")
-
-
 
         elif isinstance(expression, OWLObjectMinCardinality):
 
@@ -1031,12 +1015,7 @@ class NeuralReasoner:
                 results.update(ids)
 
         return results
-    
-
-
-
-
-        
+            
 
 class TripleStore:
     """ Connecting a triple store"""
