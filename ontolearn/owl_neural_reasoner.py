@@ -52,7 +52,7 @@ class TripleStoreNeuralReasoner:
                 path_of_kb = path_of_kb.replace(".", "_")
                 args.path_to_store_single_run = path_of_kb
                 args.num_epochs = 500
-                args.embedding_dim = 256
+                args.embedding_dim = 512
                 args.batch_size = 1024
                 args.backend = "rdflib"
                 reports = Execute(args).start()
