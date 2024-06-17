@@ -851,7 +851,9 @@ class NeuralReasoner:
             # Return individuals/instance of A denoted by R(A)
             owl_individuals_of_a = {i for i in self.instances(expression.get_operand())}
             # All individuals - R(A)
-            return self.owl_individuals - owl_individuals_of_a
+            results = self.owl_individuals - owl_individuals_of_a
+            yield from results 
+
         
         elif isinstance(expression, OWLObjectUnionOf):
             # Given Concept C = A OR B
@@ -867,14 +869,12 @@ class NeuralReasoner:
         elif isinstance(expression, OWLObjectIntersectionOf):
             # Given Concept C = A AND B
             # R(C) AND R(B)
-            results = set()
+            results = self.owl_individuals.copy() #set()
             retrieval_of_i: Set[OWLNamedIndividual]
             operand: OWLClassExpression
             for operand in expression.operands():
                 retrieval_of_i = {_ for _ in self.instances(operand)}
                 results = results.intersection(retrieval_of_i)
-                # print(operand)
-                # exit(0)
             yield from results
 
         elif isinstance(expression, OWLObjectSomeValuesFrom):
@@ -884,32 +884,34 @@ class NeuralReasoner:
 
             results =  self.existential_restriction(filler_expression, property_expression)
             # Convert the ids back to IRIs and yield  
-            for idx in results:
-                iri = self.neural_link_predictor.idx_to_entity[idx]
+            for individual in results:
                 try:
-                    yield OWLNamedIndividual(iri)
+                    yield individual
                 except:
-                    print(f"Could not convert to OWLNamedIndividual {iri}")
+                    print(f"Could not convert to OWLNamedIndividual {individual}")
 
         elif isinstance(expression, OWLObjectAllValuesFrom):
 
             # NB: ∀ r.C = ∃r.¬C = NI \ {x | ∃ y : φ(y, type, ¬C) ≥ γ ∧ φ(x, r, y) ≥ γ} hence, deduction from above.
 
-            property_expression = expression.get_property() #relation
+            property_expression = expression.get_property()  # relation
             filler_expression = expression.get_filler()
 
             # 1) find y that are not from type C i.e.  φ(y, type, ¬C) ≥ γ 
             neg_expression = OWLObjectComplementOf(filler_expression)
 
             # 2) use existential
-            results =  self.owl_individuals - self.existential_restriction(neg_expression, property_expression)
+            neg_individuals = self.existential_restriction(neg_expression, property_expression)
+
+            # All individuals - neg_individuals
+            results = self.owl_individuals - neg_individuals
 
             # Convert the IRIs to OWLNamedIndividual and yield
-            for iri in results:
+            for individual in results:
                 try:
-                    yield OWLNamedIndividual(iri)
+                    yield individual
                 except:
-                    print(f"Could not convert to OWLNamedIndividual {iri}")
+                    print(f"Could not convert to OWLNamedIndividual {individual}")
 
         elif isinstance(expression, OWLObjectMinCardinality):
 
@@ -980,23 +982,13 @@ class NeuralReasoner:
             if instance.str == individual_iri:
                 return True
         return False
+    
 
+    def existential_restriction(self, filler_expression, property_expression) -> Set[OWLNamedIndividual]:
 
-    def existential_restriction(self, filler_expression, property_expression):
-
-        # print("\n")
-        # print("#"*50)
-        # print(property_expression.str)
-        # exit(0)
-
-        #  (1) Find individuals that are likeliy y \in C^I, i.e. φ(y, type, C) 
+        #  (1) Find individuals that are likely y \in C^I, i.e. φ(y, type, C) 
 
         filler_individuals = {i for i in self.instances(filler_expression)}
-
-        # print("\n")
-        # print("###############"*50)
-        # print(filler_individuals)
-        # exit(0) 
 
         # (2) For each filler individual, 
         results = set()
@@ -1006,15 +998,41 @@ class NeuralReasoner:
                                                                 t=[i.str],
                                                                 within=None,
                                                                 logits=False).tolist()
-            # print("\n")
-            # print("##################"*50)
-            # print(scores_for_all)
-            # exit(0)
-            ids = [idx for idx, score in enumerate(scores_for_all) if score >= self.gamma_for_nc]
-            if ids:
-                results.update(ids)
+            
+            # Convert scores to corresponding IRIs
+            candidate_iris = [iri for iri, score in zip(self.neural_link_predictor.entity_to_idx.keys(), scores_for_all) if score >= self.gamma_for_nc]
+            
+            # Add the individuals to results
+            for iri in candidate_iris:
+                try:
+                    results.add(OWLNamedIndividual(iri))
+                except:
+                    print(f"Could not convert to OWLNamedIndividual {iri}")
 
         return results
+
+
+
+    # def existential_restriction(self, filler_expression, property_expression):
+
+    #     #  (1) Find individuals that are likeliy y \in C^I, i.e. φ(y, type, C) 
+
+    #     filler_individuals = {i for i in self.instances(filler_expression)}
+
+    #     # (2) For each filler individual, 
+    #     results = set()
+    #     for i in filler_individuals:
+    #         # (2.1) Assign scores for all subjects and check (x, r, y) ≥ γ
+    #         scores_for_all = self.neural_link_predictor.predict(r=[property_expression.str],
+    #                                                             t=[i.str],
+    #                                                             within=None,
+    #                                                             logits=False).tolist()
+        
+    #         ids = [idx for idx, score in enumerate(scores_for_all) if score >= self.gamma_for_nc]
+    #         if ids:
+    #             results.update(ids)
+
+    #     return results
             
 
 class TripleStore:

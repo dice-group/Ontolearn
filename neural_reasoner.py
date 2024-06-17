@@ -13,11 +13,15 @@ from generate_valid_class_expression import *
 from ontolearn.utils import jaccard_similarity
 from owlapy.parser import DLSyntaxParser
 from ontolearn.knowledge_base import KnowledgeBase
+from owlapy.class_expression import OWLClassExpression, OWLThing, OWLClass, OWLObjectSomeValuesFrom, OWLObjectOneOf, \
+    OWLObjectMinCardinality, OWLDataSomeValuesFrom, OWLDataOneOf, OWLObjectComplementOf, OWLObjectUnionOf, \
+    OWLObjectIntersectionOf, OWLObjectAllValuesFrom, OWLObjectMaxCardinality
+from owlapy.iri import IRI
 
 
 
-# kb = KnowledgeBase(path="/home/dice/Desktop/Ontolearn/KGs/Family/family-benchmark_rich_background.owl")
-kb = KnowledgeBase(path="/home/dice/Desktop/Ontolearn/KGs/Family/father.owl")
+kb = KnowledgeBase(path="/home/dice/Desktop/Ontolearn/KGs/Family/family-benchmark_rich_background.owl")
+# kb = KnowledgeBase(path="/home/dice/Desktop/Ontolearn/KGs/Family/father.owl")
 
 namespace = list(kb.ontology.classes_in_signature())[0].iri.get_namespace()
 
@@ -32,7 +36,7 @@ def get_reasoner_instances(reasoner: NeuralReasoner, class_expression: OWLClassE
     """
     instances = set()
     for instance in reasoner.instances(class_expression):
-        instances.add(instance.str)
+        instances.add(instance.str)#instances.add(instance)
     return instances
 
 
@@ -45,27 +49,26 @@ def evaluate_reasoner(kb, reasoner):
 
      for class_expr in class_expressions:
 
-          ground_truth = set(kb.individuals(parser.parse_expression(class_expr)))
+          ground_truth = {i.str for i in kb.individuals(parser.parse_expression(class_expr))}
           reasoner_instances = get_reasoner_instances(reasoner, parser.parse_expression(class_expr))
 
           jaccard_score = jaccard_similarity(ground_truth, reasoner_instances)
           jaccard_scores.append(jaccard_score)
 
-          # print(f"Class Expression: {class_expr}")
-          # print("\n here: ")
-          # print(f"Ground Truth: {ground_truth}")
+          print(f"Class Expression: {parser.parse_expression(class_expr)}")
+          print(f"Ground Truth: {ground_truth}")
           print(f"Reasoner Instances: {reasoner_instances}")
-          # print(f"Jaccard Similarity: {jaccard_score}")
+          print(f"Jaccard Similarity: {jaccard_score}")
           print("---------------------------------------------------")
 
      avg_jaccard_similarity = sum(jaccard_scores) / len(jaccard_scores)
      print(f"Average Jaccard Similarity: {avg_jaccard_similarity}")
+     # print(jaccard_scores)
 
 
+reasoner = NeuralReasoner(KGE("KeciFamilyRun"))
 
-reasoner = NeuralReasoner(KGE("KeciFatherRun"))
-
-# evaluate_reasoner(kb, reasoner)
+evaluate_reasoner(kb, reasoner)
 
 # class_expressions = generate_class_expressions(kb)
 # for class_exp in class_expressions:
