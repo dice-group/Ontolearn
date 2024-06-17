@@ -1,7 +1,8 @@
 # To train a neural link predictor
 # dicee --path_single_kg "KGs/Family/father.owl" --model Keci --p 0 --q 1 --path_to_store_single_run "KeciFatherRun" --backend rdflib --eval_model None --embedding_dim 128
+# dicee --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --p 0 --q 1 --path_to_store_single_run "KeciFamilyRun" --backend rdflib --eval_model None --embedding_dim 256 --scoring_technique AllvsAll
 from dicee import KGE
-from ontolearn.triple_store import TripleStore, NeuralReasoner
+from ontolearn.triple_store import TripleStore, NeuralReasoner, TripleStoreReasonerOntology
 from owlapy.class_expression import OWLClassExpression
 from typing import List, Set
 from ontolearn.learners import Drill, TDL
@@ -41,38 +42,53 @@ def get_reasoner_instances(reasoner: NeuralReasoner, class_expression: OWLClassE
 
 
 
-def evaluate_reasoner(kb, reasoner):
+
+def evaluate_reasoner(kb, reasoner, triple_store):
 
      class_expressions = generate_class_expressions(kb)
+     # print(len(class_expressions))
+     # exit(0)
 
      jaccard_scores = []
 
      for class_expr in class_expressions:
 
-          ground_truth = {i.str for i in kb.individuals(parser.parse_expression(class_expr))}
+          # ground_truth = {i.str for i in kb.individuals(parser.parse_expression(class_expr))}
+          ground_truth = {i.str for i in triple_store.instances(parser.parse_expression(class_expr))}
           reasoner_instances = get_reasoner_instances(reasoner, parser.parse_expression(class_expr))
 
           jaccard_score = jaccard_similarity(ground_truth, reasoner_instances)
           jaccard_scores.append(jaccard_score)
 
-          print(f"Class Expression: {parser.parse_expression(class_expr)}")
-          print(f"Ground Truth: {ground_truth}")
-          print(f"Reasoner Instances: {reasoner_instances}")
-          print(f"Jaccard Similarity: {jaccard_score}")
-          print("---------------------------------------------------")
+          # print(f"Class Expression: {parser.parse_expression(class_expr)}")
+          # print(f"Ground Truth: {ground_truth}")
+          # print(f"Reasoner Instances: {reasoner_instances}")
+          # print(f"Jaccard Similarity: {jaccard_score}")
+          # print("---------------------------------------------------")
 
      avg_jaccard_similarity = sum(jaccard_scores) / len(jaccard_scores)
      print(f"Average Jaccard Similarity: {avg_jaccard_similarity}")
+     return avg_jaccard_similarity
      # print(jaccard_scores)
 
+# TS = TripleStore(url="http://localhost:3030/family")
+TS = TripleStoreReasonerOntology(url="http://localhost:3030/family.owl")
+reasoner = NeuralReasoner(KGE(f"KeciFamilyRun"))
+# evaluate_reasoner(kb, reasoner, TS)
 
-reasoner = NeuralReasoner(KGE("KeciFamilyRun"))
 
-evaluate_reasoner(kb, reasoner)
 
-# class_expressions = generate_class_expressions(kb)
-# for class_exp in class_expressions:
-#     print(class_exp)
+embedding_dim = [16, 32, 64, 128, 256, 512, 1024]
+data = {}
+
+for dim in embedding_dim:
+
+     reasoner = NeuralReasoner(KGE(f"KeciFamilyRun_{dim}"))
+     data.update({dim: evaluate_reasoner(kb, reasoner, TS)})
+
+print(data)
+
+
 
 
 

@@ -653,16 +653,18 @@ class TripleStoreReasonerOntology:
         assert isinstance(expression, OWLClassExpression)
         try:
             sparql_query = owl_expression_to_sparql(expression=expression, named_individuals=named_individuals)
+            # print(f"SPARQL Query: {sparql_query}")  
         except Exception as exc:
-            print(f"Error at converting {expression} into sparql")
+            # print(f"Error at converting {expression} into sparql")
             traceback.print_exception(exc)
-            print(f"Error at converting {expression} into sparql")
+            # print(f"Error at converting {expression} into sparql")
             raise RuntimeError("Couldn't convert")
         try:
             for binding in self.query(sparql_query).json()["results"]["bindings"]:
                 yield OWLNamedIndividual(binding["x"]["value"])
-        except:
-            print(self.query(sparql_query).text)
+        except Exception as exc:
+            # print(f"Error during query execution: {exc}")
+            # print(f"Response: {response.text}")
             raise RuntimeError
 
     def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
