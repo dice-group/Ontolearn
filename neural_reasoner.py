@@ -43,50 +43,69 @@ def get_reasoner_instances(reasoner: NeuralReasoner, class_expression: OWLClassE
 
 
 
-def evaluate_reasoner(kb, reasoner, triple_store):
+def evaluate_reasoner(kb, reasoner, triple_store, concept_type):
 
-     class_expressions = generate_class_expressions(kb)
-     # print(len(class_expressions))
+     class_expressions, length = generate_class_expressions(kb, concept_type)
+     # print(class_expressions)
      # exit(0)
 
      jaccard_scores = []
 
      for class_expr in class_expressions:
 
-          # ground_truth = {i.str for i in kb.individuals(parser.parse_expression(class_expr))}
-          ground_truth = {i.str for i in triple_store.instances(parser.parse_expression(class_expr))}
-          reasoner_instances = get_reasoner_instances(reasoner, parser.parse_expression(class_expr))
+        ground_truth = {i.str for i in kb.individuals(parser.parse_expression(class_expr))}
+        #   ground_truth = {i.str for i in triple_store.instances(parser.parse_expression(class_expr))}
+        reasoner_instances = get_reasoner_instances(reasoner, parser.parse_expression(class_expr))
 
-          jaccard_score = jaccard_similarity(ground_truth, reasoner_instances)
-          jaccard_scores.append(jaccard_score)
+        jaccard_score = jaccard_similarity(ground_truth, reasoner_instances)
+        jaccard_scores.append(jaccard_score)
 
-          # print(f"Class Expression: {parser.parse_expression(class_expr)}")
-          # print(f"Ground Truth: {ground_truth}")
-          # print(f"Reasoner Instances: {reasoner_instances}")
-          # print(f"Jaccard Similarity: {jaccard_score}")
-          # print("---------------------------------------------------")
+        #   if jaccard_score == 0:
+        print(f"Class Expression: {parser.parse_expression(class_expr)}")
+        # print(f"Ground Truth: {ground_truth}")
+        print(f"Reasoner Instances: {reasoner_instances}")
+        print(f"Jaccard Similarity: {jaccard_score}")
+        # print("---------------------------------------------------")
 
      avg_jaccard_similarity = sum(jaccard_scores) / len(jaccard_scores)
      print(f"Average Jaccard Similarity: {avg_jaccard_similarity}")
-     return avg_jaccard_similarity
+     return avg_jaccard_similarity, length
      # print(jaccard_scores)
 
-# TS = TripleStore(url="http://localhost:3030/family")
+# TS = TripleStore(url="http://localhost:3030/family.owl")
 TS = TripleStoreReasonerOntology(url="http://localhost:3030/family.owl")
 reasoner = NeuralReasoner(KGE(f"KeciFamilyRun"))
-# evaluate_reasoner(kb, reasoner, TS)
 
+# reasoner_instances = get_reasoner_instances(reasoner,OWLObjectComplementOf(OWLClass(IRI('http://www.benchmark.org/family#','Person'))))
 
+# ground_truth = {i.str for i in kb.individuals(OWLObjectComplementOf(OWLClass(IRI('http://www.benchmark.org/family#','Person'))))}
 
-embedding_dim = [16, 32, 64, 128, 256, 512, 1024]
+# print(ground_truth)
+
+# evaluate_reasoner(kb, reasoner, TS, concept_type="negated")
+ 
+#, "negated",  "intersect", "union", "exist", "universal", "All"
+
+concept_types = ["named"]
 data = {}
 
-for dim in embedding_dim:
+for concept_type in concept_types:
 
-     reasoner = NeuralReasoner(KGE(f"KeciFamilyRun_{dim}"))
-     data.update({dim: evaluate_reasoner(kb, reasoner, TS)})
+     jacc, l = evaluate_reasoner(kb, reasoner, TS, concept_type= concept_type)
+     data.update({concept_type: [jacc, l]})
 
 print(data)
+
+
+# embedding_dim = [16, 32, 64, 128, 256, 512, 1024]
+# data = {}
+
+# for dim in embedding_dim:
+
+#      reasoner = NeuralReasoner(KGE(f"KeciFamilyRun_{dim}"))
+#      data.update({dim: evaluate_reasoner(kb, reasoner, TS)})
+
+# print(data)
 
 
 

@@ -717,6 +717,7 @@ class NeuralReasoner:
                                             "http://www.w3.org/2002/07/owl#complementOf",
                                             "http://www.w3.org/2000/01/rdf-schema#domain",
                                             "http://www.w3.org/2000/01/rdf-schema#range"]}
+        print("In init", self.gamma_for_nc)
 
 
     def abox(self, str_iri: str = None):
@@ -763,13 +764,13 @@ class NeuralReasoner:
 
         #    individual, None), f"{individual} must occur in the knowledge graph!!!"
         # Important to find a good scalar value.
-        gamma_for_nc = 0.1
+        
         scores = self.neural_link_predictor.predict(h=[individual],
                                                     r=["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],
                                                     within=None,
                                                     logits=False).tolist()
         top_candidate_iris = sorted(
-            [(ei, s) for ei, s in zip(self.neural_link_predictor.entity_to_idx.keys(), scores) if s > gamma_for_nc],
+            [(ei, s) for ei, s in zip(self.neural_link_predictor.entity_to_idx.keys(), scores) if s > self.gamma_for_nc],
             reverse=True)
         # Caution: http://www.w3.org/2002/07/owl#Thing or properties
         for str_iri, _ in top_candidate_iris:
@@ -786,7 +787,7 @@ class NeuralReasoner:
                                                     logits=False).tolist()
         top_candidate_iris = sorted(
             [(ei, s) for ei, s in zip(self.neural_link_predictor.entity_to_idx.keys(), scores) if
-             s > gamma_for_owl_individuals],
+                s > gamma_for_owl_individuals],
             reverse=True)
         # Caution: http://www.w3.org/2002/07/owl#ObjectProperty or http://www.w3.org/2002/07/owl#NamedIndividual
         for str_iri, _ in top_candidate_iris:
@@ -797,13 +798,13 @@ class NeuralReasoner:
 
     def most_general_classes(self) -> Iterable[OWLClass]:
         """ At least it has single subclass and there is no superclass """
-        gamma_for_nc = 0.1
+        
         scores = self.neural_link_predictor.predict(r=["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],
                                                     t=["http://www.w3.org/2002/07/owl#Class"],
                                                     within=None,
                                                     logits=False).tolist()
         top_candidate_iris = sorted(
-            [(ei, s) for ei, s in zip(self.neural_link_predictor.entity_to_idx.keys(), scores) if s > gamma_for_nc],
+            [(ei, s) for ei, s in zip(self.neural_link_predictor.entity_to_idx.keys(), scores) if s > self.gamma_for_nc],
             reverse=True)
         # TODO: After detecting ?concept rdf:type owl:Class ., we need to person two AND operations
         # query = f"""{rdf_prefix}{rdfs_prefix}{owl_prefix} SELECT ?x WHERE {{
@@ -854,6 +855,8 @@ class NeuralReasoner:
             owl_individuals_of_a = {i for i in self.instances(expression.get_operand())}
             # All individuals - R(A)
             results = self.owl_individuals - owl_individuals_of_a
+
+            # assert owl_individuals_of_a < self.owl_individuals
             yield from results 
 
         
