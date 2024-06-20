@@ -62,6 +62,23 @@ class Test_Neural_Retrieval:  #:(unittest.TestCase):
 
         assert 0.73 > avg_jaccard_index / len(benchmark_dataset) >= 0.72
 
+    def test_retrieval_named_concepts_in_abox_family(self):
+        symbolic_kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
+        named_concepts_having_at_least_single_indv = [i for i in symbolic_kb.get_concepts() if i.str not in [
+            "http://www.benchmark.org/family#PersonWithASibling",
+            "http://www.benchmark.org/family#Child",
+            "http://www.benchmark.org/family#Parent",
+            "http://www.benchmark.org/family#Grandparent",
+            "http://www.benchmark.org/family#Grandchild"]]
+        benchmark_dataset_named = [(concept, {individual.str for individual in symbolic_kb.individuals(concept)}) for
+                                   concept in named_concepts_having_at_least_single_indv]
+
+        neural_owl_reasoner = TripleStoreNeuralReasoner(path_of_kb="KGs/Family/family-benchmark_rich_background.owl",
+                                                        gamma=0.1)
+        for (concept, symbolic_retrieval) in benchmark_dataset_named:
+            neural_retrieval = {i.str for i in neural_owl_reasoner.instances(concept)}
+            assert jaccard_similarity(symbolic_retrieval, neural_retrieval)
+
     """
     def test_regression_named_concepts_owl(self):
         symbolic_kb = KnowledgeBase(path="KGs/Family/father.owl")
