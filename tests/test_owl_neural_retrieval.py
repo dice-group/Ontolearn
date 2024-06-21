@@ -14,7 +14,7 @@ from ontolearn.triple_store import TripleStore
 from ontolearn.utils import jaccard_similarity
 
 
-class Test_Neural_Retrieval:  #:(unittest.TestCase):
+class Test_Neural_Retrieval:
 
     def test_retrieval_single_individual_father_owl(self):
         neural_owl_reasoner = TripleStoreNeuralReasoner(
@@ -138,6 +138,68 @@ class Test_Neural_Retrieval:  #:(unittest.TestCase):
         )
         individuals_2 = set(neural_owl_reasoner.instances(not_male_or_not_has_daughter))
         assert individuals == individuals_2
+
+    def test_retrieval_named_concepts_in_abox_family(self):
+        symbolic_kb = KnowledgeBase(
+            path="KGs/Family/family-benchmark_rich_background.owl"
+        )
+        named_concepts_having_at_least_single_indv = [
+            i
+            for i in symbolic_kb.get_concepts()
+            if i.str
+            not in [
+                "http://www.benchmark.org/family#PersonWithASibling",
+                "http://www.benchmark.org/family#Child",
+                "http://www.benchmark.org/family#Parent",
+                "http://www.benchmark.org/family#Grandparent",
+                "http://www.benchmark.org/family#Grandchild",
+            ]
+        ]
+        benchmark_dataset_named = [
+            (
+                concept,
+                {individual.str for individual in symbolic_kb.individuals(concept)},
+            )
+            for concept in named_concepts_having_at_least_single_indv
+        ]
+
+        neural_owl_reasoner = TripleStoreNeuralReasoner(
+            path_of_kb="KGs/Family/family-benchmark_rich_background.owl", gamma=0.1
+        )
+        for concept, symbolic_retrieval in benchmark_dataset_named:
+            neural_retrieval = {i.str for i in neural_owl_reasoner.instances(concept)}
+            assert jaccard_similarity(symbolic_retrieval, neural_retrieval)
+
+    def test_negated_retrieval_named_concepts_in_abox_family(self):
+        symbolic_kb = KnowledgeBase(
+            path="KGs/Family/family-benchmark_rich_background.owl"
+        )
+        named_concepts_having_at_least_single_indv = [
+            i.get_object_complement_of()
+            for i in symbolic_kb.get_concepts()
+            if i.str
+            not in [
+                "http://www.benchmark.org/family#PersonWithASibling",
+                "http://www.benchmark.org/family#Child",
+                "http://www.benchmark.org/family#Parent",
+                "http://www.benchmark.org/family#Grandparent",
+                "http://www.benchmark.org/family#Grandchild",
+            ]
+        ]
+        benchmark_dataset_named = [
+            (
+                concept,
+                {individual.str for individual in symbolic_kb.individuals(concept)},
+            )
+            for concept in named_concepts_having_at_least_single_indv
+        ]
+
+        neural_owl_reasoner = TripleStoreNeuralReasoner(
+            path_of_kb="KGs/Family/family-benchmark_rich_background.owl", gamma=0.1
+        )
+        for concept, symbolic_retrieval in benchmark_dataset_named:
+            neural_retrieval = {i.str for i in neural_owl_reasoner.instances(concept)}
+            assert jaccard_similarity(symbolic_retrieval, neural_retrieval)
 
     """
     def test_regression_named_concepts_owl(self):
