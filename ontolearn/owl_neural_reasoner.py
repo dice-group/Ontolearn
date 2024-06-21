@@ -68,11 +68,22 @@ class TripleStoreNeuralReasoner:
         return f"TripleStoreNeuralReasoner:{self.model} with likelihood threshold gamma : {self.gamma}"
 
     def get_predictions(self, h: str = None, r: str = None, t: str = None, confidence_threshold: float = None,
-                        ):
+                        ) -> Generator[Tuple[str, float], None, None]:
         """
-        TODO: Write docstring and define the type of returned object
-        """
+        Generate predictions for a given head entity (h), relation (r), or tail entity (t) with an optional confidence threshold. The method yields predictions that exceed the specified confidence threshold. If no threshold is provided, it defaults to the model's gamma value.
 
+        Parameters:
+        - h (str, optional): The identifier for the head entity.
+        - r (str, optional): The identifier for the relation.
+        - t (str, optional): The identifier for the tail entity.
+        - confidence_threshold (float, optional): The minimum confidence level required for a prediction to be returned.
+
+        Returns:
+        - Generator[Tuple[str, float], None, None]: A generator of tuples, where each tuple contains a predicted entity or relation identifier (IRI) as a string and its corresponding confidence level as a float.
+
+        Raises:
+        - Exception: If an error occurs during prediction.
+        """
         if h is not None:
             if (self.model.entity_to_idx.get(h, None)) is None:
                 return
@@ -89,7 +100,7 @@ class TripleStoreNeuralReasoner:
 
         if confidence_threshold is None:
             confidence_threshold = self.gamma
-        # TODO: set topk by checking lenght of self.model.entity_to_idx and self.model.relation_to_idx depening on the input
+
         if r is None:
             topk = len(self.model.relation_to_idx)
         else:
@@ -232,6 +243,14 @@ class TripleStoreNeuralReasoner:
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
+
+    def individuals(self, expression: OWLClassExpression=None, named_individuals:bool=False,
+                    confidence_threshold: float = None, ) -> Generator[OWLNamedIndividual, None, None]:
+        if expression is None or expression.is_owl_thing():
+            yield from self.individuals_in_signature()
+        else:
+            yield from self.instances(expression, confidence_threshold=confidence_threshold)
+
     def instances(self, expression: OWLClassExpression, named_individuals=False,
                   confidence_threshold: float = None, ) -> Generator[OWLNamedIndividual, None, None]:
         """
@@ -244,7 +263,7 @@ class TripleStoreNeuralReasoner:
             # TODO: CD: Perhaps, we need to ensure that is never the case :).
             yield expression
 
-        if isinstance(expression, OWLClass):
+        elif isinstance(expression, OWLClass):
             """ Given an OWLClass A, retrieve its instances Retrieval(A)={ x | phi(x, type, A) ≥ γ } """
             yield from self.get_individuals_of_class(
                 owl_class=expression, confidence_threshold=confidence_threshold
@@ -445,7 +464,7 @@ class TripleStoreNeuralReasoner:
                 yield individual
         else:
             raise NotImplementedError(
-                f"Instances for {expression} are not implemented yet"
+                f"Instances for {type(expression)} are not implemented yet"
             )
 
     def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:

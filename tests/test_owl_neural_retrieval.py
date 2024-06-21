@@ -46,21 +46,98 @@ class Test_Neural_Retrieval:  #:(unittest.TestCase):
         assert triples_about_anna == sanity_checking
 
     def test_retrieval_named_concepts_family(self):
-        symbolic_kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
-        benchmark_dataset = [(concept, {individual.str for individual in symbolic_kb.individuals(concept)}) for concept
-                             in symbolic_kb.get_concepts()]
+        symbolic_kb = KnowledgeBase(
+            path="KGs/Family/family-benchmark_rich_background.owl"
+        )
+        benchmark_dataset = [
+            (
+                concept,
+                {individual.str for individual in symbolic_kb.individuals(concept)},
+            )
+            for concept in symbolic_kb.get_concepts()
+        ]
 
-        neural_owl_reasoner = TripleStoreNeuralReasoner(path_of_kb="KGs/Family/family-benchmark_rich_background.owl",
-                                                        gamma=0.1)
+        neural_owl_reasoner = TripleStoreNeuralReasoner(
+            path_of_kb="KGs/Family/family-benchmark_rich_background.owl", gamma=0.1
+        )
 
         avg_jaccard_index = 0
-        for (concept, symbolic_retrieval) in benchmark_dataset:
+        for concept, symbolic_retrieval in benchmark_dataset:
             neural_retrieval = {i.str for i in neural_owl_reasoner.instances(concept)}
             v = jaccard_similarity(symbolic_retrieval, neural_retrieval)
             assert v == 1.0 or v == 0.0
             avg_jaccard_index += v
 
         assert 0.73 > avg_jaccard_index / len(benchmark_dataset) >= 0.72
+
+    def test_de_morgan_male_and_father_father(self):
+        neural_owl_reasoner = TripleStoreNeuralReasoner(
+            path_of_kb="KGs/Family/father.owl", gamma=0.8
+        )
+
+        male_and_father = OWLObjectIntersectionOf(
+            [
+                OWLClass("http://example.com/father#male"),
+                OWLObjectMinCardinality(
+                    cardinality=1,
+                    property=OWLObjectProperty("http://example.com/father#hasChild"),
+                    filler=OWLNamedIndividual("http://example.com/father#anna"),
+                ),
+            ]
+        )
+        individuals = set(neural_owl_reasoner.instances(male_and_father))
+        not_female_or_not_mother = OWLObjectComplementOf(
+            OWLObjectUnionOf(
+                [
+                    OWLClass("http://example.com/father#female"),
+                    OWLObjectComplementOf(
+                        OWLObjectMinCardinality(
+                            cardinality=1,
+                            property=OWLObjectProperty(
+                                "http://example.com/father#hasChild"
+                            ),
+                            filler=OWLNamedIndividual("http://example.com/father#anna"),
+                        )
+                    ),
+                ]
+            )
+        )
+        print(individuals)
+        individuals_2 = set(neural_owl_reasoner.instances(not_female_or_not_mother))
+        assert individuals == individuals_2
+
+    def test_de_morgan_male_and_has_daughter_family(self):
+        neural_owl_reasoner = TripleStoreNeuralReasoner(
+            path_of_kb="KGs/Family/family-benchmark_rich_background.owl", gamma=0.8
+        )
+        prefix = "http://www.benchmark.org/family#"
+        male_and_has_daughter = OWLObjectIntersectionOf(
+            [
+                OWLClass(prefix + "Male"),
+                OWLObjectMinCardinality(
+                    cardinality=1,
+                    property=OWLObjectProperty(prefix + "hasChild"),
+                    filler=OWLClass(prefix + "Female"),
+                ),
+            ]
+        )
+        individuals = set(neural_owl_reasoner.instances(male_and_has_daughter))
+        not_male_or_not_has_daughter = OWLObjectComplementOf(
+            OWLObjectUnionOf(
+                [
+                    OWLClass(prefix + "Female"),
+                    OWLObjectComplementOf(
+                        OWLObjectMinCardinality(
+                            cardinality=1,
+                            property=OWLObjectProperty(prefix + "hasChild"),
+                            filler=OWLClass(prefix + "Female"),
+                        )
+                    ),
+                ]
+            )
+        )
+        individuals_2 = set(neural_owl_reasoner.instances(not_male_or_not_has_daughter))
+        assert individuals == individuals_2
 
     """
     def test_regression_named_concepts_owl(self):
