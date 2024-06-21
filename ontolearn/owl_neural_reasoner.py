@@ -195,7 +195,7 @@ class TripleStoreNeuralReasoner:
                 ):
                     yield _class
 
-    def get_direct_parents(
+    def subconcepts(
             self, named_concept: OWLClass, confidence_threshold: float = None
     ) -> Generator[OWLClass, None, None]:
         for prediction in self.get_predictions(
@@ -211,7 +211,7 @@ class TripleStoreNeuralReasoner:
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
-    def subconcepts(
+    def get_direct_parents(
             self, named_concept: OWLClass, direct=True, confidence_threshold: float = None
     ):
         for prediction in self.get_predictions(
@@ -603,12 +603,13 @@ class TripleStoreNeuralReasoner:
     def get_individuals_of_class(
             self, owl_class: OWLClass, confidence_threshold: float = None
     ) -> Generator[OWLNamedIndividual, None, None]:
-        for prediction in self.get_predictions(
-                h=None,
-                r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-                t=owl_class.str,
-                confidence_threshold=confidence_threshold,
-        ):
+        predictions = self.get_predictions(
+            h=None,
+            r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+            t=owl_class.str,
+            confidence_threshold=confidence_threshold,
+        )
+        for prediction in predictions:
             try:
                 owl_named_individual = OWLNamedIndividual(prediction[0])
                 yield owl_named_individual
@@ -616,6 +617,11 @@ class TripleStoreNeuralReasoner:
                 # Log the invalid IRI
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
+
+        if len(list(predictions)) == 0:
+            # abstract class / class that does not have any instances -> get all child classes and make predictions
+            for child_class in self.subconcepts(owl_class, confidence_threshold=confidence_threshold):
+                yield from self.get_individuals_of_class(child_class, confidence_threshold=confidence_threshold)
 
     def get_individuals_with_object_property(
             self,

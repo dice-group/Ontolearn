@@ -139,6 +139,29 @@ class Test_Neural_Retrieval:
         individuals_2 = set(neural_owl_reasoner.instances(not_male_or_not_has_daughter))
         assert individuals == individuals_2
 
+    def test_de_morgan_not_father_or_brother_family(self):
+        neural_owl_reasoner = TripleStoreNeuralReasoner(
+            path_of_kb="KGs/Family/family-benchmark_rich_background.owl", gamma=0.8
+        )
+        prefix = "http://www.benchmark.org/family#"
+        not_father_or_brother = OWLObjectComplementOf(
+            OWLObjectUnionOf(
+                [
+                    OWLClass(prefix + "Father"),
+                    OWLClass(prefix + "Brother"),
+                ]
+            )
+        )
+        individuals = set(neural_owl_reasoner.instances(not_father_or_brother))
+        father_and_brother = OWLObjectIntersectionOf(
+            [
+                OWLObjectComplementOf(OWLClass(prefix + "Father")),
+                OWLObjectComplementOf(OWLClass(prefix + "Brother")),
+            ]
+        )
+        individuals_2 = set(neural_owl_reasoner.instances(father_and_brother))
+        assert individuals == individuals_2
+
     def test_retrieval_named_concepts_in_abox_family(self):
         symbolic_kb = KnowledgeBase(
             path="KGs/Family/family-benchmark_rich_background.owl"
