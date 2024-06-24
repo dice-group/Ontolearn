@@ -96,8 +96,8 @@ class Test_Neural_Retrieval:
                             property=OWLObjectProperty(
                                 "http://example.com/father#hasChild"
                             ),
-                            filler=OWLNamedIndividual("http://example.com/father#anna"),
-                        )
+                            filler=OWLObjectOneOf(OWLNamedIndividual("http://example.com/father#anna")),
+                        
                     ),
                 ]
             )

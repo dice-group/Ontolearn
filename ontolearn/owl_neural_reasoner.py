@@ -384,6 +384,7 @@ class TripleStoreNeuralReasoner:
 
         elif isinstance(expression, OWLObjectMinCardinality):
             # Get the object property
+            object_propertyj: OWLObjectProperty
             object_property = expression.get_property()
             # Get the filler class -> the individual/ or expression that the object property should point to
             filler_expression = expression.get_filler()
@@ -449,6 +450,16 @@ class TripleStoreNeuralReasoner:
         # Handling union of class expressions
         elif isinstance(expression, OWLObjectUnionOf):
             # Get the class expressions
+
+            result=None 
+            for op in expression.operands():
+                retrieval_of_op={_ for _ in self.instances(expression=op,  confidence_threshold=confidence_threshold)}
+                if result is None:
+                    result=retrieval_of_op
+                else:
+                    result=result.union(retrieval_of_op)
+            yield from result
+            """
             operands = list(expression.operands())
             seen = set()
             for operand in operands:
@@ -456,6 +467,7 @@ class TripleStoreNeuralReasoner:
                     if individual not in seen:
                         seen.add(individual)
                         yield individual
+            """
 
         elif isinstance(expression, OWLObjectOneOf):
             # Get the individuals
@@ -629,8 +641,16 @@ class TripleStoreNeuralReasoner:
             obj: OWLClass,
             confidence_threshold: float = None,
     ) -> Generator[OWLNamedIndividual, None, None]:
-        if is_inverse := isinstance(object_property, OWLObjectInverseOf):
+        # TODO: check why obj can be a property 
+        if isinstance(obj,OWLObjectInverseOf):
+            print("obj is an inverse of an object property")
+            a = obj.get_inverse()
+            obj = object_property
+            object_property = a
+        is_inverse = isinstance(object_property, OWLObjectInverseOf)
+        if is_inverse:
             object_property = object_property.get_inverse()
+
         for prediction in self.get_predictions(
                 h=obj.str if is_inverse else None,
                 r=object_property.str,
