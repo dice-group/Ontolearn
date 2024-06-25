@@ -31,6 +31,33 @@ def jaccard_similarity(y: Set[str], yhat: Set[str]) -> float:
         return 0.0
     return len(y.intersection(yhat)) / len(y.union(yhat))
 
+def compute_f1_score(set_true, set_pred):
+    # Convert sets to frozensets for easy set operations
+    set_true = frozenset(set_true)
+    set_pred = frozenset(set_pred)
+    
+    # True Positives (TP)
+    tp = len(set_true & set_pred)
+    # False Positives (FP)
+    fp = len(set_pred - set_true)
+    # False Negatives (FN)
+    fn = len(set_true - set_pred)
+    
+    # Precision and Recall calculation
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+    
+    # F1 Score calculation
+    if precision + recall == 0:
+        f1_score = 0
+    else:
+        f1_score = 2 * (precision * recall) / (precision + recall)
+    
+    return f1_score
+
+
+
+
 
 def parametrized_performance_debugger(fmt=DEFAULT_FMT):
     def decorate(func):
