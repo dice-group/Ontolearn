@@ -31,6 +31,8 @@ git clone https://github.com/dice-group/Ontolearn.git
 conda create -n venv python=3.10.14 --no-default-packages && conda activate venv && pip install -e .
 # To download knowledge graphs
 wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
+# To download learning problems
+wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
 ```
 ```shell
 pytest -p no:warnings -x # Running 64 tests takes ~ 6 mins
