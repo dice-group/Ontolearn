@@ -30,25 +30,26 @@ def generate_class_expressions(kb, concept_type: str):
     # 3b: For all properties, generate ∃ and ∀ with fillers that is a union of step 1 and step 2 (---> length 3 and 4)
     object_properties = [r.str.split("#")[-1] for r in kb.ontology.object_properties_in_signature()]
 
-    
-
     existential_restrictions = [f"∃ {p}.{c}" for p in object_properties for c in named_concepts + negated_concepts]
     universal_restrictions = [f"∀ {p}.{c}" for p in object_properties for c in named_concepts + negated_concepts]
 
     # 4. Generate cardinality restrictions (---> length 3 and 4)
-    cardinality_values = [1,2,3]  
+
+    cardinality_values = [1]  
     min_cardinality_restrictions = [f"≥ {n} {p}.{c}" for n in cardinality_values for p in object_properties for c in named_concepts + negated_concepts]
     max_cardinality_restrictions = [f"≤ {n} {p}.{c}" for n in cardinality_values for p in object_properties for c in named_concepts + negated_concepts]
     exact_cardinality_restrictions = [f"= {n} {p}.{c}" for n in cardinality_values for p in object_properties for c in named_concepts + negated_concepts]
 
-    # 5. Generate inverse property restrictions (---> length 3 and 4)
+    # 5. Generate inverse property restrictions (---> length 3 and 4) 
+
     existential_inverse_restrictions = [f"∃ {p}⁻.{c}" for p in object_properties for c in named_concepts + negated_concepts]
     universal_inverse_restrictions = [f"∀ {p}⁻.{c}" for p in object_properties for c in named_concepts + negated_concepts]
     min_cardinality_inverse_restrictions = [f"≥ {n} {p}⁻.{c}" for n in cardinality_values for p in object_properties for c in named_concepts + negated_concepts]
     max_cardinality_inverse_restrictions = [f"≤ {n} {p}⁻.{c}" for n in cardinality_values for p in object_properties for c in named_concepts + negated_concepts]
     exact_cardinality_inverse_restrictions = [f"= {n} {p}⁻.{c}" for n in cardinality_values for p in object_properties for c in named_concepts + negated_concepts]
 
-    # Combine everything (---> length 1, 2, 3, 4)
+    # 7. Combine everything (---> length 1, 2, 3, 4)
+
     all_concepts = (named_concepts + negated_concepts + unions + intersections + 
                     existential_restrictions + universal_restrictions +
                     min_cardinality_restrictions + max_cardinality_restrictions + exact_cardinality_restrictions +

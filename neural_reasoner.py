@@ -58,10 +58,10 @@ def evaluate_reasoner(kb, reasoner, triple_store, concept_type):
      start_time = time.time()
      for class_expr in class_expressions:
 
-        # ground_truth = {i.str for i in kb.individuals(parser.parse_expression(class_expr))}
+        ground_truth = {i.str for i in kb.individuals(parser.parse_expression(class_expr))}
 
         
-        ground_truth = {i.str for i in triple_store.instances(parser.parse_expression(class_expr))}
+        # ground_truth = {i.str for i in triple_store.instances(parser.parse_expression(class_expr))}
 
         # print(ground_truth)
         # exit(0)
@@ -75,7 +75,7 @@ def evaluate_reasoner(kb, reasoner, triple_store, concept_type):
 
         #   if jaccard_score == 0:
         print(f"Class Expression: {parser.parse_expression(class_expr)}")
-        exit(0)
+        # exit(0)
         # print(f"Ground Truth: {ground_truth}")
         # print(f"Reasoner Instances: {reasoner_instances}")
         print(f"Jaccard Similarity: {jaccard_score}")
@@ -98,52 +98,23 @@ reasoner = NeuralReasoner(KGE(f"KeciFamilyRun"))
 
 # evaluate_reasoner(kb, reasoner, TS, concept_type="exist")
 
-
-#########################################################################################
-# reasoner_instances = get_reasoner_instances(reasoner,OWLObjectComplementOf(OWLClass(IRI('http://www.benchmark.org/family#','Person'))))
-
-
-class_expr_1 =  OWLObjectMinCardinality(property=OWLObjectProperty(IRI('http://www.benchmark.org/family#','hasChild')),cardinality = 1,filler=OWLClass(IRI('http://www.benchmark.org/family#','Brother')))
-class_expr_2 =  OWLObjectSomeValuesFrom(property=OWLObjectProperty(IRI('http://www.benchmark.org/family#','hasChild')),filler=OWLClass(IRI('http://www.benchmark.org/family#','Brother')))
-
-reasoner_instances_1 = get_reasoner_instances(reasoner, class_expr_1)
-reasoner_instances_2 = get_reasoner_instances(reasoner, class_expr_2)
-
-ground_truth_1 = {i.str for i in kb.individuals(class_expr_1)}
-ground_truth_2 = {i.str for i in kb.individuals(class_expr_2)}
-# ground_truth_1 = {i.str for i in TS.instances(class_expr_1)}
-# ground_truth_2 = {i.str for i in TS.instances(class_expr_2)}
-
-assert ground_truth_1 == ground_truth_2
-
-print(len(reasoner_instances_2))
-print(len(reasoner_instances_1))
-
-assert reasoner_instances_1 == reasoner_instances_2, "Reasoner fails"
-
-# print("hey"*100)
-# print(ground_truth)
-# print(len(ground_truth))
-
-
- 
-#, "negated",  "intersect", "union", "exist", "universal", "All"
-
 ################################################################################
 
 # concept_types = ["name", "nega",  "intersect", "union", "exist", "universal", "min_card", "max_card", "exact_card",\
 #                   "exist_inv", "universal_inv", "min_card_inv", "max_card_inv", "All"]
 
-# concept_types = ["exist"]
-# data = {}
+concept_types = ["max_card"] 
 
-# for concept_type in concept_types:
+data = {}
 
-#      jacc, f1_score, length, running_time = evaluate_reasoner(kb, reasoner, TS, concept_type= concept_type)
-#      data.update({concept_type: [jacc, length, f1_score, running_time]})
+for concept_type in concept_types:
 
-# print(data)
-# # Save to a JSON file
+     jacc, f1_score, length, running_time = evaluate_reasoner(kb, reasoner, TS, concept_type= concept_type)
+     data.update({concept_type: [jacc, length, f1_score, running_time]})
+
+print(data)
+
+# # # Save to a JSON file
 # with open('data.json', 'w') as json_file:
 #     json.dump(data, json_file, indent=4)
 
