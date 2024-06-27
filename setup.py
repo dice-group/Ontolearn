@@ -13,7 +13,7 @@ _deps = [
     "matplotlib>=3.3.4",
     "scikit-learn>=1.4.1",
     "owlready2>=0.40",
-    "torch>=1.7.1,<2.2.0",
+    "torch==2.2.0",
     "rdflib>=6.0.2",
     "pandas>=1.5.0",
     "sortedcontainers>=2.4.0",  # AB: This is required
@@ -25,7 +25,7 @@ _deps = [
     "transformers>=4.38.1",
     "pytest>=7.2.2",
     "owlapy==1.1.0",
-    "dicee>=0.1.2",
+    "dicee==0.1.4",
     "ontosample>=0.2.2",
     "sphinx>=7.2.6",
     "sphinx-autoapi>=3.0.0",
