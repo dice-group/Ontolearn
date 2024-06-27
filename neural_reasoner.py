@@ -94,7 +94,7 @@ def evaluate_reasoner(kb, reasoner, triple_store, concept_type):
      # print(jaccard_scores)
 
 TS = TripleStoreReasonerOntology(url="http://localhost:3030/family.owl")
-reasoner = NeuralReasoner(KGE(f"KeciFamilyRun"))
+reasoner = NeuralReasoner(KGE(f"KeciFamilyRun_256"),gamma_for_nc=0.1)
 
 # evaluate_reasoner(kb, reasoner, TS, concept_type="exist")
 
@@ -103,7 +103,7 @@ reasoner = NeuralReasoner(KGE(f"KeciFamilyRun"))
 # concept_types = ["name", "nega",  "intersect", "union", "exist", "universal", "min_card", "max_card", "exact_card",\
 #                   "exist_inv", "universal_inv", "min_card_inv", "max_card_inv", "All"]
 
-concept_types = ["max_card"] 
+concept_types = ["nega"] 
 
 data = {}
 

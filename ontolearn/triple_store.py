@@ -705,13 +705,15 @@ class TripleStoreReasonerOntology:
 
 
 class NeuralReasoner:
-    def __init__(self, neural_link_predictor: None):
+    def __init__(self, neural_link_predictor, gamma_for_nc: float):
+
         self.neural_link_predictor = neural_link_predictor
+        self.gamma_for_nc = gamma_for_nc
 
         self.owl_individuals = {i for i in self.individuals_in_signature()}
-        self.gamma_for_nc = 0.1
+        
         self.object_properties = {OWLObjectProperty(k) for k, v in self.neural_link_predictor.relation_to_idx.items() if
-                                  k not in ["http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+                                    k not in ["http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
                                             "http://www.w3.org/2000/01/rdf-schema#subClassOf",
                                             "http://www.w3.org/2002/07/owl#equivalentClass",
                                             "http://www.w3.org/2002/07/owl#complementOf",
@@ -778,7 +780,7 @@ class NeuralReasoner:
 
     def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
         """ Neural Retrieval of NamedIndividuals """
-        gamma_for_owl_individuals = 0.1
+        # gamma_for_owl_individuals = self.gamma_for_nc#0.1
         # phi(?,r,t)
 
         scores = self.neural_link_predictor.predict(r=["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],
@@ -787,8 +789,9 @@ class NeuralReasoner:
                                                     logits=False).tolist()
         top_candidate_iris = sorted(
             [(ei, s) for ei, s in zip(self.neural_link_predictor.entity_to_idx.keys(), scores) if
-                s > gamma_for_owl_individuals],
+                s > self.gamma_for_nc],
             reverse=True)
+        
         # Caution: http://www.w3.org/2002/07/owl#ObjectProperty or http://www.w3.org/2002/07/owl#NamedIndividual
         for str_iri, _ in top_candidate_iris:
             yield OWLNamedIndividual(str_iri)
@@ -1005,7 +1008,7 @@ class NeuralReasoner:
                 candidate_iris = [iri for iri, score in zip(self.neural_link_predictor.entity_to_idx.keys(), scores) if score >= self.gamma_for_nc]
 
                 count = len(candidate_iris)
-
+ 
                 for iri in candidate_iris:
                     try:
                         if count >= min_cardinality:
@@ -1014,6 +1017,48 @@ class NeuralReasoner:
                         print(f"Could not convert to OWLNamedIndividual {iri}")
 
             yield from results
+
+        # elif isinstance(expression, OWLObjectMaxCardinality):
+
+        #     property_expression = expression.get_property()
+        #     filler_expression = expression.get_filler()
+
+        #     # (1) Find individuals that are likely y \in C^I, i.e. φ(y, type, C) 
+
+        #     filler_individuals = {i for i in self.instances(filler_expression)}
+
+        #     # 2) set max cardinality
+        #     max_cardinality = expression.get_cardinality()
+
+        #     # (3) Iterative (1) and return entities whose predicted score satisfies the condition.
+        #     results = set()
+        #     for individual in filler_individuals:# self.owl_individuals:
+
+        #         if isinstance(property_expression, OWLObjectInverseOf):
+
+        #             inverse_property = property_expression.get_inverse_property()
+        #             scores = self.neural_link_predictor.predict(h=[individual.str],
+        #                                                         r=[inverse_property.str],
+        #                                                         within=None,
+        #                                                         logits=False).tolist()
+        #         else:
+        #             scores = self.neural_link_predictor.predict(r=[property_expression.str],
+        #                                                         t=[individual.str],
+        #                                                         within=None,
+        #                                                         logits=False).tolist()
+
+        #         candidate_iris = [iri for iri, score in zip(self.neural_link_predictor.entity_to_idx.keys(), scores) if score >= self.gamma_for_nc]
+
+        #         count = len(candidate_iris)
+
+        #         if count <= max_cardinality:
+        #             for iri in candidate_iris:
+        #                 try:
+        #                     results.add(OWLNamedIndividual(iri))
+        #                 except:
+        #                     print(f"Could not convert to OWLNamedIndividual {iri}")
+
+        #     yield from results
 
 
         elif isinstance(expression, OWLObjectMaxCardinality):
@@ -1160,7 +1205,8 @@ class NeuralReasoner:
                                                                 within=None,
                                                                 logits=False).tolist()
 
-
+            # print(scores_for_all)
+            # exit(0)
             # Convert scores to corresponding IRIs
             candidate_iris = [iri for iri, score in zip(self.neural_link_predictor.entity_to_idx.keys(), scores_for_all) if score >= self.gamma_for_nc]
 

@@ -35,7 +35,7 @@ def generate_class_expressions(kb, concept_type: str):
 
     # 4. Generate cardinality restrictions (---> length 3 and 4)
 
-    cardinality_values = [1]  
+    cardinality_values = [1,2,3]  
     min_cardinality_restrictions = [f"≥ {n} {p}.{c}" for n in cardinality_values for p in object_properties for c in named_concepts + negated_concepts]
     max_cardinality_restrictions = [f"≤ {n} {p}.{c}" for n in cardinality_values for p in object_properties for c in named_concepts + negated_concepts]
     exact_cardinality_restrictions = [f"= {n} {p}.{c}" for n in cardinality_values for p in object_properties for c in named_concepts + negated_concepts]
@@ -52,8 +52,8 @@ def generate_class_expressions(kb, concept_type: str):
 
     all_concepts = (named_concepts + negated_concepts + unions + intersections + 
                     existential_restrictions + universal_restrictions +
-                    min_cardinality_restrictions + max_cardinality_restrictions + exact_cardinality_restrictions +
-                    existential_inverse_restrictions + universal_inverse_restrictions + exact_cardinality_inverse_restrictions+
+                    min_cardinality_restrictions + max_cardinality_restrictions +
+                    existential_inverse_restrictions + universal_inverse_restrictions +
                     min_cardinality_inverse_restrictions + max_cardinality_inverse_restrictions)
 
     if "name" in concept_type:
