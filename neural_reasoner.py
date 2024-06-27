@@ -75,7 +75,7 @@ def evaluate_reasoner(kb, reasoner, triple_store, concept_type):
 
         #   if jaccard_score == 0:
         print(f"Class Expression: {parser.parse_expression(class_expr)}")
-        # exit(0)
+        exit(0)
         # print(f"Ground Truth: {ground_truth}")
         # print(f"Reasoner Instances: {reasoner_instances}")
         print(f"Jaccard Similarity: {jaccard_score}")
@@ -103,7 +103,7 @@ reasoner = NeuralReasoner(KGE(f"KeciFamilyRun_256"),gamma_for_nc=0.1)
 # concept_types = ["name", "nega",  "intersect", "union", "exist", "universal", "min_card", "max_card", "exact_card",\
 #                   "exist_inv", "universal_inv", "min_card_inv", "max_card_inv", "All"]
 
-concept_types = ["nega"] 
+concept_types = ["exist_inv"] 
 
 data = {}
 

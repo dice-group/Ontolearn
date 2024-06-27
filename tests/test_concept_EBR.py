@@ -1,6 +1,3 @@
-# To train a neural link predictor
-# dicee --path_single_kg "KGs/Family/father.owl" --model Keci --p 0 --q 1 --path_to_store_single_run "KeciFatherRun" --backend rdflib --eval_model None --embedding_dim 128
-# dicee --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --p 0 --q 1 --path_to_store_single_run "KeciFamilyRun" --backend rdflib --eval_model None --embedding_dim 256 --scoring_technique AllvsAll
 from dicee import KGE
 from ontolearn.triple_store import TripleStore, NeuralReasoner, TripleStoreReasonerOntology
 from owlapy.class_expression import OWLClassExpression
@@ -45,7 +42,7 @@ def get_reasoner_instances(reasoner: NeuralReasoner, class_expression: OWLClassE
 
 
 TS = TripleStoreReasonerOntology(url="http://localhost:3030/family.owl")
-reasoner = NeuralReasoner(KGE(f"KeciFamilyRun"))
+reasoner = NeuralReasoner(KGE(f"KeciFamilyRun"), gamma_for_nc=0.1)
 
 
 #########################################################################################
@@ -74,17 +71,18 @@ print(len(reasoner_instances_2))
 print(len(reasoner_instances_1))
 
 assert reasoner_instances_1 == reasoner_instances_2, "Reasoner fails"
+print("test 1 done")
+
 
 #########################################################################################
 
-# test max cardunality: ∀r.C = ≤ 1 r.C
+# test union and inter:  ¬C ⊓ ¬D = ¬(C ⊔ D)
 
 #########################################################################################
-# OWLObjectMaxCardinality(property=OWLObjectProperty(IRI('http://www.benchmark.org/family#','hasChild')),1,filler=OWLObjectComplementOf(OWLClass(IRI('http://www.benchmark.org/family#','Brother'))))
 
-class_expr_1 =  OWLObjectMaxCardinality(property=OWLObjectProperty(IRI('http://www.benchmark.org/family#','hasChild')),cardinality = 1,filler=OWLObjectComplementOf(OWLClass(IRI('http://www.benchmark.org/family#','Brother'))))
+class_expr_1 =  OWLObjectComplementOf(OWLObjectUnionOf((OWLClass(IRI('http://www.benchmark.org/family#','Brother')), OWLClass(IRI('http://www.benchmark.org/family#','Male')))))
 
-class_expr_2 =  OWLObjectAllValuesFrom(property=OWLObjectProperty(IRI('http://www.benchmark.org/family#','hasChild')),filler=OWLObjectComplementOf(OWLClass(IRI('http://www.benchmark.org/family#','Brother'))))
+class_expr_2 = OWLObjectIntersectionOf((OWLObjectComplementOf(OWLClass(IRI('http://www.benchmark.org/family#','Brother'))), OWLObjectComplementOf(OWLClass(IRI('http://www.benchmark.org/family#','Male')))))
 
 reasoner_instances_1 = get_reasoner_instances(reasoner, class_expr_1)
 reasoner_instances_2 = get_reasoner_instances(reasoner, class_expr_2)
@@ -94,7 +92,7 @@ ground_truth_2 = {i.str for i in kb.individuals(class_expr_2)}
 # ground_truth_1 = {i.str for i in TS.instances(class_expr_1)}
 # ground_truth_2 = {i.str for i in TS.instances(class_expr_2)}
 
-# assert ground_truth_1 == ground_truth_2
+assert ground_truth_1 == ground_truth_2
 
 print(len(ground_truth_1))
 print(len(ground_truth_2))
@@ -102,6 +100,129 @@ print(len(reasoner_instances_2))
 print(len(reasoner_instances_1))
 
 assert reasoner_instances_1 == reasoner_instances_2, "Reasoner fails"
+
+print("test 2 done")
+
+
+#########################################################################################
+
+# test exist and universal rectsiction: ¬(∀r.C) = ∃r.¬C
+
+#########################################################################################
+# OWLObjectMaxCardinality(property=OWLObjectProperty(IRI('http://www.benchmark.org/family#','hasChild')),1,filler=OWLObjectComplementOf(OWLClass(IRI('http://www.benchmark.org/family#','Brother'))))
+
+class_expr_1 =  OWLObjectSomeValuesFrom(property=OWLObjectProperty(IRI('http://www.benchmark.org/family#','hasChild')),filler=OWLObjectComplementOf(OWLClass(IRI('http://www.benchmark.org/family#','Brother'))))
+
+class_expr_2 =  OWLObjectComplementOf(OWLObjectAllValuesFrom(property=OWLObjectProperty(IRI('http://www.benchmark.org/family#','hasChild')),filler=OWLClass(IRI('http://www.benchmark.org/family#','Brother'))))
+
+reasoner_instances_1 = get_reasoner_instances(reasoner, class_expr_1)
+reasoner_instances_2 = get_reasoner_instances(reasoner, class_expr_2)
+
+ground_truth_1 = {i.str for i in kb.individuals(class_expr_1)}
+ground_truth_2 = {i.str for i in kb.individuals(class_expr_2)}
+# ground_truth_1 = {i.str for i in TS.instances(class_expr_1)}
+# ground_truth_2 = {i.str for i in TS.instances(class_expr_2)}
+
+assert ground_truth_1 == ground_truth_2
+
+print(len(ground_truth_1))
+print(len(ground_truth_2))
+print(len(reasoner_instances_2))
+print(len(reasoner_instances_1))
+
+assert reasoner_instances_1 == reasoner_instances_2, "Reasoner fails"
+
+print("test 3 done")
+
+#########################################################################################
+
+# test negation: ¬(¬C) = C
+
+#########################################################################################
+
+class_expr_1 =  OWLObjectComplementOf(OWLObjectComplementOf(OWLClass(IRI('http://www.benchmark.org/family#','Brother'))))
+
+class_expr_2 =  OWLClass(IRI('http://www.benchmark.org/family#','Brother'))
+
+reasoner_instances_1 = get_reasoner_instances(reasoner, class_expr_1)
+reasoner_instances_2 = get_reasoner_instances(reasoner, class_expr_2)
+
+ground_truth_1 = {i.str for i in kb.individuals(class_expr_1)}
+ground_truth_2 = {i.str for i in kb.individuals(class_expr_2)}
+# ground_truth_1 = {i.str for i in TS.instances(class_expr_1)}
+# ground_truth_2 = {i.str for i in TS.instances(class_expr_2)}
+
+assert ground_truth_1 == ground_truth_2
+
+print(len(ground_truth_1))
+print(len(ground_truth_2))
+print(len(reasoner_instances_2))
+print(len(reasoner_instances_1))
+
+assert reasoner_instances_1 == reasoner_instances_2, "Reasoner fails"
+
+print("test 4 done")
+
+#########################################################################################
+
+# test exist and universal rectsiction: ∀/∃r−1.C = ∀/∃r.C if r symmetric
+
+#########################################################################################
+# OWLObjectMaxCardinality(property=OWLObjectProperty(IRI('http://www.benchmark.org/family#','hasChild')),1,filler=OWLObjectComplementOf(OWLClass(IRI('http://www.benchmark.org/family#','Brother'))))
+
+class_expr_1 =  OWLObjectAllValuesFrom(property=OWLObjectInverseOf(OWLObjectProperty(IRI('http://www.benchmark.org/family#','married'))),filler=OWLClass(IRI('http://www.benchmark.org/family#','Brother')))  
+
+class_expr_2 =  OWLObjectAllValuesFrom(property=OWLObjectProperty(IRI('http://www.benchmark.org/family#','married')),filler=OWLClass(IRI('http://www.benchmark.org/family#','Brother')))
+
+reasoner_instances_1 = get_reasoner_instances(reasoner, class_expr_1)
+reasoner_instances_2 = get_reasoner_instances(reasoner, class_expr_2)
+
+ground_truth_1 = {i.str for i in kb.individuals(class_expr_1)}
+ground_truth_2 = {i.str for i in kb.individuals(class_expr_2)}
+# ground_truth_1 = {i.str for i in TS.instances(class_expr_1)}
+# ground_truth_2 = {i.str for i in TS.instances(class_expr_2)}
+
+assert ground_truth_1 == ground_truth_2
+
+print(len(ground_truth_1))
+print(len(ground_truth_2))
+print(len(reasoner_instances_2))
+print(len(reasoner_instances_1))
+
+assert reasoner_instances_1 == reasoner_instances_2, "Reasoner fails"
+
+print("test 5 done")
+
+#########################################################################################
+
+# test max cardinality: ≤ 0r.C = ¬∃r.C
+
+#########################################################################################
+
+
+class_expr_1 =  OWLObjectMaxCardinality(property=OWLObjectProperty(IRI('http://www.benchmark.org/family#','hasChild')),cardinality =0,filler=OWLClass(IRI('http://www.benchmark.org/family#','Brother')))
+class_expr_2 = OWLObjectComplementOf(OWLObjectSomeValuesFrom(property=OWLObjectProperty(IRI('http://www.benchmark.org/family#','hasChild')),filler=OWLClass(IRI('http://www.benchmark.org/family#','Brother'))))
+
+reasoner_instances_1 = get_reasoner_instances(reasoner, class_expr_1)
+reasoner_instances_2 = get_reasoner_instances(reasoner, class_expr_2)
+
+ground_truth_1 = {i.str for i in kb.individuals(class_expr_1)}
+ground_truth_2 = {i.str for i in kb.individuals(class_expr_2)}
+# ground_truth_1 = {i.str for i in TS.instances(class_expr_1)}
+# ground_truth_2 = {i.str for i in TS.instances(class_expr_2)}
+
+assert ground_truth_1 == ground_truth_2
+
+print(len(ground_truth_1))
+print(len(ground_truth_2))
+print(len(reasoner_instances_2))
+print(len(reasoner_instances_1))
+
+assert reasoner_instances_1 == reasoner_instances_2, "Reasoner fails"
+print("test 6 done")
+
+
+
 
 
 

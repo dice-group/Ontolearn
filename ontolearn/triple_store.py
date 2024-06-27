@@ -1071,6 +1071,8 @@ class NeuralReasoner:
             # 1) define max cardinality
             max_cardinality = expression.get_cardinality()
 
+            filler_individuals = {i for i in self.instances(filler_expression)}
+
             # (2) Iterative (1) and return entities whose predicted score satisfies the condition.
             results = set()
             for individual in self.owl_individuals:
