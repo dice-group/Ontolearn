@@ -26,7 +26,6 @@ _deps = [
     "pytest>=7.2.2",
     "owlapy==1.1.0",
     "dicee==0.1.4",
-    "dicee>=0.1.2",
     "ontosample>=0.2.2",
     "sphinx>=7.2.6",
     "sphinx-autoapi>=3.0.0",
