@@ -84,7 +84,6 @@ exist_unnc = concept_reducer_properties(unnc, opt=OWLObjectSomeValuesFrom)
 for_all_unnc = concept_reducer_properties(unnc, opt=OWLObjectAllValuesFrom)
 min_cardinality_unnc = concept_reducer_properties(unnc, opt=OWLObjectMinCardinality)
 max_cardinality_unnc = concept_reducer_properties(unnc, opt=OWLObjectMaxCardinality)
-
 nc_retrieval_results = retrieval_eval(
     expressions=nc,
     y=concept_to_retrieval(nc, symbolic_kb),
@@ -140,6 +139,7 @@ max_cardinality_unnc_retrieval_results = retrieval_eval(
     y=concept_to_retrieval(max_cardinality_unnc, symbolic_kb),
     yhat=concept_to_retrieval(max_cardinality_unnc, neural_owl_reasoner),
 )
+
 
 results = {
     "nc_retrieval_results": nc_retrieval_results,
