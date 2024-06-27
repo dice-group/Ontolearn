@@ -14,7 +14,7 @@ from typing import List, Tuple, Set
 
 symbolic_kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
 neural_owl_reasoner = TripleStoreNeuralReasoner(
-    path_of_kb="KGs/Family/family-benchmark_rich_background.owl", gamma=0.1
+    path_of_kb="KGs/Family/family-benchmark_rich_background.owl", gamma=0.8
 )
 object_properties = {i for i in symbolic_kb.get_object_properties()}
 object_properties_inverse = {i.get_inverse_property() for i in object_properties}
@@ -35,7 +35,7 @@ def concept_reducer(concepts, opt):
     return result
 
 
-def concept_reducer_properties(concepts, opt, cardinality=3):
+def concept_reducer_properties(concepts, opt, cardinality=5):
     result = set()
     for i in concepts:
         for j in object_properties_and_inverse:
@@ -141,15 +141,29 @@ max_cardinality_unnc_retrieval_results = retrieval_eval(
     yhat=concept_to_retrieval(max_cardinality_unnc, neural_owl_reasoner),
 )
 
+results = {
+    "nc_retrieval_results": nc_retrieval_results,
+    "unions_nc_retrieval_results": unions_nc_retrieval_results,
+    "intersections_nc_retrieval_results": intersections_nc_retrieval_results,
+    "nnc_retrieval_results": nnc_retrieval_results,
+    "unnc_retrieval_results": unnc_retrieval_results,
+    "unions_unnc_retrieval_results": unions_unnc_retrieval_results,
+    "intersections_unnc_retrieval_results": intersections_unnc_retrieval_results,
+    "exist_unnc_retrieval_results": exist_unnc_retrieval_results,
+    "for_all_unnc_retrieval_results": for_all_unnc_retrieval_results,
+    "min_cardinality_unnc_retrieval_results": min_cardinality_unnc_retrieval_results,
+    "max_cardinality_unnc_retrieval_results": max_cardinality_unnc_retrieval_results,
+}
 
-print(nc_retrieval_results)
-print(unions_nc_retrieval_results)
-print(intersections_nc_retrieval_results)
-print(nnc_retrieval_results)
-print(unnc_retrieval_results)
-print(unions_unnc_retrieval_results)
-print(intersections_unnc_retrieval_results)
-print(exist_unnc_retrieval_results)
-print(for_all_unnc_retrieval_results)
-print(min_cardinality_unnc_retrieval_results)
-print(max_cardinality_unnc_retrieval_results)
+
+# logger that prints the results
+def print_results(results):
+    for k, v in results.items():
+        print("\n")
+        print(f"{k}:")
+        print(v)
+
+
+print("\n")
+print("(Jackard Similarity, Runtime Benefits)")
+print_results(results)

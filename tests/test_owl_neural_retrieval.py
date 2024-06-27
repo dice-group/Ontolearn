@@ -96,8 +96,10 @@ class Test_Neural_Retrieval:
                             property=OWLObjectProperty(
                                 "http://example.com/father#hasChild"
                             ),
-                            filler=OWLObjectOneOf(OWLNamedIndividual("http://example.com/father#anna")),
-                        
+                            filler=OWLObjectOneOf(
+                                OWLNamedIndividual("http://example.com/father#anna")
+                            ),
+                        )
                     ),
                 ]
             )
@@ -161,6 +163,30 @@ class Test_Neural_Retrieval:
         )
         individuals_2 = set(neural_owl_reasoner.instances(father_and_brother))
         assert individuals == individuals_2
+
+    def test_complement_for_all_named_concepts_family(self):
+        symbolic_kb = KnowledgeBase(
+            path="KGs/Family/family-benchmark_rich_background.owl"
+        )
+        named_concepts = symbolic_kb.get_concepts()
+        benchmark_dataset = [
+            (
+                OWLObjectComplementOf(concept),
+                {
+                    individual.str
+                    for individual in symbolic_kb.individuals(
+                        OWLObjectComplementOf(concept)
+                    )
+                },
+            )
+            for concept in named_concepts
+        ]
+        neural_owl_reasoner = TripleStoreNeuralReasoner(
+            path_of_kb="KGs/Family/family-benchmark_rich_background.owl", gamma=0.1
+        )
+        for concept, symbolic_retrieval in benchmark_dataset:
+            neural_retrieval = {i.str for i in neural_owl_reasoner.instances(concept)}
+            assert jaccard_similarity(symbolic_retrieval, neural_retrieval)
 
     def test_retrieval_named_concepts_in_abox_family(self):
         symbolic_kb = KnowledgeBase(
