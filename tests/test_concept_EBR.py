@@ -215,8 +215,8 @@ assert ground_truth_1 == ground_truth_2
 
 print(len(ground_truth_1))
 print(len(ground_truth_2))
-print(len(reasoner_instances_2))
 print(len(reasoner_instances_1))
+print(len(reasoner_instances_2))
 
 assert reasoner_instances_1 == reasoner_instances_2, "Reasoner fails"
 print("test 6 done")

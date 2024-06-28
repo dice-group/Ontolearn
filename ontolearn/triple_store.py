@@ -1018,48 +1018,8 @@ class NeuralReasoner:
 
             yield from results
 
-        # elif isinstance(expression, OWLObjectMaxCardinality):
-
-        #     property_expression = expression.get_property()
-        #     filler_expression = expression.get_filler()
-
-        #     # (1) Find individuals that are likely y \in C^I, i.e. φ(y, type, C) 
-
-        #     filler_individuals = {i for i in self.instances(filler_expression)}
-
-        #     # 2) set max cardinality
-        #     max_cardinality = expression.get_cardinality()
-
-        #     # (3) Iterative (1) and return entities whose predicted score satisfies the condition.
-        #     results = set()
-        #     for individual in filler_individuals:# self.owl_individuals:
-
-        #         if isinstance(property_expression, OWLObjectInverseOf):
-
-        #             inverse_property = property_expression.get_inverse_property()
-        #             scores = self.neural_link_predictor.predict(h=[individual.str],
-        #                                                         r=[inverse_property.str],
-        #                                                         within=None,
-        #                                                         logits=False).tolist()
-        #         else:
-        #             scores = self.neural_link_predictor.predict(r=[property_expression.str],
-        #                                                         t=[individual.str],
-        #                                                         within=None,
-        #                                                         logits=False).tolist()
-
-        #         candidate_iris = [iri for iri, score in zip(self.neural_link_predictor.entity_to_idx.keys(), scores) if score >= self.gamma_for_nc]
-
-        #         count = len(candidate_iris)
-
-        #         if count <= max_cardinality:
-        #             for iri in candidate_iris:
-        #                 try:
-        #                     results.add(OWLNamedIndividual(iri))
-        #                 except:
-        #                     print(f"Could not convert to OWLNamedIndividual {iri}")
-
-        #     yield from results
-
+        
+        
 
         elif isinstance(expression, OWLObjectMaxCardinality):
 
@@ -1070,8 +1030,6 @@ class NeuralReasoner:
 
             # 1) define max cardinality
             max_cardinality = expression.get_cardinality()
-
-            filler_individuals = {i for i in self.instances(filler_expression)}
 
             # (2) Iterative (1) and return entities whose predicted score satisfies the condition.
             results = set()
@@ -1097,8 +1055,12 @@ class NeuralReasoner:
                 count = sum(1 for idx, score in enumerate(scores) if score >= self.gamma_for_nc and
                             self.is_instance(self.neural_link_predictor.idx_to_entity[idx], filler_expression))
                 
-                if count <= max_cardinality:
-                    results.add(individual)
+                if max_cardinality == 0:
+                    raise NotImplementedError("Handling for max cardinality of 0 is not implemented.")
+               
+                else:
+                    if count <= max_cardinality:
+                        results.add(individual)
 
             yield from results
 
