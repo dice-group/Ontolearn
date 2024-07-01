@@ -188,6 +188,49 @@ class Test_Neural_Retrieval:
             neural_retrieval = {i.str for i in neural_owl_reasoner.instances(concept)}
             assert jaccard_similarity(symbolic_retrieval, neural_retrieval)
 
+    def test_for_all_family(self):
+        neural_owl_reasoner = TripleStoreNeuralReasoner(
+            path_of_kb="KGs/Family/family-benchmark_rich_background.owl", gamma=0.1
+        )
+        symbolic_kb = TripleStore(url="http://localhost:3030/family")
+        named_classes = symbolic_kb.get_concepts()  # Retrieve all named classes
+        properties = symbolic_kb.get_object_properties()  # Retrieve all properties
+
+        with open("match_log.txt", "w") as file:
+            file.write("Matches found in the neural reasoner evaluations:\n")
+
+            # Iterate over all properties and named classes
+            for property in properties:
+                for named_class in named_classes:
+                    # Creating the expressions for ¬∃r.¬C and ∀r.C using property.str
+                    neg_exist_neg = OWLObjectComplementOf(
+                        OWLObjectSomeValuesFrom(
+                            property=OWLObjectProperty(property.str),
+                            filler=OWLObjectComplementOf(named_class),
+                        )
+                    )
+                    all_values = OWLObjectAllValuesFrom(
+                        property=OWLObjectProperty(property.str), filler=named_class
+                    )
+
+                    # Using the neural reasoner to get instances
+                    neural_neg_exist_neg = {
+                        i.str for i in neural_owl_reasoner.instances(neg_exist_neg)
+                    }
+                    neural_all_values = {
+                        i.str for i in neural_owl_reasoner.instances(all_values)
+                    }
+
+                    # Check for matches and write to file if equal
+                    if neural_neg_exist_neg == neural_all_values:
+                        file.write(
+                            f"Property: {property.str}, Class: {named_class.str}\n"
+                        )
+                        file.write(
+                            f"¬∃{property.str}.¬{named_class.str} and ∀{property.str}.{named_class.str} match\n"
+                        )
+                        file.write(f"Matching Instances: {neural_neg_exist_neg}\n\n")
+
     def test_retrieval_named_concepts_in_abox_family(self):
         symbolic_kb = KnowledgeBase(
             path="KGs/Family/family-benchmark_rich_background.owl"

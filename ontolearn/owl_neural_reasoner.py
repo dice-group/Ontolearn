@@ -606,7 +606,7 @@ class TripleStoreNeuralReasoner:
                 # Log the invalid IRI
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
-
+        """"       
         if len(list(predictions)) == 0:
             # abstract class / class that does not have any instances -> get all child classes and make predictions
             for child_class in self.subconcepts(owl_class, confidence_threshold=confidence_threshold):
@@ -614,6 +614,7 @@ class TripleStoreNeuralReasoner:
                     if individual not in seen:
                         seen.add(individual)
                         yield individual
+        """
 
 
     def get_individuals_with_object_property(
