@@ -13,7 +13,7 @@ from owlapy.parser import DLSyntaxParser
 from ontolearn.knowledge_base import KnowledgeBase
 from owlapy.class_expression import OWLClassExpression, OWLThing, OWLClass, OWLObjectSomeValuesFrom, OWLObjectOneOf, \
     OWLObjectMinCardinality, OWLDataSomeValuesFrom, OWLDataOneOf, OWLObjectComplementOf, OWLObjectUnionOf, \
-    OWLObjectIntersectionOf, OWLObjectAllValuesFrom, OWLObjectMaxCardinality
+    OWLObjectIntersectionOf, OWLObjectAllValuesFrom, OWLObjectMaxCardinality, OWLObjectExactCardinality
 from owlapy.owl_property import OWLDataProperty, OWLObjectPropertyExpression, OWLObjectInverseOf, OWLObjectProperty, \
     OWLProperty
 from owlapy.iri import IRI
@@ -42,7 +42,7 @@ def get_reasoner_instances(reasoner: NeuralReasoner, class_expression: OWLClassE
 
 
 TS = TripleStoreReasonerOntology(url="http://localhost:3030/family.owl")
-reasoner = NeuralReasoner(KGE(f"KeciFamilyRun"), gamma_for_nc=0.1)
+reasoner = NeuralReasoner(KGE(f"KeciFamilyRun"), gamma_for_nc=0.9)
 
 
 #########################################################################################
@@ -220,6 +220,69 @@ print(len(reasoner_instances_2))
 
 assert reasoner_instances_1 == reasoner_instances_2, "Reasoner fails"
 print("test 6 done")
+
+
+#########################################################################################
+
+# test max cardinality: ≤ n r.C = ¬ (≥ n+1 r.C)
+
+#########################################################################################
+
+
+class_expr_1 =  OWLObjectMaxCardinality(property=OWLObjectProperty(IRI('http://www.benchmark.org/family#','hasChild')),cardinality =1,filler=OWLClass(IRI('http://www.benchmark.org/family#','Brother')))
+class_expr_2 =  OWLObjectComplementOf(OWLObjectMinCardinality(property=OWLObjectProperty(IRI('http://www.benchmark.org/family#','hasChild')),cardinality =2,filler=OWLClass(IRI('http://www.benchmark.org/family#','Brother'))))
+
+reasoner_instances_1 = get_reasoner_instances(reasoner, class_expr_1)
+reasoner_instances_2 = get_reasoner_instances(reasoner, class_expr_2)
+
+ground_truth_1 = {i.str for i in kb.individuals(class_expr_1)}
+ground_truth_2 = {i.str for i in kb.individuals(class_expr_2)}
+# ground_truth_1 = {i.str for i in TS.instances(class_expr_1)}
+# ground_truth_2 = {i.str for i in TS.instances(class_expr_2)}
+
+assert ground_truth_1 == ground_truth_2
+
+print(len(ground_truth_1))
+print(len(ground_truth_2))
+print(len(reasoner_instances_1))
+print(len(reasoner_instances_2))
+
+assert reasoner_instances_1 == reasoner_instances_2, "Reasoner fails"
+print("test 7 done")
+
+
+#########################################################################################
+
+# test exact cardinality: (≤ n r.C) ⊓ (≥ n r.C) = (= n r.C)
+
+#########################################################################################
+
+
+
+C =  OWLObjectMaxCardinality(property=OWLObjectProperty(IRI('http://www.benchmark.org/family#','hasChild')),cardinality =1,filler=OWLClass(IRI('http://www.benchmark.org/family#','Brother')))
+D =  OWLObjectMinCardinality(property=OWLObjectProperty(IRI('http://www.benchmark.org/family#','hasChild')),cardinality =1,filler=OWLClass(IRI('http://www.benchmark.org/family#','Brother')))
+
+class_expr_1 = OWLObjectIntersectionOf([C,D])
+class_expr_2 = OWLObjectExactCardinality(property=OWLObjectProperty(IRI('http://www.benchmark.org/family#','hasChild')),cardinality =1,filler=OWLClass(IRI('http://www.benchmark.org/family#','Brother')))
+
+
+reasoner_instances_1 = get_reasoner_instances(reasoner, class_expr_1)
+reasoner_instances_2 = get_reasoner_instances(reasoner, class_expr_2)
+
+# ground_truth_1 = {i.str for i in kb.individuals(class_expr_1)}
+# ground_truth_2 = {i.str for i in kb.individuals(class_expr_2)}
+ground_truth_1 = {i.str for i in TS.instances(class_expr_1)}
+ground_truth_2 = {i.str for i in TS.instances(class_expr_2)}
+
+assert ground_truth_1 == ground_truth_2
+
+print(len(ground_truth_1))
+print(len(ground_truth_2))
+print(len(reasoner_instances_1))
+print(len(reasoner_instances_2))
+
+assert reasoner_instances_1 == reasoner_instances_2, "Reasoner fails"
+print("test 8 done")
 
 
 
