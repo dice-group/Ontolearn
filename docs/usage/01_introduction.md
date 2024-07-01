@@ -8,7 +8,7 @@
 
 **Contact**: [onto-learn@lists.uni-paderborn.de](mailto:onto-learn@lists.uni-paderborn.de)
 
-**License:** GNU Affero General Public License v3 or later (AGPLv3+)
+**License:** MIT License
 
 --------------------------------------------------------------------------------------------
 
