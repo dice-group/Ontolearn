@@ -270,47 +270,8 @@ model.verbalize('Predictions.owl')
 This will create for each class expression inside `Predictions.owl` a `.png` 
 image that contain the tree representation of that class expression.
 
-
-## Quick try-out
-
-You can execute the script `deploy_cl.py` to deploy the concept learners in a local web server and try
-the algorithms using an interactive interface made possible by [gradio](https://www.gradio.app/). Currently, 
-you can only deploy the following concept learners: **NCES**, **EvoLearner**, **CELOE** and **OCEL**.
-
-**Warning!** Gradio is not part of the required packages. Therefore, if you want to use this functionality
-you need to install gradio in addition to the other dependencies:
-
-```shell
-pip install gradio
-```
-
-> **NOTE**: In case you don't have you own dataset, don't worry, you can use
-> the datasets we store in our data server. See _[Download external files](02_installation.md#download-external-files)_.
-
-For example the command below will launch an interface using **EvoLearner** as the model on 
-the **Family** dataset which is a simple dataset with 202 individuals:
-
-
-```shell
-python deploy_cl.py --model evolearner --path_knowledge_base KGs/Family/family-benchmark_rich_background.owl
-```
-
-Once you run this command, a local URL where our model is deployed will be provided to you.
-
-In the interface you need to enter the positive and the negative examples. For a quick run you can
-click on the **Random Examples** checkbox, but you may as well enter some real examples for
-the learning problem of **Aunt**, **Brother**, **Cousin**, etc. which
-you can find in the folder `examples/synthetic_problems.json`. Just copy and paste the IRIs of
-positive and negative examples for a certain learning problem directly
-in their respective fields.
-
-Run the help command to see the description on this script usage:
-
-```shell
-python deploy_cl.py --help
-```
-
 ---------------------------------------------------------------------------------------
+
 ## Use Triplestore Knowledge Base
 
 Instead of going through nodes using expensive computation resources why not just make use of the

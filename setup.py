@@ -36,15 +36,13 @@ with open('README.md', 'r') as fh:
 _deps = [
     "matplotlib>=3.3.4",
     "scikit-learn>=1.4.1",
-    "owlready2>=0.40",
     "torch==2.2.0",
     "rdflib>=6.0.2",
     "pandas>=1.5.0",
-    "sortedcontainers>=2.4.0",  # AB: This is required
+    "sortedcontainers>=2.4.0",
     "deap>=1.3.1",
     "flask>=1.1.2",
     "httpx>=0.25.2",
-    "gradio>=4.11.0",
     "tqdm>=4.64.0",
     "transformers>=4.38.1",
     "pytest>=7.2.2",
@@ -76,7 +74,6 @@ extras["min"] = deps_list(
     "rdflib",
     "pandas",
     "sortedcontainers",
-    "owlready2",
     "owlapy",
     "flask",  # Drill, NCES
     "tqdm", "transformers",  # NCES
@@ -92,7 +89,7 @@ extras["doc"] = (deps_list("sphinx",
                            "sphinxcontrib-plantuml",
                            "plantuml-local-client", "myst-parser"))
 
-extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "gradio", "ontosample"))
+extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "ontosample"))
 
 setup(
     name="ontolearn",

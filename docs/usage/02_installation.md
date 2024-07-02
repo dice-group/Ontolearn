@@ -177,5 +177,6 @@ Additionally, you can specify the path where you want to flake8 to run.
 
 ----------------------------------------------------------------------
 
-In the next guide we will explore the [KnowledgeBase](ontolearn.knowledge_base.KnowledgeBase) class that is needed to 
-run a concept learner.
+In the next guide we give some example on the main usage of Ontolearn. The
+guides after that, goes into more details on the key concepts and functionalities 
+used in Ontolearn.
