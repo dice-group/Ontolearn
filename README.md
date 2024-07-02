@@ -198,7 +198,7 @@ python examples/concept_learning_cv_evaluation.py --lps LPs/Mutagenesis/lps.json
 ```
 
 | LP       | Train-F1-OCEL | Test-F1-OCEL | RT-OCEL | Train-F1-CELOE | Test-F1-CELOE | RT-CELOE | Train-F1-Evo | Test-F1-Evo | RT-Evo | Train-F1-DRILL | Test-F1-DRILL | RT-DRILL | Train-F1-TDL | Test-F1-TDL | RT-TDL | Train-F1-NCES | Test-F1-NCES | RT-NCES | Train-F1-CLIP | Test-F1-CLIP | RT-CLIP |
-|:---------|--------------:|-------------:|--------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|--------------:|-------------:|--------:|
+|:---------|--------------:|-------------:|--------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|--------------:|-------------:|--------:|--------------:|-------------:|--------:|
 | NotKnown |         0.916 |        0.918 |  60.705 |          0.916 |         0.918 |   60.705 |        0.975 |       0.970 | 51.870 |          0.809 |         0.804 |   60.140 |        1.000 |       0.852 | 13.569 |         0.717 |        0.718 |   3.784 |         0.916 |        0.918 |   26.312|
 
 
@@ -207,8 +207,8 @@ python examples/concept_learning_cv_evaluation.py --lps LPs/Mutagenesis/lps.json
 ```shell
 python examples/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 60 --report carcinogenesis_results.csv 
 ```
-| LP       | Train-F1-OCEL | Test-F1-OCEL | RT-OCEL | Train-F1-CELOE | Test-F1-CELOE | RT-CELOE | Train-F1-Evo | Test-F1-Evo | RT-Evo | Train-F1-DRILL | Test-F1-DRILL | RT-DRILL | Train-F1-TDL | Test-F1-TDL | RT-TDL | Train-F1-NCES | Test-F1-NCES | RT-NCES | | Train-F1-CLIP | Test-F1-CLIP | RT-CLIP |
-|:---------|--------------:|-------------:|--------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|--------------:|-------------:|--------:|
+| LP       | Train-F1-OCEL | Test-F1-OCEL | RT-OCEL | Train-F1-CELOE | Test-F1-CELOE | RT-CELOE | Train-F1-Evo | Test-F1-Evo | RT-Evo | Train-F1-DRILL | Test-F1-DRILL | RT-DRILL | Train-F1-TDL | Test-F1-TDL | RT-TDL | Train-F1-NCES | Test-F1-NCES | RT-NCES | Train-F1-CLIP | Test-F1-CLIP | RT-CLIP |
+|:---------|--------------:|-------------:|--------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|--------------:|-------------:|--------:|--------------:|-------------:|--------:|
 | NOTKNOWN |         0.737 |        0.711 |  62.048 |          0.740 |         0.701 |   62.048 |        0.822 |       0.628 | 64.508 |          0.740 |         0.707 |   60.120 |        1.000 |       0.616 |  5.196 |         0.705 |        0.704 |   4.157 |         0.740 |        0.701 |   48.475| 
 
 
