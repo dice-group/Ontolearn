@@ -1,25 +1,47 @@
 from rdflib import Graph, RDF, RDFS, OWL, URIRef
 from itertools import product, combinations
 from typing import List, Set
+from owlready2 import *
 from owlapy.owl_property import OWLObjectInverseOf
 # from owlapy.owl_property import get_inverse_property
 
-def load_ontology(file_path):
-    g = Graph()
-    g.parse(file_path, format='xml')
-    return g
+def check_abox(path_kb):
+
+    kb = get_ontology(path_kb).load()
+
+    # Get all named concepts (classes)
+    all_concepts = list(kb.classes())
+
+    # Get all individuals (instances) in the ABox
+    all_individuals = list(kb.individuals())
+
+    # Collect all concepts that are referenced by individuals in the ABox
+    referenced_concepts = set()
+    for individual in all_individuals:
+        for concept in individual.is_a:
+            referenced_concepts.add(concept)
+
+    # Find concepts that are not in the ABox
+    concepts_not_in_abox = [concept for concept in all_concepts if concept not in referenced_concepts]
+
+    concepts_not_in_abox = [c.iri for c in concepts_not_in_abox]
+
+    return concepts_not_in_abox
+
 
 
 def generate_class_expressions(kb, concept_type: str):
 
-    #  1. all named classes
-    named_concepts = [c.str.split("#")[-1] for c in kb.ontology.classes_in_signature() if c.str not in [
-        "http://www.benchmark.org/family#PersonWithASibling",
-        "http://www.benchmark.org/family#Child",
-        "http://www.benchmark.org/family#Parent",
-        "http://www.benchmark.org/family#Grandparent",
-        "http://www.benchmark.org/family#Grandchild"]]
 
+    concepts_not_in_abox = check_abox(kb.path)
+
+    # print(concepts_not_in_abox)
+    # exit(0)
+    
+    #  1. all named classes
+    named_concepts = [c.str.split("#")[-1] for c in kb.ontology.classes_in_signature() if c.str not in concepts_not_in_abox]
+
+   
     # 2: Negate all concepts obtained from step 1 (---> length 2)
     negated_concepts = [f"¬{c}" for c in named_concepts]
 
@@ -51,9 +73,9 @@ def generate_class_expressions(kb, concept_type: str):
     # 7. Combine everything (---> length 1, 2, 3, 4)
 
     all_concepts = (named_concepts + negated_concepts + unions + intersections + 
-                    existential_restrictions + universal_restrictions +
+                    existential_restrictions + universal_restrictions + exact_cardinality_restrictions+
                     min_cardinality_restrictions + max_cardinality_restrictions +
-                    existential_inverse_restrictions + universal_inverse_restrictions +
+                    existential_inverse_restrictions + universal_inverse_restrictions + exact_cardinality_inverse_restrictions+
                     min_cardinality_inverse_restrictions + max_cardinality_inverse_restrictions)
 
     if "name" in concept_type:
