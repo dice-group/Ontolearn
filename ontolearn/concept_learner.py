@@ -33,6 +33,7 @@ from itertools import islice, chain
 from typing import Any, Callable, Dict, FrozenSet, Set, List, Tuple, Iterable, Optional, Union
 
 import pandas as pd
+import numpy as np
 import torch
 from owlapy.class_expression import OWLClassExpression
 from owlapy.owl_individual import OWLNamedIndividual
@@ -1192,8 +1193,6 @@ class CLIP(CELOE):
                          max_results,
                          best_only,
                          calculate_min_max)
-        assert hasattr(refinement_operator,
-                       "expressivity"), f"CLIP was developed to run more efficiently with ExpressRefinement, not {refinement_operator}"
         self.predictor_name = predictor_name
         self.pretrained_predictor_name = pretrained_predictor_name
         self.knowledge_base_path = knowledge_base_path
@@ -1476,8 +1475,8 @@ class NCES(BaseNCES):
         else:
             num_pos_ex = len(pos)
             num_neg_ex = len(neg)
-        positive = random.sample(pos, min(num_pos_ex, len(pos)))
-        negative = random.sample(neg, min(num_neg_ex, len(neg)))
+        positive = np.random.choice(pos, size=min(num_pos_ex, len(pos)), replace=False)
+        negative = np.random.choice(neg, size=min(num_neg_ex, len(neg)), replace=False)
         return positive, negative
 
     def get_prediction(self, models, x1, x2):
@@ -1496,6 +1495,7 @@ class NCES(BaseNCES):
         return prediction
 
     def fit_one(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]]):
+        #print("\n\n#### In fit one\n\n")
         if isinstance(pos[0], OWLNamedIndividual):
             pos_str = [ind.str.split("/")[-1] for ind in pos]
             neg_str = [ind.str.split("/")[-1] for ind in neg]
@@ -1504,8 +1504,8 @@ class NCES(BaseNCES):
             neg_str = neg
         else:
             raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
-        Pos = [random.sample(pos_str, len(pos_str)) for _ in range(self.num_predictions)]
-        Neg = [random.sample(neg_str, len(neg_str)) for _ in range(self.num_predictions)]
+        Pos = np.random.choice(pos_str, size=(self.num_predictions, len(pos_str)), replace=True)
+        Neg = np.random.choice(neg_str, size=(self.num_predictions, len(neg_str)), replace=True)
 
         assert self.load_pretrained and self.pretrained_model_name, \
             "No pretrained model found. Please first train NCES, see the <<train>> method below"
