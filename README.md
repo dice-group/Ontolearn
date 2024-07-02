@@ -170,26 +170,26 @@ print(df[[col for col in df if col.startswith('Test-F1') or col.startswith('RT')
 
 Below, we report the average test F1 score and the average runtimes of learners.
 
-|         LP         | Test-F1-OCEL | RT-OCEL | Test-F1-CELOE | RT-CELOE | Test-F1-Evo | RT-Evo | Test-F1-DRILL | RT-DRILL | Test-F1-TDL | RT-TDL | Test-F1-NCES | RT-NCES |
-|:------------------:|-------------:|--------:|--------------:|---------:|------------:|-------:|--------------:|---------:|------------:|-------:|-------------:|--------:|
-|        Aunt        |        0.614 |  13.697 |         0.855 |   13.697 |       0.978 |  5.278 |         0.811 |   60.351 |       0.956 |  0.118 |        0.681 |   0.234 |
-|       Cousin       |        0.712 |  10.846 |         0.789 |   10.846 |       0.993 |  3.311 |         0.701 |   60.485 |       0.820 |  0.176 |        0.667 |   0.232 |
-| Grandgranddaughter |        1.000 |   0.013 |         1.000 |    0.013 |       1.000 |  0.426 |         0.980 |   17.486 |       1.000 |  0.050 |        0.800 |   0.224 |
-|  Grandgrandfather  |        1.000 |   0.897 |         1.000 |    0.897 |       1.000 |  0.404 |         0.947 |   55.728 |       0.947 |  0.059 |        0.707 |   0.231 |
-|  Grandgrandmother  |        1.000 |   4.173 |         1.000 |    4.173 |       1.000 |  0.442 |         0.893 |   50.329 |       0.947 |  0.060 |        0.707 |   0.229 |
-|   Grandgrandson    |        1.000 |   1.632 |         1.000 |    1.632 |       1.000 |  0.452 |         0.931 |   60.358 |       0.911 |  0.070 |        0.817 |   0.235 |
-|       Uncle        |        0.876 |  16.244 |         0.891 |   16.244 |       0.964 |  4.516 |         0.876 |   60.416 |       0.933 |  0.098 |        0.687 |   0.253 |
+|         LP         | Test-F1-OCEL | RT-OCEL | Test-F1-CELOE | RT-CELOE | Test-F1-Evo | RT-Evo | Test-F1-DRILL | RT-DRILL | Test-F1-TDL | RT-TDL | Test-F1-NCES | RT-NCES | Test-F1-CLIP | RT-CLIP |
+|:------------------:|-------------:|--------:|--------------:|---------:|------------:|-------:|--------------:|---------:|------------:|-------:|-------------:|--------:|-------------:|--------:|
+|        Aunt        |        0.614 |  13.697 |         0.855 |   13.697 |       0.978 |  5.278 |         0.811 |   60.351 |       0.956 |  0.118 |        0.812 |   1.168 |        0.855 |   14.059 |
+|       Cousin       |        0.712 |  10.846 |         0.789 |   10.846 |       0.993 |  3.311 |         0.701 |   60.485 |       0.820 |  0.176 |        0.677 |   1.050 |        0.779 |   9.050 |
+| Grandgranddaughter |        1.000 |   0.013 |         1.000 |    0.013 |       1.000 |  0.426 |         0.980 |   17.486 |       1.000 |  0.050 |        1.000 |   0.843 |        1.000 |   0.639 |
+|  Grandgrandfather  |        1.000 |   0.897 |         1.000 |    0.897 |       1.000 |  0.404 |         0.947 |   55.728 |       0.947 |  0.059 |        0.927 |   0.902 |        1.000 |   0.746 |
+|  Grandgrandmother  |        1.000 |   4.173 |         1.000 |    4.173 |       1.000 |  0.442 |         0.893 |   50.329 |       0.947 |  0.060 |        0.927 |   0.908 |        1.000 |   0.817 |
+|   Grandgrandson    |        1.000 |   1.632 |         1.000 |    1.632 |       1.000 |  0.452 |         0.931 |   60.358 |       0.911 |  0.070 |        0.911 |   1.050 |        1.000 |   0.939 |
+|       Uncle        |        0.876 |  16.244 |         0.891 |   16.244 |       0.964 |  4.516 |         0.876 |   60.416 |       0.933 |  0.098 |        0.891 |   1.256 |        0.928 |   17.682 |
 
 
-|         LP         | Train-F1-OCEL | Train-F1-CELOE | Train-F1-Evo | Train-F1-DRILL | Train-F1-TDL | Train-F1-NCES | 
-|:------------------:|--------------:|---------------:|-------------:|---------------:|-------------:|--------------:|
-|        Aunt        |         0.835 |          0.918 |        0.995 |          0.837 |        1.000 |         0.712 |
-|       Cousin       |         0.746 |          0.796 |        1.000 |          0.732 |        1.000 |         0.667 |
-| Grandgranddaughter |         1.000 |          1.000 |        1.000 |          1.000 |        1.000 |         0.825 |
-|  Grandgrandfather  |         1.000 |          1.000 |        1.000 |          0.968 |        1.000 |         0.741 |
-|  Grandgrandmother  |         1.000 |          1.000 |        1.000 |          0.975 |        1.000 |         0.702 |
-|   Grandgrandson    |         1.000 |          1.000 |        1.000 |          0.962 |        1.000 |         0.824 |
-|       Uncle        |         0.904 |          0.907 |        0.996 |          0.908 |        1.000 |         0.696 |
+|         LP         | Train-F1-OCEL | Train-F1-CELOE | Train-F1-Evo | Train-F1-DRILL | Train-F1-TDL |   Train-F1-NCES |   Train-F1-CLIP |
+|:------------------:|--------------:|---------------:|-------------:|---------------:|-------------:|----------------:|----------------:|
+|        Aunt        |         0.835 |          0.918 |        0.995 |          0.837 |        1.000 |           0.804 |           0.918 |
+|       Cousin       |         0.746 |          0.796 |        1.000 |          0.732 |        1.000 |           0.681 |           0.798 |
+| Grandgranddaughter |         1.000 |          1.000 |        1.000 |          1.000 |        1.000 |           1.000 |           1.000 |
+|  Grandgrandfather  |         1.000 |          1.000 |        1.000 |          0.968 |        1.000 |           0.973 |           1.000 |
+|  Grandgrandmother  |         1.000 |          1.000 |        1.000 |          0.975 |        1.000 |           0.939 |           1.000 |
+|   Grandgrandson    |         1.000 |          1.000 |        1.000 |          0.962 |        1.000 |           0.927 |           1.000 |
+|       Uncle        |         0.904 |          0.907 |        0.996 |          0.908 |        1.000 |           0.884 |           0.940 |
 
 
 ### 10-Fold Cross Validation Mutagenesis Benchmark Results
@@ -197,9 +197,9 @@ Below, we report the average test F1 score and the average runtimes of learners.
 python examples/concept_learning_cv_evaluation.py --lps LPs/Mutagenesis/lps.json --kb KGs/Mutagenesis/mutagenesis.owl --max_runtime 60 --report mutagenesis_results.csv 
 ```
 
-| LP       | Train-F1-OCEL | Test-F1-OCEL | RT-OCEL | Train-F1-CELOE | Test-F1-CELOE | RT-CELOE | Train-F1-Evo | Test-F1-Evo | RT-Evo | Train-F1-DRILL | Test-F1-DRILL | RT-DRILL | Train-F1-TDL | Test-F1-TDL | RT-TDL | Train-F1-NCES | Test-F1-NCES | RT-NCES |
+| LP       | Train-F1-OCEL | Test-F1-OCEL | RT-OCEL | Train-F1-CELOE | Test-F1-CELOE | RT-CELOE | Train-F1-Evo | Test-F1-Evo | RT-Evo | Train-F1-DRILL | Test-F1-DRILL | RT-DRILL | Train-F1-TDL | Test-F1-TDL | RT-TDL | Train-F1-NCES | Test-F1-NCES | RT-NCES | Train-F1-CLIP | Test-F1-CLIP | RT-CLIP |
 |:---------|--------------:|-------------:|--------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|--------------:|-------------:|--------:|
-| NotKnown |         0.916 |        0.918 |  60.705 |          0.916 |         0.918 |   60.705 |        0.975 |       0.970 | 51.870 |          0.809 |         0.804 |   60.140 |        1.000 |       0.852 | 13.569 |         0.634 |        0.632 |   1.223 |
+| NotKnown |         0.916 |        0.918 |  60.705 |          0.916 |         0.918 |   60.705 |        0.975 |       0.970 | 51.870 |          0.809 |         0.804 |   60.140 |        1.000 |       0.852 | 13.569 |         0.717 |        0.718 |   3.784 |         0.916 |        0.918 |   26.312|
 
 
 
@@ -207,9 +207,9 @@ python examples/concept_learning_cv_evaluation.py --lps LPs/Mutagenesis/lps.json
 ```shell
 python examples/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 60 --report carcinogenesis_results.csv 
 ```
-| LP       | Train-F1-OCEL | Test-F1-OCEL | RT-OCEL | Train-F1-CELOE | Test-F1-CELOE | RT-CELOE | Train-F1-Evo | Test-F1-Evo | RT-Evo | Train-F1-DRILL | Test-F1-DRILL | RT-DRILL | Train-F1-TDL | Test-F1-TDL | RT-TDL | Train-F1-NCES | Test-F1-NCES | RT-NCES |
+| LP       | Train-F1-OCEL | Test-F1-OCEL | RT-OCEL | Train-F1-CELOE | Test-F1-CELOE | RT-CELOE | Train-F1-Evo | Test-F1-Evo | RT-Evo | Train-F1-DRILL | Test-F1-DRILL | RT-DRILL | Train-F1-TDL | Test-F1-TDL | RT-TDL | Train-F1-NCES | Test-F1-NCES | RT-NCES | | Train-F1-CLIP | Test-F1-CLIP | RT-CLIP |
 |:---------|--------------:|-------------:|--------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|--------------:|-------------:|--------:|
-| NOTKNOWN |         0.737 |        0.711 |  62.048 |          0.740 |         0.701 |   62.048 |        0.822 |       0.628 | 64.508 |          0.740 |         0.707 |   60.120 |        1.000 |       0.616 |  5.196 |         0.375 |        0.407 |   1.246 |
+| NOTKNOWN |         0.737 |        0.711 |  62.048 |          0.740 |         0.701 |   62.048 |        0.822 |       0.628 | 64.508 |          0.740 |         0.707 |   60.120 |        1.000 |       0.616 |  5.196 |         0.705 |        0.704 |   4.157 |         0.740 |        0.701 |   48.475| 
 
 
 </details>
