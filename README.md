@@ -158,7 +158,7 @@ To compute the test performance, we compute F1-score of H w.r.t. test positive a
   
 ```shell
 # To download learning problems and benchmark learners on the Family benchmark dataset with benchmark learning problems.
-python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps_difficult.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 60 --report family_results.csv 
+python examples/concept_learning_cv_evaluation.py --kb ./KGs/Family/family-benchmark_rich_background.owl --lps ./LPs/Family/lps_difficult.json --path_of_nces_embeddings ./NCESData/family/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings ./CLIPData/family/embeddings/ConEx_entity_embeddings.csv --max_runtime 60 --report family_results.csv 
 ```
 In the following python script, the results are summarized and the markdown displayed below generated.
 ```python
@@ -194,7 +194,7 @@ Below, we report the average test F1 score and the average runtimes of learners.
 
 ### 10-Fold Cross Validation Mutagenesis Benchmark Results
 ```shell
-python examples/concept_learning_cv_evaluation.py --lps LPs/Mutagenesis/lps.json --kb KGs/Mutagenesis/mutagenesis.owl --max_runtime 60 --report mutagenesis_results.csv 
+python examples/concept_learning_cv_evaluation.py --kb ./KGs/Mutagenesis/mutagenesis.owl --lps ./LPs/Mutagenesis/lps.json --path_of_nces_embeddings ./NCESData/mutagenesis/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings ./CLIPData/mutagenesis/embeddings/ConEx_entity_embeddings.csv --max_runtime 60 --report mutagenesis_results.csv 
 ```
 
 | LP       | Train-F1-OCEL | Test-F1-OCEL | RT-OCEL | Train-F1-CELOE | Test-F1-CELOE | RT-CELOE | Train-F1-Evo | Test-F1-Evo | RT-Evo | Train-F1-DRILL | Test-F1-DRILL | RT-DRILL | Train-F1-TDL | Test-F1-TDL | RT-TDL | Train-F1-NCES | Test-F1-NCES | RT-NCES | Train-F1-CLIP | Test-F1-CLIP | RT-CLIP |
@@ -205,7 +205,7 @@ python examples/concept_learning_cv_evaluation.py --lps LPs/Mutagenesis/lps.json
 
 ### 10-Fold Cross Validation Carcinogenesis Benchmark Results
 ```shell
-python examples/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 60 --report carcinogenesis_results.csv 
+python examples/concept_learning_cv_evaluation.py --kb ./KGs/Carcinogenesis/carcinogenesis.owl --lps ./LPs/Carcinogenesis/lps.json --path_of_nces_embeddings ./NCESData/carcinogenesis/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings ./CLIPData/carcinogenesis/embeddings/ConEx_entity_embeddings.csv --max_runtime 60 --report carcinogenesis_results.csv 
 ```
 | LP       | Train-F1-OCEL | Test-F1-OCEL | RT-OCEL | Train-F1-CELOE | Test-F1-CELOE | RT-CELOE | Train-F1-Evo | Test-F1-Evo | RT-Evo | Train-F1-DRILL | Test-F1-DRILL | RT-DRILL | Train-F1-TDL | Test-F1-TDL | RT-TDL | Train-F1-NCES | Test-F1-NCES | RT-NCES | Train-F1-CLIP | Test-F1-CLIP | RT-CLIP |
 |:---------|--------------:|-------------:|--------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|--------------:|-------------:|--------:|--------------:|-------------:|--------:|
