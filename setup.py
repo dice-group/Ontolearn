@@ -89,7 +89,7 @@ extras["doc"] = (deps_list("sphinx",
                            "sphinxcontrib-plantuml",
                            "plantuml-local-client", "myst-parser"))
 
-extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "gradio", "ontosample"))
+extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "ontosample"))
 
 setup(
     name="ontolearn",
