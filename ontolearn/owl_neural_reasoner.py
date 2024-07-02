@@ -343,16 +343,16 @@ class TripleStoreNeuralReasoner:
             filler_individuals = set(self.instances(filler_expression, confidence_threshold))
             all_individuals = set(self.individuals_in_signature())
             potential_individuals = set()
-            for indivdual in filler_individuals:
-                potential_individuals.update(set(self.get_individuals_with_object_property(object_property, indivdual)))
+            for filler_individual in filler_individuals:
+                potential_individuals.update(set(self.get_individuals_with_object_property(object_property, filler_individual)))
 
             # since when there is no relation at all - thorugh object_prop - it is vacuously true
             to_yield_individuals = all_individuals - potential_individuals
 
 
-            for individual in potential_individuals:
-                if set(self.get_object_property_values(indivdual.str, object_property)) <= filler_individuals:
-                    to_yield_individuals.add(individual)
+            for pot_individual in potential_individuals:
+                if set(self.get_object_property_values(pot_individual.str, object_property)) <= filler_individuals:
+                    to_yield_individuals.add(pot_individual)
             yield from to_yield_individuals
 
 
