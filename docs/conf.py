@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'Ontolearn'
-copyright = '2021, The Ontolearn team'
+copyright = '2021-2024, The Ontolearn team'
 author = 'Ontolearn team'
 
 # -- General configuration ---------------------------------------------------

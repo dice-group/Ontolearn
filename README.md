@@ -214,27 +214,6 @@ python examples/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.j
 
 </details>
 
-## Deployment 
-
-<details> <summary> To see the results </summary>
-
-```shell
-pip install gradio # (check `pip show gradio` first)
-```
-
-Available models to deploy: **EvoLearner**, **NCES**, **CELOE** and **OCEL**.
-To deploy **EvoLearner** on the **Family** knowledge graph:
-```shell
-python deploy_cl.py --model evolearner --path_knowledge_base KGs/Family/family-benchmark_rich_background.owl
-```
-Run the help command to see the description on this script usage:
-
-```shell
-python deploy_cl.py --help
-```
-
-</details>
-
 ## Development
 
 <details> <summary> To see the results </summary>
