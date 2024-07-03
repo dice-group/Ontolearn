@@ -68,7 +68,7 @@ def retrieval_eval(expressions, y, yhat, verbose=1):
 
         jaccard_sim = jaccard_similarity(y_i, yhat_i)
         runtime_benefits = runtime_y_i - runtime_yhat_i
-        if verbose > 1:  # todo: set to 0
+        if verbose > 0:
             print(
                 f"Concept:{expressions}\tTrue Size:{len(y_i)}\tPredicted Size:{len(yhat_i)}\tRetrieval Similarity:{jaccard_sim}\tRuntime Benefit:{runtime_benefits:.3f}"
             )

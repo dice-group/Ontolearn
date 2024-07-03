@@ -386,33 +386,29 @@ class TripleStoreNeuralReasoner:
                     yield individual
 
         elif isinstance(expression, OWLObjectMaxCardinality):
-            # Get the object property
             object_property = expression.get_property()
-            # Get the filler class -> the individual/ or expression that the object property should point to
             filler_expression = expression.get_filler()
-            # Get the cardinality
             cardinality = expression.get_cardinality()
 
             # Get all individuals that are instances of the filler expression
-            object_individuals = self.instances(filler_expression, confidence_threshold)
-                        # Fetch all individuals in the ontology
-            all_individuals = self.individuals_in_signature()
+            object_individuals = set(self.instances(filler_expression, confidence_threshold))
+            all_individuals = set(self.individuals_in_signature())
 
             # Initialize a dictionary to keep track of counts of related individuals for each entity
-            related_individuals_count = {individual: 0 for individual in all_individuals}
+            subject_individuals_count = {individual: 0 for individual in all_individuals}
 
-            # Iterate over each individual and count relationships that match the object property and filler expression
-            for individual in all_individuals:
-                # Fetch all individuals related by the object property
-                related_individuals = self.get_object_property_values(individual, object_property)
-                
-                # Count only those related individuals that are also instances of the filler expression
-                for related in related_individuals:
-                    if related in object_individuals:
-                        related_individuals_count[individual] += 1
+            for object_individual in object_individuals:
+                # Get all individuals related to the object individual via the object property
+                subject_individuals = (self.get_individuals_with_object_property(obj=object_individual,object_property=object_property,confidence_threshold=confidence_threshold))
+
+
+
+                # Update the count of related individuals for each object individual
+                for subject_individual in subject_individuals:
+                    subject_individuals_count[subject_individual] += 1
 
             # Filter out individuals who exceed the specified cardinality
-            valid_individuals = {ind for ind, count in related_individuals_count.items() if count <= cardinality}
+            valid_individuals = {ind for ind, count in subject_individuals_count.items() if count <= cardinality}
 
             yield from valid_individuals
 
@@ -451,20 +447,25 @@ class TripleStoreNeuralReasoner:
             )
 
     def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
-        for cl in self.classes_in_signature():
-            for prediction in self.get_predictions(
+        seen_individuals = set()
+        try:
+            for cl in self.classes_in_signature():
+                predictions = self.get_predictions(
                     h=None,
                     r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
                     t=cl.str,
                     confidence_threshold=self.gamma,
-            ):
-                try:
-                    owl_named_individual = OWLNamedIndividual(prediction[0])
-                    yield owl_named_individual
-                except Exception as e:
-                    # Log the invalid IRI
-                    print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
-                    continue
+                )
+                for prediction in predictions:
+                    try:
+                        owl_named_individual = OWLNamedIndividual(prediction[0])
+                        if owl_named_individual not in seen_individuals:
+                            seen_individuals.add(owl_named_individual)
+                            yield owl_named_individual
+                    except Exception as e:
+                        print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+        except Exception as e:
+            print(f"Error processing classes in signature: {e}")
 
     def data_properties_in_signature(
             self, confidence_threshold: float = None
