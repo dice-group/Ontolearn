@@ -60,7 +60,8 @@ _deps = [
     "myst-parser>=2.0.0",
     "flake8>=6.0.0",
     "fastapi>=0.110.1",
-    "uvicorn>=0.29.0"]
+    "uvicorn>=0.29.0",
+    "coverage>=7.5.4"]
 
 deps = {b: a for a, b in (re.findall(r"^(([^!=<>~ ]+)(?:[!=<>~ ].*)?$)", x)[0] for x in _deps)}
 
