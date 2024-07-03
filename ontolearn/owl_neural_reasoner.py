@@ -120,7 +120,8 @@ class TripleStoreNeuralReasoner:
                 if confidence >= confidence_threshold:
                     yield predicted_iri_str, confidence
                 else:
-                    return
+                    #todo: replace with return or break?
+                    continue
         except Exception as e:
             print(f"Error at getting predictions: {e}")
 
@@ -338,22 +339,18 @@ class TripleStoreNeuralReasoner:
             """
             object_property = expression.get_property()
             filler_expression = expression.get_filler()
-
-            # Get all individuals that are instances of the filler class
+            
             filler_individuals = set(self.instances(filler_expression, confidence_threshold))
             all_individuals = set(self.individuals_in_signature())
-            potential_individuals = set()
-            for filler_individual in filler_individuals:
-                potential_individuals.update(set(self.get_individuals_with_object_property(object_property, filler_individual)))
 
-            # since when there is no relation at all - thorugh object_prop - it is vacuously true
-            to_yield_individuals = all_individuals - potential_individuals
+            to_yield_individuals = set()
 
+            for individual in all_individuals:
+                related_individuals = set(self.get_object_property_values(individual.str, object_property))
+                if not related_individuals or related_individuals <= filler_individuals:
+                    to_yield_individuals.add(individual)
 
-            for pot_individual in potential_individuals:
-                if set(self.get_object_property_values(pot_individual.str, object_property)) <= filler_individuals:
-                    to_yield_individuals.add(pot_individual)
-            yield from to_yield_individuals
+            yield from to_yield_individuals 
 
 
         elif isinstance(expression, OWLObjectMinCardinality) or isinstance(expression, OWLObjectSomeValuesFrom):
@@ -606,7 +603,7 @@ class TripleStoreNeuralReasoner:
                 # Log the invalid IRI
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
-        """"       
+        
         if len(list(predictions)) == 0:
             # abstract class / class that does not have any instances -> get all child classes and make predictions
             for child_class in self.subconcepts(owl_class, confidence_threshold=confidence_threshold):
@@ -614,7 +611,6 @@ class TripleStoreNeuralReasoner:
                     if individual not in seen:
                         seen.add(individual)
                         yield individual
-        """
 
 
     def get_individuals_with_object_property(

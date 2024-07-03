@@ -13,8 +13,8 @@ from owlapy.class_expression import (
 import time
 from typing import List, Tuple, Set
 
-# symbolic_kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
-symbolic_kb = TripleStore(url="http://localhost:3030/family")
+symbolic_kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
+# symbolic_kb = TripleStore(url="http://localhost:3030/family")
 neural_owl_reasoner = TripleStoreNeuralReasoner(
     path_of_kb="KGs/Family/family-benchmark_rich_background.owl", gamma=0.8
 )
