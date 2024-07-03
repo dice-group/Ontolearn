@@ -25,5 +25,13 @@ jobs:
         run: |
           wget https://files.dice-research.org/projects/Ontolearn/KGs.zip
           wget https://files.dice-research.org/projects/Ontolearn/LPs.zip
-          unzip KGs.zip && unzip LPs.zip
+          wget https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip
+          wget https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip
+          unzip KGs.zip && unzip LPs.zip && unzip NCESData.zip && unzip CLIPData.zip
           pytest -p no:warnings -x
+
+      - name: Coverage report
+        run: | 
+          pip install coverage
+          coverage run --omit='tests/*' -m pytest
+          coverage report -m

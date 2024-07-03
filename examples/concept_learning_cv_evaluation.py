@@ -11,7 +11,7 @@ import platform
 import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, NCES, CLIP
-from ontolearn.refinement_operators import ExpressRefinement
+from ontolearn.refinement_operators import ExpressRefinement, ModifiedCELOERefinement
 from ontolearn.learners import Drill, TDL
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1
@@ -71,7 +71,6 @@ def get_embedding_path(ftp_link: str, embeddings_path_arg: str, kb_path_arg: str
 def dl_concept_learning(args):
     with open(args.lps) as json_file:
         settings = json.load(json_file)
-
     kb = KnowledgeBase(path=args.kb)
     ocel = OCEL(knowledge_base=kb,
                 quality_func=F1(),
@@ -91,19 +90,19 @@ def dl_concept_learning(args):
                 quality_func=F1(),
                 path_of_embeddings=get_embedding_path("https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip",args.path_of_nces_embeddings, args.kb),
                 pretrained_model_name=["LSTM", "GRU", "SetTransformer"],
-                num_predictions=5,
+                num_predictions=100,
                 verbose=0)
-    """
     args.path_of_clip_embeddings = get_embedding_path(
         "https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip",
         args.path_of_clip_embeddings, args.kb)
     
     clip = CLIP(knowledge_base=kb,
-                refinement_operator=ExpressRefinement(kb, use_inverse=False, use_numeric_datatypes=False), quality_func=F1(),
+                #refinement_operator=ExpressRefinement(kb, use_inverse=True, use_numeric_datatypes=True, sample_fillers_count=3, expressivity=0.2),
+                refinement_operator=ModifiedCELOERefinement(kb),
+                quality_func=F1(),
                 max_num_of_concepts_tested=int(1e9), max_runtime=args.max_runtime,
                 path_of_embeddings=args.path_of_clip_embeddings,
-                pretrained_predictor_name=["LSTM", "GRU", "SetTransformer", "CNN"], load_pretrained=True)
-    """
+                pretrained_predictor_name=["LSTM", "GRU", "SetTransformer"], load_pretrained=True)
     # dictionary to store the data
     data = dict()
     if "problems" in settings:
@@ -147,7 +146,6 @@ def dl_concept_learning(args):
 
             test_lp = PosNegLPStandard(pos={OWLNamedIndividual(i) for i in test_pos},
                                        neg={OWLNamedIndividual(i) for i in test_neg})
-
             print("OCEL starts..", end="\t")
             start_time = time.time()
             pred_ocel = ocel.fit(train_lp).best_hypotheses()
@@ -283,18 +281,18 @@ def dl_concept_learning(args):
             print(f"NCES Test Quality: {test_f1_nces:.3f}", end="\t")
             print(f"NCES Runtime: {rt_nces:.3f}")
 
-            """
+            #"""
             print("CLIP starts..", end="\t")
             start_time = time.time()
             pred_clip = clip.fit(train_lp).best_hypotheses()
             rt_clip = time.time() - start_time
             print("CLIP ends..", end="\t")
             # () Quality on the training data
-            train_f1_clip = compute_f1_score(individuals={i for i in kb.individuals(pred_clip)},
+            train_f1_clip = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_clip)}),
                                               pos=train_lp.pos,
                                               neg=train_lp.neg)
             # () Quality on test data
-            test_f1_clip = compute_f1_score(individuals={i for i in kb.individuals(pred_clip)},
+            test_f1_clip = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_clip)}),
                                              pos=test_lp.pos,
                                              neg=test_lp.neg)
             
@@ -304,7 +302,7 @@ def dl_concept_learning(args):
             print(f"CLIP Train Quality: {train_f1_clip:.3f}", end="\t")
             print(f"CLIP Test Quality: {test_f1_clip:.3f}", end="\t")
             print(f"CLIP Runtime: {rt_clip:.3f}")
-            """
+            #"""
 
     df = pd.DataFrame.from_dict(data)
     df.to_csv(args.report, index=False)
