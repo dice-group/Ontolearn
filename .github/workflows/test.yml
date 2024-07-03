@@ -32,5 +32,6 @@ jobs:
 
       - name: Coverage report
         run: | 
+          pip install coverage
           coverage run --omit='tests/*' -m pytest
           coverage report -m
