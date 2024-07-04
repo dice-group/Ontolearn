@@ -28,6 +28,9 @@ import json
 kb = KnowledgeBase(path="/home/dice/Desktop/Ontolearn/KGs/Family/family-benchmark_rich_background.owl")
 # kb = KnowledgeBase(path="/home/dice/Desktop/Ontolearn/KGs/Family/father.owl")
 
+# print(kb.abox.classes)
+# exit(0)
+
 namespace = list(kb.ontology.classes_in_signature())[0].iri.get_namespace()
 
 parser = DLSyntaxParser(namespace) 
@@ -44,9 +47,6 @@ def get_reasoner_instances(reasoner: NeuralReasoner, class_expression: OWLClassE
         instances.add(instance.str)#instances.add(instance)
     return instances
 
-
-
-
 def evaluate_reasoner(kb, reasoner, triple_store, concept_type):
 
      class_expressions, length = generate_class_expressions(kb, concept_type)
@@ -57,7 +57,8 @@ def evaluate_reasoner(kb, reasoner, triple_store, concept_type):
      f1_scores = []
      start_time = time.time()
      for class_expr in class_expressions:
-
+        A = parser.parse_expression(class_expr)
+        print(A)
         ground_truth = {i.str for i in kb.individuals(parser.parse_expression(class_expr))}
 
         
@@ -73,13 +74,13 @@ def evaluate_reasoner(kb, reasoner, triple_store, concept_type):
         jaccard_scores.append(jaccard_score)
         f1_scores.append(f1_score)
 
-        #   if jaccard_score == 0:
-        print(f"Class Expression: {parser.parse_expression(class_expr)}")
-        exit(0)
+        # if jaccard_score != 1:
+        # print(f"Class Expression: {parser.parse_expression(class_expr)}")
+        # exit(0)
         # print(f"Ground Truth: {ground_truth}")
         # print(f"Reasoner Instances: {reasoner_instances}")
         print(f"Jaccard Similarity: {jaccard_score}")
-        # print("---------------------------------------------------")
+        print("---------------------------------------------------")
 
      end_time = time.time()
      duration = end_time-start_time
@@ -88,33 +89,50 @@ def evaluate_reasoner(kb, reasoner, triple_store, concept_type):
      avg_f1_score = sum(f1_scores)/ len(f1_scores)
 
      print(f"Average Jaccard Similarity: {avg_jaccard_similarity}")
-     print(f"Elapsed time: {duration} seconds")
+    #  print(f"Elapsed time: {duration} seconds")
 
      return avg_jaccard_similarity, avg_f1_score ,length, duration
      # print(jaccard_scores)
 
 TS = TripleStoreReasonerOntology(url="http://localhost:3030/family.owl")
-reasoner = NeuralReasoner(KGE(f"KeciFamilyRun_256"),gamma_for_nc=0.1)
+reasoner = NeuralReasoner(KGE(f"KeciFamilyRun"),gamma_for_nc=0.1)
 
-# evaluate_reasoner(kb, reasoner, TS, concept_type="exist")
+# class_expr_1 =OWLClass(IRI('http://www.w3.org/2002/07/owl#','person'))
+
+
+
+# # ground_truth_1 = {i.str for i in kb.individuals(class_expr_1)}
+# # print(ground_truth_1)
+# # reasoner_instances_1 = get_reasoner_instances(reasoner, class_expr_1)
+
+# print(parser.parse_expression("http://www.w3.org/2002/07/owl"))
+
+evaluate_reasoner(kb, reasoner, TS, concept_type="union")
 
 ################################################################################
 
-# concept_types = ["name", "nega",  "intersect", "union", "exist", "universal", "min_card", "max_card", "exact_card",\
+# concept_types = ["name", "nega",  "intersect", "union", "exist", "universal", "min_card", "max_card", "exact_card", "exact_card_inv",\
 #                   "exist_inv", "universal_inv", "min_card_inv", "max_card_inv", "All"]
 
-concept_types = ["exist_inv"] 
 
-data = {}
+# concept_types = ["min_card", "max_card", "exact_card"] 
 
-for concept_type in concept_types:
+# gammas = [.1, .5, .7, .8, .9, .95, .98, .99, 1.0]
 
-     jacc, f1_score, length, running_time = evaluate_reasoner(kb, reasoner, TS, concept_type= concept_type)
-     data.update({concept_type: [jacc, length, f1_score, running_time]})
+# for gamma in gammas:
 
-print(data)
+#     reasoner = NeuralReasoner(KGE(f"KeciFamilyRun_256"),gamma_for_nc = gamma)
 
-# # # Save to a JSON file
+#     data = {}
+
+#     for concept_type in concept_types:
+
+#         jacc, f1_score, length, running_time = evaluate_reasoner(kb, reasoner, TS, concept_type= concept_type)
+#         data.update({concept_type: [jacc]})
+
+#     print(data)
+
+# # Save to a JSON file
 # with open('data.json', 'w') as json_file:
 #     json.dump(data, json_file, indent=4)
 
