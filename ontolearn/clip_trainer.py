@@ -141,22 +141,26 @@ class CLIPTrainer:
             with open(self.storage_path+"/runtime/runtime"+"_"+desc+".json", "w") as file:
                 json.dump(runtime_info, file, indent=3)
         results_dict = dict()
-        print("Top performance: loss: {:.4f}, f1: {:.2f}% ... "
-              "acc: {:.2f}%".format(min(Train_loss), max(F1), max(Acc)), "weights saved based on Acc best score!")
+        if save_model:
+            print("Top performance: loss: {:.4f}, f1: {:.2f}% ... "
+                  "acc: {:.2f}%".format(min(Train_loss), max(F1), max(Acc)), "weights saved based on Acc best score!")
+        else:
+            print("Top performance: loss: {:.4f}, f1: {:.2f}% ... "
+                  "acc: {:.2f}%".format(min(Train_loss), max(F1), max(Acc)))
         print()
         results_dict.update({"Train Max F1": max(F1), "Train Acc": max(Acc),
                              "Train Min Loss": min(Train_loss)})
-        if not os.path.exists(self.storage_path+"/results/"):
-            os.mkdir(self.storage_path+"/results/")
-        with open(self.storage_path+"/results/"+"results"+"_"+desc+".json", "w") as file:
-            json.dump(results_dict, file, indent=3)
         if save_model:
+            if not os.path.exists(self.storage_path+"/results/"):
+                os.mkdir(self.storage_path+"/results/")
+            with open(self.storage_path+"/results/"+"results"+"_"+desc+".json", "w") as file:
+                json.dump(results_dict, file, indent=3)
             if not os.path.exists(self.storage_path+"/trained_models/"):
                 os.mkdir(self.storage_path+"/trained_models/")
             torch.save(length_predictor.state_dict(), self.storage_path+"/trained_models/"+"trained_"+desc+".pt")
             print("{} saved".format(length_predictor.name))
-        if not os.path.exists(self.storage_path+"/metrics/"):
-            os.mkdir(self.storage_path+"/metrics/")
-        with open(self.storage_path+"/metrics/"+"metrics_"+desc+".json", "w") as plot_file:
-            json.dump({"f1": F1, "acc": Acc, "loss": Train_loss}, plot_file,
-                      indent=3)
+            if not os.path.exists(self.storage_path+"/metrics/"):
+                os.mkdir(self.storage_path+"/metrics/")
+            with open(self.storage_path+"/metrics/"+"metrics_"+desc+".json", "w") as plot_file:
+                json.dump({"f1": F1, "acc": Acc, "loss": Train_loss}, plot_file,
+                          indent=3)

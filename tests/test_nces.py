@@ -9,6 +9,9 @@ import os
 import torch
 import numpy as np
 
+import warnings
+warnings.filterwarnings("ignore")
+
 def seed_everything():
     seed = 42
     os.environ['PYTHONHASHSEED'] = str(seed)
