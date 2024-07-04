@@ -19,6 +19,7 @@ from owlapy import owl_expression_to_dl
 from itertools import chain
 from argparse import ArgumentParser
 import os
+from tqdm import tqdm
 
 
 # @TODO Move into ontolearn.utils
@@ -150,7 +151,7 @@ def execute(args):
 
     ###################################################################
 
-    ## RETRIEVAL RESULTS
+    # Retrieval Results
 
     def concept_retrieval(retriever_func, c) -> Tuple[Set[str], float]:
         start_time = time.time()
@@ -158,26 +159,29 @@ def execute(args):
 
     data = []
 
-    for i in chain(nc, unions, intersections,
-                   nnc, unnc, unions_unnc, intersections_unnc,
-                   exist_unnc, for_all_unnc,
-                   min_cardinality_unnc_1, min_cardinality_unnc_2, min_cardinality_unnc_3,
-                   max_cardinality_unnc_1, max_cardinality_unnc_2, max_cardinality_unnc_3):
-        retrieval_y, runtime_y = concept_retrieval(symbolic_kb, i)
-        retrieval_neural_y, runtime_neural_y = concept_retrieval(neural_owl_reasoner, i)
+    # Converted to list so that the progress bar works.
+    for expression in (tqdm_bar := tqdm(list(chain(nc, unions, intersections,
+                              nnc, unnc, unions_unnc, intersections_unnc,
+                              exist_unnc, for_all_unnc,
+                              min_cardinality_unnc_1, min_cardinality_unnc_2, min_cardinality_unnc_3,
+                              max_cardinality_unnc_1, max_cardinality_unnc_2, max_cardinality_unnc_3)), position=0, leave=True)):
+        retrieval_y, runtime_y = concept_retrieval(symbolic_kb, expression)
+        retrieval_neural_y, runtime_neural_y = concept_retrieval(neural_owl_reasoner, expression)
         jaccard_sim = jaccard_similarity(retrieval_y, retrieval_neural_y)
-        data.append({"Expression": owl_expression_to_dl(i),
-                     "Type": type(i).__name__,
+        data.append({"Expression": owl_expression_to_dl(expression),
+                     "Type": type(expression).__name__,
                      "Jaccard Similarity": jaccard_sim,
                      "Runtime Benefits": runtime_y - runtime_neural_y
                      })
+        tqdm_bar.set_description_str(
+            f"Expression: {owl_expression_to_dl(expression)} | Jaccard Similarity:{jaccard_sim:.4f} | Runtime Benefits:{runtime_y - runtime_neural_y:.3f}")
 
     df = pd.DataFrame(data)
     assert df["Jaccard Similarity"].mean() == 1.0
 
     df.to_csv(args.path_report)
     del df
-    df=pd.read_csv(args.path_report,index_col=0)
+    df = pd.read_csv(args.path_report, index_col=0)
     numerical_df = df.select_dtypes(include=['number'])
     df_g = df.groupby(by="Type")
     print(df_g["Type"].count())
@@ -187,7 +191,8 @@ def execute(args):
 
 def get_default_arguments():
     parser = ArgumentParser()
-    parser.add_argument("--path_kg", type=str, default="KGs/Family/family-benchmark_rich_background.owl")
+    parser.add_argument("--path_kg", type=str,
+                        default="KGs/Family/family-benchmark_rich_background.owl")
     parser.add_argument("--endpoint_triple_store", type=str, default=None)
     parser.add_argument("--gamma", type=float, default=0.8)
     parser.add_argument("--path_report", type=str, default="ALCQ_Retrieval_Results.csv")
