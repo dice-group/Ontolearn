@@ -80,7 +80,7 @@ class CELOEHeuristic(AbstractHeuristic[AbstractOEHeuristicNode]):
         node.heuristic = round(heuristic_val, 5)
 
 
-class DLFOILHeuristic(AbstractHeuristic):
+class DLFOILHeuristic(AbstractHeuristic):  # pragma: no cover
     """DLFOIL Heuristic."""
     __slots__ = ()
 

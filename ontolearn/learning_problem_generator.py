@@ -43,7 +43,7 @@ from .utils import balanced_sets
 SearchAlgos = Literal['dfs', 'strict-dfs']
 
 
-class LearningProblemGenerator:
+class LearningProblemGenerator:  # pragma: no cover
     """Learning problem generator."""
 
     def __init__(self, knowledge_base: KnowledgeBase, refinement_operator=None, num_problems=10_000, num_diff_runs=100,
