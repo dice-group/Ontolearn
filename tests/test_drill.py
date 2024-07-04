@@ -16,9 +16,9 @@ from owlapy.render import DLSyntaxObjectRenderer
 
 class TestDrill(unittest.TestCase):
 
-    kg_path = "../KGs/Family/family-benchmark_rich_background.owl"
-    embeddings_path = "../embeddings/Keci_entity_embeddings.csv"
-    lp_path = "../examples/uncle_lp2.json"
+    kg_path = "KGs/Family/family-benchmark_rich_background.owl"
+    embeddings_path = "embeddings/Keci_entity_embeddings.csv"
+    lp_path = "examples/uncle_lp2.json"
 
     def test_regression_family(self):
         kb = KnowledgeBase(path=self.kg_path)
