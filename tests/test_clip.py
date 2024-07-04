@@ -8,6 +8,9 @@ import time
 import random
 import unittest
 
+import warnings
+warnings.filterwarnings("ignore")
+
 class TestCLIP(unittest.TestCase):
 
     def test_prediction_quality_family(self):

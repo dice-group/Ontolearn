@@ -1387,7 +1387,7 @@ class CLIP(CELOE):
                                       collate_fn=self.collate_batch, shuffle=True)
         if storage_path is None:
             storage_path = self.knowledge_base_path[:self.knowledge_base_path.rfind("/")]
-        elif not os.path.exists(storage_path):
+        elif not os.path.exists(storage_path) and (record_runtime or save_model):
             os.mkdir(storage_path)
         trainer = CLIPTrainer(self, epochs=epochs, learning_rate=learning_rate, decay_rate=decay_rate,
                               clip_value=clip_value, storage_path=storage_path)
@@ -1635,7 +1635,7 @@ class NCES(BaseNCES):
                                       collate_fn=self.collate_batch, shuffle=True)
         if storage_path is None:
             storage_path = self.knowledge_base_path[:self.knowledge_base_path.rfind("/")]
-        elif not os.path.exists(storage_path):
+        elif not os.path.exists(storage_path) and (record_runtime or save_model):
             os.mkdir(storage_path)
         trainer = NCESTrainer(self, epochs=epochs, learning_rate=learning_rate, decay_rate=decay_rate,
                               clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)

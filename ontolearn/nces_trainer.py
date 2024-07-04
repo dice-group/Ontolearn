@@ -210,17 +210,19 @@ class NCESTrainer:
         print()
         results_dict.update({"Train Max Soft Acc": max(Train_acc['soft']), "Train Max Hard Acc": max(Train_acc['hard']),
                              "Train Min Loss": min(Train_loss)})
-        if not os.path.exists(self.storage_path+"/results/"):
-            os.mkdir(self.storage_path+"/results/")
-        with open(self.storage_path+"/results/"+"results"+"_"+desc+".json", "w") as file:
-            json.dump(results_dict, file, indent=3)
+        
         if save_model:
+            if not os.path.exists(self.storage_path+"/results/"):
+                os.mkdir(self.storage_path+"/results/")
+            with open(self.storage_path+"/results/"+"results"+"_"+desc+".json", "w") as file:
+                json.dump(results_dict, file, indent=3)
+
             if not os.path.exists(self.storage_path+"/trained_models/"):
                 os.mkdir(self.storage_path+"/trained_models/")
             torch.save(synthesizer.state_dict(), self.storage_path+"/trained_models/"+"trained_"+desc+".pt")
             print("{} saved".format(synthesizer.name))
-        if not os.path.exists(self.storage_path+"/metrics/"):
-            os.mkdir(self.storage_path+"/metrics/")
-        with open(self.storage_path+"/metrics/"+"metrics_"+desc+".json", "w") as plot_file:
-            json.dump({"soft acc": Train_acc['soft'], "hard acc": Train_acc['hard'], "loss": Train_loss}, plot_file,
-                      indent=3)
+            if not os.path.exists(self.storage_path+"/metrics/"):
+                os.mkdir(self.storage_path+"/metrics/")
+            with open(self.storage_path+"/metrics/"+"metrics_"+desc+".json", "w") as plot_file:
+                json.dump({"soft acc": Train_acc['soft'], "hard acc": Train_acc['hard'], "loss": Train_loss}, plot_file,
+                          indent=3)
