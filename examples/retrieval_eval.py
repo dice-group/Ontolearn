@@ -21,6 +21,8 @@ from argparse import ArgumentParser
 import os
 from tqdm import tqdm
 
+# TODO:CD: Fix the seed
+import random
 
 # @TODO Move into ontolearn.utils
 def concept_reducer(concepts, opt):
@@ -158,15 +160,18 @@ def execute(args):
         return {i.str for i in retriever_func.individuals(c)}, time.time() - start_time
 
     data = []
-
     # Converted to list so that the progress bar works.
-    for expression in (tqdm_bar := tqdm(list(chain(nc, unions, intersections,
-                                                   nnc, unnc, unions_unnc, intersections_unnc,
-                                                   exist_unnc, for_all_unnc,
-                                                   min_cardinality_unnc_1, min_cardinality_unnc_2,
-                                                   min_cardinality_unnc_3,
-                                                   max_cardinality_unnc_1, max_cardinality_unnc_2,
-                                                   max_cardinality_unnc_3)), position=0, leave=True)):
+    concepts=list(chain(nc, unions, intersections,
+               nnc, unnc, unions_unnc, intersections_unnc,
+               exist_unnc, for_all_unnc,
+               min_cardinality_unnc_1, min_cardinality_unnc_2,
+               min_cardinality_unnc_3,
+               max_cardinality_unnc_1, max_cardinality_unnc_2,
+               max_cardinality_unnc_3))
+    # Shuffled the data so that the progress bar is not influenced by the order of concepts.
+    random.shuffle(concepts)
+    # Converted to list so that the progress bar works.
+    for expression in (tqdm_bar := tqdm(concepts, position=0, leave=True)):
         retrieval_y, runtime_y = concept_retrieval(symbolic_kb, expression)
         retrieval_neural_y, runtime_neural_y = concept_retrieval(neural_owl_reasoner, expression)
         jaccard_sim = jaccard_similarity(retrieval_y, retrieval_neural_y)
