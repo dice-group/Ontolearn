@@ -161,10 +161,12 @@ def execute(args):
 
     # Converted to list so that the progress bar works.
     for expression in (tqdm_bar := tqdm(list(chain(nc, unions, intersections,
-                              nnc, unnc, unions_unnc, intersections_unnc,
-                              exist_unnc, for_all_unnc,
-                              min_cardinality_unnc_1, min_cardinality_unnc_2, min_cardinality_unnc_3,
-                              max_cardinality_unnc_1, max_cardinality_unnc_2, max_cardinality_unnc_3)), position=0, leave=True)):
+                                                   nnc, unnc, unions_unnc, intersections_unnc,
+                                                   exist_unnc, for_all_unnc,
+                                                   min_cardinality_unnc_1, min_cardinality_unnc_2,
+                                                   min_cardinality_unnc_3,
+                                                   max_cardinality_unnc_1, max_cardinality_unnc_2,
+                                                   max_cardinality_unnc_3)), position=0, leave=True)):
         retrieval_y, runtime_y = concept_retrieval(symbolic_kb, expression)
         retrieval_neural_y, runtime_neural_y = concept_retrieval(neural_owl_reasoner, expression)
         jaccard_sim = jaccard_similarity(retrieval_y, retrieval_neural_y)
