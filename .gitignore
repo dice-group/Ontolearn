@@ -151,6 +151,7 @@ cython_debug/
 Log/
 
 embeddings/
+KGs*/
 # Big files
 pre_trained_agents.zip
 embeddings.zip
