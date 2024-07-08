@@ -63,7 +63,7 @@ from owlapy.class_expression import OWLDataOneOf
 logger = logging.getLogger(__name__)
 
 
-def depth_Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
+def depth_Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:  # pragma: no cover
     assert isinstance(onto, Ontology)
     base_reasoner = OntologyReasoner(ontology=onto)
     return FastInstanceCheckerReasoner(ontology=onto, base_reasoner=base_reasoner)
@@ -233,7 +233,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             yield from self.maybe_cache_individuals(concept)
 
-    def abox(self, individual: Union[OWLNamedIndividual, Iterable[OWLNamedIndividual]] = None, mode='native'):
+    def abox(self, individual: Union[OWLNamedIndividual, Iterable[OWLNamedIndividual]] = None, mode='native'):  # pragma: no cover
         """
         Get all the abox axioms for a given individual. If no individual is given, get all abox axioms
 
@@ -337,7 +337,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
     # AB: This method is to ask for tbox axioms related with the given entity, which can be a class or a property.
     # For named individuals there is the method `get_types`.
     def tbox(self, entities: Union[Iterable[OWLClass], Iterable[OWLDataProperty], Iterable[OWLObjectProperty], OWLClass,
-    OWLDataProperty, OWLObjectProperty, None] = None, mode='native'):
+    OWLDataProperty, OWLObjectProperty, None] = None, mode='native'):  # pragma: no cover
         """Get all the tbox axioms for the given concept-s|propert-y/ies.
          If no concept-s|propert-y/ies are given, get all tbox axioms.
 

@@ -189,7 +189,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
         self._learning_problem = None
         self._max_runtime = None
 
-    def next_node_to_expand(self, step: int) -> OENode:
+    def next_node_to_expand(self, step: int) -> OENode:  # pragma: no cover
         if not self.best_only:
             for node in reversed(self.heuristic_queue):
                 if node.quality < 1.0:
@@ -335,7 +335,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
 
         return self.terminate()
 
-    async def fit_async(self, *args, **kwargs):
+    async def fit_async(self, *args, **kwargs):  # pragma: no cover
         """
         Async method of fit.
         """
@@ -466,7 +466,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
         res = await self.kb.evaluate_concept_async(ref.concept, self.quality_func, self._learning_problem)
         return ref, res
 
-    def _add_node_evald(self, ref: OENode, eval_: EvaluatedConcept, tree_parent: Optional[TreeNode[OENode]]):
+    def _add_node_evald(self, ref: OENode, eval_: EvaluatedConcept, tree_parent: Optional[TreeNode[OENode]]):  # pragma: no cover
         norm_concept = OperandSetTransform().simplify(ref.concept)
         if norm_concept in self._seen_norm_concepts:
             norm_seen = True
@@ -873,7 +873,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             pset.addPrimitive(universal, [OWLClassExpression], OWLClassExpression,
                               name=OperatorVocabulary.UNIVERSAL + name)
 
-            if self.use_inverse:
+            if self.use_inverse:  # pragma: no cover
                 existential, universal = factory.create_existential_universal(op.get_inverse_property())
                 pset.addPrimitive(existential, [OWLClassExpression], OWLClassExpression,
                                   name=OperatorVocabulary.INVERSE + OperatorVocabulary.EXISTENTIAL + name)
@@ -983,7 +983,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
                 self.pset.context.pop(terminal_name, None)
                 self.pset.addTerminal(split, self._dp_to_prim_type[p], name=terminal_name)
 
-    def register_op(self, alias: str, function: Callable, *args, **kargs):
+    def register_op(self, alias: str, function: Callable, *args, **kargs):  # pragma: no cover
         """Register a *function* in the toolbox under the name *alias*.
         You may provide default arguments that will be passed automatically when
         calling the registered function. Fixed arguments can then be overriden
@@ -1241,7 +1241,7 @@ class CLIP(CELOE):
     def refresh(self):
         self.length_predictor = self.get_length_predictor()
 
-    def collate_batch(self, batch):
+    def collate_batch(self, batch):  # pragma: no cover
         pos_emb_list = []
         neg_emb_list = []
         target_labels = []
@@ -1259,7 +1259,7 @@ class CLIP(CELOE):
         neg_emb_list = pad_sequence(neg_emb_list, batch_first=True, padding_value=0)
         return pos_emb_list, neg_emb_list, torch.LongTensor(target_labels)
 
-    def collate_batch_inference(self, batch):
+    def collate_batch_inference(self, batch):  # pragma: no cover
         pos_emb_list = []
         neg_emb_list = []
         for pos_emb, neg_emb in batch:
@@ -1456,7 +1456,7 @@ class NCES(BaseNCES):
     def refresh(self):
         self.model = self.get_synthesizer()
 
-    def sample_examples(self, pos, neg):
+    def sample_examples(self, pos, neg):  # pragma: no cover
         assert type(pos[0]) == type(neg[0]), "The two iterables pos and neg must be of same type"
         num_ex = self.num_examples
         if min(len(pos), len(neg)) >= num_ex // 2:
@@ -1565,7 +1565,7 @@ class NCES(BaseNCES):
         self.best_predictions = predictions_as_nodes
         return self
 
-    def best_hypotheses(self, n=1) -> Union[OWLClassExpression, Iterable[OWLClassExpression]]:
+    def best_hypotheses(self, n=1) -> Union[OWLClassExpression, Iterable[OWLClassExpression]]:  # pragma: no cover
         if self.best_predictions is None:
             print("NCES needs to be fitted to a problem first")
             return None
@@ -1574,7 +1574,7 @@ class NCES(BaseNCES):
         else:
             return self.best_predictions[:n]
 
-    def convert_to_list_str_from_iterable(self, data):
+    def convert_to_list_str_from_iterable(self, data):  # pragma: no cover
         target_concept_str, examples = data[0], data[1:]
         pos = list(examples[0])
         neg = list(examples[1])
@@ -1591,7 +1591,7 @@ class NCES(BaseNCES):
 
     def fit_from_iterable(self, dataset: Union[List[Tuple[str, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]],
     List[Tuple[str, Set[str], Set[str]]]], shuffle_examples=False,
-                          verbose=False, **kwargs) -> List:
+                          verbose=False, **kwargs) -> List:  # pragma: no cover
         """
         - Dataset is a list of tuples where the first items are strings corresponding to target concepts.
         

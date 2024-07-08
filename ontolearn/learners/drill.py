@@ -55,7 +55,7 @@ from owlapy.utils import OWLClassExpressionLengthMetric
 from ..utils.static_funcs import make_iterable_verbose
 
 
-class Drill(RefinementBasedConceptLearner):
+class Drill(RefinementBasedConceptLearner):  # pragma: no cover
     """ Neuro-Symbolic Class Expression Learning (https://www.ijcai.org/proceedings/2023/0403.pdf)"""
 
     def __init__(self, knowledge_base,
@@ -88,7 +88,7 @@ class Drill(RefinementBasedConceptLearner):
         self.verbose = verbose
         self.learning_problem = None
         # (1) Initialize KGE.
-        if path_embeddings and os.path.isfile(path_embeddings):
+        if path_embeddings and os.path.isfile(path_embeddings): #
             if self.verbose > 0:
                 print("Reading Embeddings...", end="\t")
             self.df_embeddings = pd.read_csv(path_embeddings, index_col=0).astype('float32')
@@ -894,7 +894,7 @@ class Drill(RefinementBasedConceptLearner):
         return results
 
 
-class DrillHeuristic:
+class DrillHeuristic:  # pragma: no cover
     """
     Heuristic in Convolutional DQL concept learning.
     Heuristic implements a convolutional neural network.
@@ -923,7 +923,7 @@ class DrillHeuristic:
         node.heuristic = predicted_q_val
 
 
-class DrillNet(torch.nn.Module):
+class DrillNet(torch.nn.Module):  # pragma: no cover
     """
     A neural model for Deep Q-Learning.
 

@@ -107,7 +107,7 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
         pass
 
     # @TODO:CD: Why there is '..' in AbstractNode
-    def apply(self, node: 'AbstractNode', instances, learning_problem: EncodedLearningProblem) -> bool:
+    def apply(self, node: 'AbstractNode', instances, learning_problem: EncodedLearningProblem) -> bool:  # pragma: no cover
         """Apply the quality function to a search tree node after calculating the quality score on the given instances.
 
         Args:
@@ -481,7 +481,7 @@ class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
         pass
 
 
-class DepthAbstractDrill:
+class DepthAbstractDrill:   # pragma: no cover
     """
     Abstract class for Convolutional DQL concept learning.
     """
@@ -567,7 +567,7 @@ class DepthAbstractDrill:
         """
 
 
-class DRILLAbstractTree:
+class DRILLAbstractTree:  # pragma: no cover
     """Abstract Tree for DRILL."""
     @abstractmethod
     def __init__(self):

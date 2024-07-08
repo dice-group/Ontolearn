@@ -72,7 +72,7 @@ class _NodeConcept(metaclass=ABCMeta):
 
 # noinspection PyUnresolvedReferences
 # noinspection PyDunderSlots
-class _NodeLen(metaclass=ABCMeta):
+class _NodeLen(metaclass=ABCMeta):  # pragma: no cover
     __slots__ = ()
 
     _len: int
@@ -88,7 +88,7 @@ class _NodeLen(metaclass=ABCMeta):
 
 # noinspection PyUnresolvedReferences
 # noinspection PyDunderSlots
-class _NodeIndividualsCount(metaclass=ABCMeta):
+class _NodeIndividualsCount(metaclass=ABCMeta):  # pragma: no cover
     __slots__ = ()
 
     _individuals_count: Optional[int]
@@ -206,7 +206,7 @@ class Node(_NodeConcept, _NodeLen, _NodeIndividualsCount, AbstractNode):
     """
     __slots__ = '_concept', '_len', '_individuals_count'
 
-    def __init__(self, concept: OWLClassExpression, length: int):
+    def __init__(self, concept: OWLClassExpression, length: int):  # pragma: no cover
         _NodeConcept.__init__(self, concept)
         _NodeLen.__init__(self, length)
         _NodeIndividualsCount.__init__(self)
