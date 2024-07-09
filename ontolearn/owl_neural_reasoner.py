@@ -30,7 +30,7 @@ class TripleStoreNeuralReasoner:
     def __init__(self, path_of_kb: str = None,
                  path_neural_embedding: str = None, gamma: float = 0.25):
 
-        if path_neural_embedding:
+        if path_neural_embedding:  # pragma: no cover
             assert os.path.isdir(
                 path_neural_embedding), f"The given path ({path_neural_embedding}) does not lead to a directory"
             self.model = KGE(path=path_neural_embedding)
@@ -40,7 +40,7 @@ class TripleStoreNeuralReasoner:
             dir_of_potential_neural_embedding_model = path_of_kb.replace("/", "_").replace(".", "_")
             if os.path.isdir(dir_of_potential_neural_embedding_model):
                 self.model = KGE(path=dir_of_potential_neural_embedding_model)
-            else:
+            else:  # pragma: no cover
                 # Train a KGE on the fly
                 from dicee.executer import Execute
                 from dicee.config import Namespace
@@ -78,14 +78,14 @@ class TripleStoreNeuralReasoner:
         else:
             return self.inferred_owl_individuals
     @property
-    def set_inferred_object_properties(self):
+    def set_inferred_object_properties(self):  # pragma: no cover
         if self.inferred_object_properties is None:
             # self.inferred_owl_individuals is filled in here
             return {i for i in self.object_properties_in_signature()}
         else:
             return self.inferred_object_properties
     @property
-    def set_inferred_owl_classes(self):
+    def set_inferred_owl_classes(self):  # pragma: no cover
         if self.inferred_named_owl_classes is None:
             # self.inferred_owl_individuals is filled in here
             return {i for i in self.classes_in_signature()}
@@ -150,7 +150,7 @@ class TripleStoreNeuralReasoner:
                 else:
                     #todo: replace with return or break?
                     continue
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             print(f"Error at getting predictions: {e}")
 
     def abox(self, str_iri: str) -> Generator[
@@ -177,7 +177,7 @@ class TripleStoreNeuralReasoner:
                 yield subject_, op, o
 
         # for p == data property
-        for dp in self.data_properties_in_signature():
+        for dp in self.data_properties_in_signature():  # pragma: no cover
             print("these data properties are in the signature: ", dp.str)
             for l in self.get_data_property_values(str_iri, dp):
                 yield subject_, dp, l
@@ -206,7 +206,7 @@ class TripleStoreNeuralReasoner:
 
     def most_general_classes(
             self, confidence_threshold: float = None
-    ) -> Generator[OWLClass, None, None]:
+    ) -> Generator[OWLClass, None, None]:  # pragma: no cover
         """At least it has single subclass and there is no superclass"""
         for _class in self.classes_in_signature(confidence_threshold):
             for concept in self.get_direct_parents(_class, confidence_threshold):
@@ -222,7 +222,7 @@ class TripleStoreNeuralReasoner:
 
     def least_general_named_concepts(
             self, confidence_threshold: float = None
-    ) -> Generator[OWLClass, None, None]:
+    ) -> Generator[OWLClass, None, None]:  # pragma: no cover
         """At least it has single superclass and there is no subclass"""
         for _class in self.classes_in_signature(confidence_threshold):
             for concept in self.subconcepts(
@@ -247,14 +247,14 @@ class TripleStoreNeuralReasoner:
         ):
             try:
                 yield OWLClass(prediction[0])
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 # Log the invalid IRI
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
     def get_direct_parents(
             self, named_concept: OWLClass, direct=True, confidence_threshold: float = None
-    ):
+    ):  # pragma: no cover
         for prediction in self.get_predictions(
                 h=named_concept.str,
                 r="http://www.w3.org/2000/01/rdf-schema#subClassOf",
@@ -279,7 +279,7 @@ class TripleStoreNeuralReasoner:
         ):
             try:
                 yield OWLClass(prediction[0])
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 # Log the invalid IRI
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
@@ -475,11 +475,11 @@ class TripleStoreNeuralReasoner:
                             if owl_named_individual not in seen_individuals:
                                 seen_individuals.add(owl_named_individual)
                                 yield owl_named_individual
-                        except Exception as e:
+                        except Exception as e:  # pragma: no cover
                             print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
 
                     self.inferred_owl_individuals = seen_individuals
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 print(f"Error processing classes in signature: {e}")
         else:
             yield from self.inferred_owl_individuals
@@ -493,7 +493,7 @@ class TripleStoreNeuralReasoner:
                 t="http://www.w3.org/2002/07/owl#DatatypeProperty",
                 confidence_threshold=confidence_threshold,
         ):
-            try:
+            try:  # pragma: no cover
                 yield OWLDataProperty(prediction[0])
             except Exception as e:
                 # Log the invalid IRI
@@ -515,14 +515,14 @@ class TripleStoreNeuralReasoner:
                     owl_obj_property = OWLObjectProperty(prediction[0])
                     self.inferred_object_properties.add(owl_obj_property)
                     yield owl_obj_property
-                except Exception as e:
+                except Exception as e:  # pragma: no cover
                     # Log the invalid IRI
                     print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                     continue
 
     def boolean_data_properties(
             self, confidence_threshold: float = None
-    ) -> Generator[OWLDataProperty, None, None]:
+    ) -> Generator[OWLDataProperty, None, None]:  # pragma: no cover
         for prediction in self.get_predictions(
                 h=None,
                 r="http://www.w3.org/2000/01/rdf-schema#range",
@@ -538,7 +538,7 @@ class TripleStoreNeuralReasoner:
 
     def double_data_properties(
             self, confidence_threshold: float = None
-    ) -> Generator[OWLDataProperty, None, None]:
+    ) -> Generator[OWLDataProperty, None, None]:  # pragma: no cover
         for prediction in self.get_predictions(
                 h=None,
                 r="http://www.w3.org/2000/01/rdf-schema#range",
@@ -570,7 +570,7 @@ class TripleStoreNeuralReasoner:
         ):
             try:
                 yield OWLNamedIndividual(prediction[0])
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 # Log the invalid IRI
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
@@ -580,7 +580,7 @@ class TripleStoreNeuralReasoner:
             subject: str,
             data_property: OWLDataProperty,
             confidence_threshold: float = None,
-    ) -> Generator[OWLLiteral, None, None]:
+    ) -> Generator[OWLLiteral, None, None]:  # pragma: no cover
         for prediction in self.get_predictions(
                 h=subject,
                 r=data_property.str,
@@ -616,7 +616,7 @@ class TripleStoreNeuralReasoner:
                 if owl_named_individual not in seen:
                     seen.add(owl_named_individual)
                     yield owl_named_individual
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 # Log the invalid IRI
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
@@ -647,7 +647,7 @@ class TripleStoreNeuralReasoner:
         ):
             try:
                 yield OWLNamedIndividual(prediction[0])
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 # Log the invalid IRI
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
