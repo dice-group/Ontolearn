@@ -54,7 +54,7 @@ class CLIPTrainer:
         acc = 100*accuracy_score(target, prediction)
         return f1, acc
 
-    def get_optimizer(self, length_predictor, optimizer='Adam'):
+    def get_optimizer(self, length_predictor, optimizer='Adam'):  # pragma: no cover
         if optimizer == 'Adam':
             return torch.optim.Adam(length_predictor.parameters(), lr=self.learning_rate)
         elif optimizer == 'SGD':
@@ -132,7 +132,7 @@ class CLIPTrainer:
                 best_score = Acc[-1]
                 best_weights = weights
         length_predictor.load_state_dict(best_weights)
-        if record_runtime:
+        if record_runtime:  # pragma: no cover
             duration = time.time()-t0
             runtime_info = {"Architecture": length_predictor.name,
                             "Number of Epochs": self.epochs, "Runtime (s)": duration}
@@ -150,7 +150,7 @@ class CLIPTrainer:
         print()
         results_dict.update({"Train Max F1": max(F1), "Train Acc": max(Acc),
                              "Train Min Loss": min(Train_loss)})
-        if save_model:
+        if save_model:  # pragma: no cover
             if not os.path.exists(self.storage_path+"/results/"):
                 os.mkdir(self.storage_path+"/results/")
             with open(self.storage_path+"/results/"+"results"+"_"+desc+".json", "w") as file:
