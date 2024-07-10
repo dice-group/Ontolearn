@@ -25,7 +25,7 @@ import json
 
 
 
-kb = KnowledgeBase(path="/home/dice/Desktop/Ontolearn/KGs/Family/family-benchmark_rich_background.owl")
+kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
 # kb = KnowledgeBase(path="/home/dice/Desktop/Ontolearn/KGs/Family/father.owl")
 
 # print(kb.abox.classes)

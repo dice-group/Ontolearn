@@ -21,7 +21,7 @@ import time
 import json
 
 
-kb = KnowledgeBase(path="/home/dice/Desktop/Ontolearn/KGs/Family/family-benchmark_rich_background.owl")
+kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
 # kb = KnowledgeBase(path="/home/dice/Desktop/Ontolearn/KGs/Family/father.owl")
 
 namespace = list(kb.ontology.classes_in_signature())[0].iri.get_namespace()
