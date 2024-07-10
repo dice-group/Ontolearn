@@ -2,7 +2,9 @@
 [![Pypi](docs/images/tag_version.png)](https://pypi.org/project/ontolearn/0.7.1/)
 [![Docs](docs/images/tag_docs.png)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
 
-<img src="docs/images/Ontolearn_logo.png" alt="Ontolearn" style="border-radius: 30px; margin-top: 30px; margin-bottom: -10px" >
+&nbsp;
+
+![Ontolearn](docs/images/Ontolearn_logo.png)
 
 # Ontolearn: Learning OWL Class Expression
 
