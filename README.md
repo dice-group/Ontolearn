@@ -2,6 +2,8 @@
 [![Pypi](docs/images/tag_version.png)](https://pypi.org/project/ontolearn/0.7.1/)
 [![Docs](docs/images/tag_docs.png)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
 
+<img src="docs/images/Ontolearn_logo.png" alt="Ontolearn" style="border-radius: 30px; margin-top: 30px; margin-bottom: -10px" >
+
 # Ontolearn: Learning OWL Class Expression
 
 *Ontolearn* is an open-source software library for learning owl class expressions at large scale.
