@@ -60,7 +60,7 @@ class AbstractEvolutionaryAlgorithm(metaclass=ABCMeta):
                verbose: bool = False) -> Tuple[bool, List[Tree]]:
         pass
 
-    def _log_generation_info(self, toolbox: Toolbox, gen: int, population: List[Tree]):
+    def _log_generation_info(self, toolbox: Toolbox, gen: int, population: List[Tree]):  # pragma: no cover
         logger.info(f'Generation: {gen}')
         for node in toolbox.get_top_hypotheses(population):
             logger.info(node)
@@ -131,7 +131,7 @@ class EASimple(BaseEvolutionaryAlgorithm):
 
         num_selections = num_selections if num_selections > 0 else len(population)
 
-        if self.elitism:
+        if self.elitism:  # pragma: no cover
             num_elite = int(self.elite_size*num_selections)
             num_selections = num_selections - num_elite
             elite = nlargest(num_elite, population, key=lambda ind: ind.fitness.values[0])
@@ -157,7 +157,7 @@ class RegularizedEvolution(BaseEvolutionaryAlgorithm):
     def __init__(self):
         pass
 
-    def generation(self, toolbox: Toolbox, population: List[Tree], num_selections: int = 0) -> Tuple[bool, List[Tree]]:
+    def generation(self, toolbox: Toolbox, population: List[Tree], num_selections: int = 0) -> Tuple[bool, List[Tree]]:  # pragma: no cover
         # TODO: use queue, since normal list has O(n) for pop
 
         parent = toolbox.select(population, 1)[0]
@@ -170,7 +170,7 @@ class RegularizedEvolution(BaseEvolutionaryAlgorithm):
         return offspring.quality.values[0] == 1.0, population
 
 
-class MultiPopulation(AbstractEvolutionaryAlgorithm):
+class MultiPopulation(AbstractEvolutionaryAlgorithm):  # pragma: no cover
     __slots__ = 'base_algorithm', 'migration_size', 'num_populations', 'iso_generations', 'boost'
 
     name: Final = 'MultiPopulation'

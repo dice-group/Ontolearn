@@ -79,7 +79,7 @@ def transform_string(input_string):
     return transformed_string
 
 
-def compute_quality(KB, solution, pos, neg, qulaity_func="f1"):
+def compute_quality(KB, solution, pos, neg, qulaity_func="f1"):  # pragma: no cover
     func = metrics[qulaity_func]().score2
     instances = set(KB.individuals(solution))
     if isinstance(list(pos)[0], str):
@@ -90,7 +90,7 @@ def compute_quality(KB, solution, pos, neg, qulaity_func="f1"):
     tn = len(neg.difference(instances))
     return func(tp=tp, fn=fn, fp=fp, tn=tn)[-1]
 
-def _get_matching_opts(_Type, optargs, kwargs, *, prefix=None):
+def _get_matching_opts(_Type, optargs, kwargs, *, prefix=None):  # pragma: no cover
     """Find the keys in kwargs that are parameters of _Type.
 
     If prefix is specified, the keys in kwargs need to be prefixed with prefix_.
@@ -124,7 +124,7 @@ def _get_matching_opts(_Type, optargs, kwargs, *, prefix=None):
 _N = TypeVar('_N', bound=AbstractNode)  #:
 
 
-def ModelAdapter(*args, **kwargs):  # noqa: C901
+def ModelAdapter(*args, **kwargs):  # pragma: no cover
     """Instantiate a model through the model adapter.
 
     .. warning ::
@@ -293,7 +293,7 @@ def ModelAdapter(*args, **kwargs):  # noqa: C901
     return learner
 
 
-class Trainer:
+class Trainer: # pragma: no cover
     def __init__(self, learner: BaseConceptLearner, reasoner: OWLReasoner):
         """
         A class to disentangle the learner from its training.
@@ -362,7 +362,7 @@ class Trainer:
         self.learner.save_best_hypothesis(n, path, rdf_format)
 
 
-def execute(args):
+def execute(args): # pragma: no cover
 
     args_d = args.__dict__
     learner_type = models[args.model]

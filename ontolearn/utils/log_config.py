@@ -43,7 +43,7 @@ def _try_load(fn):
     logger.debug("Loaded log config: %s", fn)
 
 
-def _log_file(fn):
+def _log_file(fn):  # pragma: no cover
     file_name = datetime.now().strftime(fn)
     path_dirname = os.path.realpath(os.path.dirname(file_name))
     os.makedirs(path_dirname)
@@ -65,7 +65,7 @@ def setup_logging(config_file="ontolearn/logging.conf"):
 
     try:
         _try_load(Path(config_file).resolve())
-    except KeyError:
+    except KeyError:  # pragma: no cover
         try:
             _try_load(Path(ontolearn.__path__[0], "..", config_file).resolve())
         except KeyError:

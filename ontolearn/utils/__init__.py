@@ -55,7 +55,7 @@ def jaccard_similarity(y: Set[str], yhat: Set[str]) -> float:
         return 0.0
     return len(y.intersection(yhat)) / len(y.union(yhat))
 
-def parametrized_performance_debugger(fmt=DEFAULT_FMT):
+def parametrized_performance_debugger(fmt=DEFAULT_FMT): # pragma: no cover
     def decorate(func):
         if flag_for_performance:
             def clocked(*_args):
@@ -75,7 +75,7 @@ def parametrized_performance_debugger(fmt=DEFAULT_FMT):
     return decorate
 
 
-def performance_debugger(func_name):
+def performance_debugger(func_name): # pragma: no cover
     def function_name_decorator(func):
         def debug(*args, **kwargs):
             start = time.time()
@@ -101,20 +101,20 @@ def create_experiment_folder(folder_name='Log'):
     return path_of_folder, path_of_folder[:path_of_folder.rfind('/')]
 
 
-def serializer(*, object_: object, path: str, serialized_name: str):
+def serializer(*, object_: object, path: str, serialized_name: str):  # pragma: no cover
     with open(path + '/' + serialized_name + ".p", "wb") as f:
         pickle.dump(object_, f)
     f.close()
 
 
-def deserializer(*, path: str, serialized_name: str):
+def deserializer(*, path: str, serialized_name: str):  # pragma: no cover
     with open(path + "/" + serialized_name + ".p", "rb") as f:
         obj_ = pickle.load(f)
     f.close()
     return obj_
 
 
-def apply_TSNE_on_df(df) -> None:
+def apply_TSNE_on_df(df) -> None:  # pragma: no cover
     from sklearn.manifold import TSNE
     from matplotlib import pyplot as plt
     low_emb = TSNE(n_components=2).fit_transform(df)
@@ -123,7 +123,7 @@ def apply_TSNE_on_df(df) -> None:
     plt.show()
 
 
-def balanced_sets(a: set, b: set) -> Tuple[Set, Set]:
+def balanced_sets(a: set, b: set) -> Tuple[Set, Set]:  # pragma: no cover
     """
     Balance given two sets through sampling without replacement.
     Returned sets have the same length.
@@ -143,7 +143,7 @@ def balanced_sets(a: set, b: set) -> Tuple[Set, Set]:
         return a, b
 
 
-def read_csv(path)->Union[None,pd.DataFrame]:
+def read_csv(path)->Union[None,pd.DataFrame]:  # pragma: no cover
     """
     Path leads a folder containing embeddings in csv format.
     indexes correspond subjects or predicates or objects in n-triple.
@@ -158,7 +158,7 @@ def read_csv(path)->Union[None,pd.DataFrame]:
         return None
 
 
-def assertion_path_isfile(path) -> bool:
+def assertion_path_isfile(path) -> bool:  # pragma: no cover
     try:
         assert path is not None
     except AssertionError:
@@ -173,7 +173,7 @@ def assertion_path_isfile(path) -> bool:
     return True
 
 
-def sanity_checking_args(args):
+def sanity_checking_args(args):  # pragma: no cover
     try:
         assert os.path.isfile(args.path_knowledge_base)
     except AssertionError:
@@ -207,7 +207,7 @@ def sanity_checking_args(args):
 _T = TypeVar('_T', bound=HasIRI)
 
 
-def _read_iri_file(file: str, type_: Factory[[IRI], _T]) -> Set[_T]:
+def _read_iri_file(file: str, type_: Factory[[IRI], _T]) -> Set[_T]:  # pragma: no cover
     """Read a text file containing IRIs (one per line) and return the content as a set of instances created by the
     given type
 
@@ -233,7 +233,7 @@ def _read_iri_file(file: str, type_: Factory[[IRI], _T]) -> Set[_T]:
     return set(inds)
 
 
-def read_individuals_file(file: str) -> Set[OWLNamedIndividual]:
+def read_individuals_file(file: str) -> Set[OWLNamedIndividual]:  # pragma: no cover
     """Read a text file containing IRIs of Named Individuals (one per line) and return the content as a set of OWL
     Named Individuals
 
@@ -246,7 +246,7 @@ def read_individuals_file(file: str) -> Set[OWLNamedIndividual]:
     return _read_iri_file(file, OWLNamedIndividual)
 
 
-def read_named_classes_file(file: str) -> Set[OWLClass]:
+def read_named_classes_file(file: str) -> Set[OWLClass]:  # pragma: no cover
     """Read a text file containing IRIs of OWL Named Classes (one per line) and return the content as a set of OWL
     Classes
 

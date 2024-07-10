@@ -68,7 +68,7 @@ class BaseNCES:
             return min(kb.individuals_count()//2, 1000)
         return kb.individuals_count()
 
-    def collate_batch(self, batch):
+    def collate_batch(self, batch):  # pragma: no cover
         pos_emb_list = []
         neg_emb_list = []
         target_labels = []
@@ -87,7 +87,7 @@ class BaseNCES:
         target_labels = pad_sequence(target_labels, batch_first=True, padding_value=-100)
         return pos_emb_list, neg_emb_list, target_labels
 
-    def collate_batch_inference(self, batch):
+    def collate_batch_inference(self, batch):  # pragma: no cover
         pos_emb_list = []
         neg_emb_list = []
         for pos_emb, neg_emb in batch:

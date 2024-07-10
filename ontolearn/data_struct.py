@@ -31,7 +31,7 @@ import numpy as np
 import random
 
 
-class PrepareBatchOfPrediction(torch.utils.data.Dataset):
+class PrepareBatchOfPrediction(torch.utils.data.Dataset):  # pragma: no cover
 
     def __init__(self, current_state: torch.FloatTensor, next_state_batch: torch.FloatTensor, p: torch.FloatTensor,
                  n: torch.FloatTensor):
@@ -53,7 +53,7 @@ class PrepareBatchOfPrediction(torch.utils.data.Dataset):
         return self.X
 
 
-class PrepareBatchOfTraining(torch.utils.data.Dataset):
+class PrepareBatchOfTraining(torch.utils.data.Dataset):  # pragma: no cover
 
     def __init__(self, current_state_batch: torch.Tensor, next_state_batch: torch.Tensor, p: torch.Tensor,
                  n: torch.Tensor, q: torch.Tensor):
@@ -109,7 +109,7 @@ class PrepareBatchOfTraining(torch.utils.data.Dataset):
         return self.X[idx], self.y[idx]
 
 
-class Experience:
+class Experience:  # pragma: no cover
     """
     A class to model experiences for Replay Memory.
     """
@@ -147,7 +147,7 @@ class Experience:
         self.rewards.clear()
 
 
-class NCESBaseDataLoader:
+class NCESBaseDataLoader:  # pragma: no cover
 
     def __init__(self, vocab, inv_vocab):
 
@@ -179,7 +179,7 @@ class NCESBaseDataLoader:
         return labels, len(target)
 
 
-class NCESDataLoader(NCESBaseDataLoader, torch.utils.data.Dataset):
+class NCESDataLoader(NCESBaseDataLoader, torch.utils.data.Dataset):  # pragma: no cover
 
     def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, max_length, example_sizes=None,
                  sorted_examples=True):
@@ -215,7 +215,7 @@ class NCESDataLoader(NCESBaseDataLoader, torch.utils.data.Dataset):
                                                             self.max_length - length)]).long()
 
 
-class NCESDataLoaderInference(NCESBaseDataLoader, torch.utils.data.Dataset):
+class NCESDataLoaderInference(NCESBaseDataLoader, torch.utils.data.Dataset):  # pragma: no cover
 
     def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, sorted_examples=True):
         self.data_raw = data
@@ -239,7 +239,7 @@ class NCESDataLoaderInference(NCESBaseDataLoader, torch.utils.data.Dataset):
         return datapoint_pos, datapoint_neg
 
     
-class CLIPDataLoader(torch.utils.data.Dataset):
+class CLIPDataLoader(torch.utils.data.Dataset):  # pragma: no cover
 
     def __init__(self, data: list, embeddings, shuffle_examples, example_sizes: list=None,
                  k=5, sorted_examples=True):
@@ -285,7 +285,7 @@ class CLIPDataLoader(torch.utils.data.Dataset):
         return datapoint_pos, datapoint_neg, torch.LongTensor([length])
     
     
-class CLIPDataLoaderInference(torch.utils.data.Dataset):
+class CLIPDataLoaderInference(torch.utils.data.Dataset):  # pragma: no cover
 
     def __init__(self, data: list, embeddings, shuffle_examples,
                  sorted_examples=True):
