@@ -7,7 +7,7 @@ import json
 
 from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.base.owl.utils import ConceptOperandSorter
+from owlapy.utils import ConceptOperandSorter
 from ontolearn.utils import setup_logging
 from owlapy.providers import owl_datatype_max_inclusive_restriction, owl_datatype_min_inclusive_restriction
 from owlapy.render import DLSyntaxObjectRenderer

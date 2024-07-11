@@ -1,6 +1,6 @@
 # About Ontolearn
 
-**Version:** ontolearn 0.7.0
+**Version:** ontolearn 0.7.1
 
 **GitHub repository:** [https://github.com/dice-group/Ontolearn](https://github.com/dice-group/Ontolearn)
 
@@ -8,7 +8,7 @@
 
 **Contact**: [onto-learn@lists.uni-paderborn.de](mailto:onto-learn@lists.uni-paderborn.de)
 
-**License:** GNU Affero General Public License v3 or later (AGPLv3+)
+**License:** MIT License
 
 --------------------------------------------------------------------------------------------
 
@@ -17,17 +17,16 @@ Ontolearn is an open-source software library for explainable structured machine 
 Ontolearn started with the goal of using _Explainable Structured Machine Learning_ 
 in OWL 2.0 ontologies and this
 exactly what our library offers. The main contribution are the exclusive concept learning
-algorithms that are part of this library. Currently, we have 4 fully functioning algorithms that 
+algorithms that are part of this library. Currently, we have 6 fully functioning algorithms that 
 learn concept in description logics. Papers can be found [here](09_further_resources.md).
 
 For the base (core) module of Ontolearn we use [owlapy](https://github.com/dice-group/owlapy)
-combined with [Owlready2](https://owlready2.readthedocs.io/en/latest/index.html). _Owlapy_ is a python package
-based on owlapi and implemented by us, the Ontolearn team. For the sake of modularization we
-have moved it in a separate repository. On the other side _Owlready2_ is a package for manipulating 
-OWL 2.0 ontologies in Python. So in the end we have implemented
-a higher degree of code for manipulation OWL 2.0 ontologies, in pursuit of making it 
-easier to implement and understand, and of course, having this all in Python. This adaptation of 
-Owlready2 library made it possible to build more complex algorithms.
+which on its end uses [Owlready2](https://owlready2.readthedocs.io/en/latest/index.html). _Owlapy_ is a python package
+based on owlapi (the java counterpart), and implemented by us, the Ontolearn team. 
+For the sake of modularization we have moved it in a separate repository.
+The modularization aspect helps us to increase readability and reduce complexity.
+So now we use owlapy not only for OWL 2 entities representation but
+for ontology manipulation and reasoning as well.
 
 ---------------------------------------
 
@@ -46,11 +45,5 @@ Owlready2 library made it possible to build more complex algorithms.
 
 ------------------------------------
 
-The rest of the content is build as a top-to-bottom guide, but nevertheless self-containing, where
+The rest of content after "examples" is build as a top-to-bottom guide, but nevertheless self-containing, where
 you can learn more in depth about the capabilities of Ontolearn.
-
-If you want to quickly view the concept learning algorithms in action check 
-[_Quick try-out_](06_concept_learners.md#quick-try-out).
-
-
-

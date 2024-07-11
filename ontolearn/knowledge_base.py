@@ -1,17 +1,39 @@
+# -----------------------------------------------------------------------------
+# MIT License
+#
+# Copyright (c) 2024 Ontolearn Team
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# -----------------------------------------------------------------------------
+
 """ Knowledge Base."""
 
 import logging
 import random
 from collections import Counter
 from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict, cast, Generator
-
 import owlapy
 from owlapy.class_expression import OWLClassExpression, OWLClass, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLThing, OWLObjectMinCardinality, OWLObjectOneOf
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLClassAssertionAxiom, OWLObjectPropertyAssertionAxiom, OWLDataPropertyAssertionAxiom, \
     OWLSubClassOfAxiom, OWLEquivalentClassesAxiom
-from owlapy.owl_data_ranges import OWLDataRange
 from owlapy.owl_datatype import OWLDatatype
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import BooleanOWLDatatype, NUMERIC_DATATYPES, DoubleOWLDatatype, TIME_DATATYPES, OWLLiteral
@@ -20,34 +42,31 @@ from owlapy.owl_ontology_manager import OWLOntologyManager
 from owlapy.owl_property import OWLObjectProperty, OWLDataProperty, OWLObjectPropertyExpression, \
     OWLDataPropertyExpression
 from owlapy.owl_reasoner import OWLReasoner
-
-from ontolearn.base import OWLOntology_Owlready2, OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
-from ontolearn.base.fast_instance_checker import OWLReasoner_FastInstanceChecker
-
+from owlapy.owl_ontology import Ontology
+from owlapy.owl_ontology_manager import OntologyManager
+from owlapy.owl_reasoner import OntologyReasoner, FastInstanceCheckerReasoner
 from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.search import EvaluatedConcept
-from owlapy.util import iter_count, LRUCache
+from owlapy.utils import iter_count, LRUCache, OWLClassExpressionLengthMetric
 from .abstracts import AbstractKnowledgeBase, AbstractScorer, EncodedLearningProblem
 from .concept_generator import ConceptGenerator
-from ontolearn.base.owl.utils import OWLClassExpressionLengthMetric
 from .learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
-from ontolearn.base.owl.hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
+from owlapy.owl_hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 
 from .utils.static_funcs import (init_length_metric, init_hierarchy_instances,
                                  init_named_individuals, init_individuals_from_concepts)
 
 from owlapy.class_expression import OWLDataMaxCardinality, OWLDataSomeValuesFrom
-from owlapy import owl_expression_to_sparql, owl_expression_to_dl
 from owlapy.owl_data_ranges import OWLDataRange
 from owlapy.class_expression import OWLDataOneOf
 
 logger = logging.getLogger(__name__)
 
 
-def depth_Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:
-    assert isinstance(onto, OWLOntology_Owlready2)
-    base_reasoner = OWLReasoner_Owlready2(ontology=onto)
-    return OWLReasoner_FastInstanceChecker(ontology=onto, base_reasoner=base_reasoner)
+def depth_Default_ReasonerFactory(onto: OWLOntology) -> OWLReasoner:  # pragma: no cover
+    assert isinstance(onto, Ontology)
+    base_reasoner = OntologyReasoner(ontology=onto)
+    return FastInstanceCheckerReasoner(ontology=onto, base_reasoner=base_reasoner)
 
 
 class KnowledgeBase(AbstractKnowledgeBase):
@@ -90,7 +109,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
     @overload
     def __init__(self, *,
                  path: str,
-                 ontologymanager_factory: Callable[[], OWLOntologyManager] = OWLOntologyManager_Owlready2(
+                 ontologymanager_factory: Callable[[], OWLOntologyManager] = OntologyManager(
                      world_store=None),
                  reasoner_factory: Callable[[OWLOntology], OWLReasoner] = None,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
@@ -104,6 +123,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
     def __init__(self, *,
                  ontology: OWLOntology,
                  reasoner: OWLReasoner,
+                 load_class_hierarchy: bool = True,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
                  length_metric_factory: Optional[Callable[[], OWLClassExpressionLengthMetric]] = None,
                  individuals_cache_size=128):
@@ -123,6 +143,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  individuals_cache_size=128,
                  backend_store: bool = False,
                  class_hierarchy: Optional[ClassHierarchy] = None,
+                 load_class_hierarchy: bool = True,
                  object_property_hierarchy: Optional[ObjectPropertyHierarchy] = None,
                  data_property_hierarchy: Optional[DatatypePropertyHierarchy] = None,
                  include_implicit_individuals=False
@@ -137,9 +158,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
             self.manager = ontologymanager_factory()
         else:  # default to Owlready2 implementation
             if path is not None and backend_store:
-                self.manager = OWLOntologyManager_Owlready2(world_store=path + ".or2")
+                self.manager = OntologyManager(world_store=path + ".or2")
             else:
-                self.manager = OWLOntologyManager_Owlready2(world_store=None)
+                self.manager = OntologyManager(world_store=None)
             # raise TypeError("neither ontology nor manager factory given")
 
         if ontology is None:
@@ -147,7 +168,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
                 raise TypeError("path missing")
             else:
                 self.ontology = self.manager.load_ontology(IRI.create('file://' + self.path))
-                if isinstance(self.manager, OWLOntologyManager_Owlready2) and backend_store:
+                if isinstance(self.manager, OntologyManager) and backend_store:
                     self.manager.save_world()
                     logger.debug("Synced world to backend store")
 
@@ -157,21 +178,22 @@ class KnowledgeBase(AbstractKnowledgeBase):
         elif reasoner_factory is not None:
             self.reasoner = reasoner_factory(self.ontology)
         else:
-            self.reasoner = OWLReasoner_FastInstanceChecker(ontology=self.ontology,
-                                                            base_reasoner=OWLReasoner_Owlready2(
+            self.reasoner = FastInstanceCheckerReasoner(ontology=self.ontology,
+                                                            base_reasoner=OntologyReasoner(
                                                                 ontology=self.ontology))
 
         self.length_metric = init_length_metric(length_metric, length_metric_factory)
 
-        self.class_hierarchy: ClassHierarchy
-        self.object_property_hierarchy: ObjectPropertyHierarchy
-        self.data_property_hierarchy: DatatypePropertyHierarchy
-        (self.class_hierarchy,
-         self.object_property_hierarchy,
-         self.data_property_hierarchy) = init_hierarchy_instances(self.reasoner,
-                                                                  class_hierarchy=class_hierarchy,
-                                                                  object_property_hierarchy=object_property_hierarchy,
-                                                                  data_property_hierarchy=data_property_hierarchy)
+        if load_class_hierarchy:
+            self.class_hierarchy: ClassHierarchy
+            self.object_property_hierarchy: ObjectPropertyHierarchy
+            self.data_property_hierarchy: DatatypePropertyHierarchy
+            (self.class_hierarchy,
+             self.object_property_hierarchy,
+             self.data_property_hierarchy) = init_hierarchy_instances(self.reasoner,
+                                                                      class_hierarchy=class_hierarchy,
+                                                                      object_property_hierarchy=object_property_hierarchy,
+                                                                      data_property_hierarchy=data_property_hierarchy)
         # Object property domain and range:
         self.op_domains: Dict[OWLObjectProperty, OWLClassExpression]
         self.op_domains = dict()
@@ -194,12 +216,13 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
         self.describe()
 
-    def individuals(self, concept: Optional[OWLClassExpression] = None) -> Iterable[OWLNamedIndividual]:
+    def individuals(self, concept: Optional[OWLClassExpression] = None, named_individuals:bool=False) -> Iterable[OWLNamedIndividual]:
         """Given an OWL class expression, retrieve all individuals belonging to it.
 
 
         Args:
             concept: Class expression of which to list individuals.
+            named_individuals: Ensure that results can be or not named_individuals
         Returns:
             Individuals belonging to the given class.
         """
@@ -210,7 +233,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             yield from self.maybe_cache_individuals(concept)
 
-    def abox(self, individual: Union[OWLNamedIndividual, Iterable[OWLNamedIndividual]] = None, mode='native'):
+    def abox(self, individual: Union[OWLNamedIndividual, Iterable[OWLNamedIndividual]] = None, mode='native'):  # pragma: no cover
         """
         Get all the abox axioms for a given individual. If no individual is given, get all abox axioms
 
@@ -310,13 +333,15 @@ class KnowledgeBase(AbstractKnowledgeBase):
             else:
                 raise RuntimeError(f"Unrecognized mode:{mode}")
 
+    # @TODO: entities or namedindividuals ?!
+    # AB: This method is to ask for tbox axioms related with the given entity, which can be a class or a property.
+    # For named individuals there is the method `get_types`.
     def tbox(self, entities: Union[Iterable[OWLClass], Iterable[OWLDataProperty], Iterable[OWLObjectProperty], OWLClass,
-    OWLDataProperty, OWLObjectProperty, None] = None, mode='native'):
+    OWLDataProperty, OWLObjectProperty, None] = None, mode='native'):  # pragma: no cover
         """Get all the tbox axioms for the given concept-s|propert-y/ies.
          If no concept-s|propert-y/ies are given, get all tbox axioms.
 
          Args:
-             @TODO: entities or namedindividuals ?!
              entities: Entities to obtain tbox axioms from. This can be a single
               OWLClass/OWLDataProperty/OWLObjectProperty object, a list of those objects or None. If you enter a list
               that combines classes and properties (which we don't recommend doing), only axioms for one type will be
@@ -549,7 +574,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             raise TypeError
         if ce in self.ind_cache:
             return
-        if isinstance(self.reasoner, OWLReasoner_FastInstanceChecker):
+        if isinstance(self.reasoner, FastInstanceCheckerReasoner):
             self.ind_cache[ce] = self.reasoner._find_instances(ce)  # performance hack
         else:
             temp = self.reasoner.instances(ce)

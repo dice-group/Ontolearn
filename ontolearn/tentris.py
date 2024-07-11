@@ -1,3 +1,27 @@
+# -----------------------------------------------------------------------------
+# MIT License
+#
+# Copyright (c) 2024 Ontolearn Team
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# -----------------------------------------------------------------------------
+
 """Tentris representations."""
 
 import logging
@@ -25,7 +49,7 @@ from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1, Precision, Accuracy, Recall
 from ontolearn.utils import oplogging, Factory
 from ontolearn.base.ext import OWLReasonerEx
-from ontolearn.base import OWLOntologyManager_Owlready2, OWLReasoner_Owlready2
+from ontolearn.base import OntologyManager, OntologyReasoner
 from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer
 from owlapy.util import LRUCache
 
@@ -70,7 +94,7 @@ class TentrisOntology(OWLOntology):
         self._path = path
         self._endpoint_url = endpoint_url
         self._endpoint_timeout = timeout
-        self._backing_mgr = OWLOntologyManager_Owlready2()
+        self._backing_mgr = OntologyManager()
         self._backing_onto = self._backing_mgr.load_ontology(IRI.create('file://' + self._path))
 
     def classes_in_signature(self) -> Iterable[OWLClass]:
@@ -129,7 +153,7 @@ class TentrisReasoner(OWLReasonerEx):
 
     def __init__(self, ontology: TentrisOntology):
         self._ontology = ontology
-        self._backing_reasoner = OWLReasoner_Owlready2(self._ontology._backing_onto)
+        self._backing_reasoner = OntologyReasoner(self._ontology._backing_onto)
 
     def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClass]:
         raise NotImplementedError

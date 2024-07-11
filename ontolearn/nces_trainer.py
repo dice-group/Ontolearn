@@ -1,3 +1,27 @@
+# -----------------------------------------------------------------------------
+# MIT License
+#
+# Copyright (c) 2024 Ontolearn Team
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# -----------------------------------------------------------------------------
+
 """NCES trainer."""
 import numpy as np
 import copy
@@ -68,7 +92,7 @@ class NCESTrainer:
         hard_acc = sum(map(hard, prediction, target))/len(target)
         return soft_acc, hard_acc
 
-    def get_optimizer(self, synthesizer, optimizer='Adam'):
+    def get_optimizer(self, synthesizer, optimizer='Adam'):  # pragma: no cover
         if optimizer == 'Adam':
             return torch.optim.Adam(synthesizer.parameters(), lr=self.learning_rate)
         elif optimizer == 'SGD':
@@ -88,7 +112,7 @@ class NCESTrainer:
         print()
         return size
 
-    def collate_batch(self, batch):
+    def collate_batch(self, batch):  # pragma: no cover
         pos_emb_list = []
         neg_emb_list = []
         target_labels = []
@@ -172,7 +196,7 @@ class NCESTrainer:
                 best_score = Train_acc['hard'][-1]
                 best_weights = weights
         synthesizer.load_state_dict(best_weights)
-        if record_runtime:
+        if record_runtime:  # pragma: no cover
             duration = time.time()-t0
             runtime_info = {"Architecture": synthesizer.name,
                             "Number of Epochs": self.epochs, "Runtime (s)": duration}
@@ -186,17 +210,19 @@ class NCESTrainer:
         print()
         results_dict.update({"Train Max Soft Acc": max(Train_acc['soft']), "Train Max Hard Acc": max(Train_acc['hard']),
                              "Train Min Loss": min(Train_loss)})
-        if not os.path.exists(self.storage_path+"/results/"):
-            os.mkdir(self.storage_path+"/results/")
-        with open(self.storage_path+"/results/"+"results"+"_"+desc+".json", "w") as file:
-            json.dump(results_dict, file, indent=3)
-        if save_model:
+        
+        if save_model:  # pragma: no cover
+            if not os.path.exists(self.storage_path+"/results/"):
+                os.mkdir(self.storage_path+"/results/")
+            with open(self.storage_path+"/results/"+"results"+"_"+desc+".json", "w") as file:
+                json.dump(results_dict, file, indent=3)
+
             if not os.path.exists(self.storage_path+"/trained_models/"):
                 os.mkdir(self.storage_path+"/trained_models/")
             torch.save(synthesizer.state_dict(), self.storage_path+"/trained_models/"+"trained_"+desc+".pt")
             print("{} saved".format(synthesizer.name))
-        if not os.path.exists(self.storage_path+"/metrics/"):
-            os.mkdir(self.storage_path+"/metrics/")
-        with open(self.storage_path+"/metrics/"+"metrics_"+desc+".json", "w") as plot_file:
-            json.dump({"soft acc": Train_acc['soft'], "hard acc": Train_acc['hard'], "loss": Train_loss}, plot_file,
-                      indent=3)
+            if not os.path.exists(self.storage_path+"/metrics/"):
+                os.mkdir(self.storage_path+"/metrics/")
+            with open(self.storage_path+"/metrics/"+"metrics_"+desc+".json", "w") as plot_file:
+                json.dump({"soft acc": Train_acc['soft'], "hard acc": Train_acc['hard'], "loss": Train_loss}, plot_file,
+                          indent=3)

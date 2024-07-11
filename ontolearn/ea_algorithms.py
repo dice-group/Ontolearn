@@ -1,3 +1,27 @@
+# -----------------------------------------------------------------------------
+# MIT License
+#
+# Copyright (c) 2024 Ontolearn Team
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# -----------------------------------------------------------------------------
+
 """Evolutionary algorithms (for Evolearner)."""
 
 from abc import ABCMeta, abstractmethod
@@ -36,7 +60,7 @@ class AbstractEvolutionaryAlgorithm(metaclass=ABCMeta):
                verbose: bool = False) -> Tuple[bool, List[Tree]]:
         pass
 
-    def _log_generation_info(self, toolbox: Toolbox, gen: int, population: List[Tree]):
+    def _log_generation_info(self, toolbox: Toolbox, gen: int, population: List[Tree]):  # pragma: no cover
         logger.info(f'Generation: {gen}')
         for node in toolbox.get_top_hypotheses(population):
             logger.info(node)
@@ -107,7 +131,7 @@ class EASimple(BaseEvolutionaryAlgorithm):
 
         num_selections = num_selections if num_selections > 0 else len(population)
 
-        if self.elitism:
+        if self.elitism:  # pragma: no cover
             num_elite = int(self.elite_size*num_selections)
             num_selections = num_selections - num_elite
             elite = nlargest(num_elite, population, key=lambda ind: ind.fitness.values[0])
@@ -133,7 +157,7 @@ class RegularizedEvolution(BaseEvolutionaryAlgorithm):
     def __init__(self):
         pass
 
-    def generation(self, toolbox: Toolbox, population: List[Tree], num_selections: int = 0) -> Tuple[bool, List[Tree]]:
+    def generation(self, toolbox: Toolbox, population: List[Tree], num_selections: int = 0) -> Tuple[bool, List[Tree]]:  # pragma: no cover
         # TODO: use queue, since normal list has O(n) for pop
 
         parent = toolbox.select(population, 1)[0]
@@ -146,7 +170,7 @@ class RegularizedEvolution(BaseEvolutionaryAlgorithm):
         return offspring.quality.values[0] == 1.0, population
 
 
-class MultiPopulation(AbstractEvolutionaryAlgorithm):
+class MultiPopulation(AbstractEvolutionaryAlgorithm):  # pragma: no cover
     __slots__ = 'base_algorithm', 'migration_size', 'num_populations', 'iso_generations', 'boost'
 
     name: Final = 'MultiPopulation'
