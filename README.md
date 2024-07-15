@@ -1,5 +1,5 @@
 [![Coverage](docs/images/tag_coverage.png)](https://ontolearn-docs-dice-group.netlify.app/usage/09_further_resources#code-coverage)
-[![Pypi](docs/images/tag_version.png)](https://pypi.org/project/ontolearn/0.7.1/)
+[![Pypi](docs/images/tag_version.png)](https://pypi.org/project/ontolearn/0.7.2/)
 [![Docs](docs/images/tag_docs.png)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
 
 &nbsp;
