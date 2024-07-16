@@ -50,6 +50,8 @@ def get_reasoner_instances(reasoner: NeuralReasoner, class_expression: OWLClassE
 def evaluate_reasoner(kb, reasoner, triple_store, concept_type):
 
      class_expressions, length = generate_class_expressions(kb, concept_type)
+
+    #  print(length)
     #  print(class_expressions)
     #  exit(0)
 
@@ -58,8 +60,10 @@ def evaluate_reasoner(kb, reasoner, triple_store, concept_type):
      start_time = time.time()
      for class_expr in class_expressions:
         A = parser.parse_expression(class_expr)
-        print(A)
+        # print(A)
+        grd_time = time.time()
         ground_truth = {i.str for i in kb.individuals(parser.parse_expression(class_expr))}
+        print(f"gt time: {time.time()-grd_time}")
 
         
         # ground_truth = {i.str for i in triple_store.instances(parser.parse_expression(class_expr))}
@@ -67,7 +71,9 @@ def evaluate_reasoner(kb, reasoner, triple_store, concept_type):
         # print(ground_truth)
         # exit(0)
 
+        our_time = time.time()
         reasoner_instances = get_reasoner_instances(reasoner, parser.parse_expression(class_expr))
+        print(f"Our time: {time.time()-our_time}")
 
         jaccard_score = jaccard_similarity(ground_truth, reasoner_instances)
         f1_score = compute_f1_score(ground_truth, reasoner_instances)
@@ -79,8 +85,8 @@ def evaluate_reasoner(kb, reasoner, triple_store, concept_type):
         # exit(0)
         # print(f"Ground Truth: {ground_truth}")
         # print(f"Reasoner Instances: {reasoner_instances}")
-        print(f"Jaccard Similarity: {jaccard_score}")
-        print("---------------------------------------------------")
+        # print(f"Jaccard Similarity: {jaccard_score}")
+        # print("---------------------------------------------------")
 
      end_time = time.time()
      duration = end_time-start_time
@@ -89,13 +95,13 @@ def evaluate_reasoner(kb, reasoner, triple_store, concept_type):
      avg_f1_score = sum(f1_scores)/ len(f1_scores)
 
      print(f"Average Jaccard Similarity: {avg_jaccard_similarity}")
-    #  print(f"Elapsed time: {duration} seconds")
+     print(f"Elapsed time: {duration} seconds")
 
      return avg_jaccard_similarity, avg_f1_score ,length, duration
      # print(jaccard_scores)
 
 TS = TripleStoreReasonerOntology(url="http://localhost:3030/family.owl")
-reasoner = NeuralReasoner(KGE(f"KeciFamilyRun"),gamma_for_nc=0.1)
+reasoner = NeuralReasoner(KGE(f"KeciFamilyRun"),gamma_for_nc=0.9)
 
 # class_expr_1 =OWLClass(IRI('http://www.w3.org/2002/07/owl#','person'))
 
@@ -107,7 +113,9 @@ reasoner = NeuralReasoner(KGE(f"KeciFamilyRun"),gamma_for_nc=0.1)
 
 # print(parser.parse_expression("http://www.w3.org/2002/07/owl"))
 
-evaluate_reasoner(kb, reasoner, TS, concept_type="union")
+evaluate_reasoner(kb, reasoner, TS, concept_type="min_card")
+add = NeuralReasoner.instances_cached
+print(add.cache_info())
 
 ################################################################################
 

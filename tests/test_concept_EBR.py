@@ -58,10 +58,10 @@ class_expr_2 =  OWLObjectSomeValuesFrom(property=OWLObjectProperty(IRI('http://w
 reasoner_instances_1 = get_reasoner_instances(reasoner, class_expr_1)
 reasoner_instances_2 = get_reasoner_instances(reasoner, class_expr_2)
 
-# ground_truth_1 = {i.str for i in kb.individuals(class_expr_1)}
-# ground_truth_2 = {i.str for i in kb.individuals(class_expr_2)}
-ground_truth_1 = {i.str for i in TS.instances(class_expr_1)}
-ground_truth_2 = {i.str for i in TS.instances(class_expr_2)}
+ground_truth_1 = {i.str for i in kb.individuals(class_expr_1)}
+ground_truth_2 = {i.str for i in kb.individuals(class_expr_2)}
+# ground_truth_1 = {i.str for i in TS.instances(class_expr_1)}
+# ground_truth_2 = {i.str for i in TS.instances(class_expr_2)}
 
 assert ground_truth_1 == ground_truth_2
 
@@ -269,10 +269,10 @@ class_expr_2 = OWLObjectExactCardinality(property=OWLObjectProperty(IRI('http://
 reasoner_instances_1 = get_reasoner_instances(reasoner, class_expr_1)
 reasoner_instances_2 = get_reasoner_instances(reasoner, class_expr_2)
 
-# ground_truth_1 = {i.str for i in kb.individuals(class_expr_1)}
-# ground_truth_2 = {i.str for i in kb.individuals(class_expr_2)}
-ground_truth_1 = {i.str for i in TS.instances(class_expr_1)}
-ground_truth_2 = {i.str for i in TS.instances(class_expr_2)}
+ground_truth_1 = {i.str for i in kb.individuals(class_expr_1)}
+ground_truth_2 = {i.str for i in kb.individuals(class_expr_2)}
+# ground_truth_1 = {i.str for i in TS.instances(class_expr_1)}
+# ground_truth_2 = {i.str for i in TS.instances(class_expr_2)}
 
 assert ground_truth_1 == ground_truth_2
 
