@@ -1,13 +1,8 @@
 """python examples/retrieval_eval.py"""
-
 from ontolearn.owl_neural_reasoner import TripleStoreNeuralReasoner
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.triple_store import TripleStore
-from ontolearn.utils import jaccard_similarity
-from owlapy.class_expression import (
-    OWLQuantifiedObjectRestriction,
-    OWLObjectCardinalityRestriction,
-)
+from ontolearn.utils import jaccard_similarity, f1_set_similarity, concept_reducer, concept_reducer_properties
 from owlapy.class_expression import (
     OWLObjectUnionOf,
     OWLObjectIntersectionOf,
@@ -18,89 +13,16 @@ from owlapy.class_expression import (
     OWLObjectOneOf,
 )
 import time
-from typing import List, Tuple, Union, Set, Iterable, Callable
+from typing import Tuple, Set
 import pandas as pd
 from owlapy import owl_expression_to_dl
 from itertools import chain
 from argparse import ArgumentParser
 import os
 from tqdm import tqdm
-
-# TODO:CD: Fix the seed
 import random
 import itertools
-
-
-# @TODO Move into ontolearn.utils
-def concept_reducer(concepts, opt):
-    result = set()
-    for i in concepts:
-        for j in concepts:
-            result.add(opt((i, j)))
-    return result
-
-
-# @TODO Move into ontolearn.utils
-def concept_reducer_properties(
-        concepts: Set, properties, cls: Callable = None, cardinality: int = 2
-) -> Set[Union[OWLQuantifiedObjectRestriction, OWLObjectCardinalityRestriction]]:
-    """
-    Map a set of owl concepts and a set of properties into OWL Restrictions
-
-    Args:
-        concepts:
-        properties:
-        cls (Callable): An owl Restriction class
-        cardinality: A positive Integer
-
-    Returns: List of OWL Restrictions
-
-    """
-    assert isinstance(concepts, Iterable), "Concepts must be an Iterable"
-    assert isinstance(properties, Iterable), "properties must be an Iterable"
-    assert isinstance(cls, Callable), "cls must be an Callable"
-    assert cardinality > 0
-    result = set()
-    for i in concepts:
-        for j in properties:
-            if cls == OWLObjectMinCardinality or cls == OWLObjectMaxCardinality:
-                result.add(cls(cardinality=cardinality, property=j, filler=i))
-                continue
-            result.add(cls(j, i))
-    return result
-
-
-# @TODO: CD: Perhaps we can remove this function.
-def concept_to_retrieval(concepts, retriever) -> List[Tuple[float, Set[str]]]:
-    results = []
-    for c in concepts:
-        start_time_ = time.time()
-        retrieval = {i.str for i in retriever.individuals(c)}
-        results.append((time.time() - start_time_, retrieval))
-    return results
-
-
-# @TODO: CD: Perhaps we can remove this function.
-def retrieval_eval(expressions, y, yhat, verbose=1):
-    assert len(y) == len(yhat)
-    similarities = []
-    runtime_diff = []
-    number_of_concepts = len(expressions)
-    for expressions, y_report_i, yhat_report_i in zip(expressions, y, yhat):
-        runtime_y_i, y_i = y_report_i
-        runtime_yhat_i, yhat_i = yhat_report_i
-
-        jaccard_sim = jaccard_similarity(y_i, yhat_i)
-        runtime_benefits = runtime_y_i - runtime_yhat_i
-        if verbose > 0:
-            print(
-                f"Concept:{expressions}\tTrue Size:{len(y_i)}\tPredicted Size:{len(yhat_i)}\tRetrieval Similarity:{jaccard_sim}\tRuntime Benefit:{runtime_benefits:.3f}"
-            )
-        similarities.append(jaccard_sim)
-        runtime_diff.append(runtime_benefits)
-    avg_jaccard_sim = sum(similarities) / len(similarities)
-    avg_runtime_benefits = sum(runtime_diff) / len(runtime_diff)
-    return number_of_concepts, avg_jaccard_sim, avg_runtime_benefits
+import ast
 
 
 def execute(args):
@@ -119,16 +41,25 @@ def execute(args):
         neural_owl_reasoner = TripleStoreNeuralReasoner(
             path_of_kb=args.path_kg, gamma=args.gamma
         )
+    # Fix the random seed.
+    random.seed(args.seed)
     ###################################################################
     # GENERATE ALCQ CONCEPTS TO EVALUATE RETRIEVAL PERFORMANCES
     # (3) R: Extract object properties.
     object_properties = {i for i in symbolic_kb.get_object_properties()}
+    # (3.1) Subsample if required.
+    if args.ratio_sample_object_prob:
+        object_properties = {i for i in random.sample(population=list(object_properties),
+                                                      k=max(1, int(len(object_properties) * args.ratio_sample_nc)))}
     # (4) R⁻: Inverse of object properties.
     object_properties_inverse = {i.get_inverse_property() for i in object_properties}
     # (5) R*: R UNION R⁻.
     object_properties_and_inverse = object_properties.union(object_properties_inverse)
     # (6) NC: Named owl concepts.
     nc = {i for i in symbolic_kb.get_concepts()}
+    if args.ratio_sample_nc:
+        # (6.1) Subsample if required.
+        nc = {i for i in random.sample(population=list(nc), k=max(1, int(len(nc) * args.ratio_sample_nc)))}
     # (7) NC⁻: Complement of NC.
     nnc = {i.get_object_complement_of() for i in nc}
     # (8) UNNC: NC UNION NC⁻.
@@ -148,7 +79,6 @@ def execute(args):
     unions_unnc = concept_reducer(unnc, opt=OWLObjectUnionOf)
     # (14) UNNC INTERACTION UNNC.
     intersections_unnc = concept_reducer(unnc, opt=OWLObjectIntersectionOf)
-
     # (15) \exist r. C s.t. C \in UNNC and r \in R* .
     exist_unnc = concept_reducer_properties(
         concepts=unnc,
@@ -195,61 +125,64 @@ def execute(args):
         start_time = time.time()
         return {i.str for i in retriever_func.individuals(c)}, time.time() - start_time
 
+    # () Collect the data.
     data = []
-    # Converted to list so that the progress bar works.
+    # () Converted to list so that the progress bar works.
     concepts = list(
         chain(
-            nc,
-            unions,
-            intersections,
-            nnc,
-            unnc,
-            unions_unnc,
-            intersections_unnc,
-            exist_unnc,
-            for_all_unnc,
-            min_cardinality_unnc_1,
-            min_cardinality_unnc_2,
-            min_cardinality_unnc_3,
-            max_cardinality_unnc_1,
-            max_cardinality_unnc_2,
-            max_cardinality_unnc_3,
+            nc, unions, intersections, nnc, unnc, unions_unnc, intersections_unnc,
+            exist_unnc, for_all_unnc,
+            min_cardinality_unnc_1, min_cardinality_unnc_2, min_cardinality_unnc_3,
+            max_cardinality_unnc_1, max_cardinality_unnc_2, max_cardinality_unnc_3,
             exist_nominals,
         )
     )
-    # Shuffled the data so that the progress bar is not influenced by the order of concepts.
+    # () Shuffled the data so that the progress bar is not influenced by the order of concepts.
     random.shuffle(concepts)
-    # Converted to list so that the progress bar works.
+    # () Iterate over single OWL Class Expressions in ALCQIHO
     for expression in (tqdm_bar := tqdm(concepts, position=0, leave=True)):
         retrieval_y: Set[str]
         runtime_y: Set[str]
-
+        # () Retrieve the true set of individuals and elapsed runtime.
         retrieval_y, runtime_y = concept_retrieval(symbolic_kb, expression)
-        retrieval_neural_y, runtime_neural_y = concept_retrieval(
-            neural_owl_reasoner, expression
-        )
+        # () Retrieve a set of inferred individuals and elapsed runtime.
+        retrieval_neural_y, runtime_neural_y = concept_retrieval(neural_owl_reasoner, expression)
+        # () Compute the Jaccard similarity.
         jaccard_sim = jaccard_similarity(retrieval_y, retrieval_neural_y)
+        # () Compute the F1-score.
+        f1_sim = f1_set_similarity(retrieval_y, retrieval_neural_y)
+        # () Store the data.
         data.append(
             {
                 "Expression": owl_expression_to_dl(expression),
                 "Type": type(expression).__name__,
                 "Jaccard Similarity": jaccard_sim,
+                "F1": f1_sim,
                 "Runtime Benefits": runtime_y - runtime_neural_y,
                 "Symbolic_Retrieval": retrieval_y,
                 "Symbolic_Retrieval_Neural": retrieval_neural_y,
             }
         )
+        # () Update the progress bar.
         tqdm_bar.set_description_str(
-            f"Expression: {owl_expression_to_dl(expression)} | Jaccard Similarity:{jaccard_sim:.4f} | Runtime Benefits:{runtime_y - runtime_neural_y:.3f}"
+            f"Expression: {owl_expression_to_dl(expression)} | Jaccard Similarity:{jaccard_sim:.4f} | F1 :{f1_sim:.4f} | Runtime Benefits:{runtime_y - runtime_neural_y:.3f}"
         )
-
+    # () Read the data into pandas dataframe
     df = pd.DataFrame(data)
     assert df["Jaccard Similarity"].mean() == 1.0
-
+    # () Save the experimental results into csv file.
     df.to_csv(args.path_report)
     del df
-    df = pd.read_csv(args.path_report, index_col=0)
+    # () Load the saved CSV file.
+    df = pd.read_csv(args.path_report, index_col=0, converters={'Symbolic_Retrieval': lambda x: ast.literal_eval(x),
+                                                                'Symbolic_Retrieval_Neural': lambda x: ast.literal_eval(
+                                                                    x)})
+    # () A retrieval result can be parsed into  set of instances to python object.
+    x = df["Symbolic_Retrieval_Neural"].iloc[0]
+    assert isinstance(x, set)
+    # () Extract the numerical features.
     numerical_df = df.select_dtypes(include=["number"])
+    # () Extract the type of owl concepts
     df_g = df.groupby(by="Type")
     print(df_g["Type"].count())
     mean_df = df_g[numerical_df.columns].mean()
@@ -258,15 +191,16 @@ def execute(args):
 
 def get_default_arguments():
     parser = ArgumentParser()
-    parser.add_argument(
-        "--path_kg", type=str, default="KGs/Family/family-benchmark_rich_background.owl"
-    )
+    parser.add_argument("--path_kg", type=str, default="KGs/Family/family-benchmark_rich_background.owl")
     parser.add_argument("--path_kge_model", type=str, default=None)
     parser.add_argument("--endpoint_triple_store", type=str, default=None)
     parser.add_argument("--gamma", type=float, default=0.8)
-    parser.add_argument("--path_report", type=str, default="ALCQ_Retrieval_Results.csv")
+    parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--ratio_sample_nc", type=float, default=None, help="To sample OWL Classes.")
+    parser.add_argument("--ratio_sample_object_prob", type=float, default=None, help="To sample OWL Object Properties.")
+    # H is obtained if the forward chain is applied on KG.
+    parser.add_argument("--path_report", type=str, default="ALCQHI_Retrieval_Results.csv")
     return parser.parse_args()
-
 
 if __name__ == "__main__":
     execute(get_default_arguments())

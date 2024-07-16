@@ -4,19 +4,22 @@ import os
 import pickle
 import random
 import time
-from typing import Callable, Set, TypeVar, Tuple, Union
+from typing import Callable, TypeVar, Tuple, Union
 from owlapy.class_expression import OWLClass
 from owlapy.iri import IRI
 from owlapy.meta_classes import HasIRI
 from owlapy.owl_individual import OWLNamedIndividual
 from ontolearn.utils.log_config import setup_logging  # noqa: F401
 import pandas as pd
-from .static_funcs import compute_f1_score
+from .static_funcs import compute_f1_score, f1_set_similarity, concept_reducer, concept_reducer_properties
+
 Factory = Callable
 from typing import Set
+
 # DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args}) -> {result}'
 DEFAULT_FMT = 'Func:{name} took {elapsed:0.8f}s'
 flag_for_performance = False
+
 
 def jaccard_similarity(y: Set[str], yhat: Set[str]) -> float:
     """
@@ -30,6 +33,7 @@ def jaccard_similarity(y: Set[str], yhat: Set[str]) -> float:
     if len(yhat) == 0 or len(y) == 0:
         return 0.0
     return len(y.intersection(yhat)) / len(y.union(yhat))
+
 
 def parametrized_performance_debugger(fmt=DEFAULT_FMT):
     def decorate(func):
@@ -119,7 +123,7 @@ def balanced_sets(a: set, b: set) -> Tuple[Set, Set]:
         return a, b
 
 
-def read_csv(path)->Union[None,pd.DataFrame]:
+def read_csv(path) -> Union[None, pd.DataFrame]:
     """
     Path leads a folder containing embeddings in csv format.
     indexes correspond subjects or predicates or objects in n-triple.

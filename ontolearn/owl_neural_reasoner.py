@@ -37,7 +37,6 @@ class TripleStoreNeuralReasoner:
                 # Train a KGE on the fly
                 from dicee.executer import Execute
                 from dicee.config import Namespace
-
                 args = Namespace()
                 args.model = 'Keci'
                 args.scoring_technique = "AllvsAll"
