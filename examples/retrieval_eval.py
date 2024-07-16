@@ -42,7 +42,7 @@ def concept_reducer(concepts, opt):
 
 # @TODO Move into ontolearn.utils
 def concept_reducer_properties(
-    concepts: Set, properties, cls: Callable = None, cardinality: int = 2
+        concepts: Set, properties, cls: Callable = None, cardinality: int = 2
 ) -> Set[Union[OWLQuantifiedObjectRestriction, OWLObjectCardinalityRestriction]]:
     """
     Map a set of owl concepts and a set of properties into OWL Restrictions
@@ -186,6 +186,7 @@ def execute(args):
         properties=object_properties_and_inverse,
         cls=OWLObjectSomeValuesFrom,
     )
+
     ###################################################################
 
     # Retrieval Results
@@ -220,6 +221,9 @@ def execute(args):
     random.shuffle(concepts)
     # Converted to list so that the progress bar works.
     for expression in (tqdm_bar := tqdm(concepts, position=0, leave=True)):
+        retrieval_y: Set[str]
+        runtime_y: Set[str]
+
         retrieval_y, runtime_y = concept_retrieval(symbolic_kb, expression)
         retrieval_neural_y, runtime_neural_y = concept_retrieval(
             neural_owl_reasoner, expression
@@ -231,6 +235,8 @@ def execute(args):
                 "Type": type(expression).__name__,
                 "Jaccard Similarity": jaccard_sim,
                 "Runtime Benefits": runtime_y - runtime_neural_y,
+                "Symbolic_Retrieval": retrieval_y,
+                "Symbolic_Retrieval_Neural": retrieval_neural_y,
             }
         )
         tqdm_bar.set_description_str(
