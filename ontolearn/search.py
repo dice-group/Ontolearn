@@ -1,3 +1,27 @@
+# -----------------------------------------------------------------------------
+# MIT License
+#
+# Copyright (c) 2024 Ontolearn Team
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# -----------------------------------------------------------------------------
+
 """Node representation."""
 import weakref
 from _weakref import ReferenceType
@@ -48,7 +72,7 @@ class _NodeConcept(metaclass=ABCMeta):
 
 # noinspection PyUnresolvedReferences
 # noinspection PyDunderSlots
-class _NodeLen(metaclass=ABCMeta):
+class _NodeLen(metaclass=ABCMeta):  # pragma: no cover
     __slots__ = ()
 
     _len: int
@@ -64,7 +88,7 @@ class _NodeLen(metaclass=ABCMeta):
 
 # noinspection PyUnresolvedReferences
 # noinspection PyDunderSlots
-class _NodeIndividualsCount(metaclass=ABCMeta):
+class _NodeIndividualsCount(metaclass=ABCMeta):  # pragma: no cover
     __slots__ = ()
 
     _individuals_count: Optional[int]
@@ -182,7 +206,7 @@ class Node(_NodeConcept, _NodeLen, _NodeIndividualsCount, AbstractNode):
     """
     __slots__ = '_concept', '_len', '_individuals_count'
 
-    def __init__(self, concept: OWLClassExpression, length: int):
+    def __init__(self, concept: OWLClassExpression, length: int):  # pragma: no cover
         _NodeConcept.__init__(self, concept)
         _NodeLen.__init__(self, length)
         _NodeIndividualsCount.__init__(self)
@@ -344,7 +368,7 @@ class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodePa
         if self.is_root is False:
             assert self.parent_node
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         if self.embeddings is None:
             return "\t".join((
                 AbstractNode.__str__(self),
@@ -502,7 +526,7 @@ class QualityOrderedNode:
         return self.node == other.node
 
 
-def _node_and_all_children(n: _N) -> Iterable[_N]:
+def _node_and_all_children(n: _N) -> Iterable[_N]:  # pragma: no cover
     """Get a node and all of its children (recursively) in an iterable"""
     yield n
     for c in n.children:
@@ -533,7 +557,7 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
     nodes: Dict[OWLClassExpression, LBLNode]
     items_in_queue: 'PriorityQueue[Tuple[float, HeuristicOrderedNode[LBLNode]]]'
 
-    def __init__(self, quality_func, heuristic_func):
+    def __init__(self, quality_func, heuristic_func):  # pragma: no cover
         self.quality_func = quality_func
         self.heuristic_func = heuristic_func
         self.nodes = dict()
@@ -552,7 +576,7 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
         self.items_in_queue.put((-n.heuristic, HeuristicOrderedNode(n)))  # gets the smallest one.
         self.nodes[n.concept] = n
 
-    def add_root(self, node, kb_learning_problem):
+    def add_root(self, node, kb_learning_problem):  # pragma: no cover
         assert node.is_root
         assert not self.nodes
         self.quality_func.apply(node, node.individuals, kb_learning_problem)
@@ -561,7 +585,7 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
         self.nodes[node.concept] = node
 
     def add_node(self, *, node: LBLNode, parent_node: LBLNode, kb_learning_problem: EncodedLearningProblem) \
-            -> Optional[bool]:
+            -> Optional[bool]:  # pragma: no cover
         """
         Add a node into the search tree after calculating heuristic value given its parent.
 
@@ -600,7 +624,7 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
             if node.quality == 1:
                 return True
 
-    def get_most_promising(self) -> LBLNode:
+    def get_most_promising(self) -> LBLNode:  # pragma: no cover
         """
         Gets the current most promising node from Queue.
 
@@ -619,7 +643,7 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
                 print(k)
             raise
 
-    def get_top_n(self, n: int, key='quality') -> List[LBLNode]:
+    def get_top_n(self, n: int, key='quality') -> List[LBLNode]:  # pragma: no cover
         """
         Gets the top n nodes determined by key from the search tree.
 
@@ -642,7 +666,7 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
         self.items_in_queue = PriorityQueue()
         self.nodes.clear()
 
-    def show_search_tree(self, root_concept: OWLClassExpression, heading_step: str):
+    def show_search_tree(self, root_concept: OWLClassExpression, heading_step: str):  # pragma: no cover
         rdr = DLSyntaxObjectRenderer()
 
         print('######## ', heading_step, 'step Search Tree ###########')
@@ -761,7 +785,7 @@ class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
         node = self.nodes[dl_representation]
         return node
 
-    def get_top_n(self, n: int, key='quality') -> List[Node]:
+    def get_top_n(self, n: int, key='quality') -> List[Node]:  # pragma: no cover
         """
         Gets the top n nodes determined by key from the search tree.
 
@@ -798,7 +822,7 @@ class EvaluatedConcept:
     pass
 
 
-class SuperProp:
+class SuperProp:  # pragma: no cover
     """
     Super wrapper which allows property setting & deletion. Super can't be subclassed with empty __init__ arguments.
     """

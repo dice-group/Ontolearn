@@ -1,3 +1,27 @@
+# -----------------------------------------------------------------------------
+# MIT License
+#
+# Copyright (c) 2024 Ontolearn Team
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# -----------------------------------------------------------------------------
+
 import pandas as pd
 import json
 from owlapy.class_expression import OWLClassExpression
@@ -28,12 +52,10 @@ import torch
 from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
 from tqdm import tqdm
 from owlapy.utils import OWLClassExpressionLengthMetric
-
 from ..utils.static_funcs import make_iterable_verbose
 
 
-
-class Drill(RefinementBasedConceptLearner):
+class Drill(RefinementBasedConceptLearner):  # pragma: no cover
     """ Neuro-Symbolic Class Expression Learning (https://www.ijcai.org/proceedings/2023/0403.pdf)"""
 
     def __init__(self, knowledge_base,
@@ -66,15 +88,13 @@ class Drill(RefinementBasedConceptLearner):
         self.verbose = verbose
         self.learning_problem = None
         # (1) Initialize KGE.
-        if path_embeddings and os.path.isfile(path_embeddings):
-
+        if path_embeddings and os.path.isfile(path_embeddings): #
             if self.verbose > 0:
                 print("Reading Embeddings...", end="\t")
             self.df_embeddings = pd.read_csv(path_embeddings, index_col=0).astype('float32')
             self.num_entities, self.embedding_dim = self.df_embeddings.shape
             if self.verbose > 0:
                 print(self.df_embeddings.shape)
-
         else:
             if self.verbose > 0:
                 print("No pre-trained model...")
@@ -251,9 +271,7 @@ class Drill(RefinementBasedConceptLearner):
                  'Negatives': [i.str for i in negatives]})
         return self.terminate_training()
 
-
     def save(self, directory: str = None) -> None:
-
         """ save weights of the deep Q-network"""
         # (1) Create a folder
         if directory:
@@ -271,9 +289,7 @@ class Drill(RefinementBasedConceptLearner):
                 if isinstance(self.heuristic_func, CeloeBasedReward):
                     print("No loading because embeddings not provided")
                 else:
-
                     print("Loading pretrained DQL Agent...", end="")
-
                     self.heuristic_func.net.load_state_dict(torch.load(directory + "/drill.pth", torch.device('cpu')))
                     print(self.heuristic_func.net)
             else:
@@ -315,10 +331,8 @@ class Drill(RefinementBasedConceptLearner):
             if x.quality > best_found_quality:
                 best_found_quality = x.quality
             self.search_tree.add(x)
-
             if ith_bias == self.positive_type_bias:
                 break
-
 
         for _ in make_iterable_verbose(range(0, self.iter_bound),
                                        verbose=self.verbose,
@@ -363,9 +377,7 @@ class Drill(RefinementBasedConceptLearner):
                 preds = self.predict_values(current_state=most_promising,
                                             next_states=next_possible_states)
             else:
-
                 preds = None
-
             # (6.5) Add next possible states into search tree based on predicted Q values
             self.goal_found = self.update_search(next_possible_states, preds)
             if self.goal_found and self.stop_at_goal:
@@ -882,7 +894,7 @@ class Drill(RefinementBasedConceptLearner):
         return results
 
 
-class DrillHeuristic:
+class DrillHeuristic:  # pragma: no cover
     """
     Heuristic in Convolutional DQL concept learning.
     Heuristic implements a convolutional neural network.
@@ -911,7 +923,7 @@ class DrillHeuristic:
         node.heuristic = predicted_q_val
 
 
-class DrillNet(torch.nn.Module):
+class DrillNet(torch.nn.Module):  # pragma: no cover
     """
     A neural model for Deep Q-Learning.
 

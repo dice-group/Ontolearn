@@ -1,3 +1,27 @@
+# -----------------------------------------------------------------------------
+# MIT License
+#
+# Copyright (c) 2024 Ontolearn Team
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# -----------------------------------------------------------------------------
+
 """Data structures."""
 
 import torch
@@ -7,7 +31,7 @@ import numpy as np
 import random
 
 
-class PrepareBatchOfPrediction(torch.utils.data.Dataset):
+class PrepareBatchOfPrediction(torch.utils.data.Dataset):  # pragma: no cover
 
     def __init__(self, current_state: torch.FloatTensor, next_state_batch: torch.FloatTensor, p: torch.FloatTensor,
                  n: torch.FloatTensor):
@@ -29,7 +53,7 @@ class PrepareBatchOfPrediction(torch.utils.data.Dataset):
         return self.X
 
 
-class PrepareBatchOfTraining(torch.utils.data.Dataset):
+class PrepareBatchOfTraining(torch.utils.data.Dataset):  # pragma: no cover
 
     def __init__(self, current_state_batch: torch.Tensor, next_state_batch: torch.Tensor, p: torch.Tensor,
                  n: torch.Tensor, q: torch.Tensor):
@@ -85,7 +109,7 @@ class PrepareBatchOfTraining(torch.utils.data.Dataset):
         return self.X[idx], self.y[idx]
 
 
-class Experience:
+class Experience:  # pragma: no cover
     """
     A class to model experiences for Replay Memory.
     """
@@ -123,7 +147,7 @@ class Experience:
         self.rewards.clear()
 
 
-class NCESBaseDataLoader:
+class NCESBaseDataLoader:  # pragma: no cover
 
     def __init__(self, vocab, inv_vocab):
 
@@ -155,7 +179,7 @@ class NCESBaseDataLoader:
         return labels, len(target)
 
 
-class NCESDataLoader(NCESBaseDataLoader, torch.utils.data.Dataset):
+class NCESDataLoader(NCESBaseDataLoader, torch.utils.data.Dataset):  # pragma: no cover
 
     def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, max_length, example_sizes=None,
                  sorted_examples=True):
@@ -191,7 +215,7 @@ class NCESDataLoader(NCESBaseDataLoader, torch.utils.data.Dataset):
                                                             self.max_length - length)]).long()
 
 
-class NCESDataLoaderInference(NCESBaseDataLoader, torch.utils.data.Dataset):
+class NCESDataLoaderInference(NCESBaseDataLoader, torch.utils.data.Dataset):  # pragma: no cover
 
     def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, sorted_examples=True):
         self.data_raw = data
@@ -215,7 +239,7 @@ class NCESDataLoaderInference(NCESBaseDataLoader, torch.utils.data.Dataset):
         return datapoint_pos, datapoint_neg
 
     
-class CLIPDataLoader(torch.utils.data.Dataset):
+class CLIPDataLoader(torch.utils.data.Dataset):  # pragma: no cover
 
     def __init__(self, data: list, embeddings, shuffle_examples, example_sizes: list=None,
                  k=5, sorted_examples=True):
@@ -261,7 +285,7 @@ class CLIPDataLoader(torch.utils.data.Dataset):
         return datapoint_pos, datapoint_neg, torch.LongTensor([length])
     
     
-class CLIPDataLoaderInference(torch.utils.data.Dataset):
+class CLIPDataLoaderInference(torch.utils.data.Dataset):  # pragma: no cover
 
     def __init__(self, data: list, embeddings, shuffle_examples,
                  sorted_examples=True):

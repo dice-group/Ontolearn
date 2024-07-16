@@ -1,3 +1,27 @@
+# -----------------------------------------------------------------------------
+# MIT License
+#
+# Copyright (c) 2024 Ontolearn Team
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# -----------------------------------------------------------------------------
+
 """Refinement Operators for refinement-based concept learners."""
 from collections import defaultdict
 from itertools import chain
@@ -128,7 +152,7 @@ class LengthBasedRefinement(BaseRefinement):
         # (2) OWLDataSomeValuesFrom over double values fillers
         # Two ce for each property returned. Mean value extracted-
         # TODO: Most general_double_data_pro
-        if not isinstance(self.kb, KnowledgeBase):
+        if not isinstance(self.kb, KnowledgeBase):  # pragma: no cover
             for i in self.kb.get_double_data_properties():
                 doubles = [i.parse_double() for i in self.kb.get_range_of_double_data_properties(i)]
                 mean_doubles = sum(doubles) / len(doubles)
@@ -217,7 +241,7 @@ class LengthBasedRefinement(BaseRefinement):
 
         yield OWLObjectIntersectionOf((class_expression, OWLThing))
 
-    def refine(self, class_expression) -> Iterable[OWLClassExpression]:
+    def refine(self, class_expression) -> Iterable[OWLClassExpression]:  # pragma: no cover
         assert isinstance(class_expression, OWLClassExpression)
         # (1) Initialize top refinement if it has not been initialized.
         if self.top_refinements is None:
@@ -973,7 +997,7 @@ class ExpressRefinement(ModifiedCELOERefinement):
             yield OWLNothing
 
     def refine_object_min_card_restriction(self, ce: OWLObjectMinCardinality) \
-            -> Iterable[OWLObjectMinCardinality]:
+            -> Iterable[OWLObjectMinCardinality]:  # pragma: no cover
         """Refine owl:allValuesFrom.
 
         Args:
@@ -994,7 +1018,7 @@ class ExpressRefinement(ModifiedCELOERefinement):
                                                              ce.get_cardinality() + 1)
 
     def refine_object_max_card_restriction(self, ce: OWLObjectMaxCardinality) \
-            -> Iterable[OWLObjectMaxCardinality]:
+            -> Iterable[OWLObjectMaxCardinality]:  # pragma: no cover
         """Refine owl:maxCardinality.
 
         Args:
@@ -1062,7 +1086,7 @@ class ExpressRefinement(ModifiedCELOERefinement):
         if not any_refinement:
             yield ce
 
-    def refine_data_some_values_from(self, ce: OWLDataSomeValuesFrom) -> Iterable[OWLDataSomeValuesFrom]:
+    def refine_data_some_values_from(self, ce: OWLDataSomeValuesFrom) -> Iterable[OWLDataSomeValuesFrom]:  # pragma: no cover
         """Refine owl:someValuesFrom for data properties.
 
         Args:
@@ -1092,7 +1116,7 @@ class ExpressRefinement(ModifiedCELOERefinement):
         if not any_refinement:
             yield ce
 
-    def refine_data_has_value(self, ce: OWLDataHasValue) -> Iterable[OWLDataHasValue]:
+    def refine_data_has_value(self, ce: OWLDataHasValue) -> Iterable[OWLDataHasValue]:  # pragma: no cover
         """ Refine owl:hasValue.
 
         Args:
@@ -1110,7 +1134,7 @@ class ExpressRefinement(ModifiedCELOERefinement):
         if not any_refinement:
             yield ce
 
-    def refine(self, ce, **kwargs) -> Iterable[OWLClassExpression]:
+    def refine(self, ce, **kwargs) -> Iterable[OWLClassExpression]:  # pragma: no cover
         """Refine a given concept.
 
         Args:

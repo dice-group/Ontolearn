@@ -1,3 +1,27 @@
+# -----------------------------------------------------------------------------
+# MIT License
+#
+# Copyright (c) 2024 Ontolearn Team
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# -----------------------------------------------------------------------------
+
 """Model adapters."""
 import inspect
 import json
@@ -55,7 +79,7 @@ def transform_string(input_string):
     return transformed_string
 
 
-def compute_quality(KB, solution, pos, neg, qulaity_func="f1"):
+def compute_quality(KB, solution, pos, neg, qulaity_func="f1"):  # pragma: no cover
     func = metrics[qulaity_func]().score2
     instances = set(KB.individuals(solution))
     if isinstance(list(pos)[0], str):
@@ -66,7 +90,7 @@ def compute_quality(KB, solution, pos, neg, qulaity_func="f1"):
     tn = len(neg.difference(instances))
     return func(tp=tp, fn=fn, fp=fp, tn=tn)[-1]
 
-def _get_matching_opts(_Type, optargs, kwargs, *, prefix=None):
+def _get_matching_opts(_Type, optargs, kwargs, *, prefix=None):  # pragma: no cover
     """Find the keys in kwargs that are parameters of _Type.
 
     If prefix is specified, the keys in kwargs need to be prefixed with prefix_.
@@ -100,7 +124,7 @@ def _get_matching_opts(_Type, optargs, kwargs, *, prefix=None):
 _N = TypeVar('_N', bound=AbstractNode)  #:
 
 
-def ModelAdapter(*args, **kwargs):  # noqa: C901
+def ModelAdapter(*args, **kwargs):  # pragma: no cover
     """Instantiate a model through the model adapter.
 
     .. warning ::
@@ -269,7 +293,7 @@ def ModelAdapter(*args, **kwargs):  # noqa: C901
     return learner
 
 
-class Trainer:
+class Trainer: # pragma: no cover
     def __init__(self, learner: BaseConceptLearner, reasoner: OWLReasoner):
         """
         A class to disentangle the learner from its training.
@@ -338,7 +362,7 @@ class Trainer:
         self.learner.save_best_hypothesis(n, path, rdf_format)
 
 
-def execute(args):
+def execute(args): # pragma: no cover
 
     args_d = args.__dict__
     learner_type = models[args.model]

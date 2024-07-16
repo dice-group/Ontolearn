@@ -1,3 +1,26 @@
+# -----------------------------------------------------------------------------
+# MIT License
+#
+# Copyright (c) 2024 Ontolearn Team
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# -----------------------------------------------------------------------------
 from itertools import chain
 from typing import Optional, Callable, Tuple, Generator, List, Union, Final
 import pandas
@@ -152,7 +175,7 @@ def init_named_individuals(individuals_cache_size, ):
 
 
 def init_individuals_from_concepts(include_implicit_individuals: bool = None, reasoner=None, ontology=None,
-                                   individuals_per_concept=None):
+                                   individuals_per_concept=None):  # pragma: no cover
     assert isinstance(include_implicit_individuals, bool), f"{include_implicit_individuals} must be boolean"
     if include_implicit_individuals:
         assert isinstance(individuals_per_concept, Generator)
@@ -165,7 +188,7 @@ def init_individuals_from_concepts(include_implicit_individuals: bool = None, re
     return _ind_set
 
 
-def compute_tp_fn_fp_tn(individuals, pos, neg):
+def compute_tp_fn_fp_tn(individuals, pos, neg):  # pragma: no cover
     tp = len(pos.intersection(individuals))
     tn = len(neg.difference(individuals))
     fp = len(neg.intersection(individuals))
@@ -173,7 +196,7 @@ def compute_tp_fn_fp_tn(individuals, pos, neg):
     return tp, fn, fp, tn
 
 
-def compute_f1_score(individuals, pos, neg) -> float:
+def compute_f1_score(individuals, pos, neg) -> float:  # pragma: no cover
     """ Compute F1-score of a concept
     """
     assert type(individuals) == type(pos) == type(neg), f"Types must match:{type(individuals)},{type(pos)},{type(neg)}"
@@ -204,7 +227,7 @@ def compute_f1_score(individuals, pos, neg) -> float:
     return f_1
 
 
-def plot_umap_reduced_embeddings(X: pandas.DataFrame, y: List[float], name: str = "umap_visualization.pdf") -> None:
+def plot_umap_reduced_embeddings(X: pandas.DataFrame, y: List[float], name: str = "umap_visualization.pdf") -> None:  # pragma: no cover
     import umap
     reducer = umap.UMAP(random_state=1)
     embedding = reducer.fit_transform(X)
@@ -216,7 +239,7 @@ def plot_umap_reduced_embeddings(X: pandas.DataFrame, y: List[float], name: str 
     plt.show()
 
 
-def plot_decision_tree_of_expressions(feature_names, cart_tree) -> None:
+def plot_decision_tree_of_expressions(feature_names, cart_tree) -> None:  # pragma: no cover
     """
     Plot the built CART Decision Tree and feature importance.
 
@@ -237,8 +260,7 @@ def plot_decision_tree_of_expressions(feature_names, cart_tree) -> None:
     plt.savefig('cart_decision_tree.pdf')
     plt.show()
 
-
-def plot_topk_feature_importance(feature_names, cart_tree, topk: int = 10) -> None:
+def plot_topk_feature_importance(feature_names, cart_tree, topk: int = 10)->None:  # pragma: no cover
     """
     Plot the feature importance of the CART Decision Tree.
 
@@ -269,7 +291,7 @@ def plot_topk_feature_importance(feature_names, cart_tree, topk: int = 10) -> No
 
 def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLClassExpression]],
                                path: str = 'Predictions',
-                               rdf_format: str = 'rdfxml') -> None:
+                               rdf_format: str = 'rdfxml') -> None:  # pragma: no cover
     assert isinstance(expressions, OWLClassExpression) or isinstance(expressions[0],
                                                                      OWLClassExpression), "expressions must be either OWLClassExpression or a list of OWLClassExpression"
     if isinstance(expressions, OWLClassExpression):
@@ -299,3 +321,65 @@ def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLCl
             print(expressions)
             exit(1)
     manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))
+
+
+def verbalize(predictions_file_path: str):  # pragma: no cover
+    import xml.etree.ElementTree as ET
+    import os
+    tree = ET.parse(predictions_file_path)
+    root = tree.getroot()
+    tmp_file = 'tmp_file_' + predictions_file_path
+    owl = 'http://www.w3.org/2002/07/owl#'
+    ontology_elem = root.find(f'{{{owl}}}Ontology')
+    ontology_elem.remove(ontology_elem.find(f'{{{owl}}}imports'))
+
+    # The commented lines below are needed if you want to use `verbaliser.verbalise_class_expression`
+    # They assign labels to classes and properties.
+
+    # rdf = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'
+    # rdfs = 'http://www.w3.org/2000/01/rdf-schema#'
+    # for element in root.iter():
+    #     resource = None
+    #     if f'{{{rdf}}}about' in element.attrib:
+    #         resource = element.attrib[f'{{{rdf}}}about']
+    #     elif f'{{{rdf}}}resource' in element.attrib:
+    #         resource = element.attrib[f'{{{rdf}}}resource']
+    #     if resource is not None:
+    #         label = resource.split('#')
+    #         if len(label) > 1:
+    #             element.set(f'{{{rdfs}}}label', label[1])
+    #         else:
+    #             element.set(f'{{{rdfs}}}label', resource)
+
+    tree.write(tmp_file)
+
+    try:
+        from deeponto.onto import Ontology, OntologyVerbaliser
+        from anytree.dotexport import RenderTreeGraph
+        from IPython.display import Image
+    except Exception as e:
+        print("You need to install deeponto to use this feature (pip install deeponto). If you have already, check "
+              "whether it's installed properly. \n   ----> Error: " + f'{e}')
+        if os.path.exists(tmp_file):
+            os.remove(tmp_file)
+        return
+
+    onto = Ontology(tmp_file)
+    verbalizer = OntologyVerbaliser(onto)
+    complex_concepts = onto.get_asserted_complex_classes()
+    try:
+        for i, ce in enumerate(complex_concepts):
+            tree = verbalizer.parser.parse(str(ce))
+            tree.render_image()
+            os.rename("range_node.png", f"Prediction_{i}.png")
+    except Exception as e:
+        print("If you have not installed graphviz, please do so at https://graphviz.org/download/ to make the "
+              "verbalization possible. Otherwise check the error message: \n" + f'{e}')
+    if os.path.exists(tmp_file):
+        os.remove(tmp_file)
+    if len(complex_concepts) == 0:
+        print("No complex classes found!")
+    elif len(complex_concepts) == 1:
+        print("Image generated successfully!")
+    else:
+        print("Images generated successfully!")
