@@ -1,23 +1,16 @@
 from owlapy.owl_property import (
     OWLDataProperty,
-    OWLObjectPropertyExpression,
     OWLObjectInverseOf,
     OWLObjectProperty,
     OWLProperty,
 )
-
-from owlapy.owl_datatype import OWLDatatype
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
-
 from owlapy.class_expression import *
-
-from typing import Iterable, Set, Optional, Generator, Union, FrozenSet, Tuple, Callable
-
+from typing import Generator, Tuple
 from dicee.knowledge_graph_embeddings import KGE
-
 import os
-
+import re
 from collections import Counter
 
 
@@ -44,7 +37,6 @@ class TripleStoreNeuralReasoner:
                 # Train a KGE on the fly
                 from dicee.executer import Execute
                 from dicee.config import Namespace
-
                 args = Namespace()
                 args.model = 'Keci'
                 args.scoring_technique = "AllvsAll"
@@ -70,6 +62,7 @@ class TripleStoreNeuralReasoner:
         self.inferred_owl_individuals = None
         self.inferred_object_properties = None
         self.inferred_named_owl_classes = None
+
     @property
     def set_inferred_individuals(self):
         if self.inferred_owl_individuals is None:
@@ -77,6 +70,7 @@ class TripleStoreNeuralReasoner:
             return {i for i in self.individuals_in_signature()}
         else:
             return self.inferred_owl_individuals
+
     @property
     def set_inferred_object_properties(self):  # pragma: no cover
         if self.inferred_object_properties is None:
@@ -84,6 +78,7 @@ class TripleStoreNeuralReasoner:
             return {i for i in self.object_properties_in_signature()}
         else:
             return self.inferred_object_properties
+
     @property
     def set_inferred_owl_classes(self):  # pragma: no cover
         if self.inferred_named_owl_classes is None:
