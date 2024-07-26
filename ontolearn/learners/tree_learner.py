@@ -118,7 +118,6 @@ def explain_inference(clf, X: pd.DataFrame):
             if leaf_id[sample_id] == node_id:
                 continue
 
-
             # check if value of the split feature for sample 0 is below threshold
             if np_X[sample_id, feature[node_id]] <= threshold[node_id]:
                 threshold_sign = "<="
@@ -150,7 +149,7 @@ def explain_inference(clf, X: pd.DataFrame):
 
 
 def concepts_reducer(
-    concepts: List[OWLClassExpression], reduced_cls: Callable
+        concepts: List[OWLClassExpression], reduced_cls: Callable
 ) -> Union[OWLObjectUnionOf, OWLObjectIntersectionOf]:
     """Reduces a list of OWLClassExpression instances into a single instance of OWLObjectUnionOf or OWLObjectIntersectionOf"""
     dl_concept_path = None
@@ -166,7 +165,6 @@ def concepts_reducer(
 class TDL:
     """Tree-based Description Logic Concept Learner"""
 
-
     def __init__(self, knowledge_base,
                  use_inverse: bool = False,
                  use_data_properties: bool = False,
@@ -176,7 +174,7 @@ class TDL:
                  max_runtime: int = 1,
                  grid_search_over: dict = None,
                  grid_search_apply: bool = False,
-                 report_classification: bool = False,
+                 report_classification: bool = True,
                  plot_tree: bool = False,
                  plot_embeddings: bool = False,
                  plot_feature_importance: bool = False,
@@ -200,9 +198,9 @@ class TDL:
         else:
             grid_search_over = dict()
         assert (
-            isinstance(knowledge_base, KnowledgeBase)
-            or isinstance(knowledge_base, ontolearn.triple_store.TripleStore)
-            or isinstance(knowledge_base)
+                isinstance(knowledge_base, KnowledgeBase)
+                or isinstance(knowledge_base, ontolearn.triple_store.TripleStore)
+                or isinstance(knowledge_base)
         ), "knowledge_base must be a KnowledgeBase instance"
         print(f"Knowledge Base: {knowledge_base}")
         self.grid_search_over = grid_search_over
@@ -225,7 +223,7 @@ class TDL:
         self.types_of_individuals = dict()
         self.verbose = verbose
         self.data_property_cast = dict()
-
+        self.__classification_report = None
 
     def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> List[
         OWLClassExpression]:
@@ -280,14 +278,13 @@ class TDL:
         # (4) Creating a tabular data for the binary classification problem.
         X = self.construct_sparse_binary_representations(features, examples)
 
-
         self.features = features
         X = pd.DataFrame(data=X, index=examples, columns=self.features)
         y = pd.DataFrame(data=y, index=examples, columns=["label"])
 
         same_value_columns = X.apply(lambda col: col.nunique() == 1)
         X = X.loc[:, ~same_value_columns]
-        self.features=X.columns.values.tolist()
+        self.features = X.columns.values.tolist()
         return X, y
 
         """
@@ -368,7 +365,6 @@ class TDL:
                 else:
                     owl_class_expression = i["owl_expression"].get_object_complement_of()
 
-
                 retrival_result = pos in {_ for _ in self.knowledge_base.individuals(owl_class_expression)}
 
                 if retrival_result:
@@ -433,16 +429,18 @@ class TDL:
         if self.report_classification:
 
             if self.verbose > 0:
-                print("Classification Report: Negatives: -1 and Positives 1 ")
-            print(sklearn.metrics.classification_report(y.values, self.clf.predict(X.values),
-                                                        target_names=["Negative", "Positive"]))
+                self.__classification_report = "Classification Report: Negatives: -1 and Positives 1 \n"
+                self.__classification_report += sklearn.metrics.classification_report(y.values,
+                                                                                      self.clf.predict(X.values),
+                                                                                      target_names=["Negative",
+                                                                                                    "Positive"])
+                print(self.__classification_report)
         if self.plot_tree:
             plot_decision_tree_of_expressions(feature_names=[owl_expression_to_dl(f) for f in self.features],
                                               cart_tree=self.clf)
         if self.plot_feature_importance:
             plot_topk_feature_importance(feature_names=[owl_expression_to_dl(f) for f in self.features],
                                          cart_tree=self.clf)
-
 
         self.owl_class_expressions.clear()
         # Each item can be considered is a path of OWL Class Expressions
@@ -459,8 +457,12 @@ class TDL:
 
         return self
 
+    @property
+    def classification_report(self) -> str:
+        return self.__classification_report
+
     def best_hypotheses(
-        self, n=1
+            self, n=1
     ) -> Tuple[OWLClassExpression, List[OWLClassExpression]]:
         """Return the prediction"""
         if n == 1:
@@ -474,4 +476,3 @@ class TDL:
 
         """ Predict the likelihoods of individuals belonging to the classes"""
         raise NotImplementedError("Unavailable. Predict the likelihoods of individuals belonging to the classes")
-
