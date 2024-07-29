@@ -151,6 +151,8 @@ cython_debug/
 Log/
 
 embeddings/
+checkpoints/
+ALCQHI*.csv
 KGs*/
 # Big files
 pre_trained_agents.zip

@@ -13,6 +13,8 @@ import os
 import re
 from collections import Counter
 
+import functools
+
 
 # Neural Reasoner
 class TripleStoreNeuralReasoner:
@@ -90,6 +92,19 @@ class TripleStoreNeuralReasoner:
     def __str__(self):
         return f"TripleStoreNeuralReasoner:{self.model} with likelihood threshold gamma : {self.gamma}"
 
+    def generator_cache(func):
+        cache = {}
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            key = (args, frozenset(kwargs.items()))
+            if key not in cache:
+                cache[key] = list(func(*args, **kwargs))
+            return iter(cache[key])
+
+        return wrapper
+
+    @generator_cache
     def get_predictions(self, h: str = None, r: str = None, t: str = None, confidence_threshold: float = None,
                         ) -> Generator[Tuple[str, float], None, None]:
         """
@@ -144,7 +159,7 @@ class TripleStoreNeuralReasoner:
                     yield predicted_iri_str, confidence
                 else:
                     #todo: replace with return or break?
-                    continue
+                    return
         except Exception as e:  # pragma: no cover
             print(f"Error at getting predictions: {e}")
 
@@ -194,7 +209,7 @@ class TripleStoreNeuralReasoner:
                     yield owl_class
                 except Exception as e:
                     # Log the invalid IRI
-                    print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                    #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                     continue
         else:
             yield from self.inferred_named_owl_classes
@@ -244,7 +259,7 @@ class TripleStoreNeuralReasoner:
                 yield OWLClass(prediction[0])
             except Exception as e:  # pragma: no cover
                 # Log the invalid IRI
-                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
     def get_direct_parents(
@@ -260,7 +275,7 @@ class TripleStoreNeuralReasoner:
                 yield OWLClass(prediction[0])
             except Exception as e:
                 # Log the invalid IRI
-                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
     def get_type_individuals(
@@ -276,7 +291,7 @@ class TripleStoreNeuralReasoner:
                 yield OWLClass(prediction[0])
             except Exception as e:  # pragma: no cover
                 # Log the invalid IRI
-                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
     def individuals(self, expression: OWLClassExpression = None, named_individuals: bool = False,
@@ -423,7 +438,8 @@ class TripleStoreNeuralReasoner:
 
                 # Update the count of related individuals for each object individual
                 for subject_individual in subject_individuals:
-                    subject_individuals_count[subject_individual] += 1
+                    if subject_individual.str in subject_individuals_count:
+                        subject_individuals_count[subject_individual.str] += 1
 
             # Filter out individuals who exceed the specified cardinality
             valid_individuals = {ind for ind, count in subject_individuals_count.items() if count <= cardinality}
@@ -471,7 +487,8 @@ class TripleStoreNeuralReasoner:
                                 seen_individuals.add(owl_named_individual)
                                 yield owl_named_individual
                         except Exception as e:  # pragma: no cover
-                            print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                            #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                            continue
 
                     self.inferred_owl_individuals = seen_individuals
             except Exception as e:  # pragma: no cover
@@ -492,7 +509,7 @@ class TripleStoreNeuralReasoner:
                 yield OWLDataProperty(prediction[0])
             except Exception as e:
                 # Log the invalid IRI
-                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
     def object_properties_in_signature(
@@ -512,7 +529,7 @@ class TripleStoreNeuralReasoner:
                     yield owl_obj_property
                 except Exception as e:  # pragma: no cover
                     # Log the invalid IRI
-                    print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                    #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                     continue
 
     def boolean_data_properties(
@@ -528,7 +545,7 @@ class TripleStoreNeuralReasoner:
                 yield OWLDataProperty(prediction[0])
             except Exception as e:
                 # Log the invalid IRI
-                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
     def double_data_properties(
@@ -544,7 +561,7 @@ class TripleStoreNeuralReasoner:
                 yield OWLDataProperty(prediction[0])
             except Exception as e:
                 # Log the invalid IRI
-                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
     ### additional functions for neural reasoner
@@ -567,7 +584,7 @@ class TripleStoreNeuralReasoner:
                 yield OWLNamedIndividual(prediction[0])
             except Exception as e:  # pragma: no cover
                 # Log the invalid IRI
-                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
     def get_data_property_values(
@@ -592,7 +609,7 @@ class TripleStoreNeuralReasoner:
                 yield owl_literal
             except Exception as e:
                 # Log the invalid IRI
-                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
     def get_individuals_of_class(
@@ -613,9 +630,10 @@ class TripleStoreNeuralReasoner:
                     yield owl_named_individual
             except Exception as e:  # pragma: no cover
                 # Log the invalid IRI
-                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
+        '''
         if len(list(predictions)) == 0:
             # abstract class / class that does not have any instances -> get all child classes and make predictions
             for child_class in self.subconcepts(owl_class, confidence_threshold=confidence_threshold):
@@ -623,6 +641,7 @@ class TripleStoreNeuralReasoner:
                     if individual not in seen:
                         seen.add(individual)
                         yield individual
+        '''
 
     def get_individuals_with_object_property(
             self,
@@ -644,5 +663,5 @@ class TripleStoreNeuralReasoner:
                 yield OWLNamedIndividual(prediction[0])
             except Exception as e:  # pragma: no cover
                 # Log the invalid IRI
-                print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+                #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
