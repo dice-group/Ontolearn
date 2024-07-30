@@ -889,6 +889,8 @@ class TripleStoreReasonerOntology:
                                                                                 )
                     elif data_type == "http://www.w3.org/2001/XMLSchema#double":
                         yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=float(o["value"]))
+                    elif data_type == "http://www.w3.org/2001/XMLSchema#string":
+                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=str(o["value"]))
                     else:
                         raise NotImplementedError(
                             f"Currently this type of literal is not supported:{o} "
