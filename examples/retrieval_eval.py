@@ -30,6 +30,8 @@ import random
 import itertools
 import ast
 
+random.seed(1)
+
 
 def execute(args):
     # (1) Initialize knowledge base.

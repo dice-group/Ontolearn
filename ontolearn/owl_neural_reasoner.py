@@ -11,7 +11,7 @@ from typing import Generator, Tuple
 from dicee.knowledge_graph_embeddings import KGE
 import os
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 
 import functools
 
@@ -147,6 +147,7 @@ class TripleStoreNeuralReasoner:
             confidence_threshold = self.gamma
 
         if r is None:
+            print("r is None")
             topk = len(self.model.relation_to_idx)
         else:
             topk = len(self.model.entity_to_idx)
@@ -188,7 +189,6 @@ class TripleStoreNeuralReasoner:
 
         # for p == data property
         for dp in self.data_properties_in_signature():  # pragma: no cover
-            print("these data properties are in the signature: ", dp.str)
             for l in self.get_data_property_values(str_iri, dp):
                 yield subject_, dp, l
 
@@ -424,24 +424,21 @@ class TripleStoreNeuralReasoner:
             filler_expression = expression.get_filler()
             cardinality = expression.get_cardinality()
 
-            # Get all individuals that are instances of the filler expression
             object_individuals = set(self.instances(filler_expression, confidence_threshold))
 
-            # Initialize a dictionary to keep track of counts of related individuals for each entity
-            subject_individuals_count = {individual: 0 for individual in self.set_inferred_individuals}
+            subject_individuals_count = defaultdict(int, {ind: 0 for ind in self.set_inferred_individuals})
 
-            for object_individual in object_individuals:
-                # Get all individuals related to the object individual via the object property
-                subject_individuals = (
-                    self.get_individuals_with_object_property(obj=object_individual, object_property=object_property,
-                                                              confidence_threshold=confidence_threshold))
+            all_subject_individuals = {
+                obj: set(self.get_individuals_with_object_property(
+                    obj=obj, object_property=object_property, confidence_threshold=confidence_threshold))
+                for obj in object_individuals
+            }
 
-                # Update the count of related individuals for each object individual
-                for subject_individual in subject_individuals:
-                    if subject_individual.str in subject_individuals_count:
-                        subject_individuals_count[subject_individual.str] += 1
+            for subject_set in all_subject_individuals.values():
+                for subject in subject_set:
+                    if subject in subject_individuals_count:
+                        subject_individuals_count[subject] += 1
 
-            # Filter out individuals who exceed the specified cardinality
             valid_individuals = {ind for ind, count in subject_individuals_count.items() if count <= cardinality}
 
             yield from valid_individuals
@@ -613,8 +610,11 @@ class TripleStoreNeuralReasoner:
                 continue
 
     def get_individuals_of_class(
-            self, owl_class: OWLClass, confidence_threshold: float = None
+            self, owl_class: OWLClass, confidence_threshold: float = None, depth: int = 2
     ) -> Generator[OWLNamedIndividual, None, None]:
+        if depth == 0:
+            return  # Stop recursion when depth limit is reached
+
         predictions = self.get_predictions(
             h=None,
             r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
@@ -622,26 +622,24 @@ class TripleStoreNeuralReasoner:
             confidence_threshold=confidence_threshold,
         )
         seen = set()
+        seen.add(owl_class)
         for prediction in predictions:
             try:
                 owl_named_individual = OWLNamedIndividual(prediction[0])
                 if owl_named_individual not in seen:
                     seen.add(owl_named_individual)
                     yield owl_named_individual
-            except Exception as e:  # pragma: no cover
-                # Log the invalid IRI
-                #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
+            except Exception:
                 continue
 
-        '''
         if len(list(predictions)) == 0:
-            # abstract class / class that does not have any instances -> get all child classes and make predictions
             for child_class in self.subconcepts(owl_class, confidence_threshold=confidence_threshold):
-                for individual in self.get_individuals_of_class(child_class, confidence_threshold=confidence_threshold):
-                    if individual not in seen:
-                        seen.add(individual)
-                        yield individual
-        '''
+                if child_class not in seen:
+                    seen.add(child_class)
+                    for individual in self.get_individuals_of_class(child_class, confidence_threshold=confidence_threshold, depth=depth-1):
+                        if individual not in seen:
+                            seen.add(individual)
+                            yield individual
 
     def get_individuals_with_object_property(
             self,
