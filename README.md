@@ -1,6 +1,6 @@
-[![Coverage](docs/images/tag_coverage.png)](https://ontolearn-docs-dice-group.netlify.app/usage/09_further_resources#code-coverage)
-[![Pypi](docs/images/tag_version.png)](https://pypi.org/project/ontolearn/0.7.2/)
-[![Docs](docs/images/tag_docs.png)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
+[![Coverage](https://img.shields.io/badge/coverage-95%25-green)](https://ontolearn-docs-dice-group.netlify.app/usage/09_further_resources#code-coverage)
+[![Pypi](https://img.shields.io/badge/pypi-0.7.3-blue)](https://pypi.org/project/ontolearn/0.7.3/)
+[![Docs](https://img.shields.io/badge/documentation-0.7.3-yellow)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
 
 &nbsp;
 

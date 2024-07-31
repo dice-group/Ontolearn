@@ -30,7 +30,6 @@ from abc import ABCMeta, abstractmethod
 from typing import List, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, Union, cast, Callable, Type
 import numpy as np
 import pandas as pd
-import os
 
 from owlapy.class_expression import OWLClass, OWLClassExpression, OWLThing
 from owlapy.iri import IRI
@@ -38,7 +37,7 @@ from owlapy.owl_axiom import OWLDeclarationAxiom, OWLEquivalentClassesAxiom, OWL
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_ontology import OWLOntology
 from owlapy.owl_ontology_manager import OWLOntologyManager, AddImport, OWLImportsDeclaration
-from owlapy.owl_reasoner import OWLReasoner
+from owlapy.owl_reasoner import OWLReasoner, FastInstanceCheckerReasoner, OntologyReasoner
 
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.knowledge_base import KnowledgeBase
@@ -46,7 +45,6 @@ from ontolearn.metrics import F1
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from owlapy.owl_ontology import Ontology
 from owlapy.owl_ontology_manager import OntologyManager
-from owlapy.owl_reasoner import SyncReasoner
 from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
     AbstractConceptNode, AbstractLearningProblem
@@ -307,7 +305,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             for axiom in axioms:
                 manager.add_axiom(ontology, axiom)
             if reasoner is None:
-                reasoner = SyncReasoner(ontology)
+                reasoner = FastInstanceCheckerReasoner(ontology, base_reasoner=OntologyReasoner(ontology))
 
         if hypotheses is None:
             hypotheses = [hyp.concept for hyp in self.best_hypotheses(n)]
