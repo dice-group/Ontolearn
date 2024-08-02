@@ -42,9 +42,6 @@ wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && 
 # To download learning problems
 wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
 ```
-```shell
-pytest -p no:warnings -x # Running 64 tests takes ~ 6 mins
-```
 
 ## Learning OWL Class Expression
 ```python
@@ -250,13 +247,28 @@ python examples/concept_learning_cv_evaluation.py --kb ./KGs/Carcinogenesis/carc
 
 ## Development
 
+
 <details> <summary> To see the results </summary>
-  
+
 Creating a feature branch **refactoring** from development branch
 
 ```shell
 git branch refactoring develop
 ```
+
+Each feature branch must be merged to develop branch. To this end, the tests must run without a problem:
+```shell
+# To download knowledge graphs
+wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
+# To download learning problems
+wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
+# Download weights for some model for few tests
+wget https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip -O ./NCESData.zip && unzip NCESData.zip && rm NCESData.zip
+wget https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip && unzip CLIPData.zip && rm CLIPData.zip 
+pytest -p no:warnings -x # Running 80 tests takes ~ 11 mins
+```
+
+
 
 </details>
 

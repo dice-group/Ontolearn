@@ -890,14 +890,13 @@ class TripleStoreReasonerOntology:
                     elif data_type == "http://www.w3.org/2001/XMLSchema#double":
                         yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=float(o["value"]))
                     elif data_type == "http://www.w3.org/2001/XMLSchema#string":
-                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=str(o["value"]))
+                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=repr(o["value"]))
                     else:
                         raise NotImplementedError(
                             f"Currently this type of literal is not supported:{o} "
-                            f"but can done easily let us know :)"
-                        )
+                            f"but can done easily let us know :)")
                 else:
-                    yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=str(o["value"]))
+                    yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=repr(o["value"]))
 
             else:
                 raise RuntimeError(f"Unrecognized type {subject_} ({p}) ({o})")
