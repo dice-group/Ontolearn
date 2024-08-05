@@ -21,6 +21,9 @@ class TripleStoreNeuralReasoner:
     """ OWL Neural Reasoner uses a neural link predictor to retrieve instances of an OWL Class Expression"""
     model: KGE
     gamma: float
+    # TODO:CD: Optional => a set of strings representing a set of IRIs of valid OWL individuals
+    # TODO:CD: Optional => a set of strings representing a set of IRIs of valid owl object properties
+    # TODO:CD: Optional => a set of strings representing a set of IRIs of valid owl concepts
 
     def __init__(self, path_of_kb: str = None,
                  path_neural_embedding: str = None, gamma: float = 0.25):
@@ -59,8 +62,6 @@ class TripleStoreNeuralReasoner:
 
         self.gamma = gamma
         # Caching for the sake of memory usage.
-        # TODO:CD: We may want to use  @functools.lru_cache(maxsize=?, typed=?)
-        #  https://docs.python.org/3/library/functools.html
         self.inferred_owl_individuals = None
         self.inferred_object_properties = None
         self.inferred_named_owl_classes = None
@@ -614,23 +615,20 @@ class TripleStoreNeuralReasoner:
     ) -> Generator[OWLNamedIndividual, None, None]:
         if depth == 0:
             return  # Stop recursion when depth limit is reached
-
+        from typing import List
+        predictions:List[Tuple[str, float]]
         predictions = self.get_predictions(
             h=None,
             r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
             t=owl_class.str,
             confidence_threshold=confidence_threshold,
         )
-        seen = set()
-        seen.add(owl_class)
         for prediction in predictions:
-            try:
-                owl_named_individual = OWLNamedIndividual(prediction[0])
-                if owl_named_individual not in seen:
-                    seen.add(owl_named_individual)
-                    yield owl_named_individual
-            except Exception:
-                continue
+            # TODO:CD: Check whether inferred_owl_individuals is a string
+            #if prediction[0] in self.inferred_owl_individuals:
+
+            owl_named_individual = OWLNamedIndividual(prediction[0])
+            yield owl_named_individual
         '''        
         if len(list(predictions)) == 0:
             for child_class in self.subconcepts(owl_class, confidence_threshold=confidence_threshold):
