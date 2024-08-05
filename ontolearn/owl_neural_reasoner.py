@@ -12,7 +12,7 @@ from dicee.knowledge_graph_embeddings import KGE
 import os
 import re
 from collections import Counter, defaultdict
-
+from typing import List
 import functools
 
 
@@ -21,6 +21,7 @@ class TripleStoreNeuralReasoner:
     """ OWL Neural Reasoner uses a neural link predictor to retrieve instances of an OWL Class Expression"""
     model: KGE
     gamma: float
+
     # TODO:CD: Optional => a set of strings representing a set of IRIs of valid OWL individuals
     # TODO:CD: Optional => a set of strings representing a set of IRIs of valid owl object properties
     # TODO:CD: Optional => a set of strings representing a set of IRIs of valid owl concepts
@@ -615,8 +616,8 @@ class TripleStoreNeuralReasoner:
     ) -> Generator[OWLNamedIndividual, None, None]:
         if depth == 0:
             return  # Stop recursion when depth limit is reached
-        from typing import List
-        predictions:List[Tuple[str, float]]
+
+        predictions: List[Tuple[str, float]]
         predictions = self.get_predictions(
             h=None,
             r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
@@ -624,7 +625,7 @@ class TripleStoreNeuralReasoner:
             confidence_threshold=confidence_threshold,
         )
         for prediction in predictions:
-            # TODO:CD: Check whether inferred_owl_individuals is a string
+            # TODO:CD: Check whether a string is outside of the union of relations and classes is a string.
             #if prediction[0] in self.inferred_owl_individuals:
 
             owl_named_individual = OWLNamedIndividual(prediction[0])
