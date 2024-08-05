@@ -22,12 +22,13 @@ class TripleStoreNeuralReasoner:
     model: KGE
     gamma: float
 
-    # TODO:CD: Optional => a set of strings representing a set of IRIs of valid OWL individuals
-    # TODO:CD: Optional => a set of strings representing a set of IRIs of valid owl object properties
-    # TODO:CD: Optional => a set of strings representing a set of IRIs of valid owl concepts
-
     def __init__(self, path_of_kb: str = None,
-                 path_neural_embedding: str = None, gamma: float = 0.25):
+                 path_neural_embedding: str = None, gamma: float = 0.25, inferred_owl_individuals=None,
+                 inferred_object_properties=None, inferred_named_owl_classes=None):
+
+        assert inferred_owl_individuals, "It must be given"
+        assert inferred_object_properties, "It must be given"
+        assert inferred_named_owl_classes, "It must be given"
 
         if path_neural_embedding:  # pragma: no cover
             assert os.path.isdir(
@@ -63,10 +64,32 @@ class TripleStoreNeuralReasoner:
 
         self.gamma = gamma
         # Caching for the sake of memory usage.
-        self.inferred_owl_individuals = None
-        self.inferred_object_properties = None
-        self.inferred_named_owl_classes = None
+        if inferred_owl_individuals:
+            self.inferred_owl_individuals = {OWLNamedIndividual(i) for i in inferred_owl_individuals}
+            self.mapping_str_to_owl_individuals = {i.str: i for i in self.inferred_owl_individuals}
+        else:
+            self.inferred_owl_individuals = None
 
+        if inferred_object_properties:
+            self.inferred_object_properties = {OWLObjectProperty(i) for i in inferred_object_properties}
+            self.mapping_str_to_owl_properties = {i.str: i for i in self.inferred_object_properties}
+
+        else:
+            self.inferred_object_properties = None
+        if inferred_named_owl_classes:
+            self.inferred_named_owl_classes = {OWLClass(i) for i in inferred_named_owl_classes}
+            self.mapping_str_to_owl_classes = {i.str: i for i in self.inferred_named_owl_classes}
+
+        else:
+            self.inferred_named_owl_classes = None
+
+    def get_object_properties(self):
+        return self.inferred_object_properties
+
+    def get_concepts(self):
+        return self.inferred_named_owl_classes
+
+    """
     @property
     def set_inferred_individuals(self):
         if self.inferred_owl_individuals is None:
@@ -90,6 +113,7 @@ class TripleStoreNeuralReasoner:
             return {i for i in self.classes_in_signature()}
         else:
             return self.inferred_named_owl_classes
+    """
 
     def __str__(self):
         return f"TripleStoreNeuralReasoner:{self.model} with likelihood threshold gamma : {self.gamma}"
@@ -327,7 +351,8 @@ class TripleStoreNeuralReasoner:
             """ Given an OWLObjectComplementOf ¬A, hence (A is an OWLClass),
             retrieve its instances => Retrieval(¬A)= All Instance Set-DIFF { x | phi(x, type, A) ≥ γ } """
             excluded_individuals = set(self.instances(expression.get_operand(), confidence_threshold))
-            yield from self.set_inferred_individuals - excluded_individuals
+
+            yield from self.inferred_owl_individuals - excluded_individuals
 
         # Handling intersection of class expressions
         elif isinstance(expression, OWLObjectIntersectionOf):
@@ -616,7 +641,7 @@ class TripleStoreNeuralReasoner:
     ) -> Generator[OWLNamedIndividual, None, None]:
         if depth == 0:
             return  # Stop recursion when depth limit is reached
-
+        # ()
         predictions: List[Tuple[str, float]]
         predictions = self.get_predictions(
             h=None,
@@ -624,12 +649,13 @@ class TripleStoreNeuralReasoner:
             t=owl_class.str,
             confidence_threshold=confidence_threshold,
         )
+        # ()
+        prediction: str
         for prediction in predictions:
-            # TODO:CD: Check whether a string is outside of the union of relations and classes is a string.
-            #if prediction[0] in self.inferred_owl_individuals:
+            # ()
+            if result := self.mapping_str_to_owl_individuals.get(prediction, None):
+                yield result
 
-            owl_named_individual = OWLNamedIndividual(prediction[0])
-            yield owl_named_individual
         '''        
         if len(list(predictions)) == 0:
             for child_class in self.subconcepts(owl_class, confidence_threshold=confidence_threshold):
