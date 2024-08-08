@@ -1,6 +1,6 @@
-[![Coverage](docs/images/tag_coverage.png)](https://ontolearn-docs-dice-group.netlify.app/usage/09_further_resources#code-coverage)
-[![Pypi](docs/images/tag_version.png)](https://pypi.org/project/ontolearn/0.7.2/)
-[![Docs](docs/images/tag_docs.png)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
+[![Coverage](https://img.shields.io/badge/coverage-95%25-green)](https://ontolearn-docs-dice-group.netlify.app/usage/09_further_resources#code-coverage)
+[![Pypi](https://img.shields.io/badge/pypi-0.7.3-blue)](https://pypi.org/project/ontolearn/0.7.3/)
+[![Docs](https://img.shields.io/badge/documentation-0.7.3-yellow)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
 
 &nbsp;
 
@@ -42,24 +42,22 @@ wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && 
 # To download learning problems
 wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
 ```
-```shell
-pytest -p no:warnings -x # Running 64 tests takes ~ 6 mins
-```
 
 ## Learning OWL Class Expression
 ```python
 from ontolearn.learners import TDL
 from ontolearn.triple_store import TripleStore
+from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy import owl_expression_to_sparql, owl_expression_to_dl
-# (1) Initialize Triplestore
+# (1) Initialize Triplestore or KnowledgeBase
 # sudo docker run -p 3030:3030 -e ADMIN_PASSWORD=pw123 stain/jena-fuseki
-# Login http://localhost:3030/#/ with admin and pw123
-# Create a new dataset called family and upload KGs/Family/family.owl
-kb = TripleStore(url="http://localhost:3030/family")
+# Login http://localhost:3030/#/ with admin and pw123 and upload KGs/Family/family.owl
+# kb = TripleStore(url="http://localhost:3030/family")
+kb = KnowledgeBase(path="KGs/Family/father.owl")
 # (2) Initialize a learner.
-model = TDL(knowledge_base=kb)
+model = TDL(knowledge_base=kb, use_nominals=True)
 # (3) Define a description logic concept learning problem.
 lp = PosNegLPStandard(pos={OWLNamedIndividual("http://example.com/father#stefan")},
                       neg={OWLNamedIndividual("http://example.com/father#heinz"),
@@ -67,9 +65,34 @@ lp = PosNegLPStandard(pos={OWLNamedIndividual("http://example.com/father#stefan"
                            OWLNamedIndividual("http://example.com/father#michelle")})
 # (4) Learn description logic concepts best fitting (3).
 h = model.fit(learning_problem=lp).best_hypotheses()
-print(h)
+print(h) 
 print(owl_expression_to_dl(h))
-print(owl_expression_to_sparql(expression=h))
+print(owl_expression_to_sparql(expression=h)) 
+"""
+OWLObjectSomeValuesFrom(property=OWLObjectProperty(IRI('http://example.com/father#','hasChild')),filler=OWLObjectOneOf((OWLNamedIndividual(IRI('http://example.com/father#','markus')),)))
+
+∃ hasChild.{markus}
+
+SELECT
+ DISTINCT ?x WHERE { 
+?x <http://example.com/father#hasChild> ?s_1 . 
+ FILTER ( ?s_1 IN ( 
+<http://example.com/father#markus>
+ ) )
+ }
+"""
+print(model.classification_report)
+"""
+Classification Report: Negatives: -1 and Positives 1 
+              precision    recall  f1-score   support
+
+    Negative       1.00      1.00      1.00         3
+    Positive       1.00      1.00      1.00         1
+
+    accuracy                           1.00         4
+   macro avg       1.00      1.00      1.00         4
+weighted avg       1.00      1.00      1.00         4
+"""
 ```
 
 ## Learning OWL Class Expression over DBpedia
@@ -224,13 +247,28 @@ python examples/concept_learning_cv_evaluation.py --kb ./KGs/Carcinogenesis/carc
 
 ## Development
 
+
 <details> <summary> To see the results </summary>
-  
+
 Creating a feature branch **refactoring** from development branch
 
 ```shell
 git branch refactoring develop
 ```
+
+Each feature branch must be merged to develop branch. To this end, the tests must run without a problem:
+```shell
+# To download knowledge graphs
+wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
+# To download learning problems
+wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
+# Download weights for some model for few tests
+wget https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip -O ./NCESData.zip && unzip NCESData.zip && rm NCESData.zip
+wget https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip && unzip CLIPData.zip && rm CLIPData.zip 
+pytest -p no:warnings -x # Running 80 tests takes ~ 11 mins
+```
+
+
 
 </details>
 

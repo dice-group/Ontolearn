@@ -174,7 +174,7 @@ class TDL:
                  max_runtime: int = 1,
                  grid_search_over: dict = None,
                  grid_search_apply: bool = False,
-                 report_classification: bool = False,
+                 report_classification: bool = True,
                  plot_tree: bool = False,
                  plot_embeddings: bool = False,
                  plot_feature_importance: bool = False,
@@ -223,7 +223,6 @@ class TDL:
         self.types_of_individuals = dict()
         self.verbose = verbose
         self.data_property_cast = dict()
-
         self.X = None
         self.y = None
 
@@ -433,9 +432,12 @@ class TDL:
         if self.report_classification:
 
             if self.verbose > 0:
-                print("Classification Report: Negatives: -1 and Positives 1 ")
-            print(sklearn.metrics.classification_report(y.values, self.clf.predict(X.values),
-                                                        target_names=["Negative", "Positive"]))
+                self.__classification_report = "Classification Report: Negatives: -1 and Positives 1 \n"
+                self.__classification_report += sklearn.metrics.classification_report(y.values,
+                                                                                      self.clf.predict(X.values),
+                                                                                      target_names=["Negative",
+                                                                                                    "Positive"])
+                print(self.__classification_report)
         if self.plot_tree:
             plot_decision_tree_of_expressions(feature_names=[owl_expression_to_dl(f) for f in self.features],
                                               cart_tree=self.clf)
@@ -457,6 +459,10 @@ class TDL:
         )
 
         return self
+
+    @property
+    def classification_report(self) -> str:
+        return self.__classification_report
 
     def best_hypotheses(
             self, n=1
