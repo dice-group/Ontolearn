@@ -118,7 +118,6 @@ def explain_inference(clf, X: pd.DataFrame):
             if leaf_id[sample_id] == node_id:
                 continue
 
-
             # check if value of the split feature for sample 0 is below threshold
             if np_X[sample_id, feature[node_id]] <= threshold[node_id]:
                 threshold_sign = "<="
@@ -150,7 +149,7 @@ def explain_inference(clf, X: pd.DataFrame):
 
 
 def concepts_reducer(
-    concepts: List[OWLClassExpression], reduced_cls: Callable
+        concepts: List[OWLClassExpression], reduced_cls: Callable
 ) -> Union[OWLObjectUnionOf, OWLObjectIntersectionOf]:
     """Reduces a list of OWLClassExpression instances into a single instance of OWLObjectUnionOf or OWLObjectIntersectionOf"""
     dl_concept_path = None
@@ -165,7 +164,6 @@ def concepts_reducer(
 
 class TDL:
     """Tree-based Description Logic Concept Learner"""
-
 
     def __init__(self, knowledge_base,
                  use_inverse: bool = False,
@@ -200,9 +198,9 @@ class TDL:
         else:
             grid_search_over = dict()
         assert (
-            isinstance(knowledge_base, KnowledgeBase)
-            or isinstance(knowledge_base, ontolearn.triple_store.TripleStore)
-            or isinstance(knowledge_base)
+                isinstance(knowledge_base, KnowledgeBase)
+                or isinstance(knowledge_base, ontolearn.triple_store.TripleStore)
+                or isinstance(knowledge_base)
         ), "knowledge_base must be a KnowledgeBase instance"
         print(f"Knowledge Base: {knowledge_base}")
         self.grid_search_over = grid_search_over
@@ -226,6 +224,8 @@ class TDL:
         self.verbose = verbose
         self.data_property_cast = dict()
 
+        self.X = None
+        self.y = None
 
     def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> List[
         OWLClassExpression]:
@@ -280,14 +280,13 @@ class TDL:
         # (4) Creating a tabular data for the binary classification problem.
         X = self.construct_sparse_binary_representations(features, examples)
 
-
         self.features = features
         X = pd.DataFrame(data=X, index=examples, columns=self.features)
         y = pd.DataFrame(data=y, index=examples, columns=["label"])
 
         same_value_columns = X.apply(lambda col: col.nunique() == 1)
         X = X.loc[:, ~same_value_columns]
-        self.features=X.columns.values.tolist()
+        self.features = X.columns.values.tolist()
         return X, y
 
         """
@@ -368,7 +367,6 @@ class TDL:
                 else:
                     owl_class_expression = i["owl_expression"].get_object_complement_of()
 
-
                 retrival_result = pos in {_ for _ in self.knowledge_base.individuals(owl_class_expression)}
 
                 if retrival_result:
@@ -413,6 +411,8 @@ class TDL:
         X: pd.DataFrame
         y: Union[pd.DataFrame, pd.Series]
         X, y = self.create_training_data(learning_problem=learning_problem)
+        # CD: Remember so that if user wants to use them
+        self.X, self.y = X, y
 
         if self.plot_embeddings:
             plot_umap_reduced_embeddings(X, y.label.to_list(), "umap_visualization.pdf")
@@ -443,7 +443,6 @@ class TDL:
             plot_topk_feature_importance(feature_names=[owl_expression_to_dl(f) for f in self.features],
                                          cart_tree=self.clf)
 
-
         self.owl_class_expressions.clear()
         # Each item can be considered is a path of OWL Class Expressions
         # starting from the root node in the decision tree and
@@ -460,7 +459,7 @@ class TDL:
         return self
 
     def best_hypotheses(
-        self, n=1
+            self, n=1
     ) -> Tuple[OWLClassExpression, List[OWLClassExpression]]:
         """Return the prediction"""
         if n == 1:
@@ -474,4 +473,3 @@ class TDL:
 
         """ Predict the likelihoods of individuals belonging to the classes"""
         raise NotImplementedError("Unavailable. Predict the likelihoods of individuals belonging to the classes")
-
