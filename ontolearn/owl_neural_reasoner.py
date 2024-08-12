@@ -281,12 +281,8 @@ class TripleStoreNeuralReasoner:
                 t=named_concept.str,
                 confidence_threshold=confidence_threshold,
         ):
-            try:
-                yield OWLClass(prediction[0])
-            except Exception as e:  # pragma: no cover
-                # Log the invalid IRI
-                #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
-                continue
+            if result := self.mapping_str_to_owl_classes.get(prediction[0], None):
+                yield result
 
     def get_direct_parents(
             self, named_concept: OWLClass, direct=True, confidence_threshold: float = None
@@ -297,12 +293,8 @@ class TripleStoreNeuralReasoner:
                 t=None,
                 confidence_threshold=confidence_threshold,
         ):
-            try:
-                yield OWLClass(prediction[0])
-            except Exception as e:
-                # Log the invalid IRI
-                #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
-                continue
+            if result := self.mapping_str_to_owl_classes.get(prediction[0], None):
+                yield result
 
     def get_type_individuals(
             self, individual: str, confidence_threshold: float = None
@@ -313,12 +305,8 @@ class TripleStoreNeuralReasoner:
                 t=None,
                 confidence_threshold=confidence_threshold,
         ):
-            try:
-                yield OWLClass(prediction[0])
-            except Exception as e:  # pragma: no cover
-                # Log the invalid IRI
-                #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
-                continue
+            if result := self.mapping_str_to_owl_classes.get(prediction[0], None):
+                yield result
 
     def individuals(self, expression: OWLClassExpression = None, named_individuals: bool = False,
                     confidence_threshold: float = None, ) -> Generator[OWLNamedIndividual, None, None]:
@@ -406,7 +394,7 @@ class TripleStoreNeuralReasoner:
             filler_individuals = set(self.instances(filler_expression, confidence_threshold))
             to_yield_individuals = set()
 
-            for individual in self.set_inferred_individuals:
+            for individual in self.inferred_owl_individuals:
                 related_individuals = set(self.get_object_property_values(individual.str, object_property))
                 if not related_individuals or related_individuals <= filler_individuals:
                     to_yield_individuals.add(individual)
@@ -426,11 +414,10 @@ class TripleStoreNeuralReasoner:
             if isinstance(expression, OWLObjectMinCardinality):
                 cardinality = expression.get_cardinality()
 
-            object_individuals = self.instances(filler_expression, confidence_threshold)
-
+            object_individuals = set(self.instances(filler_expression, confidence_threshold))
+            #print("Computed filler with ", len(object_individuals), " individuals with the filler expression", filler_expression)
             # Initialize counter to keep track of individual occurrences
             result = Counter()
-
             # Iterate over each object individual to find and count subjects
             for object_individual in object_individuals:
                 subjects = self.get_individuals_with_object_property(
@@ -453,7 +440,7 @@ class TripleStoreNeuralReasoner:
 
             object_individuals = set(self.instances(filler_expression, confidence_threshold))
 
-            subject_individuals_count = defaultdict(int, {ind: 0 for ind in self.set_inferred_individuals})
+            subject_individuals_count = defaultdict(int, {ind: 0 for ind in self.individuals_in_signature()})
 
             all_subject_individuals = {
                 obj: set(self.get_individuals_with_object_property(
@@ -495,6 +482,7 @@ class TripleStoreNeuralReasoner:
     def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
 
         if self.inferred_owl_individuals is None:
+            # currently not used since inferred_owl_individuals is never None
             seen_individuals = set()
             try:
                 for cl in self.classes_in_signature():
@@ -547,6 +535,9 @@ class TripleStoreNeuralReasoner:
                     t="http://www.w3.org/2002/07/owl#ObjectProperty",
                     confidence_threshold=confidence_threshold,
             ):
+                if result := self.mapping_str_to_owl_properties.get(prediction[0], None):
+                    yield result
+            '''
                 try:
                     owl_obj_property = OWLObjectProperty(prediction[0])
                     self.inferred_object_properties.add(owl_obj_property)
@@ -555,6 +546,7 @@ class TripleStoreNeuralReasoner:
                     # Log the invalid IRI
                     #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                     continue
+            '''
 
     def boolean_data_properties(
             self, confidence_threshold: float = None
@@ -604,12 +596,8 @@ class TripleStoreNeuralReasoner:
                 t=subject if is_inverse else None,
                 confidence_threshold=confidence_threshold,
         ):
-            try:
-                yield OWLNamedIndividual(prediction[0])
-            except Exception as e:  # pragma: no cover
-                # Log the invalid IRI
-                #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
-                continue
+            if result := self.mapping_str_to_owl_individuals.get(prediction[0], None):
+                yield result
 
     def get_data_property_values(
             self,
@@ -637,7 +625,7 @@ class TripleStoreNeuralReasoner:
                 continue
 
     def get_individuals_of_class(
-            self, owl_class: OWLClass, confidence_threshold: float = None, depth: int = 2
+            self, owl_class: OWLClass, confidence_threshold: float = None, depth: int = 10
     ) -> Generator[OWLNamedIndividual, None, None]:
         if depth == 0:
             return  # Stop recursion when depth limit is reached
@@ -650,13 +638,12 @@ class TripleStoreNeuralReasoner:
             confidence_threshold=confidence_threshold,
         )
         # ()
-        prediction: str
+        prediction: Tuple[str, float]
         for prediction in predictions:
             # ()
-            if result := self.mapping_str_to_owl_individuals.get(prediction, None):
+            if result := self.mapping_str_to_owl_individuals.get(prediction[0], None):
                 yield result
-
-        '''        
+        '''
         if len(list(predictions)) == 0:
             for child_class in self.subconcepts(owl_class, confidence_threshold=confidence_threshold):
                 if child_class not in seen:
@@ -683,9 +670,5 @@ class TripleStoreNeuralReasoner:
                 t=None if is_inverse else obj.str,
                 confidence_threshold=confidence_threshold,
         ):
-            try:
-                yield OWLNamedIndividual(prediction[0])
-            except Exception as e:  # pragma: no cover
-                # Log the invalid IRI
-                #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
-                continue
+            if result := self.mapping_str_to_owl_individuals.get(prediction[0], None):
+                yield result

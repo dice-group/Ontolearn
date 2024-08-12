@@ -30,39 +30,49 @@ import random
 import itertools
 import ast
 
-random.seed(1)
-
 
 def execute(args):
     # (1) Initialize knowledge base.
     assert os.path.isfile(args.path_kg)
     if args.endpoint_triple_store:
-        symbolic_kb = TripleStore(url="http://localhost:3030/family")
+        symbolic_kb = TripleStore(url=args.endpoint_triple_store)
     else:
         symbolic_kb = KnowledgeBase(path=args.path_kg)
     # (2) Initialize Neural OWL Reasoner.
 
     if args.path_kge_model:
         neural_owl_reasoner = TripleStoreNeuralReasoner(
-            path_neural_embedding=args.path_kge_model, gamma=args.gamma,
-            inferred_owl_individuals={i.str for i in symbolic_kb.get_concepts()},
-            inferred_object_properties={i.str for i in symbolic_kb.get_object_properties()},
+            path_neural_embedding=args.path_kge_model,
+            gamma=args.gamma,
+            inferred_owl_individuals={i.str for i in symbolic_kb.individuals()},
+            inferred_object_properties={
+                i.str for i in symbolic_kb.get_object_properties()
+            },
             inferred_named_owl_classes={i.str for i in symbolic_kb.get_concepts()},
         )
     else:
         neural_owl_reasoner = TripleStoreNeuralReasoner(
-            path_of_kb=args.path_kg, gamma=args.gamma,
+            path_of_kb=args.path_kg,
+            gamma=args.gamma,
             inferred_owl_individuals={i.str for i in symbolic_kb.individuals()},
-            inferred_object_properties={i.str for i in symbolic_kb.get_object_properties()},
-            inferred_named_owl_classes={i.str for i in symbolic_kb.get_concepts()})
+            inferred_object_properties={
+                i.str for i in symbolic_kb.get_object_properties()
+            },
+            inferred_named_owl_classes={i.str for i in symbolic_kb.get_concepts()},
+        )
     # Fix the random seed.
     random.seed(args.seed)
 
     # Sanity checking
-    assert {i.str for i in symbolic_kb.get_object_properties()} == {i.str for i in
-                                                                    neural_owl_reasoner.get_object_properties()}
-    assert {i.str for i in symbolic_kb.individuals()} == {i.str for i in neural_owl_reasoner.individuals()}
-    assert {i.str for i in symbolic_kb.get_concepts()} == {i.str for i in neural_owl_reasoner.get_concepts()}
+    assert {i.str for i in symbolic_kb.get_object_properties()} == {
+        i.str for i in neural_owl_reasoner.get_object_properties()
+    }
+    assert {i.str for i in symbolic_kb.individuals()} == {
+        i.str for i in neural_owl_reasoner.individuals()
+    }
+    assert {i.str for i in symbolic_kb.get_concepts()} == {
+        i.str for i in neural_owl_reasoner.get_concepts()
+    }
 
     ###################################################################
     # GENERATE ALCQ CONCEPTS TO EVALUATE RETRIEVAL PERFORMANCES
@@ -97,7 +107,7 @@ def execute(args):
     # (8) UNNC: NC UNION NC⁻.
     unnc = nc.union(nnc)
     # (9) Retrieve 10 random Nominals.
-    nominals = set(random.sample(symbolic_kb.all_individuals_set(), 10))
+    nominals = set(random.sample(set(symbolic_kb.individuals()), 10))
     # (10) All Combinations of 3 for Nominals.
     nominal_combinations = set(
         OWLObjectOneOf(combination)
