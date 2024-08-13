@@ -16,7 +16,7 @@ import ast
 
 
 # [] Create sub/incomplete KGs
-def generated_incomplete_kg(kb_path: str, directory: str, n: int, ratio: float) -> Set[str]:
+def generated_incomplete_kg(kb_path: str, directory: str, number_of_incomplete_graphs: int, level_of_incompleteness: float) -> Set[str]:
 
     # (1)
     # TODO:CD: Ensure that randomness can be controlled via seed
@@ -27,15 +27,15 @@ def generated_incomplete_kg(kb_path: str, directory: str, n: int, ratio: float) 
     # output_path = f"incomplete_father_ratio_10_number_1.owl" 
 
     name = kb_path.split('/')[-1].split('.')[0]
-    rate = int(ratio * 100)
+    rate = int(level_of_incompleteness * 100)
 
     os.makedirs(directory, exist_ok=True)
 
     file_paths = set()
 
-    for i in range(1, n + 1):
+    for i in range(1, number_of_incomplete_graphs + 1):
 
-        # Construct the output path for the incomplete KG
+        # output path for the incomplete KGs
         output_path = f'{directory}/incomplete_{name}_ratio_{rate}_number_{i}.owl'
 
         # function to generate the incomplete KG
@@ -44,43 +44,29 @@ def generated_incomplete_kg(kb_path: str, directory: str, n: int, ratio: float) 
         # Add the output path to the set
         file_paths.add(output_path)
 
-    # Return the set of file paths
     return file_paths
 
-# kb_path = "KGs/Family/father.owl"  
-# directory = "incomplete_father" 
-# u,v = generated_incomplete_kg(kb_path , directory , 2, 0.1)
-# print(u,v)
 
 def execute(args):
 
     symbolic_kb = KnowledgeBase(path=args.path_kg)
-    # print({i.str for i in symbolic_kb.individuals(OWLClass(IRI('http://example.com/fatherr#','female')))})
-    # exit(0)
-    # TODO: Report the results in a CSV file as we have done it in retieval_eval.py
-    # Load the full KG
-     
+         
+    namespace = list(symbolic_kb.ontology.classes_in_signature())[0].iri.get_namespace()
+
+    parser = DLSyntaxParser(namespace)
 
     # TODO: What should be directory args.path_kg?
     name_KG = args.path_kg.split('/')[-1].split('.')[0]
 
     directory = f"incomplete_{name_KG}"
-    paths_of_incomplete_kgs = generated_incomplete_kg(kb_path=args.path_kg, directory=directory, n=1, ratio=0.99)
 
+    paths_of_incomplete_kgs = generated_incomplete_kg(kb_path=args.path_kg, directory=directory, n=4, ratio=0.2)
 
+    # TODO: make sure the number of triple match inside 
+    # TODO: ensure all triples are subset of the original KG
     expressions = None
 
-    
-
     for path_of_an_incomplete_kgs in paths_of_incomplete_kgs:
-
-        symbolic_kb = KnowledgeBase(path=path_of_an_incomplete_kgs)
-        # print({i.str for i in symbolic_kb.individuals(OWLClass(IRI('http://www.w3.org/2002/07/owl#','female')))})
-        # exit(0)
-
-        namespace = list(symbolic_kb.ontology.classes_in_signature())[0].iri.get_namespace()
-
-        parser = DLSyntaxParser(namespace)
 
         list_jaccard_symbolic = []
         list_jaccard_neural = []
@@ -94,18 +80,16 @@ def execute(args):
 
         # Sanity checking
         if expressions is None:
-            expressions = df["Expression"].values
+            expressions = {i for i in df["Expression"].to_list()}
         else:
-            assert expressions == df["Expression"].values
+            assert expressions == {i for i in df["Expression"].to_list()}
 
         # Iterate
         for expression in expressions:
 
             # TODO: str -> owlapy.owl_classexpression object
             
-            target_concept = parser.parse_expression(expression) #row["Expression"]
-            # print(target_concept)
-            
+            target_concept = parser.parse_expression(expression) 
             
             goal_retrieval = {i.str for i in symbolic_kb.individuals(target_concept)}
 
@@ -119,26 +103,20 @@ def execute(args):
             result_neural_symbolic = result_neural_symbolic.iloc[0]
             
 
-            # jaccard_sim_symbolic = jaccard_similarity(row["Symbolic_Retrieval_Neural"], goal_retrieval)
             jaccard_sim_symbolic = jaccard_similarity(result_symbolic, goal_retrieval)
 
-            # jaccard_sim_neural = jaccard_similarity(row["Symbolic_Retrieval_Neural"], goal_retrieval)
             jaccard_sim_neural = jaccard_similarity(result_neural_symbolic, goal_retrieval)
 
-            #Update the Average
+            # Update for Averaging
             list_jaccard_neural.append(jaccard_sim_neural)
             list_jaccard_symbolic.append(jaccard_sim_symbolic)
 
-
-            # Ideally
-            # jaccard_sim_neural > jaccard_sim_symbolic
         avg_jaccard_sym = sum(list_jaccard_symbolic)/len(list_jaccard_symbolic)
         avg_jaccard_neural = sum(list_jaccard_neural)/len(list_jaccard_neural)
 
         print("Average jaccard symbolic", avg_jaccard_sym)
         print("Average Jaccard neural", avg_jaccard_neural)
-        print(list_jaccard_neural)
-        print(list_jaccard_symbolic)
+
 
 
 def get_default_arguments():
