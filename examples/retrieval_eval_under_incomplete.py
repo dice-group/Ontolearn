@@ -16,7 +16,7 @@ import ast
 
 
 # [] Create sub/incomplete KGs
-def generated_incomplete_kg(kb_path: str, directory: str, number_of_incomplete_graphs: int, level_of_incompleteness: float) -> Set[str]:
+def generated_incomplete_kg(kb_path: str, directory: str, n: int, ratio: float) -> Set[str]:
 
     # (1)
     # TODO:CD: Ensure that randomness can be controlled via seed
@@ -27,13 +27,13 @@ def generated_incomplete_kg(kb_path: str, directory: str, number_of_incomplete_g
     # output_path = f"incomplete_father_ratio_10_number_1.owl" 
 
     name = kb_path.split('/')[-1].split('.')[0]
-    rate = int(level_of_incompleteness * 100)
+    rate = int(ratio * 100)
 
     os.makedirs(directory, exist_ok=True)
 
     file_paths = set()
 
-    for i in range(1, number_of_incomplete_graphs + 1):
+    for i in range(1, n + 1):
 
         # output path for the incomplete KGs
         output_path = f'{directory}/incomplete_{name}_ratio_{rate}_number_{i}.owl'
@@ -60,7 +60,8 @@ def execute(args):
 
     directory = f"incomplete_{name_KG}"
 
-    paths_of_incomplete_kgs = generated_incomplete_kg(kb_path=args.path_kg, directory=directory, n=4, ratio=0.2)
+    paths_of_incomplete_kgs = generated_incomplete_kg(kb_path=args.path_kg, directory=directory,\
+                                n=args.number_of_incomplete_graphs, ratio=args.level_of_incompleteness)
 
     # TODO: make sure the number of triple match inside 
     # TODO: ensure all triples are subset of the original KG
@@ -126,6 +127,9 @@ def get_default_arguments():
     parser.add_argument("--ratio_sample_nc", type=float, default=None, help="To sample OWL Classes.")
     parser.add_argument("--ratio_sample_object_prob", type=float, default=None, help="To sample OWL Object Properties.")
     parser.add_argument("--path_report", type=str, default="ALCQHI_Retrieval_Incomplete_Results.csv")
+    parser.add_argument("--number_of_incomplete_graphs", type = int, default=1)
+    parser.add_argument("--level_of_incompleteness", type = float, default=0.1, \
+                        help="Percentage of incompleteness from the original KGs between 0 and 1")
     return parser.parse_args()
 
 
