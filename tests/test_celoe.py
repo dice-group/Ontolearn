@@ -8,8 +8,7 @@ from owlapy.owl_individual import OWLNamedIndividual
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE
 from ontolearn.learning_problem import PosNegLPStandard
-from ontolearn.model_adapter import ModelAdapter
-from ontolearn.utils import setup_logging, compute_f1_score
+from ontolearn.utils import compute_f1_score
 from owlapy.render import DLSyntaxObjectRenderer
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
@@ -107,7 +106,6 @@ class Test_Celoe:
         assert r.render(best_pred)=='(¬female) ⊓ (∃ hasChild.⊤)'
 
     def test_multiple_fits(self):
-        """
         kb = KnowledgeBase(path=PATH_FAMILY)
 
         pos_aunt = set(map(OWLNamedIndividual,
@@ -123,9 +121,7 @@ class Test_Celoe:
         neg_uncle = set(map(OWLNamedIndividual,
                             map(IRI.create,
                                 settings['problems']['Uncle']['negative_examples'])))
-        # TODO: Remove ModelAdapter from ontolearn
-        # TODO:CD: It is broken due to using SyncReasoner
-        model = ModelAdapter(learner_type=CELOE, knowledge_base=kb, max_runtime=1000, max_num_of_concepts_tested=100)
+        model = CELOE(knowledge_base=kb, max_runtime=1000, max_num_of_concepts_tested=100)
         model.fit(pos=pos_aunt, neg=neg_aunt)
         kb.clean()
         model.fit(pos=pos_uncle, neg=neg_uncle)
@@ -136,7 +132,7 @@ class Test_Celoe:
         q, str_concept = compute_f1_score(individuals={i for i in kb.individuals(hypotheses[0])}, pos=pos_uncle, neg=neg_uncle), hypotheses[0]
         kb.clean()
         kb = KnowledgeBase(path=PATH_FAMILY)
-        model = ModelAdapter(learner_type=CELOE, knowledge_base=kb, max_runtime=1000, max_num_of_concepts_tested=100)
+        model = CELOE(knowledge_base=kb, max_runtime=1000, max_num_of_concepts_tested=100)
         model.fit(pos=pos_uncle, neg=neg_uncle)
 
         print("Only fitted on Uncle:")
@@ -144,7 +140,5 @@ class Test_Celoe:
 
         q2, str_concept2 = compute_f1_score(individuals={i for i in kb.individuals(hypotheses[0])}, pos=pos_uncle, neg=neg_uncle), hypotheses[0]
 
-        assert q==q2
-        assert str_concept==str_concept2
-
-        """
+        assert q == q2
+        assert str_concept == str_concept2
