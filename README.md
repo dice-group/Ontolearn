@@ -1,10 +1,10 @@
 [![Coverage](https://img.shields.io/badge/coverage-95%25-green)](https://ontolearn-docs-dice-group.netlify.app/usage/09_further_resources#code-coverage)
 [![Pypi](https://img.shields.io/badge/pypi-0.7.3-blue)](https://pypi.org/project/ontolearn/0.7.3/)
 [![Docs](https://img.shields.io/badge/documentation-0.7.3-yellow)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
-
+[![Python](https://img.shields.io/badge/python-3.10.13+-4584b6)](https://www.python.org/downloads/release/python-31013/)
 &nbsp;
 
-![Ontolearn](docs/images/Ontolearn_logo.png)
+![Ontolearn](docs/_static/images/Ontolearn_logo.png)
 
 # Ontolearn: Learning OWL Class Expression
 
