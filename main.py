@@ -22,7 +22,7 @@
 # SOFTWARE.
 # -----------------------------------------------------------------------------
 
-from ontolearn.model_adapter import execute
+from ontolearn.executor import execute
 from argparse import ArgumentParser
 
 
