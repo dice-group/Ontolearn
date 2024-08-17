@@ -35,10 +35,8 @@ from owlapy.owl_axiom import OWLAxiom
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_reasoner import OWLReasoner
 
-from ontolearn.abstracts import AbstractHeuristic, AbstractScorer, BaseRefinement, AbstractKnowledgeBase, \
-    AbstractNode
+from ontolearn.abstracts import AbstractNode
 from ontolearn.base_concept_learner import BaseConceptLearner
-from owlapy.owl_reasoner import SyncReasoner
 from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, NCES
 from ontolearn.ea_algorithms import EASimple
 from ontolearn.ea_initialization import EARandomWalkInitialization, EARandomInitialization, RandomInitMethod
@@ -68,6 +66,7 @@ models = {'celoe': CELOE,
 heuristics = {'celoe': CELOEHeuristic,
               'ocel': OCELHeuristic}
 
+
 def transform_string(input_string):
     """Used to turn camelCase arguments to snake_case"""
     # Use regex to find all capital letters C and replace them with '_C'
@@ -89,6 +88,7 @@ def compute_quality(KB, solution, pos, neg, qulaity_func="f1"):  # pragma: no co
     fp = len(neg.intersection(instances))
     tn = len(neg.difference(instances))
     return func(tp=tp, fn=fn, fp=fp, tn=tn)[-1]
+
 
 def _get_matching_opts(_Type, optargs, kwargs, *, prefix=None):  # pragma: no cover
     """Find the keys in kwargs that are parameters of _Type.
@@ -124,176 +124,7 @@ def _get_matching_opts(_Type, optargs, kwargs, *, prefix=None):  # pragma: no co
 _N = TypeVar('_N', bound=AbstractNode)  #:
 
 
-def ModelAdapter(*args, **kwargs):  # pragma: no cover
-    """Instantiate a model through the model adapter.
-
-    .. warning ::
-        You should not specify both: the _type and the object. For
-        example, you should not give both 'reasoner' and 'reasoner_type' because the ModelAdapter cant decide
-        which one to use, the reasoner object or create a new reasoner instance using 'reasoner_type'.
-
-    Note:
-        If you give `_type` for an argument you can pass further arguments to construct the instance of that
-        class. The model adapter will arrange every argument automatically and use them to construct an object
-        for that certain class type.
-
-    Args:
-        knowledge_base (AbstractKnowledgeBase): A knowledge base.
-        knowledge_base_type: A knowledge base type.
-        ...: Knowledge base arguments.
-        reasoner: A reasoner.
-        reasoner_type: A reasoner type.
-        ...: Reasoner constructor arguments.
-        refinement_operator_type: A refinement operator type.
-        ...: Refinement operator arguments.
-        quality_type: An Abstract Scorer type.
-        ...: Quality arguments.
-        heuristic_func (AbstractHeuristic): A heuristic.
-        heuristic_type: An Abstract Heuristic type.
-        ...: arguments For the heuristic type.
-        learner_type: A Base Concept Learner type.
-        ...: Arguments for the learning algorithm.
-    """
-    if "knowledge_base" in kwargs:
-        kb = kwargs.pop("knowledge_base")
-        if "reasoner" in kwargs:
-            kwargs["cl_reasoner"] = kwargs["reasoner"]
-            kwargs.pop("reasoner")
-        if "knowledge_base_type" in kwargs:
-            raise ValueError("both knowledge_base and _type specified")
-    else:
-        kb_type = kwargs.pop("knowledge_base_type", None)
-        if kb_type is None:
-            kb_type = KnowledgeBase
-        else:
-            kb_type = kb_type
-        if "reasoner" in kwargs:
-            kwargs["cl_reasoner"] = kwargs["reasoner"]
-        kb_args = _get_matching_opts(kb_type, {}, kwargs)
-        try:
-            kb = kb_type(**kb_args)
-        except TypeError:
-            kb = None
-    if kb is not None:
-        assert isinstance(kb, AbstractKnowledgeBase)
-
-    if "ignore" in kwargs:
-        assert isinstance(kb, KnowledgeBase)
-        target_kb = kb.ignore_and_copy(ignored_classes=kwargs.pop("ignore"))
-    else:
-        target_kb = kb
-
-    if "cl_reasoner" in kwargs:
-        reasoner = kwargs.pop("cl_reasoner")
-        if "reasoner_type" in kwargs:
-            raise ValueError("both reasoner and _type specified")
-    else:
-        reasoner_type = kwargs.pop("reasoner_type", None)
-        if reasoner_type is None:
-            reasoner_type = SyncReasoner
-        assert issubclass(reasoner_type, OWLReasoner)
-        reasoner = reasoner_type(**_get_matching_opts(
-            reasoner_type, {'ontology': target_kb.ontology}, kwargs))
-    assert isinstance(reasoner, OWLReasoner)
-
-    if "refinement_operator" in kwargs:
-        operator = kwargs.pop("refinement_operator")
-        if "refinement_operator_type" in kwargs:
-            raise ValueError("both refinement_operator and _type specified")
-    else:
-        op_type = kwargs.pop("refinement_operator_type", None)
-        if op_type is None:
-            op_type = ModifiedCELOERefinement
-        assert issubclass(op_type, BaseRefinement)
-        operator = op_type(**_get_matching_opts(
-            op_type, {
-                'knowledge_base': target_kb
-            }, kwargs))
-    assert isinstance(operator, BaseRefinement)
-
-    if "quality_func" in kwargs:
-        qual = kwargs.pop("quality_func")
-        if "quality_type" in kwargs:
-            raise ValueError("both quality_func and _type specified")
-    else:
-        quality_type = kwargs.pop("quality_type", None)
-        if quality_type is None:
-            quality_type = F1
-        assert issubclass(quality_type, AbstractScorer)
-        qual = quality_type(**_get_matching_opts(quality_type, {}, kwargs))
-    assert isinstance(qual, AbstractScorer)
-
-    if "heuristic_func" in kwargs:
-        heur = kwargs.pop("heuristic_func")
-        if "heuristic_type" in kwargs:
-            raise ValueError("both heuristic_func and _type specified")
-    else:
-        heuristic_type = kwargs.pop("heuristic_type", None)
-        if heuristic_type is None:
-            heuristic_type = CELOEHeuristic
-        assert issubclass(heuristic_type, AbstractHeuristic)
-        heur = heuristic_type(**_get_matching_opts(heuristic_type, {}, kwargs))
-    assert isinstance(heur, AbstractHeuristic)
-
-    if "learner" in kwargs:
-        learner = kwargs.pop("learner")
-        learner_type = type(learner)
-        if "learner_type" in kwargs:
-            raise ValueError("both learner and _type specified")
-    else:
-        learner_type = kwargs.pop("learner_type", None)
-        if learner_type is None:
-            learner_type = CELOE
-        assert issubclass(learner_type, BaseConceptLearner)
-        learner_args = _get_matching_opts(learner_type, {}, kwargs)
-        learner = None
-
-    other_components = dict()
-    clearkeys = set()
-    for k in list(kwargs):
-        if k in kwargs and k.endswith("_type"):
-            clearkeys.add(k)
-            cls = kwargs[k]
-            assert issubclass(cls, object)
-            other_components[k[:-5]] = (cls, _get_matching_opts(cls, {}, kwargs))
-
-    for k in clearkeys:
-        kwargs.pop(k)
-
-    if kwargs:
-        logger.warning("Unused parameters: %s", kwargs)
-
-    other_instances = dict()
-    for k in other_components:
-        cls = other_components[k][0]
-        logger.debug("Instantiating %s of type %s", k, cls)
-
-        # noinspection PyArgumentList
-        inst = cls(**_get_matching_opts(cls, {
-            'knowledge_base': target_kb,
-            'reasoner': reasoner,
-            'refinement_operator': operator,
-            'quality_func': qual,
-            'heuristic_func': heur,
-        }, other_components[k][1]))
-        other_instances[k] = inst
-
-    if learner is None:
-        learner = learner_type(**_get_matching_opts(
-            learner_type, {
-                **other_instances,
-                'knowledge_base': target_kb,
-                'reasoner': reasoner,
-                'refinement_operator': operator,
-                'quality_func': qual,
-                'heuristic_func': heur,
-            }, learner_args
-        ))
-
-    return learner
-
-
-class Trainer: # pragma: no cover
+class Trainer:  # pragma: no cover
     def __init__(self, learner: BaseConceptLearner, reasoner: OWLReasoner):
         """
         A class to disentangle the learner from its training.
