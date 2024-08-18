@@ -26,9 +26,6 @@ class TripleStoreNeuralReasoner:
                  path_neural_embedding: str = None, gamma: float = 0.25, inferred_owl_individuals=None,
                  inferred_object_properties=None, inferred_named_owl_classes=None):
 
-        assert inferred_owl_individuals, "It must be given"
-        assert inferred_object_properties, "It must be given"
-        assert inferred_named_owl_classes, "It must be given"
 
         if path_neural_embedding:  # pragma: no cover
             assert os.path.isdir(
@@ -64,24 +61,27 @@ class TripleStoreNeuralReasoner:
 
         self.gamma = gamma
         # Caching for the sake of memory usage.
+        if inferred_named_owl_classes:
+            self.inferred_named_owl_classes = {OWLClass(i) for i in inferred_named_owl_classes}
+            self.mapping_str_to_owl_classes = {i.str: i for i in self.inferred_named_owl_classes}
+        else:
+            self.inferred_named_owl_classes = None
+            self.mapping_str_to_owl_classes = {i.str: i for i in self.classes_in_signature()}
+
         if inferred_owl_individuals:
             self.inferred_owl_individuals = {OWLNamedIndividual(i) for i in inferred_owl_individuals}
             self.mapping_str_to_owl_individuals = {i.str: i for i in self.inferred_owl_individuals}
         else:
             self.inferred_owl_individuals = None
+            self.mapping_str_to_owl_individuals = {i.str: i for i in self.individuals_in_signature()}
 
         if inferred_object_properties:
             self.inferred_object_properties = {OWLObjectProperty(i) for i in inferred_object_properties}
             self.mapping_str_to_owl_properties = {i.str: i for i in self.inferred_object_properties}
-
         else:
             self.inferred_object_properties = None
-        if inferred_named_owl_classes:
-            self.inferred_named_owl_classes = {OWLClass(i) for i in inferred_named_owl_classes}
-            self.mapping_str_to_owl_classes = {i.str: i for i in self.inferred_named_owl_classes}
+            self.mapping_str_to_owl_properties = {i.str: i for i in self.object_properties_in_signature()}
 
-        else:
-            self.inferred_named_owl_classes = None
 
     def get_object_properties(self):
         return self.inferred_object_properties
@@ -185,7 +185,6 @@ class TripleStoreNeuralReasoner:
                 if confidence >= confidence_threshold:
                     yield predicted_iri_str, confidence
                 else:
-                    #todo: replace with return or break?
                     return
         except Exception as e:  # pragma: no cover
             print(f"Error at getting predictions: {e}")
@@ -222,7 +221,7 @@ class TripleStoreNeuralReasoner:
             self, confidence_threshold: float = None
     ) -> Generator[OWLClass, None, None]:
         if self.inferred_named_owl_classes is None:
-            self.inferred_named_owl_classes = set()
+            seen_classes = set()
             for prediction in self.get_predictions(
                     h=None,
                     r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
@@ -231,12 +230,13 @@ class TripleStoreNeuralReasoner:
             ):
                 try:
                     owl_class = OWLClass(prediction[0])
-                    self.inferred_named_owl_classes.add(owl_class)
+                    seen_classes.add(owl_class)
                     yield owl_class
                 except Exception as e:
                     # Log the invalid IRI
                     #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                     continue
+            self.inferred_named_owl_classes = seen_classes
         else:
             yield from self.inferred_named_owl_classes
 
@@ -501,8 +501,7 @@ class TripleStoreNeuralReasoner:
                         except Exception as e:  # pragma: no cover
                             #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                             continue
-
-                    self.inferred_owl_individuals = seen_individuals
+                self.inferred_owl_individuals = seen_individuals
             except Exception as e:  # pragma: no cover
                 print(f"Error processing classes in signature: {e}")
         else:
@@ -528,25 +527,25 @@ class TripleStoreNeuralReasoner:
             self, confidence_threshold: float = None
     ) -> Generator[OWLObjectProperty, None, None]:
         if self.inferred_object_properties is None:
-            self.inferred_object_properties = set()
+            seen_object_properties = set()
             for prediction in self.get_predictions(
                     h=None,
                     r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
                     t="http://www.w3.org/2002/07/owl#ObjectProperty",
                     confidence_threshold=confidence_threshold,
             ):
-                if result := self.mapping_str_to_owl_properties.get(prediction[0], None):
-                    yield result
-            '''
                 try:
                     owl_obj_property = OWLObjectProperty(prediction[0])
-                    self.inferred_object_properties.add(owl_obj_property)
+                    seen_object_properties.add(owl_obj_property)
                     yield owl_obj_property
                 except Exception as e:  # pragma: no cover
                     # Log the invalid IRI
                     #print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                     continue
-            '''
+            self.inferred_object_properties = seen_object_properties
+        else:
+            yield from self.inferred_object_properties
+
 
     def boolean_data_properties(
             self, confidence_threshold: float = None
@@ -637,13 +636,12 @@ class TripleStoreNeuralReasoner:
             t=owl_class.str,
             confidence_threshold=confidence_threshold,
         )
-        # ()
+        seen = set()
         prediction: Tuple[str, float]
         for prediction in predictions:
             # ()
             if result := self.mapping_str_to_owl_individuals.get(prediction[0], None):
                 yield result
-        '''
         if len(list(predictions)) == 0:
             for child_class in self.subconcepts(owl_class, confidence_threshold=confidence_threshold):
                 if child_class not in seen:
@@ -652,7 +650,6 @@ class TripleStoreNeuralReasoner:
                         if individual not in seen:
                             seen.add(individual)
                             yield individual
-        '''
 
     def get_individuals_with_object_property(
             self,
