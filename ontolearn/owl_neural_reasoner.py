@@ -636,12 +636,12 @@ class TripleStoreNeuralReasoner:
             t=owl_class.str,
             confidence_threshold=confidence_threshold,
         )
-        seen = set()
+        #seen = set()
         prediction: Tuple[str, float]
         for prediction in predictions:
-            # ()
             if result := self.mapping_str_to_owl_individuals.get(prediction[0], None):
                 yield result
+        '''
         if len(list(predictions)) == 0:
             for child_class in self.subconcepts(owl_class, confidence_threshold=confidence_threshold):
                 if child_class not in seen:
@@ -650,6 +650,7 @@ class TripleStoreNeuralReasoner:
                         if individual not in seen:
                             seen.add(individual)
                             yield individual
+        '''
 
     def get_individuals_with_object_property(
             self,
