@@ -11,7 +11,7 @@ from typing import Generator, Tuple
 from dicee.knowledge_graph_embeddings import KGE
 import os
 import re
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, OrderedDict
 from typing import List
 import functools
 
@@ -117,20 +117,30 @@ class TripleStoreNeuralReasoner:
 
     def __str__(self):
         return f"TripleStoreNeuralReasoner:{self.model} with likelihood threshold gamma : {self.gamma}"
+    
 
-    def generator_cache(func):
-        cache = {}
+    def generator_lru_cache(maxsize=4096):
+        def decorator(func):
+            cache = OrderedDict()
 
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            key = (args, frozenset(kwargs.items()))
-            if key not in cache:
-                cache[key] = list(func(*args, **kwargs))
-            return iter(cache[key])
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                key = (args, frozenset(kwargs.items()))
+                if key in cache:
+                    # Move the accessed item to the end (most recent)
+                    cache.move_to_end(key)
+                else:
+                    # If cache size is exceeded, remove the oldest item (LRU)
+                    if len(cache) >= maxsize:
+                        cache.popitem(last=False)
+                    # Store the new result
+                    cache[key] = list(func(*args, **kwargs))
+                return iter(cache[key])
 
-        return wrapper
+            return wrapper
+        return decorator
 
-    @generator_cache
+    @generator_lru_cache()
     def get_predictions(self, h: str = None, r: str = None, t: str = None, confidence_threshold: float = None,
                         ) -> Generator[Tuple[str, float], None, None]:
         """
