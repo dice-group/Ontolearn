@@ -97,8 +97,12 @@ weighted avg       1.00      1.00      1.00         4
 
 ## Learning OWL Class Expression over DBpedia
 ```python
+from ontolearn.learners import TDL
+from ontolearn.triple_store import TripleStore
+from ontolearn.learning_problem import PosNegLPStandard
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy import owl_expression_to_sparql, owl_expression_to_dl
 from ontolearn.utils.static_funcs import save_owl_class_expressions
-
 # (1) Initialize Triplestore
 kb = TripleStore(url="http://dice-dbpedia.cs.upb.de:9080/sparql")
 # (3) Initialize a learner.
@@ -265,7 +269,7 @@ wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && 
 # Download weights for some model for few tests
 wget https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip -O ./NCESData.zip && unzip NCESData.zip && rm NCESData.zip
 wget https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip && unzip CLIPData.zip && rm CLIPData.zip 
-pytest -p no:warnings -x # Running 80 tests takes ~ 11 mins
+pytest -p no:warnings -x # Running 76 tests takes ~ 17 mins
 ```
 
 
