@@ -67,6 +67,10 @@ def f1_set_similarity(y: Set[str], yhat: Set[str]) -> float:
 
     precision = len(y.intersection(yhat)) / len(y)
     recall = len(y.intersection(yhat)) / len(yhat)
+
+    if precision == 0 and recall == 0:
+        return 0.0
+    
     return (2 * precision * recall) / (precision + recall)
 
 
