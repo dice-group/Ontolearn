@@ -17,6 +17,7 @@ from owlapy.class_expression import (
     OWLObjectMinCardinality,
     OWLObjectMaxCardinality,
     OWLObjectOneOf,
+    OWLClass,
 )
 import time
 from typing import Tuple, Set
@@ -89,7 +90,9 @@ def execute(args):
             )
         }
     # (4) R⁻: Inverse of object properties.
-    object_properties_inverse = {i.get_inverse_property() for i in object_properties}
+    object_properties_inverse = (
+        set()
+    )  # {i.get_inverse_property() for i in object_properties}
     # (5) R*: R UNION R⁻.
     object_properties_and_inverse = object_properties.union(object_properties_inverse)
     # (6) NC: Named owl concepts.
@@ -103,7 +106,7 @@ def execute(args):
             )
         }
     # (7) NC⁻: Complement of NC.
-    nnc = {i.get_object_complement_of() for i in nc}
+    nnc = set()  # {i.get_object_complement_of() for i in nc}
     # (8) UNNC: NC UNION NC⁻.
     unnc = nc.union(nnc)
     # (9) Retrieve 10 random Nominals.
@@ -172,6 +175,11 @@ def execute(args):
     # () Converted to list so that the progress bar works.
     concepts = list(
         chain(
+            exist_unnc,
+        )
+    )
+
+    """
             nc,
             unions,
             intersections,
@@ -179,7 +187,7 @@ def execute(args):
             unnc,
             unions_unnc,
             intersections_unnc,
-            exist_unnc,
+    
             for_all_unnc,
             min_cardinality_unnc_1,
             min_cardinality_unnc_2,
@@ -187,9 +195,10 @@ def execute(args):
             max_cardinality_unnc_1,
             max_cardinality_unnc_2,
             max_cardinality_unnc_3,
+
             exist_nominals,
-        )
-    )
+    """
+
     # () Shuffled the data so that the progress bar is not influenced by the order of concepts.
     random.shuffle(concepts)
     # () Iterate over single OWL Class Expressions in ALCQIHO
@@ -210,6 +219,8 @@ def execute(args):
         except ZeroDivisionError:
             f1_sim = 0.0
         # () Store the data.
+        # TDOO: LF: data.append below floods memory
+
         data.append(
             {
                 "Expression": owl_expression_to_dl(expression),
@@ -221,12 +232,19 @@ def execute(args):
                 "Symbolic_Retrieval_Neural": retrieval_neural_y,
             }
         )
+
         # () Update the progress bar.
         tqdm_bar.set_description_str(
             f"Expression: {owl_expression_to_dl(expression)} | Jaccard Similarity:{jaccard_sim:.4f} | F1 :{f1_sim:.4f} | Runtime Benefits:{runtime_y - runtime_neural_y:.3f}"
         )
+        if jaccard_sim != 1.0:
+            print(
+                f"Expression: {owl_expression_to_dl(expression)} | Jaccard Similarity:{jaccard_sim:.4f} | F1 :{f1_sim:.4f} | Runtime Benefits:{runtime_y - runtime_neural_y:.3f}"
+            )
+
     # () Read the data into pandas dataframe
     df = pd.DataFrame(data)
+    del data
     # assert df["Jaccard Similarity"].mean() == 1.0 TODO: LF: check if assert is sensible
     # () Save the experimental results into csv file.
     df.to_csv(args.path_report)

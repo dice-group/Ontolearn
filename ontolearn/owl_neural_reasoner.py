@@ -15,7 +15,7 @@ from collections import Counter, defaultdict, OrderedDict
 from typing import List
 import functools
 
-
+from memory_profiler import profile, memory_usage  # todo: remove this line
 # Neural Reasoner
 class TripleStoreNeuralReasoner:
     """ OWL Neural Reasoner uses a neural link predictor to retrieve instances of an OWL Class Expression"""
@@ -119,27 +119,30 @@ class TripleStoreNeuralReasoner:
         return f"TripleStoreNeuralReasoner:{self.model} with likelihood threshold gamma : {self.gamma}"
     
 
-    def generator_lru_cache(maxsize=4096):
+    
+
+    def generator_lru_cache(maxsize=1048576):
         def decorator(func):
             cache = OrderedDict()
 
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
-                key = (args, frozenset(kwargs.items()))
+                key = (args, tuple(sorted(kwargs.items())))
                 if key in cache:
-                    # Move the accessed item to the end (most recent)
                     cache.move_to_end(key)
                 else:
-                    # If cache size is exceeded, remove the oldest item (LRU)
                     if len(cache) >= maxsize:
+                        # LRU cache eviction
+                        print("Evicting cache")
                         cache.popitem(last=False)
-                    # Store the new result
+
                     cache[key] = list(func(*args, **kwargs))
+                    
                 return iter(cache[key])
 
             return wrapper
         return decorator
-
+        
     @generator_lru_cache()
     def get_predictions(self, h: str = None, r: str = None, t: str = None, confidence_threshold: float = None,
                         ) -> Generator[Tuple[str, float], None, None]:
@@ -413,6 +416,7 @@ class TripleStoreNeuralReasoner:
 
 
         elif isinstance(expression, OWLObjectMinCardinality) or isinstance(expression, OWLObjectSomeValuesFrom):
+            #TODO: change to min cardinality
             """
             Given an OWLObjectSomeValuesFrom ∃ r.C, retrieve its instances => 
             Retrieval(∃ r.C) = 
@@ -435,13 +439,16 @@ class TripleStoreNeuralReasoner:
                     object_property=object_property,
                     confidence_threshold=confidence_threshold
                 )
+                # get set of subjects iris
+                subjects = {subject.str for subject in subjects}
                 # Update the counter for all subjects found
                 result.update(subjects)
 
             # Yield only those individuals who meet the cardinality requirement
             for individual, count in result.items():
                 if count >= cardinality:
-                    yield individual
+                    if result := self.mapping_str_to_owl_individuals.get(individual, None):
+                        yield result
 
         elif isinstance(expression, OWLObjectMaxCardinality):
             object_property = expression.get_property()
@@ -646,20 +653,16 @@ class TripleStoreNeuralReasoner:
             t=owl_class.str,
             confidence_threshold=confidence_threshold,
         )
-        #seen = set()
         prediction: Tuple[str, float]
         for prediction in predictions:
             if result := self.mapping_str_to_owl_individuals.get(prediction[0], None):
                 yield result
         '''
-        if len(list(predictions)) == 0:
-            for child_class in self.subconcepts(owl_class, confidence_threshold=confidence_threshold):
-                if child_class not in seen:
-                    seen.add(child_class)
-                    for individual in self.get_individuals_of_class(child_class, confidence_threshold=confidence_threshold, depth=depth-1):
-                        if individual not in seen:
-                            seen.add(individual)
-                            yield individual
+        to_yield = set()
+        if subclasses := set(self.subconcepts(owl_class, confidence_threshold)):
+            for subclass in subclasses:
+                to_yield.update(self.get_individuals_of_class(subclass, confidence_threshold, depth - 1))
+        yield from to_yield
         '''
 
     def get_individuals_with_object_property(
