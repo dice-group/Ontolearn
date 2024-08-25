@@ -90,9 +90,7 @@ def execute(args):
             )
         }
     # (4) R⁻: Inverse of object properties.
-    object_properties_inverse = (
-        set()
-    )  # {i.get_inverse_property() for i in object_properties}
+    object_properties_inverse = {i.get_inverse_property() for i in object_properties}
     # (5) R*: R UNION R⁻.
     object_properties_and_inverse = object_properties.union(object_properties_inverse)
     # (6) NC: Named owl concepts.
@@ -106,7 +104,7 @@ def execute(args):
             )
         }
     # (7) NC⁻: Complement of NC.
-    nnc = set()  # {i.get_object_complement_of() for i in nc}
+    nnc = {i.get_object_complement_of() for i in nc}
     # (8) UNNC: NC UNION NC⁻.
     unnc = nc.union(nnc)
     # (9) Retrieve 10 random Nominals.
@@ -175,11 +173,6 @@ def execute(args):
     # () Converted to list so that the progress bar works.
     concepts = list(
         chain(
-            exist_unnc,
-        )
-    )
-
-    """
             nc,
             unions,
             intersections,
@@ -187,7 +180,6 @@ def execute(args):
             unnc,
             unions_unnc,
             intersections_unnc,
-    
             for_all_unnc,
             min_cardinality_unnc_1,
             min_cardinality_unnc_2,
@@ -195,8 +187,12 @@ def execute(args):
             max_cardinality_unnc_1,
             max_cardinality_unnc_2,
             max_cardinality_unnc_3,
-
             exist_nominals,
+            exist_unnc,
+        )
+    )
+
+    """
     """
 
     # () Shuffled the data so that the progress bar is not influenced by the order of concepts.
