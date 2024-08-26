@@ -52,121 +52,182 @@ def generated_incomplete_kg(kb_path: str, directory: str, n: int, ratio: float) 
 
     return file_paths
 
-
 def execute(args):
-
     symbolic_kb = KnowledgeBase(path=args.path_kg)
-         
     namespace = list(symbolic_kb.ontology.classes_in_signature())[0].iri.get_namespace()
-
     parser = DLSyntaxParser(namespace)
-
-
-    # TODO: What should be directory args.path_kg?
     name_KG = args.path_kg.split('/')[-1].split('.')[0]
-
-    directory = f"incomplete_{name_KG}"
-
-    paths_of_incomplete_kgs = generated_incomplete_kg(kb_path=args.path_kg, directory=directory,\
-                                n=args.number_of_incomplete_graphs, ratio=args.level_of_incompleteness)
-
-    # TODO: make sure the number of triple match inside 
-    # TODO: ensure all triples are subset of the original KG
+    level_of_incompleteness_str = str(args.level_of_incompleteness).replace('.', '_')
+    directory = f"incomplete_{name_KG}_{level_of_incompleteness_str}"
+    paths_of_incomplete_kgs = generated_incomplete_kg(
+        kb_path=args.path_kg, 
+        directory=directory,
+        n=args.number_of_incomplete_graphs, 
+        ratio=args.level_of_incompleteness
+    )
+    
     expressions = None
+    all_results = []
 
     for path_of_an_incomplete_kgs in paths_of_incomplete_kgs:
-
-        data = []
-        list_jaccard_symbolic = []
         list_jaccard_neural = []
+        data = []
 
-        # Train a KGE, retrieval eval vs KGE and Symbolic
-        # args.ratio_sample_nc
-        # args.ratio_sample_object_prob
         subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path_of_an_incomplete_kgs])
-        # Load the results on the current view.
         df = pd.read_csv("ALCQHI_Retrieval_Results.csv", index_col=0)
 
-        # Sanity checking
         if expressions is None:
             expressions = {i for i in df["Expression"].to_list()}
         else:
             assert expressions == {i for i in df["Expression"].to_list()}
 
-#----------------------------------------------------------------------------------------------------------------
-
         ontology_path = path_of_an_incomplete_kgs
-        # Available OWL Reasoners: 'HermiT', 'Pellet', 'JFact', 'Openllet'
-
         reasoners = ['HermiT', 'Pellet', 'JFact', 'Openllet']
+        reasoner_jaccards = {reasoner: [] for reasoner in reasoners}
 
-        owlapi_adaptor = OWLAPIAdaptor(path=ontology_path, name_reasoner="JFact")
-        # Iterate over defined owl Classes in the signature
-        # for i in onto.classes_in_signature():
-        #     print(i)
-        #     exit(0)
-        #     # Performing type inference with Pellet
-        #     instances=owlapi_adaptor.instances(i,direct=False)
-        #     print(f"Class:{i}\t Num instances:{len(instances)}")
-        # owlapi_adaptor.stopJVM()
-
-        # exit(0)
-
-#------------------------------------------------------------------------------------------------------------------
-
-        # Iterate
         for expression in expressions:
-
-            # TODO: str -> owlapy.owl_classexpression object
-            
-            target_concept = parser.parse_expression(expression) 
-    
+            target_concept = parser.parse_expression(expression)
             goal_retrieval = {i.str for i in symbolic_kb.individuals(target_concept)}
-
-            result_symbolic: Set[str]
-            result_neural_symbolic: Set[str]
-
-            # result_symbolic = df[df["Expression"]==expression]["Symbolic_Retrieval"].apply(ast.literal_eval)
-            # result_symbolic = result_symbolic.iloc[0] 
-
-            result_symbolic = {i.str for i in (owlapi_adaptor.instances(target_concept,direct=False))}
-
-            result_neural_symbolic = df[df["Expression"]==expression]["Symbolic_Retrieval_Neural"].apply(ast.literal_eval)
-            result_neural_symbolic = result_neural_symbolic.iloc[0]
-            
-
-            jaccard_sim_symbolic = jaccard_similarity(result_symbolic, goal_retrieval)
-
+            result_neural_symbolic = df[df["Expression"] == expression]["Symbolic_Retrieval_Neural"].apply(ast.literal_eval).iloc[0]
             jaccard_sim_neural = jaccard_similarity(result_neural_symbolic, goal_retrieval)
-
-            # Update for Averaging
             list_jaccard_neural.append(jaccard_sim_neural)
-            list_jaccard_symbolic.append(jaccard_sim_symbolic)
-
-            data.append(
-            {
-                "Expression": expression,
-                "Type": type(expression).__name__,
-                "Jaccard_sym": jaccard_sim_symbolic,
-                "Jaccard_EBR": jaccard_sim_neural,
-                # "Runtime Benefits": runtime_y - runtime_neural_y,
-                # "Symbolic_Retrieval": retrieval_y,
-                # "Symbolic_Retrieval_Neural": retrieval_neural_y,
-            }
-        )
             
+            result_row = {
+                "Incomplete_KG": path_of_an_incomplete_kgs.split('/')[-1],
+                "Expression": expression,
+                "Type": type(parser.parse_expression(expression)).__name__,
+                "Jaccard_EBR": jaccard_sim_neural
+            }
+
+            for reasoner in reasoners:
+                owlapi_adaptor = OWLAPIAdaptor(path=ontology_path, name_reasoner=reasoner)
+                result_symbolic = {i.str for i in (owlapi_adaptor.instances(target_concept, direct=False))}
+                jaccard_sim_symbolic = jaccard_similarity(result_symbolic, goal_retrieval)
+                reasoner_jaccards[reasoner].append(jaccard_sim_symbolic)
+                result_row[f"Jaccard_{reasoner}"] = jaccard_sim_symbolic
+
+            data.append(result_row)
+
+        all_results.extend(data)
         
-        df = pd.DataFrame(data=data)
+        avg_jaccard_neural = sum(list_jaccard_neural) / len(list_jaccard_neural)
+        avg_jaccard_reasoners = {reasoner: sum(reasoner_jaccards[reasoner]) / len(reasoner_jaccards[reasoner]) for reasoner in reasoners}
 
-        print(df)
+        print(f"Average Jaccard neural ({path_of_an_incomplete_kgs}):", avg_jaccard_neural)
+        for reasoner, avg_jaccard in avg_jaccard_reasoners.items():
+            print(f"Average Jaccard {reasoner} ({path_of_an_incomplete_kgs}):", avg_jaccard)
 
-        avg_jaccard_sym = sum(list_jaccard_symbolic)/len(list_jaccard_symbolic)
-        avg_jaccard_neural = sum(list_jaccard_neural)/len(list_jaccard_neural)
+    # Create a final DataFrame from all results and write to a CSV file
+    final_df = pd.DataFrame(all_results)
+    final_csv_path = f"{directory}/comparison_results.csv"
+    final_df.to_csv(final_csv_path, index=False)
 
-        print("Average jaccard symbolic", avg_jaccard_sym)
-        print("Average Jaccard neural", avg_jaccard_neural)
+    print(final_df.head())
+    print(f"Results have been saved to {final_csv_path}")
+        
+    owlapi_adaptor.stopJVM()  # Stop the standard reasoner 
 
-    owlapi_adaptor.stopJVM() #stop the standard reasoner
+   
+
+
+    
+
+# def execute(args):
+
+#     symbolic_kb = KnowledgeBase(path=args.path_kg)
+         
+#     namespace = list(symbolic_kb.ontology.classes_in_signature())[0].iri.get_namespace()
+
+#     parser = DLSyntaxParser(namespace)
+
+#     name_KG = args.path_kg.split('/')[-1].split('.')[0]
+
+#     directory = f"incomplete_{name_KG}"
+
+#     paths_of_incomplete_kgs = generated_incomplete_kg(kb_path=args.path_kg, directory=directory,\
+#                                 n=args.number_of_incomplete_graphs, ratio=args.level_of_incompleteness)
+    
+#     expressions = None
+
+#     for path_of_an_incomplete_kgs in paths_of_incomplete_kgs:
+
+#         data = []
+#         list_jaccard_symbolic = []
+#         list_jaccard_neural = []
+
+#         subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path_of_an_incomplete_kgs])
+#         # Load the results on the current view.
+#         df = pd.read_csv("ALCQHI_Retrieval_Results.csv", index_col=0)
+
+#         # Sanity checking
+#         if expressions is None:
+#             expressions = {i for i in df["Expression"].to_list()}
+#         else:
+#             assert expressions == {i for i in df["Expression"].to_list()}
+
+# #----------------------------------------------------------------------------------------------------------------
+
+#         # adding other reasoners for comparison
+
+#         ontology_path = path_of_an_incomplete_kgs
+#         # Available OWL Reasoners: 'HermiT', 'Pellet', 'JFact', 'Openllet'
+
+#         reasoners = ['HermiT', 'Pellet', 'JFact', 'Openllet']
+
+#         owlapi_adaptor = OWLAPIAdaptor(path=ontology_path, name_reasoner="JFact")
+
+# #------------------------------------------------------------------------------------------------------------------
+
+#         # Iterate
+#         for expression in expressions:
+
+
+#             target_concept = parser.parse_expression(expression) 
+
+#             # print(target_concept)
+#             # exit(0)
+
+#             # Compute the groundtruth
+#             goal_retrieval = {i.str for i in symbolic_kb.individuals(target_concept)}
+
+#             result_symbolic: Set[str]
+#             result_neural_symbolic: Set[str]
+
+#             # retrieval operation with other reasoners
+#             result_symbolic = {i.str for i in (owlapi_adaptor.instances(target_concept,direct=False))}
+
+#             # retrieval operation with ours (we just load from the csv data)
+#             result_neural_symbolic = df[df["Expression"]==expression]["Symbolic_Retrieval_Neural"].apply(ast.literal_eval)
+#             result_neural_symbolic = result_neural_symbolic.iloc[0]
+            
+#             # Compute the Jaccard similarity
+#             jaccard_sim_symbolic = jaccard_similarity(result_symbolic, goal_retrieval)
+#             jaccard_sim_neural = jaccard_similarity(result_neural_symbolic, goal_retrieval)
+
+#             # Update for Averaging
+#             list_jaccard_neural.append(jaccard_sim_neural)
+#             list_jaccard_symbolic.append(jaccard_sim_symbolic)
+
+#             data.append(
+#             {
+#                 "Expression": expression,
+#                 "Type": type(parser.parse_expression(expression)).__name__,
+#                 "Jaccard_sym": jaccard_sim_symbolic,
+#                 "Jaccard_EBR": jaccard_sim_neural,
+#             }
+#         )
+            
+#         df = pd.DataFrame(data=data)
+
+#         print(df)
+
+#         avg_jaccard_sym = sum(list_jaccard_symbolic)/len(list_jaccard_symbolic)
+#         avg_jaccard_neural = sum(list_jaccard_neural)/len(list_jaccard_neural)
+
+#         print("Average jaccard symbolic", avg_jaccard_sym)
+#         print("Average Jaccard neural", avg_jaccard_neural)
+
+#     owlapi_adaptor.stopJVM() #stop the standard reasoner
 
 def get_default_arguments():
     parser = ArgumentParser()
