@@ -130,10 +130,10 @@ def execute(args):
     data = []
     # () Converted to list so that the progress bar works.
     concepts = list(
-        chain(
-            nc, unions, intersections, nnc, unnc, unions_unnc, intersections_unnc,
-            exist_unnc, for_all_unnc,
-            min_cardinality_unnc_1, min_cardinality_unnc_2, min_cardinality_unnc_3,
+        chain(for_all_unnc,
+            # nc, unions, intersections, nnc, unnc, unions_unnc, intersections_unnc,
+            # exist_unnc, for_all_unnc,
+            # min_cardinality_unnc_1, min_cardinality_unnc_2, min_cardinality_unnc_3,
             max_cardinality_unnc_1, max_cardinality_unnc_2, max_cardinality_unnc_3,
             # exist_nominals,
         )
@@ -153,8 +153,6 @@ def execute(args):
         # () Compute the F1-score.
         f1_sim = f1_set_similarity(retrieval_y, retrieval_neural_y)
         # () Store the data.
-        # print(expression)
-        # exit(0)
         data.append(
             {
                 "Expression": owl_expression_to_dl(expression),
@@ -162,6 +160,7 @@ def execute(args):
                 "Jaccard Similarity": jaccard_sim,
                 "F1": f1_sim,
                 "Runtime Benefits": runtime_y - runtime_neural_y,
+                "Runtime Neural": runtime_neural_y,
                 "Symbolic_Retrieval": retrieval_y,
                 "Symbolic_Retrieval_Neural": retrieval_neural_y,
             }
@@ -194,10 +193,10 @@ def execute(args):
 
 def get_default_arguments():
     parser = ArgumentParser()
-    parser.add_argument("--path_kg", type=str, default="KGs/Family/family-benchmark_rich_background.owl")
+    parser.add_argument("--path_kg", type=str, default="KGs/Family/father.owl")
     parser.add_argument("--path_kge_model", type=str, default=None)
     parser.add_argument("--endpoint_triple_store", type=str, default=None)
-    parser.add_argument("--gamma", type=float, default=0.8)
+    parser.add_argument("--gamma", type=float, default=0.9)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--ratio_sample_nc", type=float, default=None, help="To sample OWL Classes.")
     parser.add_argument("--ratio_sample_object_prob", type=float, default=None, help="To sample OWL Object Properties.")

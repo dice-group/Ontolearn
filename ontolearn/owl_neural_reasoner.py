@@ -48,6 +48,7 @@ class TripleStoreNeuralReasoner:
                 args.embedding_dim = 512
                 args.batch_size = 1024
                 args.backend = "rdflib"
+                args.trainer = "PL"
                 reports = Execute(args).start()
                 path_neural_embedding = reports["path_experiment_folder"]
                 self.model = KGE(path=path_neural_embedding)

@@ -73,19 +73,23 @@ def execute(args):
         list_jaccard_neural = []
         data = []
 
+        # subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path_of_an_incomplete_kgs, "--ratio_sample_nc","0.1", "--ratio_sample_object_prob", "0.1"])
+        
         subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path_of_an_incomplete_kgs])
+        
         df = pd.read_csv("ALCQHI_Retrieval_Results.csv", index_col=0)
-
-        if expressions is None:
-            expressions = {i for i in df["Expression"].to_list()}
-        else:
-            assert expressions == {i for i in df["Expression"].to_list()}
+        
+        expressions = {i for i in df["Expression"].to_list()}
 
         ontology_path = path_of_an_incomplete_kgs
         reasoners = ['HermiT', 'Pellet', 'JFact', 'Openllet']
         reasoner_jaccards = {reasoner: [] for reasoner in reasoners}
+        reasoner_times = {reasoner: [] for reasoner in reasoners}  # To store running times
 
         for expression in expressions:
+            
+            print("-"*100)
+            print("Expression:", expression)
             target_concept = parser.parse_expression(expression)
             goal_retrieval = {i.str for i in symbolic_kb.individuals(target_concept)}
             result_neural_symbolic = df[df["Expression"] == expression]["Symbolic_Retrieval_Neural"].apply(ast.literal_eval).iloc[0]
@@ -96,15 +100,26 @@ def execute(args):
                 "Incomplete_KG": path_of_an_incomplete_kgs.split('/')[-1],
                 "Expression": expression,
                 "Type": type(parser.parse_expression(expression)).__name__,
-                "Jaccard_EBR": jaccard_sim_neural
+                "Jaccard_EBR": jaccard_sim_neural,
+                "Runtime_EBR": df[df["Expression"] == expression]["Runtime Neural"].iloc[0]
             }
 
             for reasoner in reasoners:
+    
+                print(f"...Reasoner {reasoner} starts")
+    
+                start_time = time.time()  # Start timing
                 owlapi_adaptor = OWLAPIAdaptor(path=ontology_path, name_reasoner=reasoner)
                 result_symbolic = {i.str for i in (owlapi_adaptor.instances(target_concept, direct=False))}
+                end_time = time.time()  # End timing
+                
+                elapsed_time = end_time - start_time  # Calculate elapsed time
                 jaccard_sim_symbolic = jaccard_similarity(result_symbolic, goal_retrieval)
                 reasoner_jaccards[reasoner].append(jaccard_sim_symbolic)
+                reasoner_times[reasoner].append(elapsed_time)  # Store running time
+                
                 result_row[f"Jaccard_{reasoner}"] = jaccard_sim_symbolic
+                result_row[f"Runtime_{reasoner}"] = elapsed_time
 
             data.append(result_row)
 
@@ -112,10 +127,12 @@ def execute(args):
         
         avg_jaccard_neural = sum(list_jaccard_neural) / len(list_jaccard_neural)
         avg_jaccard_reasoners = {reasoner: sum(reasoner_jaccards[reasoner]) / len(reasoner_jaccards[reasoner]) for reasoner in reasoners}
+        avg_time_reasoners = {reasoner: sum(reasoner_times[reasoner]) / len(reasoner_times[reasoner]) for reasoner in reasoners}
 
         print(f"Average Jaccard neural ({path_of_an_incomplete_kgs}):", avg_jaccard_neural)
         for reasoner, avg_jaccard in avg_jaccard_reasoners.items():
             print(f"Average Jaccard {reasoner} ({path_of_an_incomplete_kgs}):", avg_jaccard)
+            print(f"Average Runtime {reasoner} ({path_of_an_incomplete_kgs}):", avg_time_reasoners[reasoner])
 
     # Create a final DataFrame from all results and write to a CSV file
     final_df = pd.DataFrame(all_results)
@@ -126,7 +143,6 @@ def execute(args):
     print(f"Results have been saved to {final_csv_path}")
         
     owlapi_adaptor.stopJVM()  # Stop the standard reasoner 
-
    
 
 
@@ -231,7 +247,7 @@ def execute(args):
 
 def get_default_arguments():
     parser = ArgumentParser()
-    parser.add_argument("--path_kg", type=str, default="KGs/Family/family-benchmark_rich_background.owl")
+    parser.add_argument("--path_kg", type=str, default="KGs/Family/father.owl")
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--ratio_sample_nc", type=float, default=None, help="To sample OWL Classes.")
     parser.add_argument("--ratio_sample_object_prob", type=float, default=None, help="To sample OWL Object Properties.")
