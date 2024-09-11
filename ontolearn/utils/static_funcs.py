@@ -311,7 +311,7 @@ def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLCl
         cls_a = OWLClass(IRI.create(NS, str(th)))
         equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, i])
         try:
-            manager.add_axiom(ontology, equivalent_classes_axiom)
+            ontology.add_axiom(equivalent_classes_axiom)
         except AttributeError:
             print(traceback.format_exc())
             print("Exception at creating OWLEquivalentClassesAxiom")
@@ -320,7 +320,7 @@ def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLCl
             print(i)
             print(expressions)
             exit(1)
-    manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))
+    ontology.save(IRI.create('file:/' + path + '.owl'))
 
 
 def verbalize(predictions_file_path: str):  # pragma: no cover
