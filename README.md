@@ -6,7 +6,7 @@
 
 ![Ontolearn](docs/_static/images/Ontolearn_logo.png)
 
-# Ontolearn: Learning OWL Class Expression
+# Ontolearn: Learning OWL Class Expressions
 
 *Ontolearn* is an open-source software library for learning owl class expressions at large scale.
 
