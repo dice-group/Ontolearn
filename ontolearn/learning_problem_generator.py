@@ -104,7 +104,7 @@ class LearningProblemGenerator:  # pragma: no cover
         for ith, h in enumerate(concepts):
             cls_a: OWLClass = OWLClass(IRI.create(NS, "Pred_" + str(ith)))
             equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, h.concept])
-            manager.add_axiom(ontology, equivalent_classes_axiom)
+            ontology.add_axiom(equivalent_classes_axiom)
 
             count = None
             try:
@@ -118,9 +118,9 @@ class LearningProblemGenerator:  # pragma: no cover
             if count is not None:
                 num_inds = OWLAnnotationAssertionAxiom(cls_a.iri, OWLAnnotation(
                     OWLAnnotationProperty(IRI.create(SNS, "covered_inds")), OWLLiteral(count)))
-                manager.add_axiom(ontology, num_inds)
+                ontology.add_axiom(num_inds)
 
-        manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))
+        ontology.save(IRI.create('file:/' + path + '.owl'))
 
     def concept_individuals_to_string_balanced_examples(self, concept: OWLClassExpression) -> Dict[str, Set]:
 

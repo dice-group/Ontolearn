@@ -303,7 +303,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             ontology: OWLOntology = cast(Ontology, self.kb.ontology)
             manager: OWLOntologyManager = ontology.get_owl_ontology_manager()
             for axiom in axioms:
-                manager.add_axiom(ontology, axiom)
+                ontology.add_axiom(axiom)
             if reasoner is None:
                 reasoner = FastInstanceCheckerReasoner(ontology, base_reasoner=OntologyReasoner(ontology))
 
@@ -322,9 +322,9 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         # Remove the axioms from the ontology
         if axioms is not None:
             for axiom in axioms:
-                manager.remove_axiom(ontology, axiom)
+                ontology.remove_axiom(axiom)
             for ind in individuals:
-                manager.remove_axiom(ontology, OWLDeclarationAxiom(ind))
+                ontology.remove_axiom(OWLDeclarationAxiom(ind))
 
         return predictions
 
@@ -362,7 +362,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         for ith, h in enumerate(self.best_hypotheses(n=n)):
             cls_a: OWLClass = OWLClass(IRI.create(NS, "Pred_" + str(ith)))
             equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, h])
-            manager.add_axiom(ontology, equivalent_classes_axiom)
+            ontology.add_axiom(equivalent_classes_axiom)
             # @TODO:CD: We should find a way to include information (F1score etc) outside of OWL class expression instances
             """
             try:
@@ -373,14 +373,14 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             if isinstance(self.quality_func, Accuracy):
                 accuracy = OWLAnnotationAssertionAxiom(cls_a.iri, OWLAnnotation(
                     OWLAnnotationProperty(IRI.create(SNS, "accuracy")), OWLLiteral(quality)))
-                manager.add_axiom(ontology, accuracy)
+                ontology.add_axiom(accuracy)
             elif isinstance(self.quality_func, F1):
                 f1_score = OWLAnnotationAssertionAxiom(cls_a.iri, OWLAnnotation(
                     OWLAnnotationProperty(IRI.create(SNS, "f1_score")), OWLLiteral(quality)))
-                manager.add_axiom(ontology, f1_score)
+                ontology.add_axiom(f1_score)
             """
 
-        manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))
+        ontology.save(IRI.create('file:/' + path + '.owl'))
 
     def load_hypotheses(self, path: str) -> Iterable[OWLClassExpression]:
         """
