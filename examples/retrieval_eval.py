@@ -130,10 +130,10 @@ def execute(args):
     data = []
     # () Converted to list so that the progress bar works.
     concepts = list(
-        chain(for_all_unnc,
-            # nc, unions, intersections, nnc, unnc, unions_unnc, intersections_unnc,
-            # exist_unnc, for_all_unnc,
-            # min_cardinality_unnc_1, min_cardinality_unnc_2, min_cardinality_unnc_3,
+        chain(
+            nc, unions, intersections, nnc, unnc, unions_unnc, intersections_unnc,
+            exist_unnc, for_all_unnc,
+            min_cardinality_unnc_1, min_cardinality_unnc_2, min_cardinality_unnc_3,
             max_cardinality_unnc_1, max_cardinality_unnc_2, max_cardinality_unnc_3,
             # exist_nominals,
         )
