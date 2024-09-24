@@ -38,13 +38,35 @@ class TripleStoreNeuralReasoner:
             if os.path.isdir(dir_of_potential_neural_embedding_model):
                 self.model = KGE(path=dir_of_potential_neural_embedding_model)
             else:  # pragma: no cover
+                # enrich ontology 
+                from owlapy.owl_reasoner import SyncReasoner
+                from owlapy.static_funcs import stopJVM
+                
+                sync_reasoner = SyncReasoner(ontology=path_of_kb, reasoner="HermiT")
+                output_path = "enriched_" + path_of_kb.replace("/", "_").replace(".", "_") + ".owl"
+                inferred_axioms_generator = sync_reasoner.infer_axioms_and_save(
+                                    output_path=output_path,
+                                    inference_types=[
+                                         "InferredClassAssertionAxiomGenerator",
+                           "InferredEquivalentClassAxiomGenerator",
+                           "InferredDisjointClassesAxiomGenerator",
+                                        "InferredSubClassAxiomGenerator",
+                                        "InferredInverseObjectPropertiesAxiomGenerator",
+                                        "InferredEquivalentClassAxiomGenerator"
+                                        ])
+                                    
+                
+                    
+                
+                
+                stopJVM()
                 # Train a KGE on the fly
                 from dicee.executer import Execute
                 from dicee.config import Namespace
                 args = Namespace()
                 args.model = 'Keci'
                 args.scoring_technique = "AllvsAll"
-                args.path_single_kg = path_of_kb
+                args.path_single_kg = output_path
                 path_of_kb = path_of_kb.replace("/", "_")
                 path_of_kb = path_of_kb.replace(".", "_")
                 args.path_to_store_single_run = path_of_kb
