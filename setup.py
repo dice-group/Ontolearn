@@ -46,7 +46,7 @@ _deps = [
     "tqdm>=4.64.0",
     "transformers>=4.38.1",
     "pytest>=7.2.2",
-    "owlapy==1.1.0",
+    "owlapy==1.3.0",
     "dicee==0.1.4",
     "ontosample>=0.2.2",
     "sphinx>=7.2.6",
@@ -94,7 +94,7 @@ extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "ontosample"))
 setup(
     name="ontolearn",
     description="Ontolearn is an open-source software library for structured machine learning in Python. Ontolearn includes modules for processing knowledge bases, inductive logic programming and ontology engineering.",
-    version="0.7.3",
+    version="0.7.4",
     packages=find_packages(),
     install_requires=extras["min"],
     extras_require=extras,

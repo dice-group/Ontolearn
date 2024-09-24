@@ -226,6 +226,9 @@ class TDL:
         self.X = None
         self.y = None
 
+        self.X = None
+        self.y = None
+
     def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> List[
         OWLClassExpression]:
         features = []
@@ -287,63 +290,6 @@ class TDL:
         X = X.loc[:, ~same_value_columns]
         self.features = X.columns.values.tolist()
         return X, y
-
-        """
-        for ith_row, i in enumerate(make_iterable_verbose(examples,
-                                                          verbose=self.verbose,
-                                                          desc="Creating supervised binary classification data")):
-
-            # IMPORTANT: None existence is described as 0.0 features.
-            X_i = [0.0 for _ in range(len(mapping_features))]
-            expression: [
-                OWLClass,
-                OWLObjectSomeValuesFrom,
-                OWLObjectMinCardinality,
-                OWLDataSomeValuesFrom,
-            ]
-            # Filling the features
-            for expression in self.knowledge_base.abox(individual=i, mode="expression"):
-                if isinstance(expression, OWLDataSomeValuesFrom):
-                    fillers: OWLDataOneOf[OWLLiteral]
-                    fillers = expression.get_filler()
-                    datavalues_in_fillers = list(fillers.values())
-                    if datavalues_in_fillers[0].is_boolean():
-                        X_i[mapping_features[expression]] = 1
-                    elif datavalues_in_fillers[0].is_double():
-                        X_i[mapping_features[expression]] = 1.0
-                    else:
-                        raise RuntimeError(
-                            f"Type of literal in OWLDataSomeValuesFrom is not understood:{datavalues_in_fillers}"
-                        )
-                elif isinstance(expression, OWLClass) or isinstance(
-                    expression, OWLObjectSomeValuesFrom
-                ):
-                    assert expression in mapping_features, expression
-                    X_i[mapping_features[expression]] = 1.0
-                elif isinstance(expression, OWLObjectMinCardinality):
-                    X_i[mapping_features[expression]] = expression.get_cardinality()
-                else:
-                    raise RuntimeError(
-                        f"Unrecognized type:{expression}-{type(expression)}"
-                    )
-
-            X.append(X_i)
-            # Filling the label
-            if ith_row < len(positive_examples):
-                # Sanity checking for positive examples.
-                assert i in positive_examples and i not in negative_examples
-                label = 1.0
-            else:
-                # Sanity checking for negative examples.
-                assert i in negative_examples and i not in positive_examples
-                label = 0.0
-            y.append(label)
-
-        self.features = features
-        X = pd.DataFrame(data=X, index=examples, columns=self.features)
-        y = pd.DataFrame(data=y, index=examples, columns=["label"])
-        return X, y
-        """
 
     def construct_owl_expression_from_tree(self, X: pd.DataFrame, y: pd.DataFrame) -> List[OWLObjectIntersectionOf]:
         """ Construct an OWL class expression from a decision tree"""

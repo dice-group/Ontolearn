@@ -118,14 +118,14 @@ kb = KnowledgeBase(path=data_file)
 onto = kb.ontology
 manager = onto.get_owl_ontology_manager()
 
-manager.add_axiom(onto, OWLEquivalentObjectPropertiesAxiom([r6, r5]))
-manager.add_axiom(onto, OWLEquivalentObjectPropertiesAxiom([r5, r6]))
-manager.add_axiom(onto, OWLObjectPropertyDomainAxiom(r1, ST))
+onto.add_axiom(OWLEquivalentObjectPropertiesAxiom([r6, r5]))
+onto.add_axiom(OWLEquivalentObjectPropertiesAxiom([r5, r6]))
+onto.add_axiom(OWLObjectPropertyDomainAxiom(r1, ST))
 
-manager.add_axiom(onto, OWLSubClassOfAxiom(R, r5Q))
-manager.add_axiom(onto, OWLSubClassOfAxiom(ST, U))
+onto.add_axiom(OWLSubClassOfAxiom(R, r5Q))
+onto.add_axiom(OWLSubClassOfAxiom(ST, U))
 
-# manager.save_ontology(onto, IRI.create('file:/' + 'test' + '.owl'))
+# onto.save(IRI.create('file:/' + 'test' + '.owl'))
 
 base_reasoner = OntologyReasoner(onto)
 # reasoner = FastInstanceCheckerReasoner(

@@ -1,12 +1,12 @@
 [![Coverage](https://img.shields.io/badge/coverage-95%25-green)](https://ontolearn-docs-dice-group.netlify.app/usage/09_further_resources#code-coverage)
-[![Pypi](https://img.shields.io/badge/pypi-0.7.3-blue)](https://pypi.org/project/ontolearn/0.7.3/)
-[![Docs](https://img.shields.io/badge/documentation-0.7.3-yellow)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
-
+[![Pypi](https://img.shields.io/badge/pypi-0.7.4-blue)](https://pypi.org/project/ontolearn/0.7.4/)
+[![Docs](https://img.shields.io/badge/documentation-0.7.4-yellow)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
+[![Python](https://img.shields.io/badge/python-3.10.13+-4584b6)](https://www.python.org/downloads/release/python-31013/)
 &nbsp;
 
-![Ontolearn](docs/images/Ontolearn_logo.png)
+![Ontolearn](docs/_static/images/Ontolearn_logo.png)
 
-# Ontolearn: Learning OWL Class Expression
+# Ontolearn: Learning OWL Class Expressions
 
 *Ontolearn* is an open-source software library for learning owl class expressions at large scale.
 
@@ -15,7 +15,7 @@ $E^+$ and $E^-$, learning [OWL Class expression](https://www.w3.org/TR/owl2-synt
 
 $$\forall p \in E^+\ \mathcal{K} \models H(p) \wedge \forall n \in E^-\ \mathcal{K} \not \models H(n).$$
 
-To tackle this supervised learnign problem, ontolearn offers many symbolic, neuro-sybmoloc and deep learning based Learning algorithms: 
+To tackle this supervised learning problem, ontolearn offers many symbolic, neuro-symbolic and deep learning based Learning algorithms: 
 - **Drill** &rarr; [Neuro-Symbolic Class Expression Learning](https://www.ijcai.org/proceedings/2023/0403.pdf)
 - **EvoLearner** &rarr; [EvoLearner: Learning Description Logics with Evolutionary Algorithms](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
 - **NCES2** &rarr; (soon) [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
@@ -97,8 +97,12 @@ weighted avg       1.00      1.00      1.00         4
 
 ## Learning OWL Class Expression over DBpedia
 ```python
+from ontolearn.learners import TDL
+from ontolearn.triple_store import TripleStore
+from ontolearn.learning_problem import PosNegLPStandard
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy import owl_expression_to_sparql, owl_expression_to_dl
 from ontolearn.utils.static_funcs import save_owl_class_expressions
-
 # (1) Initialize Triplestore
 kb = TripleStore(url="http://dice-dbpedia.cs.upb.de:9080/sparql")
 # (3) Initialize a learner.
@@ -265,7 +269,7 @@ wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && 
 # Download weights for some model for few tests
 wget https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip -O ./NCESData.zip && unzip NCESData.zip && rm NCESData.zip
 wget https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip && unzip CLIPData.zip && rm CLIPData.zip 
-pytest -p no:warnings -x # Running 80 tests takes ~ 11 mins
+pytest -p no:warnings -x # Running 76 tests takes ~ 17 mins
 ```
 
 

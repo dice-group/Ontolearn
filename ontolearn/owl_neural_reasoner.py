@@ -228,41 +228,32 @@ class TripleStoreNeuralReasoner:
         Tuple[
             Tuple[OWLNamedIndividual, OWLProperty, OWLClass],
             Tuple[OWLObjectProperty, OWLObjectProperty, OWLNamedIndividual],
-            Tuple[OWLObjectProperty, OWLDataProperty, OWLLiteral],
-        ],
-        None,
-        None,
-    ]:
+            Tuple[OWLObjectProperty, OWLDataProperty, OWLLiteral]], None,None ]:
+        # Initialize an owl named individual object.
         subject_ = OWLNamedIndividual(str_iri)
-        # for p == type
+        # Return a triple indicating the type.
         for cl in self.get_type_individuals(str_iri):
-            yield (
-                subject_,
-                OWLProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
-                cl,
-            )
+            yield subject_,OWLProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), cl
 
-        # for p == object property
+        # Return a triple based on an object property.
         for op in self.object_properties_in_signature():
             for o in self.get_object_property_values(str_iri, op):
                 yield subject_, op, o
 
-        # for p == data property
+        # Return a triple based on a data property.
         for dp in self.data_properties_in_signature():  # pragma: no cover
             for l in self.get_data_property_values(str_iri, dp):
                 yield subject_, dp, l
 
     def classes_in_signature(
-            self, confidence_threshold: float = None
-    ) -> Generator[OWLClass, None, None]:
+            self, confidence_threshold: float = None) -> Generator[OWLClass, None, None]:
         if self.inferred_named_owl_classes is None:
             seen_classes = set()
             for prediction in self.get_predictions(
                     h=None,
                     r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
                     t="http://www.w3.org/2002/07/owl#Class",
-                    confidence_threshold=confidence_threshold,
-            ):
+                    confidence_threshold=confidence_threshold):
                 try:
                     owl_class = OWLClass(prediction[0])
                     seen_classes.add(owl_class)
@@ -279,17 +270,20 @@ class TripleStoreNeuralReasoner:
             self, confidence_threshold: float = None
     ) -> Generator[OWLClass, None, None]:  # pragma: no cover
         """At least it has single subclass and there is no superclass"""
-        for _class in self.classes_in_signature(confidence_threshold):
-            for concept in self.get_direct_parents(_class, confidence_threshold):
+
+        for c in self.classes_in_signature(confidence_threshold):
+            for x in self.get_direct_parents(c, confidence_threshold):
+                # Ignore c if (c subclass x) \in KG.
                 break
             else:
                 # checks if subconcepts is not empty -> there is at least one subclass
+                # c should have at least a single subclass.
                 if subconcepts := list(
                         self.subconcepts(
-                            named_concept=_class, confidence_threshold=confidence_threshold
+                            named_concept=c, confidence_threshold=confidence_threshold
                         )
                 ):
-                    yield _class
+                    yield c
 
     def least_general_named_concepts(
             self, confidence_threshold: float = None
@@ -416,7 +410,6 @@ class TripleStoreNeuralReasoner:
                 for individual in common_individuals:
                     yield individual
             """
-
         elif isinstance(expression, OWLObjectAllValuesFrom):
             """
             Given an OWLObjectAllValuesFrom ∀ r.C, retrieve its instances => 
@@ -435,8 +428,6 @@ class TripleStoreNeuralReasoner:
                     to_yield_individuals.add(individual)
 
             yield from to_yield_individuals
-
-
         elif isinstance(expression, OWLObjectMinCardinality) or isinstance(expression, OWLObjectSomeValuesFrom):
             #TODO: change to min cardinality
             """
@@ -473,8 +464,13 @@ class TripleStoreNeuralReasoner:
                         yield result
 
         elif isinstance(expression, OWLObjectMaxCardinality):
+            object_property: OWLObjectProperty
             object_property = expression.get_property()
+
+            filler_expression:OWLClassExpression
             filler_expression = expression.get_filler()
+
+            cardinality:int
             cardinality = expression.get_cardinality()
 
             object_individuals = set(self.instances(filler_expression, confidence_threshold))
@@ -526,11 +522,8 @@ class TripleStoreNeuralReasoner:
             try:
                 for cl in self.classes_in_signature():
                     predictions = self.get_predictions(
-                        h=None,
-                        r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-                        t=cl.str,
-                        confidence_threshold=self.gamma,
-                    )
+                        h=None, r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type", t=cl.str,
+                        confidence_threshold=self.gamma)
                     for prediction in predictions:
                         try:
                             owl_named_individual = OWLNamedIndividual(prediction[0])
@@ -689,11 +682,11 @@ class TripleStoreNeuralReasoner:
 
     def get_individuals_with_object_property(
             self,
-            object_property: OWLObjectProperty,
-            obj: OWLClass,
-            confidence_threshold: float = None,
-    ) -> Generator[OWLNamedIndividual, None, None]:
+            object_property: OWLObjectProperty, obj: OWLClass, confidence_threshold: float = None ) \
+            -> Generator[OWLNamedIndividual, None, None]:
+
         is_inverse = isinstance(object_property, OWLObjectInverseOf)
+
         if is_inverse:
             object_property = object_property.get_inverse()
 

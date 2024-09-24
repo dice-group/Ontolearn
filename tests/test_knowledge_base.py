@@ -143,13 +143,13 @@ class KnowledgeBaseTest(unittest.TestCase):
 
         # indirect object property values of an individual
         super_in_bond = OWLObjectProperty(IRI.create(self.namespace, 'super_inBond'))
-        self.mgr.add_axiom(self.onto, OWLSubObjectPropertyOfAxiom(self.in_bond, super_in_bond))
+        self.onto.add_axiom(OWLSubObjectPropertyOfAxiom(self.in_bond, super_in_bond))
         inds = frozenset(self.kb.get_object_property_values(self.bond5225, super_in_bond, direct=False))
         true_inds = {self.d91_32, self.d91_17}
         self.assertEqual(true_inds, inds)
         inds = frozenset(self.kb.get_object_property_values(self.bond5225, super_in_bond, direct=True))
         self.assertEqual(frozenset(), inds)
-        self.mgr.remove_axiom(self.onto, OWLSubObjectPropertyOfAxiom(self.in_bond, super_in_bond))
+        self.onto.remove_axiom(OWLSubObjectPropertyOfAxiom(self.in_bond, super_in_bond))
 
         # data property values of an individual
         values = frozenset(self.kb.get_data_property_values(self.d91_32, self.charge, direct=True))
@@ -158,13 +158,13 @@ class KnowledgeBaseTest(unittest.TestCase):
 
         # indirect data property values of an individual
         super_charge = OWLDataProperty(IRI.create(self.namespace, 'super_charge'))
-        self.mgr.add_axiom(self.onto, OWLSubDataPropertyOfAxiom(self.charge, super_charge))
+        self.onto.add_axiom(OWLSubDataPropertyOfAxiom(self.charge, super_charge))
         values = frozenset(self.kb.get_data_property_values(self.d91_32, super_charge, direct=False))
         true_values = {OWLLiteral(0.146)}
         self.assertEqual(true_values, values)
         values = frozenset(self.kb.get_data_property_values(self.d91_32, super_charge, direct=True))
         self.assertEqual(frozenset(), values)
-        self.mgr.remove_axiom(self.onto, OWLSubDataPropertyOfAxiom(self.charge, super_charge))
+        self.onto.remove_axiom(OWLSubDataPropertyOfAxiom(self.charge, super_charge))
 
         # object properties of an individual
         properties = frozenset(self.kb.get_object_properties_for_ind(self.bond5225, direct=True))
@@ -172,14 +172,14 @@ class KnowledgeBaseTest(unittest.TestCase):
         self.assertEqual(true_properties, properties)
 
         # indirect object properties of an individual
-        self.mgr.add_axiom(self.onto, OWLSubObjectPropertyOfAxiom(self.in_bond, self.has_bond))
+        self.onto.add_axiom(OWLSubObjectPropertyOfAxiom(self.in_bond, self.has_bond))
         properties = frozenset(self.kb.get_object_properties_for_ind(self.bond5225, direct=False))
         true_properties = {self.in_bond, self.has_bond}
         self.assertEqual(true_properties, properties)
         properties = frozenset(self.kb.get_object_properties_for_ind(self.bond5225, direct=True))
         true_properties = {self.in_bond}
         self.assertEqual(true_properties, properties)
-        self.mgr.remove_axiom(self.onto, OWLSubObjectPropertyOfAxiom(self.in_bond, self.has_bond))
+        self.onto.remove_axiom(OWLSubObjectPropertyOfAxiom(self.in_bond, self.has_bond))
 
         # data properties of an individual
         properties = frozenset(self.kb.get_data_properties_for_ind(self.d91_32, direct=True))
@@ -187,14 +187,14 @@ class KnowledgeBaseTest(unittest.TestCase):
         self.assertEqual(true_properties, properties)
 
         # indirect data properties of an individual
-        self.mgr.add_axiom(self.onto, OWLSubDataPropertyOfAxiom(self.charge, self.act))
+        self.onto.add_axiom(OWLSubDataPropertyOfAxiom(self.charge, self.act))
         properties = frozenset(self.kb.get_data_properties_for_ind(self.d91_32, direct=False))
         true_properties = {self.charge, self.act}
         self.assertEqual(true_properties, properties)
         properties = frozenset(self.kb.get_data_properties_for_ind(self.d91_32, direct=True))
         true_properties = {self.charge}
         self.assertEqual(true_properties, properties)
-        self.mgr.remove_axiom(self.onto, OWLSubDataPropertyOfAxiom(self.charge, self.act))
+        self.onto.remove_axiom(OWLSubDataPropertyOfAxiom(self.charge, self.act))
 
     def test_ignore(self):
         concepts_to_ignore = {self.bond1, self.compound}
