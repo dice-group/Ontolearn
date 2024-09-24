@@ -15,7 +15,6 @@ from collections import Counter, defaultdict, OrderedDict
 from typing import List
 import functools
 
-from memory_profiler import profile, memory_usage  # todo: remove this line
 # Neural Reasoner
 class TripleStoreNeuralReasoner:
     """ OWL Neural Reasoner uses a neural link predictor to retrieve instances of an OWL Class Expression"""
