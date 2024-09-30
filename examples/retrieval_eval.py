@@ -57,6 +57,7 @@ def execute(args):
     object_properties_and_inverse = object_properties.union(object_properties_inverse)
     # (6) NC: Named owl concepts.
     nc = {i for i in symbolic_kb.get_concepts()}
+
     if args.ratio_sample_nc:
         # (6.1) Subsample if required.
         nc = {i for i in random.sample(population=list(nc), k=max(1, int(len(nc) * args.ratio_sample_nc)))}
@@ -65,6 +66,7 @@ def execute(args):
     nnc = {i.get_object_complement_of() for i in nc}
     # (8) UNNC: NC UNION NC⁻.
     unnc = nc.union(nnc)
+
     # (9) Retrieve 10 random Nominals.
     nominals = set(random.sample(symbolic_kb.all_individuals_set(), 3))
     # (10) All Combinations of 3 for Nominals.
@@ -131,15 +133,17 @@ def execute(args):
     # () Converted to list so that the progress bar works.
     concepts = list(
         chain(
-            nc, unions, intersections, nnc, unnc, unions_unnc, intersections_unnc,
+            nc, unions, intersections, nnc, unions_unnc, intersections_unnc,
             exist_unnc, for_all_unnc,
             min_cardinality_unnc_1, min_cardinality_unnc_2, min_cardinality_unnc_3,
             max_cardinality_unnc_1, max_cardinality_unnc_2, max_cardinality_unnc_3,
-            # exist_nominals,
+            exist_nominals,
         )
     )
     # () Shuffled the data so that the progress bar is not influenced by the order of concepts.
+    
     random.shuffle(concepts)
+
     # () Iterate over single OWL Class Expressions in ALCQIHO
     for expression in (tqdm_bar := tqdm(concepts, position=0, leave=True)):
         retrieval_y: Set[str]

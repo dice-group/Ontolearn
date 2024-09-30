@@ -192,14 +192,14 @@ def execute(args):
 
 def get_default_arguments():
     parser = ArgumentParser()
-    parser.add_argument("--path_kg", type=str, default="KGs/Family/family-benchmark_rich_background.owl")
+    parser.add_argument("--path_kg", type=str, default="KGs/Family/father.owl")
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--ratio_sample_nc", type=float, default=None, help="To sample OWL Classes.")
     parser.add_argument("--ratio_sample_object_prob", type=float, default=None, help="To sample OWL Object Properties.")
     parser.add_argument("--path_report", type=str, default="ALCQHI_Retrieval_Incomplete_Results.csv")
     parser.add_argument("--number_of_incomplete_graphs", type = int, default=1)
     parser.add_argument("--level_of_incompleteness", type = float, default=0.1, \
-                        help="Percentage of incompleteness from the original KGs between 0 and 1")
+                        help="Percentage of incompleteness or inconsistency from the original KG between 0 and 1")
     parser.add_argument("--operation", type = str, default= "incomplete", choices=["incomplete", "inconsistent"],\
                         help = "Choose to make the KB incomplete or inconsistent")
     return parser.parse_args()
