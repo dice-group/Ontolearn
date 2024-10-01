@@ -78,9 +78,10 @@ def execute(args):
         list_jaccard_neural = []
         data = []
 
-        # subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path_of_an_incomplete_kgs, "--ratio_sample_nc","0.02", "--ratio_sample_object_prob", "0.2", "--path_report", path_report])
-        
-        subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path_of_an_incomplete_kgs, "--path_report", path_report])
+        if args.sample == "Yes":
+            subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path_of_an_incomplete_kgs, "--ratio_sample_nc","0.02", "--ratio_sample_object_prob", "0.2", "--path_report", path_report])
+        else:
+            subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path_of_an_incomplete_kgs, "--path_report", path_report])
         
         df = pd.read_csv(f"{directory}/ALCQHI_Retrieval_Results.csv", index_col=0)
         
@@ -197,11 +198,12 @@ def get_default_arguments():
     parser.add_argument("--ratio_sample_nc", type=float, default=None, help="To sample OWL Classes.")
     parser.add_argument("--ratio_sample_object_prob", type=float, default=None, help="To sample OWL Object Properties.")
     parser.add_argument("--path_report", type=str, default="ALCQHI_Retrieval_Incomplete_Results.csv")
-    parser.add_argument("--number_of_incomplete_graphs", type = int, default=1)
-    parser.add_argument("--level_of_incompleteness", type = float, default=0.1, \
+    parser.add_argument("--number_of_incomplete_graphs", type=int, default=1)
+    parser.add_argument("--level_of_incompleteness", type=float, default=0.1, \
                         help="Percentage of incompleteness or inconsistency from the original KG between 0 and 1")
-    parser.add_argument("--operation", type = str, default= "incomplete", choices=["incomplete", "inconsistent"],\
+    parser.add_argument("--operation", type=str, default="incomplete", choices=["incomplete", "inconsistent"],\
                         help = "Choose to make the KB incomplete or inconsistent")
+    parser.add_argument("--sample", type=str, default="No", choices=["No", "Yes"], help = "Sample if needed")
     return parser.parse_args()
 
 

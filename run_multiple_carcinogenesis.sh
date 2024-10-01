@@ -1,4 +1,5 @@
 #!/bin/bash
+#You can directly choose the needed operation inside the file examples/retrieval_eval_under_incomplete.py.
 
 # Define the path to your Python script
 PYTHON_SCRIPT="examples/retrieval_eval_under_incomplete.py"
@@ -8,7 +9,7 @@ path_kg="KGs/Carcinogenesis/carcinogenesis.owl"
 NUMBER_OF_INCOMPLETE_GRAPHS=5
 
 # Define the list of levels of incompleteness
-LEVELS_OF_INCOMPLETENESS=("0.8" "0.9")
+LEVELS_OF_INCOMPLETENESS=("0.4" "0.8" "0.9")
 # LEVELS_OF_INCOMPLETENESS=("0.1")
 
 # Iterate over each level of incompleteness
