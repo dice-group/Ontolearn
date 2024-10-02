@@ -11,7 +11,7 @@ from typing import Generator, Tuple
 from dicee.knowledge_graph_embeddings import KGE
 import os
 import re
-from collections import Counter
+from collections import Counter, OrderedDict
 
 
 # Neural Reasoner
@@ -21,7 +21,10 @@ class TripleStoreNeuralReasoner:
     gamma: float
 
     def __init__(self, path_of_kb: str = None,
-                 path_neural_embedding: str = None, gamma: float = 0.25):
+                 path_neural_embedding: str = None, gamma: float = 0.25, max_cache_size: int = 2**20):
+
+        self._prediction_cache = OrderedDict()
+        self._max_cache_size = max_cache_size
 
         if path_neural_embedding:  # pragma: no cover
             assert os.path.isdir(
@@ -114,6 +117,16 @@ class TripleStoreNeuralReasoner:
         assert r is None or isinstance(r, str), "Relation must be a string."
         assert t is None or isinstance(t, str), "Tail entity must be a string."
 
+        cache_key = (h, r, t, confidence_threshold)
+        # check if concept is already cached
+        if cache_key in self._prediction_cache:
+            # Move the cache key to the end of the OrderedDict
+            self._prediction_cache.move_to_end(cache_key)
+            for prediction, confidence in self._prediction_cache[cache_key]:
+                yield prediction, confidence
+            return
+
+        results = []
         if h is not None:
             if (self.model.entity_to_idx.get(h, None)) is None:
                 return
@@ -137,14 +150,21 @@ class TripleStoreNeuralReasoner:
             topk = len(self.model.entity_to_idx)
         try:
             predictions = self.model.predict_topk(h=h, r=r, t=t, topk=topk)
-            for prediction in predictions:
-                confidence = prediction[1]
-                predicted_iri_str = prediction[0]
+            for predicted_iri_str, confidence in predictions:
                 if confidence >= confidence_threshold:
-                    yield predicted_iri_str, confidence
+                    results.append((predicted_iri_str, confidence))
                 else:
-                    #todo: replace with return or break?
-                    continue
+                    break
+            # cache result
+            self._prediction_cache[cache_key] = results
+            # Move key to end to mark as recently used
+            self._prediction_cache.move_to_end(cache_key)
+            # If the cache is full, remove the first key
+            if len(self._prediction_cache) > self._max_cache_size:
+                self._prediction_cache.popitem(last=False)
+
+            for prediction, confidence in results:
+                yield prediction, confidence
         except Exception as e:  # pragma: no cover
             print(f"Error at getting predictions: {e}")
 
