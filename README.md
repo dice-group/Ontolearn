@@ -5,15 +5,13 @@ This repository provides the implementation of our reasoner EBR. With this repos
 
 ## Installation
 
-
 ```shell
-git clone https://github.com/dice-group/Ontolearn.git -b retrieval_eval_incomplete
 # To create a virtual python env with conda 
 conda create -n venv python=3.10.14 --no-default-packages && conda activate venv && pip install -e . && cd Ontolearn
-# To download knowledge graphs
-wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && unzip KGs.zip
+# To download the benchmark datasets knowledge graphs
+wget https://shorturl.at/0T4WJ -O ./KGs.zip && unzip KGs.zip
 ```
-Other datasets used in the paper can be found [here](https://files.dice-research.org/projects/NCES/NCES/datasets.zip)
+Other datasets used in the paper can be found [here](https://shorturl.at/v28n0)
 
 ## Retrieval results from Table 2 
 
