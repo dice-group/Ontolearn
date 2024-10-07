@@ -5,7 +5,8 @@ from argparse import ArgumentParser
 from ontolearn.knowledge_base import KnowledgeBase
 import pandas as pd
 from typing import Set
-from incomplete_kb import *
+import time
+from incomplete_kb import make_kb_incomplete, make_kb_inconsistent
 import os
 from ontolearn.utils import jaccard_similarity
 import subprocess
@@ -20,7 +21,7 @@ import pandas as pd
 
 
 # [] Create sub/incomplete KGs
-def generated_incomplete_kg(kb_path: str, directory: str, n: int, ratio: float, operation: str) -> Set[str]:
+def generate_subgraphs(kb_path: str, directory: str, n: int, ratio: float, operation: str) -> Set[str]:
 
     name = kb_path.split('/')[-1].split('.')[0]
     rate = int(ratio * 100)
@@ -60,13 +61,13 @@ def execute(args):
     namespace = list(symbolic_kb.ontology.classes_in_signature())[0].iri.get_namespace()
     parser = DLSyntaxParser(namespace)
     name_KG = args.path_kg.split('/')[-1].split('.')[0]
-    level_of_incompleteness_str = str(args.level_of_incompleteness).replace('.', '_')
-    directory = f"{args.operation}_{name_KG}_{level_of_incompleteness_str}"
-    paths_of_incomplete_kgs = generated_incomplete_kg(
+    ratio_str = str(args.ratio).replace('.', '_')
+    directory = f"{args.operation}_{name_KG}_{ratio_str}"
+    paths_of_subgraphs = generate_subgraphs(
         kb_path=args.path_kg, 
         directory=directory,
-        n=args.number_of_incomplete_graphs, 
-        ratio=args.level_of_incompleteness,
+        n=args.number_of_subgraphs, 
+        ratio=args.ratio,
         operation=args.operation
     )
     path_report = f"{directory}/ALCQHI_Retrieval_Results.csv"
@@ -74,20 +75,21 @@ def execute(args):
     expressions = None
     all_results = []
 
-    for path_of_an_incomplete_kgs in paths_of_incomplete_kgs:
+    for path in paths_of_subgraphs:
+
         list_jaccard_neural = []
         data = []
 
         if args.sample == "Yes":
-            subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path_of_an_incomplete_kgs, "--ratio_sample_nc","0.02", "--ratio_sample_object_prob", "0.2", "--path_report", path_report])
+            subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path, "--ratio_sample_nc","0.2", "--ratio_sample_object_prob", "0.1", "--path_report", path_report])
         else:
-            subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path_of_an_incomplete_kgs, "--path_report", path_report])
+            subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path, "--path_report", path_report])
         
         df = pd.read_csv(f"{directory}/ALCQHI_Retrieval_Results.csv", index_col=0)
         
         expressions = {i for i in df["Expression"].to_list()}
 
-        ontology_path = path_of_an_incomplete_kgs
+        ontology_path = path
         reasoners = ['HermiT', 'Pellet', 'JFact', 'Openllet']
         reasoner_jaccards = {reasoner: [] for reasoner in reasoners}
         reasoner_times = {reasoner: [] for reasoner in reasoners}  # To store running times
@@ -108,7 +110,7 @@ def execute(args):
                 list_jaccard_neural.append(jaccard_sim_neural)
                 
                 result_row = {
-                    "Incomplete_KG": path_of_an_incomplete_kgs.split('/')[-1],
+                    "Incomplete_KG": path.split('/')[-1],
                     "Expression": expression,
                     "Type": type(parser.parse_expression(expression)).__name__,
                     "Jaccard_EBR": jaccard_sim_neural,
@@ -146,10 +148,10 @@ def execute(args):
             avg_jaccard_reasoners = {reasoner: sum(reasoner_jaccards[reasoner]) / len(reasoner_jaccards[reasoner]) for reasoner in reasoners}
             avg_time_reasoners = {reasoner: sum(reasoner_times[reasoner]) / len(reasoner_times[reasoner]) for reasoner in reasoners}
 
-            print(f"Average Jaccard neural ({path_of_an_incomplete_kgs}):", avg_jaccard_neural)
+            print(f"Average Jaccard neural ({path}):", avg_jaccard_neural)
             for reasoner, avg_jaccard in avg_jaccard_reasoners.items():
-                print(f"Average Jaccard {reasoner} ({path_of_an_incomplete_kgs}):", avg_jaccard)
-                print(f"Average Runtime {reasoner} ({path_of_an_incomplete_kgs}):", avg_time_reasoners[reasoner])
+                print(f"Average Jaccard {reasoner} ({path}):", avg_jaccard)
+                print(f"Average Runtime {reasoner} ({path}):", avg_time_reasoners[reasoner])
 
         else:
 
@@ -165,7 +167,7 @@ def execute(args):
                 list_jaccard_neural.append(jaccard_sim_neural)
                 
                 result_row = {
-                    "Incomplete_KG": path_of_an_incomplete_kgs.split('/')[-1],
+                    "Subgraphs": path.split('/')[-1],
                     "Expression": expression,
                     "Type": type(parser.parse_expression(expression)).__name__,
                     "Jaccard_EBR": jaccard_sim_neural,
@@ -193,13 +195,13 @@ def execute(args):
 
 def get_default_arguments():
     parser = ArgumentParser()
-    parser.add_argument("--path_kg", type=str, default="KGs/Family/father.owl")
+    parser.add_argument("--path_kg", type=str, default="KGs/Family/family-benchmark_rich_background.owl")
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--ratio_sample_nc", type=float, default=None, help="To sample OWL Classes.")
     parser.add_argument("--ratio_sample_object_prob", type=float, default=None, help="To sample OWL Object Properties.")
     parser.add_argument("--path_report", type=str, default="ALCQHI_Retrieval_Incomplete_Results.csv")
-    parser.add_argument("--number_of_incomplete_graphs", type=int, default=1)
-    parser.add_argument("--level_of_incompleteness", type=float, default=0.1, \
+    parser.add_argument("--number_of_subgraphs", type=int, default=1)
+    parser.add_argument("--ratio", type=float, default=0.1, \
                         help="Percentage of incompleteness or inconsistency from the original KG between 0 and 1")
     parser.add_argument("--operation", type=str, default="incomplete", choices=["incomplete", "inconsistent"],\
                         help = "Choose to make the KB incomplete or inconsistent")

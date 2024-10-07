@@ -46,22 +46,29 @@ def execute(args):
     ###################################################################
     # GENERATE ALCQ CONCEPTS TO EVALUATE RETRIEVAL PERFORMANCES
     # (3) R: Extract object properties.
-    object_properties = {i for i in symbolic_kb.get_object_properties()}
+    object_properties = sorted({i for i in symbolic_kb.get_object_properties()})
+    
     # (3.1) Subsample if required.
     if args.ratio_sample_object_prob:
         object_properties = {i for i in random.sample(population=list(object_properties),
-                                                      k=max(1, int(len(object_properties) * args.ratio_sample_nc)))}
+                                                      k=max(1, int(len(object_properties) * args.ratio_sample_object_prob)))}
+
+    object_properties = set(object_properties)    
+    
     # (4) R⁻: Inverse of object properties.
     object_properties_inverse = {i.get_inverse_property() for i in object_properties}
+
     # (5) R*: R UNION R⁻.
     object_properties_and_inverse = object_properties.union(object_properties_inverse)
     # (6) NC: Named owl concepts.
-    nc = {i for i in symbolic_kb.get_concepts()}
+    nc = sorted({i for i in symbolic_kb.get_concepts()})
+
 
     if args.ratio_sample_nc:
         # (6.1) Subsample if required.
         nc = {i for i in random.sample(population=list(nc), k=max(1, int(len(nc) * args.ratio_sample_nc)))}
 
+    nc = set(nc) # return to a set
     # (7) NC⁻: Complement of NC.
     nnc = {i.get_object_complement_of() for i in nc}
     # (8) UNNC: NC UNION NC⁻.
@@ -133,15 +140,15 @@ def execute(args):
     # () Converted to list so that the progress bar works.
     concepts = list(
         chain(
-            nc, unions, intersections, nnc, unions_unnc, intersections_unnc,
-            exist_unnc, for_all_unnc,
-            min_cardinality_unnc_1, min_cardinality_unnc_2, min_cardinality_unnc_3,
-            max_cardinality_unnc_1, max_cardinality_unnc_2, max_cardinality_unnc_3,
-            exist_nominals,
+            nc, unions, intersections, nnc, #unions_unnc, intersections_unnc,
+            # exist_unnc, for_all_unnc,
+            # min_cardinality_unnc_1, min_cardinality_unnc_2, min_cardinality_unnc_3,
+            # max_cardinality_unnc_1, max_cardinality_unnc_2, max_cardinality_unnc_3,
+            # exist_nominals,
         )
     )
     # () Shuffled the data so that the progress bar is not influenced by the order of concepts.
-    
+
     random.shuffle(concepts)
 
     # () Iterate over single OWL Class Expressions in ALCQIHO
