@@ -140,11 +140,11 @@ def execute(args):
     # () Converted to list so that the progress bar works.
     concepts = list(
         chain(
-            nc, unions, intersections, nnc, #unions_unnc, intersections_unnc,
-            # exist_unnc, for_all_unnc,
-            # min_cardinality_unnc_1, min_cardinality_unnc_2, min_cardinality_unnc_3,
-            # max_cardinality_unnc_1, max_cardinality_unnc_2, max_cardinality_unnc_3,
-            # exist_nominals,
+            nc, unions, intersections, nnc, unions_unnc, intersections_unnc,
+            exist_unnc, for_all_unnc,
+            min_cardinality_unnc_1, min_cardinality_unnc_2, min_cardinality_unnc_3,
+            max_cardinality_unnc_1, max_cardinality_unnc_2, max_cardinality_unnc_3,
+            exist_nominals,
         )
     )
     # () Shuffled the data so that the progress bar is not influenced by the order of concepts.
@@ -209,8 +209,8 @@ def get_default_arguments():
     parser.add_argument("--endpoint_triple_store", type=str, default=None)
     parser.add_argument("--gamma", type=float, default=0.9)
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--ratio_sample_nc", type=float, default=None, help="To sample OWL Classes.")
-    parser.add_argument("--ratio_sample_object_prob", type=float, default=None, help="To sample OWL Object Properties.")
+    parser.add_argument("--ratio_sample_nc", type=float, default=0.2, help="To sample OWL Classes.")
+    parser.add_argument("--ratio_sample_object_prob", type=float, default=0.1, help="To sample OWL Object Properties.")
     # H is obtained if the forward chain is applied on KG.
     parser.add_argument("--path_report", type=str, default="ALCQHI_Retrieval_Results.csv")
     return parser.parse_args()

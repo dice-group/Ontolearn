@@ -1,6 +1,5 @@
-"""
-TODO: Write few lines of code to run this script and explanations
-"""
+"""python examples/retrieval_eval_under_incomplete.py"""
+
 from argparse import ArgumentParser
 from ontolearn.knowledge_base import KnowledgeBase
 import pandas as pd
@@ -22,6 +21,27 @@ import pandas as pd
 
 # [] Create sub/incomplete KGs
 def generate_subgraphs(kb_path: str, directory: str, n: int, ratio: float, operation: str) -> Set[str]:
+
+    """
+    Generates a specified number of paths of subgraphs (incomplete or noisy knowledge graphs)
+    by applying either the "incomplete" or "inconsistent" operation from the functions make_kb_incomplete and
+    make_kb_inconsistent to the given KB.
+
+    Inputs:
+    ---------------
+
+        kb_path (str): The path to the input KB file.
+        directory (str): The directory where the generated subgraphs will be stored.
+        n (int): The number of subgraphs to generate.
+        ratio (float): The ratio of elements to modify within the KB (as a percentage).
+        operation (str): The type of operation to perform on the KB. Expected values are
+                        "incomplete" or "inconsistent", which define the type of subgraph to generate.
+
+    Output:
+    ---------------
+
+        Set[str]: A set containing the file paths of all the generated subgraphs.
+    """
 
     name = kb_path.split('/')[-1].split('.')[0]
     rate = int(ratio * 100)
@@ -81,7 +101,7 @@ def execute(args):
         data = []
 
         if args.sample == "Yes":
-            subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path, "--ratio_sample_nc","0.2", "--ratio_sample_object_prob", "0.1", "--path_report", path_report])
+            subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path, "--ratio_sample_nc","0.1", "--ratio_sample_object_prob", "0.2", "--path_report", path_report])
         else:
             subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path, "--path_report", path_report])
         
