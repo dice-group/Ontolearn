@@ -36,12 +36,14 @@ from ..triple_store import TripleStore
 from ..learning_problem import PosNegLPStandard
 from ..refinement_operators import LengthBasedRefinement
 from ..learners import Drill, TDL
+from ..concept_learner import NCES
 from ..metrics import F1
 from owlapy.render import DLSyntaxObjectRenderer
 from ..utils.static_funcs import save_owl_class_expressions
 from owlapy import owl_expression_to_dl
 import os
 from ..verbalizer import LLMVerbalizer
+import platform, subprocess
 
 app = FastAPI()
 args = None
@@ -54,8 +56,58 @@ def get_default_arguments():
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--path_knowledge_base", type=str, default=None)
+    parser.add_argument("--path_of_nces_embeddings", type=str, default="./NCESData/")
     parser.add_argument("--endpoint_triple_store", type=str, default=None)
     return parser.parse_args()
+
+
+def get_embedding_path(ftp_link: str, kb_path_arg: str)->str:
+    """
+    ftp_link: ftp link to download data
+    kb_path_arg:local path of an RDF KG
+    """
+
+    def get_kb_name(kb_path_arg):
+        if "family" in kb_path_arg:
+            return "family"
+        elif "carcinogenesis" in kb_path_arg:
+            return "carcinogenesis"
+        elif "mutagenesis" in kb_path_arg:
+            return "mutagenesis"
+        elif "nctrer" in kb_path_arg:
+            return "nctrer"
+        elif "animals" in kb_path_arg:
+            return "animals"
+        elif "lymphography" in kb_path_arg:
+            return "lymphography"
+        elif "semantic_bible" in kb_path_arg:
+            return "semantic_bible"
+        elif "suramin" in kb_path_arg:
+            return "suramin"
+        elif "vicodi" in kb_path_arg:
+            return "vicodi"
+        else:
+            raise ValueError("Knowledge base name is not recognized")
+    kb_name = get_kb_name(kb_path_arg)
+    if not os.path.exists(f"./NCESData/{kb_name}/embeddings/ConEx_entity_embeddings.csv"):
+        file_name = ftp_link.split("/")[-1]
+        
+        if not os.path.exists(os.path.join(os.getcwd(), file_name)):
+            subprocess.run(['curl', '-O', ftp_link])
+
+            if platform.system() == "Windows":
+                subprocess.run(['tar', '-xf', file_name])
+            else:
+                subprocess.run(['unzip', file_name])
+            os.remove(os.path.join(os.getcwd(), file_name))
+
+        embeddings_path = os.path.join(os.getcwd(), file_name[:-4] + '/')
+
+        embeddings_path += f"{kb_name}/embeddings/ConEx_entity_embeddings.csv"
+
+        return embeddings_path
+    else:
+        return f"./NCESData/{kb_name}/embeddings/ConEx_entity_embeddings.csv"
 
 
 @app.get("/")
@@ -89,17 +141,31 @@ def get_drill(data: dict):
         drill.save(directory=data.get("path_to_pretrained_drill", None))
     return drill
 
+def get_nces(data: dict):
+    """ Load NCES """
+    global kb
+    global args
+    nces = NCES(knowledge_base_path=args.path_knowledge_base,
+                path_of_embeddings=get_embedding_path("https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip", args.path_knowledge_base),
+                quality_func=F1(),
+                pretrained_model_name=["LSTM", "GRU", "SetTransformer"],
+                num_predictions=64
+               )
+    return nces
+
 
 def get_tdl(data) -> TDL:
     global kb
     return TDL(knowledge_base=kb)
 
 
-def get_learner(data: dict) -> Union[Drill, TDL]:
+def get_learner(data: dict) -> Union[Drill, TDL, NCES]:
     if data["model"] == "Drill":
         return get_drill(data)
     elif data["model"] == "TDL":
         return get_tdl(data)
+    elif data["model"] == "NCES":
+        return get_nces(data)
     else:
         raise NotImplementedError(f"There is no learner {data['model']} available")
 
@@ -109,8 +175,8 @@ async def cel(data: dict) -> Dict:
     global args
     global kb
     print("######### CEL Arguments ###############")
-    print(f"Knowledgebase/Triplestore:{kb}\n")
-    print(f"Input data:{data}\n")
+    print(f"Knowledgebase/Triplestore: {kb}\n")
+    print(f"Input data: {data}\n")
     print("######### CEL Arguments ###############\n")
     # (1) Initialize OWL CEL and verbalizer
     owl_learner = get_learner(data)
@@ -126,8 +192,10 @@ async def cel(data: dict) -> Dict:
         # ()Learning Process.
         results = []
         learned_owl_expression: OWLClassExpression
-
-        predictions = owl_learner.fit(lp).best_hypotheses(n=data.get("topk", 3))
+        if isinstance(owl_learner, NCES):
+            predictions = owl_learner.fit(lp.pos, lp.neg).best_hypotheses(n=data.get("topk", 3))
+        else:
+            predictions = owl_learner.fit(lp).best_hypotheses(n=data.get("topk", 3))
         if not isinstance(predictions, List):
             predictions = [predictions]
 
@@ -167,9 +235,10 @@ def main():
     elif args.endpoint_triple_store:
         kb = TripleStore(url=args.endpoint_triple_store)
     else:
-        raise RuntimeError("Either --path_knowledge_base or --endpoint_triplestore must be not None")
+        raise RuntimeError("Either --path_knowledge_base or --endpoint_triplestore must not be None")
     uvicorn.run(app, host=args.host, port=args.port)
 
 
 if __name__ == '__main__':
     main()
+

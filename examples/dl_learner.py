@@ -18,6 +18,8 @@ A log file is on the fly generated and detailed results along with the hyperpara
 Author: Caglar Demir
 """
 from ontolearn.binders import DLLearnerBinder
+from owlapy.iri import IRI
+from owlapy.owl_individual import OWLNamedIndividual
 import json
 # (1) Load learning problems
 with open('synthetic_problems.json') as json_file:
@@ -36,9 +38,14 @@ for str_target_concept, examples in settings['problems'].items():
     p = examples['positive_examples']
     n = examples['negative_examples']
 
-    best_pred_celoe = celoe.fit(pos=p, neg=n, max_runtime=1).best_hypothesis()
+    positives = {OWLNamedIndividual(IRI.create(i)) for i in p}
+    negatives = {OWLNamedIndividual(IRI.create(i)) for i in n}
+
+    lp = PosNegLPStandard(pos=positives, neg=positives)
+
+    best_pred_celoe = celoe.fit(lp, max_runtime=1).best_hypothesis()
     print(best_pred_celoe)
-    best_pred_ocel = ocel.fit(pos=p, neg=n, max_runtime=1).best_hypothesis()
+    best_pred_ocel = ocel.fit(lp, max_runtime=1).best_hypothesis()
     print(best_pred_ocel)
-    best_pred_eltl = eltl.fit(pos=p, neg=n, max_runtime=1).best_hypothesis()
+    best_pred_eltl = eltl.fit(lp, max_runtime=1).best_hypothesis()
     print(best_pred_eltl)

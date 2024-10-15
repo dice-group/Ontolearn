@@ -1572,7 +1572,7 @@ class NCES(BaseNCES):
         elif len(self.best_predictions) == 1 or n == 1:
             return self.best_predictions[0].concept
         else:
-            return self.best_predictions[:n]
+            return [best.concept for best in self.best_predictions[:n]]
 
     def convert_to_list_str_from_iterable(self, data):  # pragma: no cover
         target_concept_str, examples = data[0], data[1:]
