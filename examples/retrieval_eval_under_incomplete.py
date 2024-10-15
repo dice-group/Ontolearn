@@ -1,11 +1,21 @@
-"""python examples/retrieval_eval_under_incomplete.py"""
+"""The goal of this script is to perform retrieval task on inconsistent or incomplete KB. 
+   Given and input KB, we first generate a number of subgraphs that are either incomplete 
+   or inconsistent. Each subgraph is then evaluated by running a retrieval task, using
+   using a neural method or different symbolic reasoners (HermiT, Pellet, JFact, and Openllet).
+   for each subgraph, the script computes and records Jaccard similarity scores between 
+   the retrieval results of each reasoner and the expected goal, as well as their runtime. 
+   The result is then save as a csv file for further investigation.
+   
+   To run the script: python examples/retrieval_eval_under_incomplete.py"""
+
+
 
 from argparse import ArgumentParser
 from ontolearn.knowledge_base import KnowledgeBase
 import pandas as pd
 from typing import Set
 import time
-from incomplete_kb import make_kb_incomplete, make_kb_inconsistent
+from ontolearn.incomplete_kb import make_kb_incomplete, make_kb_inconsistent
 import os
 from ontolearn.utils import jaccard_similarity
 import subprocess
@@ -19,7 +29,7 @@ from owlapy.owlapi_adaptor import OWLAPIAdaptor
 import pandas as pd
 
 
-# [] Create sub/incomplete KGs
+# Create incomplete/noisy KGs
 def generate_subgraphs(kb_path: str, directory: str, n: int, ratio: float, operation: str) -> Set[str]:
 
     """

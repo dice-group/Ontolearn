@@ -62,6 +62,8 @@ def execute(args):
     object_properties_and_inverse = object_properties.union(object_properties_inverse)
     # (6) NC: Named owl concepts.
     nc = sorted({i for i in symbolic_kb.get_concepts()})
+   
+
 
 
     if args.ratio_sample_nc:
@@ -182,7 +184,7 @@ def execute(args):
         )
     # () Read the data into pandas dataframe
     df = pd.DataFrame(data)
-    # assert df["Jaccard Similarity"].mean() == 1.0
+    assert df["Jaccard Similarity"].mean() >= args.min_jaccard_similarity
     # () Save the experimental results into csv file.
     df.to_csv(args.path_report)
     del df
@@ -211,6 +213,7 @@ def get_default_arguments():
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--ratio_sample_nc", type=float, default=0.2, help="To sample OWL Classes.")
     parser.add_argument("--ratio_sample_object_prob", type=float, default=0.1, help="To sample OWL Object Properties.")
+    parser.add_argument("--min_jaccard_similarity", type=float, default=0.0, help="Minimum Jaccard similarity to be achieve by the reasoner")
     # H is obtained if the forward chain is applied on KG.
     parser.add_argument("--path_report", type=str, default="ALCQHI_Retrieval_Results.csv")
     return parser.parse_args()
