@@ -373,13 +373,11 @@ class TripleStoreReasoner(OWLReasonerEx):
                 )
                 yield from get_results_from_ts(self.url, query, OWLClass)
             else:
-                raise NotImplementedError(
-                    "Equivalent classes for complex class expressions is not implemented"
-                )
+                print(f"Equivalent classes for complex class expressions is not implemented\t{ce}")
+                # raise NotImplementedError(f"Equivalent classes for complex class expressions is not implemented\t{ce}")
+                yield from {}
         else:
-            raise NotImplementedError(
-                "Finding equivalent complex classes is not implemented"
-            )
+            raise NotImplementedError("Finding equivalent complex classes is not implemented")
 
     def disjoint_classes(
             self, ce: OWLClassExpression, only_named: bool = True
