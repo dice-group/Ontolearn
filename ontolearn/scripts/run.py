@@ -148,7 +148,7 @@ def get_nces(data: dict):
     nces = NCES(knowledge_base_path=args.path_knowledge_base,
                 path_of_embeddings=get_embedding_path("https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip", args.path_knowledge_base),
                 quality_func=F1(),
-                pretrained_model_name=["LSTM", "GRU", "SetTransformer"],
+                learner_names=["LSTM", "GRU", "SetTransformer"],
                 num_predictions=64
                )
     return nces
