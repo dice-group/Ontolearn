@@ -178,12 +178,11 @@ class TDL:
                  plot_tree: bool = False,
                  plot_embeddings: bool = False,
                  plot_feature_importance: bool = False,
-                 verbose: int = 1):
+                 verbose: int = 10):
 
         assert use_inverse is False, "use_inverse not implemented"
         assert use_data_properties is False, "use_data_properties not implemented"
         assert use_card_restrictions is False, "use_card_restrictions not implemented"
-
         self.use_nominals = use_nominals
         self.use_card_restrictions = use_card_restrictions
 
@@ -224,35 +223,79 @@ class TDL:
         self.verbose = verbose
         self.data_property_cast = dict()
         self.__classification_report = None
-
         self.X = None
         self.y = None
 
-    def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> List[
-        OWLClassExpression]:
-        features = []
-        for i in make_iterable_verbose(individuals,
+    def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> (
+            Tuple)[Dict[str, OWLClassExpression],Dict[str, str]]:
+        # () Store mappings from str dl concept to owl class expression objects.
+        features = dict()
+        # () Grouped str dl concepts given str individuals.
+        individuals_to_feature_mapping = dict()
+        for owl_named_individual in make_iterable_verbose(individuals,
                                        verbose=self.verbose,
                                        desc="Extracting information about examples"):
-            for expression in self.knowledge_base.abox(individual=i, mode="expression"):
-                features.append(expression)
-        assert len(
-            features) > 0, f"First hop features cannot be extracted. Ensure that there are axioms about the examples."
-        # (5) Obtain unique features from (4).
-        if self.verbose > 0:
-            print("Total extracted features:", len(features))
-        features = set(features)
-        if self.verbose > 0:
-            print("Unique features:", len(features))
-        return list(features)
+            for owl_class_expression in self.knowledge_base.abox(individual=owl_named_individual, mode="expression"):
+                str_dl_concept=owl_expression_to_dl(owl_class_expression)
+                individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
+                if str_dl_concept not in features:
+                    # A mapping from str dl representation to owl object.
+                    features[str_dl_concept] = owl_class_expression
 
-    def construct_sparse_binary_representations(self, features: List[OWLClassExpression],
-                                                examples: List[OWLNamedIndividual]) -> np.array:
+        assert len(features) > 0, f"First hop features cannot be extracted. Ensure that there are axioms about the examples."
+        if self.verbose > 0:
+            print("Unique OWL Class Expressions as features :", len(features))
+        # TODO: Establish an ordering over features
+        # TODO: Iterate over individuals
+        # TODO: For each individual check whether the i-th feature holds for the individual
+        # TODO: If yes, 1.0, otherwise 0.0
+        # TODO:
+        # () Iterate over features/extracted owl expressions.
+        X = []
+
+        features = [ v for k,v in features.items()]
+        for owl_named_individual in make_iterable_verbose(individuals,
+                                       verbose=self.verbose,
+                                       desc="Constructing Training Data"):
+            binary_sparse_representation = []
+
+            features_of_owl_named_individual=individuals_to_feature_mapping[owl_named_individual.str]
+
+            for owl_class_expression in features:
+                if owl_expression_to_dl(owl_class_expression) in features_of_owl_named_individual:
+                    binary_sparse_representation.append(1.0)
+                else:
+                    binary_sparse_representation.append(0.0)
+
+            X.append(binary_sparse_representation)
+        # Iterate o
+        # ()
+        X = np.array(X)
+        return X, features
+
+    def construct_sparse_binary_representations(self,
+                                                features: List[OWLClassExpression],
+                                                examples: List[OWLNamedIndividual], examples_to_features) -> np.array:
         # () Constructing sparse binary vector representations for examples.
         # () Iterate over features/extracted owl expressions.
         X = []
-        for f in features:
+        # ()
+        str_owl_named_individual:str
+        for str_owl_named_individual, list_of_owl_expressions in examples_to_features.items():
+            for kk in list_of_owl_expressions:
+                assert kk in features
+        #  number of rows
+        for i in examples:
+            print(i.str)
+
+        exit(1)
+
+        assert len(X)==len(examples)
+        for f in make_iterable_verbose(features,
+                                       verbose=self.verbose,
+                                       desc="Creating sparse binary representations for the training"):
             # () Retrieve instances belonging to a feature/owl class expression
+            # TODO: Very inefficient.
             feature_retrieval = {_ for _ in self.knowledge_base.individuals(f)}
             # () Add 1.0 if positive example found otherwise 0.
             feature_value_per_example = []
@@ -269,6 +312,8 @@ class TDL:
 
     def create_training_data(self, learning_problem: PosNegLPStandard) -> Tuple[pd.DataFrame, pd.DataFrame]:
         # (1) Initialize ordering over positive and negative examples.
+        if self.verbose > 0:
+            print("Creating a Training Dataset")
         positive_examples: List[OWLNamedIndividual]
         negative_examples: List[OWLNamedIndividual]
         positive_examples = [i for i in learning_problem.pos]
@@ -277,10 +322,11 @@ class TDL:
         y = [1.0 for _ in positive_examples] + [0.0 for _ in negative_examples]
         # (3) Iterate over examples to extract unique features.
         examples = positive_examples + negative_examples
-        features = self.extract_expressions_from_owl_individuals(examples)
-        # (4) Creating a tabular data for the binary classification problem.
-        X = self.construct_sparse_binary_representations(features, examples)
+        # For the sake of convenience. sort features in ascending order of string lengths of DL representations.
+        X, features = self.extract_expressions_from_owl_individuals(examples)
 
+        # (4) Creating a tabular data for the binary classification problem.
+        # X = self.construct_sparse_binary_representations(features, examples, examples_to_features)
         self.features = features
         X = pd.DataFrame(data=X, index=examples, columns=self.features)
         y = pd.DataFrame(data=y, index=examples, columns=["label"])
@@ -369,10 +415,10 @@ class TDL:
             ).fit(X.values, y.values)
             print(grid_search.best_params_)
             self.kwargs_classifier.update(grid_search.best_params_)
-
-        self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(
-            X=X.values, y=y.values
-        )
+        # Training
+        if self.verbose>0:
+            print("Training starts!")
+        self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=X.values, y=y.values)
 
         if self.report_classification:
 
