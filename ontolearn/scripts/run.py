@@ -156,7 +156,7 @@ def get_nces(data: dict):
                     path_of_embeddings=get_embedding_path("https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip", data.get("path_embeddings", None), args.path_knowledge_base),
                     quality_func=F1(),
                     load_pretrained=False,
-                    learner_names=["LSTM", "GRU", "SetTransformer"],
+                    learner_names=["SetTransformer", "LSTM", "GRU"],
                     num_predictions=64
                    )
     # (2) Either load the weights of NCES or train it.
@@ -206,10 +206,7 @@ async def cel(data: dict) -> Dict:
         # ()Learning Process.
         results = []
         learned_owl_expression: OWLClassExpression
-        if isinstance(owl_learner, NCES):
-            predictions = owl_learner.fit(lp.pos, lp.neg).best_hypotheses(n=data.get("topk", 3))
-        else:
-            predictions = owl_learner.fit(lp).best_hypotheses(n=data.get("topk", 3))
+        predictions = owl_learner.fit(lp).best_hypotheses(n=data.get("topk", 3))
         if not isinstance(predictions, List):
             predictions = [predictions]
 

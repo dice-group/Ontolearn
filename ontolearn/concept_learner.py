@@ -1577,7 +1577,9 @@ class NCES(BaseNCES):
             predictions.append(concept)
         return predictions
 
-    def fit(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]], **kwargs):
+    def fit(self, learning_problem: PosNegLPStandard, **kwargs):
+        pos = learning_problem.pos
+        neg = learning_problem.neg
         if isinstance(pos, set) or isinstance(pos, frozenset):
             pos_list = list(pos)
             neg_list = list(neg)

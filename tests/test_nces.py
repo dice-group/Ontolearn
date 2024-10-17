@@ -2,6 +2,7 @@ from ontolearn.concept_learner import NCES
 from ontolearn.knowledge_base import KnowledgeBase
 from owlapy.parser import DLSyntaxParser
 from ontolearn.metrics import F1
+from ontolearn.learning_problem import PosNegLPStandard
 import time
 import random
 import unittest
@@ -40,7 +41,8 @@ class TestNCES(unittest.TestCase):
         daughter = dl_parser.parse('Daughter')
         pos = set(KB.individuals(brother)).union(set(KB.individuals(daughter)))
         neg = set(KB.individuals())-set(pos)
-        node = list(nces.fit(pos, neg).best_predictions)[0]
+        learning_problem = PosNegLPStandard(pos=pos, neg=neg)
+        node = list(nces.fit(learning_problem).best_predictions)[0]
         print("Quality:", node.quality)
         assert node.quality > 0.95
 
@@ -57,7 +59,8 @@ class TestNCES(unittest.TestCase):
         if len(pos) > 500:
             pos = set(np.random.choice(list(pos), size=min(500, len(pos)), replace=False))
         neg = set(neg[:min(1000-len(pos), len(neg))])
-        node = list(nces.fit(pos, neg).best_predictions)[0]
+        learning_problem = PosNegLPStandard(pos=pos, neg=neg)
+        node = list(nces.fit(learning_problem).best_predictions)[0]
         print("Quality:", node.quality)
         assert node.quality > 0.95
         
