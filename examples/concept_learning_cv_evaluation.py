@@ -261,7 +261,7 @@ def dl_concept_learning(args):
 
             start_time = time.time()
             # () Fit model training dataset
-            pred_nces = nces.fit(train_lp.pos, train_lp.neg).best_hypotheses(n=1)
+            pred_nces = nces.fit(train_lp).best_hypotheses(n=1)
             print("NCES ends..", end="\t")
             rt_nces = time.time() - start_time
             
