@@ -1464,15 +1464,14 @@ class NCES(BaseNCES):
                     raise RuntimeError
 
                 if Models:
-                    if self.verbose:
-                        print("\n Loaded synthesizer model!")
+                    print("\n Loaded NCES weights!\n")
                     return Models
                 else:
                     print("!!!Returning untrained models, could not load pretrained")
                     return Untrained
 
             elif len(glob.glob(path+"/*.pt")) == 0:
-                 print("No pretrained model found!")
+                 print("No pretrained model found! If directory is empty or does not exist, set the NCES `load_pretrained` parameter to `False` or make sure `save_model` was set to `True` in the .train() method.")
                  raise FileNotFoundError
             else:
                 for file_name in glob.glob(path+"/*.pt"):
@@ -1485,8 +1484,7 @@ class NCES(BaseNCES):
                                 print(e)
                                 pass
                 if Models:
-                    if self.verbose:
-                        print("\n Loaded synthesizer model!")
+                    print("\n Loaded NCES weights!\n")
                     return Models
                 else:
                     print("!!!Returning untrained models, could not load pretrained")
@@ -1690,6 +1688,7 @@ class NCES(BaseNCES):
             storage_path = f'NCES-Experiment-{currentDateAndTime.strftime("%H:%M:%S")}'
         if not os.path.exists(storage_path):
             os.mkdir(storage_path)
+        self.trained_models_path = storage_path+"/trained_models"
         if batch_size is None:
             batch_size = self.batch_size
         if data is None:
@@ -1703,4 +1702,3 @@ class NCES(BaseNCES):
         trainer = NCESTrainer(self, epochs=epochs, learning_rate=learning_rate, decay_rate=decay_rate,
                               clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
         trainer.train(train_dataloader, save_model, optimizer, record_runtime)
-        self.refresh(storage_path+"/trained_models")

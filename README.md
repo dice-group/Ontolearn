@@ -171,18 +171,52 @@ for str_target_concept, examples in learning_problems.items():
                                   "model": "TDL"})
     print(response.json())
 ```
-NCES (another scalable learner) can be used as follows
+NCES (another scalable learner). The following will first train NCES if the provided path `path_to_pretrained_nces` does not exist
 ```python
 import json
 import requests
 with open(f"LPs/Mutagenesis/lps.json") as json_file:
     learning_problems = json.load(json_file)["problems"]
+## This trains NCES before solving the provided learning problems. Expect poor performance for this number of epochs, and this training data size.
+## If GPU is available, set `num_of_training_learning_problems` t0 10_000 or more. Set `nces_train_epochs` to 300 or more, and increase `nces_batch_size`.
 for str_target_concept, examples in learning_problems.items():
     response = requests.get('http://0.0.0.0:8000/cel',
                             headers={'accept': 'application/json', 'Content-Type': 'application/json'},
                             json={"pos": examples['positive_examples'],
                                   "neg": examples['negative_examples'],
-                                  "model": "NCES"})
+                                  "model": "NCES",
+                                  "path_embeddings": "mutagenesis_embeddings/Keci_entity_embeddings.csv",
+                                  "path_to_pretrained_nces": "pretrained_nces",
+                                  # if pretrained_nces exists, load weghts, otherwise train one and save it
+                                  "num_of_training_learning_problems": 100,
+                                  "nces_train_epochs": 5,
+                                  "nces_batch_size": 16
+                                  })
+    print(response.json())
+```
+
+Now this will use pretrained weights for NCES
+
+```python
+import json
+import requests
+with open(f"LPs/Mutagenesis/lps.json") as json_file:
+    learning_problems = json.load(json_file)["problems"]
+## This trains NCES before solving the provided learning problems. Expect poor performance for this number of epochs, and this training data size.
+## If GPU is available, set `num_of_training_learning_problems` t0 10_000 or more. Set `nces_train_epochs` to 300 or more, and increase `nces_batch_size`.
+for str_target_concept, examples in learning_problems.items():
+    response = requests.get('http://0.0.0.0:8000/cel',
+                            headers={'accept': 'application/json', 'Content-Type': 'application/json'},
+                            json={"pos": examples['positive_examples'],
+                                  "neg": examples['negative_examples'],
+                                  "model": "NCES",
+                                  "path_embeddings": "./NCESData/mutagenesis/embeddings/ConEx_entity_embeddings.csv",
+                                  "path_to_pretrained_nces": "./NCESData/mutagenesis/trained_models/",
+                                  # if pretrained_nces exists, load weghts, otherwise train one and save it
+                                  "num_of_training_learning_problems": 100,
+                                  "nces_train_epochs": 5,
+                                  "nces_batch_size": 16
+                                  })
     print(response.json())
 ```
 

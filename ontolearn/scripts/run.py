@@ -24,6 +24,7 @@
 
 
 import argparse
+import glob
 from fastapi import FastAPI
 import uvicorn
 from typing import Dict, Iterable, Union, List
@@ -56,12 +57,11 @@ def get_default_arguments():
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--path_knowledge_base", type=str, default=None)
-    parser.add_argument("--path_of_nces_embeddings", type=str, default="./NCESData/")
     parser.add_argument("--endpoint_triple_store", type=str, default=None)
     return parser.parse_args()
 
 
-def get_embedding_path(ftp_link: str, kb_path_arg: str)->str:
+def get_embedding_path(ftp_link: str, path_embeddings: str, kb_path_arg: str)->str:
     """
     ftp_link: ftp link to download data
     kb_path_arg:local path of an RDF KG
@@ -89,7 +89,12 @@ def get_embedding_path(ftp_link: str, kb_path_arg: str)->str:
         else:
             raise ValueError("Knowledge base name is not recognized")
     kb_name = get_kb_name(kb_path_arg)
-    if not os.path.exists(f"./NCESData/{kb_name}/embeddings/ConEx_entity_embeddings.csv"):
+    if path_embeddings and os.path.exists(path_embeddings) and path_embeddings.endswith(".csv"):
+        return path_embeddings
+    elif path_embeddings and os.path.exists(path_embeddings) and not os.path.isfile(path_embeddings) and glob.glob(path_embeddings+"/*.csv") and [f for f in glob.glob(path_embeddings+"/*.csv") if kb_name in f]:
+        correct_files = [f for f in glob.glob(path_embeddings+"/*.csv") if kb_name in f]
+        return correct_files[0]
+    elif not os.path.exists(f"./NCESData/{kb_name}/embeddings/ConEx_entity_embeddings.csv"):
         file_name = ftp_link.split("/")[-1]
         
         if not os.path.exists(os.path.join(os.getcwd(), file_name)):
@@ -145,12 +150,21 @@ def get_nces(data: dict):
     """ Load NCES """
     global kb
     global args
+    assert args.path_knowledge_base.endswith(".owl"), "NCES supports only a knowledge base file with extension .owl"
+    # (1) Init NCES.
     nces = NCES(knowledge_base_path=args.path_knowledge_base,
-                path_of_embeddings=get_embedding_path("https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip", args.path_knowledge_base),
-                quality_func=F1(),
-                learner_names=["LSTM", "GRU", "SetTransformer"],
-                num_predictions=64
-               )
+                    path_of_embeddings=get_embedding_path("https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip", data.get("path_embeddings", None), args.path_knowledge_base),
+                    quality_func=F1(),
+                    load_pretrained=False,
+                    learner_names=["LSTM", "GRU", "SetTransformer"],
+                    num_predictions=64
+                   )
+    # (2) Either load the weights of NCES or train it.
+    if data.get("path_to_pretrained_nces", None) and os.path.isdir(data["path_to_pretrained_nces"]):
+        nces.refresh(data["path_to_pretrained_nces"])
+    else:
+        nces.train(epochs=data["nces_train_epochs"], batch_size=data["nces_batch_size"], num_lps=data["num_of_training_learning_problems"])
+        nces.refresh(nces.trained_models_path)
     return nces
 
 
@@ -235,7 +249,7 @@ def main():
     elif args.endpoint_triple_store:
         kb = TripleStore(url=args.endpoint_triple_store)
     else:
-        raise RuntimeError("Either --path_knowledge_base or --endpoint_triplestore must not be None")
+        raise RuntimeError("Either --path_knowledge_base or --endpoint_triplestore must be provided")
     uvicorn.run(app, host=args.host, port=args.port)
 
 
