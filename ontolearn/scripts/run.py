@@ -44,7 +44,6 @@ from ..utils.static_funcs import save_owl_class_expressions
 from owlapy import owl_expression_to_dl
 import os
 from ..verbalizer import LLMVerbalizer
-import platform, subprocess
 
 app = FastAPI()
 args = None
@@ -59,60 +58,6 @@ def get_default_arguments():
     parser.add_argument("--path_knowledge_base", type=str, default=None)
     parser.add_argument("--endpoint_triple_store", type=str, default=None)
     return parser.parse_args()
-
-
-def get_embedding_path(ftp_link: str, path_embeddings: str, kb_path_arg: str)->str:
-    """
-    ftp_link: ftp link to download data
-    kb_path_arg:local path of an RDF KG
-    """
-
-    def get_kb_name(kb_path_arg):
-        if "family" in kb_path_arg:
-            return "family"
-        elif "carcinogenesis" in kb_path_arg:
-            return "carcinogenesis"
-        elif "mutagenesis" in kb_path_arg:
-            return "mutagenesis"
-        elif "nctrer" in kb_path_arg:
-            return "nctrer"
-        elif "animals" in kb_path_arg:
-            return "animals"
-        elif "lymphography" in kb_path_arg:
-            return "lymphography"
-        elif "semantic_bible" in kb_path_arg:
-            return "semantic_bible"
-        elif "suramin" in kb_path_arg:
-            return "suramin"
-        elif "vicodi" in kb_path_arg:
-            return "vicodi"
-        else:
-            raise ValueError("Knowledge base name is not recognized")
-    kb_name = get_kb_name(kb_path_arg)
-    if path_embeddings and os.path.exists(path_embeddings) and path_embeddings.endswith(".csv"):
-        return path_embeddings
-    elif path_embeddings and os.path.exists(path_embeddings) and not os.path.isfile(path_embeddings) and glob.glob(path_embeddings+"/*.csv") and [f for f in glob.glob(path_embeddings+"/*.csv") if kb_name in f]:
-        correct_files = [f for f in glob.glob(path_embeddings+"/*.csv") if kb_name in f]
-        return correct_files[0]
-    elif not os.path.exists(f"./NCESData/{kb_name}/embeddings/ConEx_entity_embeddings.csv"):
-        file_name = ftp_link.split("/")[-1]
-        
-        if not os.path.exists(os.path.join(os.getcwd(), file_name)):
-            subprocess.run(['curl', '-O', ftp_link])
-
-            if platform.system() == "Windows":
-                subprocess.run(['tar', '-xf', file_name])
-            else:
-                subprocess.run(['unzip', file_name])
-            os.remove(os.path.join(os.getcwd(), file_name))
-
-        embeddings_path = os.path.join(os.getcwd(), file_name[:-4] + '/')
-
-        embeddings_path += f"{kb_name}/embeddings/ConEx_entity_embeddings.csv"
-
-        return embeddings_path
-    else:
-        return f"./NCESData/{kb_name}/embeddings/ConEx_entity_embeddings.csv"
 
 
 @app.get("/")
@@ -146,21 +91,21 @@ def get_drill(data: dict):
         drill.save(directory=data.get("path_to_pretrained_drill", None))
     return drill
 
-def get_nces(data: dict):
+def get_nces(data: dict) -> NCES:
     """ Load NCES """
     global kb
     global args
     assert args.path_knowledge_base.endswith(".owl"), "NCES supports only a knowledge base file with extension .owl"
     # (1) Init NCES.
     nces = NCES(knowledge_base_path=args.path_knowledge_base,
-                    path_of_embeddings=get_embedding_path("https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip", data.get("path_embeddings", None), args.path_knowledge_base),
+                    path_of_embeddings=data.get("path_embeddings", None),
                     quality_func=F1(),
                     load_pretrained=False,
                     learner_names=["SetTransformer", "LSTM", "GRU"],
                     num_predictions=64
                    )
     # (2) Either load the weights of NCES or train it.
-    if data.get("path_to_pretrained_nces", None) and os.path.isdir(data["path_to_pretrained_nces"]) and glob.glob("*.pt"):
+    if data.get("path_to_pretrained_nces", None) and os.path.isdir(data["path_to_pretrained_nces"]) and glob.glob(data["path_to_pretrained_nces"]+"/*.pt"):
         nces.refresh(data["path_to_pretrained_nces"])
     else:
         nces.train(epochs=data["nces_train_epochs"], batch_size=data["nces_batch_size"], num_lps=data["num_of_training_learning_problems"])
