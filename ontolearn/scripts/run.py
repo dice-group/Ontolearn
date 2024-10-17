@@ -160,7 +160,7 @@ def get_nces(data: dict):
                     num_predictions=64
                    )
     # (2) Either load the weights of NCES or train it.
-    if data.get("path_to_pretrained_nces", None) and os.path.isdir(data["path_to_pretrained_nces"]):
+    if data.get("path_to_pretrained_nces", None) and os.path.isdir(data["path_to_pretrained_nces"]) and glob.glob("*.pt"):
         nces.refresh(data["path_to_pretrained_nces"])
     else:
         nces.train(epochs=data["nces_train_epochs"], batch_size=data["nces_batch_size"], num_lps=data["num_of_training_learning_problems"])
