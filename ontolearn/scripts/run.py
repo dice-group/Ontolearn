@@ -24,6 +24,7 @@
 
 
 import argparse
+import glob
 from fastapi import FastAPI
 import uvicorn
 from typing import Dict, Iterable, Union, List
@@ -36,6 +37,7 @@ from ..triple_store import TripleStore
 from ..learning_problem import PosNegLPStandard
 from ..refinement_operators import LengthBasedRefinement
 from ..learners import Drill, TDL
+from ..concept_learner import NCES
 from ..metrics import F1
 from owlapy.render import DLSyntaxObjectRenderer
 from ..utils.static_funcs import save_owl_class_expressions
@@ -89,17 +91,40 @@ def get_drill(data: dict):
         drill.save(directory=data.get("path_to_pretrained_drill", None))
     return drill
 
+def get_nces(data: dict) -> NCES:
+    """ Load NCES """
+    global kb
+    global args
+    assert args.path_knowledge_base.endswith(".owl"), "NCES supports only a knowledge base file with extension .owl"
+    # (1) Init NCES.
+    nces = NCES(knowledge_base_path=args.path_knowledge_base,
+                    path_of_embeddings=data.get("path_embeddings", None),
+                    quality_func=F1(),
+                    load_pretrained=False,
+                    learner_names=["SetTransformer", "LSTM", "GRU"],
+                    num_predictions=64
+                   )
+    # (2) Either load the weights of NCES or train it.
+    if data.get("path_to_pretrained_nces", None) and os.path.isdir(data["path_to_pretrained_nces"]) and glob.glob(data["path_to_pretrained_nces"]+"/*.pt"):
+        nces.refresh(data["path_to_pretrained_nces"])
+    else:
+        nces.train(epochs=data["nces_train_epochs"], batch_size=data["nces_batch_size"], num_lps=data["num_of_training_learning_problems"])
+        nces.refresh(nces.trained_models_path)
+    return nces
+
 
 def get_tdl(data) -> TDL:
     global kb
     return TDL(knowledge_base=kb)
 
 
-def get_learner(data: dict) -> Union[Drill, TDL]:
+def get_learner(data: dict) -> Union[Drill, TDL, NCES]:
     if data["model"] == "Drill":
         return get_drill(data)
     elif data["model"] == "TDL":
         return get_tdl(data)
+    elif data["model"] == "NCES":
+        return get_nces(data)
     else:
         raise NotImplementedError(f"There is no learner {data['model']} available")
 
@@ -109,8 +134,8 @@ async def cel(data: dict) -> Dict:
     global args
     global kb
     print("######### CEL Arguments ###############")
-    print(f"Knowledgebase/Triplestore:{kb}\n")
-    print(f"Input data:{data}\n")
+    print(f"Knowledgebase/Triplestore: {kb}\n")
+    print(f"Input data: {data}\n")
     print("######### CEL Arguments ###############\n")
     # (1) Initialize OWL CEL and verbalizer
     owl_learner = get_learner(data)
@@ -126,7 +151,6 @@ async def cel(data: dict) -> Dict:
         # ()Learning Process.
         results = []
         learned_owl_expression: OWLClassExpression
-
         predictions = owl_learner.fit(lp).best_hypotheses(n=data.get("topk", 3))
         if not isinstance(predictions, List):
             predictions = [predictions]
@@ -167,9 +191,10 @@ def main():
     elif args.endpoint_triple_store:
         kb = TripleStore(url=args.endpoint_triple_store)
     else:
-        raise RuntimeError("Either --path_knowledge_base or --endpoint_triplestore must be not None")
+        raise RuntimeError("Either --path_knowledge_base or --endpoint_triplestore must be provided")
     uvicorn.run(app, host=args.host, port=args.port)
 
 
 if __name__ == '__main__':
     main()
+
