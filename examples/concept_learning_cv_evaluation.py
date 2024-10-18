@@ -2,6 +2,9 @@
 python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family.owl --max_runtime 3 --report family.csv
 python examples/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 3 --report carcinogenesis.csv
 
+python examples/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 3 --report carcinogenesis.csv --path_of_nces_embeddings "TODO" --path_of_clip_embeddings "TODO"
+
+
 """
 import json
 import time
@@ -86,25 +89,18 @@ def dl_concept_learning(args):
               kwargs_classifier={"random_state": 1},
               max_runtime=args.max_runtime,
               verbose=0)
-    """
     nces = NCES(knowledge_base_path=args.kb,
                 quality_func=F1(),
-                path_of_embeddings=get_embedding_path("https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip",args.path_of_nces_embeddings, args.kb),
+                path_of_embeddings=args.path_of_nces_embeddings,
                 pretrained_model_name=["LSTM", "GRU", "SetTransformer"],
                 num_predictions=100,
                 verbose=0)
-    
-    args.path_of_clip_embeddings = get_embedding_path(
-        "https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip",
-        args.path_of_clip_embeddings, args.kb)
-    
     clip = CLIP(knowledge_base=kb,
                 refinement_operator=ModifiedCELOERefinement(kb),
                 quality_func=F1(),
                 max_num_of_concepts_tested=int(1e9), max_runtime=args.max_runtime,
                 path_of_embeddings=args.path_of_clip_embeddings,
                 pretrained_predictor_name=["LSTM", "GRU", "SetTransformer"], load_pretrained=True)
-    """
 
     # dictionary to store the data
     data = dict()
@@ -262,7 +258,6 @@ def dl_concept_learning(args):
             print(f"TDL Test Quality: {test_f1_tdl:.3f}", end="\t")
             print(f"TDL Runtime: {rt_tdl:.3f}")
 
-            """
             start_time = time.time()
             # () Fit model training dataset
             pred_nces = nces.fit(train_lp.pos, train_lp.neg).best_hypotheses(n=1)
@@ -305,7 +300,6 @@ def dl_concept_learning(args):
             print(f"CLIP Train Quality: {train_f1_clip:.3f}", end="\t")
             print(f"CLIP Test Quality: {test_f1_clip:.3f}", end="\t")
             print(f"CLIP Runtime: {rt_clip:.3f}")
-            """
 
     df = pd.DataFrame.from_dict(data)
     df.to_csv(args.report, index=False)
