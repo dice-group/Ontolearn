@@ -161,15 +161,12 @@ TDL (a more scalable learner) can also be used as follows
 ```python
 import json
 import requests
-with open(f"LPs/Mutagenesis/lps.json") as json_file:
-    learning_problems = json.load(json_file)["problems"]
-for str_target_concept, examples in learning_problems.items():
-    response = requests.get('http://0.0.0.0:8000/cel',
-                            headers={'accept': 'application/json', 'Content-Type': 'application/json'},
-                            json={"pos": examples['positive_examples'],
-                                  "neg": examples['negative_examples'],
-                                  "model": "TDL"})
-    print(response.json())
+response = requests.get('http://0.0.0.0:8000/cel',
+                        headers={'accept': 'application/json', 'Content-Type': 'application/json'},
+                        json={"pos": examples['positive_examples'],
+                              "neg": examples['negative_examples'],
+                              "model": "TDL"})
+print(response.json())
 ```
 
 
