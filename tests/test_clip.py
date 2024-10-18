@@ -42,7 +42,7 @@ class TestCLIP(unittest.TestCase):
         neg = set(KB.individuals())-set(pos)
         node = list(clip.fit(pos, neg).best_descriptions)[0]
         assert node.quality > 0.95
-if __name__ == "__main__":
-    test = TestCLIP()
+# if __name__ == "__main__":
+#    test = TestCLIP()
     # test.test_prediction_quality_family()
     # test.test_prediction_quality_mutagenesis()
