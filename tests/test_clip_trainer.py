@@ -42,4 +42,4 @@ class TestCLIPTrainer(unittest.TestCase):
 
 if __name__ == "__main__":
     test = TestCLIPTrainer()
-    test.test_trainer_family()
+    # test.test_trainer_family()

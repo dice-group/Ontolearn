@@ -44,5 +44,5 @@ class TestCLIP(unittest.TestCase):
         assert node.quality > 0.95
 if __name__ == "__main__":
     test = TestCLIP()
-    test.test_prediction_quality_family()
-    test.test_prediction_quality_mutagenesis()
+    # test.test_prediction_quality_family()
+    # test.test_prediction_quality_mutagenesis()
