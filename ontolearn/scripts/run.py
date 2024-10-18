@@ -103,13 +103,13 @@ def get_tdl(data) -> TDL:
                verbose=10)
 
 
-def get_learner(data: dict) -> Union[Drill, TDL]:
+def get_learner(data: dict) -> Union[Drill, TDL, None]:
     if data["model"] == "Drill":
         return get_drill(data)
     elif data["model"] == "TDL":
         return get_tdl(data)
     else:
-        raise NotImplementedError(f"There is no learner {data['model']} available")
+        return None
 
 
 @app.get("/cel")
@@ -122,7 +122,9 @@ async def cel(data: dict) -> Dict:
     print("######### CEL Arguments ###############\n")
     # (1) Initialize OWL CEL and verbalizer
     owl_learner = get_learner(data)
-    verbalizer = LLMVerbalizer()
+    if owl_learner is None:
+        return {"Results": f"There is no learner named as {data['model']}. Available models: Drill, TDL"}
+
     # (2) Read Positives and Negatives.
     positives = {OWLNamedIndividual(IRI.create(i)) for i in data['pos']}
     negatives = {OWLNamedIndividual(IRI.create(i)) for i in data['neg']}
@@ -145,7 +147,8 @@ async def cel(data: dict) -> Dict:
             dl_learned_owl_expression = owl_expression_to_dl(learned_owl_expression)
             # () Get Individuals
             print(f"Retrieving individuals of {dl_learned_owl_expression}...")
-            # TODO:CD: With owlapy:1.3.1, we can move the f1 score computation into triple score
+            # TODO:CD: With owlapy:1.3.1, we can move the f1 score computation into triple store.
+            # TODO: By this, we do not need to wait for the retrival results to return an answer to the user
             individuals: Iterable[OWLNamedIndividual]
             individuals = kb.individuals(learned_owl_expression)
             # () F1 score training
@@ -155,7 +158,7 @@ async def cel(data: dict) -> Dict:
                                         neg=lp.neg)
             results.append({"Rank": ith + 1,
                             "Prediction": dl_learned_owl_expression,
-                            "Verbalization": verbalizer(dl_learned_owl_expression),
+                            "Verbalization": LLMVerbalizer().verbalizer(dl_learned_owl_expression),
                             "F1": train_f1})
 
         return {"Results": results}
