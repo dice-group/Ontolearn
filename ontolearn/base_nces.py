@@ -35,7 +35,7 @@ from abc import abstractmethod
 
 class BaseNCES:
 
-    def __init__(self, knowledge_base_path, learner_name, path_of_embeddings, batch_size=256, learning_rate=1e-4,
+    def __init__(self, knowledge_base_path, learner_names, path_of_embeddings, batch_size=256, learning_rate=1e-4,
                  decay_rate=0.0, clip_value=5.0, num_workers=4):
         self.name = "NCES"
         kb = KnowledgeBase(path=knowledge_base_path)
@@ -52,7 +52,7 @@ class BaseNCES:
         self.all_individuals = set([ind.str.split("/")[-1] for ind in kb.individuals()])
         self.inv_vocab = np.array(vocab, dtype='object')
         self.vocab = {vocab[i]: i for i in range(len(vocab))}
-        self.learner_name = learner_name
+        self.learner_names = learner_names
         self.num_examples = self.find_optimal_number_of_examples(kb)
         self.batch_size = batch_size
         self.learning_rate = learning_rate
