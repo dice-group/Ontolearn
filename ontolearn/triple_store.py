@@ -713,14 +713,12 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
     ontology: TripleStoreOntology
     reasoner: TripleStoreReasoner
 
-    def __init__(self, triplestore_address: str):
-        self.url = triplestore_address
-        self.ontology = TripleStoreOntology(triplestore_address)
+    def __init__(self, url: str=None):
+        assert url is not None, "url must be string"
+        self.url = url
+        self.ontology = TripleStoreOntology(url)
         self.reasoner = TripleStoreReasoner(self.ontology)
-
-        super().__init__(
-            ontology=self.ontology, reasoner=self.reasoner, load_class_hierarchy=False
-        )
+        super().__init__( ontology=self.ontology, reasoner=self.reasoner, load_class_hierarchy=False)
 
     def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
         assert isinstance(concept, OWLClass)
@@ -730,16 +728,11 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         assert isinstance(concept, OWLClass)
         yield from self.reasoner.super_classes(concept, direct=True)
 
-    def get_all_direct_sub_concepts(
-            self, concept: OWLClassExpression
-    ) -> Iterable[OWLClassExpression]:
+    def get_all_direct_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
         assert isinstance(concept, OWLClass)
         yield from self.reasoner.sub_classes(concept, direct=True)
 
-    def get_all_sub_concepts(
-            self, concept: OWLClassExpression
-    ) -> Iterable[OWLClassExpression]:
-
+    def get_all_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
         assert isinstance(concept, OWLClass)
         yield from self.reasoner.sub_classes(concept, direct=False)
 
@@ -755,8 +748,7 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         return concept in self.ontology.classes_in_signature()
 
     def most_general_object_properties(
-            self, *, domain: OWLClassExpression, inverse: bool = False
-    ) -> Iterable[OWLObjectProperty]:
+            self, *, domain: OWLClassExpression, inverse: bool = False) -> Iterable[OWLObjectProperty]:
         assert isinstance(domain, OWLClassExpression)
         func: Callable
         func = (
@@ -794,7 +786,7 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
 
 
 #######################################################################################################################
-
+# See https://github.com/dice-group/Ontolearn/issues/451 for the decision behind this seperation
 
 class TripleStoreReasonerOntology:
 
@@ -867,7 +859,8 @@ class TripleStoreReasonerOntology:
                     """
 
                 else:
-                    print(f"Currently this type of literal is not supported:{o} but can done easily let us know :)")
+                    # print(f"Currently this type of literal is not supported:{o} but can done easily let us know :)")
+                    continue
                     # yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=repr(o["value"]))
 
             else:
@@ -983,21 +976,14 @@ class TripleStoreReasonerOntology:
         for binding in self.query(query).json()["results"]["bindings"]:
             yield OWLNamedIndividual(binding["x"]["value"])
 class TripleStore:
-    """Connecting a triple store"""
-
     url: str
-
     def __init__(self, reasoner=None, url: str = None):
 
         if reasoner is None:
-            assert (
-                    url is not None
-            ), f"Reasoner:{reasoner} and url of a triplestore {url} cannot be both None."
+            assert url is not None, f"Reasoner:{reasoner} and url of a triplestore {url} cannot be both None."
             self.g = TripleStoreReasonerOntology(url=url)
         else:
             self.g = reasoner
-        # This assigment is done as many CEL models are implemented to use both attributes seperately.
-        # CEL models will be refactored.
         self.ontology = self.g
         self.reasoner = self.g
 

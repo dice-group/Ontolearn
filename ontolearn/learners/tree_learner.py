@@ -245,14 +245,9 @@ class TDL:
         assert len(features) > 0, f"First hop features cannot be extracted. Ensure that there are axioms about the examples."
         if self.verbose > 0:
             print("Unique OWL Class Expressions as features :", len(features))
-        # TODO: Establish an ordering over features
-        # TODO: Iterate over individuals
-        # TODO: For each individual check whether the i-th feature holds for the individual
-        # TODO: If yes, 1.0, otherwise 0.0
-        # TODO:
         # () Iterate over features/extracted owl expressions.
+        # TODO:CD: We need to use parse tensor representation that we can use to train decision tree
         X = []
-
         features = [ v for k,v in features.items()]
         for owl_named_individual in make_iterable_verbose(individuals,
                                        verbose=self.verbose,
@@ -266,10 +261,7 @@ class TDL:
                     binary_sparse_representation.append(1.0)
                 else:
                     binary_sparse_representation.append(0.0)
-
             X.append(binary_sparse_representation)
-        # Iterate o
-        # ()
         X = np.array(X)
         return X, features
 
@@ -324,13 +316,12 @@ class TDL:
         examples = positive_examples + negative_examples
         # For the sake of convenience. sort features in ascending order of string lengths of DL representations.
         X, features = self.extract_expressions_from_owl_individuals(examples)
-
         # (4) Creating a tabular data for the binary classification problem.
         # X = self.construct_sparse_binary_representations(features, examples, examples_to_features)
         self.features = features
         X = pd.DataFrame(data=X, index=examples, columns=self.features)
         y = pd.DataFrame(data=y, index=examples, columns=["label"])
-
+        # Remove redundant columns
         same_value_columns = X.apply(lambda col: col.nunique() == 1)
         X = X.loc[:, ~same_value_columns]
         self.features = X.columns.values.tolist()
@@ -345,45 +336,45 @@ class TDL:
         prediction_per_example = []
         # () Iterate over reasoning steps of predicting a positive example
         pos: OWLNamedIndividual
-        for sequence_of_reasoning_steps, pos in zip(
 
-                explain_inference(self.clf,
-                                  X=vector_representation_of_positive_examples), positive_examples):
+        for sequence_of_reasoning_steps, pos in zip(make_iterable_verbose(explain_inference(self.clf,
+                                            X=vector_representation_of_positive_examples),
+                                            verbose=self.verbose,
+                                            desc="Constructing Description Logic Concepts"), positive_examples):
             concepts_per_reasoning_step = []
             for i in sequence_of_reasoning_steps:
-
                 if i["inequality"] == ">":
                     owl_class_expression = i["owl_expression"]
                 else:
                     owl_class_expression = i["owl_expression"].get_object_complement_of()
 
+                concepts_per_reasoning_step.append(owl_class_expression)
+                # TODO : CD: No need to perform retrieval.
+                """
+                print(i,owl_class_expression)
                 retrival_result = pos in {_ for _ in self.knowledge_base.individuals(owl_class_expression)}
 
                 if retrival_result:
                     concepts_per_reasoning_step.append(owl_class_expression)
                 else:
                     raise RuntimeError("Incorrect retrival")
-
-            pred = concepts_reducer(
-                concepts=concepts_per_reasoning_step,
-                reduced_cls=OWLObjectIntersectionOf,
-            )
+                """
+            pred = concepts_reducer(concepts=concepts_per_reasoning_step, reduced_cls=OWLObjectIntersectionOf)
             prediction_per_example.append((pred, pos))
 
         # From list to set to remove identical paths from the root to leafs.
-        prediction_per_example = {
-            pred for pred, positive_example in prediction_per_example
-        }
+        prediction_per_example = {pred for pred, positive_example in prediction_per_example}
         return list(prediction_per_example)
 
     def fit(self, learning_problem: PosNegLPStandard = None, max_runtime: int = None):
         """Fit the learner to the given learning problem
 
-        (1) Extract multi-hop information about E^+ and E^- denoted by \mathcal{F}.
-        (1.1) E = list of (E^+ \sqcup E^-).
-        (2) Build a training data \mathbf{X} \in  \mathbb{R}^{ |E| \times |\mathcal{F}| } .
-        (3) Create binary labels \mathbf{X}.
-
+        (1) Extract multi-hop information about E^+ and E^-.
+        (2) Create OWL Class Expressions from (1)
+        (3) Build a binary sparse training data X where
+            first |E+| rows denote the binary representations of positives
+            Remaining rows denote the binary representations of E⁻
+        (4) Create binary labels.
         (4) Construct a set of DL concept for each e \in E^+
         (5) Union (4)
 
@@ -403,16 +394,12 @@ class TDL:
         X, y = self.create_training_data(learning_problem=learning_problem)
         # CD: Remember so that if user wants to use them
         self.X, self.y = X, y
-
         if self.plot_embeddings:
             plot_umap_reduced_embeddings(X, y.label.to_list(), "umap_visualization.pdf")
-
         if self.grid_search_over:
             grid_search = sklearn.model_selection.GridSearchCV(
                 tree.DecisionTreeClassifier(**self.kwargs_classifier),
-                param_grid=self.grid_search_over,
-                cv=10,
-            ).fit(X.values, y.values)
+                param_grid=self.grid_search_over, cv=10, ).fit(X.values, y.values)
             print(grid_search.best_params_)
             self.kwargs_classifier.update(grid_search.best_params_)
         # Training
@@ -441,13 +428,14 @@ class TDL:
         # starting from the root node in the decision tree and
         # ending in a leaf node.
         self.conjunctive_concepts: List[OWLObjectIntersectionOf]
+        if self.verbose >0:
+            print("Computing conjunctive_concepts...")
         self.conjunctive_concepts = self.construct_owl_expression_from_tree(X, y)
         for i in self.conjunctive_concepts:
             self.owl_class_expressions.add(i)
-
-        self.disjunction_of_conjunctive_concepts = concepts_reducer(
-            concepts=self.conjunctive_concepts, reduced_cls=OWLObjectUnionOf
-        )
+        if self.verbose >0:
+            print("Computing disjunction_of_conjunctive_concepts...")
+        self.disjunction_of_conjunctive_concepts = concepts_reducer(concepts=self.conjunctive_concepts,  reduced_cls=OWLObjectUnionOf)
 
         return self
 
