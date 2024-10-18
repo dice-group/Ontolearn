@@ -40,6 +40,6 @@ class TestCLIPTrainer(unittest.TestCase):
             data = json.load(f)
         clip.train(list(data.items())[-100:], epochs=5, learning_rate=0.001, save_model=False, record_runtime=False, storage_path=f"./CLIP-{time.time()}/")
 
-if __name__ == "__main__":
-    test = TestCLIPTrainer()
-    test.test_trainer_family()
+#if __name__ == "__main__":
+#    test = TestCLIPTrainer()
+    # test.test_trainer_family()
