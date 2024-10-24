@@ -105,6 +105,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
     path: str
     use_individuals_cache: bool
     generator: ConceptGenerator
+    # TODO:CD: We do not benefit from using overloading in the init of KG
+    #  TODO:CD: We need to remove overloading by having a single __init__() filled with default parameters
 
     @overload
     def __init__(self, *,
@@ -139,15 +141,13 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  ontology: Optional[OWLOntology] = None,
                  reasoner: Optional[OWLReasoner] = None,
                  length_metric: Optional[OWLClassExpressionLengthMetric] = None,
-
-                 individuals_cache_size=128,
+                 individuals_cache_size:int=0,
                  backend_store: bool = False,
                  class_hierarchy: Optional[ClassHierarchy] = None,
                  load_class_hierarchy: bool = True,
                  object_property_hierarchy: Optional[ObjectPropertyHierarchy] = None,
                  data_property_hierarchy: Optional[DatatypePropertyHierarchy] = None,
-                 include_implicit_individuals=False
-                 ):
+                 include_implicit_individuals=False):
         AbstractKnowledgeBase.__init__(self)
         self.path = path
 
@@ -206,7 +206,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.dp_ranges = dict()
         # OWL class expression generator
         self.generator = ConceptGenerator()
-
+        # TODO:CD: We need to remove these next two lines
+        # TODO:CD: No caching: Caching must be done by the reasoners and it must be optional.
+        # TODO:CD: No ind_set. This hinders us scaling large KGs
         self.use_individuals_cache, self.ind_cache = init_named_individuals(individuals_cache_size)
         self.ind_set = init_individuals_from_concepts(include_implicit_individuals,
                                                       reasoner=self.reasoner,
@@ -226,11 +228,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Individuals belonging to the given class.
         """
-
+        # TODO: CD: is_owl_thing workaround must be implemented by reasoner if it is needed
         if concept is None or concept.is_owl_thing():
             for i in self.ind_set:
                 yield i
         else:
+        # TODO: CD: Disable caching
             yield from self.maybe_cache_individuals(concept)
 
     def abox(self, individual: Union[OWLNamedIndividual, Iterable[OWLNamedIndividual]] = None, mode='native'):  # pragma: no cover
@@ -581,6 +584,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             self.ind_cache[ce] = frozenset(temp)
 
     def maybe_cache_individuals(self, ce: OWLClassExpression) -> Iterable[OWLNamedIndividual]:
+        # TODO:CD: Disable caching.
         if self.use_individuals_cache:
             self.cache_individuals(ce)
             yield from self.ind_cache[ce]
@@ -588,6 +592,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             yield from self.reasoner.instances(ce)
 
     def maybe_cache_individuals_count(self, ce: OWLClassExpression) -> int:
+        # TODO:CD: Disable caching.
         if self.use_individuals_cache:
             self.cache_individuals(ce)
             r = self.ind_cache[ce]
@@ -595,6 +600,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             return iter_count(self.reasoner.instances(ce))
 
+    # TODO:CD: Remove this function from KB. Size count should not be done by KB.
     def individuals_count(self, concept: Optional[OWLClassExpression] = None) -> int:
         """Returns the number of all individuals belonging to the concept in the ontology.
 
@@ -603,12 +609,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Number of the individuals belonging to the given class.
         """
-
         if concept is None or concept.is_owl_thing():
             return len(self.ind_set)
         else:
             return self.maybe_cache_individuals_count(concept)
 
+    # TODO:CD: Delete  individuals_set functions.
     @overload
     def individuals_set(self, concept: OWLClassExpression):
         ...
@@ -644,6 +650,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             return frozenset(arg)
 
+    # TODO:CD: Redundant
     def all_individuals_set(self):
         """Retrieve all the individuals of the knowledge base.
 
@@ -655,6 +662,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             return self.ind_set
         else:
             return frozenset(self.ontology.individuals_in_signature())
+
 
     def most_general_object_properties(self, *, domain: OWLClassExpression, inverse: bool = False) \
             -> Iterable[OWLObjectProperty]:
@@ -682,16 +690,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
             if domain.is_owl_thing() or inds_domain <= self.individuals_set(self.get_data_property_domains(prop)):
                 yield prop
 
-    # in case more types of AbstractLearningProblem are introduced to the project uncomment the method below and use
-    # decorators
-    # @singledispatchmethod
-    # def encode_learning_problem(self, lp: AbstractLearningProblem):
-    #     raise NotImplementedError(lp)
-
+    # TODO:CD: A learning problem (DL concept learning problem) should not be a part of a knowledge base
     def encode_learning_problem(self, lp: PosNegLPStandard):
         """
-        @TODO: A learning problem (DL concept learning problem) should not be a part of a knowledge base
-
         Provides the encoded learning problem (lp), i.e. the class containing the set of OWLNamedIndividuals
         as follows:
             kb_pos --> the positive examples set,
@@ -739,12 +740,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
             kb_neg=kb_neg,
             kb_all=kb_all,
             kb_diff=kb_all.difference(kb_pos.union(kb_neg)))
-
+    # TODO: CD: A knowledge base is a data structure and the context of "evaluating" a concept seems to be unrelated
     def evaluate_concept(self, concept: OWLClassExpression, quality_func: AbstractScorer,
                          encoded_learning_problem: EncodedLearningProblem) -> EvaluatedConcept:
         """Evaluates a concept by using the encoded learning problem examples, in terms of Accuracy or F1-score.
-
-        @ TODO: A knowledge base is a data structure and the context of "evaluating" a concept seems to be unrelated
 
         Note:
             This method is useful to tell the quality (e.q) of a generated concept by the concept learners, to get
@@ -762,7 +761,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         e.ic = len(e.inds)
         _, e.q = quality_func.score_elp(e.inds, encoded_learning_problem)
         return e
-
+    # TODO: CD: We need to do refactoring to remove redundant class methods defined below in our next release
     def get_leaf_concepts(self, concept: OWLClass):
         """Get leaf classes.
 
