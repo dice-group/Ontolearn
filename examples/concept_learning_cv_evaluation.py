@@ -89,12 +89,14 @@ def dl_concept_learning(args):
               kwargs_classifier={"random_state": 1},
               max_runtime=args.max_runtime,
               verbose=0)
+    
     nces = NCES(knowledge_base_path=args.kb,
                 quality_func=F1(),
                 path_of_embeddings=args.path_of_nces_embeddings,
-                pretrained_model_name=["LSTM", "GRU", "SetTransformer"],
+                learner_names=["LSTM", "GRU", "SetTransformer"],
                 num_predictions=100,
                 verbose=0)
+    
     clip = CLIP(knowledge_base=kb,
                 refinement_operator=ModifiedCELOERefinement(kb),
                 quality_func=F1(),
@@ -260,7 +262,7 @@ def dl_concept_learning(args):
 
             start_time = time.time()
             # () Fit model training dataset
-            pred_nces = nces.fit(train_lp.pos, train_lp.neg).best_hypotheses(n=1)
+            pred_nces = nces.fit(train_lp).best_hypotheses(n=1)
             print("NCES ends..", end="\t")
             rt_nces = time.time() - start_time
             
