@@ -35,17 +35,16 @@ from typing import Dict, Iterable, Union, List
 from owlapy.class_expression import OWLClassExpression
 from owlapy.iri import IRI
 from owlapy.owl_individual import OWLNamedIndividual
-from ..utils.static_funcs import compute_f1_score
-from ..knowledge_base import KnowledgeBase
-from ..triple_store import TripleStore
-from ..learning_problem import PosNegLPStandard
-from ..refinement_operators import LengthBasedRefinement
-from ..learners import Drill, TDL
-from ..concept_learner import NCES
-from ..metrics import F1
+from ontolearn.utils import compute_f1_score
+from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.triple_store import TripleStore
+from ontolearn.learning_problem import PosNegLPStandard
+from ontolearn.learners import Drill, TDL
+from ontolearn.concept_learner import NCES
+from ontolearn.metrics import F1
+from ontolearn.verbalizer import LLMVerbalizer
 from owlapy import owl_expression_to_dl
 import os
-from ..verbalizer import LLMVerbalizer
 
 app = FastAPI()
 args = None
@@ -148,7 +147,7 @@ async def cel(data: dict) -> Dict:
     # (1) Initialize OWL CEL and verbalizer
     owl_learner = get_learner(data)
     if owl_learner is None:
-        return {"Results": f"There is no learner named as {data['model']}. Available models: Drill, TDL"}
+        return {"Results": f"There is no learner named as {data['model']}. Available models: Drill, TDL, NCES"}
 
     # (2) Read Positives and Negatives.
     positives = {OWLNamedIndividual(IRI.create(i)) for i in data['pos']}
@@ -164,7 +163,7 @@ async def cel(data: dict) -> Dict:
         predictions = owl_learner.fit(lp).best_hypotheses(n=data.get("topk", 3))
         if not isinstance(predictions, List):
             predictions = [predictions]
-
+        verbalizer = LLMVerbalizer()
         for ith, learned_owl_expression in enumerate(predictions):
             # () OWL to DL
             dl_learned_owl_expression: str
@@ -182,7 +181,7 @@ async def cel(data: dict) -> Dict:
                                         neg=lp.neg)
             results.append({"Rank": ith + 1,
                             "Prediction": dl_learned_owl_expression,
-                            "Verbalization": LLMVerbalizer().verbalizer(dl_learned_owl_expression),
+                            "Verbalization": verbalizer(dl_learned_owl_expression),
                             "F1": train_f1})
 
         return {"Results": results}

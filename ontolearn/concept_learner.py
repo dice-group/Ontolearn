@@ -1687,7 +1687,7 @@ class NCES(BaseNCES):
             num_workers = max(0,os.cpu_count()-1)
         if storage_path is None:
             currentDateAndTime = datetime.now()
-            storage_path = f'NCES-Experiment-{currentDateAndTime.strftime("%H:%M:%S")}'
+            storage_path = f'NCES-Experiment-{currentDateAndTime.strftime("%H-%M-%S")}'
         if not os.path.exists(storage_path):
             os.mkdir(storage_path)
         self.trained_models_path = storage_path+"/trained_models"

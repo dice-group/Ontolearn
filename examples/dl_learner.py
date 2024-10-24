@@ -21,6 +21,9 @@ from ontolearn.binders import DLLearnerBinder
 from owlapy.iri import IRI
 from owlapy.owl_individual import OWLNamedIndividual
 import json
+
+from ontolearn.learning_problem import PosNegLPStandard
+
 # (1) Load learning problems
 with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)
