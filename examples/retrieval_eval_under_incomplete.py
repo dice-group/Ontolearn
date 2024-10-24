@@ -1,11 +1,21 @@
-"""
-TODO: Write few lines of code to run this script and explanations
-"""
+"""The goal of this script is to perform retrieval task on inconsistent or incomplete KB. 
+   Given and input KB, we first generate a number of subgraphs that are either incomplete 
+   or inconsistent. Each subgraph is then evaluated by running a retrieval task, using
+   using a neural method or different symbolic reasoners (HermiT, Pellet, JFact, and Openllet).
+   for each subgraph, the script computes and records Jaccard similarity scores between 
+   the retrieval results of each reasoner and the expected goal, as well as their runtime. 
+   The result is then save as a csv file for further investigation.
+   
+   To run the script: python examples/retrieval_eval_under_incomplete.py"""
+
+
+
 from argparse import ArgumentParser
 from ontolearn.knowledge_base import KnowledgeBase
 import pandas as pd
 from typing import Set
-from incomplete_kb import *
+import time
+from ontolearn.incomplete_kb import make_kb_incomplete, make_kb_inconsistent
 import os
 from ontolearn.utils import jaccard_similarity
 import subprocess
@@ -13,18 +23,35 @@ from owlapy.class_expression import *
 from owlapy.iri import IRI
 from owlapy.parser import DLSyntaxParser
 import ast
+from owlapy import owl_expression_to_dl
+from owlapy.owl_ontology_manager import OntologyManager
+from owlapy.owlapi_adaptor import OWLAPIAdaptor
+import pandas as pd
 
 
-# [] Create sub/incomplete KGs
-def generated_incomplete_kg(kb_path: str, directory: str, n: int, ratio: float) -> Set[str]:
+# Create incomplete/noisy KGs
+def generate_subgraphs(kb_path: str, directory: str, n: int, ratio: float, operation: str) -> Set[str]:
 
-    # (1)
-    # TODO:CD: Ensure that randomness can be controlled via seed
-    # TODO:CD: Return a set of strings where each item corresponds ot the local path of a sub kg.
+    """
+    Generates a specified number of paths of subgraphs (incomplete or noisy knowledge graphs)
+    by applying either the "incomplete" or "inconsistent" operation from the functions make_kb_incomplete and
+    make_kb_inconsistent to the given KB.
 
-    #e.g. of how the file can be save
-    # kb_path = "KGs/Family/father.owl"  
-    # output_path = f"incomplete_father_ratio_10_number_1.owl" 
+    Inputs:
+    ---------------
+
+        kb_path (str): The path to the input KB file.
+        directory (str): The directory where the generated subgraphs will be stored.
+        n (int): The number of subgraphs to generate.
+        ratio (float): The ratio of elements to modify within the KB (as a percentage).
+        operation (str): The type of operation to perform on the KB. Expected values are
+                        "incomplete" or "inconsistent", which define the type of subgraph to generate.
+
+    Output:
+    ---------------
+
+        Set[str]: A set containing the file paths of all the generated subgraphs.
+    """
 
     name = kb_path.split('/')[-1].split('.')[0]
     rate = int(ratio * 100)
@@ -35,88 +62,164 @@ def generated_incomplete_kg(kb_path: str, directory: str, n: int, ratio: float) 
 
     for i in range(1, n + 1):
 
-        # output path for the incomplete KGs
-        output_path = f'{directory}/incomplete_{name}_ratio_{rate}_number_{i}.owl'
+        
+        if "incomplete" in operation:
 
-        # function to generate the incomplete KG
-        make_kb_incomplete(kb_path, output_path, rate, seed=i)
+            # output path for the incomplete KGs
+            output_path = f'{directory}/{operation}_{name}_ratio_{rate}_number_{i}.owl'
+
+                # Check if the file already exists
+            if not os.path.exists(output_path):
+                # If file does not exist, generate it
+                make_kb_incomplete(kb_path, output_path, rate, seed=i)
+
+        else:
+            output_path = f'{directory}/{operation}_{name}_ratio_{rate}_number_{i}.owl'
+
+                # Check if the file already exists
+            if not os.path.exists(output_path):
+                # If file does not exist, generate it
+                make_kb_inconsistent(kb_path, output_path, rate, seed=i)
 
         # Add the output path to the set
         file_paths.add(output_path)
 
     return file_paths
 
-
 def execute(args):
-
     symbolic_kb = KnowledgeBase(path=args.path_kg)
-         
     namespace = list(symbolic_kb.ontology.classes_in_signature())[0].iri.get_namespace()
-
     parser = DLSyntaxParser(namespace)
-
-    # TODO: What should be directory args.path_kg?
     name_KG = args.path_kg.split('/')[-1].split('.')[0]
+    ratio_str = str(args.ratio).replace('.', '_')
+    directory = f"{args.operation}_{name_KG}_{ratio_str}"
+    paths_of_subgraphs = generate_subgraphs(
+        kb_path=args.path_kg, 
+        directory=directory,
+        n=args.number_of_subgraphs, 
+        ratio=args.ratio,
+        operation=args.operation
+    )
+    path_report = f"{directory}/ALCQHI_Retrieval_Results.csv"
 
-    directory = f"incomplete_{name_KG}"
-
-    paths_of_incomplete_kgs = generated_incomplete_kg(kb_path=args.path_kg, directory=directory,\
-                                n=args.number_of_incomplete_graphs, ratio=args.level_of_incompleteness)
-
-    # TODO: make sure the number of triple match inside 
-    # TODO: ensure all triples are subset of the original KG
     expressions = None
+    all_results = []
 
-    for path_of_an_incomplete_kgs in paths_of_incomplete_kgs:
+    for path in paths_of_subgraphs:
 
-        list_jaccard_symbolic = []
         list_jaccard_neural = []
+        data = []
 
-        # Train a KGE, retrieval eval vs KGE and Symbolic
-        # args.ratio_sample_nc
-        # args.ratio_sample_object_prob
-        subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path_of_an_incomplete_kgs])
-        # Load the results on the current view.
-        df = pd.read_csv("ALCQHI_Retrieval_Results.csv", index_col=0)
-
-        # Sanity checking
-        if expressions is None:
-            expressions = {i for i in df["Expression"].to_list()}
+        if args.sample == "Yes":
+            subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path, "--ratio_sample_nc","0.1", "--ratio_sample_object_prob", "0.2", "--path_report", path_report])
         else:
-            assert expressions == {i for i in df["Expression"].to_list()}
+            subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path, "--path_report", path_report])
+        
+        df = pd.read_csv(f"{directory}/ALCQHI_Retrieval_Results.csv", index_col=0)
+        
+        expressions = {i for i in df["Expression"].to_list()}
 
-        # Iterate
-        for expression in expressions:
+        ontology_path = path
+        reasoners = ['HermiT', 'Pellet', 'JFact', 'Openllet']
+        reasoner_jaccards = {reasoner: [] for reasoner in reasoners}
+        reasoner_times = {reasoner: [] for reasoner in reasoners}  # To store running times
 
-            # TODO: str -> owlapy.owl_classexpression object
-            
-            target_concept = parser.parse_expression(expression) 
-            
-            goal_retrieval = {i.str for i in symbolic_kb.individuals(target_concept)}
 
-            result_symbolic: Set[str]
-            result_neural_symbolic: Set[str]
+        owlapi_adaptor = OWLAPIAdaptor(path=ontology_path, name_reasoner='HermiT')
 
-            result_symbolic = df[df["Expression"]==expression]["Symbolic_Retrieval"].apply(ast.literal_eval)
-            result_symbolic = result_symbolic.iloc[0] 
+        if owlapi_adaptor.has_consistent_ontology():
 
-            result_neural_symbolic = df[df["Expression"]==expression]["Symbolic_Retrieval_Neural"].apply(ast.literal_eval)
-            result_neural_symbolic = result_neural_symbolic.iloc[0]
-            
+            for expression in expressions:
+                
+                print("-"*100)
+                print("Expression:", expression)
+                target_concept = parser.parse_expression(expression)
+                goal_retrieval = {i.str for i in symbolic_kb.individuals(target_concept)}
+                result_neural_symbolic = df[df["Expression"] == expression]["Symbolic_Retrieval_Neural"].apply(ast.literal_eval).iloc[0]
+                jaccard_sim_neural = jaccard_similarity(result_neural_symbolic, goal_retrieval)
+                list_jaccard_neural.append(jaccard_sim_neural)
+                
+                result_row = {
+                    "Incomplete_KG": path.split('/')[-1],
+                    "Expression": expression,
+                    "Type": type(parser.parse_expression(expression)).__name__,
+                    "Jaccard_EBR": jaccard_sim_neural,
+                    "Runtime_EBR": df[df["Expression"] == expression]["Runtime Neural"].iloc[0]
+                }
 
-            jaccard_sim_symbolic = jaccard_similarity(result_symbolic, goal_retrieval)
 
-            jaccard_sim_neural = jaccard_similarity(result_neural_symbolic, goal_retrieval)
+                for reasoner in reasoners:
 
-            # Update for Averaging
-            list_jaccard_neural.append(jaccard_sim_neural)
-            list_jaccard_symbolic.append(jaccard_sim_symbolic)
+                    owlapi_adaptor = OWLAPIAdaptor(path=ontology_path, name_reasoner=reasoner)
 
-        avg_jaccard_sym = sum(list_jaccard_symbolic)/len(list_jaccard_symbolic)
-        avg_jaccard_neural = sum(list_jaccard_neural)/len(list_jaccard_neural)
+                    print(f"...Reasoner {reasoner} starts")
 
-        print("Average jaccard symbolic", avg_jaccard_sym)
-        print("Average Jaccard neural", avg_jaccard_neural)
+                    start_time = time.time()  # Start timing
+
+                    result_symbolic = {i.str for i in (owlapi_adaptor.instances(target_concept, direct=False))}
+                    end_time = time.time()  # End timing
+                    
+                    elapsed_time = end_time - start_time  # Calculate elapsed time
+                    jaccard_sim_symbolic = jaccard_similarity(result_symbolic, goal_retrieval)
+                    reasoner_jaccards[reasoner].append(jaccard_sim_symbolic)
+                    reasoner_times[reasoner].append(elapsed_time)  # Store running time
+                    
+                    result_row[f"Jaccard_{reasoner}"] = jaccard_sim_symbolic
+                    result_row[f"Runtime_{reasoner}"] = elapsed_time
+
+                
+
+                data.append(result_row)
+
+            all_results.extend(data)
+
+        
+            avg_jaccard_neural = sum(list_jaccard_neural) / len(list_jaccard_neural)
+            avg_jaccard_reasoners = {reasoner: sum(reasoner_jaccards[reasoner]) / len(reasoner_jaccards[reasoner]) for reasoner in reasoners}
+            avg_time_reasoners = {reasoner: sum(reasoner_times[reasoner]) / len(reasoner_times[reasoner]) for reasoner in reasoners}
+
+            print(f"Average Jaccard neural ({path}):", avg_jaccard_neural)
+            for reasoner, avg_jaccard in avg_jaccard_reasoners.items():
+                print(f"Average Jaccard {reasoner} ({path}):", avg_jaccard)
+                print(f"Average Runtime {reasoner} ({path}):", avg_time_reasoners[reasoner])
+
+        else:
+
+            for expression in expressions:
+
+                print("-"*100)
+                print("Expression:", expression)
+                
+                target_concept = parser.parse_expression(expression)
+                goal_retrieval = {i.str for i in symbolic_kb.individuals(target_concept)}
+                result_neural_symbolic = df[df["Expression"] == expression]["Symbolic_Retrieval_Neural"].apply(ast.literal_eval).iloc[0]
+                jaccard_sim_neural = jaccard_similarity(result_neural_symbolic, goal_retrieval)
+                list_jaccard_neural.append(jaccard_sim_neural)
+                
+                result_row = {
+                    "Subgraphs": path.split('/')[-1],
+                    "Expression": expression,
+                    "Type": type(parser.parse_expression(expression)).__name__,
+                    "Jaccard_EBR": jaccard_sim_neural,
+                    "Runtime_EBR": df[df["Expression"] == expression]["Runtime Neural"].iloc[0]
+                }
+                
+
+                data.append(result_row)
+
+            all_results.extend(data)
+            print("The Knowledge base is not consistent, hence other reasoners will fail")
+
+    # Create a final DataFrame from all results and write to a CSV file
+    final_df = pd.DataFrame(all_results)
+    final_csv_path = f"{directory}/comparison_results.csv"
+    final_df.to_csv(final_csv_path, index=False)
+
+    print(final_df.head())
+    print(f"Results have been saved to {final_csv_path}")
+        
+    owlapi_adaptor.stopJVM()  # Stop the standard reasoner 
+   
 
 
 
@@ -127,9 +230,12 @@ def get_default_arguments():
     parser.add_argument("--ratio_sample_nc", type=float, default=None, help="To sample OWL Classes.")
     parser.add_argument("--ratio_sample_object_prob", type=float, default=None, help="To sample OWL Object Properties.")
     parser.add_argument("--path_report", type=str, default="ALCQHI_Retrieval_Incomplete_Results.csv")
-    parser.add_argument("--number_of_incomplete_graphs", type = int, default=1)
-    parser.add_argument("--level_of_incompleteness", type = float, default=0.1, \
-                        help="Percentage of incompleteness from the original KGs between 0 and 1")
+    parser.add_argument("--number_of_subgraphs", type=int, default=1)
+    parser.add_argument("--ratio", type=float, default=0.1, \
+                        help="Percentage of incompleteness or inconsistency from the original KG between 0 and 1")
+    parser.add_argument("--operation", type=str, default="incomplete", choices=["incomplete", "inconsistent"],\
+                        help = "Choose to make the KB incomplete or inconsistent")
+    parser.add_argument("--sample", type=str, default="No", choices=["No", "Yes"], help = "Sample if needed")
     return parser.parse_args()
 
 

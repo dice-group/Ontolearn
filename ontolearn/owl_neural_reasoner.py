@@ -44,10 +44,12 @@ class TripleStoreNeuralReasoner:
                 path_of_kb = path_of_kb.replace("/", "_")
                 path_of_kb = path_of_kb.replace(".", "_")
                 args.path_to_store_single_run = path_of_kb
-                args.num_epochs = 500
+                args.num_epochs = 100
                 args.embedding_dim = 512
                 args.batch_size = 1024
                 args.backend = "rdflib"
+                args.trainer = "PL"
+                # args.save_embeddings_as_csv = "True"
                 reports = Execute(args).start()
                 path_neural_embedding = reports["path_experiment_folder"]
                 self.model = KGE(path=path_neural_embedding)

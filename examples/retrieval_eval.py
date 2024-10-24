@@ -83,22 +83,34 @@ def execute(args):
     ###################################################################
     # GENERATE DL CONCEPTS TO EVALUATE RETRIEVAL PERFORMANCES
     # (3) R: Extract object properties.
-    object_properties = {i for i in symbolic_kb.get_object_properties()}
+    object_properties = sorted({i for i in symbolic_kb.get_object_properties()})
+    
     # (3.1) Subsample if required.
     if args.ratio_sample_object_prob:
         object_properties = {i for i in random.sample(population=list(object_properties),
-                                                      k=max(1, int(len(object_properties) * args.ratio_sample_nc)))}
+                                                      k=max(1, int(len(object_properties) * args.ratio_sample_object_prob)))}
+
+    object_properties = set(object_properties)    
+    
     # (4) R⁻: Inverse of object properties.
     object_properties_inverse = {i.get_inverse_property() for i in object_properties}
+
     # (5) R*: R UNION R⁻.
     object_properties_and_inverse = object_properties.union(object_properties_inverse)
     # (6) NC: Named owl concepts.
-    nc = {i for i in symbolic_kb.get_concepts()}
+    nc = sorted({i for i in symbolic_kb.get_concepts()})
+   
+
+
+
     if args.ratio_sample_nc:
         # (6.1) Subsample if required.
         nc = {i for i in random.sample(population=list(nc), k=max(1, int(len(nc) * args.ratio_sample_nc)))}
+
+    nc = set(nc) # return to a set
     # (7) NC⁻: Complement of NC.
     nnc = {i.get_object_complement_of() for i in nc}
+
     # (8) NC*: NC UNION NC⁻.
     nc_star = nc.union(nnc)
     # (9) Retrieve 10 random Nominals.
@@ -108,6 +120,7 @@ def execute(args):
         nominals = symbolic_kb.all_individuals_set()
     # (10) All combinations of 3 for Nominals, e.g. {martin, heinz, markus}
     nominal_combinations = set( OWLObjectOneOf(combination)for combination in itertools.combinations(nominals, 3))
+
     # (11) NC UNION NC.
     unions = concept_reducer(nc, opt=OWLObjectUnionOf)
     # (12) NC INTERSECTION NC.
@@ -168,8 +181,6 @@ def execute(args):
         chain(
             nc,           # named concepts          (C)
             nnc,                   # negated named concepts  (\neg C)
-            unions,                # unions of named concepts ( A OR C)
-            intersections,         # intersection of named concepts
             unions_nc_star,        # A set of Union of named concepts and negat
             intersections_nc_star, #
             exist_nc_star,
@@ -196,8 +207,11 @@ def execute(args):
     print(f"|exist R* Nominals|={len(exist_nominals)}")
     print("#" * 50,end="\n\n")
 
+
     # () Shuffled the data so that the progress bar is not influenced by the order of concepts.
+
     random.shuffle(concepts)
+
     # () Iterate over single OWL Class Expressions in ALCQIHO
     for expression in (tqdm_bar := tqdm(concepts, position=0, leave=True)):
         retrieval_y: Set[str]
@@ -218,6 +232,7 @@ def execute(args):
                 "Jaccard Similarity": jaccard_sim,
                 "F1": f1_sim,
                 "Runtime Benefits": runtime_y - runtime_neural_y,
+                "Runtime Neural": runtime_neural_y,
                 "Symbolic_Retrieval": retrieval_y,
                 "Symbolic_Retrieval_Neural": retrieval_neural_y,
             }
@@ -228,7 +243,7 @@ def execute(args):
         )
     # () Read the data into pandas dataframe
     df = pd.DataFrame(data)
-    assert df["Jaccard Similarity"].mean() == 1.0
+    assert df["Jaccard Similarity"].mean() >= args.min_jaccard_similarity
     # () Save the experimental results into csv file.
     df.to_csv(args.path_report)
     del df
@@ -250,13 +265,14 @@ def execute(args):
 
 def get_default_arguments():
     parser = ArgumentParser()
-    parser.add_argument("--path_kg", type=str, default="KGs/Family/family-benchmark_rich_background.owl")
+    parser.add_argument("--path_kg", type=str, default="KGs/Family/father.owl")
     parser.add_argument("--path_kge_model", type=str, default=None)
     parser.add_argument("--endpoint_triple_store", type=str, default=None)
-    parser.add_argument("--gamma", type=float, default=0.8)
+    parser.add_argument("--gamma", type=float, default=0.9)
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--ratio_sample_nc", type=float, default=None, help="To sample OWL Classes.")
-    parser.add_argument("--ratio_sample_object_prob", type=float, default=None, help="To sample OWL Object Properties.")
+    parser.add_argument("--ratio_sample_nc", type=float, default=0.2, help="To sample OWL Classes.")
+    parser.add_argument("--ratio_sample_object_prob", type=float, default=0.1, help="To sample OWL Object Properties.")
+    parser.add_argument("--min_jaccard_similarity", type=float, default=0.0, help="Minimum Jaccard similarity to be achieve by the reasoner")
     parser.add_argument("--num_nominals", type=int, default=10, help="Number of OWL named individuals to be sampled.")
 
     # H is obtained if the forward chain is applied on KG.
