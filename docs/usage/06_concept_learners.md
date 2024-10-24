@@ -53,7 +53,7 @@ hardcoded lines which we can now simply access by loading the json file. Below i
 an example file that we are naming `synthetic_problems.json`  showing how should it look:
 
     {  
-      "data_path": "../KGs/Family/family-benchmark_rich_background2.owl",  
+      "data_path": "../KGs/Family/family-benchmark_rich_background.owl",  
       "learning_problem": {
         "positive_examples": [  
         "http://www.benchmark.org/family#F2F28",  
