@@ -19,7 +19,7 @@ except FileNotFoundError:
 
 if not os.path.exists("PremierLeague"):
     print("Please prepare the data required by this example")
-    print("1. Download and extract the data (in the examples directory): `wget https://files.dice-research.org/projects/Ontolearn/PremierLeague.zip -O ./LPs.zip && unzip PremierLeague.zip`")
+    print("1. Download and extract the data (in the examples directory): `wget https://files.dice-research.org/projects/Ontolearn/PremierLeague.zip && unzip PremierLeague.zip`")
     print("2. Load the knowledge graph found at `PremierLeague/premierleague-hermit-inf.nt` to the triplestore")
     exit(1)
 
