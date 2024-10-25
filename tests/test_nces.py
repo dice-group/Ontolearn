@@ -2,6 +2,7 @@ from ontolearn.concept_learner import NCES
 from ontolearn.knowledge_base import KnowledgeBase
 from owlapy.parser import DLSyntaxParser
 from ontolearn.metrics import F1
+from ontolearn.learning_problem import PosNegLPStandard
 import time
 import random
 import unittest
@@ -33,21 +34,22 @@ class TestNCES(unittest.TestCase):
     def test_prediction_quality_family(self):
         nces = NCES(knowledge_base_path="./NCESData/family/family.owl", quality_func=F1(), num_predictions=100,
                     path_of_embeddings="./NCESData/family/embeddings/ConEx_entity_embeddings.csv",
-                    pretrained_model_name=["LSTM", "GRU", "SetTransformer"])
+                    learner_names=["LSTM", "GRU", "SetTransformer"])
         KB = KnowledgeBase(path=nces.knowledge_base_path)
         dl_parser = DLSyntaxParser(nces.kb_namespace)
         brother = dl_parser.parse('Brother')
         daughter = dl_parser.parse('Daughter')
         pos = set(KB.individuals(brother)).union(set(KB.individuals(daughter)))
         neg = set(KB.individuals())-set(pos)
-        node = list(nces.fit(pos, neg).best_predictions)[0]
+        learning_problem = PosNegLPStandard(pos=pos, neg=neg)
+        node = list(nces.fit(learning_problem).best_predictions)[0]
         print("Quality:", node.quality)
         assert node.quality > 0.95
 
     def test_prediction_quality_mutagenesis(self):
         nces = NCES(knowledge_base_path="./NCESData/mutagenesis/mutagenesis.owl", quality_func=F1(), num_predictions=100,
                     path_of_embeddings="./NCESData/mutagenesis/embeddings/ConEx_entity_embeddings.csv",
-                    pretrained_model_name=["LSTM", "GRU", "SetTransformer"])
+                    learner_names=["LSTM", "GRU", "SetTransformer"])
         KB = KnowledgeBase(path=nces.knowledge_base_path)
         dl_parser = DLSyntaxParser(nces.kb_namespace)
         exists_inbond = dl_parser.parse('∃ hasStructure.Benzene')
@@ -57,7 +59,8 @@ class TestNCES(unittest.TestCase):
         if len(pos) > 500:
             pos = set(np.random.choice(list(pos), size=min(500, len(pos)), replace=False))
         neg = set(neg[:min(1000-len(pos), len(neg))])
-        node = list(nces.fit(pos, neg).best_predictions)[0]
+        learning_problem = PosNegLPStandard(pos=pos, neg=neg)
+        node = list(nces.fit(learning_problem).best_predictions)[0]
         print("Quality:", node.quality)
         assert node.quality > 0.95
         
