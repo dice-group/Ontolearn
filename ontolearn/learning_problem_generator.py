@@ -120,7 +120,7 @@ class LearningProblemGenerator:  # pragma: no cover
                     OWLAnnotationProperty(IRI.create(SNS, "covered_inds")), OWLLiteral(count)))
                 ontology.add_axiom(num_inds)
 
-        ontology.save(IRI.create('file:/' + path + '.owl'))
+        ontology.save(IRI.create(path + '.owl'))
 
     def concept_individuals_to_string_balanced_examples(self, concept: OWLClassExpression) -> Dict[str, Set]:
 

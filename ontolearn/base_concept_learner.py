@@ -380,7 +380,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
                 ontology.add_axiom(f1_score)
             """
 
-        ontology.save(IRI.create('file:/' + path + '.owl'))
+        ontology.save(IRI.create(path + '.owl'))
 
     def load_hypotheses(self, path: str) -> Iterable[OWLClassExpression]:
         """

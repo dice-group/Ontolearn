@@ -330,7 +330,7 @@ def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLCl
             print(i)
             print(expressions)
             exit(1)
-    ontology.save(IRI.create('file:/' + path + '.owl'))
+    ontology.save(IRI.create(path + '.owl'))
 
 
 def verbalize(predictions_file_path: str):  # pragma: no cover
