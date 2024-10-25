@@ -33,7 +33,7 @@ from owlapy.class_expression import OWLClassExpression
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLAxiom
 from owlapy.owl_individual import OWLNamedIndividual
-from owlapy.owl_reasoner import OWLReasoner
+from owlapy.abstracts import AbstractOWLReasoner
 
 from ontolearn.abstracts import AbstractNode
 from ontolearn.base_concept_learner import BaseConceptLearner
@@ -125,7 +125,7 @@ _N = TypeVar('_N', bound=AbstractNode)  #:
 
 
 class Trainer:  # pragma: no cover
-    def __init__(self, learner: BaseConceptLearner, reasoner: OWLReasoner):
+    def __init__(self, learner: BaseConceptLearner, reasoner: AbstractOWLReasoner):
         """
         A class to disentangle the learner from its training.
 

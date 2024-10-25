@@ -26,7 +26,6 @@
 
 import logging
 import operator
-import random
 import time
 from datetime import datetime
 from contextlib import contextmanager
@@ -40,7 +39,7 @@ from owlapy.class_expression import OWLClassExpression
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_property import OWLDataProperty
-from owlapy.owl_reasoner import OWLReasoner
+from owlapy.abstracts import AbstractOWLReasoner
 from torch.utils.data import DataLoader
 from torch.functional import F
 from torch.nn.utils.rnn import pad_sequence
@@ -108,7 +107,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
         _number_of_tested_concepts (int): Yes, you got it. This stores the number of tested concepts.
         operator (BaseRefinement): Operator used to generate refinements.
         quality_func (AbstractScorer) The quality function to be used.
-        reasoner (OWLReasoner): The reasoner that this model is using.
+        reasoner (AbstractOWLReasoner): The reasoner that this model is using.
         search_tree (Dict[OWLClassExpression, TreeNode[OENode]]): Dict to store the TreeNode for a class expression.
         start_class (OWLClassExpression): The starting class expression for the refinement operation.
         start_time (float): The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
@@ -135,7 +134,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
-                 reasoner: Optional[OWLReasoner] = None,
+                 reasoner: Optional[AbstractOWLReasoner] = None,
                  refinement_operator: Optional[BaseRefinement[OENode]] = None,
                  quality_func: Optional[AbstractScorer] = None,
                  heuristic_func: Optional[AbstractHeuristic] = None,
@@ -162,7 +161,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
             max_runtime (int): Limit to stop the algorithm after n seconds. Defaults to 5.
             max_results (int): Maximum hypothesis to store. Defaults to 10.
             quality_func (AbstractScorer) The quality function to be used. Defaults to `F1`.
-            reasoner (OWLReasoner): Optionally use a different reasoner. If reasoner=None, the reasoner of
+            reasoner (AbstractOWLReasoner): Optionally use a different reasoner. If reasoner=None, the reasoner of
                                     the :attr:`knowledge_base` is used.
             terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found. Defaults to True.
 
@@ -609,7 +608,7 @@ class OCEL(CELOE):
         _number_of_tested_concepts (int): Yes, you got it. This stores the number of tested concepts.
         operator (BaseRefinement): Operator used to generate refinements.
         quality_func (AbstractScorer) The quality function to be used.
-        reasoner (OWLReasoner): The reasoner that this model is using.
+        reasoner (AbstractOWLReasoner): The reasoner that this model is using.
         search_tree (Dict[OWLClassExpression, TreeNode[OENode]]): Dict to store the TreeNode for a class expression.
         start_class (OWLClassExpression): The starting class expression for the refinement operation.
         start_time (float): The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
@@ -622,7 +621,7 @@ class OCEL(CELOE):
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
-                 reasoner: Optional[OWLReasoner] = None,
+                 reasoner: Optional[AbstractOWLReasoner] = None,
                  refinement_operator: Optional[BaseRefinement[OENode]] = None,
                  quality_func: Optional[AbstractScorer] = None,
                  heuristic_func: Optional[AbstractHeuristic] = None,
@@ -649,7 +648,7 @@ class OCEL(CELOE):
             max_runtime (int): Limit to stop the algorithm after n seconds. Defaults to 5.
             max_results (int): Maximum hypothesis to store. Defaults to 10.
             quality_func (AbstractScorer) The quality function to be used. Defaults to `F1`.
-            reasoner (OWLReasoner): Optionally use a different reasoner. If reasoner=None, the reasoner of
+            reasoner (AbstractOWLReasoner): Optionally use a different reasoner. If reasoner=None, the reasoner of
                                     the :attr:`knowledge_base` is used.
             terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found. Defaults to True.
 
@@ -710,7 +709,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         population_size (int): Population size for the evolutionary algorithm.
         pset (gp.PrimitiveSetTyped): Contains the primitives that can be used to solve a Strongly Typed GP problem.
         quality_func: Function to evaluate the quality of solution concepts.
-        reasoner (OWLReasoner): The reasoner that this model is using.
+        reasoner (AbstractOWLReasoner): The reasoner that this model is using.
         start_time (float): The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
                             takes to execute.
         terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found.
@@ -758,7 +757,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
-                 reasoner: Optional[OWLReasoner] = None,
+                 reasoner: Optional[AbstractOWLReasoner] = None,
                  quality_func: Optional[AbstractScorer] = None,
                  fitness_func: Optional[AbstractFitness] = None,
                  init_method: Optional[AbstractEAInitialization] = None,
@@ -793,7 +792,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             num_generations (int): Number of generation for the evolutionary algorithm. Defaults to 200.
             population_size (int): Population size for the evolutionary algorithm. Defaults to 800.
             quality_func: Function to evaluate the quality of solution concepts. Defaults to `Accuracy`.
-            reasoner (OWLReasoner): Optionally use a different reasoner. If reasoner=None, the reasoner of
+            reasoner (AbstractOWLReasoner): Optionally use a different reasoner. If reasoner=None, the reasoner of
                                     the :attr:`knowledge_base` is used.
             terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found. Defaults to True.
             tournament_size (int): The number of evolutionary individuals participating in each tournament.
@@ -1148,7 +1147,7 @@ class CLIP(CELOE):
         _number_of_tested_concepts (int): Yes, you got it. This stores the number of tested concepts.
         operator (BaseRefinement): Operator used to generate refinements.
         quality_func (AbstractScorer) The quality function to be used.
-        reasoner (OWLReasoner): The reasoner that this model is using.
+        reasoner (AbstractOWLReasoner): The reasoner that this model is using.
         search_tree (Dict[OWLClassExpression, TreeNode[OENode]]): Dict to store the TreeNode for a class expression.
         start_class (OWLClassExpression): The starting class expression for the refinement operation.
         start_time (float): The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
@@ -1166,7 +1165,7 @@ class CLIP(CELOE):
     def __init__(self,
                  knowledge_base: KnowledgeBase,
                  knowledge_base_path='',
-                 reasoner: Optional[OWLReasoner] = None,
+                 reasoner: Optional[AbstractOWLReasoner] = None,
                  refinement_operator: Optional[BaseRefinement[OENode]] = ExpressRefinement,
                  quality_func: Optional[AbstractScorer] = None,
                  heuristic_func: Optional[AbstractHeuristic] = None,

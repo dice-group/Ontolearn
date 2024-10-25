@@ -30,8 +30,8 @@ import numpy as np
 from owlapy.class_expression import OWLClass, OWLClassExpression
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLEquivalentClassesAxiom
-from owlapy.owl_ontology import OWLOntology
-from owlapy.owl_ontology_manager import OWLOntologyManager, OntologyManager
+from owlapy.abstracts import AbstractOWLOntology, AbstractOWLOntologyManager
+from owlapy.owl_ontology_manager import OntologyManager
 from owlapy.owl_hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from owlapy.utils import OWLClassExpressionLengthMetric, LRUCache
 import traceback
@@ -237,6 +237,7 @@ def compute_f1_score(individuals, pos, neg) -> float:  # pragma: no cover
 
 
 def plot_umap_reduced_embeddings(X: pandas.DataFrame, y: List[float], name: str = "umap_visualization.pdf") -> None:  # pragma: no cover
+    # TODO:AB: 'umap' is not part of the dependencies !?
     import umap
     reducer = umap.UMAP(random_state=1)
     embedding = reducer.fit_transform(X)
@@ -312,9 +313,9 @@ def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLCl
     # @TODO: CD: Lazy import. CD: Can we use rdflib to serialize concepts ?!
     from owlapy.owl_ontology import Ontology
     # ()
-    manager: OWLOntologyManager = OntologyManager()
+    manager: AbstractOWLOntologyManager = OntologyManager()
     # ()
-    ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
+    ontology: AbstractOWLOntology = manager.create_ontology(IRI.create(NS))
     # () Iterate over concepts
     for th, i in enumerate(expressions):
         cls_a = OWLClass(IRI.create(NS, str(th)))
