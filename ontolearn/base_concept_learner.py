@@ -332,7 +332,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     def number_of_tested_concepts(self):
         return self._number_of_tested_concepts
 
-    def save_best_hypothesis(self, n: int = 10, path: str = 'Predictions', rdf_format: str = 'rdfxml') -> None:
+    def save_best_hypothesis(self, n: int = 10, path: str = './Predictions', rdf_format: str = 'rdfxml') -> None:
         """Serialise the best hypotheses to a file.
         @TODO: CD: This function should be deprecated.
         @TODO: CD: Saving owl class expressions into disk should be disentangled from a concept earner

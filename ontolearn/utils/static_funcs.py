@@ -300,7 +300,7 @@ def plot_topk_feature_importance(feature_names, cart_tree, topk: int = 10)->None
 
 
 def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLClassExpression]],
-                               path: str = 'Predictions',
+                               path: str = './Predictions',
                                rdf_format: str = 'rdfxml') -> None:  # pragma: no cover
     assert isinstance(expressions, OWLClassExpression) or isinstance(expressions[0],
                                                                      OWLClassExpression), "expressions must be either OWLClassExpression or a list of OWLClassExpression"
