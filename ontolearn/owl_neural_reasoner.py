@@ -1,23 +1,16 @@
 from owlapy.owl_property import (
     OWLDataProperty,
-    OWLObjectPropertyExpression,
     OWLObjectInverseOf,
     OWLObjectProperty,
     OWLProperty,
 )
-
-from owlapy.owl_datatype import OWLDatatype
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
-
 from owlapy.class_expression import *
-
-from typing import Iterable, Set, Optional, Generator, Union, FrozenSet, Tuple, Callable
-
+from typing import Generator, Tuple
 from dicee.knowledge_graph_embeddings import KGE
-
 import os
-
+import re
 from collections import Counter
 
 
@@ -44,7 +37,6 @@ class TripleStoreNeuralReasoner:
                 # Train a KGE on the fly
                 from dicee.executer import Execute
                 from dicee.config import Namespace
-
                 args = Namespace()
                 args.model = 'Keci'
                 args.scoring_technique = "AllvsAll"
@@ -52,10 +44,12 @@ class TripleStoreNeuralReasoner:
                 path_of_kb = path_of_kb.replace("/", "_")
                 path_of_kb = path_of_kb.replace(".", "_")
                 args.path_to_store_single_run = path_of_kb
-                args.num_epochs = 500
+                args.num_epochs = 100
                 args.embedding_dim = 512
                 args.batch_size = 1024
                 args.backend = "rdflib"
+                args.trainer = "PL"
+                # args.save_embeddings_as_csv = "True"
                 reports = Execute(args).start()
                 path_neural_embedding = reports["path_experiment_folder"]
                 self.model = KGE(path=path_neural_embedding)
@@ -70,6 +64,7 @@ class TripleStoreNeuralReasoner:
         self.inferred_owl_individuals = None
         self.inferred_object_properties = None
         self.inferred_named_owl_classes = None
+
     @property
     def set_inferred_individuals(self):
         if self.inferred_owl_individuals is None:
@@ -77,6 +72,7 @@ class TripleStoreNeuralReasoner:
             return {i for i in self.individuals_in_signature()}
         else:
             return self.inferred_owl_individuals
+
     @property
     def set_inferred_object_properties(self):  # pragma: no cover
         if self.inferred_object_properties is None:
@@ -84,6 +80,7 @@ class TripleStoreNeuralReasoner:
             return {i for i in self.object_properties_in_signature()}
         else:
             return self.inferred_object_properties
+
     @property
     def set_inferred_owl_classes(self):  # pragma: no cover
         if self.inferred_named_owl_classes is None:
@@ -157,42 +154,33 @@ class TripleStoreNeuralReasoner:
         Tuple[
             Tuple[OWLNamedIndividual, OWLProperty, OWLClass],
             Tuple[OWLObjectProperty, OWLObjectProperty, OWLNamedIndividual],
-            Tuple[OWLObjectProperty, OWLDataProperty, OWLLiteral],
-        ],
-        None,
-        None,
-    ]:
+            Tuple[OWLObjectProperty, OWLDataProperty, OWLLiteral]], None,None ]:
+        # Initialize an owl named individual object.
         subject_ = OWLNamedIndividual(str_iri)
-        # for p == type
+        # Return a triple indicating the type.
         for cl in self.get_type_individuals(str_iri):
-            yield (
-                subject_,
-                OWLProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
-                cl,
-            )
+            yield subject_,OWLProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"), cl
 
-        # for p == object property
+        # Return a triple based on an object property.
         for op in self.object_properties_in_signature():
             for o in self.get_object_property_values(str_iri, op):
                 yield subject_, op, o
 
-        # for p == data property
+        # Return a triple based on a data property.
         for dp in self.data_properties_in_signature():  # pragma: no cover
             print("these data properties are in the signature: ", dp.str)
             for l in self.get_data_property_values(str_iri, dp):
                 yield subject_, dp, l
 
     def classes_in_signature(
-            self, confidence_threshold: float = None
-    ) -> Generator[OWLClass, None, None]:
+            self, confidence_threshold: float = None) -> Generator[OWLClass, None, None]:
         if self.inferred_named_owl_classes is None:
             self.inferred_named_owl_classes = set()
             for prediction in self.get_predictions(
                     h=None,
                     r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
                     t="http://www.w3.org/2002/07/owl#Class",
-                    confidence_threshold=confidence_threshold,
-            ):
+                    confidence_threshold=confidence_threshold):
                 try:
                     owl_class = OWLClass(prediction[0])
                     self.inferred_named_owl_classes.add(owl_class)
@@ -208,17 +196,20 @@ class TripleStoreNeuralReasoner:
             self, confidence_threshold: float = None
     ) -> Generator[OWLClass, None, None]:  # pragma: no cover
         """At least it has single subclass and there is no superclass"""
-        for _class in self.classes_in_signature(confidence_threshold):
-            for concept in self.get_direct_parents(_class, confidence_threshold):
+
+        for c in self.classes_in_signature(confidence_threshold):
+            for x in self.get_direct_parents(c, confidence_threshold):
+                # Ignore c if (c subclass x) \in KG.
                 break
             else:
                 # checks if subconcepts is not empty -> there is at least one subclass
+                # c should have at least a single subclass.
                 if subconcepts := list(
                         self.subconcepts(
-                            named_concept=_class, confidence_threshold=confidence_threshold
+                            named_concept=c, confidence_threshold=confidence_threshold
                         )
                 ):
-                    yield _class
+                    yield c
 
     def least_general_named_concepts(
             self, confidence_threshold: float = None
@@ -316,7 +307,6 @@ class TripleStoreNeuralReasoner:
             retrieve its instances => Retrieval(¬A)= All Instance Set-DIFF { x | phi(x, type, A) ≥ γ } """
             excluded_individuals = set(self.instances(expression.get_operand(), confidence_threshold))
             yield from self.set_inferred_individuals - excluded_individuals
-
         # Handling intersection of class expressions
         elif isinstance(expression, OWLObjectIntersectionOf):
             """ Given an OWLObjectIntersectionOf (C ⊓ D),  
@@ -356,7 +346,6 @@ class TripleStoreNeuralReasoner:
                 for individual in common_individuals:
                     yield individual
             """
-
         elif isinstance(expression, OWLObjectAllValuesFrom):
             """
             Given an OWLObjectAllValuesFrom ∀ r.C, retrieve its instances => 
@@ -375,8 +364,6 @@ class TripleStoreNeuralReasoner:
                     to_yield_individuals.add(individual)
 
             yield from to_yield_individuals
-
-
         elif isinstance(expression, OWLObjectMinCardinality) or isinstance(expression, OWLObjectSomeValuesFrom):
             """
             Given an OWLObjectSomeValuesFrom ∃ r.C, retrieve its instances => 
@@ -408,34 +395,40 @@ class TripleStoreNeuralReasoner:
             for individual, count in result.items():
                 if count >= cardinality:
                     yield individual
-
         elif isinstance(expression, OWLObjectMaxCardinality):
+            object_property: OWLObjectProperty
             object_property = expression.get_property()
+
+            filler_expression:OWLClassExpression
             filler_expression = expression.get_filler()
+
+            cardinality:int
             cardinality = expression.get_cardinality()
 
-            # Get all individuals that are instances of the filler expression
-            object_individuals = set(self.instances(filler_expression, confidence_threshold))
+            # Get all individuals that are instances of the filler expression.
+            owl_individual:OWLNamedIndividual
+            object_individuals = { owl_individual for owl_individual
+                                   in self.instances(filler_expression, confidence_threshold)}
 
-            # Initialize a dictionary to keep track of counts of related individuals for each entity
-            subject_individuals_count = {individual: 0 for individual in self.set_inferred_individuals}
+            # Initialize a dictionary to keep track of counts of related individuals for each entity.
+            owl_individual:OWLNamedIndividual
+            str_subject_individuals_to_count = {owl_individual.str: (owl_individual,0) for owl_individual in self.set_inferred_individuals}
 
             for object_individual in object_individuals:
-                # Get all individuals related to the object individual via the object property
-                subject_individuals = (
-                    self.get_individuals_with_object_property(obj=object_individual, object_property=object_property,
-                                                              confidence_threshold=confidence_threshold))
+                # Get all individuals related to the object individual via the object property.
+                subject_individuals = self.get_individuals_with_object_property(obj=object_individual,
+                                                              object_property=object_property,
+                                                              confidence_threshold=confidence_threshold)
 
-                # Update the count of related individuals for each object individual
+                # Update the count of related individuals for each object individual.
                 for subject_individual in subject_individuals:
-                    subject_individuals_count[subject_individual] += 1
+                    if subject_individual.str in str_subject_individuals_to_count:
+                        owl_obj, count = str_subject_individuals_to_count[subject_individual.str]
+                        # Increment the count.
+                        str_subject_individuals_to_count[subject_individual.str] = (owl_obj, count+1)
 
-            # Filter out individuals who exceed the specified cardinality
-            valid_individuals = {ind for ind, count in subject_individuals_count.items() if count <= cardinality}
-
-            yield from valid_individuals
-
-
+            # Filter out individuals who exceed the specified cardinality.
+            yield from  {ind for str_ind, (ind, count) in str_subject_individuals_to_count.items() if count <= cardinality}
 
         # Handling union of class expressions
         elif isinstance(expression, OWLObjectUnionOf):
@@ -464,11 +457,8 @@ class TripleStoreNeuralReasoner:
             try:
                 for cl in self.classes_in_signature():
                     predictions = self.get_predictions(
-                        h=None,
-                        r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
-                        t=cl.str,
-                        confidence_threshold=self.gamma,
-                    )
+                        h=None, r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type", t=cl.str,
+                        confidence_threshold=self.gamma)
                     for prediction in predictions:
                         try:
                             owl_named_individual = OWLNamedIndividual(prediction[0])
@@ -631,11 +621,11 @@ class TripleStoreNeuralReasoner:
 
     def get_individuals_with_object_property(
             self,
-            object_property: OWLObjectProperty,
-            obj: OWLClass,
-            confidence_threshold: float = None,
-    ) -> Generator[OWLNamedIndividual, None, None]:
+            object_property: OWLObjectProperty, obj: OWLClass, confidence_threshold: float = None ) \
+            -> Generator[OWLNamedIndividual, None, None]:
+
         is_inverse = isinstance(object_property, OWLObjectInverseOf)
+
         if is_inverse:
             object_property = object_property.get_inverse()
 
@@ -643,8 +633,8 @@ class TripleStoreNeuralReasoner:
                 h=obj.str if is_inverse else None,
                 r=object_property.str,
                 t=None if is_inverse else obj.str,
-                confidence_threshold=confidence_threshold,
-        ):
+                confidence_threshold=confidence_threshold):
+
             try:
                 yield OWLNamedIndividual(prediction[0])
             except Exception as e:  # pragma: no cover

@@ -53,7 +53,7 @@ hardcoded lines which we can now simply access by loading the json file. Below i
 an example file that we are naming `synthetic_problems.json`  showing how should it look:
 
     {  
-      "data_path": "../KGs/Family/family-benchmark_rich_background2.owl",  
+      "data_path": "../KGs/Family/family-benchmark_rich_background.owl",  
       "learning_problem": {
         "positive_examples": [  
         "http://www.benchmark.org/family#F2F28",  
@@ -142,8 +142,8 @@ and `negative_examples` to `OWLNamedIndividual`:
 from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.owl_individual import IRI, OWLNamedIndividual
 
-typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
-typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
+typed_pos = set(map(OWLNamedIndividual, map(IRI.create, positive_examples)))
+typed_neg = set(map(OWLNamedIndividual, map(IRI.create, negative_examples)))
 lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
 ```
 

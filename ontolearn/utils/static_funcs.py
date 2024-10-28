@@ -30,13 +30,109 @@ import numpy as np
 from owlapy.class_expression import OWLClass, OWLClassExpression
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLEquivalentClassesAxiom
-from owlapy.owl_ontology import OWLOntology
-from owlapy.owl_ontology_manager import OWLOntologyManager, OntologyManager
+from owlapy.abstracts import AbstractOWLOntology, AbstractOWLOntologyManager
+from owlapy.owl_ontology_manager import OntologyManager
 from owlapy.owl_hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from owlapy.utils import OWLClassExpressionLengthMetric, LRUCache
 import traceback
-from typing import Iterable
 from tqdm import tqdm
+
+from typing import Set, Iterable
+from owlapy.class_expression import (
+    OWLQuantifiedObjectRestriction,
+    OWLObjectCardinalityRestriction,
+)
+from owlapy.class_expression import (
+    OWLObjectUnionOf,
+    OWLObjectIntersectionOf,
+    OWLObjectSomeValuesFrom,
+    OWLObjectAllValuesFrom,
+    OWLObjectMinCardinality,
+    OWLObjectMaxCardinality,
+    OWLObjectOneOf,
+)
+
+
+def f1_set_similarity(y: Set[str], yhat: Set[str]) -> float:
+    """
+    Compute F1 score for two set
+    :param y: A set of URIs
+    :param yhat: A set of URIs
+    :return:
+    """
+    if len(yhat) == len(y) == 0:
+        return 1.0
+    if len(yhat) == 0 or len(y) == 0:
+        return 0.0
+
+    tp = len(y.intersection(yhat))
+    fp = len(yhat.difference(y))
+    fn = len(y.difference(yhat))
+
+    precision = tp / (tp + fp)
+    recall = tp / (tp + fn)
+
+
+    if precision == 0 and recall == 0:
+        return 0.0
+    
+    return (2 * precision * recall) / (precision + recall)
+
+
+def concept_reducer(concepts, opt):
+    """
+    Reduces a set of concepts by applying a binary operation to each pair of concepts.
+
+    Args:
+        concepts (set): A set of concepts to be reduced.
+        opt (function): A binary function that takes a pair of concepts and returns a single concept.
+
+    Returns:
+        set: A set containing the results of applying the binary operation to each pair of concepts.
+
+    Example:
+        >>> concepts = {1, 2, 3}
+        >>> opt = lambda x: x[0] + x[1]
+        >>> concept_reducer(concepts, opt)
+        {2, 3, 4, 5, 6}
+
+    Note:
+        The operation `opt` should be commutative and associative to ensure meaningful reduction in the context of set operations.
+    """
+    result = set()
+    for i in concepts:
+        for j in concepts:
+            result.add(opt((i, j)))
+    return result
+
+
+def concept_reducer_properties(
+        concepts: Set, properties, cls: Callable = None, cardinality: int = 2
+) -> Set[Union[OWLQuantifiedObjectRestriction, OWLObjectCardinalityRestriction]]:
+    """
+    Map a set of owl concepts and a set of properties into OWL Restrictions
+
+    Args:
+        concepts:
+        properties:
+        cls (Callable): An owl Restriction class
+        cardinality: A positive Integer
+
+    Returns: List of OWL Restrictions
+
+    """
+    assert isinstance(concepts, Iterable), "Concepts must be an Iterable"
+    assert isinstance(properties, Iterable), "properties must be an Iterable"
+    assert isinstance(cls, Callable), "cls must be an Callable"
+    assert cardinality > 0
+    result = set()
+    for i in concepts:
+        for j in properties:
+            if cls == OWLObjectMinCardinality or cls == OWLObjectMaxCardinality:
+                result.add(cls(cardinality=cardinality, property=j, filler=i))
+                continue
+            result.add(cls(j, i))
+    return result
 
 
 def make_iterable_verbose(iterable_object, verbose, desc="Default", position=None, leave=True) -> Iterable:
@@ -141,6 +237,7 @@ def compute_f1_score(individuals, pos, neg) -> float:  # pragma: no cover
 
 
 def plot_umap_reduced_embeddings(X: pandas.DataFrame, y: List[float], name: str = "umap_visualization.pdf") -> None:  # pragma: no cover
+    # TODO:AB: 'umap' is not part of the dependencies !?
     import umap
     reducer = umap.UMAP(random_state=1)
     embedding = reducer.fit_transform(X)
@@ -203,7 +300,7 @@ def plot_topk_feature_importance(feature_names, cart_tree, topk: int = 10)->None
 
 
 def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLClassExpression]],
-                               path: str = 'Predictions',
+                               path: str = './Predictions',
                                rdf_format: str = 'rdfxml') -> None:  # pragma: no cover
     assert isinstance(expressions, OWLClassExpression) or isinstance(expressions[0],
                                                                      OWLClassExpression), "expressions must be either OWLClassExpression or a list of OWLClassExpression"
@@ -216,15 +313,15 @@ def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLCl
     # @TODO: CD: Lazy import. CD: Can we use rdflib to serialize concepts ?!
     from owlapy.owl_ontology import Ontology
     # ()
-    manager: OWLOntologyManager = OntologyManager()
+    manager: AbstractOWLOntologyManager = OntologyManager()
     # ()
-    ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
+    ontology: AbstractOWLOntology = manager.create_ontology(IRI.create(NS))
     # () Iterate over concepts
     for th, i in enumerate(expressions):
         cls_a = OWLClass(IRI.create(NS, str(th)))
         equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, i])
         try:
-            manager.add_axiom(ontology, equivalent_classes_axiom)
+            ontology.add_axiom(equivalent_classes_axiom)
         except AttributeError:
             print(traceback.format_exc())
             print("Exception at creating OWLEquivalentClassesAxiom")
@@ -233,7 +330,7 @@ def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLCl
             print(i)
             print(expressions)
             exit(1)
-    manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))
+    ontology.save(IRI.create(path + '.owl'))
 
 
 def verbalize(predictions_file_path: str):  # pragma: no cover

@@ -779,7 +779,10 @@ class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
         -------
         node: A node object
         """
-        assert len(self.items_in_queue.queue) > 0
+        assert len(self.items_in_queue.queue) > 0 ,("Search tree is empty. "
+                                                    "\nEnsure that there is at least one "
+                                                    "owl:Class or"
+                                                    "owl:ObjectProperty definitions")
         _, __, dl_representation = self.items_in_queue.get(timeout=1.0)
         # R
         node = self.nodes[dl_representation]

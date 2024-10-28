@@ -118,41 +118,40 @@ Name                                       Stmts   Miss  Cover   Missing
 ------------------------------------------------------------------------
 ontolearn/__init__.py                          1      0   100%
 ontolearn/abstracts.py                        60      0   100%
-ontolearn/base_concept_learner.py            160      2    99%   313, 317
+ontolearn/base_concept_learner.py            158      2    99%   311, 315
 ontolearn/base_nces.py                        38      0   100%
-ontolearn/clip_architectures.py               93      0   100%
-ontolearn/clip_trainer.py                     94      7    93%   85, 94, 97, 102, 109, 122, 145
+ontolearn/clip_architectures.py               93     77    17%   33-41, 45-56, 61-69, 73-84, 90-101, 105-119, 125-131, 137-141
+ontolearn/clip_trainer.py                     94     76    19%   45-50, 53-55, 69-75, 78-151
 ontolearn/concept_generator.py                95      2    98%   68, 84
-ontolearn/concept_learner.py                 699     43    94%   291, 336, 411, 466-467, 533, 972-973, 1033, 1044, 1053, 1065, 1213, 1235, 1237, 1242, 1282-1286, 1325, 1336, 1371, 1374, 1379, 1389, 1391, 1446, 1452, 1457, 1502-1506, 1533, 1542-1545, 1552-1554, 1637, 1639
+ontolearn/concept_learner.py                 748    173    77%   219, 294, 339, 414, 469-470, 536, 975-976, 1036, 1047, 1056, 1068, 1187-1211, 1214-1242, 1245, 1282-1298, 1301-1314, 1320-1382, 1387-1397, 1450, 1458-1463, 1469-1490, 1497-1499, 1544-1548, 1575, 1586-1589, 1596-1598, 1672-1678, 1688-1689, 1694, 1696
 ontolearn/data_struct.py                       5      0   100%
-ontolearn/ea_algorithms.py                    57      2    96%   93, 96
+ontolearn/ea_algorithms.py                    57      1    98%   93
 ontolearn/ea_initialization.py               216      7    97%   93, 97, 310-315
 ontolearn/ea_utils.py                         88      5    94%   93, 110-111, 114-115
 ontolearn/fitness_functions.py                13      0   100%
 ontolearn/heuristics.py                       45      0   100%
-ontolearn/knowledge_base.py                  342     38    89%   120, 130, 155-156, 158, 161, 168, 172-173, 478-479, 519, 527, 530, 536, 574, 588, 596, 614, 618, 622, 641, 643, 657, 712, 722, 728-733, 782, 1030, 1039, 1049, 1058, 1107
+ontolearn/knowledge_base.py                  340     53    84%   120, 130, 153-154, 156, 159, 166, 170-171, 175, 479-480, 512, 520, 528, 531, 537, 571, 574-582, 587-588, 595-597, 618, 622, 626, 641-643, 647, 662, 711, 721, 727-732, 779, 1027, 1036, 1046, 1055, 1104
 ontolearn/learners/__init__.py                 2      0   100%
 ontolearn/learners/drill.py                   30      0   100%
-ontolearn/learners/tree_learner.py           173     13    92%   193, 377, 412, 418, 421-427, 435-437, 440, 443, 469
+ontolearn/learners/tree_learner.py           205     28    86%   190, 273-303, 391, 398, 400-404, 420, 423, 444, 453
 ontolearn/learning_problem.py                 31      1    97%   98
 ontolearn/learning_problem_generator.py       16      0   100%
 ontolearn/lp_generator/__init__.py             2      0   100%
 ontolearn/lp_generator/generate_data.py       10      0   100%
 ontolearn/lp_generator/helper_classes.py     125     14    89%   76, 85-93, 116, 135, 169-170
 ontolearn/metrics.py                          50      0   100%
-ontolearn/model_adapter.py                    33      0   100%
 ontolearn/nces_architectures.py               72      0   100%
 ontolearn/nces_modules.py                     53      5    91%   44-45, 68-69, 72
-ontolearn/nces_trainer.py                    127     10    92%   70, 74, 83, 87, 147, 156, 159, 164, 173, 185
+ontolearn/nces_trainer.py                    127     11    91%   48, 70, 74, 83, 87, 147, 156, 159, 164, 173, 185
 ontolearn/nces_utils.py                       24      0   100%
-ontolearn/owl_neural_reasoner.py             214     11    95%   63, 96, 124, 129, 140, 205, 290, 485, 498-501
-ontolearn/refinement_operators.py            521     26    95%   167-168, 226, 299, 400-401, 447, 541, 565, 599-601, 746, 782, 888, 916, 961-963, 970, 991-993, 995, 997, 1065, 1087
+ontolearn/owl_neural_reasoner.py             215     11    95%   57, 93, 121, 126, 137, 193, 281, 475, 488-491
+ontolearn/refinement_operators.py            521     31    94%   167-168, 226, 299, 400-401, 447, 541, 565, 599-601, 746, 782, 867-868, 888, 916, 935, 961-963, 967-968, 970, 991-993, 995, 997, 1065, 1087
 ontolearn/search.py                          293     25    91%   70, 133, 196, 216, 303, 307, 310, 339, 392, 429, 433, 441, 457, 467, 482, 484, 509, 511, 576-577, 666-667, 762, 766, 770
-ontolearn/utils/__init__.py                   33      2    94%   55, 95
+ontolearn/utils/__init__.py                   33      2    94%   58, 98
 ontolearn/utils/log_config.py                 19      0   100%
 ontolearn/utils/oplogging.py                   8      0   100%
-ontolearn/utils/static_funcs.py               43      2    95%   55, 86
+ontolearn/utils/static_funcs.py               77     31    60%   63-79, 102-106, 124-135, 151, 180
 ontolearn/value_splitter.py                  159      6    96%   111-113, 118, 127, 130
 ------------------------------------------------------------------------
-TOTAL                                       4044    221    95%
+TOTAL                                       4123    561    86%
 ```

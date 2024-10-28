@@ -30,15 +30,14 @@ from abc import ABCMeta, abstractmethod
 from typing import List, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, Union, cast, Callable, Type
 import numpy as np
 import pandas as pd
-import os
 
 from owlapy.class_expression import OWLClass, OWLClassExpression, OWLThing
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLDeclarationAxiom, OWLEquivalentClassesAxiom, OWLAxiom
 from owlapy.owl_individual import OWLNamedIndividual
-from owlapy.owl_ontology import OWLOntology
-from owlapy.owl_ontology_manager import OWLOntologyManager, AddImport, OWLImportsDeclaration
-from owlapy.owl_reasoner import OWLReasoner
+from owlapy.abstracts import AbstractOWLOntology, AbstractOWLOntologyManager, AbstractOWLReasoner
+from owlapy.owl_ontology_manager import AddImport, OWLImportsDeclaration
+from owlapy.owl_reasoner import FastInstanceCheckerReasoner, OntologyReasoner
 
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.knowledge_base import KnowledgeBase
@@ -46,7 +45,6 @@ from ontolearn.metrics import F1
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from owlapy.owl_ontology import Ontology
 from owlapy.owl_ontology_manager import OntologyManager
-from owlapy.owl_reasoner import SyncReasoner
 from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
     AbstractConceptNode, AbstractLearningProblem
@@ -89,7 +87,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found.
         max_runtime (int): Limit to stop the algorithm after n seconds.
         _number_of_tested_concepts (int): Yes, you got it. This stores the number of tested concepts.
-        reasoner (OWLReasoner): The reasoner that this model is using.
+        reasoner (AbstractOWLReasoner): The reasoner that this model is using.
         start_time (float): The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
                             takes to execute.
     """
@@ -110,7 +108,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     @abstractmethod
     def __init__(self,
                  knowledge_base: KnowledgeBase,
-                 reasoner: Optional[OWLReasoner] = None,
+                 reasoner: Optional[AbstractOWLReasoner] = None,
                  quality_func: Optional[AbstractScorer] = None,
                  max_num_of_concepts_tested: Optional[int] = None,
                  max_runtime: Optional[int] = None,
@@ -242,7 +240,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
     def _assign_labels_to_individuals(self, individuals: List[OWLNamedIndividual],
                                       hypotheses: List[OWLClassExpression],
-                                      reasoner: Optional[OWLReasoner] = None) -> np.ndarray:
+                                      reasoner: Optional[AbstractOWLReasoner] = None) -> np.ndarray:
         """
         Use each class expression as a hypothesis, and use it as a binary function to assign 1 or 0 to each
         individual.
@@ -302,12 +300,12 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         # If axioms are provided they need to be added to the ontology
         if axioms is not None:
-            ontology: OWLOntology = cast(Ontology, self.kb.ontology)
-            manager: OWLOntologyManager = ontology.get_owl_ontology_manager()
+            ontology: AbstractOWLOntology = cast(Ontology, self.kb.ontology)
+            manager: AbstractOWLOntologyManager = ontology.get_owl_ontology_manager()
             for axiom in axioms:
-                manager.add_axiom(ontology, axiom)
+                ontology.add_axiom(axiom)
             if reasoner is None:
-                reasoner = SyncReasoner(ontology)
+                reasoner = FastInstanceCheckerReasoner(ontology, base_reasoner=OntologyReasoner(ontology))
 
         if hypotheses is None:
             hypotheses = [hyp.concept for hyp in self.best_hypotheses(n)]
@@ -324,9 +322,9 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         # Remove the axioms from the ontology
         if axioms is not None:
             for axiom in axioms:
-                manager.remove_axiom(ontology, axiom)
+                ontology.remove_axiom(axiom)
             for ind in individuals:
-                manager.remove_axiom(ontology, OWLDeclarationAxiom(ind))
+                ontology.remove_axiom(OWLDeclarationAxiom(ind))
 
         return predictions
 
@@ -334,7 +332,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
     def number_of_tested_concepts(self):
         return self._number_of_tested_concepts
 
-    def save_best_hypothesis(self, n: int = 10, path: str = 'Predictions', rdf_format: str = 'rdfxml') -> None:
+    def save_best_hypothesis(self, n: int = 10, path: str = './Predictions', rdf_format: str = 'rdfxml') -> None:
         """Serialise the best hypotheses to a file.
         @TODO: CD: This function should be deprecated.
         @TODO: CD: Saving owl class expressions into disk should be disentangled from a concept earner
@@ -356,15 +354,15 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         if len(best) >= n:
             logger.warning("There was/were only %d unique result/-s found", len(best))
 
-        manager: OWLOntologyManager = OntologyManager()
+        manager: AbstractOWLOntologyManager = OntologyManager()
 
-        ontology: OWLOntology = manager.create_ontology(IRI.create(NS))
+        ontology: AbstractOWLOntology = manager.create_ontology(IRI.create(NS))
         manager.load_ontology(IRI.create(self.kb.path))
         manager.apply_change(AddImport(ontology, OWLImportsDeclaration(IRI.create('file://' + self.kb.path))))
         for ith, h in enumerate(self.best_hypotheses(n=n)):
             cls_a: OWLClass = OWLClass(IRI.create(NS, "Pred_" + str(ith)))
             equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, h])
-            manager.add_axiom(ontology, equivalent_classes_axiom)
+            ontology.add_axiom(equivalent_classes_axiom)
             # @TODO:CD: We should find a way to include information (F1score etc) outside of OWL class expression instances
             """
             try:
@@ -375,14 +373,14 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             if isinstance(self.quality_func, Accuracy):
                 accuracy = OWLAnnotationAssertionAxiom(cls_a.iri, OWLAnnotation(
                     OWLAnnotationProperty(IRI.create(SNS, "accuracy")), OWLLiteral(quality)))
-                manager.add_axiom(ontology, accuracy)
+                ontology.add_axiom(accuracy)
             elif isinstance(self.quality_func, F1):
                 f1_score = OWLAnnotationAssertionAxiom(cls_a.iri, OWLAnnotation(
                     OWLAnnotationProperty(IRI.create(SNS, "f1_score")), OWLLiteral(quality)))
-                manager.add_axiom(ontology, f1_score)
+                ontology.add_axiom(f1_score)
             """
 
-        manager.save_ontology(ontology, IRI.create('file:/' + path + '.owl'))
+        ontology.save(IRI.create(path + '.owl'))
 
     def load_hypotheses(self, path: str) -> Iterable[OWLClassExpression]:
         """
@@ -415,7 +413,7 @@ class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
         terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found.
         max_runtime (int): Limit to stop the algorithm after n seconds.
         _number_of_tested_concepts (int): Yes, you got it. This stores the number of tested concepts.
-        reasoner (OWLReasoner): The reasoner that this model is using.
+        reasoner (AbstractOWLReasoner): The reasoner that this model is using.
         start_time (float): The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
                             takes to execute.
         iter_bound (int): Limit to stop the algorithm after n refinement steps are done.
@@ -437,7 +435,7 @@ class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
     @abstractmethod
     def __init__(self,
                  knowledge_base: KnowledgeBase,
-                 reasoner: Optional[OWLReasoner] = None,
+                 reasoner: Optional[AbstractOWLReasoner] = None,
                  refinement_operator: Optional[BaseRefinement] = None,
                  heuristic_func: Optional[AbstractHeuristic] = None,
                  quality_func: Optional[AbstractScorer] = None,

@@ -1,6 +1,5 @@
 from ontolearn.learners import TDL
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.triple_store import TripleStore
 from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.iri import IRI
 from owlapy.owl_individual import OWLNamedIndividual
@@ -35,9 +34,9 @@ class TestConceptLearnerReg:
             # If not a valid SPARQL query, it should throw an error
             rdflib.Graph().query(owl_expression_to_sparql(root_variable="?x", expression=h))
             # Save the prediction
-            save_owl_class_expressions(h, path="Predictions")
+            save_owl_class_expressions(h)
             # (Load the prediction) and check the number of owl class definitions
-            g = rdflib.Graph().parse("Predictions.owl")
+            g = rdflib.Graph().parse("./Predictions.owl")
             # rdflib.Graph() parses named OWL Classes by the order of their definition
             named_owl_classes = [s for s, p, o in
                                  g.triples((None, rdflib.namespace.RDF.type, rdflib.namespace.OWL.Class)) if
@@ -64,7 +63,6 @@ class TestConceptLearnerReg:
             q = compute_f1_score(individuals=frozenset({i for i in kb.individuals(h)}), pos=lp.pos, neg=lp.neg)
             assert q >= 0.94
                """
-
 
     def test_regression_family_triple_store(self):
         """

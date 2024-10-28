@@ -22,7 +22,7 @@
 # SOFTWARE.
 # -----------------------------------------------------------------------------
 
-from ontolearn.model_adapter import execute
+from ontolearn.executor import execute
 from argparse import ArgumentParser
 
 
@@ -105,7 +105,7 @@ def get_default_arguments(description=None):
                         help="Random initialization method.", choices=["GROW", "FULL", "RAMPED_HALF_HALF"])
 
     # NCES only
-    parser.add_argument("--learner_name", type=str, default="SetTransformer", help="Learner name.",
+    parser.add_argument("--learner_names", type=str, nargs="+", default=["SetTransformer"], help="Learner name.",
                         choices=["SetTransformer", "GRU", "LSTM"])
     parser.add_argument("--proj_dim", type=int, default=128, help="Number of projection dimensions.")
     parser.add_argument("--rnn_n_layers", type=int, default=2, help="Number of RNN layers (only for LSTM and GRU).")
@@ -122,8 +122,8 @@ def get_default_arguments(description=None):
     parser.add_argument("--max_length", type=int, default=48, help="Maximum length")
     parser.add_argument("--load_pretrained", type=bool, default=True, help="Load pretrained.")
     parser.add_argument("--sorted_examples", type=bool, default=True, help="Sorted examples.")
-    parser.add_argument("--pretrained_model_name", type=str, default="SetTransformer", help="Pretrained model name",
-                        choices=["SetTransformer", "GRU", "LSTM"])
+#    parser.add_argument("--pretrained_model_name", type=str, default="SetTransformer", help="Pretrained model name",
+#                        choices=["SetTransformer", "GRU", "LSTM"])
 
     if description is None:
         return parser.parse_args()

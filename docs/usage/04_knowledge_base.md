@@ -2,8 +2,8 @@
 
 In Ontolearn we represent a knowledge base 
 by the class [KnowledgeBase](ontolearn.knowledge_base.KnowledgeBase) which contains two main class attributes, 
-an ontology [OWLOntology](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_ontology/index.html#owlapy.owl_ontology.OWLOntology)
-and a reasoner [OWLReasoner](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_reasoner/index.html#owlapy.owl_reasoner.OWLReasoner).
+an ontology [AbstractOWLOntology](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_ontology/index.html#owlapy.owl_ontology.AbstractOWLOntology)
+and a reasoner [AbstractOWLReasoner](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_reasoner/index.html#owlapy.owl_reasoner.AbstractOWLReasoner).
 It also contains the class and properties hierarchy as well as other
 Ontology-related attributes required for the Structured Machine Learning library.
 
@@ -19,7 +19,7 @@ Therefore, differently from the ontology you can use methods that require reason
 the methods for each in the links below:
 
 - [KnowledgeBase](ontolearn.knowledge_base.KnowledgeBase)
-- [OWLOntology](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_ontology/index.html#owlapy.owl_ontology.OWLOntology)
+- [AbstractOWLOntology](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_ontology/index.html#owlapy.owl_ontology.AbstractOWLOntology)
 
 In summary:
 
@@ -47,7 +47,7 @@ kb = KnowledgeBase(path="file://KGs/Family/father.owl")
 ```
 
 What happens in the background is that the ontology located in this path will be loaded
-in the `OWLOntology` object of `kb` as done [here](https://dice-group.github.io/owlapy/usage/ontologies.html#loading-an-ontology).
+in the `AbstractOWLOntology` object of `kb` as done [here](https://dice-group.github.io/owlapy/usage/ontologies.html#loading-an-ontology).
 
 In our recent version you can also initialize a knowledge base using a dataset hosted in a triplestore.
 Since that knowledge base is mainly used for executing a concept learner, we cover that matter more in depth 

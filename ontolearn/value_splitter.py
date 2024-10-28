@@ -33,7 +33,7 @@ from itertools import chain
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_property import OWLDataProperty
-from owlapy.owl_reasoner import OWLReasoner
+from owlapy.abstracts import AbstractOWLReasoner
 from pandas import Timedelta
 from scipy.stats import entropy
 from sortedcontainers import SortedDict
@@ -57,7 +57,7 @@ class AbstractValueSplitter(metaclass=ABCMeta):
         self.max_nr_splits = max_nr_splits
 
     @abstractmethod
-    def compute_splits_properties(self, reasoner: OWLReasoner, properties: List[OWLDataProperty]) \
+    def compute_splits_properties(self, reasoner: AbstractOWLReasoner, properties: List[OWLDataProperty]) \
             -> Dict[OWLDataProperty, List[OWLLiteral]]:
         pass
 
@@ -81,7 +81,7 @@ class BinningValueSplitter(AbstractValueSplitter):
     def __init__(self, max_nr_splits: int = 12):
         super().__init__(max_nr_splits)
 
-    def compute_splits_properties(self, reasoner: OWLReasoner, properties: List[OWLDataProperty]) \
+    def compute_splits_properties(self, reasoner: AbstractOWLReasoner, properties: List[OWLDataProperty]) \
             -> Dict[OWLDataProperty, List[OWLLiteral]]:
         return {p: self._compute_splits(set(reasoner.all_data_property_values(p))) for p in properties}
 
@@ -145,7 +145,7 @@ class EntropyValueSplitter(AbstractValueSplitter):
         super().__init__(max_nr_splits)
         self._prop_to_values = {}
 
-    def compute_splits_properties(self, reasoner: OWLReasoner, properties: List[OWLDataProperty],
+    def compute_splits_properties(self, reasoner: AbstractOWLReasoner, properties: List[OWLDataProperty],
                                   pos: Set[OWLNamedIndividual] = None, neg: Set[OWLNamedIndividual] = None) \
             -> Dict[OWLDataProperty, List[OWLLiteral]]:
         assert pos is not None
@@ -245,7 +245,7 @@ class EntropyValueSplitter(AbstractValueSplitter):
         inds_above = list(chain.from_iterable(ind_value_map.values()[idx:]))
         return inds_below, inds_above
 
-    def _get_values_for_inds(self, reasoner: OWLReasoner, property_: OWLDataProperty, inds: Set[OWLNamedIndividual]) \
+    def _get_values_for_inds(self, reasoner: AbstractOWLReasoner, property_: OWLDataProperty, inds: Set[OWLNamedIndividual]) \
             -> Dict[str, Values]:
         inds_to_value = dict()
         for ind in inds:

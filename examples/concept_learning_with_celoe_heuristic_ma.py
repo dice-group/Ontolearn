@@ -4,13 +4,10 @@ import random
 
 from ontolearn.concept_learner import CELOE
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.model_adapter import ModelAdapter, Trainer
+from ontolearn.executor import Trainer
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 from owlapy.class_expression import OWLClass
 from ontolearn.utils import setup_logging
-from owlapy.owl_ontology import Ontology
-from owlapy.owl_reasoner import SyncReasoner, BaseReasoner
-from typing import cast
 setup_logging()
 
 try:
@@ -55,16 +52,12 @@ for str_target_concept, examples in settings['problems'].items():
     typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
 
     kb = KnowledgeBase(path=settings['data_path'])
-    reasoner = SyncReasoner(cast(Ontology, kb.ontology()), BaseReasoner.HERMIT)
+    target_kb = kb.ignore_and_copy(concepts_to_ignore)
 
-    model = ModelAdapter(path=settings['data_path'],
-                         ignore=concepts_to_ignore,
-                         reasoner=reasoner,
-                         learner_type=CELOE,
-                         max_runtime=5,
-                         max_num_of_concepts_tested=10_000_000_000,
-                         iter_bound=10_000_000_000,
-                         expansionPenaltyFactor=0.01)
+    model = CELOE(target_kb,
+                  max_runtime=5,
+                  max_num_of_concepts_tested=10_000_000_000,
+                  iter_bound=10_000_000_000,)
 
     model = model.fit(pos=typed_pos, neg=typed_neg)
 
@@ -79,6 +72,7 @@ for str_target_concept, examples in settings['problems'].items():
 
     # Using Trainer
     model2 = CELOE(knowledge_base=kb, max_runtime=5)
+    reasoner = target_kb.reasoner
     trainer = Trainer(model, reasoner)
     trainer.fit(pos=typed_pos, neg=typed_neg)
     hypotheses = list(model2.best_hypotheses(n=3))

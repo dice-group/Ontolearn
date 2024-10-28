@@ -27,10 +27,12 @@
 import logging
 import re
 from itertools import chain
-from typing import Iterable, Set, Optional, Generator, Union, FrozenSet, Tuple, Callable
+from typing import Iterable, Set, Optional, Generator, Union, Tuple, Callable
 import requests
 
+from owlapy import owl_expression_to_sparql
 from owlapy.class_expression import *
+from owlapy.class_expression import OWLThing
 from owlapy.iri import IRI
 from owlapy.owl_axiom import (
     OWLObjectPropertyRangeAxiom,
@@ -38,12 +40,13 @@ from owlapy.owl_axiom import (
     OWLDataPropertyRangeAxiom,
     OWLDataPropertyDomainAxiom,
     OWLClassAxiom,
-    OWLEquivalentClassesAxiom,
+    OWLEquivalentClassesAxiom, OWLAxiom,
 )
 from owlapy.owl_datatype import OWLDatatype
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
-from owlapy.owl_ontology import OWLOntologyID, OWLOntology
+from owlapy.owl_ontology import OWLOntologyID
+from owlapy.abstracts import AbstractOWLOntology, AbstractOWLReasonerEx
 from owlapy.owl_property import (
     OWLDataProperty,
     OWLObjectPropertyExpression,
@@ -54,11 +57,7 @@ from owlapy.owl_property import (
 from requests import Response
 from requests.exceptions import RequestException, JSONDecodeError
 from owlapy.converter import Owl2SparqlConverter
-from owlapy.owl_reasoner import OWLReasonerEx
 from ontolearn.knowledge_base import KnowledgeBase
-import rdflib
-from ontolearn.concept_generator import ConceptGenerator
-from owlapy.utils import OWLClassExpressionLengthMetric
 import traceback
 from collections import Counter
 
@@ -68,23 +67,6 @@ rdfs_prefix = "PREFIX  rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n "
 owl_prefix = "PREFIX owl: <http://www.w3.org/2002/07/owl#>\n "
 rdf_prefix = "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n "
 xsd_prefix = "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n"
-
-# CD: For the sake of efficient software development.
-limit_posix = ""
-
-from owlapy import owl_expression_to_sparql
-
-from dicee.knowledge_graph_embeddings import KGE
-import os
-
-
-def rdflib_to_str(sparql_result: rdflib.plugins.sparql.processor.SPARQLResult) -> str:
-    """
-    @TODO: CD: Not quite sure whether we need this continuent function
-    """
-    for result_row in sparql_result:
-        str_iri: str
-        yield result_row.x.n3()
 
 
 def is_valid_url(url) -> bool:
@@ -110,14 +92,14 @@ def is_valid_url(url) -> bool:
     return url is not None and regex.search(url)
 
 
-def get_results_from_ts(triplestore_address: str, query: str, return_type: type):
+def send_http_request_to_ts_and_fetch_results(triplestore_address: str, query: str, return_type: Callable):
     """
     Execute the SPARQL query in the given triplestore_address and return the result as the given return_type.
 
     Args:
         triplestore_address (str): The triplestore address where the query will be executed.
         query (str): SPARQL query where the root variable should be '?x'.
-        return_type (type): OWLAPY class as type. e.g. OWLClass, OWLNamedIndividual, etc.
+        return_type (Callable): OWLAPY class as type. e.g. OWLClass, OWLNamedIndividual, etc.
 
     Returns:
         Generator containing the results of the query as the given type.
@@ -184,59 +166,50 @@ def suf(direct: bool):
     return " " if direct else "* "
 
 
-class TripleStoreOntology(OWLOntology):
+class TripleStoreOntology(AbstractOWLOntology):
 
     def __init__(self, triplestore_address: str):
         assert is_valid_url(triplestore_address), (
             "You should specify a valid URL in the following argument: "
-            "'triplestore_address' of class `TripleStore`"
-        )
-
+            "'triplestore_address' of class `TripleStore`")
         self.url = triplestore_address
 
     def classes_in_signature(self) -> Iterable[OWLClass]:
         query = owl_prefix + "SELECT DISTINCT ?x WHERE {?x a owl:Class.}"
-        yield from get_results_from_ts(self.url, query, OWLClass)
+        yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLClass)
 
     def data_properties_in_signature(self) -> Iterable[OWLDataProperty]:
-        query = (
-            owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:DatatypeProperty.}"
-        )
-        yield from get_results_from_ts(self.url, query, OWLDataProperty)
+        query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:DatatypeProperty.}"
+        yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLDataProperty)
 
     def object_properties_in_signature(self) -> Iterable[OWLObjectProperty]:
-        query = (
-            owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:ObjectProperty.}"
-        )
-        yield from get_results_from_ts(self.url, query, OWLObjectProperty)
+        query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:ObjectProperty.}"
+        yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLObjectProperty)
 
     def individuals_in_signature(self) -> Iterable[OWLNamedIndividual]:
-        query = (
-            owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:NamedIndividual.}"
-        )
-        yield from get_results_from_ts(self.url, query, OWLNamedIndividual)
+        query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:NamedIndividual.}"
+        yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLNamedIndividual)
 
-    def equivalent_classes_axioms(
-        self, c: OWLClass
-    ) -> Iterable[OWLEquivalentClassesAxiom]:
+    def equivalent_classes_axioms(self, c: OWLClass) -> Iterable[OWLEquivalentClassesAxiom]:
+        # TODO:CD: Please fit the query into a single line
         query = (
-            owl_prefix
-            + "SELECT DISTINCT ?x"
-            + "WHERE { ?x owl:equivalentClass "
-            + f"<{c.str}>."
-            + "FILTER(?x != "
-            + f"<{c.str}>)}}"
+                owl_prefix
+                + "SELECT DISTINCT ?x"
+                + "WHERE { ?x owl:equivalentClass "
+                + f"<{c.str}>."
+                + "FILTER(?x != "
+                + f"<{c.str}>)}}"
         )
-        for cls in get_results_from_ts(self.url, query, OWLClass):
+        for cls in send_http_request_to_ts_and_fetch_results(self.url, query, OWLClass):
             yield OWLEquivalentClassesAxiom([c, cls])
 
     def general_class_axioms(self) -> Iterable[OWLClassAxiom]:
-        raise NotImplementedError
+        # TODO:CD: What does general class axiom mean ? Please document this function.
+        #  / RE:AB: Doc strings in the base class
+        raise NotImplementedError("Currently, ")
 
-    def data_property_domain_axioms(
-        self, pe: OWLDataProperty
-    ) -> Iterable[OWLDataPropertyDomainAxiom]:
-        domains = self._get_property_domains(pe)
+    def data_property_domain_axioms(self, pe: OWLDataProperty) -> Iterable[OWLDataPropertyDomainAxiom]:
+        domains = self.get_property_domains(pe)
         if len(domains) == 0:
             yield OWLDataPropertyDomainAxiom(pe, OWLThing)
         else:
@@ -244,65 +217,66 @@ class TripleStoreOntology(OWLOntology):
                 yield OWLDataPropertyDomainAxiom(pe, dom)
 
     def data_property_range_axioms(
-        self, pe: OWLDataProperty
-    ):  # -> Iterable[OWLDataPropertyRangeAxiom]:
-        query = (
-            rdfs_prefix
-            + "SELECT DISTINCT ?x WHERE { "
-            + f"<{pe.str}>"
-            + " rdfs:range ?x. }"
-        )
-
-        ranges = set(get_results_from_ts(self.url, query, OWLDatatype))
-        if len(ranges) == 0:
-            pass
-        else:
-            for rng in ranges:
-                yield OWLDataPropertyRangeAxiom(pe, rng)
+            self, pe: OWLDataProperty
+    )-> Iterable[OWLDataPropertyRangeAxiom]:
+        query = f"{rdfs_prefix}SELECT DISTINCT ?x WHERE {{ <{pe.str}> rdfs:range ?x. }}"
+        for rng in send_http_request_to_ts_and_fetch_results(self.url, query, OWLDatatype):
+            yield OWLDataPropertyRangeAxiom(pe, rng)
 
     def object_property_domain_axioms(
-        self, pe: OWLObjectProperty
+            self, pe: OWLObjectProperty
     ) -> Iterable[OWLObjectPropertyDomainAxiom]:
-        domains = self._get_property_domains(pe)
+        domains = self.get_property_domains(pe)
         if len(domains) == 0:
             yield OWLObjectPropertyDomainAxiom(pe, OWLThing)
         else:
             for dom in domains:
                 yield OWLObjectPropertyDomainAxiom(pe, dom)
 
-    def object_property_range_axioms(
-        self, pe: OWLObjectProperty
-    ) -> Iterable[OWLObjectPropertyRangeAxiom]:
+    def object_property_range_axioms(self, pe: OWLObjectProperty) -> Iterable[OWLObjectPropertyRangeAxiom]:
         query = rdfs_prefix + "SELECT ?x WHERE { " + f"<{pe.str}>" + " rdfs:range ?x. }"
-        ranges = set(get_results_from_ts(self.url, query, OWLClass))
+        # TODO: CD: Why do we need to use set operation ?! \ RE:AB: In order to calculate its length im converting to set
+        ranges = set(send_http_request_to_ts_and_fetch_results(self.url, query, OWLClass))
         if len(ranges) == 0:
             yield OWLObjectPropertyRangeAxiom(pe, OWLThing)
         else:
             for rng in ranges:
                 yield OWLObjectPropertyRangeAxiom(pe, rng)
 
-    def _get_property_domains(self, pe: OWLProperty):
+    def get_property_domains(self, pe: OWLProperty)->Set:
         if isinstance(pe, OWLObjectProperty) or isinstance(pe, OWLDataProperty):
             query = (
-                rdfs_prefix
-                + "SELECT ?x WHERE { "
-                + f"<{pe.str}>"
-                + " rdfs:domain ?x. }"
+                    rdfs_prefix
+                    + "SELECT ?x WHERE { "
+                    + f"<{pe.str}>"
+                    + " rdfs:domain ?x. }"
             )
-            domains = set(get_results_from_ts(self.url, query, OWLClass))
+            # TODO: CD: Why do we need to use set operation ?!
+            domains = set(send_http_request_to_ts_and_fetch_results(self.url, query, OWLClass))
             return domains
         else:
             raise NotImplementedError
 
     def get_owl_ontology_manager(self):
         # no manager for this kind of Ontology
+        # @TODO:CD: Please document this class method / RE:AB: Doc strings in the base class
         pass
 
     def get_ontology_id(self) -> OWLOntologyID:
+        # @TODO:CD: Please document this class method / RE:AB: Doc strings in the base class
+
         # query = (rdf_prefix + owl_prefix +
         #          "SELECT ?ontologyIRI WHERE { ?ontology rdf:type owl:Ontology . ?ontology rdf:about ?ontologyIRI .}")
         # return list(get_results_from_ts(self.url, query, OWLOntologyID)).pop()
         raise NotImplementedError
+
+    def add_axiom(self, axiom: Union[OWLAxiom, Iterable[OWLAxiom]]):
+        """Cant modify a triplestore ontology. Implemented because of the base class."""
+        pass
+
+    def remove_axiom(self, axiom: Union[OWLAxiom, Iterable[OWLAxiom]]):
+        """Cant modify a triplestore ontology. Implemented because of the base class."""
+        pass
 
     def __eq__(self, other):
         if isinstance(other, type(self)):
@@ -316,7 +290,7 @@ class TripleStoreOntology(OWLOntology):
         return f"TripleStoreOntology({self.url})"
 
 
-class TripleStoreReasoner(OWLReasonerEx):
+class TripleStoreReasoner(AbstractOWLReasonerEx):
     __slots__ = "ontology"
 
     def __init__(self, ontology: TripleStoreOntology):
@@ -325,7 +299,7 @@ class TripleStoreReasoner(OWLReasonerEx):
         self._owl2sparql_converter = Owl2SparqlConverter()
 
     def data_property_domains(
-        self, pe: OWLDataProperty, direct: bool = False
+            self, pe: OWLDataProperty, direct: bool = False
     ) -> Iterable[OWLClassExpression]:
         domains = {
             d.get_domain() for d in self.ontology.data_property_domain_axioms(pe)
@@ -336,7 +310,7 @@ class TripleStoreReasoner(OWLReasonerEx):
             yield from sub_domains
 
     def object_property_domains(
-        self, pe: OWLObjectProperty, direct: bool = False
+            self, pe: OWLObjectProperty, direct: bool = False
     ) -> Iterable[OWLClassExpression]:
         domains = {
             d.get_domain() for d in self.ontology.object_property_domain_axioms(pe)
@@ -347,7 +321,7 @@ class TripleStoreReasoner(OWLReasonerEx):
             yield from sub_domains
 
     def object_property_ranges(
-        self, pe: OWLObjectProperty, direct: bool = False
+            self, pe: OWLObjectProperty, direct: bool = False
     ) -> Iterable[OWLClassExpression]:
         ranges = {r.get_range() for r in self.ontology.object_property_range_axioms(pe)}
         sub_ranges = set(chain.from_iterable([self.sub_classes(d) for d in ranges]))
@@ -356,44 +330,42 @@ class TripleStoreReasoner(OWLReasonerEx):
             yield from sub_ranges
 
     def equivalent_classes(
-        self, ce: OWLClassExpression, only_named: bool = True
+            self, ce: OWLClassExpression, only_named: bool = True
     ) -> Iterable[OWLClassExpression]:
         if only_named:
             if isinstance(ce, OWLClass):
                 query = (
-                    owl_prefix
-                    + "SELECT DISTINCT ?x "
-                    + "WHERE { {?x owl:equivalentClass "
-                    + f"<{ce.str}>.}}"
-                    + "UNION {"
-                    + f"<{ce.str}>"
-                    + " owl:equivalentClass ?x.}"
-                    + "FILTER(?x != "
-                    + f"<{ce.str}>)}}"
+                        owl_prefix
+                        + "SELECT DISTINCT ?x "
+                        + "WHERE { {?x owl:equivalentClass "
+                        + f"<{ce.str}>.}}"
+                        + "UNION {"
+                        + f"<{ce.str}>"
+                        + " owl:equivalentClass ?x.}"
+                        + "FILTER(?x != "
+                        + f"<{ce.str}>)}}"
                 )
-                yield from get_results_from_ts(self.url, query, OWLClass)
+                yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLClass)
             else:
-                raise NotImplementedError(
-                    "Equivalent classes for complex class expressions is not implemented"
-                )
+                print(f"Equivalent classes for complex class expressions is not implemented\t{ce}")
+                # raise NotImplementedError(f"Equivalent classes for complex class expressions is not implemented\t{ce}")
+                yield from {}
         else:
-            raise NotImplementedError(
-                "Finding equivalent complex classes is not implemented"
-            )
+            raise NotImplementedError("Finding equivalent complex classes is not implemented")
 
     def disjoint_classes(
-        self, ce: OWLClassExpression, only_named: bool = True
+            self, ce: OWLClassExpression, only_named: bool = True
     ) -> Iterable[OWLClassExpression]:
         if only_named:
             if isinstance(ce, OWLClass):
                 query = (
-                    owl_prefix
-                    + " SELECT DISTINCT ?x "
-                    + "WHERE { "
-                    + f"<{ce.str}>"
-                    + " owl:disjointWith ?x .}"
+                        owl_prefix
+                        + " SELECT DISTINCT ?x "
+                        + "WHERE { "
+                        + f"<{ce.str}>"
+                        + " owl:disjointWith ?x .}"
                 )
-                yield from get_results_from_ts(self.url, query, OWLClass)
+                yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLClass)
             else:
                 raise NotImplementedError(
                     "Disjoint classes for complex class expressions is not implemented"
@@ -404,105 +376,105 @@ class TripleStoreReasoner(OWLReasonerEx):
             )
 
     def different_individuals(
-        self, ind: OWLNamedIndividual
+            self, ind: OWLNamedIndividual
     ) -> Iterable[OWLNamedIndividual]:
         query = (
-            owl_prefix
-            + rdf_prefix
-            + "SELECT DISTINCT ?x \n"
-            + "WHERE{ ?allDifferent owl:distinctMembers/rdf:rest*/rdf:first ?x.\n"
-            + "?allDifferent owl:distinctMembers/rdf:rest*/rdf:first"
-            + f"<{ind.str}>"
-            + ".\n"
-            + "FILTER(?x != "
-            + f"<{ind.str}>"
-            + ")}"
+                owl_prefix
+                + rdf_prefix
+                + "SELECT DISTINCT ?x \n"
+                + "WHERE{ ?allDifferent owl:distinctMembers/rdf:rest*/rdf:first ?x.\n"
+                + "?allDifferent owl:distinctMembers/rdf:rest*/rdf:first"
+                + f"<{ind.str}>"
+                + ".\n"
+                + "FILTER(?x != "
+                + f"<{ind.str}>"
+                + ")}"
         )
-        yield from get_results_from_ts(self.url, query, OWLNamedIndividual)
+        yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLNamedIndividual)
 
     def same_individuals(self, ind: OWLNamedIndividual) -> Iterable[OWLNamedIndividual]:
         query = (
-            owl_prefix
-            + "SELECT DISTINCT ?x "
-            + "WHERE {{ ?x owl:sameAs "
-            + f"<{ind.str}>"
-            + " .}"
-            + "UNION { "
-            + f"<{ind.str}>"
-            + " owl:sameAs ?x.}}"
+                owl_prefix
+                + "SELECT DISTINCT ?x "
+                + "WHERE {{ ?x owl:sameAs "
+                + f"<{ind.str}>"
+                + " .}"
+                + "UNION { "
+                + f"<{ind.str}>"
+                + " owl:sameAs ?x.}}"
         )
-        yield from get_results_from_ts(self.url, query, OWLNamedIndividual)
+        yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLNamedIndividual)
 
     def equivalent_object_properties(
-        self, op: OWLObjectPropertyExpression
+            self, op: OWLObjectPropertyExpression
     ) -> Iterable[OWLObjectPropertyExpression]:
         if isinstance(op, OWLObjectProperty):
             query = (
-                owl_prefix
-                + "SELECT DISTINCT ?x "
-                + "WHERE { {?x owl:equivalentProperty "
-                + f"<{op.str}>.}}"
-                + "UNION {"
-                + f"<{op.str}>"
-                + " owl:equivalentProperty ?x.}"
-                + "FILTER(?x != "
-                + f"<{op.str}>)}}"
+                    owl_prefix
+                    + "SELECT DISTINCT ?x "
+                    + "WHERE { {?x owl:equivalentProperty "
+                    + f"<{op.str}>.}}"
+                    + "UNION {"
+                    + f"<{op.str}>"
+                    + " owl:equivalentProperty ?x.}"
+                    + "FILTER(?x != "
+                    + f"<{op.str}>)}}"
             )
-            yield from get_results_from_ts(self.url, query, OWLObjectProperty)
+            yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLObjectProperty)
         elif isinstance(op, OWLObjectInverseOf):
             query = (
-                owl_prefix
-                + "SELECT DISTINCT ?x "
-                + "WHERE {  ?inverseProperty owl:inverseOf "
-                + f"<{op.get_inverse().str}> ."
-                + " {?x owl:equivalentProperty ?inverseProperty .}"
-                + "UNION { ?inverseProperty owl:equivalentClass ?x.}"
-                + "FILTER(?x != ?inverseProperty }>)}"
+                    owl_prefix
+                    + "SELECT DISTINCT ?x "
+                    + "WHERE {  ?inverseProperty owl:inverseOf "
+                    + f"<{op.get_inverse().str}> ."
+                    + " {?x owl:equivalentProperty ?inverseProperty .}"
+                    + "UNION { ?inverseProperty owl:equivalentClass ?x.}"
+                    + "FILTER(?x != ?inverseProperty }>)}"
             )
-            yield from get_results_from_ts(self.url, query, OWLObjectProperty)
+            yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLObjectProperty)
 
     def equivalent_data_properties(
-        self, dp: OWLDataProperty
+            self, dp: OWLDataProperty
     ) -> Iterable[OWLDataProperty]:
         query = (
-            owl_prefix
-            + "SELECT DISTINCT ?x"
-            + "WHERE { {?x owl:equivalentProperty "
-            + f"<{dp.str}>.}}"
-            + "UNION {"
-            + f"<{dp.str}>"
-            + " owl:equivalentProperty ?x.}"
-            + "FILTER(?x != "
-            + f"<{dp.str}>)}}"
+                owl_prefix
+                + "SELECT DISTINCT ?x"
+                + "WHERE { {?x owl:equivalentProperty "
+                + f"<{dp.str}>.}}"
+                + "UNION {"
+                + f"<{dp.str}>"
+                + " owl:equivalentProperty ?x.}"
+                + "FILTER(?x != "
+                + f"<{dp.str}>)}}"
         )
-        yield from get_results_from_ts(self.url, query, OWLDataProperty)
+        yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLDataProperty)
 
     def data_property_values(
-        self, ind: OWLNamedIndividual, pe: OWLDataProperty, direct: bool = True
+            self, ind: OWLNamedIndividual, pe: OWLDataProperty, direct: bool = True
     ) -> Iterable[OWLLiteral]:
         query = "SELECT ?x WHERE { " + f"<{ind.str}>" + f"<{pe.str}>" + " ?x . }"
-        yield from get_results_from_ts(self.url, query, OWLLiteral)
+        yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLLiteral)
         if not direct:
             for prop in self.sub_data_properties(pe):
                 yield from self.data_property_values(ind, prop, True)
 
     def object_property_values(
-        self,
-        ind: OWLNamedIndividual,
-        pe: OWLObjectPropertyExpression,
-        direct: bool = True,
+            self,
+            ind: OWLNamedIndividual,
+            pe: OWLObjectPropertyExpression,
+            direct: bool = True,
     ) -> Iterable[OWLNamedIndividual]:
         if isinstance(pe, OWLObjectProperty):
             query = "SELECT ?x WHERE { " + f"<{ind.str}> " + f"<{pe.str}>" + " ?x . }"
-            yield from get_results_from_ts(self.url, query, OWLNamedIndividual)
+            yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLNamedIndividual)
         elif isinstance(pe, OWLObjectInverseOf):
             query = (
-                owl_prefix
-                + "SELECT ?x WHERE { ?inverseProperty owl:inverseOf "
-                + f"<{pe.get_inverse().str}>."
-                + f"<{ind.str}> ?inverseProperty ?x . }}"
+                    owl_prefix
+                    + "SELECT ?x WHERE { ?inverseProperty owl:inverseOf "
+                    + f"<{pe.get_inverse().str}>."
+                    + f"<{ind.str}> ?inverseProperty ?x . }}"
             )
-            yield from get_results_from_ts(self.url, query, OWLNamedIndividual)
+            yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLNamedIndividual)
         if not direct:
             for prop in self.sub_object_properties(pe):
                 yield from self.object_property_values(ind, prop, True)
@@ -511,7 +483,7 @@ class TripleStoreReasoner(OWLReasonerEx):
         pass
 
     def instances(
-        self, ce: OWLClassExpression, direct: bool = False, seen_set: Set = None
+            self, ce: OWLClassExpression, direct: bool = False, seen_set: Set = None
     ) -> Iterable[OWLNamedIndividual]:
         if not seen_set:
             seen_set = set()
@@ -523,7 +495,7 @@ class TripleStoreReasoner(OWLReasonerEx):
                 "?x a ?some_cls. \n ?some_cls "
                 "<http://www.w3.org/2000/01/rdf-schema#subClassOf>* ",
             )
-        yield from get_results_from_ts(self.url, ce_to_sparql, OWLNamedIndividual)
+        yield from send_http_request_to_ts_and_fetch_results(self.url, ce_to_sparql, OWLNamedIndividual)
         if not direct:
             for cls in self.equivalent_classes(ce):
                 if cls not in seen_set:
@@ -531,19 +503,19 @@ class TripleStoreReasoner(OWLReasonerEx):
                     yield from self.instances(cls, direct, seen_set)
 
     def sub_classes(
-        self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True
+            self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True
     ) -> Iterable[OWLClassExpression]:
         if not only_named:
             raise NotImplementedError("Finding anonymous subclasses not implemented")
         if isinstance(ce, OWLClass):
             query = (
-                rdfs_prefix
-                + "SELECT ?x WHERE { ?x rdfs:subClassOf"
-                + suf(direct)
-                + f"<{ce.str}>"
-                + ". }"
+                    rdfs_prefix
+                    + "SELECT ?x WHERE { ?x rdfs:subClassOf"
+                    + suf(direct)
+                    + f"<{ce.str}>"
+                    + ". }"
             )
-            results = list(get_results_from_ts(self.url, query, OWLClass))
+            results = list(send_http_request_to_ts_and_fetch_results(self.url, query, OWLClass))
             if ce in results:
                 results.remove(ce)
             yield from results
@@ -561,7 +533,7 @@ class TripleStoreReasoner(OWLReasonerEx):
             # yield from get_results_from_ts(self._triplestore_address, query, OWLClass)
 
     def super_classes(
-        self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True
+            self, ce: OWLClassExpression, direct: bool = False, only_named: bool = True
     ) -> Iterable[OWLClassExpression]:
         if not only_named:
             raise NotImplementedError("Finding anonymous superclasses not implemented")
@@ -569,14 +541,14 @@ class TripleStoreReasoner(OWLReasonerEx):
             if ce == OWLThing:
                 return []
             query = (
-                rdfs_prefix
-                + "SELECT ?x WHERE { "
-                + f"<{ce.str}>"
-                + " rdfs:subClassOf"
-                + suf(direct)
-                + "?x. }"
+                    rdfs_prefix
+                    + "SELECT ?x WHERE { "
+                    + f"<{ce.str}>"
+                    + " rdfs:subClassOf"
+                    + suf(direct)
+                    + "?x. }"
             )
-            results = list(get_results_from_ts(self.url, query, OWLClass))
+            results = list(send_http_request_to_ts_and_fetch_results(self.url, query, OWLClass))
             if ce in results:
                 results.remove(ce)
             if (not direct and OWLThing not in results) or len(results) == 0:
@@ -589,161 +561,156 @@ class TripleStoreReasoner(OWLReasonerEx):
             )
 
     def disjoint_object_properties(
-        self, op: OWLObjectPropertyExpression
+            self, op: OWLObjectPropertyExpression
     ) -> Iterable[OWLObjectPropertyExpression]:
         if isinstance(op, OWLObjectProperty):
             query = (
+                    owl_prefix
+                    + rdf_prefix
+                    + "SELECT DISTINCT ?x \n"
+                    + "WHERE{ ?AllDisjointProperties owl:members/rdf:rest*/rdf:first ?x.\n"
+                    + "?AllDisjointProperties owl:members/rdf:rest*/rdf:first"
+                    + f"<{op.str}>"
+                    + ".\n"
+                    + "FILTER(?x != "
+                    + f"<{op.str}>"
+                    + ")}"
+            )
+            yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLObjectProperty)
+        elif isinstance(op, OWLObjectInverseOf):
+            query = (
+                    owl_prefix
+                    + " SELECT DISTINCT ?x "
+                    + "WHERE {  ?inverseProperty owl:inverseOf "
+                    + f"<{op.get_inverse().str}> ."
+                    + " ?AllDisjointProperties owl:members/rdf:rest*/rdf:first ?x.\n"
+                    + " ?AllDisjointProperties owl:members/rdf:rest*/rdf:first ?inverseProperty.\n"
+                    + " FILTER(?x != ?inverseProperty)}"
+            )
+            yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLObjectProperty)
+
+    def disjoint_data_properties(
+            self, dp: OWLDataProperty
+    ) -> Iterable[OWLDataProperty]:
+        query = (
                 owl_prefix
                 + rdf_prefix
                 + "SELECT DISTINCT ?x \n"
                 + "WHERE{ ?AllDisjointProperties owl:members/rdf:rest*/rdf:first ?x.\n"
                 + "?AllDisjointProperties owl:members/rdf:rest*/rdf:first"
-                + f"<{op.str}>"
+                + f"<{dp.str}>"
                 + ".\n"
                 + "FILTER(?x != "
-                + f"<{op.str}>"
+                + f"<{dp.str}>"
                 + ")}"
-            )
-            yield from get_results_from_ts(self.url, query, OWLObjectProperty)
-        elif isinstance(op, OWLObjectInverseOf):
-            query = (
-                owl_prefix
-                + " SELECT DISTINCT ?x "
-                + "WHERE {  ?inverseProperty owl:inverseOf "
-                + f"<{op.get_inverse().str}> ."
-                + " ?AllDisjointProperties owl:members/rdf:rest*/rdf:first ?x.\n"
-                + " ?AllDisjointProperties owl:members/rdf:rest*/rdf:first ?inverseProperty.\n"
-                + " FILTER(?x != ?inverseProperty)}"
-            )
-            yield from get_results_from_ts(self.url, query, OWLObjectProperty)
-
-    def disjoint_data_properties(
-        self, dp: OWLDataProperty
-    ) -> Iterable[OWLDataProperty]:
-        query = (
-            owl_prefix
-            + rdf_prefix
-            + "SELECT DISTINCT ?x \n"
-            + "WHERE{ ?AllDisjointProperties owl:members/rdf:rest*/rdf:first ?x.\n"
-            + "?AllDisjointProperties owl:members/rdf:rest*/rdf:first"
-            + f"<{dp.str}>"
-            + ".\n"
-            + "FILTER(?x != "
-            + f"<{dp.str}>"
-            + ")}"
         )
-        yield from get_results_from_ts(self.url, query, OWLDataProperty)
+        yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLDataProperty)
 
     def all_data_property_values(
-        self, pe: OWLDataProperty, direct: bool = True
+            self, pe: OWLDataProperty, direct: bool = True
     ) -> Iterable[OWLLiteral]:
         query = "SELECT DISTINCT ?x WHERE { ?y" + f"<{pe.str}>" + " ?x . }"
-        yield from get_results_from_ts(self.url, query, OWLLiteral)
+        yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLLiteral)
         if not direct:
             for prop in self.sub_data_properties(pe):
                 yield from self.all_data_property_values(prop, True)
 
     def sub_data_properties(
-        self, dp: OWLDataProperty, direct: bool = False
+            self, dp: OWLDataProperty, direct: bool = False
     ) -> Iterable[OWLDataProperty]:
         query = (
-            rdfs_prefix
-            + "SELECT ?x WHERE { ?x rdfs:subPropertyOf"
-            + suf(direct)
-            + f"<{dp.str}>"
-            + ". }"
-        )
-        yield from get_results_from_ts(self.url, query, OWLDataProperty)
-
-    def super_data_properties(
-        self, dp: OWLDataProperty, direct: bool = False
-    ) -> Iterable[OWLDataProperty]:
-        query = (
-            rdfs_prefix
-            + "SELECT ?x WHERE {"
-            + f"<{dp.str}>"
-            + " rdfs:subPropertyOf"
-            + suf(direct)
-            + " ?x. }"
-        )
-        yield from get_results_from_ts(self.url, query, OWLDataProperty)
-
-    def sub_object_properties(
-        self, op: OWLObjectPropertyExpression, direct: bool = False
-    ) -> Iterable[OWLObjectPropertyExpression]:
-        if isinstance(op, OWLObjectProperty):
-            query = (
                 rdfs_prefix
                 + "SELECT ?x WHERE { ?x rdfs:subPropertyOf"
                 + suf(direct)
-                + f"<{op.str}> . FILTER(?x != "
-                + f"<{op.str}>) }}"
-            )
-            yield from get_results_from_ts(self.url, query, OWLObjectProperty)
-        elif isinstance(op, OWLObjectInverseOf):
-            query = (
-                rdfs_prefix
-                + "SELECT ?x "
-                + "WHERE { ?inverseProperty owl:inverseOf "
-                + f"<{op.get_inverse().str}> ."
-                + " ?x rdfs:subPropertyOf"
-                + suf(direct)
-                + " ?inverseProperty . }"
-            )
-            yield from get_results_from_ts(self.url, query, OWLObjectProperty)
+                + f"<{dp.str}>"
+                + ". }"
+        )
+        yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLDataProperty)
 
-    def super_object_properties(
-        self, op: OWLObjectPropertyExpression, direct: bool = False
+    def super_data_properties(
+            self, dp: OWLDataProperty, direct: bool = False
+    ) -> Iterable[OWLDataProperty]:
+        query = (
+                rdfs_prefix
+                + "SELECT ?x WHERE {"
+                + f"<{dp.str}>"
+                + " rdfs:subPropertyOf"
+                + suf(direct)
+                + " ?x. }"
+        )
+        yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLDataProperty)
+
+    def sub_object_properties(
+            self, op: OWLObjectPropertyExpression, direct: bool = False
     ) -> Iterable[OWLObjectPropertyExpression]:
         if isinstance(op, OWLObjectProperty):
             query = (
-                rdfs_prefix
-                + "SELECT ?x WHERE {"
-                + f"<{op.str}>"
-                + " rdfs:subPropertyOf"
-                + suf(direct)
-                + " ?x. FILTER(?x != "
-                + f"<{op.str}>) }}"
+                    rdfs_prefix
+                    + "SELECT ?x WHERE { ?x rdfs:subPropertyOf"
+                    + suf(direct)
+                    + f"<{op.str}> . FILTER(?x != "
+                    + f"<{op.str}>) }}"
             )
-            yield from get_results_from_ts(self.url, query, OWLObjectProperty)
+            yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLObjectProperty)
         elif isinstance(op, OWLObjectInverseOf):
             query = (
-                rdfs_prefix
-                + "SELECT ?x "
-                + "WHERE { ?inverseProperty owl:inverseOf "
-                + f"<{op.get_inverse().str}> ."
-                + " ?inverseProperty rdfs:subPropertyOf"
-                + suf(direct)
-                + "?x  . }"
+                    rdfs_prefix
+                    + "SELECT ?x "
+                    + "WHERE { ?inverseProperty owl:inverseOf "
+                    + f"<{op.get_inverse().str}> ."
+                    + " ?x rdfs:subPropertyOf"
+                    + suf(direct)
+                    + " ?inverseProperty . }"
             )
-            yield from get_results_from_ts(self.url, query, OWLObjectProperty)
+            yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLObjectProperty)
+
+    def super_object_properties(
+            self, op: OWLObjectPropertyExpression, direct: bool = False
+    ) -> Iterable[OWLObjectPropertyExpression]:
+        if isinstance(op, OWLObjectProperty):
+            query = (
+                    rdfs_prefix
+                    + "SELECT ?x WHERE {"
+                    + f"<{op.str}>"
+                    + " rdfs:subPropertyOf"
+                    + suf(direct)
+                    + " ?x. FILTER(?x != "
+                    + f"<{op.str}>) }}"
+            )
+            yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLObjectProperty)
+        elif isinstance(op, OWLObjectInverseOf):
+            query = (
+                    rdfs_prefix
+                    + "SELECT ?x "
+                    + "WHERE { ?inverseProperty owl:inverseOf "
+                    + f"<{op.get_inverse().str}> ."
+                    + " ?inverseProperty rdfs:subPropertyOf"
+                    + suf(direct)
+                    + "?x  . }"
+            )
+            yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLObjectProperty)
 
     def types(
-        self, ind: OWLNamedIndividual, direct: bool = False
+            self, ind: OWLNamedIndividual, direct: bool = False
     ) -> Iterable[OWLClass]:
         if direct:
             query = "SELECT ?x WHERE {" + f"<{ind.str}> a" + " ?x. }"
         else:
             query = (
-                rdfs_prefix + "SELECT DISTINCT ?x WHERE {" + f"<{ind.str}> a ?cls. "
-                " ?cls rdfs:subClassOf* ?x}"
+                    rdfs_prefix + "SELECT DISTINCT ?x WHERE {" + f"<{ind.str}> a ?cls. "
+                                                                 " ?cls rdfs:subClassOf* ?x}"
             )
         yield from [
             i
-            for i in get_results_from_ts(self.url, query, OWLClass)
+            for i in send_http_request_to_ts_and_fetch_results(self.url, query, OWLClass)
             if i != OWLClass(IRI("http://www.w3.org/2002/07/owl#", "NamedIndividual"))
         ]
 
-    def get_root_ontology(self) -> OWLOntology:
+    def get_root_ontology(self) -> AbstractOWLOntology:
         return self.ontology
 
     def is_isolated(self):
         # not needed here
-        pass
-
-    def is_using_triplestore(self):
-        """No use! Deprecated."""
-        # TODO: Deprecated! Remove after it is removed from OWLReasoner in owlapy
         pass
 
 
@@ -752,14 +719,12 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
     ontology: TripleStoreOntology
     reasoner: TripleStoreReasoner
 
-    def __init__(self, triplestore_address: str):
-        self.url = triplestore_address
-        self.ontology = TripleStoreOntology(triplestore_address)
+    def __init__(self, url: str=None):
+        assert url is not None, "url must be string"
+        self.url = url
+        self.ontology = TripleStoreOntology(url)
         self.reasoner = TripleStoreReasoner(self.ontology)
-
-        super().__init__(
-            ontology=self.ontology, reasoner=self.reasoner, load_class_hierarchy=False
-        )
+        super().__init__( ontology=self.ontology, reasoner=self.reasoner, load_class_hierarchy=False)
 
     def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
         assert isinstance(concept, OWLClass)
@@ -769,16 +734,11 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         assert isinstance(concept, OWLClass)
         yield from self.reasoner.super_classes(concept, direct=True)
 
-    def get_all_direct_sub_concepts(
-        self, concept: OWLClassExpression
-    ) -> Iterable[OWLClassExpression]:
+    def get_all_direct_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
         assert isinstance(concept, OWLClass)
         yield from self.reasoner.sub_classes(concept, direct=True)
 
-    def get_all_sub_concepts(
-        self, concept: OWLClassExpression
-    ) -> Iterable[OWLClassExpression]:
-
+    def get_all_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
         assert isinstance(concept, OWLClass)
         yield from self.reasoner.sub_classes(concept, direct=False)
 
@@ -794,8 +754,7 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         return concept in self.ontology.classes_in_signature()
 
     def most_general_object_properties(
-        self, *, domain: OWLClassExpression, inverse: bool = False
-    ) -> Iterable[OWLObjectProperty]:
+            self, *, domain: OWLClassExpression, inverse: bool = False) -> Iterable[OWLObjectProperty]:
         assert isinstance(domain, OWLClassExpression)
         func: Callable
         func = (
@@ -821,7 +780,7 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
         yield from self.ontology.data_properties_in_signature()
 
     def get_data_properties(
-        self, ranges: Set[OWLDatatype] = None
+            self, ranges: Set[OWLDatatype] = None
     ) -> Iterable[OWLDataProperty]:
 
         if ranges is not None:
@@ -833,7 +792,7 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
 
 
 #######################################################################################################################
-
+# See https://github.com/dice-group/Ontolearn/issues/451 for the decision behind this seperation
 
 class TripleStoreReasonerOntology:
 
@@ -883,19 +842,33 @@ class TripleStoreReasonerOntology:
                     o["value"]
                 )
             elif o["type"] == "literal":
-                if o["datatype"] == "http://www.w3.org/2001/XMLSchema#boolean":
-                    yield subject_, OWLDataProperty(p["value"]), OWLLiteral(
-                        value=bool(o["value"])
-                    )
-                elif o["datatype"] == "http://www.w3.org/2001/XMLSchema#double":
-                    yield subject_, OWLDataProperty(p["value"]), OWLLiteral(
-                        value=float(o["value"])
-                    )
+                if data_type := o.get("datatype", None):
+                    if data_type == "http://www.w3.org/2001/XMLSchema#boolean":
+                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=bool(o["value"]))
+                    elif data_type == "http://www.w3.org/2001/XMLSchema#integer":
+                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=float(o["value"]))
+                    elif data_type == "http://www.w3.org/2001/XMLSchema#nonNegativeInteger":
+                        # TODO: We do not have http://www.w3.org/2001/XMLSchema#nonNegativeInteger implemented
+                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=float(o["value"]))
+                    elif data_type == "http://www.w3.org/2001/XMLSchema#double":
+                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=float(o["value"]))
+                    else:
+                        # TODO: Unclear for the time being.
+                        # print(f"Currently this type of literal is not supported:{o} but can done easily let us know :)")
+                        continue
+                    """
+                    # TODO: Converting a SPARQL query becomes an issue with strings.
+                    elif data_type == "http://www.w3.org/2001/XMLSchema#string":
+                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=repr(o["value"]))
+                    elif data_type == "http://www.w3.org/2001/XMLSchema#date":
+                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=repr(o["value"])) 
+                    """
+
                 else:
-                    raise NotImplementedError(
-                        f"Currently this type of literal is not supported:{o} "
-                        f"but can done easily let us know :)"
-                    )
+                    # print(f"Currently this type of literal is not supported:{o} but can done easily let us know :)")
+                    continue
+                    # yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=repr(o["value"]))
+
             else:
                 raise RuntimeError(f"Unrecognized type {subject_} ({p}) ({o})")
 
@@ -949,13 +922,12 @@ class TripleStoreReasonerOntology:
             yield OWLClass(binding["x"]["value"])
 
     def instances(
-        self, expression: OWLClassExpression, named_individuals: bool = False
+            self, expression: OWLClassExpression, named_individuals: bool = False
     ) -> Generator[OWLNamedIndividual, None, None]:
         assert isinstance(expression, OWLClassExpression)
         try:
-            sparql_query = owl_expression_to_sparql(
-                expression=expression, named_individuals=named_individuals
-            )
+            sparql_query = owl_expression_to_sparql(expression=expression,
+                                                    named_individuals=named_individuals)
 
         except Exception as exc:
             print(f"Error at converting {expression} into sparql")
@@ -963,6 +935,7 @@ class TripleStoreReasonerOntology:
             print(f"Error at converting {expression} into sparql")
             raise RuntimeError("Couldn't convert")
         try:
+            # TODO:Be aware of the implicit inference of x being OWLNamedIndividual!
             for binding in self.query(sparql_query).json()["results"]["bindings"]:
                 yield OWLNamedIndividual(binding["x"]["value"])
         except:
@@ -972,14 +945,14 @@ class TripleStoreReasonerOntology:
     def individuals_in_signature(self) -> Generator[OWLNamedIndividual, None, None]:
         # owl:OWLNamedIndividual is often missing: Perhaps we should add union as well
         query = (
-            owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a ?y. ?y a owl:Class.}"
+                owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a ?y. ?y a owl:Class.}"
         )
         for binding in self.query(query).json()["results"]["bindings"]:
             yield OWLNamedIndividual(binding["x"]["value"])
 
     def data_properties_in_signature(self) -> Iterable[OWLDataProperty]:
         query = (
-            owl_prefix + "SELECT DISTINCT ?x " + "WHERE {?x a owl:DatatypeProperty.}"
+                owl_prefix + "SELECT DISTINCT ?x " + "WHERE {?x a owl:DatatypeProperty.}"
         )
         for binding in self.query(query).json()["results"]["bindings"]:
             yield OWLDataProperty(binding["x"]["value"])
@@ -1008,24 +981,15 @@ class TripleStoreReasonerOntology:
         query = f"{rdf_prefix}\n{rdfs_prefix}\n{xsd_prefix}SELECT DISTINCT ?x WHERE {{?x <{prop.str}> ?z}}"
         for binding in self.query(query).json()["results"]["bindings"]:
             yield OWLNamedIndividual(binding["x"]["value"])
-
-
 class TripleStore:
-    """Connecting a triple store"""
-
     url: str
-
     def __init__(self, reasoner=None, url: str = None):
 
         if reasoner is None:
-            assert (
-                url is not None
-            ), f"Reasoner:{reasoner} and url of a triplestore {url} cannot be both None."
+            assert url is not None, f"Reasoner:{reasoner} and url of a triplestore {url} cannot be both None."
             self.g = TripleStoreReasonerOntology(url=url)
         else:
             self.g = reasoner
-        # This assigment is done as many CEL models are implemented to use both attributes seperately.
-        # CEL models will be refactored.
         self.ontology = self.g
         self.reasoner = self.g
 
@@ -1080,8 +1044,8 @@ class TripleStore:
                 )
         # Iterating over the mappings of object properties to individuals.
         for (
-            object_property,
-            list_owl_individuals,
+                object_property,
+                list_owl_individuals,
         ) in object_property_to_individuals.items():
             # RETURN: \exists r. {x1,x33, .., x8} => Existential restriction over nominals
             yield OWLObjectSomeValuesFrom(
@@ -1090,11 +1054,11 @@ class TripleStore:
             owl_class: OWLClass
             count: int
             for owl_class, count in Counter(
-                [
-                    type_i
-                    for i in list_owl_individuals
-                    for type_i in self.get_types(ind=i, direct=True)
-                ]
+                    [
+                        type_i
+                        for i in list_owl_individuals
+                        for type_i in self.get_types(ind=i, direct=True)
+                    ]
             ).items():
                 existential_quantifier = OWLObjectSomeValuesFrom(
                     property=object_property, filler=owl_class
@@ -1189,9 +1153,9 @@ class TripleStore:
         yield from self.reasoner.range_of_double_data_properties(prop)
 
     def individuals(
-        self,
-        concept: Optional[OWLClassExpression] = None,
-        named_individuals: bool = False,
+            self,
+            concept: Optional[OWLClassExpression] = None,
+            named_individuals: bool = False,
     ) -> Generator[OWLNamedIndividual, None, None]:
         """Given an OWL class expression, retrieve all individuals belonging to it.
         Args:
@@ -1210,7 +1174,7 @@ class TripleStore:
             )
 
     def get_types(
-        self, ind: OWLNamedIndividual, direct: True
+            self, ind: OWLNamedIndividual, direct: True
     ) -> Generator[OWLClass, None, None]:
         if not direct:
             raise NotImplementedError("Inferring indirect types not available")
