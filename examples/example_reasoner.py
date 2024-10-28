@@ -125,7 +125,7 @@ onto.add_axiom(OWLObjectPropertyDomainAxiom(r1, ST))
 onto.add_axiom(OWLSubClassOfAxiom(R, r5Q))
 onto.add_axiom(OWLSubClassOfAxiom(ST, U))
 
-# onto.save(IRI.create('file:/' + 'test' + '.owl'))
+# onto.save(IRI.create('test' + '.owl'))
 
 base_reasoner = OntologyReasoner(onto)
 # reasoner = FastInstanceCheckerReasoner(
