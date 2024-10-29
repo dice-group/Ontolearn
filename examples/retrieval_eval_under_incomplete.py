@@ -24,9 +24,10 @@ from owlapy.iri import IRI
 from owlapy.parser import DLSyntaxParser
 import ast
 from owlapy import owl_expression_to_dl
+from owlapy.owl_reasoner import SyncReasoner
 from owlapy.owl_ontology_manager import OntologyManager
-from owlapy.owlapi_adaptor import OWLAPIAdaptor
 import pandas as pd
+import re
 
 
 # Create incomplete/noisy KGs
@@ -86,6 +87,7 @@ def generate_subgraphs(kb_path: str, directory: str, n: int, ratio: float, opera
 
     return file_paths
 
+
 def execute(args):
     symbolic_kb = KnowledgeBase(path=args.path_kg)
     namespace = list(symbolic_kb.ontology.classes_in_signature())[0].iri.get_namespace()
@@ -115,25 +117,31 @@ def execute(args):
         else:
             subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path, "--path_report", path_report])
         
-        df = pd.read_csv(f"{directory}/ALCQHI_Retrieval_Results.csv", index_col=0)
-        
-        expressions = {i for i in df["Expression"].to_list()}
 
+        df = pd.read_csv(f"{directory}/ALCQHI_Retrieval_Results.csv")
+
+        # Extract expressions
+        expressions = df["Expression"].tolist()
+        
         ontology_path = path
         reasoners = ['HermiT', 'Pellet', 'JFact', 'Openllet']
         reasoner_jaccards = {reasoner: [] for reasoner in reasoners}
         reasoner_times = {reasoner: [] for reasoner in reasoners}  # To store running times
 
 
-        owlapi_adaptor = OWLAPIAdaptor(path=ontology_path, name_reasoner='HermiT')
+        hermit_reasoner = SyncReasoner(ontology=ontology_path, reasoner='HermiT')
 
-        if owlapi_adaptor.has_consistent_ontology():
+        if hermit_reasoner.has_consistent_ontology():
 
             for expression in expressions:
-                
-                print("-"*100)
+                print("-" * 100)
                 print("Expression:", expression)
-                target_concept = parser.parse_expression(expression)
+                try:
+                    target_concept = parser.parse_expression(expression)
+                except Exception as e:
+                    print(f"Failed to parse expression: {expression}")
+                    print(e)
+                    continue
                 goal_retrieval = {i.str for i in symbolic_kb.individuals(target_concept)}
                 result_neural_symbolic = df[df["Expression"] == expression]["Symbolic_Retrieval_Neural"].apply(ast.literal_eval).iloc[0]
                 jaccard_sim_neural = jaccard_similarity(result_neural_symbolic, goal_retrieval)
@@ -150,13 +158,13 @@ def execute(args):
 
                 for reasoner in reasoners:
 
-                    owlapi_adaptor = OWLAPIAdaptor(path=ontology_path, name_reasoner=reasoner)
+                    cur_reasoner = SyncReasoner(ontology=ontology_path, reasoner=reasoner)
 
                     print(f"...Reasoner {reasoner} starts")
 
                     start_time = time.time()  # Start timing
 
-                    result_symbolic = {i.str for i in (owlapi_adaptor.instances(target_concept, direct=False))}
+                    result_symbolic = {i.str for i in (cur_reasoner.instances(target_concept, direct=False))}
                     end_time = time.time()  # End timing
                     
                     elapsed_time = end_time - start_time  # Calculate elapsed time
@@ -218,7 +226,6 @@ def execute(args):
     print(final_df.head())
     print(f"Results have been saved to {final_csv_path}")
         
-    owlapi_adaptor.stopJVM()  # Stop the standard reasoner 
    
 
 
