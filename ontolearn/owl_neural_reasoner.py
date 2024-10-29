@@ -593,12 +593,12 @@ class TripleStoreNeuralReasoner:
     def get_individuals_of_class(
             self, owl_class: OWLClass, confidence_threshold: float = None
     ) -> Generator[OWLNamedIndividual, None, None]:
-        predictions = self.get_predictions(
+        predictions = list(self.get_predictions(
             h=None,
             r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
             t=owl_class.str,
             confidence_threshold=confidence_threshold,
-        )
+        ))
         seen = set()
         for prediction in predictions:
             try:
@@ -611,7 +611,7 @@ class TripleStoreNeuralReasoner:
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
-        if len(list(predictions)) == 0:
+        if len(predictions) == 0:
             # abstract class / class that does not have any instances -> get all child classes and make predictions
             for child_class in self.subconcepts(owl_class, confidence_threshold=confidence_threshold):
                 for individual in self.get_individuals_of_class(child_class, confidence_threshold=confidence_threshold):
