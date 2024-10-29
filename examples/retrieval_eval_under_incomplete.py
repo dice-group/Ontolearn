@@ -28,7 +28,7 @@ from owlapy.owl_reasoner import SyncReasoner
 from owlapy.owl_ontology_manager import OntologyManager
 import pandas as pd
 import re
-
+from owlapy.static_funcs import stopJVM
 
 # Create incomplete/noisy KGs
 def generate_subgraphs(kb_path: str, directory: str, n: int, ratio: float, operation: str) -> Set[str]:
@@ -225,7 +225,7 @@ def execute(args):
 
     print(final_df.head())
     print(f"Results have been saved to {final_csv_path}")
-        
+    stopJVM()
    
 
 
