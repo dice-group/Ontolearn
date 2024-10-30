@@ -47,10 +47,12 @@ class TripleStoreNeuralReasoner:
                 path_of_kb = path_of_kb.replace("/", "_")
                 path_of_kb = path_of_kb.replace(".", "_")
                 args.path_to_store_single_run = path_of_kb
-                args.num_epochs = 500
+                args.num_epochs = 100
                 args.embedding_dim = 512
                 args.batch_size = 1024
                 args.backend = "rdflib"
+                args.trainer = "PL"
+                # args.save_embeddings_as_csv = "True"
                 reports = Execute(args).start()
                 path_neural_embedding = reports["path_experiment_folder"]
                 self.model = KGE(path=path_neural_embedding)
@@ -611,12 +613,12 @@ class TripleStoreNeuralReasoner:
     def get_individuals_of_class(
             self, owl_class: OWLClass, confidence_threshold: float = None
     ) -> Generator[OWLNamedIndividual, None, None]:
-        predictions = self.get_predictions(
+        predictions = list(self.get_predictions(
             h=None,
             r="http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
             t=owl_class.str,
             confidence_threshold=confidence_threshold,
-        )
+        ))
         seen = set()
         for prediction in predictions:
             try:
@@ -629,7 +631,7 @@ class TripleStoreNeuralReasoner:
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
 
-        if len(list(predictions)) == 0:
+        if len(predictions) == 0:
             # abstract class / class that does not have any instances -> get all child classes and make predictions
             for child_class in self.subconcepts(owl_class, confidence_threshold=confidence_threshold):
                 for individual in self.get_individuals_of_class(child_class, confidence_threshold=confidence_threshold):

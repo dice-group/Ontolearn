@@ -26,8 +26,8 @@
 
 import logging
 import operator
-import random
 import time
+from datetime import datetime
 from contextlib import contextmanager
 from itertools import islice, chain
 from typing import Any, Callable, Dict, FrozenSet, Set, List, Tuple, Iterable, Optional, Union
@@ -39,7 +39,7 @@ from owlapy.class_expression import OWLClassExpression
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_property import OWLDataProperty
-from owlapy.owl_reasoner import OWLReasoner
+from owlapy.abstracts import AbstractOWLReasoner
 from torch.utils.data import DataLoader
 from torch.functional import F
 from torch.nn.utils.rnn import pad_sequence
@@ -78,6 +78,9 @@ from owlapy.parser import DLSyntaxParser
 from owlapy.utils import OrderedOWLObject
 from sortedcontainers import SortedSet
 import os
+import json
+import glob
+from ontolearn.lp_generator import LPGen
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +107,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
         _number_of_tested_concepts (int): Yes, you got it. This stores the number of tested concepts.
         operator (BaseRefinement): Operator used to generate refinements.
         quality_func (AbstractScorer) The quality function to be used.
-        reasoner (OWLReasoner): The reasoner that this model is using.
+        reasoner (AbstractOWLReasoner): The reasoner that this model is using.
         search_tree (Dict[OWLClassExpression, TreeNode[OENode]]): Dict to store the TreeNode for a class expression.
         start_class (OWLClassExpression): The starting class expression for the refinement operation.
         start_time (float): The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
@@ -131,7 +134,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
-                 reasoner: Optional[OWLReasoner] = None,
+                 reasoner: Optional[AbstractOWLReasoner] = None,
                  refinement_operator: Optional[BaseRefinement[OENode]] = None,
                  quality_func: Optional[AbstractScorer] = None,
                  heuristic_func: Optional[AbstractHeuristic] = None,
@@ -158,7 +161,7 @@ class CELOE(RefinementBasedConceptLearner[OENode]):
             max_runtime (int): Limit to stop the algorithm after n seconds. Defaults to 5.
             max_results (int): Maximum hypothesis to store. Defaults to 10.
             quality_func (AbstractScorer) The quality function to be used. Defaults to `F1`.
-            reasoner (OWLReasoner): Optionally use a different reasoner. If reasoner=None, the reasoner of
+            reasoner (AbstractOWLReasoner): Optionally use a different reasoner. If reasoner=None, the reasoner of
                                     the :attr:`knowledge_base` is used.
             terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found. Defaults to True.
 
@@ -605,7 +608,7 @@ class OCEL(CELOE):
         _number_of_tested_concepts (int): Yes, you got it. This stores the number of tested concepts.
         operator (BaseRefinement): Operator used to generate refinements.
         quality_func (AbstractScorer) The quality function to be used.
-        reasoner (OWLReasoner): The reasoner that this model is using.
+        reasoner (AbstractOWLReasoner): The reasoner that this model is using.
         search_tree (Dict[OWLClassExpression, TreeNode[OENode]]): Dict to store the TreeNode for a class expression.
         start_class (OWLClassExpression): The starting class expression for the refinement operation.
         start_time (float): The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
@@ -618,7 +621,7 @@ class OCEL(CELOE):
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
-                 reasoner: Optional[OWLReasoner] = None,
+                 reasoner: Optional[AbstractOWLReasoner] = None,
                  refinement_operator: Optional[BaseRefinement[OENode]] = None,
                  quality_func: Optional[AbstractScorer] = None,
                  heuristic_func: Optional[AbstractHeuristic] = None,
@@ -645,7 +648,7 @@ class OCEL(CELOE):
             max_runtime (int): Limit to stop the algorithm after n seconds. Defaults to 5.
             max_results (int): Maximum hypothesis to store. Defaults to 10.
             quality_func (AbstractScorer) The quality function to be used. Defaults to `F1`.
-            reasoner (OWLReasoner): Optionally use a different reasoner. If reasoner=None, the reasoner of
+            reasoner (AbstractOWLReasoner): Optionally use a different reasoner. If reasoner=None, the reasoner of
                                     the :attr:`knowledge_base` is used.
             terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found. Defaults to True.
 
@@ -706,7 +709,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
         population_size (int): Population size for the evolutionary algorithm.
         pset (gp.PrimitiveSetTyped): Contains the primitives that can be used to solve a Strongly Typed GP problem.
         quality_func: Function to evaluate the quality of solution concepts.
-        reasoner (OWLReasoner): The reasoner that this model is using.
+        reasoner (AbstractOWLReasoner): The reasoner that this model is using.
         start_time (float): The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
                             takes to execute.
         terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found.
@@ -754,7 +757,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
-                 reasoner: Optional[OWLReasoner] = None,
+                 reasoner: Optional[AbstractOWLReasoner] = None,
                  quality_func: Optional[AbstractScorer] = None,
                  fitness_func: Optional[AbstractFitness] = None,
                  init_method: Optional[AbstractEAInitialization] = None,
@@ -789,7 +792,7 @@ class EvoLearner(BaseConceptLearner[EvoLearnerNode]):
             num_generations (int): Number of generation for the evolutionary algorithm. Defaults to 200.
             population_size (int): Population size for the evolutionary algorithm. Defaults to 800.
             quality_func: Function to evaluate the quality of solution concepts. Defaults to `Accuracy`.
-            reasoner (OWLReasoner): Optionally use a different reasoner. If reasoner=None, the reasoner of
+            reasoner (AbstractOWLReasoner): Optionally use a different reasoner. If reasoner=None, the reasoner of
                                     the :attr:`knowledge_base` is used.
             terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found. Defaults to True.
             tournament_size (int): The number of evolutionary individuals participating in each tournament.
@@ -1144,7 +1147,7 @@ class CLIP(CELOE):
         _number_of_tested_concepts (int): Yes, you got it. This stores the number of tested concepts.
         operator (BaseRefinement): Operator used to generate refinements.
         quality_func (AbstractScorer) The quality function to be used.
-        reasoner (OWLReasoner): The reasoner that this model is using.
+        reasoner (AbstractOWLReasoner): The reasoner that this model is using.
         search_tree (Dict[OWLClassExpression, TreeNode[OENode]]): Dict to store the TreeNode for a class expression.
         start_class (OWLClassExpression): The starting class expression for the refinement operation.
         start_time (float): The time when :meth:`fit` starts the execution. Used to calculate the total time :meth:`fit`
@@ -1162,7 +1165,7 @@ class CLIP(CELOE):
     def __init__(self,
                  knowledge_base: KnowledgeBase,
                  knowledge_base_path='',
-                 reasoner: Optional[OWLReasoner] = None,
+                 reasoner: Optional[AbstractOWLReasoner] = None,
                  refinement_operator: Optional[BaseRefinement[OENode]] = ExpressRefinement,
                  quality_func: Optional[AbstractScorer] = None,
                  heuristic_func: Optional[AbstractHeuristic] = None,
@@ -1226,7 +1229,7 @@ class CLIP(CELOE):
             pretrained_model_path = self.path_of_embeddings.split("embeddings")[
                                         0] + "trained_models/trained_" + predictor_name + ".pt"
             if load_pretrained and os.path.isfile(pretrained_model_path):
-                model.load_state_dict(torch.load(pretrained_model_path, map_location=self.device))
+                model.load_state_dict(torch.load(pretrained_model_path, map_location=self.device, weights_only=True))
                 model.eval()
                 print("\n Loaded length predictor!")
             return model
@@ -1399,11 +1402,10 @@ class NCES(BaseNCES):
 
     def __init__(self, knowledge_base_path,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
-                 learner_name="SetTransformer", path_of_embeddings="", proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
+                 learner_names=["SetTransformer"], path_of_embeddings="", proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
                  num_heads=4, num_seeds=1, num_inds=32, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0,
-                 batch_size=256, num_workers=4, max_length=48, load_pretrained=True, sorted_examples=False,
-                 pretrained_model_name=None, verbose: int = 0):
-        super().__init__(knowledge_base_path, learner_name, path_of_embeddings, batch_size, learning_rate, decay_rate,
+                 batch_size=256, num_workers=4, max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0):
+        super().__init__(knowledge_base_path, learner_names, path_of_embeddings, batch_size, learning_rate, decay_rate,
                          clip_value, num_workers)
         self.quality_func = quality_func
         self.num_predictions = num_predictions
@@ -1419,42 +1421,82 @@ class NCES(BaseNCES):
         self.ln = ln
         self.load_pretrained = load_pretrained
         self.sorted_examples = sorted_examples
-        self.pretrained_model_name = pretrained_model_name
         self.verbose = verbose
         self.model = self.get_synthesizer()
         self.dl_parser = DLSyntaxParser(namespace=self.kb_namespace)
         self.best_predictions = None
 
-    def get_synthesizer(self):
-        def load_model(learner_name, load_pretrained):
-            if learner_name == 'SetTransformer':
-                model = SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length,
-                                       self.input_size, self.proj_dim, self.num_heads, self.num_seeds, self.num_inds,
-                                       self.ln)
-            elif learner_name == 'GRU':
-                model = GRU(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size,
-                            self.proj_dim, self.rnn_n_layers, self.drop_prob)
-            elif learner_name == 'LSTM':
-                model = LSTM(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size,
-                             self.proj_dim, self.rnn_n_layers, self.drop_prob)
-            if load_pretrained:
-                model_path = self.path_of_embeddings.split("embeddings")[
-                                 0] + "trained_models/trained_" + learner_name + ".pt"
-                model.load_state_dict(torch.load(model_path, map_location=self.device))
-                model.eval()
-                if self.verbose > 0:
-                    print("\n Loaded synthesizer model!")
-            return model
+    def get_synthesizer(self, path=None):
+        m1 = SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length,
+                                   self.input_size, self.proj_dim, self.num_heads, self.num_seeds, self.num_inds,
+                                   self.ln)
+        m2 = GRU(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size,
+                        self.proj_dim, self.rnn_n_layers, self.drop_prob)
 
-        if not self.load_pretrained:
-            return [load_model(self.learner_name, self.load_pretrained)]
-        elif self.load_pretrained and isinstance(self.pretrained_model_name, str):
-            return [load_model(self.pretrained_model_name, self.load_pretrained)]
-        elif self.load_pretrained and isinstance(self.pretrained_model_name, list):
-            return [load_model(name, self.load_pretrained) for name in self.pretrained_model_name]
+        m3 = LSTM(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size,
+                         self.proj_dim, self.rnn_n_layers, self.drop_prob)
+        Untrained = []
+        for name in self.learner_names:
+            for m in [m1,m2,m3]:
+                if m.name == name:
+                    Untrained.append(m)
 
-    def refresh(self):
-        self.model = self.get_synthesizer()
+        Models = []
+
+        if self.load_pretrained:
+            if path is None:
+                try:
+                    if len(glob.glob(self.path_of_embeddings.split("embeddings")[0] + "trained_models/*.pt")) == 0:
+                        raise FileNotFoundError
+                    else:
+                        for file_name in glob.glob(self.path_of_embeddings.split("embeddings")[0] + "trained_models/*.pt"):
+                            for m in Untrained:
+                                if m.name in file_name:
+                                    try:
+                                        m.load_state_dict(torch.load(file_name, map_location=self.device, weights_only=True))
+                                        Models.append(m.eval())
+                                    except Exception as e:
+                                        print(e)
+                                        pass
+                except Exception as e:
+                    print(e)
+                    raise RuntimeError
+
+                if Models:
+                    print("\n Loaded NCES weights!\n")
+                    return Models
+                else:
+                    print("!!!Returning untrained models, could not load pretrained")
+                    return Untrained
+
+            elif len(glob.glob(path+"/*.pt")) == 0:
+                 print("No pretrained model found! If directory is empty or does not exist, set the NCES `load_pretrained` parameter to `False` or make sure `save_model` was set to `True` in the .train() method.")
+                 raise FileNotFoundError
+            else:
+                for file_name in glob.glob(path+"/*.pt"):
+                    for m in Untrained:
+                        if m.name in file_name:
+                            try:
+                                m.load_state_dict(torch.load(file_name, map_location=self.device, weights_only=True))
+                                Models.append(m.eval())
+                            except Exception as e:
+                                print(e)
+                                pass
+                if Models:
+                    print("\n Loaded NCES weights!\n")
+                    return Models
+                else:
+                    print("!!!Returning untrained models, could not load pretrained")
+                    return Untrained
+        else:
+            print("!!!Returning untrained models, could not load pretrained. Check the `load_pretrained parameter` or train the models using NCES.train(data).")
+            return Untrained
+
+
+    def refresh(self, path=None):
+        if path is not None:
+            self.load_pretrained = True
+        self.model = self.get_synthesizer(path)
 
     def sample_examples(self, pos, neg):  # pragma: no cover
         assert type(pos[0]) == type(neg[0]), "The two iterables pos and neg must be of same type"
@@ -1507,7 +1549,7 @@ class NCES(BaseNCES):
         Pos = np.random.choice(pos_str, size=(self.num_predictions, len(pos_str)), replace=True)
         Neg = np.random.choice(neg_str, size=(self.num_predictions, len(neg_str)), replace=True)
 
-        assert self.load_pretrained and self.pretrained_model_name, \
+        assert self.load_pretrained and self.learner_names, \
             "No pretrained model found. Please first train NCES, see the <<train>> method below"
 
         dataset = NCESDataLoaderInference([("", Pos_str, Neg_str) for (Pos_str, Neg_str) in zip(Pos, Neg)],
@@ -1534,7 +1576,9 @@ class NCES(BaseNCES):
             predictions.append(concept)
         return predictions
 
-    def fit(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]], **kwargs):
+    def fit(self, learning_problem: PosNegLPStandard, **kwargs):
+        pos = learning_problem.pos
+        neg = learning_problem.neg
         if isinstance(pos, set) or isinstance(pos, frozenset):
             pos_list = list(pos)
             neg_list = list(neg)
@@ -1572,7 +1616,7 @@ class NCES(BaseNCES):
         elif len(self.best_predictions) == 1 or n == 1:
             return self.best_predictions[0].concept
         else:
-            return self.best_predictions[:n]
+            return [best.concept for best in self.best_predictions[:n]]
 
     def convert_to_list_str_from_iterable(self, data):  # pragma: no cover
         target_concept_str, examples = data[0], data[1:]
@@ -1597,7 +1641,7 @@ class NCES(BaseNCES):
         
         - This function returns predictions as owl class expressions, not nodes as in fit
         """
-        assert self.load_pretrained and self.pretrained_model_name, \
+        assert self.load_pretrained and self.learner_names, \
             "No pretrained model found. Please first train NCES, refer to the <<train>> method"
         dataset = [self.convert_to_list_str_from_iterable(datapoint) for datapoint in dataset]
         dataset = NCESDataLoaderInference(dataset, self.instance_embeddings, self.vocab, self.inv_vocab,
@@ -1623,20 +1667,39 @@ class NCES(BaseNCES):
             print("Predictions: ", predictions_str)
         return predictions_as_owl_class_expressions
 
-    def train(self, data: Iterable[List[Tuple]], epochs=300, batch_size=None, learning_rate=1e-4, decay_rate=0.0,
+    @staticmethod
+    def generate_training_data(kb_path, num_lps=1000, storage_dir="./NCES_Training_Data"):
+        lp_gen = LPGen(kb_path=kb_path, max_num_lps=num_lps, storage_dir=storage_dir)
+        lp_gen.generate()
+        print("Loading generated data...")
+        with open(f"{storage_dir}/LPs.json") as file:
+            lps = list(json.load(file).items())
+            print("Number of learning problems:", len(lps))
+        return lps
+
+
+
+    def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, num_lps=1000, learning_rate=1e-4, decay_rate=0.0,
               clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True,
               example_sizes=None, shuffle_examples=False):
+        if os.cpu_count() <= num_workers:
+            num_workers = max(0,os.cpu_count()-1)
+        if storage_path is None:
+            currentDateAndTime = datetime.now()
+            storage_path = f'NCES-Experiment-{currentDateAndTime.strftime("%H-%M-%S")}'
+        if not os.path.exists(storage_path):
+            os.mkdir(storage_path)
+        self.trained_models_path = storage_path+"/trained_models"
         if batch_size is None:
             batch_size = self.batch_size
+        if data is None:
+            data = self.generate_training_data(self.knowledge_base_path, num_lps=num_lps, storage_dir=storage_path)
         train_dataset = NCESDataLoader(data, self.instance_embeddings, self.vocab, self.inv_vocab,
                                        shuffle_examples=shuffle_examples, max_length=self.max_length,
                                        example_sizes=example_sizes)
-        train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=self.num_workers,
+        train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers,
                                       collate_fn=self.collate_batch, shuffle=True)
-        if storage_path is None:
-            storage_path = self.knowledge_base_path[:self.knowledge_base_path.rfind("/")]
-        elif not os.path.exists(storage_path) and (record_runtime or save_model):
-            os.mkdir(storage_path)
+        
         trainer = NCESTrainer(self, epochs=epochs, learning_rate=learning_rate, decay_rate=decay_rate,
                               clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
         trainer.train(train_dataloader, save_model, optimizer, record_runtime)

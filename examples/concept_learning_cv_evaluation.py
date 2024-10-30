@@ -2,6 +2,9 @@
 python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family.owl --max_runtime 3 --report family.csv
 python examples/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 3 --report carcinogenesis.csv
 
+python examples/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 3 --report carcinogenesis.csv --path_of_nces_embeddings "TODO" --path_of_clip_embeddings "TODO"
+
+
 """
 import json
 import time
@@ -23,14 +26,13 @@ import numpy as np
 from ontolearn.utils.static_funcs import compute_f1_score
 
 pd.set_option("display.precision", 5)
-
+"""
 
 def get_embedding_path(ftp_link: str, embeddings_path_arg: str, kb_path_arg: str)->str:
-    """
-    ftp_link: ftp link to download data
-    embeddings_path_arg:local path of an embedding file
-    kb_path_arg:local path of an RDF KG
-    """
+    # ftp_link: ftp link to download data
+    # embeddings_path_arg:local path of an embedding file
+    # kb_path_arg:local path of an RDF KG
+    
 
     if embeddings_path_arg is None or (embeddings_path_arg is not None and not os.path.exists(embeddings_path_arg)):
         file_name = ftp_link.split("/")[-1]
@@ -67,6 +69,7 @@ def get_embedding_path(ftp_link: str, embeddings_path_arg: str, kb_path_arg: str
     else:
         return embeddings_path_arg
 
+"""
 
 def dl_concept_learning(args):
     with open(args.lps) as json_file:
@@ -86,23 +89,21 @@ def dl_concept_learning(args):
               kwargs_classifier={"random_state": 1},
               max_runtime=args.max_runtime,
               verbose=0)
+    
     nces = NCES(knowledge_base_path=args.kb,
                 quality_func=F1(),
-                path_of_embeddings=get_embedding_path("https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip",args.path_of_nces_embeddings, args.kb),
-                pretrained_model_name=["LSTM", "GRU", "SetTransformer"],
+                path_of_embeddings=args.path_of_nces_embeddings,
+                learner_names=["LSTM", "GRU", "SetTransformer"],
                 num_predictions=100,
                 verbose=0)
-    args.path_of_clip_embeddings = get_embedding_path(
-        "https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip",
-        args.path_of_clip_embeddings, args.kb)
     
     clip = CLIP(knowledge_base=kb,
-                #refinement_operator=ExpressRefinement(kb, use_inverse=True, use_numeric_datatypes=True, sample_fillers_count=3, expressivity=0.2),
                 refinement_operator=ModifiedCELOERefinement(kb),
                 quality_func=F1(),
                 max_num_of_concepts_tested=int(1e9), max_runtime=args.max_runtime,
                 path_of_embeddings=args.path_of_clip_embeddings,
                 pretrained_predictor_name=["LSTM", "GRU", "SetTransformer"], load_pretrained=True)
+
     # dictionary to store the data
     data = dict()
     if "problems" in settings:
@@ -261,7 +262,7 @@ def dl_concept_learning(args):
 
             start_time = time.time()
             # () Fit model training dataset
-            pred_nces = nces.fit(train_lp.pos, train_lp.neg).best_hypotheses(n=1)
+            pred_nces = nces.fit(train_lp).best_hypotheses(n=1)
             print("NCES ends..", end="\t")
             rt_nces = time.time() - start_time
             
@@ -281,7 +282,6 @@ def dl_concept_learning(args):
             print(f"NCES Test Quality: {test_f1_nces:.3f}", end="\t")
             print(f"NCES Runtime: {rt_nces:.3f}")
 
-            #"""
             print("CLIP starts..", end="\t")
             start_time = time.time()
             pred_clip = clip.fit(train_lp).best_hypotheses()
@@ -302,7 +302,6 @@ def dl_concept_learning(args):
             print(f"CLIP Train Quality: {train_f1_clip:.3f}", end="\t")
             print(f"CLIP Test Quality: {test_f1_clip:.3f}", end="\t")
             print(f"CLIP Runtime: {rt_clip:.3f}")
-            #"""
 
     df = pd.DataFrame.from_dict(data)
     df.to_csv(args.report, index=False)

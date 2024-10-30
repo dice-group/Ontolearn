@@ -1,6 +1,6 @@
-[![Coverage](https://img.shields.io/badge/coverage-95%25-green)](https://ontolearn-docs-dice-group.netlify.app/usage/09_further_resources#code-coverage)
-[![Pypi](https://img.shields.io/badge/pypi-0.7.4-blue)](https://pypi.org/project/ontolearn/0.7.4/)
-[![Docs](https://img.shields.io/badge/documentation-0.7.4-yellow)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
+[![Coverage](https://img.shields.io/badge/coverage-86%25-green)](https://ontolearn-docs-dice-group.netlify.app/usage/09_further_resources#code-coverage)
+[![Pypi](https://img.shields.io/badge/pypi-0.8.0-blue)](https://pypi.org/project/ontolearn/0.8.0/)
+[![Docs](https://img.shields.io/badge/documentation-0.8.0-yellow)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
 [![Python](https://img.shields.io/badge/python-3.10.13+-4584b6)](https://www.python.org/downloads/release/python-31013/)
 &nbsp;
 
@@ -161,6 +161,42 @@ TDL (a more scalable learner) can also be used as follows
 ```python
 import json
 import requests
+response = requests.get('http://0.0.0.0:8000/cel',
+                        headers={'accept': 'application/json', 'Content-Type': 'application/json'},
+                        json={"pos": examples['positive_examples'],
+                              "neg": examples['negative_examples'],
+                              "model": "TDL"})
+print(response.json())
+```
+NCES (another scalable learner). The following will first train NCES if the provided path `path_to_pretrained_nces` does not exist
+```python
+import json
+import requests
+with open(f"LPs/Mutagenesis/lps.json") as json_file:
+    learning_problems = json.load(json_file)["problems"]
+## This trains NCES before solving the provided learning problems. Expect poor performance for this number of epochs, and this training data size.
+## If GPU is available, set `num_of_training_learning_problems` t0 10_000 or more. Set `nces_train_epochs` to 300 or more, and increase `nces_batch_size`.
+for str_target_concept, examples in learning_problems.items():
+    response = requests.get('http://0.0.0.0:8000/cel',
+                            headers={'accept': 'application/json', 'Content-Type': 'application/json'},
+                            json={"pos": examples['positive_examples'],
+                                  "neg": examples['negative_examples'],
+                                  "model": "NCES",
+                                  "path_embeddings": "mutagenesis_embeddings/Keci_entity_embeddings.csv",
+                                  "path_to_pretrained_nces": None,
+                                  # if pretrained_nces exists, load weghts, otherwise train one and save it
+                                  "num_of_training_learning_problems": 100,
+                                  "nces_train_epochs": 5,
+                                  "nces_batch_size": 16
+                                  })
+    print(response.json())
+```
+
+Now this will use pretrained weights for NCES
+
+```python
+import json
+import requests
 with open(f"LPs/Mutagenesis/lps.json") as json_file:
     learning_problems = json.load(json_file)["problems"]
 for str_target_concept, examples in learning_problems.items():
@@ -168,10 +204,16 @@ for str_target_concept, examples in learning_problems.items():
                             headers={'accept': 'application/json', 'Content-Type': 'application/json'},
                             json={"pos": examples['positive_examples'],
                                   "neg": examples['negative_examples'],
-                                  "model": "TDL"})
+                                  "model": "NCES",
+                                  "path_embeddings": "./NCESData/mutagenesis/embeddings/ConEx_entity_embeddings.csv",
+                                  "path_to_pretrained_nces": "./NCESData/mutagenesis/trained_models/",
+                                  # if pretrained_nces exists, load weghts, otherwise train one and save it
+                                  "num_of_training_learning_problems": 100,
+                                  "nces_train_epochs": 5,
+                                  "nces_batch_size": 16
+                                  })
     print(response.json())
 ```
-
 
 </details>
 

@@ -1,3 +1,7 @@
+"""
+
+
+"""
 # -----------------------------------------------------------------------------
 # MIT License
 #
@@ -24,24 +28,23 @@
 
 
 import argparse
+import glob
 from fastapi import FastAPI
 import uvicorn
 from typing import Dict, Iterable, Union, List
 from owlapy.class_expression import OWLClassExpression
 from owlapy.iri import IRI
 from owlapy.owl_individual import OWLNamedIndividual
-from ..utils.static_funcs import compute_f1_score
-from ..knowledge_base import KnowledgeBase
-from ..triple_store import TripleStore
-from ..learning_problem import PosNegLPStandard
-from ..refinement_operators import LengthBasedRefinement
-from ..learners import Drill, TDL
-from ..metrics import F1
-from owlapy.render import DLSyntaxObjectRenderer
-from ..utils.static_funcs import save_owl_class_expressions
+from ontolearn.utils import compute_f1_score
+from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.triple_store import TripleStore
+from ontolearn.learning_problem import PosNegLPStandard
+from ontolearn.learners import Drill, TDL
+from ontolearn.concept_learner import NCES
+from ontolearn.metrics import F1
+from ontolearn.verbalizer import LLMVerbalizer
 from owlapy import owl_expression_to_dl
 import os
-from ..verbalizer import LLMVerbalizer
 
 app = FastAPI()
 args = None
@@ -74,10 +77,10 @@ def get_drill(data: dict):
                   iter_bound=data.get("iter_bound", 10),  # total refinement operation applied
                   max_runtime=data.get("max_runtime", 60),  # seconds
                   num_episode=data.get("num_episode", 2),  # for the training
-                  use_inverse=True,
-                  use_data_properties=True,
-                  use_card_restrictions=True,
-                  use_nominals=True,
+                  use_inverse=data.get("use_inverse", True),
+                  use_data_properties=data.get("use_data_properties", True),
+                  use_card_restrictions=data.get("use_card_restrictions", True),
+                  use_nominals=data.get("use_nominals", True),
                   verbose=1)
     # (2) Either load the weights of DRILL or train it.
     if data.get("path_to_pretrained_drill", None) and os.path.isdir(data["path_to_pretrained_drill"]):
@@ -89,19 +92,48 @@ def get_drill(data: dict):
         drill.save(directory=data.get("path_to_pretrained_drill", None))
     return drill
 
+def get_nces(data: dict) -> NCES:
+    """ Load NCES """
+    global kb
+    global args
+    assert args.path_knowledge_base.endswith(".owl"), "NCES supports only a knowledge base file with extension .owl"
+    # (1) Init NCES.
+    nces = NCES(knowledge_base_path=args.path_knowledge_base,
+                    path_of_embeddings=data.get("path_embeddings", None),
+                    quality_func=F1(),
+                    load_pretrained=False,
+                    learner_names=["SetTransformer", "LSTM", "GRU"],
+                    num_predictions=64
+                   )
+    # (2) Either load the weights of NCES or train it.
+    if data.get("path_to_pretrained_nces", None) and os.path.isdir(data["path_to_pretrained_nces"]) and glob.glob(data["path_to_pretrained_nces"]+"/*.pt"):
+        nces.refresh(data["path_to_pretrained_nces"])
+    else:
+        nces.train(epochs=data["nces_train_epochs"], batch_size=data["nces_batch_size"], num_lps=data["num_of_training_learning_problems"])
+        nces.refresh(nces.trained_models_path)
+    return nces
+
 
 def get_tdl(data) -> TDL:
     global kb
-    return TDL(knowledge_base=kb)
+    return TDL(knowledge_base=kb,
+               use_inverse=False,
+               use_data_properties=False,
+               use_nominals=False,
+               use_card_restrictions=data.get("use_card_restrictions",False),
+               kwargs_classifier=data.get("kwargs_classifier",None),
+               verbose=10)
 
 
-def get_learner(data: dict) -> Union[Drill, TDL]:
+def get_learner(data: dict) -> Union[Drill, TDL, NCES, None]:
     if data["model"] == "Drill":
         return get_drill(data)
     elif data["model"] == "TDL":
         return get_tdl(data)
+    elif data["model"] == "NCES":
+        return get_nces(data)
     else:
-        raise NotImplementedError(f"There is no learner {data['model']} available")
+        return None
 
 
 @app.get("/cel")
@@ -109,12 +141,14 @@ async def cel(data: dict) -> Dict:
     global args
     global kb
     print("######### CEL Arguments ###############")
-    print(f"Knowledgebase/Triplestore:{kb}\n")
-    print(f"Input data:{data}\n")
+    print(f"Knowledgebase/Triplestore: {kb}\n")
+    print(f"Input data: {data}\n")
     print("######### CEL Arguments ###############\n")
     # (1) Initialize OWL CEL and verbalizer
     owl_learner = get_learner(data)
-    verbalizer = LLMVerbalizer()
+    if owl_learner is None:
+        return {"Results": f"There is no learner named as {data['model']}. Available models: Drill, TDL, NCES"}
+
     # (2) Read Positives and Negatives.
     positives = {OWLNamedIndividual(IRI.create(i)) for i in data['pos']}
     negatives = {OWLNamedIndividual(IRI.create(i)) for i in data['neg']}
@@ -126,17 +160,18 @@ async def cel(data: dict) -> Dict:
         # ()Learning Process.
         results = []
         learned_owl_expression: OWLClassExpression
-
         predictions = owl_learner.fit(lp).best_hypotheses(n=data.get("topk", 3))
         if not isinstance(predictions, List):
             predictions = [predictions]
-
+        verbalizer = LLMVerbalizer()
         for ith, learned_owl_expression in enumerate(predictions):
             # () OWL to DL
             dl_learned_owl_expression: str
             dl_learned_owl_expression = owl_expression_to_dl(learned_owl_expression)
             # () Get Individuals
             print(f"Retrieving individuals of {dl_learned_owl_expression}...")
+            # TODO:CD: With owlapy:1.3.1, we can move the f1 score computation into triple store.
+            # TODO: By this, we do not need to wait for the retrival results to return an answer to the user
             individuals: Iterable[OWLNamedIndividual]
             individuals = kb.individuals(learned_owl_expression)
             # () F1 score training
@@ -167,9 +202,10 @@ def main():
     elif args.endpoint_triple_store:
         kb = TripleStore(url=args.endpoint_triple_store)
     else:
-        raise RuntimeError("Either --path_knowledge_base or --endpoint_triplestore must be not None")
+        raise RuntimeError("Either --path_knowledge_base or --endpoint_triplestore must be provided")
     uvicorn.run(app, host=args.host, port=args.port)
 
 
 if __name__ == '__main__':
     main()
+
