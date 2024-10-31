@@ -14,6 +14,8 @@ import re
 from collections import Counter, OrderedDict
 
 
+
+
 # Neural Reasoner
 class TripleStoreNeuralReasoner:
     """ OWL Neural Reasoner uses a neural link predictor to retrieve instances of an OWL Class Expression"""
@@ -168,7 +170,11 @@ class TripleStoreNeuralReasoner:
             for prediction, confidence in results:
                 yield prediction, confidence
         except Exception as e:  # pragma: no cover
-            print(f"Error at getting predictions: {e}")
+            print("Error for prediction:")
+            print("h: ", h)
+            print("r: ", r)
+            print("t: ", t)
+            print(f"The Error: {e}")
 
     def abox(self, str_iri: str) -> Generator[
         Tuple[
@@ -204,13 +210,11 @@ class TripleStoreNeuralReasoner:
                 try:
                     owl_class = OWLClass(prediction[0])
                     self.inferred_named_owl_classes.add(owl_class)
-                    yield owl_class
                 except Exception as e:
                     # Log the invalid IRI
                     print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                     continue
-        else:
-            yield from self.inferred_named_owl_classes
+        yield from self.inferred_named_owl_classes
 
     def most_general_classes(
             self, confidence_threshold: float = None
@@ -484,15 +488,13 @@ class TripleStoreNeuralReasoner:
                             owl_named_individual = OWLNamedIndividual(prediction[0])
                             if owl_named_individual not in seen_individuals:
                                 seen_individuals.add(owl_named_individual)
-                                yield owl_named_individual
                         except Exception as e:  # pragma: no cover
                             print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
 
                     self.inferred_owl_individuals = seen_individuals
             except Exception as e:  # pragma: no cover
                 print(f"Error processing classes in signature: {e}")
-        else:
-            yield from self.inferred_owl_individuals
+        yield from self.inferred_owl_individuals
 
     def data_properties_in_signature(
             self, confidence_threshold: float = None
@@ -524,11 +526,11 @@ class TripleStoreNeuralReasoner:
                 try:
                     owl_obj_property = OWLObjectProperty(prediction[0])
                     self.inferred_object_properties.add(owl_obj_property)
-                    yield owl_obj_property
                 except Exception as e:  # pragma: no cover
                     # Log the invalid IRI
                     print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                     continue
+        yield from self.inferred_object_properties
 
     def boolean_data_properties(
             self, confidence_threshold: float = None
@@ -630,7 +632,7 @@ class TripleStoreNeuralReasoner:
                 # Log the invalid IRI
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
-
+        
         if len(predictions) == 0:
             # abstract class / class that does not have any instances -> get all child classes and make predictions
             for child_class in self.subconcepts(owl_class, confidence_threshold=confidence_threshold):

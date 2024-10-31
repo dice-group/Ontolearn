@@ -271,7 +271,7 @@ def get_default_arguments():
     parser.add_argument("--gamma", type=float, default=0.9)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--ratio_sample_nc", type=float, default=0.2, help="To sample OWL Classes.")
-    parser.add_argument("--ratio_sample_object_prob", type=float, default=0.1, help="To sample OWL Object Properties.")
+    parser.add_argument("--ratio_sample_object_prop", type=float, default=0.1, help="To sample OWL Object Properties.")
     parser.add_argument("--min_jaccard_similarity", type=float, default=0.0, help="Minimum Jaccard similarity to be achieve by the reasoner")
     parser.add_argument("--num_nominals", type=int, default=10, help="Number of OWL named individuals to be sampled.")
 
