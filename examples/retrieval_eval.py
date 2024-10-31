@@ -86,9 +86,9 @@ def execute(args):
     object_properties = sorted({i for i in symbolic_kb.get_object_properties()})
     
     # (3.1) Subsample if required.
-    if args.ratio_sample_object_prob:
+    if args.ratio_sample_object_prop:
         object_properties = {i for i in random.sample(population=list(object_properties),
-                                                      k=max(1, int(len(object_properties) * args.ratio_sample_object_prob)))}
+                                                      k=max(1, int(len(object_properties) * args.ratio_sample_object_prop)))}
 
     object_properties = set(object_properties)    
     
