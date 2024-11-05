@@ -4,7 +4,7 @@ from owlapy.owl_axiom import OWLSubClassOfAxiom, OWLObjectPropertyDomainAxiom, O
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_property import OWLDataProperty, OWLObjectProperty
 
-from owlapy.owl_reasoner import OntologyReasoner, BaseReasoner, SyncReasoner
+from owlapy.owl_reasoner import StructuralReasoner, SyncReasoner
 from ontolearn.knowledge_base import KnowledgeBase
 
 data_file = '../KGs/Test/test_ontology.owl'
@@ -127,14 +127,9 @@ onto.add_axiom(OWLSubClassOfAxiom(ST, U))
 
 # onto.save(IRI.create('test' + '.owl'))
 
-base_reasoner = OntologyReasoner(onto)
-# reasoner = FastInstanceCheckerReasoner(
-#                     onto,
-#                     base_reasoner,
-#                     negation_default=True,
-#                     sub_properties=True)
+reasoner = StructuralReasoner(onto, negation_default=True, sub_properties=True)
 
-reasoner = SyncReasoner(onto, BaseReasoner.HERMIT)
+# sync_reasoner = SyncReasoner(data_file, "HermiT") # if you use this you have to remove `only_named` argument:
 
 t1 = list(reasoner.instances(N))
 t2 = list(reasoner.instances(r7E))

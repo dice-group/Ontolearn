@@ -6,7 +6,7 @@ from ontolearn.concept_learner import CELOE
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import Accuracy, F1
 from ontolearn.utils import setup_logging, read_individuals_file
-from owlapy.owl_reasoner import FastInstanceCheckerReasoner, OntologyReasoner
+from owlapy.owl_reasoner import StructuralReasoner
 from owlapy.iri import IRI
 from owlapy.owl_ontology_manager import OntologyManager
 from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRenderer  # noqa: F401
@@ -15,9 +15,7 @@ from owlapy.render import ManchesterOWLSyntaxOWLObjectRenderer, DLSyntaxObjectRe
 def run(data_file, pos_file, neg_file):
     mgr = OntologyManager()
     onto = mgr.load_ontology(IRI.create("file://" + data_file))
-    base_reasoner = OntologyReasoner(onto)
-    reasoner = FastInstanceCheckerReasoner(onto, base_reasoner,
-                                               negation_default=True)
+    reasoner = StructuralReasoner(onto, negation_default=True)
 
     kb = KnowledgeBase(ontology=onto, reasoner=reasoner)
     pos = read_individuals_file(pos_file)
