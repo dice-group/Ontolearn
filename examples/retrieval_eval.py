@@ -86,9 +86,9 @@ def execute(args):
     object_properties = sorted({i for i in symbolic_kb.get_object_properties()})
     
     # (3.1) Subsample if required.
-    if args.ratio_sample_object_prob:
+    if args.ratio_sample_object_prop:
         object_properties = {i for i in random.sample(population=list(object_properties),
-                                                      k=max(1, int(len(object_properties) * args.ratio_sample_object_prob)))}
+                                                      k=max(1, int(len(object_properties) * args.ratio_sample_object_prop)))}
 
     object_properties = set(object_properties)    
     
@@ -271,7 +271,7 @@ def get_default_arguments():
     parser.add_argument("--gamma", type=float, default=0.9)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--ratio_sample_nc", type=float, default=0.2, help="To sample OWL Classes.")
-    parser.add_argument("--ratio_sample_object_prob", type=float, default=0.1, help="To sample OWL Object Properties.")
+    parser.add_argument("--ratio_sample_object_prop", type=float, default=0.1, help="To sample OWL Object Properties.")
     parser.add_argument("--min_jaccard_similarity", type=float, default=0.0, help="Minimum Jaccard similarity to be achieve by the reasoner")
     parser.add_argument("--num_nominals", type=int, default=10, help="Number of OWL named individuals to be sampled.")
 
