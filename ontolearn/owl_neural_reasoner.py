@@ -193,11 +193,11 @@ class TripleStoreNeuralReasoner:
             for o in self.get_object_property_values(str_iri, op):
                 yield subject_, op, o
 
-        # Return a triple based on a data property.
-        for dp in self.data_properties_in_signature():  # pragma: no cover
-            print("these data properties are in the signature: ", dp.str)
-            for l in self.get_data_property_values(str_iri, dp):
-                yield subject_, dp, l
+        # Return a triple based on a data property. TODO: LF: fix if support for data properties is added.
+        # for dp in self.data_properties_in_signature():  # pragma: no cover
+        #     print("these data properties are in the signature: ", dp.str)
+        #     for l in self.get_data_property_values(str_iri, dp):
+        #         yield subject_, dp, l
 
     def classes_in_signature(
             self, confidence_threshold: float = None) -> Generator[OWLClass, None, None]:
