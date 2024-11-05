@@ -11,8 +11,7 @@ from typing import Generator, Tuple
 from dicee.knowledge_graph_embeddings import KGE
 import os
 import re
-from collections import Counter
-
+from collections import Counter, OrderedDict
 
 # Neural Reasoner
 class TripleStoreNeuralReasoner:
@@ -20,8 +19,9 @@ class TripleStoreNeuralReasoner:
     model: KGE
     gamma: float
 
-    def __init__(self, path_of_kb: str = None,
-                 path_neural_embedding: str = None, gamma: float = 0.25):
+    def __init__(self, path_of_kb: str = None, path_neural_embedding: str = None, gamma: float = 0.25, max_cache_size: int = 2**20):
+        self._prediction_cache = OrderedDict()
+        self._max_cache_size = max_cache_size
 
         if path_neural_embedding:  # pragma: no cover
             assert os.path.isdir(
@@ -92,7 +92,7 @@ class TripleStoreNeuralReasoner:
     def __str__(self):
         return f"TripleStoreNeuralReasoner:{self.model} with likelihood threshold gamma : {self.gamma}"
 
-    def get_predictions(self, h: str = None, r: str = None, t: str = None, confidence_threshold: float = None,
+    def compute_predictions(self, h: str = None, r: str = None, t: str = None, confidence_threshold: float = None,
                         ) -> Generator[Tuple[str, float], None, None]:
         """
         Generate predictions for a given head entity (h), relation (r), or tail entity (t) with an optional confidence threshold. The method yields predictions that exceed the specified confidence threshold. If no threshold is provided, it defaults to the model's gamma value.
@@ -108,6 +108,7 @@ class TripleStoreNeuralReasoner:
 
         Raises:
         - Exception: If an error occurs during prediction.
+        - KeyError: If the head entity, relation, or tail entity is not found in the model indices.
         """
         # sanity check
         assert h is not None or r is not None or t is not None, "At least one of h, r, or t must be provided."
@@ -117,17 +118,18 @@ class TripleStoreNeuralReasoner:
         assert t is None or isinstance(t, str), "Tail entity must be a string."
 
         if h is not None:
-            if (self.model.entity_to_idx.get(h, None)) is None:
-                return
+            if h not in self.model.entity_to_idx:
+                raise KeyError(f"Head entity '{h}' not found in model entity indices.")
             h = [h]
 
         if r is not None:
-            if (self.model.relation_to_idx.get(r, None)) is None:
-                return
+            if r not in self.model.relation_to_idx:
+                raise KeyError(f"Relation '{r}' not found in model relation indices.")
             r = [r]
+
         if t is not None:
-            if (self.model.entity_to_idx.get(t, None)) is None:
-                return
+            if t not in self.model.entity_to_idx:
+                raise KeyError(f"Tail entity '{t}' not found in model entity indices.")
             t = [t]
 
         if confidence_threshold is None:
@@ -137,19 +139,44 @@ class TripleStoreNeuralReasoner:
             topk = len(self.model.relation_to_idx)
         else:
             topk = len(self.model.entity_to_idx)
+
         try:
             predictions = self.model.predict_topk(h=h, r=r, t=t, topk=topk)
-            for prediction in predictions:
-                confidence = prediction[1]
-                predicted_iri_str = prediction[0]
+            for predicted_iri_str, confidence in predictions:
                 if confidence >= confidence_threshold:
                     yield predicted_iri_str, confidence
                 else:
-                    #todo: replace with return or break?
-                    continue
+                    break
         except Exception as e:  # pragma: no cover
-            print(f"Error at getting predictions: {e}")
-
+            print("Error during prediction:")
+            print("h:", h)
+            print("r:", r)
+            print("t:", t)
+            print(f"The Error: {e}")
+            
+    def get_predictions(
+        self,
+        h: str = None,
+        r: str = None,
+        t: str = None,
+        confidence_threshold: float = None,
+    ) -> Generator[Tuple[str, float], None, None]:
+        cache_key = (h, r, t, confidence_threshold)
+        if cache_key in self._prediction_cache:
+            # Return cached results
+            results = self._prediction_cache[cache_key]
+        else:
+            # Compute predictions and update cache
+            results = list(self.compute_predictions(h, r, t, confidence_threshold))
+            # Update cache
+            self._prediction_cache[cache_key] = results
+            # Check if the cache size exceeds the maximum size
+            if len(self._prediction_cache) > self._max_cache_size:
+                self._prediction_cache.popitem(last=False)
+        self._prediction_cache.move_to_end(cache_key)
+        for prediction, confidence in results:
+            yield prediction, confidence
+    
     def abox(self, str_iri: str) -> Generator[
         Tuple[
             Tuple[OWLNamedIndividual, OWLProperty, OWLClass],
@@ -184,13 +211,11 @@ class TripleStoreNeuralReasoner:
                 try:
                     owl_class = OWLClass(prediction[0])
                     self.inferred_named_owl_classes.add(owl_class)
-                    yield owl_class
                 except Exception as e:
                     # Log the invalid IRI
                     print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                     continue
-        else:
-            yield from self.inferred_named_owl_classes
+        yield from self.inferred_named_owl_classes
 
     def most_general_classes(
             self, confidence_threshold: float = None
@@ -464,15 +489,13 @@ class TripleStoreNeuralReasoner:
                             owl_named_individual = OWLNamedIndividual(prediction[0])
                             if owl_named_individual not in seen_individuals:
                                 seen_individuals.add(owl_named_individual)
-                                yield owl_named_individual
                         except Exception as e:  # pragma: no cover
                             print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
 
                     self.inferred_owl_individuals = seen_individuals
             except Exception as e:  # pragma: no cover
                 print(f"Error processing classes in signature: {e}")
-        else:
-            yield from self.inferred_owl_individuals
+        yield from self.inferred_owl_individuals
 
     def data_properties_in_signature(
             self, confidence_threshold: float = None
@@ -504,11 +527,11 @@ class TripleStoreNeuralReasoner:
                 try:
                     owl_obj_property = OWLObjectProperty(prediction[0])
                     self.inferred_object_properties.add(owl_obj_property)
-                    yield owl_obj_property
                 except Exception as e:  # pragma: no cover
                     # Log the invalid IRI
                     print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                     continue
+        yield from self.inferred_object_properties
 
     def boolean_data_properties(
             self, confidence_threshold: float = None
@@ -610,7 +633,7 @@ class TripleStoreNeuralReasoner:
                 # Log the invalid IRI
                 print(f"Invalid IRI detected: {prediction[0]}, error: {e}")
                 continue
-
+        
         if len(predictions) == 0:
             # abstract class / class that does not have any instances -> get all child classes and make predictions
             for child_class in self.subconcepts(owl_class, confidence_threshold=confidence_threshold):
