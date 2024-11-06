@@ -22,56 +22,26 @@
 # SOFTWARE.
 # -----------------------------------------------------------------------------
 
-from typing import Dict, Set, Tuple, List, Union, Callable, Iterable
+from typing import Dict, Set, Tuple, List, Union, Callable
 import numpy as np
 import pandas as pd
 from owlapy.class_expression import (
     OWLObjectIntersectionOf,
     OWLClassExpression,
     OWLObjectUnionOf,
-    OWLDataHasValue,
-    OWLDataSomeValuesFrom,
-    OWLClass,
 )
 from owlapy.owl_individual import OWLNamedIndividual
-from owlapy.owl_literal import OWLLiteral
-from owlapy.owl_property import OWLDataProperty
 import ontolearn.triple_store
 from ontolearn.knowledge_base import KnowledgeBase
-from owlapy.class_expression import OWLDataOneOf
 from ontolearn.learning_problem import PosNegLPStandard
-from tqdm import tqdm
 import sklearn
 from sklearn import tree
-from owlapy.render import DLSyntaxObjectRenderer, ManchesterOWLSyntaxOWLObjectRenderer
 
 from ..utils.static_funcs import plot_umap_reduced_embeddings, plot_decision_tree_of_expressions, \
     plot_topk_feature_importance
 
 import itertools
-from owlapy.class_expression import (
-    OWLDataMinCardinality,
-    OWLDataMaxCardinality,
-    OWLObjectOneOf,
-)
-from owlapy.class_expression import (
-    OWLDataMinCardinality,
-    OWLDataOneOf,
-    OWLDataSomeValuesFrom,
-)
-from owlapy.providers import (
-    owl_datatype_min_inclusive_restriction,
-    owl_datatype_max_inclusive_restriction,
-)
-from owlapy.providers import (
-    owl_datatype_min_exclusive_restriction,
-    owl_datatype_max_exclusive_restriction,
-    owl_datatype_min_inclusive_restriction,
-)
-import scipy
-from owlapy import owl_expression_to_dl, owl_expression_to_sparql
-from owlapy.class_expression import OWLObjectSomeValuesFrom, OWLObjectMinCardinality
-from owlapy.providers import owl_datatype_min_max_exclusive_restriction
+from owlapy import owl_expression_to_dl
 from ..utils.static_funcs import make_iterable_verbose
 
 
@@ -242,7 +212,7 @@ class TDL:
                     # A mapping from str dl representation to owl object.
                     features[str_dl_concept] = owl_class_expression
 
-        assert len(features) > 0, f"First hop features cannot be extracted. Ensure that there are axioms about the examples."
+        assert len(features) > 0, "First hop features cannot be extracted. Ensure that there are axioms about the examples."
         if self.verbose > 0:
             print("Unique OWL Class Expressions as features :", len(features))
         # () Iterate over features/extracted owl expressions.
