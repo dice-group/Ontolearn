@@ -10,7 +10,7 @@ import random
 import unittest
 import warnings
 warnings.filterwarnings("ignore")
-
+import os
 def seed_everything():
     seed = 42
     os.environ['PYTHONHASHSEED'] = str(seed)
@@ -28,18 +28,17 @@ def seed_everything():
 seed_everything()
 
 
-class TestCLIPTrainer(unittest.TestCase):
+class TestCLIPTrainer:
 
     def test_trainer_family(self):
-        KB = KnowledgeBase(path="./CLIPData/family/family.owl")
-        op = ExpressRefinement(knowledge_base=KB, use_inverse=False,
-                          use_numeric_datatypes=False)
-        clip = CLIP(knowledge_base=KB, path_of_embeddings="./CLIPData/family/embeddings/ConEx_entity_embeddings.csv",
-             refinement_operator=op, load_pretrained=True, max_runtime=60)
-        with open("./CLIPData/family/LPs.json") as f:
-            data = json.load(f)
-        clip.train(list(data.items())[-100:], epochs=5, learning_rate=0.001, save_model=False, record_runtime=False, storage_path=f"./CLIP-{time.time()}/")
-
-#if __name__ == "__main__":
-#    test = TestCLIPTrainer()
-    # test.test_trainer_family()
+        knowledge_base_path="./CLIPData/family/family.owl"
+        path_of_embeddings="./CLIPData/family/embeddings/ConEx_entity_embeddings.csv"
+        if os.path.exists(knowledge_base_path) and os.path.exists(path_of_embeddings):
+            KB = KnowledgeBase(path="./CLIPData/family/family.owl")
+            op = ExpressRefinement(knowledge_base=KB, use_inverse=False,
+                              use_numeric_datatypes=False)
+            clip = CLIP(knowledge_base=KB, path_of_embeddings="./CLIPData/family/embeddings/ConEx_entity_embeddings.csv",
+                 refinement_operator=op, load_pretrained=True, max_runtime=60)
+            with open("./CLIPData/family/LPs.json") as f:
+                data = json.load(f)
+            clip.train(list(data.items())[-100:], epochs=5, learning_rate=0.001, save_model=False, record_runtime=False, storage_path=f"./CLIP-{time.time()}/")

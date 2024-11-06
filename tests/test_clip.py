@@ -7,11 +7,11 @@ from ontolearn.metrics import F1
 import time
 import random
 import unittest
-
+import os
 import warnings
 warnings.filterwarnings("ignore")
 
-class TestCLIP(unittest.TestCase):
+class TestCLIP:
 
     def test_prediction_quality_family(self):
         knowledge_base_path="./CLIPData/family/family.owl"
@@ -48,7 +48,3 @@ class TestCLIP(unittest.TestCase):
             neg = set(KB.individuals())-set(pos)
             node = list(clip.fit(pos, neg).best_descriptions)[0]
             assert node.quality > 0.95
-if __name__ == "__main__":
-    test = TestCLIP()
-    test.test_prediction_quality_family()
-    test.test_prediction_quality_mutagenesis()
