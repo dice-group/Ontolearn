@@ -1,14 +1,14 @@
 """
 Fitting OWL Class Expression Learners:
 
-Given E^+  and E^-, a learner finds a concept H and F1 score is computed w.r.t. E^+, E^-, and R(H) retrieval of H.
+Given positive examples (E^+)  and negative examples (E^-),
+Evaluate the performances of OWL Class Expression Learners  w.r.t. the quality of learned/found OWL Class Expression
 
-python examples/concept_learning_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family.owl --max_runtime 30 --report family.csv
+Example to run the script
+python examples/concept_learning_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 3 --report family.csv
 
 """
-
 import json
-import os
 import time
 import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
@@ -19,19 +19,14 @@ from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 import argparse
-from rdflib import Graph
-
 from ontolearn.utils.static_funcs import compute_f1_score
-
 pd.set_option("display.precision", 5)
-
 
 def dl_concept_learning(args):
     with open(args.lps) as json_file:
         settings = json.load(json_file)
 
     kb = KnowledgeBase(path=args.kb)
-
     ocel = OCEL(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
     celoe = CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
     drill = Drill(knowledge_base=KnowledgeBase(path=args.kb),
@@ -120,8 +115,9 @@ def dl_concept_learning(args):
     print(df)
     print(df.select_dtypes(include="number").mean())
 
+    print(df.select_dtypes(include="number").mean().values.tolist())
+
 if __name__ == '__main__':
-    # python examples/concept_learning_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family.owl --max_runtime 30 --report family.csv
     parser = argparse.ArgumentParser(description='Description Logic Concept Learning')
     parser.add_argument("--max_runtime", type=int, default=3000)
     parser.add_argument("--lps", type=str, default="/home/cdemir/Desktop/Softwares/Ontolearn/LPs/Family/lps.json")#, required=True)
