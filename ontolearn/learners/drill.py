@@ -29,10 +29,10 @@ from owlapy.owl_individual import OWLNamedIndividual
 from owlapy import owl_expression_to_dl
 from ontolearn.base_concept_learner import RefinementBasedConceptLearner
 from ontolearn.refinement_operators import LengthBasedRefinement
-from ontolearn.abstracts import AbstractScorer, AbstractNode
+from ontolearn.abstracts import AbstractNode
 from ontolearn.search import RL_State
 from typing import Set, List, Tuple, Optional, Generator, SupportsFloat, Iterable, FrozenSet, Callable, Union
-from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
+from ontolearn.learning_problem import PosNegLPStandard
 import torch
 from ontolearn.data_struct import Experience
 from ontolearn.search import DRILLSearchTreePriorityQueue
@@ -40,16 +40,12 @@ from ontolearn.utils import create_experiment_folder
 from collections import Counter, deque
 from itertools import chain
 import time
-import dicee
 import os
-from owlapy import owl_expression_to_dl
 # F1 class will be deprecated to become compute_f1_score function.
-from ontolearn.metrics import F1
 from ontolearn.utils.static_funcs import compute_f1_score
 import random
 from ontolearn.heuristics import CeloeBasedReward
-import torch
-from ontolearn.data_struct import PrepareBatchOfTraining, PrepareBatchOfPrediction
+from ontolearn.data_struct import PrepareBatchOfPrediction
 from tqdm import tqdm
 from ..utils.static_funcs import make_iterable_verbose
 from owlapy.utils import get_expression_length
@@ -592,49 +588,6 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
     def get_individuals(self, rl_state: RL_State) -> List[str]:
         return [owl_individual.str.strip() for owl_individual in self.kb.individuals(rl_state.concept)]
 
-    def get_embeddings(self, instances) -> None:
-        if self.representation_mode == 'averaging':
-            # (2) if input node has not seen before, assign embeddings.
-            if rl_state.embeddings is None:
-                assert isinstance(rl_state.concept, OWLClassExpression)
-                # (3) Retrieval instances via our retrieval function (R(C)). Be aware Open World and Closed World
-
-                rl_state.instances = set(self.kb.individuals(rl_state.concept))
-                # (4) Retrieval instances in terms of bitset.
-                rl_state.instances_bitset = self.kb.individuals_set(rl_state.concept)
-                # (5) |R(C)|=\emptyset ?
-                if len(rl_state.instances) == 0:
-                    # If|R(C)|=\emptyset, then represent C with zeros
-                    if self.pre_trained_kge is not None:
-                        emb = torch.zeros(1, self.sample_size, self.embedding_dim)
-                    else:
-                        emb = torch.rand(size=(1, self.sample_size, self.embedding_dim))
-                else:
-                    # If|R(C)| \not= \emptyset, then take the mean of individuals.
-                    str_individuals = [i.str for i in rl_state.instances]
-                    assert len(str_individuals) > 0
-                    if self.pre_trained_kge is not None:
-                        emb = self.pre_trained_kge.get_entity_embeddings(str_individuals)
-                        emb = torch.mean(emb, dim=0)
-                        emb = emb.view(1, self.sample_size, self.embedding_dim)
-                    else:
-                        emb = torch.rand(size=(1, self.sample_size, self.embedding_dim))
-                # (6) Assign embeddings
-                rl_state.embeddings = emb
-            else:
-                """ Embeddings already assigned."""
-                try:
-                    assert rl_state.embeddings.shape == (1, self.sample_size, self.embedding_dim)
-                except AssertionError as e:
-                    print(e)
-                    print(rl_state)
-                    print(rl_state.embeddings.shape)
-                    print((1, self.sample_size, self.instance_embeddings.shape[1]))
-                    raise
-        else:
-            """ No embeddings available assigned."""""
-            assert self.representation_mode is None
-
     def assign_embeddings(self, rl_state: RL_State) -> None:
         """
         Assign embeddings to a rl state. A rl state is represented with vector representation of
@@ -865,40 +818,6 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         with open(f"{self.storage_path}/seen_examples.json", 'w', encoding='utf-8') as f:
             json.dump(self.seen_examples, f, ensure_ascii=False, indent=4)
         return self
-
-    # TODO: CD:Should be deprecated
-    def fit_from_iterable(self,
-                          dataset: List[Tuple[object, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]],
-                          max_runtime: int = None) -> List:
-        """
-        Dataset is a list of tuples where the first item is either str or OWL class expression indicating target
-        concept.
-        """
-        if max_runtime:
-            self.max_runtime = max_runtime
-        renderer = DLSyntaxObjectRenderer()
-
-        results = []
-        for (target_ce, p, n) in dataset:
-            print(f'TARGET OWL CLASS EXPRESSION:\n{target_ce}')
-            print(f'|Sampled Positive|:{len(p)}\t|Sampled Negative|:{len(n)}')
-            start_time = time.time()
-            self.fit(pos=p, neg=n, max_runtime=max_runtime)
-            rn = time.time() - start_time
-            h: RL_State = next(iter(self.best_hypotheses()))
-            # TODO:CD: We need to remove this first returned boolean for the sake of readability.
-            _, f_measure = F1().score_elp(instances=h.instances_bitset, learning_problem=self._learning_problem)
-            _, accuracy = Accuracy().score_elp(instances=h.instances_bitset, learning_problem=self._learning_problem)
-
-            report = {'Target': str(target_ce),
-                      'Prediction': renderer.render(h.concept),
-                      'F-measure': f_measure,
-                      'Accuracy': accuracy,
-                      'NumClassTested': self._number_of_tested_concepts,
-                      'Runtime': rn}
-            results.append(report)
-
-        return results
 
 
 class DrillHeuristic:  # pragma: no cover
