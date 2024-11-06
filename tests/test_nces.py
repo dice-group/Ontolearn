@@ -36,8 +36,8 @@ seed_everything()
 class TestNCES(unittest.TestCase):
 
     def test_prediction_quality_family(self):
-        knowledge_base_path = "./NCESData/family/family.owl"
-        path_of_embeddings = "./NCESData/family/embeddings/ConEx_entity_embeddings.csv"
+        knowledge_base_path="./NCESData/family/family.owl"
+        path_of_embeddings="./NCESData/family/embeddings/ConEx_entity_embeddings.csv"
         if os.path.exists(knowledge_base_path) and os.path.exists(path_of_embeddings):
             nces = NCES(knowledge_base_path=knowledge_base_path, quality_func=F1(), num_predictions=100,
                         path_of_embeddings=path_of_embeddings,
@@ -47,15 +47,15 @@ class TestNCES(unittest.TestCase):
             brother = dl_parser.parse('Brother')
             daughter = dl_parser.parse('Daughter')
             pos = set(KB.individuals(brother)).union(set(KB.individuals(daughter)))
-            neg = set(KB.individuals()) - set(pos)
+            neg = set(KB.individuals())-set(pos)
             learning_problem = PosNegLPStandard(pos=pos, neg=neg)
             node = list(nces.fit(learning_problem).best_predictions)[0]
             print("Quality:", node.quality)
             assert node.quality > 0.95
 
     def test_prediction_quality_mutagenesis(self):
-        knowledge_base_path = "./NCESData/mutagenesis/mutagenesis.owl"
-        path_of_embeddings = "./NCESData/mutagenesis/embeddings/ConEx_entity_embeddings.csv"
+        knowledge_base_path="./NCESData/mutagenesis/mutagenesis.owl"
+        path_of_embeddings="./NCESData/mutagenesis/embeddings/ConEx_entity_embeddings.csv"
         if os.path.exists(knowledge_base_path) and os.path.exists(path_of_embeddings):
             nces = NCES(knowledge_base_path=knowledge_base_path, quality_func=F1(), num_predictions=100,
                         path_of_embeddings=path_of_embeddings,
@@ -73,7 +73,6 @@ class TestNCES(unittest.TestCase):
             node = list(nces.fit(learning_problem).best_predictions)[0]
             print("Quality:", node.quality)
             assert node.quality > 0.95
-
 
 if __name__ == "__main__":
     test = TestNCES()
