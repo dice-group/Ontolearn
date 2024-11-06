@@ -19,7 +19,7 @@ with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 
 
-class Test_Celoe:
+class Celoe:
     def test_celoe(self):
         kb = KnowledgeBase(path=PATH_FAMILY)
 

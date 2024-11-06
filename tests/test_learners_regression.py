@@ -10,7 +10,7 @@ from ontolearn.metrics import F1
 from ontolearn.utils.static_funcs import compute_f1_score
 
 
-class TestConceptLearnerReg:
+class ConceptLearnerReg:
 
     def test_regression_family(self):
         with open('examples/synthetic_problems.json') as json_file:

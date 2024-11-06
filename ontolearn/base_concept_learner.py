@@ -37,7 +37,7 @@ from owlapy.owl_axiom import OWLDeclarationAxiom, OWLEquivalentClassesAxiom, OWL
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.abstracts import AbstractOWLOntology, AbstractOWLOntologyManager, AbstractOWLReasoner
 from owlapy.owl_ontology_manager import AddImport, OWLImportsDeclaration
-from owlapy.owl_reasoner import FastInstanceCheckerReasoner, OntologyReasoner
+from owlapy.owl_reasoner import StructuralReasoner
 
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.knowledge_base import KnowledgeBase
@@ -305,7 +305,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             for axiom in axioms:
                 ontology.add_axiom(axiom)
             if reasoner is None:
-                reasoner = FastInstanceCheckerReasoner(ontology, base_reasoner=OntologyReasoner(ontology))
+                reasoner = StructuralReasoner(ontology)
 
         if hypotheses is None:
             hypotheses = [hyp.concept for hyp in self.best_hypotheses(n)]

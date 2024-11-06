@@ -11,7 +11,9 @@ import torch
 import numpy as np
 
 import warnings
+
 warnings.filterwarnings("ignore")
+
 
 def seed_everything():
     seed = 42
@@ -27,7 +29,9 @@ def seed_everything():
         torch.backends.cudnn.benchmark = False
     print('-----Seed Set!-----')
 
+
 seed_everything()
+
 
 class TestNCES(unittest.TestCase):
 
@@ -61,15 +65,15 @@ class TestNCES(unittest.TestCase):
             exists_inbond = dl_parser.parse('∃ hasStructure.Benzene')
             not_bond7 = dl_parser.parse('¬Bond-7')
             pos = set(KB.individuals(exists_inbond)).intersection(set(KB.individuals(not_bond7)))
-            neg = sorted(set(KB.individuals())-pos)
+            neg = sorted(set(KB.individuals()) - pos)
             if len(pos) > 500:
                 pos = set(np.random.choice(list(pos), size=min(500, len(pos)), replace=False))
-            neg = set(neg[:min(1000-len(pos), len(neg))])
+            neg = set(neg[:min(1000 - len(pos), len(neg))])
             learning_problem = PosNegLPStandard(pos=pos, neg=neg)
             node = list(nces.fit(learning_problem).best_predictions)[0]
             print("Quality:", node.quality)
             assert node.quality > 0.95
-        
+
 if __name__ == "__main__":
     test = TestNCES()
     test.test_prediction_quality_family()

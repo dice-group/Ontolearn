@@ -46,7 +46,7 @@ from owlapy.owl_datatype import OWLDatatype
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_ontology import OWLOntologyID
-from owlapy.abstracts import AbstractOWLOntology, AbstractOWLReasonerEx
+from owlapy.abstracts import AbstractOWLOntology, AbstractOWLReasoner
 from owlapy.owl_property import (
     OWLDataProperty,
     OWLObjectPropertyExpression,
@@ -290,7 +290,7 @@ class TripleStoreOntology(AbstractOWLOntology):
         return f"TripleStoreOntology({self.url})"
 
 
-class TripleStoreReasoner(AbstractOWLReasonerEx):
+class TripleStoreReasoner(AbstractOWLReasoner):
     __slots__ = "ontology"
 
     def __init__(self, ontology: TripleStoreOntology):
