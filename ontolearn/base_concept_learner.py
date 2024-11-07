@@ -57,7 +57,7 @@ Factory = Callable
 logger = logging.getLogger(__name__)
 
 
-class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
+class BaseConceptLearner(metaclass=ABCMeta):
     """
     @TODO: CD: Why should this class inherit from AbstractConceptNode ?
     @TODO: CD: This class should be redefined. An owl class expression learner does not need to be a search based model.
@@ -402,7 +402,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
                         yield equivalent_c
 
 
-class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
+class RefinementBasedConceptLearner(BaseConceptLearner):
     """
     Base class for refinement based Concept Learning approaches.
 
@@ -501,8 +501,7 @@ class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
         assert self.operator
 
     def terminate(self):
-        if logger.isEnabledFor(oplogging.TRACE):
-            self.show_search_tree('Final')
+        self.show_search_tree('Final')
         return super().terminate()
 
     @abstractmethod

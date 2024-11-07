@@ -241,7 +241,8 @@ class SPARQLQueryLearner:
                                fp=int(stats["fp"]["value"]),
                                fn=int(stats["fn"]["value"]),
                                tn=int(stats["tn"]["value"]))
-        except:
+        except Exception:
+            print("Exception occurred!")
             # query failed (e.g., due to malformed string; continue)
             return F1().score2(tp=0, fp=0, fn=0, tn=0)
 

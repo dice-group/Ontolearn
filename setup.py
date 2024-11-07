@@ -38,6 +38,7 @@ _deps = [
     "scikit-learn>=1.4.1",
     "torch==2.2.0",
     "rdflib>=6.0.2",
+    "ruff>=0.7.2",
     "pandas>=1.5.0",
     "sortedcontainers>=2.4.0",
     "deap>=1.3.1",
@@ -89,7 +90,7 @@ extras["doc"] = (deps_list("sphinx",
                            "sphinxcontrib-plantuml",
                            "plantuml-local-client", "myst-parser"))
 
-extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "ontosample"))
+extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "ontosample", "ruff"))
 
 setup(
     name="ontolearn",

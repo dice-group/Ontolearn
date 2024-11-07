@@ -205,7 +205,7 @@ def compute_tp_fn_fp_tn(individuals, pos, neg):  # pragma: no cover
     return tp, fn, fp, tn
 
 
-def compute_f1_score(individuals, pos, neg) -> float:  # pragma: no cover
+def compute_f1_score(individuals, pos, neg) -> float:
     """ Compute F1-score of a concept
     """
     assert type(individuals) == type(pos) == type(neg), f"Types must match:{type(individuals)},{type(pos)},{type(neg)}"

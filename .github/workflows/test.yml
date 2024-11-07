@@ -18,8 +18,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip3 install -e .
-          
+          pip3 install -e .["full"]      
+
+      - name: Lint with ruff
+        run: |
+          ruff check ontolearn/learners/ --line-length=200
 
       - name: Test with pytest
         run: |
