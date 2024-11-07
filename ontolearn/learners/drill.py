@@ -330,7 +330,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             x.heuristic = x.quality
             if x.quality > best_found_quality:
                 best_found_quality = x.quality
-            self.search_tree.add(x)
+                self.search_tree.add(x)
             if ith_bias == self.positive_type_bias:
                 break
 
@@ -429,8 +429,8 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         # (3) Increment the number of tested concepts attribute.
 
         """
-        individuals = frozenset({i for i in self.kb.individuals(state.concept)})
 
+        individuals = frozenset([i for i in self.kb.individuals(state.concept)])
         quality = self.quality_func(individuals=individuals, pos=self.pos, neg=self.neg)
         state.quality = quality
         self._number_of_tested_concepts += 1
