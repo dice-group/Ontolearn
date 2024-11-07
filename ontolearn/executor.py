@@ -242,7 +242,7 @@ def execute(args): # pragma: no cover
     model = learner_type(**_get_matching_opts(learner_type, optargs, args_d))
 
     if args.model in ["celoe", "evolearner", "ocel"]:
-        trainer = Trainer(model, kb.reasoner())
+        trainer = Trainer(model, kb.reasoner)
         trainer.fit(lp)
         print(trainer.best_hypotheses(1))
         if args.save:
