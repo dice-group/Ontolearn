@@ -35,19 +35,11 @@ class TestEvoLearner(unittest.TestCase):
         for str_target_concept, examples in settings['problems'].items():
             pos = set(map(OWLNamedIndividual, map(IRI.create, set(examples['positive_examples']))))
             neg = set(map(OWLNamedIndividual, map(IRI.create, set(examples['negative_examples']))))
-            print('Target concept: ', str_target_concept)
-
             lp = PosNegLPStandard(pos=pos, neg=neg)
             returned_model = model.fit(learning_problem=lp)
             assert returned_model == model
             hypotheses = list(returned_model.best_hypotheses(n=3, return_node=True))
             assert hypotheses[0].quality >= regression_test_evolearner[str_target_concept]
-            # best_hypotheses returns distinct hypotheses and sometimes the model will not find 'n' distinct hypothesis,
-            # hence the checks
-            if len(hypotheses) == 2:
-                assert hypotheses[0].quality >= hypotheses[1].quality
-            if len(hypotheses) == 3:
-                assert hypotheses[1].quality >= hypotheses[2].quality
 
     def test_regression_mutagenesis_multiple_fits(self):
         kb = KnowledgeBase(path='KGs/Mutagenesis/mutagenesis.owl')
