@@ -43,49 +43,29 @@ from itertools import chain
 class Test_Neural_Retrieval:
 
     def test_retrieval_single_individual_father_owl(self):
-        neural_owl_reasoner = TripleStoreNeuralReasoner(
-            path_of_kb="KGs/Family/father.owl", gamma=0.8
-        )
-        triples_about_anna = {
-            (s, p, o)
-            for s, p, o in neural_owl_reasoner.abox("http://example.com/father#anna")
-        }
+        neural_owl_reasoner = TripleStoreNeuralReasoner(path_of_kb="KGs/Family/father.owl", gamma=0.8)
+        triples_about_anna = {(s, p, o) for s, p, o in neural_owl_reasoner.abox("http://example.com/father#anna")}
 
         sanity_checking = {
-            (
-                OWLNamedIndividual("http://example.com/father#anna"),
-                OWLObjectProperty("http://example.com/father#hasChild"),
-                OWLNamedIndividual("http://example.com/father#heinz"),
-            ),
-            (
-                OWLNamedIndividual("http://example.com/father#anna"),
-                OWLProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
-                OWLClass("http://example.com/father#female"),
-            ),
-            (
-                OWLNamedIndividual("http://example.com/father#anna"),
-                OWLProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
-                OWLClass("http://www.w3.org/2002/07/owl#NamedIndividual"),
-            ),
-        }
+            (OWLNamedIndividual("http://example.com/father#anna"),
+             OWLObjectProperty("http://example.com/father#hasChild"),
+             OWLNamedIndividual("http://example.com/father#heinz")),
+            (OWLNamedIndividual("http://example.com/father#anna"),
+             OWLProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+             OWLClass("http://example.com/father#female")),
+            (OWLNamedIndividual("http://example.com/father#anna"),
+             OWLProperty("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+             OWLClass("http://www.w3.org/2002/07/owl#NamedIndividual"))}
 
         assert triples_about_anna == sanity_checking
 
     def test_retrieval_named_concepts_family(self):
-        symbolic_kb = KnowledgeBase(
-            path="KGs/Family/family-benchmark_rich_background.owl"
-        )
-        benchmark_dataset = [
-            (
-                concept,
-                {individual.str for individual in symbolic_kb.individuals(concept)},
-            )
-            for concept in symbolic_kb.get_concepts()
-        ]
+        symbolic_kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
+        benchmark_dataset = [(concept,{individual.str for individual in symbolic_kb.individuals(concept)})
+                             for concept in symbolic_kb.get_concepts()]
 
-        neural_owl_reasoner = TripleStoreNeuralReasoner(
-            path_of_kb="KGs/Family/family-benchmark_rich_background.owl", gamma=0.1
-        )
+        neural_owl_reasoner = TripleStoreNeuralReasoner(path_of_kb="KGs/Family/family-benchmark_rich_background.owl",
+                                                        gamma=0.1)
 
         avg_jaccard_index = 0
         for concept, symbolic_retrieval in benchmark_dataset:
@@ -97,9 +77,7 @@ class Test_Neural_Retrieval:
         assert avg_jaccard_index / len(benchmark_dataset) == 1.0
 
     def test_de_morgan_male_and_father_father(self):
-        neural_owl_reasoner = TripleStoreNeuralReasoner(
-            path_of_kb="KGs/Family/father.owl", gamma=0.8
-        )
+        neural_owl_reasoner = TripleStoreNeuralReasoner(path_of_kb="KGs/Family/father.owl", gamma=0.8)
 
         male_and_father = OWLObjectIntersectionOf(
             [
@@ -109,10 +87,7 @@ class Test_Neural_Retrieval:
                     property=OWLObjectProperty("http://example.com/father#hasChild"),
                     filler=OWLObjectOneOf(
                         OWLNamedIndividual("http://example.com/father#anna")
-                    ),
-                ),
-            ]
-        )
+                    ))])
         individuals = set(neural_owl_reasoner.instances(male_and_father))
         not_female_or_not_mother = OWLObjectComplementOf(
             OWLObjectUnionOf(
@@ -215,53 +190,6 @@ class Test_Neural_Retrieval:
         for concept, symbolic_retrieval in benchmark_dataset:
             neural_retrieval = {i.str for i in neural_owl_reasoner.instances(concept)}
             assert jaccard_similarity(symbolic_retrieval, neural_retrieval)
-
-    """
-    def test_for_all_family(self):
-        neural_owl_reasoner = TripleStoreNeuralReasoner(
-            path_of_kb="KGs/Family/family-benchmark_rich_background.owl", gamma=0.1
-        )
-        symbolic_kb = KnowledgeBase(
-            path="KGs/Family/family-benchmark_rich_background.owl"
-        )
-        named_classes = symbolic_kb.get_concepts()  # Retrieve all named classes
-        properties = symbolic_kb.get_object_properties()  # Retrieve all properties
-
-        with open("match_log.txt", "w") as file:
-            file.write("Matches found in the neural reasoner evaluations:\n")
-
-            # Iterate over all properties and named classes
-            for property in properties:
-                for named_class in named_classes:
-                    # Creating the expressions for ¬∃r.¬C and ∀r.C using property.str
-                    neg_exist_neg = OWLObjectComplementOf(
-                        OWLObjectSomeValuesFrom(
-                            property=OWLObjectProperty(property.str),
-                            filler=OWLObjectComplementOf(named_class),
-                        )
-                    )
-                    all_values = OWLObjectAllValuesFrom(
-                        property=OWLObjectProperty(property.str), filler=named_class
-                    )
-
-                    # Using the neural reasoner to get instances
-                    neural_neg_exist_neg = {
-                        i.str for i in neural_owl_reasoner.instances(neg_exist_neg)
-                    }
-                    neural_all_values = {
-                        i.str for i in neural_owl_reasoner.instances(all_values)
-                    }
-
-                    # Check for matches and write to file if equal
-                    if neural_neg_exist_neg == neural_all_values:
-                        file.write(
-                            f"Property: {property.str}, Class: {named_class.str}\n"
-                        )
-                        file.write(
-                            f"¬∃{property.str}.¬{named_class.str} and ∀{property.str}.{named_class.str} match\n"
-                        )
-                        file.write(f"Matching Instances: {neural_neg_exist_neg}\n\n")
-    """
 
     def test_retrieval_named_concepts_in_abox_family(self):
         symbolic_kb = KnowledgeBase(

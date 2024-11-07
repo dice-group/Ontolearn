@@ -210,7 +210,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
                                                       ontology=self.ontology,
                                                       individuals_per_concept=(self.individuals(i) for i in
                                                                                self.get_concepts()))
-
         self.describe()
 
     def individuals(self, concept: Optional[OWLClassExpression] = None, named_individuals:bool=False) -> Iterable[OWLNamedIndividual]:
