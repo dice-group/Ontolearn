@@ -350,16 +350,14 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
         assert isinstance(self.kb, KnowledgeBase)
 
-        best = self.best_hypotheses(n)
-        if len(best) >= n:
-            logger.warning("There was/were only %d unique result/-s found", len(best))
-
         manager: AbstractOWLOntologyManager = OntologyManager()
 
         ontology: AbstractOWLOntology = manager.create_ontology(IRI.create(NS))
         manager.load_ontology(IRI.create(self.kb.path))
         manager.apply_change(AddImport(ontology, OWLImportsDeclaration(IRI.create('file://' + self.kb.path))))
-        for ith, h in enumerate(self.best_hypotheses(n=n)):
+        best = [self.best_hypotheses(n=n)] if n==1 else self.best_hypotheses(n=n)
+
+        for ith, h in enumerate(best):
             cls_a: OWLClass = OWLClass(IRI.create(NS, "Pred_" + str(ith)))
             equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, h])
             ontology.add_axiom(equivalent_classes_axiom)
@@ -379,8 +377,8 @@ class BaseConceptLearner(metaclass=ABCMeta):
                     OWLAnnotationProperty(IRI.create(SNS, "f1_score")), OWLLiteral(quality)))
                 ontology.add_axiom(f1_score)
             """
-
-        ontology.save(IRI.create(path + '.owl'))
+        # TODO:# must be added for the time being
+        ontology.save(IRI.create(path + '#.owl'))
 
     def load_hypotheses(self, path: str) -> Iterable[OWLClassExpression]:
         """

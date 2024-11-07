@@ -10,9 +10,6 @@ from ontolearn.metrics import Accuracy
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 from owlapy.class_expression import OWLClass
 from ontolearn.refinement_operators import ModifiedCELOERefinement
-from ontolearn.utils import setup_logging
-
-setup_logging()
 
 try:
     os.chdir("examples")
@@ -69,11 +66,10 @@ for str_target_concept, examples in settings['problems'].items():
                   refinement_operator=op,
                   quality_func=qual,
                   heuristic_func=heur,
-                  max_num_of_concepts_tested=10_000_000_000,
-                  iter_bound=10_000_000_000)
+                  max_num_of_concepts_tested=100,
+                  iter_bound=100)
     model.fit(lp)
-
-    model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
+    model.save_best_hypothesis(n=1, path=f'Predictions_{str_target_concept}')
     # Get Top n hypotheses
     hypotheses = list(model.best_hypotheses(n=3))
     # Use hypotheses as binary function to label individuals.
@@ -81,4 +77,3 @@ for str_target_concept, examples in settings['problems'].items():
                                 hypotheses=hypotheses)
     # print(predictions)
     [print(_) for _ in hypotheses]
-    # exit(1)
