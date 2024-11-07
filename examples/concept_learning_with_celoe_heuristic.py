@@ -1,9 +1,8 @@
 import json
 import os
 import random
-
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import CELOE
+from ontolearn.learners import CELOE
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import Accuracy
