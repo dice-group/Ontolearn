@@ -156,10 +156,20 @@ class TripleStoreNeuralReasoner:
         return [OWLClass(top_entity) for top_entity, score in self.predict(h=None,
                                                                    r=self.str_iri_type,
                                                                    t=self.str_iri_owl_class)]
-    def subconcepts(self, named_concept: OWLClass) -> List[OWLClass]:
+    def direct_subconcepts(self, named_concept: OWLClass) -> List[OWLClass]:
         return [OWLClass(top_entity) for top_entity, score in self.predict(h=None,
                                                                            r=self.str_iri_subclassof,
                                                                            t=named_concept.str)]
+    
+    def subconcepts(self, named_concept: OWLClass) -> List[OWLClass]:
+        all_subconcepts = []
+        for subconcept in self.direct_subconcepts(named_concept):
+            # if subconcept is not valid class we can get invaild subconcepts for it resulting in infinite loop
+            if subconcept not in self.classes_in_signature():
+                return []
+            all_subconcepts.append(subconcept)
+            all_subconcepts.extend(self.subconcepts(subconcept))
+        return all_subconcepts
 
     def most_general_classes(self) -> List[OWLClass]:  # pragma: no cover
         """At least it has single subclass and there is no superclass"""
