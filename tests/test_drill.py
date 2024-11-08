@@ -18,7 +18,7 @@ class TestDrill(unittest.TestCase):
 
     kg_path = "KGs/Family/family-benchmark_rich_background.owl"
     embeddings_path = "embeddings/Keci_entity_embeddings.csv"
-    lp_path = "examples/uncle_lp2.json"
+    lp_path = "examples/synthetic_problems.json"
 
     def test_regression_family(self):
         kb = KnowledgeBase(path=self.kg_path)
@@ -36,8 +36,8 @@ class TestDrill(unittest.TestCase):
 
         with open(self.lp_path) as json_file:
             examples = json.load(json_file)
-        p = examples['positive_examples']
-        n = examples['negative_examples']
+        p = examples["problems"]["Uncle"]['positive_examples']
+        n = examples["problems"]["Uncle"]['negative_examples']
 
         kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=1)
         X = np.array(p + n)

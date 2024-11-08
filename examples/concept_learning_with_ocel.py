@@ -1,8 +1,7 @@
 import json
 import os
-
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import OCEL
+from ontolearn.learners import OCEL
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.utils import setup_logging
 from owlapy.owl_individual import OWLNamedIndividual, IRI
@@ -54,7 +53,7 @@ for str_target_concept, examples in settings['problems'].items():
     lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
 
     model = OCEL(knowledge_base=target_kb,
-                 max_runtime=600,
+                 max_runtime=10,
                  max_num_of_concepts_tested=10_000_000_000,
                  iter_bound=10_000_000_000)
     model.fit(lp)

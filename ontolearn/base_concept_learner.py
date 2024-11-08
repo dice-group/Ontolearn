@@ -336,7 +336,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         """Serialise the best hypotheses to a file.
         @TODO: CD: This function should be deprecated.
         @TODO: CD: Saving owl class expressions into disk should be disentangled from a concept earner
-
+        @TODO:CD: owlapy 1.3.3, we will use save_owl_class_expressions
         Args:
             n: Maximum number of hypotheses to save.
             path: Filename base (extension will be added automatically).
