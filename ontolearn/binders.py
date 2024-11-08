@@ -29,7 +29,8 @@ from typing import List, Dict
 from .utils import create_experiment_folder
 import re
 import time
-from ontolearn.learning_problem import PosNegLPStandard
+import os
+from .learning_problem import PosNegLPStandard
 
 
 class PredictedConcept:
@@ -46,13 +47,10 @@ class DLLearnerBinder:
     """
 
     def __init__(self, binary_path=None, model=None, kb_path=None, storage_path=".", max_runtime=3):
-        try:
-            assert binary_path
-            assert model
-            assert kb_path
-        except AssertionError:
-            print(f'binary_path:{binary_path}, model:{model} kb_path{kb_path} can not be None')
-            raise
+        assert binary_path, f"binary_path must be given {binary_path}"
+        assert os.path.exists(binary_path), f"binary path {binary_path} does not exist"
+        assert model, "model must be given"
+        assert kb_path, "kb_path must be given"
         self.binary_path = binary_path
         self.kb_path = kb_path
         self.name = model
