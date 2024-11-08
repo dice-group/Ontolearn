@@ -164,6 +164,9 @@ class TripleStoreNeuralReasoner:
     def subconcepts(self, named_concept: OWLClass) -> List[OWLClass]:
         all_subconcepts = []
         for subconcept in self.direct_subconcepts(named_concept):
+            # if subconcept is not valid class we can get invaild subconcepts for it resulting in infinite loop
+            if subconcept not in self.classes_in_signature():
+                return []
             all_subconcepts.append(subconcept)
             all_subconcepts.extend(self.subconcepts(subconcept))
         return all_subconcepts
