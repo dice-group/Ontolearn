@@ -25,6 +25,9 @@ from owlapy.iri import IRI
 
 # Asynchronous function to query the neural reasoner API
 async def async_neural_retrieval(session, url, expression, namespace):
+	"""
+	Asynchronously queries the neural reasoner API to retrieve individuals satisfying the given OWL expression.	
+	"""
 	payload = {'expression': owl_expression_to_dl(expression), 'namespace': namespace}
 	async with session.post(url + '/predict', json=payload) as response:
 		result = await response.json()
@@ -35,13 +38,8 @@ def generate_concepts_from_kb(symbolic_kb: KnowledgeBase):
 	Generates concepts from the knowledge base, including named concepts, negations, unions, intersections,
 	existential restrictions, and other combinations as described.
 	"""
-	object_properties = sorted({i for i in symbolic_kb.get_object_properties()})
+	object_properties = {i for i in symbolic_kb.get_object_properties()}
 	
-	# (3.1) Subsample if required.
-	object_properties = {i for i in random.sample(population=list(object_properties),
-													  k=max(1, int(len(object_properties))))}
-
-	object_properties = set(object_properties)    
 	
 	# (4) R⁻: Inverse of object properties.
 	object_properties_inverse = {i.get_inverse_property() for i in object_properties}
@@ -116,6 +114,9 @@ def generate_concepts_from_kb(symbolic_kb: KnowledgeBase):
 	return concepts
 
 def execute(args):
+	"""
+	Executes the retrieval runtime evaluation for the neural reasoner API.
+	"""
 	# Initialize the normal reasoner using OwlReady2
 	kb = KnowledgeBase(path=args.path_kg)
 	local_reasoner = TripleStoreNeuralReasoner(path_of_kb=args.path_kg)
