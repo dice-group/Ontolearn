@@ -2,8 +2,6 @@ import asyncio
 import aiohttp
 import time
 import pandas as pd
-from owlapy.parser import DLSyntaxParser
-from owlapy.render import DLSyntaxObjectRenderer
 from tqdm import tqdm
 import random
 import itertools
@@ -60,11 +58,6 @@ def generate_concepts_from_kb(symbolic_kb: KnowledgeBase):
 	nominals = symbolic_kb.all_individuals_set()
 	# (10) All combinations of 3 for Nominals, e.g. {martin, heinz, markus}
 	nominal_combinations = set( OWLObjectOneOf(combination)for combination in itertools.combinations(nominals, 3))
-
-	# (11) NC UNION NC.
-	unions = concept_reducer(nc, opt=OWLObjectUnionOf)
-	# (12) NC INTERSECTION NC.
-	intersections = concept_reducer(nc, opt=OWLObjectIntersectionOf)
 	# (13) NC* UNION NC*.
 	unions_nc_star = concept_reducer(nc_star, opt=OWLObjectUnionOf)
 	# (14) NC* INTERACTION NC*.
