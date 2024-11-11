@@ -165,7 +165,7 @@ class TripleStoreNeuralReasoner:
         all_subconcepts = []
         for subconcept in self.direct_subconcepts(named_concept):
             # if subconcept is not valid class we can get invaild subconcepts for it resulting in infinite loop
-            if subconcept not in self.classes_in_signature():
+            if subconcept not in self.classes_in_signature() or subconcept in all_subconcepts:
                 return []
             all_subconcepts.append(subconcept)
             all_subconcepts.extend(self.subconcepts(subconcept))
