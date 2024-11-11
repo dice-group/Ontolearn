@@ -122,7 +122,7 @@ def execute(args):
 	local_reasoner = TripleStoreNeuralReasoner(path_of_kb=args.path_kg)
 
 	# Generate concepts from the KB
-	concepts = generate_concepts_from_kb(kb) * 10
+	concepts = generate_concepts_from_kb(kb) 
 
 	# Prepare data storage
 	data = []
