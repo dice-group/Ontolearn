@@ -47,7 +47,7 @@ _deps = [
     "tqdm>=4.64.0",
     "transformers>=4.38.1",
     "pytest>=7.2.2",
-    "owlapy==1.3.2",
+    "owlapy==1.3.3",
     "dicee==0.1.4",
     "ontosample>=0.2.2",
     "sphinx>=7.2.6",
