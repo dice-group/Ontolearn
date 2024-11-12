@@ -88,7 +88,7 @@ def execute(args):
     # (3.1) Subsample if required.
     if args.ratio_sample_object_prop:
         object_properties = {i for i in random.sample(population=list(object_properties),
-                                                      k=max(1, int(len(object_properties) * args.ratio_sample_object_prop)))}
+                                                      k=max(0, int(len(object_properties) * args.ratio_sample_object_prop)))}
 
     object_properties = set(object_properties)    
     
@@ -105,7 +105,7 @@ def execute(args):
 
     if args.ratio_sample_nc:
         # (6.1) Subsample if required.
-        nc = {i for i in random.sample(population=list(nc), k=max(1, int(len(nc) * args.ratio_sample_nc)))}
+        nc = {i for i in random.sample(population=list(nc), k=max(0, int(len(nc) * args.ratio_sample_nc)))}
 
     nc = set(nc) # return to a set
     # (7) NC⁻: Complement of NC.
