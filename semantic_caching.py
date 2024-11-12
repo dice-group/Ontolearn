@@ -25,7 +25,6 @@ from typing import Tuple, Set
 import pandas as pd
 from owlapy import owl_expression_to_dl
 from itertools import chain
-import argparse 
 import os
 import random
 import itertools
@@ -122,7 +121,7 @@ def concept_generator(path_kg):
 
     # () Converted to list so that the progress bar works.
     concepts = list(
-        chain(nc, nnc, unions, intersections,# exist_unnc, for_all_unnc,
+        chain(nc, nnc, unions, intersections, exist_unnc, for_all_unnc,
             # nc, unions, intersections, nnc, unions_unnc, intersections_unnc,
             # exist_unnc, for_all_unnc,
             # min_cardinality_unnc_1, min_cardinality_unnc_2, min_cardinality_unnc_3,
@@ -253,6 +252,7 @@ def semantic_caching_size(func, cache_size=5):
             object_property = owl_expression.get_property()
             filler_expression = owl_expression.get_filler()
             instances = retrieve_from_cache(owl_expression_to_dl(filler_expression)) or set()
+
             result = set()
 
             if isinstance(object_property, OWLObjectInverseOf):
@@ -260,19 +260,35 @@ def semantic_caching_size(func, cache_size=5):
             else:
                 r = onto.search_one(iri=object_property.str)
 
-            with onto:
-                sync_reasoner()
-
+            individual_map = {ind: onto.search_one(iri=ind) for ind in All_individuals | instances}
+    
             for ind_a in All_individuals:
+                a = individual_map[ind_a]
+                
                 for ind_b in instances:
-                    a = onto.search_one(iri=ind_a)
-                    b = onto.search_one(iri=ind_b)
+                    b = individual_map[ind_b]
+                    
                     if isinstance(object_property, OWLObjectInverseOf):
                         if a in getattr(b, r.name):
                             result.add(a)
                     else:
                         if b in getattr(a, r.name):
                             result.add(ind_a)
+
+            # with onto:
+            #     sync_reasoner()
+            # 
+            # for ind_a in All_individuals:
+            #     for ind_b in instances:
+            #         a = onto.search_one(iri=ind_a)
+            #         b = onto.search_one(iri=ind_b)
+            #         if isinstance(object_property, OWLObjectInverseOf):
+            #             if a in getattr(b, r.name):
+            #                 result.add(a)
+            #         else:
+            #             if b in getattr(a, r.name):
+            #                 result.add(ind_a)
+
         elif isinstance(owl_expression, OWLObjectAllValuesFrom):
             all_values_expr = owl_expression_to_dl(owl_expression)
             some_values_expr = transform_forall_to_exists(all_values_expr)
@@ -304,7 +320,7 @@ def semantic_caching_size(func, cache_size=5):
         hit_ratio = stats['hits'] / total_requests if total_requests > 0 else 0
         miss_ratio = stats['misses'] / total_requests if total_requests > 0 else 0
         avg_time = stats['time'] / total_requests if total_requests > 0 else 0
-
+    
         return {
             'hit_ratio': hit_ratio,
             'miss_ratio': miss_ratio,
@@ -336,58 +352,58 @@ def retrieve(expression:str, path_kg:str, path_kge_model:str) -> Tuple[Set[str],
     return retrievals
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--cache_size', type=int, default=20)
-parser.add_argument('--path_kg', type=str, default="/home/dice/Desktop/Ontolearn/KGs/Family/father.owl")
-parser.add_argument('--path_kge', type=str, default=None)
-args = parser.parse_args()
+def run_cache(path_kg:str, path_kge:str=None, cache_size:int=5)-> dict:
 
+    cached_retriever = semantic_caching_size(retrieve, cache_size=cache_size)
+    symbolic_kb = KnowledgeBase(path=path_kg)
 
-cached_retriever = semantic_caching_size(retrieve, cache_size=args.cache_size)
+    D = []
+    Avg_jaccard = []
+    alc_concepts = concept_generator(path_kg)
+    total_time_ebr = 0
+    data = path_kg.split("/")[-1].split("/")[-1].split(".")[0]
 
+    for expr in alc_concepts:
+        
+        time_start_cache = time.time()
+        A  = cached_retriever(expr, path_kg, path_kge) # Caching retrieval
+        time_cache = time.time()-time_start_cache
 
+        ground_truth = concept_retrieval(symbolic_kb, expr)
 
+        time_start = time.time()
+        retrieve_ebr = retrieve(expr, path_kg, path_kge)
+        time_ebr = time.time()-time_start
+        total_time_ebr += time_ebr
 
-symbolic_kb = KnowledgeBase(path=args.path_kg)
+        jacc = jaccard_similarity(A,ground_truth)
+        Avg_jaccard.append(jacc)
+        D.append({'dataset':data,'Expression':owl_expression_to_dl(expr), "Type": type(expr).__name__ ,'cache_size':cache_size, "time_ebr":time_ebr, "time_cache": time_cache, "Jaccard":jacc})
+        print(f'Expression: {owl_expression_to_dl(expr)}')
+        print(f'Jaccard similarity: {jacc}')
 
-D = []
-Avg_jaccard = []
-alc_concepts = concept_generator(args.path_kg)
-total_time_ebr = 0
+    
+    
+    stats = cached_retriever.get_stats()
+    
+    print('-'*50)
+    print("Cache Statistics:")
+    print(f"Hit Ratio: {stats['hit_ratio']:.2f}")
+    print(f"Miss Ratio: {stats['miss_ratio']:.2f}")
+    print(f"Average Time per Request: {stats['average_time_per_request']:.4f} seconds")
+    print(f"Total Time with Caching: {stats['total_time']:.4f} seconds")
+    print(f"Total Time Without Caching: {total_time_ebr:.4f} seconds")
+    print(f"Total number of concepts: {len(alc_concepts)}")
+    print(f"Average Jaccard for the {data} dataset", sum(Avg_jaccard)/len(Avg_jaccard))
 
-for expr in alc_concepts:
+    return {
+        'dataset': data,
+        'cache_size': cache_size,
+        'hit_ratio': f"{stats['hit_ratio']:.2f}",
+        'miss_ratio': f"{stats['miss_ratio']:.2f}",
+        'RT_cache': f"{stats['total_time']:.4f}",
+        'RT': f"{total_time_ebr:.4f}",
+        '#concepts': len(alc_concepts),
+        'avg_jaccard': f"{sum(Avg_jaccard) / len(Avg_jaccard):.4f}"
+    }, D
 
-    A  = cached_retriever(expr, args.path_kg, args.path_kge) # Caching retrieval
-    ground_truth = concept_retrieval(symbolic_kb, expr)
-
-    time_start = time.time()
-    retrieve_ebr = retrieve(expr, args.path_kg, args.path_kge)
-    time_ebr = time.time()-time_start
-    total_time_ebr += time_ebr
-
-    jacc = jaccard_similarity(A,ground_truth)
-    Avg_jaccard.append(jacc)
-    D.append({'Expression':owl_expression_to_dl(expr), "Jaccard Similarity":jacc, 'Retrieval_caching':A, "Retrieval_true":ground_truth,\
-              "time_ebr":time_ebr})
-    print(f'Expression: {owl_expression_to_dl(expr)}')
-    print(f'Jaccard similarity: {jacc}')
-     
-
-stats = cached_retriever.get_stats()
-data = args.path_kg.split("/")[-1]
-print('-'*50)
-print("Cache Statistics:")
-print(f"Hit Ratio: {stats['hit_ratio']:.2f}")
-print(f"Miss Ratio: {stats['miss_ratio']:.2f}")
-print(f"Average Time per Request: {stats['average_time_per_request']:.4f} seconds")
-print(f"Total Time with Caching: {stats['total_time']:.4f} seconds")
-print(f"Total Time Without Caching: {total_time_ebr:.4f} seconds")
-print(f"Total number of concepts: {len(alc_concepts)}")
-print(f"Average Jaccard for the {data} dataset", sum(Avg_jaccard)/len(Avg_jaccard))
-
-
-
-
-   
-# Data = pd.DataFrame(D)
-# Data.to_csv('analyse_cache.csv')
