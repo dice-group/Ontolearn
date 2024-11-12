@@ -157,6 +157,7 @@ pre_trained_agents.zip
 embeddings.zip
 KGs.zip
 /Fuseki/
+/checkpoints/
 /KGs/
 **/NCESData*
 **/CLIPData*
