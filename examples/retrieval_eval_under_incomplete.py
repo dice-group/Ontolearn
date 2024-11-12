@@ -226,6 +226,7 @@ def execute(args):
     print(final_df.head())
     print(f"Results have been saved to {final_csv_path}")
     stopJVM()
+    return avg_jaccard_reasoners
    
 
 
