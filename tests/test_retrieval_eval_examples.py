@@ -9,7 +9,7 @@ class RetrievalTests(unittest.TestCase):
     def test_retrieval_eval(self):
         class ARGS:
             def __init__(self):
-                self.path_kg = "KGs/Father/father.owl"
+                self.path_kg = "KGs/Family/father.owl"
                 self.path_kge_model = None
                 self.endpoint_triple_store = None
                 self.gamma = 0.9
@@ -29,7 +29,7 @@ class RetrievalTests(unittest.TestCase):
     def test_retrieval_eval_under_incomplete(self):
         class ARGS:
             def __init__(self):
-                self.path_kg = "KGs/Father/father.owl"
+                self.path_kg = "KGs/Family/father.owl"
                 self.seed = 1
                 self.ratio_sample_nc = None
                 self.ratio_sample_object_prob = None
