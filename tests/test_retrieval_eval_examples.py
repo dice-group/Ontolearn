@@ -2,7 +2,7 @@ import os
 import unittest
 from examples.retrieval_eval import execute
 from examples.retrieval_eval_under_incomplete import execute as execute2
-
+import shutil
 
 class RetrievalTests(unittest.TestCase):
 
@@ -43,4 +43,10 @@ class RetrievalTests(unittest.TestCase):
         results = execute2(args)
         for r, v in results.items():
             self.assertGreaterEqual(v, 0.9)
+        if os.path.exists("incomplete_father_0_1"):
+            shutil.rmtree("incomplete_father_0_1")
+        if os.path.exists("KGs_Family_father_owl"):
+            shutil.rmtree("KGs_Family_father_owl")
+        if os.path.exists("checkpoints"):
+            shutil.rmtree("checkpoints")
 
