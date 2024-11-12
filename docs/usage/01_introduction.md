@@ -1,6 +1,6 @@
 # About Ontolearn
 
-**Version:** ontolearn 0.8.0
+**Version:** ontolearn 0.8.1
 
 **GitHub repository:** [https://github.com/dice-group/Ontolearn](https://github.com/dice-group/Ontolearn)
 
