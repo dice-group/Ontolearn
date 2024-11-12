@@ -282,17 +282,8 @@ class TripleStoreNeuralReasoner:
             """
             object_property = expression.get_property()
             filler_expression = expression.get_filler()
-
-            filler_individuals = set(self.instances(filler_expression))
-            to_yield_individuals = set()
-
-
-            for individual in self.individuals_in_signature():
-                related_individuals = set(self.get_object_property_values(individual.str, object_property))
-                if not related_individuals or related_individuals <= filler_individuals:
-                    to_yield_individuals.add(individual)
-
-            yield from to_yield_individuals
+            yield from self.instances(OWLObjectComplementOf(OWLObjectSomeValuesFrom(object_property, OWLObjectComplementOf(filler_expression))))
+            
         elif isinstance(expression, OWLObjectMinCardinality) or isinstance(expression, OWLObjectSomeValuesFrom):
             """
             Given an OWLObjectSomeValuesFrom ∃ r.C, retrieve its instances => 
