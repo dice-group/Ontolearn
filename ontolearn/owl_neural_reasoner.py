@@ -13,6 +13,7 @@ import os
 import re
 from collections import Counter, OrderedDict
 from owlapy.iri import IRI
+from functools import lru_cache
 
 # TODO:
 def is_valid_entity(text_input: str):
@@ -33,6 +34,9 @@ class TripleStoreNeuralReasoner:
         self.str_iri_double = "http://www.w3.org/2001/XMLSchema#double"
         self.str_iri_boolean = "http://www.w3.org/2001/XMLSchema#boolean"
         self.str_iri_data_property="http://www.w3.org/2002/07/owl#DatatypeProperty"
+
+        if isinstance(max_cache_size,int) and max_cache_size>0:
+           self.predict=lru_cache(maxsize=max_cache_size)(self.predict)
 
         if path_neural_embedding:  # pragma: no cover
             assert os.path.isdir(
