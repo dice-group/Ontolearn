@@ -1,123 +1,98 @@
-from nltk import CFG, ChartParser
-from random import choice
 import requests
-import sys
-from owlapy.converter import Owl2SparqlConverter
+from requests import Response
+from requests.exceptions import RequestException, JSONDecodeError
+from owlapy.converter import owl_expression_to_sparql
 from owlapy.parser import DLSyntaxParser
+from ontolearn.triple_store import TripleStoreKnowledgeBase
+import random
+import numpy as np
+import json
 
-roles = []
-concepts = []
-with open('/home/nkouagou/Research/Ontolearn/KGs/DBpedia-2022-12/dbpedia2022-12_properties.txt') as f:
-    roles = f.read().splitlines()
-with open('/home/nkouagou/Research/Ontolearn/KGs/DBpedia-2022-12/dbpedia2022-12_classes.txt') as f:
-    concepts = f.read().splitlines()
+random.seed(42)
+np.random.seed(42)
 
-url = 'https://dbpedia-2022-12.data.dice-research.org/sparql'
-payload = ("SELECT DISTINCT ?c WHERE { "
-           "add_role_here <http://www.w3.org/2000/01/rdf-schema#range> ?c_temp. "
-           "?c <http://www.w3.org/2000/01/rdf-schema#subClassOf>+ ?c_temp .}")
-headers = {'content-type': 'application/sparql-query', 'Accept': 'application/sparql-results+json'}
+sparql_endpoint = "https://dbpedia.data.dice-research.org/sparql"
 
-# source: https://stackoverflow.com/questions/603687/how-do-i-generate-sentences-from-a-formal-grammar/3292027#3292027
-def produce(inp_grammar, symbol, concepts, role=None, depth=1, max_depth=5):
-    if depth > max_depth:
-        return [choice(concepts)] # terminal
-    words = []
-    productions = inp_grammar.productions(lhs=symbol)
-    production = choice(productions)
-    cur_concepts = concepts
-    changed = False
-    for sym in production.rhs():
-        if isinstance(sym, str):
-            # print(sym)
-            # print('str', sym)
-            if 'R' in sym:
-                words.append(sym.replace('R', role))
-            else:
-                words.append(sym.replace('A', choice(cur_concepts)))
-        else:
-            if str(sym) in ['Existential', 'Universal']:
-                while True:
-                    try:
-                        random_role = choice(roles)
-                        r = requests.post(url, data=payload.replace('add_role_here', random_role), headers=headers)
-                        print(r.json())
-                        role_concepts = ['<' + b['c']['value'] + '>' for b in r.json()['results']['bindings']]
-                        if len(role_concepts) == 0:
-                            continue
-                        words.extend(produce(inp_grammar, sym, role_concepts, random_role, depth + 1, max_depth))
-                        break
-                    except:
-                        continue
-            else:
-                words.extend(produce(inp_grammar, sym, cur_concepts, role, depth+1, max_depth))
-    return words
+rdfs_prefix = "PREFIX  rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n "
 
+namespace = "http://dbpedia.org/ontology/"
 
-if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print("Usage: [output directory]")
-        sys.exit()
-    output_dir = str(sys.argv[1])
-    # C1: avoid double negation
-    grammar = CFG.fromstring('''
-        C -> Complement | Intersection | Union | Existential | Universal | Terminal
-        Complement -> '¬'C1
-        Intersection -> '('C ' ⊓ ' C')'
-        Union -> '('C ' ⊔ ' C')'
-        Existential -> '(∃ R.'C')'
-        Universal -> '(∀ R.'C')'
-        C1 -> Intersection | Union | Existential | Universal | Terminal
-        Terminal -> 'A'
-    ''')
+dls_parser = DLSyntaxParser(namespace=namespace)
 
-    parser = ChartParser(grammar)
-
-    gr = parser.grammar()
-    count = 0
-    # file to write all class expressions
-    with open(f"{output_dir}/class_expressions.txt", 'w+') as ce_file:
-        with open(f"{output_dir}/queries.txt", 'w+') as q_file:
-            while True:
-                if count >= 100:
-                    break
-                ce_list = produce(gr, gr.start(), concepts)
-                # skip single concepts (just a scan)
-                if len(ce_list) == 1:
-                    continue
-                count += 1
-                ce_str = ''.join(ce_list)
-                ce_parsed = DLSyntaxParser(namespace=None).parse_expression(expression_str=ce_str)
-                sparql_query = Owl2SparqlConverter().as_query(root_variable='?x',
-                                                                ce=ce_parsed,
-                                                                for_all_de_morgan=True,
-                                                                count=False,
-                                                                values=None,
-                                                                named_individuals=False)
-                ce_file.write(ce_str)
-                ce_file.write(",")
-                ce_file.write(" ".join(sparql_query.split()))
-                ce_file.write("\n")
-                q_file.write(" ".join(sparql_query.split()))
-                q_file.write("\n")
-
-
-"""
-
-from ontolearn.triple_store import TripleStore
-
-kb = TripleStore(url="https://dbpedia.data.dice-research.org/sparql")
-
-atomic_concepts = list(kb.ontology.classes_in_signature())
-
-print('Total number of atomic concepts in DBpedia: ', len(atomic_concepts))
-print('\nShowing some...\n\n', atomic_concepts[:10])
+kb = TripleStoreKnowledgeBase(sparql_endpoint)
 
 selected_concepts_str = ['http://dbpedia.org/ontology/Journalist', 'http://dbpedia.org/ontology/HistoricPlace', 'http://dbpedia.org/ontology/Lipid', 'http://dbpedia.org/ontology/Profession', 'http://dbpedia.org/ontology/Model', 'http://dbpedia.org/ontology/President', 'http://dbpedia.org/ontology/Academic', 'http://dbpedia.org/ontology/Actor', 'http://dbpedia.org/ontology/Place', 'http://dbpedia.org/ontology/FootballMatch']
 
-selected_concepts = [c for c in atomic_concepts if any(s==c.str for s in selected_concepts_str)]
+def query_func(query):
+    try:
+        response = requests.post(sparql_endpoint, data={"query": query}, timeout=300)
+    except RequestException as e:
+        raise RequestException(
+            f"Make sure the server is running on the `triplestore_address` = '{sparql_endpoint}'"
+            f". Check the error below:"
+            f"\n  -->Error: {e}"
+        )
+        
+    json_results = response.json()
+    vars_ = list(json_results["head"]["vars"])
+    inds = []
+    for b in json_results["results"]["bindings"]:
+        val = []
+        for v in vars_:
+            if b[v]["type"] == "uri":
+                val.append(b[v]["value"])
+        inds.extend(val)
+        
+    if inds:
+        yield from inds
+    else:
+        yield None
 
-print('\nSelected concepts ', selected_concepts, '\n')
-print('\nTotal selected: ', len(selected_concepts))
+    
+def generate_lps():
+    pass
 
-"""
+if __name__ == "__main__":
+    all_obj_props = list(kb.ontology.object_properties_in_signature())
+    
+    all_lps = []
+    
+    for i in range(100):
+        connectors = ['⊔', '⊓']
+        neg = "¬"
+        quantifiers = ['∃', '∀']
+
+        expression = f"<{random.choice(selected_concepts_str)}> {random.choice(connectors)} <{random.choice(selected_concepts_str)}>"
+
+        if random.random() > 0.9:
+            expression = f"{neg}{expression}"
+
+        if random.random() > 0.8:
+            expression = f"{random.choice(quantifiers)} <{random.choice(all_obj_props).str}>.({expression})"
+
+        neg_expression = neg + f"({expression})"
+        concept = dls_parser.parse(expression)
+        concept_neg = dls_parser.parse(neg_expression)
+
+        sparql_query = owl_expression_to_sparql(concept) + "\nLIMIT 100"
+        sparql_query_neg = owl_expression_to_sparql(concept_neg) + "\nLIMIT 100"
+
+        print(sparql_query)
+        print("\nNeg query")
+        print(sparql_query_neg)
+        
+        pos_inds = list(query_func(sparql_query))
+        neg_inds = list(query_func(sparql_query_neg))
+        
+        if pos_inds and neg_inds:
+            lp = {"target expression": expression,
+                   "examples": {"positive examples": pos_inds,
+                                "negative examples": neg_inds}
+              }
+            
+            all_lps.append(lp)
+    
+    with open("Large_scale_lps.json", "w") as f:
+        json.dump(all_lps, f)
+    
+    
