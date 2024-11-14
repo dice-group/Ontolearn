@@ -63,8 +63,13 @@ import os
 from tqdm import tqdm
 import random
 import itertools
-import ast
 
+# Set pandas options to ensure full output
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None)
+pd.set_option('display.colheader_justify', 'left')
+pd.set_option('display.expand_frame_repr', False)
 
 def execute(args):
     # (1) Initialize knowledge base.
@@ -84,25 +89,18 @@ def execute(args):
     # GENERATE DL CONCEPTS TO EVALUATE RETRIEVAL PERFORMANCES
     # (3) R: Extract object properties.
     object_properties = sorted({i for i in symbolic_kb.get_object_properties()})
-    
     # (3.1) Subsample if required.
     if args.ratio_sample_object_prop:
         object_properties = {i for i in random.sample(population=list(object_properties),
                                                       k=max(0, int(len(object_properties) * args.ratio_sample_object_prop)))}
 
     object_properties = set(object_properties)    
-    
     # (4) R⁻: Inverse of object properties.
     object_properties_inverse = {i.get_inverse_property() for i in object_properties}
-
     # (5) R*: R UNION R⁻.
     object_properties_and_inverse = object_properties.union(object_properties_inverse)
     # (6) NC: Named owl concepts.
     nc = sorted({i for i in symbolic_kb.get_concepts()})
-   
-
-
-
     if args.ratio_sample_nc:
         # (6.1) Subsample if required.
         nc = {i for i in random.sample(population=list(nc), k=max(0, int(len(nc) * args.ratio_sample_nc)))}
@@ -110,7 +108,6 @@ def execute(args):
     nc = set(nc) # return to a set
     # (7) NC⁻: Complement of NC.
     nnc = {i.get_object_complement_of() for i in nc}
-
     # (8) NC*: NC UNION NC⁻.
     nc_star = nc.union(nnc)
     # (9) Retrieve 10 random Nominals.
@@ -120,7 +117,6 @@ def execute(args):
         nominals = symbolic_kb.all_individuals_set()
     # (10) All combinations of 3 for Nominals, e.g. {martin, heinz, markus}
     nominal_combinations = set( OWLObjectOneOf(combination)for combination in itertools.combinations(nominals, 3))
-
     # (11) NC UNION NC.
     unions = concept_reducer(nc, opt=OWLObjectUnionOf)
     # (12) NC INTERSECTION NC.
@@ -233,8 +229,6 @@ def execute(args):
                 "F1": f1_sim,
                 "Runtime Benefits": runtime_y - runtime_neural_y,
                 "Runtime Neural": runtime_neural_y,
-                "Symbolic_Retrieval": retrieval_y,
-                "Symbolic_Retrieval_Neural": retrieval_neural_y,
             }
         )
         # () Update the progress bar.
@@ -248,12 +242,7 @@ def execute(args):
     df.to_csv(args.path_report)
     del df
     # () Load the saved CSV file.
-    df = pd.read_csv(args.path_report, index_col=0, converters={'Symbolic_Retrieval': lambda x: ast.literal_eval(x),
-                                                                'Symbolic_Retrieval_Neural': lambda x: ast.literal_eval(
-                                                                    x)})
-    # () A retrieval result can be parsed into  set of instances to python object.
-    x = df["Symbolic_Retrieval_Neural"].iloc[0]
-    assert isinstance(x, set)
+    df = pd.read_csv(args.path_report, index_col=0)
     # () Extract the numerical features.
     numerical_df = df.select_dtypes(include=["number"])
     # () Extract the type of owl concepts
