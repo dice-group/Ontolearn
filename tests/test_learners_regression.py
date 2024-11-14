@@ -4,13 +4,13 @@ from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.iri import IRI
 
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import EvoLearner, CELOE, OCEL
-from ontolearn.learners import Drill
+from ontolearn.concept_learner import EvoLearner
+from ontolearn.learners import CELOE, OCEL, Drill
 from ontolearn.metrics import F1
 from ontolearn.utils.static_funcs import compute_f1_score
 
 
-class TestConceptLearnerReg:
+class ConceptLearnerReg:
 
     def test_regression_family(self):
         with open('examples/synthetic_problems.json') as json_file:

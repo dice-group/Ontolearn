@@ -37,7 +37,7 @@ from owlapy.owl_axiom import OWLDeclarationAxiom, OWLEquivalentClassesAxiom, OWL
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.abstracts import AbstractOWLOntology, AbstractOWLOntologyManager, AbstractOWLReasoner
 from owlapy.owl_ontology_manager import AddImport, OWLImportsDeclaration
-from owlapy.owl_reasoner import FastInstanceCheckerReasoner, OntologyReasoner
+from owlapy.owl_reasoner import StructuralReasoner
 
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.knowledge_base import KnowledgeBase
@@ -57,7 +57,7 @@ Factory = Callable
 logger = logging.getLogger(__name__)
 
 
-class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
+class BaseConceptLearner(metaclass=ABCMeta):
     """
     @TODO: CD: Why should this class inherit from AbstractConceptNode ?
     @TODO: CD: This class should be redefined. An owl class expression learner does not need to be a search based model.
@@ -305,7 +305,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
             for axiom in axioms:
                 ontology.add_axiom(axiom)
             if reasoner is None:
-                reasoner = FastInstanceCheckerReasoner(ontology, base_reasoner=OntologyReasoner(ontology))
+                reasoner = StructuralReasoner(ontology)
 
         if hypotheses is None:
             hypotheses = [hyp.concept for hyp in self.best_hypotheses(n)]
@@ -336,7 +336,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
         """Serialise the best hypotheses to a file.
         @TODO: CD: This function should be deprecated.
         @TODO: CD: Saving owl class expressions into disk should be disentangled from a concept earner
-
+        @TODO:CD: owlapy 1.3.3, we will use save_owl_class_expressions
         Args:
             n: Maximum number of hypotheses to save.
             path: Filename base (extension will be added automatically).
@@ -350,16 +350,14 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
 
         assert isinstance(self.kb, KnowledgeBase)
 
-        best = self.best_hypotheses(n)
-        if len(best) >= n:
-            logger.warning("There was/were only %d unique result/-s found", len(best))
-
         manager: AbstractOWLOntologyManager = OntologyManager()
 
         ontology: AbstractOWLOntology = manager.create_ontology(IRI.create(NS))
         manager.load_ontology(IRI.create(self.kb.path))
         manager.apply_change(AddImport(ontology, OWLImportsDeclaration(IRI.create('file://' + self.kb.path))))
-        for ith, h in enumerate(self.best_hypotheses(n=n)):
+        best = [self.best_hypotheses(n=n)] if n==1 else self.best_hypotheses(n=n)
+
+        for ith, h in enumerate(best):
             cls_a: OWLClass = OWLClass(IRI.create(NS, "Pred_" + str(ith)))
             equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, h])
             ontology.add_axiom(equivalent_classes_axiom)
@@ -379,8 +377,8 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
                     OWLAnnotationProperty(IRI.create(SNS, "f1_score")), OWLLiteral(quality)))
                 ontology.add_axiom(f1_score)
             """
-
-        ontology.save(IRI.create(path + '.owl'))
+        # TODO:# must be added for the time being
+        ontology.save(IRI.create(path + '#.owl'))
 
     def load_hypotheses(self, path: str) -> Iterable[OWLClassExpression]:
         """
@@ -402,7 +400,7 @@ class BaseConceptLearner(Generic[_N], metaclass=ABCMeta):
                         yield equivalent_c
 
 
-class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
+class RefinementBasedConceptLearner(BaseConceptLearner):
     """
     Base class for refinement based Concept Learning approaches.
 
@@ -501,8 +499,7 @@ class RefinementBasedConceptLearner(BaseConceptLearner[_N]):
         assert self.operator
 
     def terminate(self):
-        if logger.isEnabledFor(oplogging.TRACE):
-            self.show_search_tree('Final')
+        self.show_search_tree('Final')
         return super().terminate()
 
     @abstractmethod

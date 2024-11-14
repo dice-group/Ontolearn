@@ -42,7 +42,7 @@ from owlapy.owl_property import OWLObjectProperty, OWLDataProperty, OWLObjectPro
     OWLDataPropertyExpression
 from owlapy.owl_ontology import Ontology
 from owlapy.owl_ontology_manager import OntologyManager
-from owlapy.owl_reasoner import OntologyReasoner, FastInstanceCheckerReasoner
+from owlapy.owl_reasoner import StructuralReasoner
 from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.search import EvaluatedConcept
 from owlapy.utils import iter_count, LRUCache, OWLClassExpressionLengthMetric
@@ -63,8 +63,7 @@ logger = logging.getLogger(__name__)
 
 def depth_Default_ReasonerFactory(onto: AbstractOWLOntology) -> AbstractOWLReasoner:  # pragma: no cover
     assert isinstance(onto, Ontology)
-    base_reasoner = OntologyReasoner(ontology=onto)
-    return FastInstanceCheckerReasoner(ontology=onto, base_reasoner=base_reasoner)
+    return StructuralReasoner(onto)
 
 
 class KnowledgeBase(AbstractKnowledgeBase):
@@ -176,9 +175,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         elif reasoner_factory is not None:
             self.reasoner = reasoner_factory(self.ontology)
         else:
-            self.reasoner = FastInstanceCheckerReasoner(ontology=self.ontology,
-                                                            base_reasoner=OntologyReasoner(
-                                                                ontology=self.ontology))
+            self.reasoner = StructuralReasoner(ontology=self.ontology)
 
         self.length_metric = init_length_metric(length_metric, length_metric_factory)
 
@@ -213,7 +210,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
                                                       ontology=self.ontology,
                                                       individuals_per_concept=(self.individuals(i) for i in
                                                                                self.get_concepts()))
-
         self.describe()
 
     def individuals(self, concept: Optional[OWLClassExpression] = None, named_individuals:bool=False) -> Iterable[OWLNamedIndividual]:
@@ -575,7 +571,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             raise TypeError
         if ce in self.ind_cache:
             return
-        if isinstance(self.reasoner, FastInstanceCheckerReasoner):
+        if isinstance(self.reasoner, StructuralReasoner):
             self.ind_cache[ce] = self.reasoner._find_instances(ce)  # performance hack
         else:
             temp = self.reasoner.instances(ce)

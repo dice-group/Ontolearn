@@ -118,7 +118,7 @@ class TestBaseConceptLearner(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdirname:
             file_path = tmpdirname + '/Predictions'
             model.save_best_hypothesis(n=2, path=file_path)
-            hypotheses = list(model.load_hypotheses(file_path + '.owl'))
+            hypotheses = list(model.load_hypotheses(file_path + '#.owl'))
 
         # New Individuals
         julia = OWLNamedIndividual(IRI.create(self.namespace, 'julia'))

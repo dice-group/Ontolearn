@@ -46,7 +46,7 @@ from owlapy.owl_datatype import OWLDatatype
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_ontology import OWLOntologyID
-from owlapy.abstracts import AbstractOWLOntology, AbstractOWLReasonerEx
+from owlapy.abstracts import AbstractOWLOntology, AbstractOWLReasoner
 from owlapy.owl_property import (
     OWLDataProperty,
     OWLObjectPropertyExpression,
@@ -290,7 +290,7 @@ class TripleStoreOntology(AbstractOWLOntology):
         return f"TripleStoreOntology({self.url})"
 
 
-class TripleStoreReasoner(AbstractOWLReasonerEx):
+class TripleStoreReasoner(AbstractOWLReasoner):
     __slots__ = "ontology"
 
     def __init__(self, ontology: TripleStoreOntology):
@@ -1168,14 +1168,9 @@ class TripleStore:
         if concept is None or concept.is_owl_thing():
             yield from self.reasoner.individuals_in_signature()
         else:
+            yield from self.reasoner.instances(concept, named_individuals=named_individuals)
 
-            yield from self.reasoner.instances(
-                concept, named_individuals=named_individuals
-            )
-
-    def get_types(
-            self, ind: OWLNamedIndividual, direct: True
-    ) -> Generator[OWLClass, None, None]:
+    def get_types(self, ind: OWLNamedIndividual, direct: True) -> Generator[OWLClass, None, None]:
         if not direct:
             raise NotImplementedError("Inferring indirect types not available")
         return self.reasoner.get_type_individuals(ind.str)

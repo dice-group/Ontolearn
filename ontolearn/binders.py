@@ -29,7 +29,8 @@ from typing import List, Dict
 from .utils import create_experiment_folder
 import re
 import time
-from ontolearn.learning_problem import PosNegLPStandard
+import os
+from .learning_problem import PosNegLPStandard
 
 
 class PredictedConcept:

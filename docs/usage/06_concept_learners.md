@@ -363,28 +363,4 @@ you pass this url to `triplestore_address` argument, you have to add the
 
 You can now create a triplestore knowledge base or a reasoner that uses this URL for their 
 operations:
-
-```python
-from ontolearn.triple_store import TripleStoreKnowledgeBase
-
-father_kb = TripleStoreKnowledgeBase("http://localhost:3030/father/sparql")
-
-# ** Continue to execute the learning algorithm as you normally do. ** .
-```
-
--------------------------------------------------------------------
-
-
-In this guide, we have shown the prerequisites of running a concept learner,
-how to configure it's input properties and how to run it to successfully
-learn class expressions for learning problems in an ontology. We showed as well how to set up
-a triplestore server that can be used to execute the concept learner. There is also a jupyter 
-notebook for each of these concept learners:
-
-- [NCES notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/simple-usage-NCES.ipynb)
-- [CLIP notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/clip_notebook.ipynb)
-- [DRILL notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/drill_notebook.ipynb)
-- [EvoLearner notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/evolearner_notebook.ipynb)
-- [CELOE notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/celoe_notebook.ipynb)
-- [OCEL notebook](https://github.com/dice-group/Ontolearn/blob/develop/examples/ocel_notebook.ipynb)
-- [TDL example](https://github.com/dice-group/Ontolearn/blob/develop/examples/concept_learning_with_tdl_and_triplestore_kb.py)
+TODO
