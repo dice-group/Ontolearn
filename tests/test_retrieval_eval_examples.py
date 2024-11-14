@@ -16,7 +16,7 @@ class RetrievalTests(unittest.TestCase):
                 self.seed = 1
                 self.min_jaccard_similarity = 0.0
                 self.ratio_sample_nc = 0.2
-                self.ratio_sample_object_prob = 0.1
+                self.ratio_sample_object_prop = 0.1
                 self.num_nominals = 10
                 self.path_report = "incomplete_father_0_1/ALCQHI_Retrieval_Results.csv"
         args = ARGS()
@@ -32,7 +32,7 @@ class RetrievalTests(unittest.TestCase):
                 self.path_kg = "KGs/Family/father.owl"
                 self.seed = 1
                 self.ratio_sample_nc = None
-                self.ratio_sample_object_prob = None
+                self.ratio_sample_object_prop = None
                 self.path_report = "ALCQHI_Retrieval_Results.csv"
                 self.number_of_subgraphs = 1
                 self.ratio = 0.1
