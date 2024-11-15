@@ -30,6 +30,7 @@ import random
 import itertools
 from owlready2 import *
 from collections import OrderedDict
+from owlapy.owlapi_adaptor import OWLAPIAdaptor
 
 
 
@@ -120,6 +121,16 @@ def concept_generator(path_kg):
     ###################################################################
 
     # () Converted to list so that the progress bar works.
+    random.seed(0)
+    if len(intersections)>100:
+        intersections = random.sample(intersections, k=100)
+    if len(unions)>100:
+        unions = random.sample(unions, k=100)
+    if len(exist_unnc)>100:
+        exist_unnc = random.sample(exist_unnc, k=100)
+    if len(for_all_unnc)>100:
+        for_all_unnc = random.sample(for_all_unnc, k=100)
+
     concepts = list(
         chain(nc, nnc, unions, intersections, exist_unnc, for_all_unnc,
             # nc, unions, intersections, nnc, unions_unnc, intersections_unnc,
@@ -140,69 +151,140 @@ def concept_retrieval(retriever_func, c) -> Set[str]:
 
 # Implement the caching mechanism here
 
-def subsumption_based_caching(func):
-    # Dictionary to store the cached results
-    cache = {}
+# def subsumption_based_caching(func, cache_size):
+#     # Dictionary to store the cached results
+#     cache = {}
+
+#     def wrapper(*args):
+#         # Load the ontology
+#         path_onto = args[1]
+#         onto = get_ontology(path_onto).load()
+        
+#         # Synchronize the reasoner (e.g., using Pellet)
+#         with onto:
+#             sync_reasoner(infer_property_values=True)
+
+#         # all individuals
+#         all_individuals = {a for a in onto.individuals()}       
+#         str_expression = owl_expression_to_dl(args[0])
+#         owl_expression = args[0]
+
+#         # if isinstance(owl_expression, OWLClass):
+#         #     result = func(*args)
+
+#         if str_expression in cache:
+#             return cache[str_expression]
+
+#         super_concepts = set()
+#         for D in list(cache.keys()):
+#             if D in owl_expression.ancestors(): # this check if expression := C ⊑ D
+#                 super_concepts.add(D)
+
+#         # Compute instances
+#         if len(super_concepts)==0:
+#             instances = all_individuals
+#         else:
+#             instances = set.intersection(
+#                 *[wrapper(D, path_onto) for D in super_concepts]
+#             )
+#             pass
+
+#         # Filter instances: Check if each instance belongs to the concept C
+#         instance_set = set()
+#         for individual in instances:
+#             if individual.is_instance_of(owl_expression):
+#                 instance_set.add(individual)
+
+#         # Store the result in the cache
+#         cache[str_expression] = instance_set
+
+#         return instance_set
+
+#     return wrapper
+
+
+
+
+def subsumption_based_caching(func, cache_size):
+    cache = {}  # Dictionary to store cached results
+    
+    def store(concept, instances):
+        # Check if cache limit will be exceeded
+        if len(instances) + len(cache) > cache_size:
+            purge(len(instances))  # Adjusted to ensure cache size limit
+        # Add concept and instances to cache
+        cache[concept] = instances
+
+    def purge(needed_space):
+        # Remove oldest items until there's enough space
+        while len(cache) > needed_space:
+            cache.pop(next(iter(cache)))
 
     def wrapper(*args):
-        # Load the ontology
         path_onto = args[1]
         onto = get_ontology(path_onto).load()
         
         # Synchronize the reasoner (e.g., using Pellet)
-        with onto:
-            sync_reasoner(infer_property_values=True)
+        # with onto:
+        #     sync_reasoner(infer_property_values=True)
 
-        # all individuals
-        all_individuals = {a for a in onto.individuals()}
-
-       
+        all_individuals = {a for a in onto.individuals()}       
         str_expression = owl_expression_to_dl(args[0])
         owl_expression = args[0]
 
-       
+        # Check cache for existing results
         if str_expression in cache:
             return cache[str_expression]
 
         super_concepts = set()
+        namespace, class_name = owl_expression.str.split('#') 
+        class_expression = f"{namespace.split('/')[-1]}.{class_name}"
+
+        all_classes = [i for i in list(onto.classes())]
+
+        for j in all_classes:
+            if str(j) == class_expression:
+                class_expression = j
+    
         for D in list(cache.keys()):
-            if D in owl_expression.ancestors(): # this check if expression := C ⊑ D
+            # print(owl_expression)
+            # exit(0)
+            if D in class_expression.ancestors():  # Check if C ⊑ D
                 super_concepts.add(D)
 
-        # Compute instances
-        if len(super_concepts)==0:
+        print(super_concepts)
+        exit(0)
+        # Compute instances based on subsumption
+        if len(super_concepts) == 0:
             instances = all_individuals
         else:
-            # instances = set.intersection(
-            #     *[wrapper(D, path_onto) for D in super_concepts]
-            # )
-            pass
+            instances = set.intersection(
+                *[wrapper(D, path_onto) for D in super_concepts]
+            )
 
-        # Filter instances: Check if each instance belongs to the concept C
+        # Filter instances by checking if each is an instance of the concept
         instance_set = set()
+    
         for individual in instances:
-            if individual.is_instance_of(owl_expression):
-                instance_set.add(individual)
+             for type_entry in individual.is_a:
+                type_iri = str(type_entry.iri)
+                if owl_expression.str == type_iri:
+                    instance_set.add(individual)
+                    break
 
-        # Store the result in the cache
-        cache[str_expression] = instance_set
+        # Store in cache
+        store(str_expression, instance_set)
 
         return instance_set
-
-
-        
 
     return wrapper
 
 
 
-
-
-
-
-
 def semantic_caching_size(func, cache_size=5):
-    cache = OrderedDict()
+    cache = OrderedDict() #Cache for instances
+    loaded_ontologies = {} #Cache for ontologies
+    loaded_individuals = {} #cache for individuals
     stats = {
         'hits': 0,
         'misses': 0,
@@ -213,10 +295,15 @@ def semantic_caching_size(func, cache_size=5):
         nonlocal stats
         start_time = time.time()
 
-        # Load the ontology
+        
+        # Load ontology if not already cached
         path_onto = args[1]
-        onto = get_ontology(path_onto).load()
-        All_individuals = {a.iri for a in list(onto.individuals())}
+        if path_onto not in loaded_ontologies:
+            loaded_ontologies[path_onto] = get_ontology(path_onto).load()
+            loaded_individuals[path_onto] = {a.iri for a in list(loaded_ontologies[path_onto].individuals())}
+
+        onto = loaded_ontologies[path_onto]
+        All_individuals = loaded_individuals[path_onto]
 
         # Convert expression to DL format
         str_expression = owl_expression_to_dl(args[0])
@@ -231,10 +318,9 @@ def semantic_caching_size(func, cache_size=5):
                 stats['misses'] += 1
                 return set()
 
-        # Check if the expression itself is in the cache
-        result = retrieve_from_cache(str_expression)
-        if len(result) > 0:
-            return result
+        # result = retrieve_from_cache(str_expression)
+        # if len(result) > 0:
+        #     return result
 
         # Handle different OWL expression types and use cache when needed
         if isinstance(owl_expression, OWLClass):
@@ -332,8 +418,112 @@ def semantic_caching_size(func, cache_size=5):
     return wrapper
 
 
- 
-# @semantic_caching_size 
+
+# def semantic_caching_size(func, cache_size=5):
+#     cache = OrderedDict()
+#     loaded_ontologies = {}
+#     stats = {'hits': 0, 'misses': 0, 'time': 0}
+
+#     def wrapper(*args):
+
+#         nonlocal stats
+#         start_time = time.time()
+
+#         # Load ontology if not already cached
+#         path_onto = args[1]
+#         if path_onto not in loaded_ontologies:
+#             loaded_ontologies[path_onto] = get_ontology(path_onto).load()
+#         onto = loaded_ontologies[path_onto]
+#         All_individuals = {a.iri for a in list(onto.individuals())}
+
+#         # Convert expression to DL format
+#         str_expression = owl_expression_to_dl(args[0])
+#         print(str_expression + '1')
+#         exit(0)
+#         owl_expression = args[0]
+
+#         # Retrieve or initialize result from cache
+#         if str_expression in cache:
+#             stats['hits'] += 1
+#             return cache[str_expression]
+#         else:
+#             stats['misses'] += 1
+
+#         # Handle different OWL expression types
+#         if isinstance(owl_expression, OWLClass):
+#             result = func(*args)
+#         elif isinstance(owl_expression, OWLObjectComplementOf):
+#             not_str_expression = str_expression.split("¬")[-1]
+#             result = All_individuals - cache.get(not_str_expression, set())
+#         elif isinstance(owl_expression, OWLObjectIntersectionOf):
+#             C_and_D = [owl_expression_to_dl(i) for i in owl_expression.operands()]
+#             result = cache.get(C_and_D[0], set()).intersection(cache.get(C_and_D[1], set()))
+#         elif isinstance(owl_expression, OWLObjectUnionOf):
+#             C_or_D = [owl_expression_to_dl(i) for i in owl_expression.operands()]
+#             result = cache.get(C_or_D[0], set()).union(cache.get(C_or_D[1], set()))
+#         elif isinstance(owl_expression, OWLObjectSomeValuesFrom):
+#             object_property = owl_expression.get_property()
+#             filler_expression = owl_expression.get_filler()
+#             instances = cache.get(owl_expression_to_dl(filler_expression), set())
+
+#             result = set()
+#             property_relation = onto.search_one(iri=object_property.str if not isinstance(object_property, OWLObjectInverseOf)
+#                                                 else object_property.get_inverse_property().str)
+#             individual_map = {ind: onto.search_one(iri=ind) for ind in All_individuals | instances}
+#             for ind_a, a in individual_map.items():
+#                 if ind_a in All_individuals:
+#                     for ind_b in instances:
+#                         b = individual_map[ind_b]
+#                         if isinstance(object_property, OWLObjectInverseOf):
+#                             if a in getattr(b, property_relation.name):
+#                                 result.add(a)
+#                         else:
+#                             if b in getattr(a, property_relation.name):
+#                                 result.add(ind_a)
+#         elif isinstance(owl_expression, OWLObjectAllValuesFrom):
+#             all_values_expr = owl_expression_to_dl(owl_expression)
+#             some_values_expr = transform_forall_to_exists(all_values_expr)
+#             result = All_individuals - cache.get(some_values_expr, set())
+#         else:
+#             result = func(*args)
+
+#         # Cache the result and maintain the cache size
+#         if len(cache) >= cache_size:
+#             cache.popitem(last=False)
+#         cache[str_expression] = result
+
+#         stats['time'] += (time.time() - start_time)
+#         return result
+
+#     def transform_forall_to_exists(expression):
+#         pattern_negated = r'∀ (\w+)\.\(¬(\w+)\)'
+#         replacement_negated = r'∃ \1.\2'
+#         pattern_non_negated = r'∀ (\w+)\.(\w+)'
+#         replacement_non_negated = r'∃ \1.(¬\2)'
+
+#         transformed_expression = re.sub(pattern_negated, replacement_negated, expression)
+#         transformed_expression = re.sub(pattern_non_negated, replacement_non_negated, transformed_expression)
+
+#         return transformed_expression
+
+#     def get_stats():
+#         total_requests = stats['hits'] + stats['misses']
+#         hit_ratio = stats['hits'] / total_requests if total_requests > 0 else 0
+#         miss_ratio = stats['misses'] / total_requests if total_requests > 0 else 0
+#         avg_time = stats['time'] / total_requests if total_requests > 0 else 0
+
+#         return {
+#             'hit_ratio': hit_ratio,
+#             'miss_ratio': miss_ratio,
+#             'average_time_per_request': avg_time,
+#             'total_time': stats['time']
+#         }
+
+#     wrapper.get_stats = get_stats
+#     return wrapper
+
+
+
 def retrieve(expression:str, path_kg:str, path_kge_model:str) -> Tuple[Set[str], Set[str]]:
     'take a concept c and returns it set of retrieved individual'
 
@@ -346,15 +536,40 @@ def retrieve(expression:str, path_kg:str, path_kge_model:str) -> Tuple[Set[str],
             path_of_kb=path_kg, gamma=0.9
         )
 
-
     retrievals = concept_retrieval(neural_owl_reasoner, expression) # Retrieving with our reasoner
     
     return retrievals
 
+##### Add other reasoners here
 
-def run_cache(path_kg:str, path_kge:str=None, cache_size:int=5)-> dict:
+def retrieve_other_reasoner(expression, path_kg, name_reasoner='HermiT'): # reasoners = ['HermiT', 'Pellet', 'JFact', 'Openllet']
+    
+    owlapi_adaptor = OWLAPIAdaptor(path=path_kg, name_reasoner=name_reasoner)
 
-    cached_retriever = semantic_caching_size(retrieve, cache_size=cache_size)
+    if owlapi_adaptor.has_consistent_ontology():
+
+        owlapi_adaptor = OWLAPIAdaptor(path=path_kg, name_reasoner=name_reasoner)
+
+        return {i.str for i in (owlapi_adaptor.instances(expression, direct=False))}
+
+    else:
+        print("The knowledge base is not consistent")
+         
+
+
+
+
+
+
+def run_cache(path_kg:str, path_kge:str=None, cache_size:int=5, name_reasoner:str='HermiT'):
+
+    if name_reasoner == 'EBR':
+        # cached_retriever = subsumption_based_caching(retrieve, cache_size=cache_size)
+        cached_retriever = semantic_caching_size(retrieve, cache_size=cache_size)
+    else:
+        # cached_retriever = subsumption_based_caching(retrieve, cache_size=cache_size)
+        cached_retriever = semantic_caching_size(retrieve_other_reasoner, cache_size=cache_size)
+
     symbolic_kb = KnowledgeBase(path=path_kg)
 
     D = []
@@ -365,16 +580,29 @@ def run_cache(path_kg:str, path_kge:str=None, cache_size:int=5)-> dict:
 
     for expr in alc_concepts:
         
-        time_start_cache = time.time()
-        A  = cached_retriever(expr, path_kg, path_kge) # Caching retrieval
-        time_cache = time.time()-time_start_cache
+        if name_reasoner == 'EBR':
+            time_start_cache = time.time()
+            A  = cached_retriever(expr, path_kg, path_kge) #Retrieval with cache
+            time_cache = time.time()-time_start_cache
+
+            time_start = time.time()
+            retrieve_ebr = retrieve(expr, path_kg, path_kge) #Retrieval without cache
+            time_ebr = time.time()-time_start
+            total_time_ebr += time_ebr
+
+        else:
+            time_start_cache = time.time()
+            A  = cached_retriever(expr, path_kg, name_reasoner)  #Retrieval with cache
+            time_cache = time.time()-time_start_cache
+
+            time_start = time.time()
+            retrieve_ebr = retrieve_other_reasoner(expr, path_kg, name_reasoner=name_reasoner) #Retrieval without cache
+            time_ebr = time.time()-time_start
+            total_time_ebr += time_ebr
 
         ground_truth = concept_retrieval(symbolic_kb, expr)
 
-        time_start = time.time()
-        retrieve_ebr = retrieve(expr, path_kg, path_kge)
-        time_ebr = time.time()-time_start
-        total_time_ebr += time_ebr
+    
 
         jacc = jaccard_similarity(A,ground_truth)
         Avg_jaccard.append(jacc)

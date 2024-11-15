@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 
-def plot_jaccard_vs_cache_size(data):
+def plot_jaccard_vs_cache_size(data, name_reasoner):
 
     datasets = data["dataset"].unique()
 
@@ -22,11 +22,11 @@ def plot_jaccard_vs_cache_size(data):
     # plt.title('Cache Size vs Avg Jaccard Similarity for Each Dataset')
     plt.legend()
     plt.grid()
-    plt.savefig(f'caching_results/jaccard_vs_cache_size_plot.pdf', format='pdf')
+    plt.savefig(f'caching_results/jaccard_vs_cache_size_plot_{name_reasoner}.pdf', format='pdf')
 
     plt.show()
 
-def plot_RT_vs_RT_cache(data):
+def plot_RT_vs_RT_cache(data, name_reasoner):
 
     datasets = data["dataset"].unique()
 
@@ -55,12 +55,12 @@ def plot_RT_vs_RT_cache(data):
         plt.ylabel('Runtime(s)')
         plt.grid()
         # plt.title(f'Cache Size vs. Runtime for {dataset_name}')
-        plt.savefig(f'caching_results/runtime_plot.pdf', format='pdf')
+        plt.savefig(f'caching_results/runtime_plot_{name_reasoner}.pdf', format='pdf')
 
         # Show the plot
         plt.show()
 
-def plot_scale_factor(data):
+def plot_scale_factor(data, name_reasoner):
     # Ensure 'RT' and 'RT_cache' are numeric
     data["RT"] = pd.to_numeric(data["RT"], errors='coerce')
     data["RT_cache"] = pd.to_numeric(data["RT_cache"], errors='coerce')
@@ -88,12 +88,12 @@ def plot_scale_factor(data):
     plt.grid()
     
     # Save the plot as a PDF
-    plt.savefig('caching_results/scale_factor_plot.pdf', format='pdf')
+    plt.savefig(f'caching_results/scale_factor_plot_{name_reasoner}.pdf', format='pdf')
     
     # Show the plot
     plt.show()
 
-def bar_plot_all_data(data, cache_size):
+def bar_plot_all_data(data, cache_size, name_reasoner):
     # Plotting
     grouped_df = data.groupby(['dataset', 'Type', 'cache_size']).agg({
         'time_ebr': 'mean',
@@ -125,11 +125,11 @@ def bar_plot_all_data(data, cache_size):
     ax.legend()
     # Show plot
     plt.tight_layout()
-    plt.savefig('caching_results/bar_plot.pdf', format='pdf')
+    plt.savefig(f'caching_results/bar_plot_{name_reasoner}.pdf', format='pdf')
     plt.show()
 
 
-def bar_plot_separate_data(data, cache_size):
+def bar_plot_separate_data(data, cache_size, name_reasoner):
 
     grouped_df = data.groupby(['dataset', 'Type', 'cache_size']).agg({
         'time_ebr': 'mean',
@@ -169,5 +169,5 @@ def bar_plot_separate_data(data, cache_size):
         ax.legend()
         # Adjust layout and display
         plt.tight_layout()
-        plt.savefig(f'caching_results/bar_plot_{dataset}.pdf', format='pdf')
+        plt.savefig(f'caching_results/bar_plot_{dataset}_{name_reasoner}.pdf', format='pdf')
         plt.show()
