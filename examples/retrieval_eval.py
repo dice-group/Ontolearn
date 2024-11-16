@@ -271,6 +271,7 @@ def execute(args):
     # () Compute mean of numerical columns per group
     mean_df = df_g[numerical_df.columns].mean()
     print(mean_df)
+    return jaccard_sim, f1_sim
 
 def get_default_arguments():
     parser = ArgumentParser()
