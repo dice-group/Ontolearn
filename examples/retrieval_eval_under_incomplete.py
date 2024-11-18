@@ -113,7 +113,7 @@ def execute(args):
         data = []
 
         if args.sample == "Yes":
-            subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path, "--ratio_sample_nc","0.1", "--ratio_sample_object_prob", "0.2", "--path_report", path_report])
+            subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path, "--ratio_sample_nc","0.1", "--ratio_sample_object_prop", "0.2", "--path_report", path_report])
         else:
             subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path, "--path_report", path_report])
         
@@ -226,6 +226,7 @@ def execute(args):
     print(final_df.head())
     print(f"Results have been saved to {final_csv_path}")
     stopJVM()
+    return avg_jaccard_reasoners
    
 
 
@@ -235,7 +236,7 @@ def get_default_arguments():
     parser.add_argument("--path_kg", type=str, default="KGs/Family/family-benchmark_rich_background.owl")
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--ratio_sample_nc", type=float, default=None, help="To sample OWL Classes.")
-    parser.add_argument("--ratio_sample_object_prob", type=float, default=None, help="To sample OWL Object Properties.")
+    parser.add_argument("--ratio_sample_object_prop", type=float, default=None, help="To sample OWL Object Properties.")
     parser.add_argument("--path_report", type=str, default="ALCQHI_Retrieval_Incomplete_Results.csv")
     parser.add_argument("--number_of_subgraphs", type=int, default=1)
     parser.add_argument("--ratio", type=float, default=0.1, \
