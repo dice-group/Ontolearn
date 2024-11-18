@@ -19,7 +19,9 @@ namespace = "http://dbpedia.org/ontology/"
 
 dls_parser = DLSyntaxParser(namespace=namespace)
 
-kb = TripleStoreKnowledgeBase(sparql_endpoint)
+kb = TripleStoreKnowledgeBase(url=sparql_endpoint)
+
+#print(kb.ontology)
 
 selected_concepts_str = ['http://dbpedia.org/ontology/Journalist', 'http://dbpedia.org/ontology/HistoricPlace', 'http://dbpedia.org/ontology/Lipid', 'http://dbpedia.org/ontology/Profession', 'http://dbpedia.org/ontology/Model', 'http://dbpedia.org/ontology/President', 'http://dbpedia.org/ontology/Academic', 'http://dbpedia.org/ontology/Actor', 'http://dbpedia.org/ontology/Place', 'http://dbpedia.org/ontology/FootballMatch']
 
@@ -83,6 +85,9 @@ if __name__ == "__main__":
         
         pos_inds = list(query_func(sparql_query))
         neg_inds = list(query_func(sparql_query_neg))
+        
+        if pos_inds == ['null'] or neg_inds == ['null']:
+            continue
         
         if pos_inds and neg_inds:
             lp = {"target expression": expression,

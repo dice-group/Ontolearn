@@ -291,7 +291,7 @@ class TripleStoreOntology(AbstractOWLOntology):
 
 
 class TripleStoreReasoner(AbstractOWLReasoner):
-    __slots__ = "ontology"
+    #__slots__ = "ontology"
 
     def __init__(self, ontology: TripleStoreOntology):
         self.ontology = ontology
