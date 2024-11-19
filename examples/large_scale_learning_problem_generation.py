@@ -59,7 +59,7 @@ if __name__ == "__main__":
     
     all_lps = []
     
-    for i in range(100):
+    for i in range(200):
         connectors = ['⊔', '⊓']
         neg = "¬"
         quantifiers = ['∃', '∀']
@@ -86,7 +86,7 @@ if __name__ == "__main__":
         pos_inds = list(query_func(sparql_query))
         neg_inds = list(query_func(sparql_query_neg))
         
-        if pos_inds == ['null'] or neg_inds == ['null']:
+        if len(pos_inds) <= 1 or len(neg_inds) <= 1:
             continue
         
         if pos_inds and neg_inds:
