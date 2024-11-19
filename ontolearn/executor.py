@@ -37,7 +37,8 @@ from owlapy.abstracts import AbstractOWLReasoner
 
 from ontolearn.abstracts import AbstractNode
 from ontolearn.base_concept_learner import BaseConceptLearner
-from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, NCES
+from .learners import CELOE, OCEL
+from ontolearn.concept_learner import EvoLearner, NCES
 from ontolearn.ea_algorithms import EASimple
 from ontolearn.ea_initialization import EARandomWalkInitialization, EARandomInitialization, RandomInitMethod
 from ontolearn.fitness_functions import LinearPressureFitness
@@ -241,7 +242,7 @@ def execute(args): # pragma: no cover
     model = learner_type(**_get_matching_opts(learner_type, optargs, args_d))
 
     if args.model in ["celoe", "evolearner", "ocel"]:
-        trainer = Trainer(model, kb.reasoner())
+        trainer = Trainer(model, kb.reasoner)
         trainer.fit(lp)
         print(trainer.best_hypotheses(1))
         if args.save:

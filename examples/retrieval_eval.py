@@ -64,7 +64,12 @@ from tqdm import tqdm
 import random
 import itertools
 import ast
-
+# Set pandas options to ensure full output
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None)
+pd.set_option('display.colheader_justify', 'left')
+pd.set_option('display.expand_frame_repr', False)
 
 def execute(args):
     # (1) Initialize knowledge base.
@@ -86,9 +91,9 @@ def execute(args):
     object_properties = sorted({i for i in symbolic_kb.get_object_properties()})
     
     # (3.1) Subsample if required.
-    if args.ratio_sample_object_prob:
+    if args.ratio_sample_object_prop and len(object_properties) > 0:
         object_properties = {i for i in random.sample(population=list(object_properties),
-                                                      k=max(1, int(len(object_properties) * args.ratio_sample_object_prob)))}
+                                                      k=max(1, int(len(object_properties) * args.ratio_sample_object_prop)))}
 
     object_properties = set(object_properties)    
     
@@ -103,7 +108,7 @@ def execute(args):
 
 
 
-    if args.ratio_sample_nc:
+    if args.ratio_sample_nc and len(nc) > 0:
         # (6.1) Subsample if required.
         nc = {i for i in random.sample(population=list(nc), k=max(1, int(len(nc) * args.ratio_sample_nc)))}
 
@@ -211,7 +216,10 @@ def execute(args):
     # () Shuffled the data so that the progress bar is not influenced by the order of concepts.
 
     random.shuffle(concepts)
-
+    # check if csv arleady exists and delete it cause we want to override it
+    if os.path.exists(args.path_report):
+        os.remove(args.path_report)
+    file_exists = False
     # () Iterate over single OWL Class Expressions in ALCQIHO
     for expression in (tqdm_bar := tqdm(concepts, position=0, leave=True)):
         retrieval_y: Set[str]
@@ -225,8 +233,8 @@ def execute(args):
         # () Compute the F1-score.
         f1_sim = f1_set_similarity(retrieval_y, retrieval_neural_y)
         # () Store the data.
-        data.append(
-            {
+        df_row = pd.DataFrame(
+            [{
                 "Expression": owl_expression_to_dl(expression),
                 "Type": type(expression).__name__,
                 "Jaccard Similarity": jaccard_sim,
@@ -235,33 +243,35 @@ def execute(args):
                 "Runtime Neural": runtime_neural_y,
                 "Symbolic_Retrieval": retrieval_y,
                 "Symbolic_Retrieval_Neural": retrieval_neural_y,
-            }
-        )
+            }])
+        # Append the row to the CSV file
+        df_row.to_csv(args.path_report, mode='a', header=not file_exists, index=False)
+        file_exists = True
         # () Update the progress bar.
         tqdm_bar.set_description_str(
             f"Expression: {owl_expression_to_dl(expression)} | Jaccard Similarity:{jaccard_sim:.4f} | F1 :{f1_sim:.4f} | Runtime Benefits:{runtime_y - runtime_neural_y:.3f}"
         )
     # () Read the data into pandas dataframe
-    df = pd.DataFrame(data)
-    assert df["Jaccard Similarity"].mean() >= args.min_jaccard_similarity
-    # () Save the experimental results into csv file.
-    df.to_csv(args.path_report)
-    del df
-    # () Load the saved CSV file.
     df = pd.read_csv(args.path_report, index_col=0, converters={'Symbolic_Retrieval': lambda x: ast.literal_eval(x),
-                                                                'Symbolic_Retrieval_Neural': lambda x: ast.literal_eval(
-                                                                    x)})
-    # () A retrieval result can be parsed into  set of instances to python object.
+                                                                'Symbolic_Retrieval_Neural': lambda x: ast.literal_eval(x)})
+    # () Assert that the mean Jaccard Similarity meets the threshold
+    assert df["Jaccard Similarity"].mean() >= args.min_jaccard_similarity
+
+    # () Ensure 'Symbolic_Retrieval_Neural' contains sets
     x = df["Symbolic_Retrieval_Neural"].iloc[0]
     assert isinstance(x, set)
-    # () Extract the numerical features.
+
+    # () Extract numerical features
     numerical_df = df.select_dtypes(include=["number"])
-    # () Extract the type of owl concepts
+
+    # () Group by the type of OWL concepts
     df_g = df.groupby(by="Type")
     print(df_g["Type"].count())
+
+    # () Compute mean of numerical columns per group
     mean_df = df_g[numerical_df.columns].mean()
     print(mean_df)
-
+    return jaccard_sim, f1_sim
 
 def get_default_arguments():
     parser = ArgumentParser()
@@ -271,7 +281,7 @@ def get_default_arguments():
     parser.add_argument("--gamma", type=float, default=0.9)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--ratio_sample_nc", type=float, default=0.2, help="To sample OWL Classes.")
-    parser.add_argument("--ratio_sample_object_prob", type=float, default=0.1, help="To sample OWL Object Properties.")
+    parser.add_argument("--ratio_sample_object_prop", type=float, default=0.1, help="To sample OWL Object Properties.")
     parser.add_argument("--min_jaccard_similarity", type=float, default=0.0, help="Minimum Jaccard similarity to be achieve by the reasoner")
     parser.add_argument("--num_nominals", type=int, default=10, help="Number of OWL named individuals to be sampled.")
 

@@ -1,15 +1,21 @@
 """ Test the default pipeline for structured machine learning"""
 import json
-
 from owlapy.class_expression import OWLClass
 from owlapy.iri import IRI
 from owlapy.owl_individual import OWLNamedIndividual
-
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.utils import compute_f1_score
 from owlapy.render import DLSyntaxObjectRenderer
+import json
+import os
+from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.learners import OCEL
+from ontolearn.learning_problem import PosNegLPStandard
+from ontolearn.utils import setup_logging
+from owlapy.owl_individual import OWLNamedIndividual, IRI
+from owlapy.class_expression import OWLClass
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 PATH_MUTAGENESIS = 'KGs/Mutagenesis/mutagenesis.owl'
@@ -19,7 +25,55 @@ with open('examples/synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 
 
-class Test_Celoe:
+class TestCeloe:
+
+    def test_ocel_example(self):
+
+        kb = KnowledgeBase(path=PATH_FAMILY)
+
+        for str_target_concept, examples in settings['problems'].items():
+            p = set(examples['positive_examples'])
+            n = set(examples['negative_examples'])
+            print('Target concept: ', str_target_concept)
+            concepts_to_ignore = set()
+            # lets inject more background info
+            if str_target_concept in ['Granddaughter', 'Aunt', 'Sister']:
+                NS = 'http://www.benchmark.org/family#'
+                concepts_to_ignore = {
+                    OWLClass(IRI(NS, 'Brother')),
+                    OWLClass(IRI(NS, 'Sister')),
+                    OWLClass(IRI(NS, 'Daughter')),
+                    OWLClass(IRI(NS, 'Mother')),
+                    OWLClass(IRI(NS, 'Grandmother')),
+                    OWLClass(IRI(NS, 'Father')),
+                    OWLClass(IRI(NS, 'Grandparent')),
+                    OWLClass(IRI(NS, 'PersonWithASibling')),
+                    OWLClass(IRI(NS, 'Granddaughter')),
+                    OWLClass(IRI(NS, 'Son')),
+                    OWLClass(IRI(NS, 'Child')),
+                    OWLClass(IRI(NS, 'Grandson')),
+                    OWLClass(IRI(NS, 'Grandfather')),
+                    OWLClass(IRI(NS, 'Grandchild')),
+                    OWLClass(IRI(NS, 'Parent')),
+                }
+                target_kb = kb.ignore_and_copy(ignored_classes=concepts_to_ignore)
+            else:
+                target_kb = kb
+
+            typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
+            typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
+            lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
+
+            model = OCEL(knowledge_base=target_kb,
+                         max_runtime=3,
+                         max_num_of_concepts_tested=10_000_000_000,
+                         iter_bound=10_000_000_000)
+            model.fit(lp)
+
+            model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
+            hypotheses = model.best_hypotheses(n=3)
+            [print(_) for _ in hypotheses]
+
     def test_celoe(self):
         kb = KnowledgeBase(path=PATH_FAMILY)
 

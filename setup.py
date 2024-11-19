@@ -38,6 +38,7 @@ _deps = [
     "scikit-learn>=1.4.1",
     "torch==2.2.0",
     "rdflib>=6.0.2",
+    "ruff>=0.7.2",
     "pandas>=1.5.0",
     "sortedcontainers>=2.4.0",
     "deap>=1.3.1",
@@ -46,7 +47,7 @@ _deps = [
     "tqdm>=4.64.0",
     "transformers>=4.38.1",
     "pytest>=7.2.2",
-    "owlapy==1.3.1",
+    "owlapy==1.3.3",
     "dicee==0.1.4",
     "ontosample>=0.2.2",
     "sphinx>=7.2.6",
@@ -89,12 +90,12 @@ extras["doc"] = (deps_list("sphinx",
                            "sphinxcontrib-plantuml",
                            "plantuml-local-client", "myst-parser"))
 
-extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "ontosample"))
+extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "ontosample", "ruff"))
 
 setup(
     name="ontolearn",
     description="Ontolearn is an open-source software library for structured machine learning in Python. Ontolearn includes modules for processing knowledge bases, inductive logic programming and ontology engineering.",
-    version="0.8.0",
+    version="0.8.1",
     packages=find_packages(),
     install_requires=extras["min"],
     extras_require=extras,
