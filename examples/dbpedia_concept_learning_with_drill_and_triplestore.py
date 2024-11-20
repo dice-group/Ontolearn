@@ -1,6 +1,6 @@
 import json, os
 from owlapy.owl_individual import OWLNamedIndividual, IRI
-from ontolearn.learners import TDL
+from ontolearn.learners import Drill
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.triple_store import TripleStore
 from ontolearn.utils.static_funcs import save_owl_class_expressions
@@ -10,7 +10,7 @@ kb = TripleStore(url="https://dbpedia.data.dice-research.org/sparql")
 # (2) Initialize a DL renderer.
 renderer = DLSyntaxObjectRenderer()
 # (3) Initialize a learner.
-model = TDL(knowledge_base=kb)
+model = Drill(knowledge_base=kb, max_runtime=240)
 # (4) Solve learning problems
 with open("/home/nkouagou/Research/Ontolearn/LPs/DBpedia2022-12/lps.json") as f:
     lps = json.load(f)
@@ -23,6 +23,6 @@ for i, item in enumerate(lps):
     str_concept = renderer.render(h)
     print("Concept:", str_concept)  # e.g.  ∃ predecessor.WikicatPeopleFromBerlin
     # (6) Save ∃ predecessor.WikicatPeopleFromBerlin into disk
-    if not os.path.exists("./learned_owl_expressions_tdl"):
-        os.mkdir("./learned_owl_expressions_tdl")
-    save_owl_class_expressions(expressions=h, path=f"./learned_owl_expressions_tdl/owl_prediction_{i}")
+    if not os.path.exists("./learned_owl_expressions_drill"):
+        os.mkdir("./learned_owl_expressions_drill")
+    save_owl_class_expressions(expressions=h, path=f"./learned_owl_expressions_drill/owl_prediction_{i}")
