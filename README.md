@@ -121,17 +121,11 @@ save_owl_class_expressions(expressions=h,path="owl_prediction")
 - With one command
 1. For TDL
 ```bash
-git clone https://github.com/dice-group/Ontolearn.git
-cd Ontolearn && git checkout large_scale_cel && conda create -n venv python=3.10.14 --no-default-packages --y && conda activate venv && pip install -e .
-wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
-python examples/dbpedia_concept_learning_with_tdl_and_triplestore.py
+git clone https://github.com/dice-group/Ontolearn.git && cd Ontolearn && git checkout large_scale_cel && conda create -n venv python=3.10.14 --no-default-packages --y && conda activate venv && pip install -e . && wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip && python examples/dbpedia_concept_learning_with_tdl_and_triplestore.py
 ```
 2. For Drill
 ```bash
-git clone https://github.com/dice-group/Ontolearn.git
-cd Ontolearn && git checkout large_scale_cel && conda create -n venv python=3.10.14 --no-default-packages --y && conda activate venv && pip install -e .
-wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
-python examples/dbpedia_concept_learning_with_drill_and_triplestore.py
+git clone https://github.com/dice-group/Ontolearn.git && cd Ontolearn && git checkout large_scale_cel && conda create -n venv python=3.10.14 --no-default-packages --y && conda activate venv && pip install -e . && wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip && python examples/dbpedia_concept_learning_with_drill_and_triplestore.py
 ```
 
 Fore more please refer to  the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder.
