@@ -12,7 +12,7 @@ renderer = DLSyntaxObjectRenderer()
 # (3) Initialize a learner.
 model = TDL(knowledge_base=kb)
 # (4) Solve learning problems
-with open("/home/nkouagou/Research/Ontolearn/LPs/DBpedia2022-12/lps.json") as f:
+with open("./LPs/DBpedia2022-12/lps.json") as f:
     lps = json.load(f)
 for i, item in enumerate(lps):
     print("\nTarget expression: ", item["target expression"], "\n")
