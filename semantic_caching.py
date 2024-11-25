@@ -122,17 +122,17 @@ def concept_generator(path_kg):
 
     # () Converted to list so that the progress bar works.
     random.seed(0)
-    if len(intersections)>100:
-        intersections = random.sample(intersections, k=100)
-    if len(unions)>100:
-        unions = random.sample(unions, k=100)
+    if len(intersections_unnc)>100:
+        intersections_unnc = random.sample(intersections_unnc, k=100)
+    if len(unions_unnc)>100:
+        unions_unnc = random.sample(unions_unnc, k=100)
     if len(exist_unnc)>100:
-        exist_unnc = random.sample(exist_unnc, k=100)
+        exist_unnc = set(list(exist_unnc)[:100]) #random.sample(exist_unnc, k=100)
     if len(for_all_unnc)>100:
-        for_all_unnc = random.sample(for_all_unnc, k=100)
+        for_all_unnc = set(list(for_all_unnc)[:100]) #random.sample(for_all_unnc, k=100)
 
     concepts = list(
-        chain(nc, nnc, unions, intersections, exist_unnc, for_all_unnc,
+        chain(nc, nnc, unions_unnc, intersections_unnc, exist_unnc, for_all_unnc,
             # nc, unions, intersections, nnc, unions_unnc, intersections_unnc,
             # exist_unnc, for_all_unnc,
             # min_cardinality_unnc_1, min_cardinality_unnc_2, min_cardinality_unnc_3,
@@ -149,61 +149,63 @@ def concept_retrieval(retriever_func, c) -> Set[str]:
     return {i.str for i in retriever_func.individuals(c)}
 
 
+class CacheWithEviction:
+    def __init__(self, cache_size, strategy='LIFO', random_seed=10):
+        self.cache = OrderedDict()  # Store the actual cache
+        self.access_times = {}      # Track last access times for LRU and MRU
+        self.cache_size = cache_size
+        self.strategy = strategy
+        self.random_seed = random_seed 
+
+    def _evict(self):
+        if len(self.cache) >= self.cache_size:
+            if self.strategy == 'FIFO':
+                self.cache.popitem(last=False)  # Evict the oldest item (first in)
+            elif self.strategy == 'LIFO':
+                self.cache.popitem(last=True)  # Evict the most recently added item
+            elif self.strategy == 'LRU':
+                # Evict the least recently used item based on `access_times`
+                lru_key = min(self.access_times, key=self.access_times.get)
+                del self.cache[lru_key]
+                del self.access_times[lru_key]
+            elif self.strategy == 'MRU':
+                # Evict the most recently used item based on `access_times`
+                mru_key = max(self.access_times, key=self.access_times.get)
+                del self.cache[mru_key]
+                del self.access_times[mru_key]
+            elif self.strategy == 'RP':
+                # Random eviction
+                random.seed(self.random_seed) 
+                random_key = random.choice(list(self.cache.keys()))
+                del self.cache[random_key]
+                self.access_times.pop(random_key, None)
+
+    def get(self, key):
+        """
+        Retrieve an item from the cache. Updates access time for LRU/MRU.
+        """
+        if key in self.cache:
+            if self.strategy in ['LRU', 'MRU']:
+                self.access_times[key] = time.time()  # Update access timestamp
+            return self.cache[key]
+        return None
+
+    def put(self, key, value):
+        """
+        Add an item to the cache. Evicts an entry if the cache is full.
+        """
+        if key in self.cache:
+            del self.cache[key]  # Remove existing entry to re-insert and maintain order
+
+        self._evict()  # Evict if necessary
+
+        self.cache[key] = value
+        if self.strategy in ['LRU', 'MRU']:
+            self.access_times[key] = time.time()  # Record access timestamp
+
+
+
 # Implement the caching mechanism here
-
-# def subsumption_based_caching(func, cache_size):
-#     # Dictionary to store the cached results
-#     cache = {}
-
-#     def wrapper(*args):
-#         # Load the ontology
-#         path_onto = args[1]
-#         onto = get_ontology(path_onto).load()
-        
-#         # Synchronize the reasoner (e.g., using Pellet)
-#         with onto:
-#             sync_reasoner(infer_property_values=True)
-
-#         # all individuals
-#         all_individuals = {a for a in onto.individuals()}       
-#         str_expression = owl_expression_to_dl(args[0])
-#         owl_expression = args[0]
-
-#         # if isinstance(owl_expression, OWLClass):
-#         #     result = func(*args)
-
-#         if str_expression in cache:
-#             return cache[str_expression]
-
-#         super_concepts = set()
-#         for D in list(cache.keys()):
-#             if D in owl_expression.ancestors(): # this check if expression := C ⊑ D
-#                 super_concepts.add(D)
-
-#         # Compute instances
-#         if len(super_concepts)==0:
-#             instances = all_individuals
-#         else:
-#             instances = set.intersection(
-#                 *[wrapper(D, path_onto) for D in super_concepts]
-#             )
-#             pass
-
-#         # Filter instances: Check if each instance belongs to the concept C
-#         instance_set = set()
-#         for individual in instances:
-#             if individual.is_instance_of(owl_expression):
-#                 instance_set.add(individual)
-
-#         # Store the result in the cache
-#         cache[str_expression] = instance_set
-
-#         return instance_set
-
-#     return wrapper
-
-
-
 
 def subsumption_based_caching(func, cache_size):
     cache = {}  # Dictionary to store cached results
@@ -281,8 +283,9 @@ def subsumption_based_caching(func, cache_size):
 
 
 
-def semantic_caching_size(func, cache_size=5):
-    cache = OrderedDict() #Cache for instances
+def semantic_caching_size(func, cache_size=5, eviction_strategy='RP', random_seed=10):
+    cache = CacheWithEviction(cache_size, strategy=eviction_strategy, random_seed=random_seed)  # Cache for instances
+    # cache = OrderedDict()
     loaded_ontologies = {} #Cache for ontologies
     loaded_individuals = {} #cache for individuals
     stats = {
@@ -311,16 +314,13 @@ def semantic_caching_size(func, cache_size=5):
 
         # Function to retrieve cached expression and count hits
         def retrieve_from_cache(expression):
-            if expression in cache:
+            cached_result = cache.get(expression)
+            if cached_result is not None:
                 stats['hits'] += 1
-                return cache[expression]
+                return cached_result
             else:
                 stats['misses'] += 1
                 return set()
-
-        # result = retrieve_from_cache(str_expression)
-        # if len(result) > 0:
-        #     return result
 
         # Handle different OWL expression types and use cache when needed
         if isinstance(owl_expression, OWLClass):
@@ -359,21 +359,7 @@ def semantic_caching_size(func, cache_size=5):
                             result.add(a)
                     else:
                         if b in getattr(a, r.name):
-                            result.add(ind_a)
-
-            # with onto:
-            #     sync_reasoner()
-            # 
-            # for ind_a in All_individuals:
-            #     for ind_b in instances:
-            #         a = onto.search_one(iri=ind_a)
-            #         b = onto.search_one(iri=ind_b)
-            #         if isinstance(object_property, OWLObjectInverseOf):
-            #             if a in getattr(b, r.name):
-            #                 result.add(a)
-            #         else:
-            #             if b in getattr(a, r.name):
-            #                 result.add(ind_a)
+                            result.add(ind_a) 
 
         elif isinstance(owl_expression, OWLObjectAllValuesFrom):
             all_values_expr = owl_expression_to_dl(owl_expression)
@@ -382,10 +368,13 @@ def semantic_caching_size(func, cache_size=5):
         else:
             result = func(*args)
 
+
         # Add the result to the cache with LIFO eviction strategy
-        if len(cache) >= cache_size:
-            cache.popitem(last=False)
-        cache[str_expression] = result
+        # if len(cache) >= cache_size:
+        #     cache.popitem(last=False)
+        # cache[str_expression] = result
+         # Add to cache
+        cache.put(str_expression, result)
 
         stats['time'] += (time.time() - start_time)
         return result
@@ -418,109 +407,6 @@ def semantic_caching_size(func, cache_size=5):
     return wrapper
 
 
-
-# def semantic_caching_size(func, cache_size=5):
-#     cache = OrderedDict()
-#     loaded_ontologies = {}
-#     stats = {'hits': 0, 'misses': 0, 'time': 0}
-
-#     def wrapper(*args):
-
-#         nonlocal stats
-#         start_time = time.time()
-
-#         # Load ontology if not already cached
-#         path_onto = args[1]
-#         if path_onto not in loaded_ontologies:
-#             loaded_ontologies[path_onto] = get_ontology(path_onto).load()
-#         onto = loaded_ontologies[path_onto]
-#         All_individuals = {a.iri for a in list(onto.individuals())}
-
-#         # Convert expression to DL format
-#         str_expression = owl_expression_to_dl(args[0])
-#         print(str_expression + '1')
-#         exit(0)
-#         owl_expression = args[0]
-
-#         # Retrieve or initialize result from cache
-#         if str_expression in cache:
-#             stats['hits'] += 1
-#             return cache[str_expression]
-#         else:
-#             stats['misses'] += 1
-
-#         # Handle different OWL expression types
-#         if isinstance(owl_expression, OWLClass):
-#             result = func(*args)
-#         elif isinstance(owl_expression, OWLObjectComplementOf):
-#             not_str_expression = str_expression.split("¬")[-1]
-#             result = All_individuals - cache.get(not_str_expression, set())
-#         elif isinstance(owl_expression, OWLObjectIntersectionOf):
-#             C_and_D = [owl_expression_to_dl(i) for i in owl_expression.operands()]
-#             result = cache.get(C_and_D[0], set()).intersection(cache.get(C_and_D[1], set()))
-#         elif isinstance(owl_expression, OWLObjectUnionOf):
-#             C_or_D = [owl_expression_to_dl(i) for i in owl_expression.operands()]
-#             result = cache.get(C_or_D[0], set()).union(cache.get(C_or_D[1], set()))
-#         elif isinstance(owl_expression, OWLObjectSomeValuesFrom):
-#             object_property = owl_expression.get_property()
-#             filler_expression = owl_expression.get_filler()
-#             instances = cache.get(owl_expression_to_dl(filler_expression), set())
-
-#             result = set()
-#             property_relation = onto.search_one(iri=object_property.str if not isinstance(object_property, OWLObjectInverseOf)
-#                                                 else object_property.get_inverse_property().str)
-#             individual_map = {ind: onto.search_one(iri=ind) for ind in All_individuals | instances}
-#             for ind_a, a in individual_map.items():
-#                 if ind_a in All_individuals:
-#                     for ind_b in instances:
-#                         b = individual_map[ind_b]
-#                         if isinstance(object_property, OWLObjectInverseOf):
-#                             if a in getattr(b, property_relation.name):
-#                                 result.add(a)
-#                         else:
-#                             if b in getattr(a, property_relation.name):
-#                                 result.add(ind_a)
-#         elif isinstance(owl_expression, OWLObjectAllValuesFrom):
-#             all_values_expr = owl_expression_to_dl(owl_expression)
-#             some_values_expr = transform_forall_to_exists(all_values_expr)
-#             result = All_individuals - cache.get(some_values_expr, set())
-#         else:
-#             result = func(*args)
-
-#         # Cache the result and maintain the cache size
-#         if len(cache) >= cache_size:
-#             cache.popitem(last=False)
-#         cache[str_expression] = result
-
-#         stats['time'] += (time.time() - start_time)
-#         return result
-
-#     def transform_forall_to_exists(expression):
-#         pattern_negated = r'∀ (\w+)\.\(¬(\w+)\)'
-#         replacement_negated = r'∃ \1.\2'
-#         pattern_non_negated = r'∀ (\w+)\.(\w+)'
-#         replacement_non_negated = r'∃ \1.(¬\2)'
-
-#         transformed_expression = re.sub(pattern_negated, replacement_negated, expression)
-#         transformed_expression = re.sub(pattern_non_negated, replacement_non_negated, transformed_expression)
-
-#         return transformed_expression
-
-#     def get_stats():
-#         total_requests = stats['hits'] + stats['misses']
-#         hit_ratio = stats['hits'] / total_requests if total_requests > 0 else 0
-#         miss_ratio = stats['misses'] / total_requests if total_requests > 0 else 0
-#         avg_time = stats['time'] / total_requests if total_requests > 0 else 0
-
-#         return {
-#             'hit_ratio': hit_ratio,
-#             'miss_ratio': miss_ratio,
-#             'average_time_per_request': avg_time,
-#             'total_time': stats['time']
-#         }
-
-#     wrapper.get_stats = get_stats
-#     return wrapper
 
 
 
@@ -557,18 +443,14 @@ def retrieve_other_reasoner(expression, path_kg, name_reasoner='HermiT'): # reas
          
 
 
-
-
-
-
-def run_cache(path_kg:str, path_kge:str=None, cache_size:int=5, name_reasoner:str='HermiT'):
+def run_cache(path_kg:str, path_kge:str=None, cache_size:int=5, name_reasoner:str='HermiT', eviction:str='RP', random_seed=10):
 
     if name_reasoner == 'EBR':
         # cached_retriever = subsumption_based_caching(retrieve, cache_size=cache_size)
-        cached_retriever = semantic_caching_size(retrieve, cache_size=cache_size)
+        cached_retriever = semantic_caching_size(retrieve, cache_size=cache_size, eviction_strategy=eviction, random_seed=random_seed)
     else:
         # cached_retriever = subsumption_based_caching(retrieve, cache_size=cache_size)
-        cached_retriever = semantic_caching_size(retrieve_other_reasoner, cache_size=cache_size)
+        cached_retriever = semantic_caching_size(retrieve_other_reasoner, cache_size=cache_size, eviction_strategy=eviction, random_seed=random_seed)
 
     symbolic_kb = KnowledgeBase(path=path_kg)
 
@@ -629,9 +511,11 @@ def run_cache(path_kg:str, path_kge:str=None, cache_size:int=5, name_reasoner:st
         'cache_size': cache_size,
         'hit_ratio': f"{stats['hit_ratio']:.2f}",
         'miss_ratio': f"{stats['miss_ratio']:.2f}",
-        'RT_cache': f"{stats['total_time']:.4f}",
-        'RT': f"{total_time_ebr:.4f}",
+        'RT_cache': f"{stats['total_time']:.3f}",
+        'RT': f"{total_time_ebr:.3f}",
         '#concepts': len(alc_concepts),
-        'avg_jaccard': f"{sum(Avg_jaccard) / len(Avg_jaccard):.4f}"
+        'avg_jaccard': f"{sum(Avg_jaccard) / len(Avg_jaccard):.3f}",
+        'strategy': eviction
     }, D
+
 
