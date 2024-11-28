@@ -179,6 +179,7 @@ class CacheWithEviction:
                 random_key = random.choice(list(self.cache.keys()))
                 del self.cache[random_key]
                 self.access_times.pop(random_key, None)
+            
 
     def get(self, key):
         """
@@ -203,6 +204,13 @@ class CacheWithEviction:
         if self.strategy in ['LRU', 'MRU']:
             self.access_times[key] = time.time()  # Record access timestamp
 
+    def get_all_items(self):
+        return list(self.cache.keys())
+    
+    def is_full(self):
+        """Check if the cache is full."""
+        return len(self.cache) >= self.max_size
+    
 
 
 # Implement the caching mechanism here
@@ -296,9 +304,6 @@ def semantic_caching_size(func, cache_size=5, eviction_strategy='RP', random_see
 
     def wrapper(*args):
         nonlocal stats
-        start_time = time.time()
-
-        
         # Load ontology if not already cached
         path_onto = args[1]
         if path_onto not in loaded_ontologies:
@@ -318,65 +323,84 @@ def semantic_caching_size(func, cache_size=5, eviction_strategy='RP', random_see
             if cached_result is not None:
                 stats['hits'] += 1
                 return cached_result
-            else:
+            else: 
                 stats['misses'] += 1
-                return set()
+                return None
 
         # Handle different OWL expression types and use cache when needed
+        start_time = time.time()
         if isinstance(owl_expression, OWLClass):
             result = func(*args)
         elif isinstance(owl_expression, OWLObjectComplementOf):
             not_str_expression = str_expression.split("¬")[-1]
-            result = All_individuals - retrieve_from_cache(not_str_expression)
+            cached_result = retrieve_from_cache(not_str_expression)
+            result = (All_individuals - cached_result) if cached_result else func(*args)
         elif isinstance(owl_expression, OWLObjectIntersectionOf):
             C_and_D = [owl_expression_to_dl(i) for i in owl_expression.operands()]
-            result = retrieve_from_cache(C_and_D[0]).intersection(retrieve_from_cache(C_and_D[1]))
+            cached_C = retrieve_from_cache(C_and_D[0])
+            cached_D = retrieve_from_cache(C_and_D[1])
+            if cached_D and cached_C:
+                result = cached_C.intersection(cached_D)
+            else:
+                result = func(*args)
         elif isinstance(owl_expression, OWLObjectUnionOf):
             C_or_D = [owl_expression_to_dl(i) for i in owl_expression.operands()]
-            result = retrieve_from_cache(C_or_D[0]).union(retrieve_from_cache(C_or_D[1]))
+            cached_C = retrieve_from_cache(C_or_D[0])
+            cached_D = retrieve_from_cache(C_or_D[1])
+            if cached_D and cached_C:
+                result = cached_C.union(cached_D)
+            else:
+                result = func(*args)
         elif isinstance(owl_expression, OWLObjectSomeValuesFrom):
+
             object_property = owl_expression.get_property()
             filler_expression = owl_expression.get_filler()
-            instances = retrieve_from_cache(owl_expression_to_dl(filler_expression)) or set()
+            instances = retrieve_from_cache(owl_expression_to_dl(filler_expression))
+            
+            if instances:
+                result = set()
 
-            result = set()
+                if isinstance(object_property, OWLObjectInverseOf):
+                    r = onto.search_one(iri=object_property.get_inverse_property().str)
+                else:
+                    r = onto.search_one(iri=object_property.str)
 
-            if isinstance(object_property, OWLObjectInverseOf):
-                r = onto.search_one(iri=object_property.get_inverse_property().str)
-            else:
-                r = onto.search_one(iri=object_property.str)
-
-            individual_map = {ind: onto.search_one(iri=ind) for ind in All_individuals | instances}
-    
-            for ind_a in All_individuals:
-                a = individual_map[ind_a]
-                
-                for ind_b in instances:
-                    b = individual_map[ind_b]
+                individual_map = {ind: onto.search_one(iri=ind) for ind in All_individuals | instances}
+        
+                for ind_a in All_individuals:
+                    a = individual_map[ind_a]
                     
-                    if isinstance(object_property, OWLObjectInverseOf):
-                        if a in getattr(b, r.name):
-                            result.add(a)
-                    else:
-                        if b in getattr(a, r.name):
-                            result.add(ind_a) 
-
+                    for ind_b in instances:
+                        b = individual_map[ind_b]
+                        
+                        if isinstance(object_property, OWLObjectInverseOf):
+                            if a in getattr(b, r.name):
+                                result.add(a)
+                        else:
+                            if b in getattr(a, r.name):
+                                result.add(ind_a) 
+            else:
+                result = func(*args)
         elif isinstance(owl_expression, OWLObjectAllValuesFrom):
             all_values_expr = owl_expression_to_dl(owl_expression)
             some_values_expr = transform_forall_to_exists(all_values_expr)
-            result = All_individuals - retrieve_from_cache(some_values_expr)
+            cached_result = retrieve_from_cache(some_values_expr)
+            result = (All_individuals - cached_result) if cached_result else func(*args)
         else:
             result = func(*args)
 
-
+        stats['time'] += (time.time() - start_time)
         # Add the result to the cache with LIFO eviction strategy
         # if len(cache) >= cache_size:
         #     cache.popitem(last=False)
+        #     result = func(*args)
+            
         # cache[str_expression] = result
-         # Add to cache
-        cache.put(str_expression, result)
 
-        stats['time'] += (time.time() - start_time)
+        #  Add to cache
+        cache.put(str_expression, result)
+        # print(len(list(cache.get_all_items())))
+        
         return result
 
     def transform_forall_to_exists(expression):
@@ -409,7 +433,6 @@ def semantic_caching_size(func, cache_size=5, eviction_strategy='RP', random_see
 
 
 
-
 def retrieve(expression:str, path_kg:str, path_kge_model:str) -> Tuple[Set[str], Set[str]]:
     'take a concept c and returns it set of retrieved individual'
 
@@ -426,7 +449,6 @@ def retrieve(expression:str, path_kg:str, path_kge_model:str) -> Tuple[Set[str],
     
     return retrievals
 
-##### Add other reasoners here
 
 def retrieve_other_reasoner(expression, path_kg, name_reasoner='HermiT'): # reasoners = ['HermiT', 'Pellet', 'JFact', 'Openllet']
     
@@ -491,6 +513,7 @@ def run_cache(path_kg:str, path_kge:str=None, cache_size:int=5, name_reasoner:st
         D.append({'dataset':data,'Expression':owl_expression_to_dl(expr), "Type": type(expr).__name__ ,'cache_size':cache_size, "time_ebr":time_ebr, "time_cache": time_cache, "Jaccard":jacc})
         print(f'Expression: {owl_expression_to_dl(expr)}')
         print(f'Jaccard similarity: {jacc}')
+        assert jacc == 1.0 
 
     
     
