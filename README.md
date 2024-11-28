@@ -1,3 +1,4 @@
+[![Downloads](https://static.pepy.tech/badge/ontolearn)](https://pepy.tech/project/ontolearn)
 [![Downloads](https://img.shields.io/pypi/dm/ontolearn)](https://pypi.org/project/ontolearn/)
 [![Coverage](https://img.shields.io/badge/coverage-86%25-green)](https://ontolearn-docs-dice-group.netlify.app/usage/09_further_resources#code-coverage)
 [![Pypi](https://img.shields.io/badge/pypi-0.8.1-blue)](https://pypi.org/project/ontolearn/0.8.1/)
