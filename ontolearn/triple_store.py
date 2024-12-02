@@ -291,11 +291,7 @@ class TripleStoreOntology(AbstractOWLOntology):
 
 
 class TripleStoreReasoner(AbstractOWLReasoner):
-<<<<<<< HEAD
-    #__slots__ = "ontology"
-=======
->>>>>>> origin/merge_triplestore_and_kb
-
+    
     def __init__(self, ontology: TripleStoreOntology):
         self.ontology = ontology
         self.url = self.ontology.url
