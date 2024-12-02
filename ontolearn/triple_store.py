@@ -291,7 +291,6 @@ class TripleStoreOntology(AbstractOWLOntology):
 
 
 class TripleStoreReasoner(AbstractOWLReasoner):
-    __slots__ = "ontology"
 
     def __init__(self, ontology: TripleStoreOntology):
         self.ontology = ontology
@@ -714,83 +713,6 @@ class TripleStoreReasoner(AbstractOWLReasoner):
         pass
 
 
-class TripleStoreKnowledgeBase(KnowledgeBase):
-    url: str
-    ontology: TripleStoreOntology
-    reasoner: TripleStoreReasoner
-
-    def __init__(self, url: str=None):
-        assert url is not None, "url must be string"
-        self.url = url
-        self.ontology = TripleStoreOntology(url)
-        self.reasoner = TripleStoreReasoner(self.ontology)
-        super().__init__( ontology=self.ontology, reasoner=self.reasoner, load_class_hierarchy=False)
-
-    def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
-        assert isinstance(concept, OWLClass)
-        yield from self.reasoner.sub_classes(concept, direct=True)
-
-    def get_direct_parents(self, concept: OWLClassExpression) -> Iterable[OWLClass]:
-        assert isinstance(concept, OWLClass)
-        yield from self.reasoner.super_classes(concept, direct=True)
-
-    def get_all_direct_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
-        assert isinstance(concept, OWLClass)
-        yield from self.reasoner.sub_classes(concept, direct=True)
-
-    def get_all_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
-        assert isinstance(concept, OWLClass)
-        yield from self.reasoner.sub_classes(concept, direct=False)
-
-    def get_concepts(self) -> Iterable[OWLClass]:
-        yield from self.ontology.classes_in_signature()
-
-    @property
-    def concepts(self) -> Iterable[OWLClass]:
-        yield from self.ontology.classes_in_signature()
-
-    def contains_class(self, concept: OWLClassExpression) -> bool:
-        assert isinstance(concept, OWLClass)
-        return concept in self.ontology.classes_in_signature()
-
-    def most_general_object_properties(
-            self, *, domain: OWLClassExpression, inverse: bool = False) -> Iterable[OWLObjectProperty]:
-        assert isinstance(domain, OWLClassExpression)
-        func: Callable
-        func = (
-            self.get_object_property_ranges
-            if inverse
-            else self.get_object_property_domains
-        )
-
-        inds_domain = self.individuals_set(domain)
-        for prop in self.ontology.object_properties_in_signature():
-            if domain.is_owl_thing() or inds_domain <= self.individuals_set(func(prop)):
-                yield prop
-
-    @property
-    def object_properties(self) -> Iterable[OWLObjectProperty]:
-        yield from self.ontology.object_properties_in_signature()
-
-    def get_object_properties(self) -> Iterable[OWLObjectProperty]:
-        yield from self.ontology.object_properties_in_signature()
-
-    @property
-    def data_properties(self) -> Iterable[OWLDataProperty]:
-        yield from self.ontology.data_properties_in_signature()
-
-    def get_data_properties(
-            self, ranges: Set[OWLDatatype] = None
-    ) -> Iterable[OWLDataProperty]:
-
-        if ranges is not None:
-            for dp in self.ontology.data_properties_in_signature():
-                if self.get_data_property_ranges(dp) & ranges:
-                    yield dp
-        else:
-            yield from self.ontology.data_properties_in_signature()
-
-
 #######################################################################################################################
 # See https://github.com/dice-group/Ontolearn/issues/451 for the decision behind this seperation
 
@@ -981,21 +903,89 @@ class TripleStoreReasonerOntology:
         query = f"{rdf_prefix}\n{rdfs_prefix}\n{xsd_prefix}SELECT DISTINCT ?x WHERE {{?x <{prop.str}> ?z}}"
         for binding in self.query(query).json()["results"]["bindings"]:
             yield OWLNamedIndividual(binding["x"]["value"])
-class TripleStore:
+        
+        
+class TripleStore(KnowledgeBase):
     url: str
-    def __init__(self, reasoner=None, url: str = None):
+    ontology: TripleStoreOntology
+    reasoner: TripleStoreReasoner
 
-        if reasoner is None:
-            assert url is not None, f"Reasoner:{reasoner} and url of a triplestore {url} cannot be both None."
-            self.g = TripleStoreReasonerOntology(url=url)
-        else:
-            self.g = reasoner
-        self.ontology = self.g
-        self.reasoner = self.g
-
+    def __init__(self, url: str=None):
+        assert url is not None, "url must be string"
+        self.g = TripleStoreReasonerOntology(url=url)
+        self.url = url
+        self.ontology = TripleStoreOntology(url)
+        self.reasoner = TripleStoreReasoner(self.ontology)
+        super().__init__( ontology=self.ontology, reasoner=self.reasoner, load_class_hierarchy=False)
+        
     def __str__(self):
         return f"TripleStore:{self.g}"
 
+    def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
+        assert isinstance(concept, OWLClass)
+        yield from self.reasoner.sub_classes(concept, direct=True)
+
+    def get_direct_parents(self, concept: OWLClassExpression) -> Iterable[OWLClass]:
+        assert isinstance(concept, OWLClass)
+        yield from self.reasoner.super_classes(concept, direct=True)
+
+    def get_all_direct_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
+        assert isinstance(concept, OWLClass)
+        yield from self.reasoner.sub_classes(concept, direct=True)
+
+    def get_all_sub_concepts(self, concept: OWLClassExpression) -> Iterable[OWLClassExpression]:
+        assert isinstance(concept, OWLClass)
+        yield from self.reasoner.sub_classes(concept, direct=False)
+
+    def get_concepts(self) -> Iterable[OWLClass]:
+        yield from self.ontology.classes_in_signature()
+
+    @property
+    def concepts(self) -> Iterable[OWLClass]:
+        yield from self.ontology.classes_in_signature()
+
+    def contains_class(self, concept: OWLClassExpression) -> bool:
+        assert isinstance(concept, OWLClass)
+        return concept in self.ontology.classes_in_signature()
+
+    def most_general_object_properties(
+            self, *, domain: OWLClassExpression, inverse: bool = False) -> Iterable[OWLObjectProperty]:
+        assert isinstance(domain, OWLClassExpression)
+        func: Callable
+        func = (
+            self.get_object_property_ranges
+            if inverse
+            else self.get_object_property_domains
+        )
+
+        inds_domain = self.individuals_set(domain)
+        for prop in self.ontology.object_properties_in_signature():
+            if domain.is_owl_thing() or inds_domain <= self.individuals_set(func(prop)):
+                yield prop
+
+    @property
+    def object_properties(self) -> Iterable[OWLObjectProperty]:
+        yield from self.ontology.object_properties_in_signature()
+
+    def get_object_properties(self) -> Iterable[OWLObjectProperty]:
+        yield from self.ontology.object_properties_in_signature()
+
+    @property
+    def data_properties(self) -> Iterable[OWLDataProperty]:
+        yield from self.ontology.data_properties_in_signature()
+
+    def get_data_properties(
+            self, ranges: Set[OWLDatatype] = None
+    ) -> Iterable[OWLDataProperty]:
+
+        if ranges is not None:
+            for dp in self.ontology.data_properties_in_signature():
+                if self.get_data_property_ranges(dp) & ranges:
+                    yield dp
+        else:
+            yield from self.ontology.data_properties_in_signature()
+            
+            
     def __abox_expression(self, individual: OWLNamedIndividual) -> Generator[
         Union[
             OWLClass,
@@ -1126,31 +1116,25 @@ class TripleStore:
 
     def are_owl_concept_disjoint(self, c: OWLClass, cc: OWLClass) -> bool:
         assert isinstance(c, OWLClass) and isinstance(cc, OWLClass)
-        return self.reasoner.are_owl_concept_disjoint(c, cc)
+        return self.g.are_owl_concept_disjoint(c, cc)
 
-    def get_object_properties(self):
-        yield from self.reasoner.object_properties_in_signature()
+    def get_concepts(self) -> Generator[OWLClass, None, None]:
+        yield from self.ontology.classes_in_signature()
 
-    def get_data_properties(self):
-        yield from self.reasoner.data_properties_in_signature()
+    def get_classes_in_signature(self) -> Generator[OWLClass, None, None]:
+        yield from self.ontology.classes_in_signature()
 
-    def get_concepts(self) -> OWLClass:
-        yield from self.reasoner.classes_in_signature()
-
-    def get_classes_in_signature(self) -> OWLClass:
-        yield from self.reasoner.classes_in_signature()
-
-    def get_most_general_classes(self):
-        yield from self.reasoner.most_general_classes()
+    def get_most_general_classes(self) -> Generator[OWLClass, None, None]:
+        yield from self.g.most_general_classes()
 
     def get_boolean_data_properties(self):
-        yield from self.reasoner.boolean_data_properties()
+        yield from self.g.boolean_data_properties()
 
     def get_double_data_properties(self):
-        yield from self.reasoner.double_data_properties()
+        yield from self.g.double_data_properties()
 
     def get_range_of_double_data_properties(self, prop: OWLDataProperty):
-        yield from self.reasoner.range_of_double_data_properties(prop)
+        yield from self.g.range_of_double_data_properties(prop)
 
     def individuals(
             self,
@@ -1166,29 +1150,29 @@ class TripleStore:
         """
 
         if concept is None or concept.is_owl_thing():
-            yield from self.reasoner.individuals_in_signature()
+            yield from self.ontology.individuals_in_signature()
         else:
-            yield from self.reasoner.instances(concept, named_individuals=named_individuals)
+            yield from self.g.instances(concept, named_individuals=named_individuals)
 
     def get_types(self, ind: OWLNamedIndividual, direct: True) -> Generator[OWLClass, None, None]:
         if not direct:
             raise NotImplementedError("Inferring indirect types not available")
-        return self.reasoner.get_type_individuals(ind.str)
+        return self.g.get_type_individuals(ind.str)
 
     def get_all_sub_concepts(self, concept: OWLClass, direct=True):
-        yield from self.reasoner.subconcepts(concept, direct)
+        yield from self.g.subconcepts(concept, direct)
 
     def classes_in_signature(self):
-        yield from self.reasoner.classes_in_signature()
+        yield from self.ontology.classes_in_signature()
 
     def get_direct_parents(self, c: OWLClass):
-        yield from self.reasoner.get_direct_parents(c)
+        yield from self.g.get_direct_parents(c)
 
     def most_general_named_concepts(self):
-        yield from self.reasoner.most_general_named_concepts()
+        yield from self.g.most_general_named_concepts()
 
     def least_general_named_concepts(self):
-        yield from self.reasoner.least_general_named_concepts()
+        yield from self.g.least_general_named_concepts()
 
     def query(self, sparql: str):
         yield from self.g.query(sparql_query=sparql)

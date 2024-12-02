@@ -47,8 +47,8 @@ def start(args):
 
     with open(args.path_learning_problem) as json_file:
         examples = json.load(json_file)
-    p = examples['positive_examples']
-    n = examples['negative_examples']
+    p = examples['problems']['Uncle']['positive_examples']
+    n = examples['problems']['Uncle']['negative_examples']
 
     kf = StratifiedKFold(n_splits=args.folds, shuffle=True, random_state=args.random_seed)
     X = np.array(p + n)
@@ -92,7 +92,7 @@ if __name__ == '__main__':
                         default=1)
     parser.add_argument("--path_pretrained_dir", type=str, default=None)
 
-    parser.add_argument("--path_learning_problem", type=str, default='uncle_lp2.json',
+    parser.add_argument("--path_learning_problem", type=str, default='synthetic_problems.json',
                         help="Path to a .json file that contains 2 properties 'positive_examples' and "
                              "'negative_examples'. Each of this properties should contain the IRIs of the respective"
                              "instances. e.g. 'some/path/lp.json'")
