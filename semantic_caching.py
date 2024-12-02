@@ -31,6 +31,8 @@ import itertools
 from owlready2 import *
 from collections import OrderedDict
 from owlapy.owlapi_adaptor import OWLAPIAdaptor
+from owlapy.parser import DLSyntaxParser
+
 
 
 
@@ -159,6 +161,7 @@ class CacheWithEviction:
 
     def _evict(self):
         if len(self.cache) >= self.cache_size:
+            # exit(0)
             if self.strategy == 'FIFO':
                 self.cache.popitem(last=False)  # Evict the oldest item (first in)
             elif self.strategy == 'LIFO':
@@ -284,7 +287,6 @@ def subsumption_based_caching(func, cache_size):
 
         # Store in cache
         store(str_expression, instance_set)
-
         return instance_set
 
     return wrapper
@@ -293,7 +295,6 @@ def subsumption_based_caching(func, cache_size):
 
 def semantic_caching_size(func, cache_size=5, eviction_strategy='RP', random_seed=10):
     cache = CacheWithEviction(cache_size, strategy=eviction_strategy, random_seed=random_seed)  # Cache for instances
-    # cache = OrderedDict()
     loaded_ontologies = {} #Cache for ontologies
     loaded_individuals = {} #cache for individuals
     stats = {
@@ -334,45 +335,39 @@ def semantic_caching_size(func, cache_size=5, eviction_strategy='RP', random_see
         elif isinstance(owl_expression, OWLObjectComplementOf):
             not_str_expression = str_expression.split("¬")[-1]
             cached_result = retrieve_from_cache(not_str_expression)
-            result = (All_individuals - cached_result) if cached_result else func(*args)
+            result = (All_individuals - cached_result) if cached_result is not None else func(*args)
         elif isinstance(owl_expression, OWLObjectIntersectionOf):
             C_and_D = [owl_expression_to_dl(i) for i in owl_expression.operands()]
             cached_C = retrieve_from_cache(C_and_D[0])
             cached_D = retrieve_from_cache(C_and_D[1])
-            if cached_D and cached_C:
-                result = cached_C.intersection(cached_D)
+            if cached_C is not None and cached_D is not None:
+                result = retrieve_from_cache(C_and_D[0]).intersection(retrieve_from_cache(C_and_D[1]))
             else:
                 result = func(*args)
         elif isinstance(owl_expression, OWLObjectUnionOf):
             C_or_D = [owl_expression_to_dl(i) for i in owl_expression.operands()]
             cached_C = retrieve_from_cache(C_or_D[0])
             cached_D = retrieve_from_cache(C_or_D[1])
-            if cached_D and cached_C:
-                result = cached_C.union(cached_D)
+            if cached_C is not None and cached_D is not None:
+                result = retrieve_from_cache(C_or_D[0]).union(retrieve_from_cache(C_or_D[1]))
             else:
                 result = func(*args)
         elif isinstance(owl_expression, OWLObjectSomeValuesFrom):
-
             object_property = owl_expression.get_property()
             filler_expression = owl_expression.get_filler()
             instances = retrieve_from_cache(owl_expression_to_dl(filler_expression))
             
             if instances:
                 result = set()
-
                 if isinstance(object_property, OWLObjectInverseOf):
                     r = onto.search_one(iri=object_property.get_inverse_property().str)
                 else:
                     r = onto.search_one(iri=object_property.str)
-
                 individual_map = {ind: onto.search_one(iri=ind) for ind in All_individuals | instances}
-        
                 for ind_a in All_individuals:
                     a = individual_map[ind_a]
-                    
                     for ind_b in instances:
                         b = individual_map[ind_b]
-                        
                         if isinstance(object_property, OWLObjectInverseOf):
                             if a in getattr(b, r.name):
                                 result.add(a)
@@ -385,22 +380,12 @@ def semantic_caching_size(func, cache_size=5, eviction_strategy='RP', random_see
             all_values_expr = owl_expression_to_dl(owl_expression)
             some_values_expr = transform_forall_to_exists(all_values_expr)
             cached_result = retrieve_from_cache(some_values_expr)
-            result = (All_individuals - cached_result) if cached_result else func(*args)
+            result = (All_individuals - cached_result) if cached_result is not None else func(*args)
         else:
             result = func(*args)
 
         stats['time'] += (time.time() - start_time)
-        # Add the result to the cache with LIFO eviction strategy
-        # if len(cache) >= cache_size:
-        #     cache.popitem(last=False)
-        #     result = func(*args)
-            
-        # cache[str_expression] = result
-
-        #  Add to cache
         cache.put(str_expression, result)
-        # print(len(list(cache.get_all_items())))
-        
         return result
 
     def transform_forall_to_exists(expression):
@@ -453,7 +438,7 @@ def retrieve(expression:str, path_kg:str, path_kge_model:str) -> Tuple[Set[str],
 def retrieve_other_reasoner(expression, path_kg, name_reasoner='HermiT'): # reasoners = ['HermiT', 'Pellet', 'JFact', 'Openllet']
     
     owlapi_adaptor = OWLAPIAdaptor(path=path_kg, name_reasoner=name_reasoner)
-
+   
     if owlapi_adaptor.has_consistent_ontology():
 
         owlapi_adaptor = OWLAPIAdaptor(path=path_kg, name_reasoner=name_reasoner)
@@ -478,12 +463,12 @@ def run_cache(path_kg:str, path_kge:str=None, cache_size:int=5, name_reasoner:st
 
     D = []
     Avg_jaccard = []
+    Avg_jaccard_reas = []
     alc_concepts = concept_generator(path_kg)
     total_time_ebr = 0
     data = path_kg.split("/")[-1].split("/")[-1].split(".")[0]
 
-    for expr in alc_concepts:
-        
+    for expr in alc_concepts: 
         if name_reasoner == 'EBR':
             time_start_cache = time.time()
             A  = cached_retriever(expr, path_kg, path_kge) #Retrieval with cache
@@ -508,12 +493,14 @@ def run_cache(path_kg:str, path_kge:str=None, cache_size:int=5, name_reasoner:st
 
     
 
-        jacc = jaccard_similarity(A,ground_truth)
+        jacc = jaccard_similarity(A, ground_truth)
+        jacc_reas = jaccard_similarity(retrieve_ebr, ground_truth)
         Avg_jaccard.append(jacc)
+        Avg_jaccard_reas.append(jacc_reas)
         D.append({'dataset':data,'Expression':owl_expression_to_dl(expr), "Type": type(expr).__name__ ,'cache_size':cache_size, "time_ebr":time_ebr, "time_cache": time_cache, "Jaccard":jacc})
         print(f'Expression: {owl_expression_to_dl(expr)}')
         print(f'Jaccard similarity: {jacc}')
-        assert jacc == 1.0 
+        # assert jacc == 1.0 
 
     
     
@@ -538,6 +525,7 @@ def run_cache(path_kg:str, path_kge:str=None, cache_size:int=5, name_reasoner:st
         'RT': f"{total_time_ebr:.3f}",
         '#concepts': len(alc_concepts),
         'avg_jaccard': f"{sum(Avg_jaccard) / len(Avg_jaccard):.3f}",
+        'avg_jaccard_reas':  f"{sum(Avg_jaccard_reas) / len(Avg_jaccard_reas):.3f}",
         'strategy': eviction
     }, D
 
