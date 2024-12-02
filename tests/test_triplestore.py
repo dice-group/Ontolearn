@@ -40,8 +40,7 @@ class TestTriplestore:
             break
         """
     def test_remote_triplestore_dbpedia_tdl(self):
-        """
-        url = "http://dice-dbpedia.cs.upb.de:9080/sparql"
+        url = "https://dbpedia.data.dice-research.org/sparql"
         kb = TripleStore(url=url)
         # Check whether there is a connection
         num_object_properties = len([i for i in kb.get_object_properties()])
@@ -53,6 +52,7 @@ class TestTriplestore:
             typed_neg = set(map(OWLNamedIndividual, map(IRI.create, examples["negative_examples"])))
             lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
             h = model.fit(learning_problem=lp).best_hypotheses()
+            print(h)
             assert h
             assert DLSyntaxObjectRenderer().render(h)
             save_owl_class_expressions(h)
@@ -60,5 +60,8 @@ class TestTriplestore:
             assert sparql
         else:
             pass
-        """
+
+if __name__ == "__main__":
+    test_triplestore = TestTriplestore()
+    test_triplestore.test_remote_triplestore_dbpedia_tdl()
 

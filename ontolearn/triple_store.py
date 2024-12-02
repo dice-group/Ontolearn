@@ -291,7 +291,10 @@ class TripleStoreOntology(AbstractOWLOntology):
 
 
 class TripleStoreReasoner(AbstractOWLReasoner):
+<<<<<<< HEAD
     #__slots__ = "ontology"
+=======
+>>>>>>> origin/merge_triplestore_and_kb
 
     def __init__(self, ontology: TripleStoreOntology):
         self.ontology = ontology
@@ -904,8 +907,8 @@ class TripleStoreReasonerOntology:
         query = f"{rdf_prefix}\n{rdfs_prefix}\n{xsd_prefix}SELECT DISTINCT ?x WHERE {{?x <{prop.str}> ?z}}"
         for binding in self.query(query).json()["results"]["bindings"]:
             yield OWLNamedIndividual(binding["x"]["value"])
-            
-            
+
+
 class TripleStore(KnowledgeBase):
     url: str
     ontology: TripleStoreOntology
