@@ -3,7 +3,7 @@ from requests import Response
 from requests.exceptions import RequestException, JSONDecodeError
 from owlapy.converter import owl_expression_to_sparql
 from owlapy.parser import DLSyntaxParser
-from ontolearn.triple_store import TripleStoreKnowledgeBase
+from ontolearn.triple_store import TripleStore
 import random
 import numpy as np
 import json
@@ -19,7 +19,7 @@ namespace = "http://dbpedia.org/ontology/"
 
 dls_parser = DLSyntaxParser(namespace=namespace)
 
-kb = TripleStoreKnowledgeBase(url=sparql_endpoint)
+kb = TripleStore(url=sparql_endpoint)
 
 #print(kb.ontology)
 
