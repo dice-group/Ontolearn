@@ -147,7 +147,7 @@ def concept_generator(path_kg):
 
 
 def get_shuffled_concepts(path_kg, data_name):
-
+    '''Shuffle the generated concept and save it in a folder for reproducibility'''
      # Create the directory if it does not exist
     cache_dir = f"caching_results_{data_name}"
     os.makedirs(cache_dir, exist_ok=True)
@@ -185,8 +185,8 @@ class CacheWithEviction:
         self.initialized = False  # Track if cache is already initialized
 
     def _evict(self):
+        '''empty the cache when it is full using different strategy'''
         if len(self.cache) >= self.cache_size:
-            # exit(0)
             if self.strategy == 'FIFO':
                 self.cache.popitem(last=False)  # Evict the oldest item (first in)
             elif self.strategy == 'LIFO':
@@ -266,8 +266,11 @@ class CacheWithEviction:
     
 
 
-# Implement the caching mechanism here
+
 def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cache_type):
+
+    '''This function implements the semantic caching algorithm for ALC concepts as presented in the paper'''
+
     cache = CacheWithEviction(cache_size, strategy=eviction_strategy, random_seed=random_seed)  # Cache for instances
     loaded_ontologies = {} #Cache for ontologies
     loaded_individuals = {} #cache for individuals
@@ -334,17 +337,16 @@ def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cach
                 result = func(*args)
             return result
 
-        start_time = time.time()
+        start_time = time.time() #state the timing before the cache initialization 
+
         # Cold cache initialization
         start_time_initialization = time.time()
         if cache_type == 'cold' and not cache.initialized:
             cache.initialize_cache(onto, func, path_onto, args[-1], All_individuals)
         time_initialization = time.time()- start_time_initialization
 
-        # print(cache.get('¬Grandfather'))
-        # exit(0)
-        
-        # start_time = time.time()
+        # start_time = time.time() #state the timing after the cache initialization 
+
         # Handle different OWL expression types and use cache when needed
         if isinstance(owl_expression, OWLClass):
             cached_result = retrieve_from_cache(str_expression)
@@ -493,8 +495,7 @@ def run_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, evic
             retrieve_ebr = retrieve(expr, path_kg, path_kge) #Retrieval without cache
             time_ebr = time.time()-time_start
             total_time_ebr += time_ebr
-            # print(time_cache)
-            # print(time_ebr)
+
         else:
             time_start_cache = time.time()
             A  = cached_retriever(expr, path_kg, name_reasoner)  #Retrieval with cache
