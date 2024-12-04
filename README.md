@@ -45,7 +45,7 @@ wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && 
 wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
 ```
 
-## Learning OWL Class Expression
+## Learning OWL Class Expressions
 ```python
 from ontolearn.learners import TDL
 from ontolearn.triple_store import TripleStore
@@ -97,7 +97,7 @@ weighted avg       1.00      1.00      1.00         4
 """
 ```
 
-## Learning OWL Class Expression over DBpedia
+## Learning OWL Class Expressions over DBpedia
 ```python
 from ontolearn.learners import TDL
 from ontolearn.triple_store import TripleStore

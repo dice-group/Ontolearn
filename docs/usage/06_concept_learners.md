@@ -272,7 +272,7 @@ image that contain the tree representation of that class expression.
 
 ---------------------------------------------------------------------------------------
 
-## Use Triplestore Knowledge Base
+## Use Triplestore as Knowledge Base
 
 Instead of going through nodes using expensive computation resources why not just make use of the
 efficient approach of querying a triplestore using SPARQL queries. We have brought this 
@@ -282,13 +282,13 @@ Let's see what it takes to make use of it.
 First of all you need a server which should host the triplestore for your ontology. If you don't
 already have one, see [Loading and Launching a Triplestore](#loading-and-launching-a-triplestore) below.
 
-Now you can simply initialize a `TripleStoreKnowledgeBase` object that will server as an input for your desired 
+Now you can simply initialize a `TripleStore` object that will server as an input for your desired 
 concept learner as follows:
 
 ```python
-from ontolearn.triple_store import TripleStoreKnowledgeBase
+from ontolearn.triple_store import TripleStore
 
-kb = TripleStoreKnowledgeBase("http://your_domain/some_path/sparql")
+kb = TripleStore("http://your_domain/some_path/sparql")
 ```
 
 Notice that the triplestore endpoint is the only argument that you need to pass.

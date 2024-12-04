@@ -47,10 +47,13 @@ class DLLearnerBinder:
     """
 
     def __init__(self, binary_path=None, model=None, kb_path=None, storage_path=".", max_runtime=3):
-        assert binary_path, f"binary_path must be given {binary_path}"
-        assert os.path.exists(binary_path), f"binary path {binary_path} does not exist"
-        assert model, "model must be given"
-        assert kb_path, "kb_path must be given"
+        try:
+            assert binary_path
+            assert model
+            assert kb_path
+        except AssertionError:
+            print(f'binary_path:{binary_path}, model:{model}, kb_path{kb_path} cannot be None')
+            raise
         self.binary_path = binary_path
         self.kb_path = kb_path
         self.name = model
@@ -62,7 +65,7 @@ class DLLearnerBinder:
         self.best_predictions = None
         self.config_name_identifier = None
 
-    def write_dl_learner_config(self, pos: List[str], neg: List[str]) -> str:
+    def write_dl_learner_config(self, pos: List[str], neg: List[str], use_sparql=False) -> str:
         """Writes config file for dl-learner.
 
         Args:
@@ -95,14 +98,24 @@ class DLLearnerBinder:
         Text.append("// knowledge source definition")
 
         Text.append("cli.type = \"org.dllearner.cli.CLI\"")
-        Text.append("ks.type = \"OWL File\"")
         Text.append("\n")
 
         Text.append("// knowledge source definition")
-        Text.append(
+        if use_sparql:
+            Text.append(
+            "ks.url = \"" + self.kb_path + '\"')
+            Text.append("ks.type = \"SPARQL endpoint\"")
+            Text.append("reasoner.type = \"SPARQL Reasoner\"")
+            Text.append("op.type = \"tdtop\"")
+        else:
+            Text.append(
             "ks.fileName = \"" + self.kb_path + '\"')
-        Text.append("\n")
-        Text.append("reasoner.type = \"closed world reasoner\"")
+            Text.append("ks.type = \"OWL File\"")
+            Text.append("reasoner.type = \"closed world reasoner\"")
+            Text.append("op.type = \"rho\"")
+            Text.append("op.useNumericDatatypes = \"false\"")
+            Text.append("op.useCardinalityRestrictions = \"false\"")
+            
         Text.append("reasoner.sources = { ks }")
         Text.append("\n")
 
@@ -114,10 +127,6 @@ class DLLearnerBinder:
         Text.append("lp.negativeExamples =" + neg_string)
         Text.append("\n")
         Text.append("alg.writeSearchTree = \"true\"")
-
-        Text.append("op.type = \"rho\"")
-        Text.append("op.useNumericDatatypes = \"false\"")
-        Text.append("op.useCardinalityRestrictions = \"false\"")
 
         if self.name == 'celoe':
             Text.append("alg.type = \"celoe\"")
@@ -143,7 +152,7 @@ class DLLearnerBinder:
                 wb.write("\n".encode("utf-8"))
         return pathToConfig
 
-    def fit(self, lp: PosNegLPStandard, max_runtime: int = None):
+    def fit(self, lp: PosNegLPStandard, max_runtime: int = None, use_sparql=False):
         """Fit dl-learner model on a given positive and negative examples.
 
         Args:
@@ -159,7 +168,8 @@ class DLLearnerBinder:
             self.max_runtime = max_runtime
 
         pathToConfig = self.write_dl_learner_config(pos=[i.str for i in lp.pos],
-                                                    neg=[i.str for i in lp.neg])
+                                                    neg=[i.str for i in lp.neg],
+                                                   use_sparql=use_sparql)
         total_runtime = time.time()
         res = subprocess.run([self.binary_path, pathToConfig], capture_output=True, universal_newlines=True)
         total_runtime = round(time.time() - total_runtime, 3)
