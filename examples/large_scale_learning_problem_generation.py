@@ -21,7 +21,6 @@ dls_parser = DLSyntaxParser(namespace=namespace)
 
 kb = TripleStore(url=sparql_endpoint)
 
-#print(kb.ontology)
 
 selected_concepts_str = ['http://dbpedia.org/ontology/Journalist', 'http://dbpedia.org/ontology/HistoricPlace', 'http://dbpedia.org/ontology/Lipid', 'http://dbpedia.org/ontology/Profession', 'http://dbpedia.org/ontology/Model', 'http://dbpedia.org/ontology/President', 'http://dbpedia.org/ontology/Academic', 'http://dbpedia.org/ontology/Actor', 'http://dbpedia.org/ontology/Place', 'http://dbpedia.org/ontology/FootballMatch']
 

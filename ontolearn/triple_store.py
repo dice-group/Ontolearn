@@ -912,9 +912,9 @@ class TripleStore(KnowledgeBase):
 
     def __init__(self, url: str=None):
         assert url is not None, "url must be string"
-        self.g = TripleStoreReasonerOntology(url=url)
         self.url = url
-        self.ontology = TripleStoreOntology(url)
+        self.g = TripleStoreReasonerOntology(url=self.url)
+        self.ontology = TripleStoreOntology(self.url)
         self.reasoner = TripleStoreReasoner(self.ontology)
         super().__init__( ontology=self.ontology, reasoner=self.reasoner, load_class_hierarchy=False)
         
