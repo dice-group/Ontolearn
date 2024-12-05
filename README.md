@@ -99,16 +99,16 @@ weighted avg       1.00      1.00      1.00         4
 
 ## Learning OWL Class Expression over DBpedia
 ```python
-from ontolearn.learners import TDL
+from ontolearn.learners import TDL, Drill
 from ontolearn.triple_store import TripleStore
 from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy import owl_expression_to_sparql, owl_expression_to_dl
 from ontolearn.utils.static_funcs import save_owl_class_expressions
 # (1) Initialize Triplestore
-kb = TripleStore(url="http://dice-dbpedia.cs.upb.de:9080/sparql")
+kb = TripleStore(url="https://dbpedia.data.dice-research.org/sparql")
 # (3) Initialize a learner.
-model = TDL(knowledge_base=kb)
+model = Drill(knowledge_base=kb) #  or  TDL(knowledge_base=kb)
 # (4) Define a description logic concept learning problem.
 lp = PosNegLPStandard(pos={OWLNamedIndividual("http://dbpedia.org/resource/Angela_Merkel")},
                       neg={OWLNamedIndividual("http://dbpedia.org/resource/Barack_Obama")})
@@ -117,7 +117,7 @@ h = model.fit(learning_problem=lp).best_hypotheses()
 print(h)
 print(owl_expression_to_dl(h))
 print(owl_expression_to_sparql(expression=h))
-save_owl_class_expressions(expressions=h,path="owl_prediction")
+save_owl_class_expressions(expressions=h,path="#owl_prediction")
 ```
 
 Fore more please refer to  the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder.
