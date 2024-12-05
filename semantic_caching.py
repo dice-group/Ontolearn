@@ -232,7 +232,7 @@ class CacheWithEviction:
         if self.strategy in ['LRU', 'MRU']:
             self.access_times[key] = time.time()  # Record access timestamp
 
-    def initialize_cache(self, ontology, func, path_onto, third, All_individuals):
+    def initialize_cache(self, ontology, func, path_onto, third, All_individuals, handle_restriction_func=None):
         """
         Initialize the cache with precomputed results.
         :param ontology: The loaded ontology.
@@ -245,16 +245,38 @@ class CacheWithEviction:
         # Fetch object properties and classes from ontology
         roles = list(ontology.object_properties())
         classes = list(ontology.classes())
+
         for cls in classes:
             named_class = OWLClass(cls.iri)
             named_class_str = str(cls).split(".")[-1]
+
+            # Add named concept
             self.put(named_class_str, func(named_class, path_onto, third))
             negated_named_class_str = f"¬{named_class_str}"
+
+            # Add negated named concept
             self.put(negated_named_class_str, All_individuals-self.cache[named_class_str])
+
+            negated_class = OWLObjectComplementOf(named_class)
+            existential_negated = OWLObjectSomeValuesFrom(property=role_property, filler=negated_class)
+            existential_negated_str = owl_expression_to_dl(existential_negated)
+            
             for role in roles:
                 role_property = OWLObjectProperty(role.iri)
-                existential_a = OWLObjectSomeValuesFrom(property=role_property, filler=named_class)         
-                self.put(owl_expression_to_dl(existential_a), func(existential_a, path_onto, third))
+                existential_a = OWLObjectSomeValuesFrom(property=role_property, filler=named_class)   
+
+                # Add ∃ r.C
+                if handle_restriction_func is not None:     
+                    self.put(owl_expression_to_dl(existential_a), handle_restriction_func(existential_a))
+                else:
+                    self.put(owl_expression_to_dl(existential_a), func(existential_a, path_onto, third))
+
+                # Add ∃ r.(¬C)
+                if handle_restriction_func is not None:
+                    self.put(existential_negated_str, handle_restriction_func(existential_negated))
+                else:
+                    self.put(existential_negated_str, func(existential_negated, path_onto, third))
+        
         self.initialized = True 
 
     def get_all_items(self):
@@ -307,42 +329,43 @@ def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cach
                 stats['misses'] += 1
                 return None
             
-        def handle_owl_some_values_from():
+        def handle_owl_some_values_from(owl_expression):
             """
             Process the OWLObjectSomeValuesFrom expression locally.
             When called, return the retrieval of OWLObjectSomeValuesFrom
             based on the Algorithm described in the paper
             """
-            object_property = owl_expression.get_property()
-            filler_expression = owl_expression.get_filler()
-            instances = retrieve_from_cache(owl_expression_to_dl(filler_expression))
-            if instances:
-                result = set()
-                if isinstance(object_property, OWLObjectInverseOf):
-                    r = onto.search_one(iri=object_property.get_inverse_property().str)
+            if isinstance(owl_expression, OWLObjectSomeValuesFrom):
+                object_property = owl_expression.get_property()
+                filler_expression = owl_expression.get_filler()
+                instances = retrieve_from_cache(owl_expression_to_dl(filler_expression))
+                if instances is not None:
+                    result = set()
+                    if isinstance(object_property, OWLObjectInverseOf):
+                        r = onto.search_one(iri=object_property.get_inverse_property().str)
+                    else:
+                        r = onto.search_one(iri=object_property.str)
+                    individual_map = {ind: onto.search_one(iri=ind) for ind in All_individuals | instances}
+                    for ind_a in All_individuals:
+                        a = individual_map[ind_a]
+                        for ind_b in instances:
+                            b = individual_map[ind_b]
+                            if isinstance(object_property, OWLObjectInverseOf):
+                                if a in getattr(b, r.name):
+                                    result.add(a)
+                            else:
+                                if b in getattr(a, r.name):
+                                    result.add(ind_a) 
                 else:
-                    r = onto.search_one(iri=object_property.str)
-                individual_map = {ind: onto.search_one(iri=ind) for ind in All_individuals | instances}
-                for ind_a in All_individuals:
-                    a = individual_map[ind_a]
-                    for ind_b in instances:
-                        b = individual_map[ind_b]
-                        if isinstance(object_property, OWLObjectInverseOf):
-                            if a in getattr(b, r.name):
-                                result.add(a)
-                        else:
-                            if b in getattr(a, r.name):
-                                result.add(ind_a) 
-            else:
-                result = func(*args)
-            return result
+                    result = func(*args)
+                return result
 
         start_time = time.time() #state the timing before the cache initialization 
 
         # Cold cache initialization
         start_time_initialization = time.time()
         if cache_type == 'cold' and not cache.initialized:
-            cache.initialize_cache(onto, func, path_onto, args[-1], All_individuals)
+            cache.initialize_cache(onto, func, path_onto, args[-1], All_individuals, handle_restriction_func=handle_owl_some_values_from)
         time_initialization = time.time()- start_time_initialization
 
         # start_time = time.time() #state the timing after the cache initialization 
@@ -385,9 +408,9 @@ def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cach
                 if cached_result_cold is not None:
                     result = cached_result_cold
                 else:
-                    result = handle_owl_some_values_from()   
+                    result = handle_owl_some_values_from(owl_expression)   
             else:
-               result = handle_owl_some_values_from()
+               result = handle_owl_some_values_from(owl_expression)
 
         elif isinstance(owl_expression, OWLObjectAllValuesFrom):
             all_values_expr = owl_expression_to_dl(owl_expression)
@@ -545,4 +568,80 @@ def run_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, evic
         'avg_jaccard_reas':  f"{sum(Avg_jaccard_reas) / len(Avg_jaccard_reas):.3f}",
         'strategy': eviction
     }, D
+
+
+
+
+# def subsumption_based_caching(func, cache_size):
+#     cache = {}  # Dictionary to store cached results
+    
+#     def store(concept, instances):
+#         # Check if cache limit will be exceeded
+#         if len(instances) + len(cache) > cache_size:
+#             purge(len(instances))  # Adjusted to ensure cache size limit
+#         # Add concept and instances to cache
+#         cache[concept] = instances
+
+#     def purge(needed_space):
+#         # Remove oldest items until there's enough space
+#         while len(cache) > needed_space:
+#             cache.pop(next(iter(cache)))
+
+#     def wrapper(*args):
+#         path_onto = args[1]
+#         onto = get_ontology(path_onto).load()
+        
+#         # Synchronize the reasoner (e.g., using Pellet)
+#         # with onto:
+#         #     sync_reasoner(infer_property_values=True)
+
+#         all_individuals = {a for a in onto.individuals()}       
+#         str_expression = owl_expression_to_dl(args[0])
+#         owl_expression = args[0]
+
+#         # Check cache for existing results
+#         if str_expression in cache:
+#             return cache[str_expression]
+
+#         super_concepts = set()
+#         namespace, class_name = owl_expression.str.split('#') 
+#         class_expression = f"{namespace.split('/')[-1]}.{class_name}"
+
+#         all_classes = [i for i in list(onto.classes())]
+
+#         for j in all_classes:
+#             if str(j) == class_expression:
+#                 class_expression = j
+    
+#         for D in list(cache.keys()):
+#             # print(owl_expression)
+#             # exit(0)
+#             if D in class_expression.ancestors():  # Check if C ⊑ D
+#                 super_concepts.add(D)
+
+#         print(super_concepts)
+#         exit(0)
+#         # Compute instances based on subsumption
+#         if len(super_concepts) == 0:
+#             instances = all_individuals
+#         else:
+#             instances = set.intersection(
+#                 *[wrapper(D, path_onto) for D in super_concepts]
+#             )
+
+#         # Filter instances by checking if each is an instance of the concept
+#         instance_set = set()
+    
+#         for individual in instances:
+#              for type_entry in individual.is_a:
+#                 type_iri = str(type_entry.iri)
+#                 if owl_expression.str == type_iri:
+#                     instance_set.add(individual)
+#                     break
+
+#         # Store in cache
+#         store(str_expression, instance_set)
+#         return instance_set
+
+#     return wrapper
 
