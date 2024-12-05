@@ -165,13 +165,11 @@ def get_shuffled_concepts(path_kg, data_name):
         random.shuffle(alc_concepts)
         with open(save_file, "wb") as f:
             pickle.dump(alc_concepts, f)
-        print("Generated, shuffled, and saved concepts.")
-    
+        print("Generated, shuffled, and saved concepts.")   
     return alc_concepts
 
 
 def concept_retrieval(retriever_func, c) -> Set[str]:
-
     return {i.str for i in retriever_func.individuals(c)}
 
 
@@ -256,11 +254,8 @@ class CacheWithEviction:
 
             # Add negated named concept
             self.put(negated_named_class_str, All_individuals-self.cache[named_class_str])
-
             negated_class = OWLObjectComplementOf(named_class)
-            existential_negated = OWLObjectSomeValuesFrom(property=role_property, filler=negated_class)
-            existential_negated_str = owl_expression_to_dl(existential_negated)
-            
+    
             for role in roles:
                 role_property = OWLObjectProperty(role.iri)
                 existential_a = OWLObjectSomeValuesFrom(property=role_property, filler=named_class)   
@@ -272,6 +267,8 @@ class CacheWithEviction:
                     self.put(owl_expression_to_dl(existential_a), func(existential_a, path_onto, third))
 
                 # Add ∃ r.(¬C)
+                existential_negated = OWLObjectSomeValuesFrom(property=role_property, filler=negated_class)
+                existential_negated_str = owl_expression_to_dl(existential_negated)
                 if handle_restriction_func is not None:
                     self.put(existential_negated_str, handle_restriction_func(existential_negated))
                 else:
@@ -286,8 +283,6 @@ class CacheWithEviction:
         """Check if the cache is full."""
         return len(self.cache) >= self.max_size
     
-
-
 
 def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cache_type):
 
@@ -335,7 +330,7 @@ def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cach
             When called, return the retrieval of OWLObjectSomeValuesFrom
             based on the Algorithm described in the paper
             """
-            if isinstance(owl_expression, OWLObjectSomeValuesFrom):
+            if isinstance(owl_expression, OWLObjectSomeValuesFrom): 
                 object_property = owl_expression.get_property()
                 filler_expression = owl_expression.get_filler()
                 instances = retrieve_from_cache(owl_expression_to_dl(filler_expression))
@@ -531,8 +526,6 @@ def run_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, evic
 
         ground_truth = concept_retrieval(symbolic_kb, expr)
 
-    
-
         jacc = jaccard_similarity(A, ground_truth)
         jacc_reas = jaccard_similarity(retrieve_ebr, ground_truth)
         Avg_jaccard.append(jacc)
@@ -542,8 +535,6 @@ def run_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, evic
         print(f'Jaccard similarity: {jacc}')
         # assert jacc == 1.0 
 
-    
-    
     stats = cached_retriever.get_stats()
     
     print('-'*50)
