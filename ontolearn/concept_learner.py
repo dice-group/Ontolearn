@@ -70,9 +70,11 @@ from ontolearn.base_nces import BaseNCES
 from ontolearn.nces_architectures import LSTM, GRU, SetTransformer
 from ontolearn.clip_architectures import LengthLearner_LSTM, LengthLearner_GRU, LengthLearner_CNN, \
     LengthLearner_SetTransformer
+from .utils import read_csv
 from ontolearn.nces_trainer import NCESTrainer, before_pad
 from ontolearn.clip_trainer import CLIPTrainer
-from ontolearn.nces_utils import SimpleSolution
+from ontolearn.nces_utils import SimpleSolution, Data
+from ontolearn.nces_modules import ConEx
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.parser import DLSyntaxParser
 from owlapy.utils import OrderedOWLObject
@@ -611,7 +613,7 @@ class CLIP(CELOE):
                 return []
             if predictor_name == 'SetTransformer':
                 model = LengthLearner_SetTransformer(self.input_size, self.output_size, proj_dim=256, num_heads=4,
-                                                     num_seeds=1, num_inds=32)
+                                                     num_seeds=1, m=32)
             elif predictor_name == 'GRU':
                 model = LengthLearner_GRU(self.input_size, self.output_size, proj_dim=256, rnn_n_layers=2,
                                           drop_prob=0.2)
@@ -798,32 +800,24 @@ class NCES(BaseNCES):
     def __init__(self, knowledge_base_path,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
                  learner_names=["SetTransformer"], path_of_embeddings="", proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
-                 num_heads=4, num_seeds=1, num_inds=32, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0,
+                 num_heads=4, num_seeds=1, m=32, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0,
                  batch_size=256, num_workers=4, max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0):
-        super().__init__(knowledge_base_path, learner_names, path_of_embeddings, batch_size, learning_rate, decay_rate,
-                         clip_value, num_workers)
-        self.quality_func = quality_func
-        self.num_predictions = num_predictions
+        super().__init__(knowledge_base_path, quality_func, num_predictions, proj_dim, drop_prob,
+                 num_heads, num_seeds, m, ln, learning_rate, decay_rate, clip_value,
+                 batch_size, num_workers, max_length, load_pretrained, sorted_examples, verbose)
+        
+        self.learner_names = learner_names
         self.path_of_embeddings = path_of_embeddings
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.max_length = max_length
-        self.proj_dim = proj_dim
         self.rnn_n_layers = rnn_n_layers
-        self.drop_prob = drop_prob
-        self.num_heads = num_heads
-        self.num_seeds = num_seeds
-        self.num_inds = num_inds
-        self.ln = ln
-        self.load_pretrained = load_pretrained
-        self.sorted_examples = sorted_examples
-        self.verbose = verbose
+        self.instance_embeddings = read_csv(path_of_embeddings)
+        self.input_size = self.instance_embeddings.shape[1]
         self.model = self.get_synthesizer()
-        self.dl_parser = DLSyntaxParser(namespace=self.kb_namespace)
-        self.best_predictions = None
+        
 
     def get_synthesizer(self, path=None):
         m1 = SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length,
-                                   self.input_size, self.proj_dim, self.num_heads, self.num_seeds, self.num_inds,
+                                   self.input_size, self.proj_dim, self.num_heads, self.num_seeds, self.m,
                                    self.ln)
         m2 = GRU(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size,
                         self.proj_dim, self.rnn_n_layers, self.drop_prob)
@@ -866,7 +860,7 @@ class NCES(BaseNCES):
 
             elif len(glob.glob(path+"/*.pt")) == 0:
                  print("No pretrained model found! If directory is empty or does not exist, set the NCES `load_pretrained` parameter to `False` or make sure `save_model` was set to `True` in the .train() method.")
-                 raise FileNotFoundError
+                raise FileNotFoundError
             else:
                 for file_name in glob.glob(path+"/*.pt"):
                     for m in Untrained:
@@ -1098,3 +1092,377 @@ class NCES(BaseNCES):
         trainer = NCESTrainer(self, epochs=epochs, learning_rate=learning_rate, decay_rate=decay_rate,
                               clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
         trainer.train(train_dataloader, save_model, optimizer, record_runtime)
+        
+        
+        
+class NCES2(BaseNCES):
+    """Neural Class Expression Synthesis in ALCHIQ(D)."""
+
+    def __init__(self, knowledge_base_path,
+                 quality_func: Optional[AbstractScorer] = None, num_predictions=5,
+                 path_of_trained_models="", proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
+                 num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=256, 
+                 input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, 
+                 learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
+                 max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0):
+        super().__init__(knowledge_base_path, quality_func, num_predictions, proj_dim, drop_prob,
+                 num_heads, num_seeds, m, ln, learning_rate, decay_rate, clip_value,
+                 batch_size, num_workers, max_length, load_pretrained, sorted_examples, verbose)
+        
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.embedding_dim = embedding_dim
+        self.input_dropout = input_dropout
+        self.feature_map_dropout = feature_map_dropout
+        self.kernel_size = kernel_size
+        self.num_of_output_channels = num_of_output_channels
+        self._maybe_load_pretrained_config()
+        self.model = self.get_synthesizer()
+        
+        
+    def _maybe_load_pretrained_config(self):
+        if isinstance(self.m, int):
+            self.m = [self.m]
+        if self.load_pretrained and len(glob.glob(self.path_of_trained_models + "/*.pt")):
+            stop_outer_loop = False
+            try:
+                for file_name in glob.glob(self.path_of_trained_models + "/*.pt"):
+                    for m in self.m:
+                        if m in file_name:
+                            try:
+                                weights = torch.load(file_name, map_location=self.device, weights_only=True)
+                                num_ents, half_emb_dim = weights["emb_ent_real"].weight.data.shape
+                                num_rels, _ = weights["emb_rel_real"].weight.data.shape
+                                self.embedding_dim = 2*half_emb_dim
+                                self.num_entities = num_ents
+                                self.num_relations = num_rels
+                                stop_outer_loop = True
+                                break
+                            except:
+                                pass
+                    if stop_outer_loop:
+                        break
+                
+    
+    def get_synthesizer(self, path=None):
+        
+        Models = {str(m): {"emb_model": ConEx(self.embedding_dim, self.num_entities, self.num_relations, self.input_dropout,
+                                              self.feature_map_dropout, self.kernel_size, self.num_of_output_channels), 
+                           "model": SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length,
+                                   self.input_size, self.proj_dim, self.num_heads, self.num_seeds, m, self.ln)} for m in self.m}
+        if self.load_pretrained:
+            num_loaded = 0
+            if path is None:
+                try:
+                    if len(glob.glob(self.path_of_trained_models + "/*.pt")) == 0:
+                        raise FileNotFoundError(f"`path` is None and no models found in {self.path_of_trained_models}")
+                    else:
+                        for file_name in glob.glob(self.path_of_trained_models + "/*.pt"):
+                            for m in self.m:
+                                if m in file_name:
+                                    try:
+                                        weights = torch.load(file_name, map_location=self.device, weights_only=True)
+                                        model = Models[str(m)]["model"]
+                                        model.load_state_dict(weights)
+                                        Models[str(m)]["model"] = model.eval()
+                                        num_loaded += 1
+                                    except Exception:
+                                        weights = torch.load(file_name, map_location=self.device, weights_only=True)
+                                        emb_model = Models[str(m)]["emb_model"]
+                                        emb_model.load_state_dict(weights)
+                                        Models[str(m)]["emb_model"] = emb_model.eval()
+                except Exception as e:
+                    print(e)
+                    raise FileNotFoundError
+                
+                if num_loaded == len(self.m):
+                    print("\nLoaded NCES2 weights!\n")
+                    return Models
+                else:
+                    print("!!!Returning untrained models, could not load pretrained")
+                    return Models
+
+            elif len(glob.glob(path+"/*.pt")) == 0:
+                 print("No pretrained model found! If directory is empty or does not exist, set the NCES2 `load_pretrained` parameter to `False` or make sure `save_model` was set to `True` in the .train() method.")
+                raise FileNotFoundError
+            else:
+                num_loaded = 0
+                for file_name in glob.glob(path+"/*.pt"):
+                    for m, model, emb_model in zip(self.m, Untrained_Synt, Untrained_Emb):
+                        if m in file_name:
+                            try:
+                                weights = torch.load(file_name, map_location=self.device, weights_only=True)
+                                model = Models[str(m)]["model"]
+                                model.load_state_dict(weights)
+                                Models[str(m)]["model"] = model.eval()
+                                num_loaded += 1
+                            except Exception:
+                                weights = torch.load(file_name, map_location=self.device, weights_only=True)
+                                emb_model = Models[str(m)]["emb_model"]
+                                emb_model.load_state_dict(weights)
+                                Models[str(m)]["emb_model"] = emb_model.eval()
+                if num_loaded == len(self.m):
+                    print("\nLoaded NCES2 weights!\n")
+                    return Models
+                else:
+                    print("!!!Returning untrained models, could not load pretrained")
+                    return Models
+        else:
+            print("!!!Returning untrained models, could not load pretrained. Check the `load_pretrained parameter` or train the models using NCES2.train(data).")
+            return Models
+
+
+    def refresh(self, path=None):
+        if path is not None:
+            self.load_pretrained = True
+        self.model = self.get_synthesizer(path)
+
+    def sample_examples(self, pos, neg):  # pragma: no cover
+        assert type(pos[0]) == type(neg[0]), "The two iterables pos and neg must be of same type"
+        num_ex = self.num_examples
+        if min(len(pos), len(neg)) >= num_ex // 2:
+            if len(pos) > len(neg):
+                num_neg_ex = num_ex // 2
+                num_pos_ex = num_ex - num_neg_ex
+            else:
+                num_pos_ex = num_ex // 2
+                num_neg_ex = num_ex - num_pos_ex
+        elif len(pos) + len(neg) >= num_ex and len(pos) > len(neg):
+            num_neg_ex = len(neg)
+            num_pos_ex = num_ex - num_neg_ex
+        elif len(pos) + len(neg) >= num_ex and len(pos) < len(neg):
+            num_pos_ex = len(pos)
+            num_neg_ex = num_ex - num_pos_ex
+        else:
+            num_pos_ex = len(pos)
+            num_neg_ex = len(neg)
+        positive = np.random.choice(pos, size=min(num_pos_ex, len(pos)), replace=False)
+        negative = np.random.choice(neg, size=min(num_neg_ex, len(neg)), replace=False)
+        return positive, negative
+
+    def get_prediction(self, models, x1, x2):
+        for i, model in enumerate(models):
+            model.eval()
+            model.to(self.device)
+            x1 = x1.to(self.device)
+            x2 = x2.to(self.device)
+            if i == 0:
+                _, scores = model(x1, x2)
+            else:
+                _, sc = model(x1, x2)
+                scores = scores + sc
+        scores = scores / len(models)
+        prediction = model.inv_vocab[scores.argmax(1).cpu()]
+        return prediction
+
+    def fit_one(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]]):
+        #print("\n\n#### In fit one\n\n")
+        if isinstance(pos[0], OWLNamedIndividual):
+            pos_str = [ind.str.split("/")[-1] for ind in pos]
+            neg_str = [ind.str.split("/")[-1] for ind in neg]
+        elif isinstance(pos[0], str):
+            pos_str = pos
+            neg_str = neg
+        else:
+            raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
+        Pos = np.random.choice(pos_str, size=(self.num_predictions, len(pos_str)), replace=True)
+        Neg = np.random.choice(neg_str, size=(self.num_predictions, len(neg_str)), replace=True)
+
+        assert self.load_pretrained and self.learner_names, \
+            "No pretrained model found. Please first train NCES, see the <<train>> method below"
+
+        dataset = NCESDataLoaderInference([("", Pos_str, Neg_str) for (Pos_str, Neg_str) in zip(Pos, Neg)],
+                                          self.instance_embeddings,
+                                          self.vocab, self.inv_vocab, False, self.sorted_examples)
+
+        dataloader = DataLoader(dataset, batch_size=self.batch_size,
+                                num_workers=self.num_workers,
+                                collate_fn=self.collate_batch_inference, shuffle=False)
+        x_pos, x_neg = next(iter(dataloader))
+        simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
+        predictions_raw = self.get_prediction(self.model, x_pos, x_neg)
+
+        predictions = []
+        for prediction in predictions_raw:
+            try:
+                prediction_str = "".join(before_pad(prediction.squeeze()))
+                concept = self.dl_parser.parse(prediction_str)
+            except:
+                prediction_str = simpleSolution.predict("".join(before_pad(prediction.squeeze())))
+                concept = self.dl_parser.parse(prediction_str)
+                if self.verbose>0:
+                    print("Prediction: ", prediction_str)
+            predictions.append(concept)
+        return predictions
+
+    def fit(self, learning_problem: PosNegLPStandard, **kwargs):
+        pos = learning_problem.pos
+        neg = learning_problem.neg
+        if isinstance(pos, set) or isinstance(pos, frozenset):
+            pos_list = list(pos)
+            neg_list = list(neg)
+            if self.sorted_examples:
+                pos_list = sorted(pos_list)
+                neg_list = sorted(neg_list)
+        else:
+            raise ValueError(f"Expected pos and neg to be sets, got {type(pos)} and {type(neg)}")
+        predictions = self.fit_one(pos_list, neg_list)
+
+        predictions_as_nodes = []
+        for concept in predictions:
+            try:
+                concept_individuals_count = self.kb.individuals_count(concept)
+            except AttributeError:
+                concept = self.dl_parser.parse('⊤')
+                concept_individuals_count = self.kb.individuals_count(concept)
+            concept_length = init_length_metric().length(concept)
+            concept_instances = set(self.kb.individuals(concept)) if isinstance(pos_list[0],
+                                                                                OWLNamedIndividual) else set(
+                [ind.str.split("/")[-1] for ind in self.kb.individuals(concept)])
+            tp, fn, fp, tn = compute_tp_fn_fp_tn(concept_instances, pos, neg)
+            quality = self.quality_func.score2(tp, fn, fp, tn)[1]
+            node = NCESNode(concept, length=concept_length, individuals_count=concept_individuals_count,
+                            quality=quality)
+            predictions_as_nodes.append(node)
+        predictions_as_nodes = sorted(predictions_as_nodes, key=lambda x: -x.quality)
+        self.best_predictions = predictions_as_nodes
+        return self
+
+    def best_hypotheses(self, n=1) -> Union[OWLClassExpression, Iterable[OWLClassExpression]]:  # pragma: no cover
+        if self.best_predictions is None:
+            print("NCES needs to be fitted to a problem first")
+            return None
+        elif len(self.best_predictions) == 1 or n == 1:
+            return self.best_predictions[0].concept
+        else:
+            return [best.concept for best in self.best_predictions[:n]]
+
+    def convert_to_list_str_from_iterable(self, data):  # pragma: no cover
+        target_concept_str, examples = data[0], data[1:]
+        pos = list(examples[0])
+        neg = list(examples[1])
+        if isinstance(pos[0], OWLNamedIndividual):
+            pos_str = [ind.str.split("/")[-1] for ind in pos]
+            neg_str = [ind.str.split("/")[-1] for ind in neg]
+        elif isinstance(pos[0], str):
+            pos_str, neg_str = list(pos), list(neg)
+        else:
+            raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
+        if self.sorted_examples:
+            pos_str, neg_str = sorted(pos_str), sorted(neg_str)
+        return (target_concept_str, pos_str, neg_str)
+
+    def fit_from_iterable(self, dataset: Union[List[Tuple[str, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]],
+    List[Tuple[str, Set[str], Set[str]]]], shuffle_examples=False,
+                          verbose=False, **kwargs) -> List:  # pragma: no cover
+        """
+        - Dataset is a list of tuples where the first items are strings corresponding to target concepts.
+        
+        - This function returns predictions as owl class expressions, not nodes as in fit
+        """
+        assert self.load_pretrained and self.learner_names, \
+            "No pretrained model found. Please first train NCES, refer to the <<train>> method"
+        dataset = [self.convert_to_list_str_from_iterable(datapoint) for datapoint in dataset]
+        dataset = NCESDataLoaderInference(dataset, self.instance_embeddings, self.vocab, self.inv_vocab,
+                                          shuffle_examples)
+        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers,
+                                collate_fn=self.collate_batch_inference, shuffle=False)
+        simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
+        predictions_as_owl_class_expressions = []
+        predictions_str = []
+        for x_pos, x_neg in dataloader:
+            predictions = self.get_prediction(self.model, x_pos, x_neg)
+            for prediction in predictions:
+                try:
+                    prediction_str = "".join(before_pad(prediction))
+                    ce = self.dl_parser.parse(prediction_str)
+                    predictions_str.append(prediction_str)
+                except:
+                    prediction_str = simpleSolution.predict("".join(before_pad(prediction)))
+                    predictions_str.append(prediction_str)
+                    ce = self.dl_parser.parse(prediction_str)
+                predictions_as_owl_class_expressions.append(ce)
+        if verbose:
+            print("Predictions: ", predictions_str)
+        return predictions_as_owl_class_expressions
+
+    @staticmethod
+    def generate_training_data(kb_path, num_lps=1000, storage_dir="./NCES_Training_Data"):
+        lp_gen = LPGen(kb_path=kb_path, max_num_lps=num_lps, storage_dir=storage_dir)
+        lp_gen.generate()
+        print("Loading generated data...")
+        with open(f"{storage_dir}/LPs.json") as file:
+            lps = list(json.load(file).items())
+            print("Number of learning problems:", len(lps))
+        return lps
+
+
+
+    def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, num_lps=1000, learning_rate=1e-4, decay_rate=0.0,
+              clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True,
+              example_sizes=None, shuffle_examples=False):
+        if os.cpu_count() <= num_workers:
+            num_workers = max(0,os.cpu_count()-1)
+        if storage_path is None:
+            currentDateAndTime = datetime.now()
+            storage_path = f'NCES-Experiment-{currentDateAndTime.strftime("%H-%M-%S")}'
+        if not os.path.exists(storage_path):
+            os.mkdir(storage_path)
+        self.trained_models_path = storage_path+"/trained_models"
+        if batch_size is None:
+            batch_size = self.batch_size
+        if data is None:
+            data = self.generate_training_data(self.knowledge_base_path, num_lps=num_lps, storage_dir=storage_path)
+        train_dataset = NCESDataLoader(data, self.instance_embeddings, self.vocab, self.inv_vocab,
+                                       shuffle_examples=shuffle_examples, max_length=self.max_length,
+                                       example_sizes=example_sizes)
+        train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers,
+                                      collate_fn=self.collate_batch, shuffle=True)
+        
+        trainer = NCESTrainer(self, epochs=epochs, learning_rate=learning_rate, decay_rate=decay_rate,
+                              clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
+        trainer.train(train_dataloader, save_model, optimizer, record_runtime)
+
+
+        
+class ROCES(NCES2):
+    """Robust Class Expression Synthesis in Description Logics via Iterative Sampling."""
+
+    def __init__(self, knowledge_base_path,
+                 quality_func: Optional[AbstractScorer] = None, num_predictions=5,
+                 path_of_trained_models="", proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
+                 num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=256, 
+                 input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, 
+                 learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
+                 max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0):
+        super().__init__(knowledge_base_path,
+                 quality_func, num_predictions, path_of_trained_models, proj_dim, rnn_n_layers, drop_prob,
+                 num_heads, num_seeds, m, ln, embedding_dim, input_dropout, feature_map_dropout, 
+                 kernel_size, num_of_output_channels, learning_rate, decay_rate, clip_value, batch_size,
+                 num_workers, max_length, load_pretrained=True, sorted_examples, verbose)
+
+
+    def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, num_lps=1000, learning_rate=1e-4, decay_rate=0.0,
+              clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True,
+              example_sizes=None, shuffle_examples=False):
+        if os.cpu_count() <= num_workers:
+            num_workers = max(0,os.cpu_count()-1)
+        if storage_path is None:
+            currentDateAndTime = datetime.now()
+            storage_path = f'NCES-Experiment-{currentDateAndTime.strftime("%H-%M-%S")}'
+        if not os.path.exists(storage_path):
+            os.mkdir(storage_path)
+        self.trained_models_path = storage_path+"/trained_models"
+        if batch_size is None:
+            batch_size = self.batch_size
+        if data is None:
+            data = self.generate_training_data(self.knowledge_base_path, num_lps=num_lps, storage_dir=storage_path)
+        train_dataset = NCESDataLoader(data, self.instance_embeddings, self.vocab, self.inv_vocab,
+                                       shuffle_examples=shuffle_examples, max_length=self.max_length,
+                                       example_sizes=example_sizes)
+        train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers,
+                                      collate_fn=self.collate_batch, shuffle=True)
+        
+        trainer = NCESTrainer(self, epochs=epochs, learning_rate=learning_rate, decay_rate=decay_rate,
+                              clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
+        trainer.train(train_dataloader, save_model, optimizer, record_runtime)
+

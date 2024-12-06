@@ -39,7 +39,7 @@ def start(args):
 
         nces = NCES(knowledge_base_path=knowledge_base_path, learner_names=args.models,
                     path_of_embeddings=path_of_embeddings, max_length=48, proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
-                    num_heads=4, num_seeds=1, num_inds=32, verbose=True, load_pretrained=args.load_pretrained)
+                    num_heads=4, num_seeds=1, m=32, verbose=True, load_pretrained=args.load_pretrained)
 
         nces.train(training_data, epochs=args.epochs, learning_rate=args.learning_rate, num_workers=2, save_model=True)
 
