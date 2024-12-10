@@ -80,13 +80,10 @@ def execute(args):
 
     if os.path.exists(args.path_report):
         os.remove(args.path_report)
+        
     file_exists = False
     
     for item in (tqdm_bar := tqdm(lps, position=0, leave=True)):
-        
-        retrieval_y: Set[str]
-        runtime_y: float
-            
         lp = PosNegLPStandard(pos=set(list(map(OWLNamedIndividual,map(IRI.create, item["examples"]["positive examples"])))),
                       neg=set(list(map(OWLNamedIndividual,map(IRI.create, item["examples"]["negative examples"])))))
         # (5) Learn description logic concepts best fitting
@@ -142,8 +139,11 @@ def get_default_arguments():
     parser.add_argument("--min_f1_score", type=float, default=0.0, help="Minimum f1 score of computed solutions")
 
     # H is obtained if the forward chain is applied on KG.
-    parser.add_argument("--path_report", type=str, default=f"CEL_on_DBpedia.csv")
+    parser.add_argument("--path_report", type=str, default=None)
     return parser.parse_args()
 
 if __name__ == "__main__":
-    execute(get_default_arguments())
+    args = get_default_arguments()
+    if not args.path_report :
+        args.path_report = f"CEL_on_DBpedia_{args.model.upper()}.csv"
+    execute(args)
