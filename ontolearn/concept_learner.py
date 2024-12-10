@@ -1271,15 +1271,16 @@ class NCES2(BaseNCES):
             neg_str = neg
         else:
             raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
-        Pos = np.random.choice(pos_str, size=(self.num_predictions, len(pos_str)), replace=True)
-        Neg = np.random.choice(neg_str, size=(self.num_predictions, len(neg_str)), replace=True)
-
         assert self.load_pretrained and self.m, \
             "No pretrained model found. Please first train NCES2"
-
-        dataset = NCES2DatasetInference([("", Pos_str, Neg_str) for (Pos_str, Neg_str) in zip(Pos, Neg)],
-                                          self.instance_embeddings,
-                                          self.vocab, self.inv_vocab, False, self.sorted_examples)
+        
+        #data, triples_data, k, vocab, inv_vocab, num_examples, sampling_strategy='p', num_pred_per_lp=1, random_sample=False
+        dataset = ROCESDatasetInference([("", pos_str, neg_str)],
+                                          self.triples_data,
+                                          self.vocab, self.inv_vocab,
+                                          self.num_examples,
+                                          sampling_strategy="nces2",
+                                          num_pred_per_lp=self.num_predictions)
 
         dataloader = DataLoader(dataset, batch_size=self.batch_size,
                                 num_workers=self.num_workers,
