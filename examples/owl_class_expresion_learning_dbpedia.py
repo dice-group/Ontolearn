@@ -8,11 +8,14 @@ import itertools
 import ast
 import json
 import time
+import requests
+from requests import Response
+from requests.exceptions import RequestException, JSONDecodeError
 from ontolearn.learners import Drill, TDL
 from ontolearn.triple_store import TripleStore
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 from ontolearn.learning_problem import PosNegLPStandard
-from ontolearn.utils import f1_set_similarity
+from ontolearn.utils import f1_set_similarity, compute_f1_score
 from typing import Tuple, Set
 import pandas as pd
 from owlapy.parser import DLSyntaxParser
@@ -80,6 +83,7 @@ def execute(args):
     file_exists = False
     
     for item in (tqdm_bar := tqdm(lps, position=0, leave=True)):
+        
         retrieval_y: Set[str]
         runtime_y: float
             
@@ -93,9 +97,8 @@ def execute(args):
         concept_to_sparql_query = owl_expression_to_sparql(h) + "\nLIMIT 100" # Due to the size of DBpedia learning problems contain at most 100 pos and 100 neg examples
         actual_instances = set(item["examples"]["positive examples"])
         retrieved_instances = set(query_func(concept_to_sparql_query))
-        f1 = f1_set_similarity(actual_instances, retrieved_instances)
-        print(f"\n{h}")
-        print("Quality (F1): ", f1)
+        f1 = compute_f1_score(retrieved_instances, set(item["examples"]["positive examples"]), set(item["examples"]["negative examples"]))
+        print(f"Computed solution: {h}")
         
         df_row = pd.DataFrame(
             [{
@@ -128,7 +131,7 @@ def execute(args):
     # () Compute mean of numerical columns per group
     mean_df = df_g[numerical_df.columns].mean()
     print(mean_df)
-    return jaccard, f1
+    return f1
 
 def get_default_arguments():
     parser = ArgumentParser()
@@ -139,7 +142,7 @@ def get_default_arguments():
     parser.add_argument("--min_f1_score", type=float, default=0.0, help="Minimum f1 score of computed solutions")
 
     # H is obtained if the forward chain is applied on KG.
-    parser.add_argument("--path_report", type=str, default=f"CEL_on_DBpedia_with_{args.model}.csv")
+    parser.add_argument("--path_report", type=str, default=f"CEL_on_DBpedia.csv")
     return parser.parse_args()
 
 if __name__ == "__main__":
