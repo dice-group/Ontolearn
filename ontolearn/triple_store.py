@@ -1195,16 +1195,4 @@ class TripleStore:
         yield from self.g.query(sparql_query=sparql)
 
     def query_results(self, sparql: str):
-        trials = 0
-        response = None
-        while True:
-            try:
-                response = self.g.query(sparql_query=sparql)
-                results = response.json()["results"]["bindings"]
-                break
-            except Exception:
-                trials += 1
-                if trials > 10:
-                    print("\n\nSPARQL endpoint not working properly. Sent a query 10 times but no results!!!\n")
-                    break
-        return response
+        return self.g.query(sparql_query=sparql)

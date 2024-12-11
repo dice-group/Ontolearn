@@ -45,7 +45,7 @@ wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && 
 wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
 ```
 
-## Learning OWL Class Expression
+## Learning OWL Class Expressions
 ```python
 from ontolearn.learners import TDL
 from ontolearn.triple_store import TripleStore
@@ -97,7 +97,8 @@ weighted avg       1.00      1.00      1.00         4
 """
 ```
 
-## Learning OWL Class Expression over DBpedia
+## Learning OWL Class Expressions over DBpedia
+1. Single learning problem
 ```python
 from ontolearn.learners import TDL, Drill
 from ontolearn.triple_store import TripleStore
@@ -119,6 +120,61 @@ print(owl_expression_to_dl(h))
 print(owl_expression_to_sparql(expression=h))
 save_owl_class_expressions(expressions=h,path="#owl_prediction")
 ```
+
+2. On 106 learning problems from https://files.dice-research.org/projects/Ontolearn/LPs.zip
+
+- Commands:
+```bash
+python examples/owl_class_expression_learning_dbpedia.py --model TDL
+```
+Or 
+```bash
+python examples/owl_class_expression_learning_dbpedia.py --model Drill
+```
+- Results:
+
+```python
+"""
+                        Cardinality
+Type                      
+OWLObjectAllValuesFrom      7
+OWLObjectIntersectionOf    14
+OWLObjectUnionOf           85
+
+
+Type                                         
+OWLObjectAllValuesFrom   1.000000  206.287996
+OWLObjectIntersectionOf  0.717172   91.663047
+OWLObjectUnionOf         0.966652  129.699940
+                         F1        Runtime   
+"""
+
+# Or
+
+"""
+                        Cardinality
+Type                      
+OWLObjectAllValuesFrom      7
+OWLObjectIntersectionOf    14
+OWLObjectUnionOf           85
+
+
+                         F1        Runtime   
+Type                                         
+OWLObjectAllValuesFrom   1.000000  206.287996
+OWLObjectIntersectionOf  0.717172   91.663047
+OWLObjectUnionOf         0.966652  129.699940
+
+
+Type                                         
+OWLObjectAllValuesFrom   0.437500  240.330940
+OWLObjectIntersectionOf  0.212930  202.557878
+OWLObjectUnionOf         0.546334  187.144105
+
+"""
+```
+
+
 
 Fore more please refer to  the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder.
 
