@@ -184,7 +184,7 @@ class CacheWithEviction:
 
     def _evict(self):
         '''empty the cache when it is full using different strategy'''
-        if len(self.cache) >= self.cache_size:
+        if len(self.cache) > self.cache_size:
             if self.strategy == 'FIFO':
                 self.cache.popitem(last=False)  # Evict the oldest item (first in)
             elif self.strategy == 'LIFO':
@@ -412,6 +412,7 @@ def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cach
             some_values_expr = transform_forall_to_exists(all_values_expr)
             cached_result = retrieve_from_cache(some_values_expr)
             result = (All_individuals - cached_result) if cached_result is not None else func(*args)
+    
         else:
             result = func(*args)
 
@@ -419,8 +420,6 @@ def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cach
         cache.put(str_expression, result)
         return result
     
-    
-
     def transform_forall_to_exists(expression):
         pattern_negated = r'∀ (\w+)\.\(¬(\w+)\)'
         replacement_negated = r'∃ \1.\2'
@@ -562,77 +561,4 @@ def run_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, evic
 
 
 
-
-# def subsumption_based_caching(func, cache_size):
-#     cache = {}  # Dictionary to store cached results
-    
-#     def store(concept, instances):
-#         # Check if cache limit will be exceeded
-#         if len(instances) + len(cache) > cache_size:
-#             purge(len(instances))  # Adjusted to ensure cache size limit
-#         # Add concept and instances to cache
-#         cache[concept] = instances
-
-#     def purge(needed_space):
-#         # Remove oldest items until there's enough space
-#         while len(cache) > needed_space:
-#             cache.pop(next(iter(cache)))
-
-#     def wrapper(*args):
-#         path_onto = args[1]
-#         onto = get_ontology(path_onto).load()
-        
-#         # Synchronize the reasoner (e.g., using Pellet)
-#         # with onto:
-#         #     sync_reasoner(infer_property_values=True)
-
-#         all_individuals = {a for a in onto.individuals()}       
-#         str_expression = owl_expression_to_dl(args[0])
-#         owl_expression = args[0]
-
-#         # Check cache for existing results
-#         if str_expression in cache:
-#             return cache[str_expression]
-
-#         super_concepts = set()
-#         namespace, class_name = owl_expression.str.split('#') 
-#         class_expression = f"{namespace.split('/')[-1]}.{class_name}"
-
-#         all_classes = [i for i in list(onto.classes())]
-
-#         for j in all_classes:
-#             if str(j) == class_expression:
-#                 class_expression = j
-    
-#         for D in list(cache.keys()):
-#             # print(owl_expression)
-#             # exit(0)
-#             if D in class_expression.ancestors():  # Check if C ⊑ D
-#                 super_concepts.add(D)
-
-#         print(super_concepts)
-#         exit(0)
-#         # Compute instances based on subsumption
-#         if len(super_concepts) == 0:
-#             instances = all_individuals
-#         else:
-#             instances = set.intersection(
-#                 *[wrapper(D, path_onto) for D in super_concepts]
-#             )
-
-#         # Filter instances by checking if each is an instance of the concept
-#         instance_set = set()
-    
-#         for individual in instances:
-#              for type_entry in individual.is_a:
-#                 type_iri = str(type_entry.iri)
-#                 if owl_expression.str == type_iri:
-#                     instance_set.add(individual)
-#                     break
-
-#         # Store in cache
-#         store(str_expression, instance_set)
-#         return instance_set
-
-#     return wrapper
 
