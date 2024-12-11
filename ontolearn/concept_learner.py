@@ -50,7 +50,7 @@ from ontolearn.abstracts import AbstractFitness, AbstractScorer, BaseRefinement,
     AbstractHeuristic, EncodedPosNegLPStandardKind
 from ontolearn.base_concept_learner import BaseConceptLearner, RefinementBasedConceptLearner
 from owlapy.utils import EvaluatedDescriptionSet, ConceptOperandSorter, OperandSetTransform
-from ontolearn.data_struct import NCESDataset, NCESDatasetInference, CLIPDataset, CLIPDatasetInference
+from ontolearn.data_struct import TriplesData, NCESDataset, NCESDatasetInference, CLIPDataset, CLIPDatasetInference, ROCESDataset, ROCESDatasetInference
 from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
 from ontolearn.ea_initialization import AbstractEAInitialization, EARandomInitialization, EARandomWalkInitialization
 from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVocabulary, Tree, escape, ind_to_string, \
@@ -799,17 +799,20 @@ class NCES(BaseNCES):
 
     def __init__(self, knowledge_base_path,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
-                 learner_names=["SetTransformer"], path_of_embeddings="", proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
-                 num_heads=4, num_seeds=1, m=32, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0,
-                 batch_size=256, num_workers=4, max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0):
+                 learner_names=["SetTransformer"], path_of_embeddings="", proj_dim=128, rnn_n_layers=2,
+                 drop_prob=0.1, num_heads=4, num_seeds=1, m=32, ln=False, 
+                 learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
+                 max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0):
         super().__init__(knowledge_base_path, quality_func, num_predictions, proj_dim, drop_prob,
                  num_heads, num_seeds, m, ln, learning_rate, decay_rate, clip_value,
-                 batch_size, num_workers, max_length, load_pretrained, sorted_examples, verbose)
+                 batch_size, num_workers, max_length, load_pretrained, verbose)
         
+        self.name = "NCES"
         self.learner_names = learner_names
         self.path_of_embeddings = path_of_embeddings
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.rnn_n_layers = rnn_n_layers
+        self.sorted_examples = sorted_examples
         self.instance_embeddings = read_csv(path_of_embeddings)
         self.input_size = self.instance_embeddings.shape[1]
         self.model = self.get_synthesizer()
@@ -991,8 +994,7 @@ class NCES(BaseNCES):
                 [ind.str.split("/")[-1] for ind in self.kb.individuals(concept)])
             tp, fn, fp, tn = compute_tp_fn_fp_tn(concept_instances, pos, neg)
             quality = self.quality_func.score2(tp, fn, fp, tn)[1]
-            node = NCESNode(concept, length=concept_length, individuals_count=concept_individuals_count,
-                            quality=quality)
+            node = NCESNode(concept, length=concept_length, individuals_count=concept_individuals_count, quality=quality)
             predictions_as_nodes.append(node)
         predictions_as_nodes = sorted(predictions_as_nodes, key=lambda x: -x.quality)
         self.best_predictions = predictions_as_nodes
@@ -1033,15 +1035,14 @@ class NCES(BaseNCES):
         assert self.load_pretrained and self.learner_names, \
             "No pretrained model found. Please first train NCES, refer to the <<train>> method"
         dataset = [self.convert_to_list_str_from_iterable(datapoint) for datapoint in dataset]
-        dataset = NCESDatasetInference(dataset, self.instance_embeddings, self.vocab, self.inv_vocab,
-                                          shuffle_examples)
-        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers,
-                                collate_fn=self.collate_batch_inference, shuffle=False)
+        dataset = NCESDatasetInference(dataset, self.instance_embeddings, self.vocab, self.inv_vocab, shuffle_examples)
+        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch_inference, shuffle=False)
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions_as_owl_class_expressions = []
         predictions_str = []
         for x_pos, x_neg in dataloader:
             predictions = self.get_prediction(self.model, x_pos, x_neg)
+            per_lp_preds = []
             for prediction in predictions:
                 try:
                     prediction_str = "".join(before_pad(prediction))
@@ -1051,9 +1052,10 @@ class NCES(BaseNCES):
                     prediction_str = simpleSolution.predict("".join(before_pad(prediction)))
                     predictions_str.append(prediction_str)
                     ce = self.dl_parser.parse(prediction_str)
-                predictions_as_owl_class_expressions.append(ce)
-        if verbose:
-            print("Predictions: ", predictions_str)
+                per_lp_preds.append(ce)
+            predictions_as_owl_class_expressions.append(per_lp_preds)
+            if verbose:
+                print("Predictions: ", predictions_str)
         return predictions_as_owl_class_expressions
 
     @staticmethod
@@ -1101,23 +1103,27 @@ class NCES2(BaseNCES):
     def __init__(self, knowledge_base_path,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
                  path_of_trained_models="", proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
-                 num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=256, 
+                 num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=256, sampling_strategy="nces2", 
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, 
                  learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
-                 max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0):
+                 max_length=48, load_pretrained=True, verbose: int = 0):
         super().__init__(knowledge_base_path, quality_func, num_predictions, proj_dim, drop_prob,
                  num_heads, num_seeds, m, ln, learning_rate, decay_rate, clip_value,
-                 batch_size, num_workers, max_length, load_pretrained, sorted_examples, verbose)
+                 batch_size, num_workers, max_length, load_pretrained, verbose)
         
+        self.name = "NCES2"
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.triples_data = TriplesData(knowledge_base_path)
+        self.num_entities = len(self.triplesdata.entity2idx)
+        self.num_relations = len(self.triplesdata.relation2idx)
         self.embedding_dim = embedding_dim
+        self.sampling_strategy = sampling_strategy
         self.input_dropout = input_dropout
         self.feature_map_dropout = feature_map_dropout
         self.kernel_size = kernel_size
         self.num_of_output_channels = num_of_output_channels
         self._maybe_load_pretrained_config()
         self.model = self.get_synthesizer()
-        
         
     def _maybe_load_pretrained_config(self, path=None):
         if isinstance(self.m, int):
@@ -1181,14 +1187,14 @@ class NCES2(BaseNCES):
                     raise FileNotFoundError(f"The path to pretrained models is None and no models could be found in {self.path_of_trained_models}")
                 
                 if num_loaded == len(self.m):
-                    print("\nLoaded NCES2 weights!\n")
+                    print(f"\nLoaded {self.name} weights!\n")
                     return Models
                 else:
                     print("!!!Returning untrained models, could not load pretrained models")
                     return Models
 
             elif len(glob.glob(path + "/*.pt")) == 0:
-                 print("No pretrained model found! If directory is empty or does not exist, set the NCES2 `load_pretrained` parameter to `False` or make sure `save_model` was set to `True` in the .train() method.")
+                 print(f"No pretrained model found! If directory is empty or does not exist, set the {self.name} `load_pretrained` parameter to `False` or make sure `save_model` was set to `True` in the .train() method.")
                 raise FileNotFoundError(f"Path {path} does not contain any pretrained models!")
             else:
                 possible_checkpoints = glob.glob(path + "/*.pt")
@@ -1208,13 +1214,13 @@ class NCES2(BaseNCES):
                                 emb_model.load_state_dict(weights)
                                 Models[str(m)]["emb_model"] = emb_model.eval()
                 if num_loaded == len(self.m):
-                    print("\nLoaded NCES2 weights!\n")
+                    print(f"\nLoaded {self.name} weights!\n")
                     return Models
                 else:
                     print("!!!Returning untrained models, could not load pretrained")
                     return Models
         else:
-            print("!!!Returning untrained models, could not load any pretrained model. Check the `load_pretrained parameter` or train the models using NCES2.train(data).")
+            print(f"!!!Returning untrained models, could not load any pretrained model. Check the `load_pretrained parameter` or train the models using {self.name}.train(data).")
             return Models
 
 
@@ -1247,19 +1253,18 @@ class NCES2(BaseNCES):
         negative = np.random.choice(neg, size=min(num_neg_ex, len(neg)), replace=False)
         return positive, negative
 
-    def get_prediction(self, models, x1, x2):
-        for i, model in enumerate(models):
-            model.eval()
-            model.to(self.device)
-            x1 = x1.to(self.device)
-            x2 = x2.to(self.device)
+    def get_prediction(self, dataloaders):
+        for i, (num_ind_points, dataloader) in enumerate(zip(self.m, dataloaders)):
+            x_pos, x_neg = next(iter(dataloader))
+            x_pos = x_pos.to(self.device)
+            x_neg = x_neg.to(self.device)
             if i == 0:
-                _, scores = model(x1, x2)
+                _, scores = self.model[str(num_ind_points)]["model"](x1, x2)
             else:
-                _, sc = model(x1, x2)
+                _, sc = self.model[str(num_ind_points)]["model"](x1, x2)
                 scores = scores + sc
-        scores = scores / len(models)
-        prediction = model.inv_vocab[scores.argmax(1).cpu()]
+        scores = scores / len(self.m)
+        prediction = self.inv_vocab[scores.argmax(1).cpu()]
         return prediction
 
     def fit_one(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]]):
@@ -1271,24 +1276,25 @@ class NCES2(BaseNCES):
             neg_str = neg
         else:
             raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
-        assert self.load_pretrained and self.m, \
-            "No pretrained model found. Please first train NCES2"
+        assert self.load_pretrained and self.m, f"No pretrained model found. Please first train {self.name}"
         
-        #data, triples_data, k, vocab, inv_vocab, num_examples, sampling_strategy='p', num_pred_per_lp=1, random_sample=False
-        dataset = ROCESDatasetInference([("", pos_str, neg_str)],
-                                          self.triples_data,
-                                          self.vocab, self.inv_vocab,
-                                          self.num_examples,
-                                          sampling_strategy="nces2",
-                                          num_pred_per_lp=self.num_predictions)
-
-        dataloader = DataLoader(dataset, batch_size=self.batch_size,
-                                num_workers=self.num_workers,
-                                collate_fn=self.collate_batch_inference, shuffle=False)
-        x_pos, x_neg = next(iter(dataloader))
-        # Initial a simple solution constructor
+        # dataloader objects
+        dataloaders = []
+        for num_ind_points in self.model:
+            dataset = ROCESDatasetInference([("", pos_str, neg_str)],
+                                              self.triples_data,
+                                              self.vocab, self.inv_vocab,
+                                              self.num_examples,
+                                              sampling_strategy=self.sampling_strategy,
+                                              num_pred_per_lp=self.num_predictions)
+            dataset.load_embeddings(self.model[num_ind_points]["emb_model"])
+            dataloader = DataLoader(dataset, batch_size=self.batch_size,
+                                num_workers=self.num_workers, shuffle=False)
+            dataloaders.append(dataloader)
+            
+        # Initialize a simple solution constructor
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
-        predictions_raw = self.get_prediction(self.model, x_pos, x_neg)
+        predictions_raw = self.get_prediction(dataloaders)
 
         predictions = []
         for prediction in predictions_raw:
@@ -1304,14 +1310,17 @@ class NCES2(BaseNCES):
         return predictions
 
     def fit(self, learning_problem: PosNegLPStandard, **kwargs):
+        # Set models in evaluation mode
+        for num_ind_points in self.model:
+            for model_type in self.model[num_ind_points]:
+                self.model[num_ind_points][model_type].eval()
+                self.model[num_ind_points][model_type].to(self.device)
+            
         pos = learning_problem.pos
         neg = learning_problem.neg
         if isinstance(pos, set) or isinstance(pos, frozenset):
             pos_list = list(pos)
             neg_list = list(neg)
-            if self.sorted_examples:
-                pos_list = sorted(pos_list)
-                neg_list = sorted(neg_list)
         else:
             raise ValueError(f"Expected pos and neg to be sets, got {type(pos)} and {type(neg)}")
         predictions = self.fit_one(pos_list, neg_list)
@@ -1325,12 +1334,10 @@ class NCES2(BaseNCES):
                 concept_individuals_count = self.kb.individuals_count(concept)
             concept_length = init_length_metric().length(concept)
             concept_instances = set(self.kb.individuals(concept)) if isinstance(pos_list[0],
-                                                                                OWLNamedIndividual) else set(
-                [ind.str.split("/")[-1] for ind in self.kb.individuals(concept)])
+                OWLNamedIndividual) else set([ind.str.split("/")[-1] for ind in self.kb.individuals(concept)])
             tp, fn, fp, tn = compute_tp_fn_fp_tn(concept_instances, pos, neg)
             quality = self.quality_func.score2(tp, fn, fp, tn)[1]
-            node = NCESNode(concept, length=concept_length, individuals_count=concept_individuals_count,
-                            quality=quality)
+            node = NCESNode(concept, length=concept_length, individuals_count=concept_individuals_count, quality=quality)
             predictions_as_nodes.append(node)
         predictions_as_nodes = sorted(predictions_as_nodes, key=lambda x: -x.quality)
         self.best_predictions = predictions_as_nodes
@@ -1338,7 +1345,7 @@ class NCES2(BaseNCES):
 
     def best_hypotheses(self, n=1) -> Union[OWLClassExpression, Iterable[OWLClassExpression]]:  # pragma: no cover
         if self.best_predictions is None:
-            print("NCES needs to be fitted to a problem first")
+            print(f"{self.name} needs to be fitted to a problem first")
             return None
         elif len(self.best_predictions) == 1 or n == 1:
             return self.best_predictions[0].concept
@@ -1356,30 +1363,38 @@ class NCES2(BaseNCES):
             pos_str, neg_str = list(pos), list(neg)
         else:
             raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
-        if self.sorted_examples:
-            pos_str, neg_str = sorted(pos_str), sorted(neg_str)
         return (target_concept_str, pos_str, neg_str)
+    
 
-    def fit_from_iterable(self, dataset: Union[List[Tuple[str, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]],
+    def fit_from_iterable(self, data: Union[List[Tuple[str, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]],
     List[Tuple[str, Set[str], Set[str]]]], shuffle_examples=False,
                           verbose=False, **kwargs) -> List:  # pragma: no cover
         """
-        - Dataset is a list of tuples where the first items are strings corresponding to target concepts.
+        - data is a list of tuples where the first items are strings corresponding to target concepts.
         
         - This function returns predictions as owl class expressions, not nodes as in fit
         """
-        assert self.load_pretrained and self.learner_names, \
-            "No pretrained model found. Please first train NCES, refer to the <<train>> method"
-        dataset = [self.convert_to_list_str_from_iterable(datapoint) for datapoint in dataset]
-        dataset = NCESDatasetInference(dataset, self.instance_embeddings, self.vocab, self.inv_vocab,
-                                          shuffle_examples)
-        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers,
-                                collate_fn=self.collate_batch_inference, shuffle=False)
+        assert self.load_pretrained and self.m, "No pretrained model found. Please first train NCES, refer to the <<train>> method"
+        data = [self.convert_to_list_str_from_iterable(datapoint) for datapoint in data]
+        dataloaders = []
+        for num_ind_points in self.model:
+            dataset = ROCESDatasetInference(data,
+                                            self.triples_data,
+                                            self.vocab, self.inv_vocab,
+                                            self.num_examples,
+                                            sampling_strategy=self.sampling_strategy,
+                                            num_pred_per_lp=self.num_predictions)
+            dataset.load_embeddings(self.model[num_ind_points]["emb_model"])
+            dataloader = DataLoader(dataset, batch_size=self.batch_size,
+                                num_workers=self.num_workers,
+                                shuffle=False)
+            dataloaders.append(dataloader)
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions_as_owl_class_expressions = []
         predictions_str = []
-        for x_pos, x_neg in dataloader:
-            predictions = self.get_prediction(self.model, x_pos, x_neg)
+        for dataloader in dataloaders:
+            predictions = self.get_prediction(dataloader)
+            per_lp_preds = []
             for prediction in predictions:
                 try:
                     prediction_str = "".join(before_pad(prediction))
@@ -1389,13 +1404,14 @@ class NCES2(BaseNCES):
                     prediction_str = simpleSolution.predict("".join(before_pad(prediction)))
                     predictions_str.append(prediction_str)
                     ce = self.dl_parser.parse(prediction_str)
-                predictions_as_owl_class_expressions.append(ce)
-        if verbose:
-            print("Predictions: ", predictions_str)
+                per_lp_preds.append(ce)
+            predictions_as_owl_class_expressions.append(per_lp_preds)
+            if verbose:
+                print("Predictions: ", predictions_str)
         return predictions_as_owl_class_expressions
 
     @staticmethod
-    def generate_training_data(kb_path, num_lps=1000, beyond_alc=False, storage_dir="./NCES_Training_Data"):
+    def generate_training_data(kb_path, num_lps=1000, beyond_alc=False, storage_dir="./Training_Data"):
         lp_gen = LPGen(kb_path=kb_path, max_num_lps=num_lps, beyond_alc=beyond_alc, storage_dir=storage_dir)
         lp_gen.generate()
         print("Loading generated data...")
@@ -1406,8 +1422,7 @@ class NCES2(BaseNCES):
 
 
     def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, num_lps=1000, learning_rate=1e-4, decay_rate=0.0,
-              clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True,
-              example_sizes=None, shuffle_examples=False):
+              clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True, shuffle_examples=False):
         if os.cpu_count() <= num_workers:
             num_workers = max(0,os.cpu_count()-1)
         if storage_path is None:
@@ -1419,10 +1434,10 @@ class NCES2(BaseNCES):
         if batch_size is None:
             batch_size = self.batch_size
         if data is None:
-            data = self.generate_training_data(self.knowledge_base_path, num_lps=num_lps, storage_dir=storage_path)
-        train_dataset = NCESDataset(data, self.instance_embeddings, self.vocab, self.inv_vocab,
-                                       shuffle_examples=shuffle_examples, max_length=self.max_length,
-                                       example_sizes=example_sizes)
+            data = self.generate_training_data(self.knowledge_base_path, num_lps=num_lps, beyond_alc=True, storage_dir=storage_path)
+        self, data, triples_data, vocab, inv_vocab, sampling_strategy="p"
+        train_dataset = ROCESDataset(data, triples_data, self.vocab, self.inv_vocab, sampling_strategy=self.sampling_strategy,
+                                       shuffle_examples=shuffle_examples, max_length=self.max_length)
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers,
                                       collate_fn=self.collate_batch, shuffle=True)
         
@@ -1438,39 +1453,15 @@ class ROCES(NCES2):
     def __init__(self, knowledge_base_path,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
                  path_of_trained_models="", proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
-                 num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=256, 
+                 num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=256, sampling_strategy="p",
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, 
                  learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
                  max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0):
         super().__init__(knowledge_base_path,
                  quality_func, num_predictions, path_of_trained_models, proj_dim, rnn_n_layers, drop_prob,
-                 num_heads, num_seeds, m, ln, embedding_dim, input_dropout, feature_map_dropout, 
+                 num_heads, num_seeds, m, ln, embedding_dim, sampling_strategy, input_dropout, feature_map_dropout, 
                  kernel_size, num_of_output_channels, learning_rate, decay_rate, clip_value, batch_size,
                  num_workers, max_length, load_pretrained=True, sorted_examples, verbose)
-
-
-    def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, num_lps=1000, learning_rate=1e-4, decay_rate=0.0,
-              clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True,
-              example_sizes=None, shuffle_examples=False):
-        if os.cpu_count() <= num_workers:
-            num_workers = max(0,os.cpu_count()-1)
-        if storage_path is None:
-            currentDateAndTime = datetime.now()
-            storage_path = f'NCES-Experiment-{currentDateAndTime.strftime("%H-%M-%S")}'
-        if not os.path.exists(storage_path):
-            os.mkdir(storage_path)
-        self.trained_models_path = storage_path+"/trained_models"
-        if batch_size is None:
-            batch_size = self.batch_size
-        if data is None:
-            data = self.generate_training_data(self.knowledge_base_path, num_lps=num_lps, storage_dir=storage_path)
-        train_dataset = NCESDataset(data, self.instance_embeddings, self.vocab, self.inv_vocab,
-                                       shuffle_examples=shuffle_examples, max_length=self.max_length,
-                                       example_sizes=example_sizes)
-        train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers,
-                                      collate_fn=self.collate_batch, shuffle=True)
         
-        trainer = NCESTrainer(self, epochs=epochs, learning_rate=learning_rate, decay_rate=decay_rate,
-                              clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
-        trainer.train(train_dataloader, save_model, optimizer, record_runtime)
+        self.name = "ROCES"
 

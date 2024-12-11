@@ -36,7 +36,7 @@ class BaseNCES:
 
     def __init__(self, knowledge_base_path, quality_func, num_predictions, proj_dim=128, drop_prob=0.1,
                  num_heads=4, num_seeds=1, m=32, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0,
-                 batch_size=256, num_workers=4, max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0):
+                 batch_size=256, num_workers=4, max_length=48, load_pretrained=True, verbose: int = 0):
         kb = KnowledgeBase(path=knowledge_base_path)
         self.kb_namespace = list(kb.ontology.classes_in_signature())[0].iri.get_namespace()
         self.renderer = DLSyntaxObjectRenderer()
@@ -65,7 +65,6 @@ class BaseNCES:
         self.num_workers = num_workers
         self.max_length = max_length
         self.load_pretrained = load_pretrained
-        self.sorted_examples = sorted_examples
         self.verbose = verbose
         self.num_examples = self.find_optimal_number_of_examples(kb)
         self.best_predictions = None

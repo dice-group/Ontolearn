@@ -31,6 +31,7 @@ from collections import deque
 import pandas as pd
 import numpy as np
 import random
+from edflib import graph
 
 
 class PrepareBatchOfPrediction(torch.utils.data.Dataset):  # pragma: no cover
@@ -148,6 +149,48 @@ class Experience:  # pragma: no cover
         self.next_states.clear()
         self.rewards.clear()
         
+        
+class TriplesData:
+    def __init__(self, knowledge_base_path):
+        
+        """
+        Read triples into a list of lists
+        """
+        
+        self.Graph = graph.Graph()
+        self.Graph.parse(knowledge_base_path)
+        train_data = self.load_data()
+        self.data_triples = train_data
+        self.entities = self.get_entities(self.data_triples)
+        self.relations = self.get_relations(self.data_triples)
+        self.relations = train_relations
+        self.entity2idx = pd.DataFrame(list(range(len(self.entities))), index=self.entities)
+        self.relation2idx = pd.DataFrame(list(range(len(self.relations))), index=self.relations)
+
+    def load_data(self):
+        data = []
+        try:
+            for (s, p, o) in self.Graph:
+                s = s.expandtabs()[s.expandtabs().rfind("/")+1:]
+                p = p.expandtabs()[p.expandtabs().rfind("/")+1:]
+                o = o.expandtabs()[o.expandtabs().rfind("/")+1:]
+                if s and p and o:
+                    data.append((s,p,o))
+        except FileNotFoundError as e:
+            print(e)
+            pass
+        return data
+
+    @staticmethod
+    def get_relations(data):
+        relations = sorted(list(set([d[1] for d in data])))
+        return relations
+
+    @staticmethod
+    def get_entities(data):
+        entities = sorted(list(set([d[0] for d in data] + [d[2] for d in data])))
+        return entities
+    
         
 class CLIPDataset(torch.utils.data.Dataset):  # pragma: no cover
 
