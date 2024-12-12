@@ -36,6 +36,7 @@ from torch.nn import functional as F
 from torch.nn.utils import clip_grad_value_
 from torch.nn.utils.rnn import pad_sequence
 import time
+from collections import defaultdict
 
 
 def before_pad(arg):
@@ -49,16 +50,18 @@ def before_pad(arg):
     return arg_temp
 
 
-class NCESTrainer:
-    """NCES trainer."""
-    def __init__(self, nces, epochs=300, learning_rate=1e-4, decay_rate=0, clip_value=5.0, num_workers=8,
-                 storage_path="./"):
-        self.nces = nces
+class Trainer:
+    """Trainer for neural class expression synthesizers, e.g., NCES."""
+    def __init__(self, synthesizer, epochs=300, batch_size=128, learning_rate=1e-4, decay_rate=0,
+                 clip_value=5.0, num_workers=8, nces2_or_roces=False, storage_path="./"):
+        self.synthesizer = synthesizer
         self.epochs = epochs
+        self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.decay_rate = decay_rate
         self.clip_value = clip_value
         self.num_workers = num_workers
+        self.nces2_or_roces = nces2_or_roces
         self.storage_path = storage_path
 
     @staticmethod
@@ -102,16 +105,32 @@ class NCESTrainer:
         else:
             raise ValueError
             print('Unsupported optimizer')
+            
+    def get_data_idxs(self):
+        data_idxs = [(self.synthesizer.triples_data.entity2idx.loc[t[0]].values[0],
+                      self.synthesizer.triples_data.relation2idx.loc[t[1]].values[0],
+                      self.synthesizer.triples_data.entity2idx.loc[t[2]].values[0]) for t in self.synthesizer.triples_data.triples]
+        return data_idxs
+    
+    def get_er_vocab(self):
+        er_vocab = defaultdict(list)
+        data_idxs = self.get_data_idxs()
+        for triple in data_idxs:
+            er_vocab[(triple[0], triple[1])].append(triple[2])
+        return er_vocab
+    
+    
 
     @staticmethod
-    def show_num_learnable_params(model):
-        print("*"*20+"Trainable model size"+"*"*20)
-        size = sum([p.numel() for p in model.parameters()])
-        size_ = 0
-        print("Synthesizer: ", size)
-        print("*"*20+"Trainable model size"+"*"*20)
-        print()
-        return size
+    def show_num_trainable_params(synthesizer):
+        size_emb_model = 0 # If training NCES there is no embedding model to train
+        size_model = sum([p.numel() for p in synthesizer["model"].parameters()])
+        if synthesizer["emb_model"]:
+            size_emb_model = sum([p.numel() for p in synthesizer["emb_model"].parameters()])
+        print("#"*30+"Trainable model size"+"#"*30)
+        print("Synthesizer: ", size_model)
+        print("Embedding model: ", size_emb_model)
+        print("#"*30+"Trainable model size"+"#"*30)
 
     def collate_batch(self, batch):  # pragma: no cover
         pos_emb_list = []
@@ -125,22 +144,55 @@ class NCESTrainer:
             pos_emb_list.append(pos_emb)
             neg_emb_list.append(neg_emb)
             target_labels.append(label)
-        pos_emb_list[0] = F.pad(pos_emb_list[0], (0, 0, 0, self.nces.num_examples - pos_emb_list[0].shape[0]),
+        pos_emb_list[0] = F.pad(pos_emb_list[0], (0, 0, 0, self.synthesizer.num_examples - pos_emb_list[0].shape[0]),
                                 "constant", 0)
         pos_emb_list = pad_sequence(pos_emb_list, batch_first=True, padding_value=0)
-        neg_emb_list[0] = F.pad(neg_emb_list[0], (0, 0, 0, self.nces.num_examples - neg_emb_list[0].shape[0]),
+        neg_emb_list[0] = F.pad(neg_emb_list[0], (0, 0, 0, self.synthesizer.num_examples - neg_emb_list[0].shape[0]),
                                 "constant", 0)
         neg_emb_list = pad_sequence(neg_emb_list, batch_first=True, padding_value=0)
         target_labels = pad_sequence(target_labels, batch_first=True, padding_value=-100)
         return pos_emb_list, neg_emb_list, target_labels
 
     def map_to_token(self, idx_array):
-        return self.nces.model[0].inv_vocab[idx_array]
+        return self.synthesizer.inv_vocab[idx_array]
+    
+    
+    def train_step(self, batch, model, optimizer, emb_model=None, triples_dataloader=None):
+        soft_acc, hard_acc = [], []
+        train_losses = []
+        if emb_model:
+            try:
+                triples_batch = next(triples_dataloader)
+            except:
+                triples_dataloader = iter(DataLoader(TriplesDataset(er_vocab=self.er_vocab, num_e=len(self.synthesizer.triples_data.entities)),
+                                              batch_size=2*self.batch_size, num_workers=self.num_workers, shuffle=True))
+                triples_batch = next(triples_dataloader)
+                
+        x_pos, x_neg, labels = batch
+        target_sequence = self.map_to_token(labels)
+        if device.type == "cuda":
+            x1, x2, labels = x1.cuda(), x2.cuda(), labels.cuda()
+        pred_sequence, scores = model(x1, x2)
+        loss = model.loss(scores, labels)
+        # Forward triples to embedding model
+        if emb_model:
+            loss_ = model.loss(scores, labels)
+            loss = loss + loss_
+        s_acc, h_acc = self.compute_accuracy(pred_sequence, target_sequence)
+        opt.zero_grad()
+        loss.backward()
+        clip_grad_value_(synthesizer.parameters(), clip_value=self.clip_value)
+        opt.step()
+        if self.decay_rate:
+            self.scheduler.step()
+        return loss.item(), s_acc, h_acc
+        
 
-    def train(self, train_dataloader, save_model=True, optimizer='Adam', record_runtime=True):
+    def train(self, data, shuffle_examples=False, example_sizes=None,
+              save_model=True, optimizer='Adam', record_runtime=True):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        for model in self.nces.model:
-            model_size = self.show_num_learnable_params(model)
+        for model_name in self.synthesizer.model:
+            self.show_num_trainable_params(self.synthesizer.model[model_name])
             if device.type == "cpu":
                 print("Training on CPU, it may take long...")
             else:
@@ -148,18 +200,31 @@ class NCESTrainer:
             print()
             print("#"*50)
             print()
-            print("{} starts training... \n".format(model.name))
+            model = copy.deepcopy(self.synthesizer.model[model_name])
+            print("{} starts training... \n".format(model["model"].name))
             print("#"*50, "\n")
-            synthesizer = copy.deepcopy(model).train()
-            desc = synthesizer.name
+            desc = model["model"].name
             if device.type == "cuda":
-                synthesizer.cuda()
-            opt = self.get_optimizer(synthesizer=synthesizer, optimizer=optimizer)
+                model["model"].cuda()
+                if model["emb_model"]:
+                    model["emb_model"].cuda()
+            optimizer = self.get_optimizer(model=model, optimizer=optimizer)
             if self.decay_rate:
                 self.scheduler = ExponentialLR(opt, self.decay_rate)
+            random.shuffle(data)
+            if model["emb_model"]:
+                self.er_vocab = self.get_er_vocab()
+                triples_dataloader = iter(DataLoader(TriplesDataset(er_vocab=self.er_vocab, num_e=len(self.synthesizer.triples_data.entities)),
+                                          batch_size=2*self.batch_size, num_workers=self.num_workers, shuffle=True))
+                train_dataset = ROCESDataset(data, self.synthesizer.triples_data, self.synthesizer.vocab, self.synthesizer.inv_vocab,
+                                             sampling_strategy=self.synthesizer.sampling_strategy, max_length=self.synthesizer.max_length)
+            else:
+                train_dataset = DataLoader(NCESDataset(data, self.synthesizer.instance_embeddings, self.synthesizer.vocab, self.synthesizer.inv_vocab,
+                                                       shuffle_examples=shuffle_examples, max_length=self.synthesizer.max_length, example_sizes=example_sizes),
+                                                       batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch, shuffle=True)
             Train_loss = []
             Train_acc = defaultdict(list)
-            best_score = 0.
+            best_score = 0
             if record_runtime:
                 t0 = time.time()
             s_acc, h_acc = 0, 0
@@ -167,30 +232,45 @@ class NCESTrainer:
             for e in Epochs:
                 soft_acc, hard_acc = [], []
                 train_losses = []
-                for x1, x2, labels in train_dataloader:
-                    target_sequence = self.map_to_token(labels)
-                    if device.type == "cuda":
-                        x1, x2, labels = x1.cuda(), x2.cuda(), labels.cuda()
-                    pred_sequence, scores = synthesizer(x1, x2)
-                    loss = synthesizer.loss(scores, labels)
-                    s_acc, h_acc = self.compute_accuracy(pred_sequence, target_sequence)
-                    soft_acc.append(s_acc)
-                    hard_acc.append(h_acc)
-                    train_losses.append(loss.item())
-                    opt.zero_grad()
-                    loss.backward()
-                    clip_grad_value_(synthesizer.parameters(), clip_value=self.clip_value)
-                    opt.step()
-                    if self.decay_rate:
-                        self.scheduler.step()
+                num_batches = len(data) // self.batch_size if len(data) % self.batch_size == 0 else len(data) // self.batch_size + 1
+                    batch_data = trange(len(data), desc=f'Train: <Batch: {batch_count}/{num_batches}, Loss: {np.nan}, Soft Acc: {s_acc}, Hard Acc: {h_acc}>', leave=False)
+                    batch_count = 0
+                if model["emb_model"]:
+                    for _, train_idx in zip(batch_data, range(0, len(data), self.batch_size)):
+                        batch = train_dataset[train_idx:train_idx+self.batch_size]
+                        loss, s_acc, h_acc = self.train_step(batch, model["model"], optimizer, model["emb_model"], triples_dataloader)
+                        batch_count += 1
+                        batch_data.set_description('Train: <Batch: {}/{}, Loss: {:.4f}, Soft Acc: {:.2f}, Hard Acc: {:.2f}>'.format(batch_count,
+                                                                                                               num_batches,
+                                                                                                               loss,
+                                                                                                               s_acc,
+                                                                                                               h_acc))
+                        batch_data.refresh()
+                        soft_acc.append(s_acc)
+                        hard_acc.append(h_acc)
+                        train_losses.append(loss)
+                else:
+                    # When embedding model is None, then we are training NCES and the training data is a torch.utils.data.DataLoader object
+                    for _, batch in zip(batch_data, train_dataset):
+                        loss, s_acc, h_acc = self.train_step(batch, model["model"], optimizer, model["emb_model"], triples_dataloader)
+                        batch_count += 1
+                        batch_data.set_description('Train: <Batch: {}/{}, Loss: {:.4f}, Soft Acc: {:.2f}, Hard Acc: {:.2f}>'.format(batch_count,
+                                                                                                               num_batches,
+                                                                                                               loss,
+                                                                                                               s_acc,
+                                                                                                               h_acc))
+                        batch_data.refresh()
+                        soft_acc.append(s_acc)
+                        hard_acc.append(h_acc)
+                        train_losses.append(loss)
+                        
                 train_soft_acc, train_hard_acc = np.mean(soft_acc), np.mean(hard_acc)
                 Train_loss.append(np.mean(train_losses))
                 Train_acc['soft'].append(train_soft_acc)
                 Train_acc['hard'].append(train_hard_acc)
-                Epochs.set_description('Loss: {:.4f}, Soft Acc: {:.2f}%, Hard Acc: {:.2f}%'.format(Train_loss[-1],
-                                                                                                   train_soft_acc,
-                                                                                                   train_hard_acc))
+                Epochs.set_description('<Epoch: {}/{}> Loss: {:.4f}, Soft Acc: {:.2f}%, Hard Acc: {:.2f}%'.format(e, self.epochs, Train_loss[-1], train_soft_acc, train_hard_acc))
                 Epochs.refresh()
+                #### Continue here
                 weights = copy.deepcopy(synthesizer.state_dict())
                 if Train_acc['hard'] and Train_acc['hard'][-1] > best_score:
                     best_score = Train_acc['hard'][-1]

@@ -1086,8 +1086,8 @@ class NCES(BaseNCES):
         if data is None:
             data = self.generate_training_data(self.knowledge_base_path, num_lps=num_lps, storage_dir=storage_path)
         train_dataset = NCESDataset(data, self.instance_embeddings, self.vocab, self.inv_vocab,
-                                       shuffle_examples=shuffle_examples, max_length=self.max_length,
-                                       example_sizes=example_sizes)
+                                    shuffle_examples=shuffle_examples, max_length=self.max_length,
+                                    example_sizes=example_sizes)
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers,
                                       collate_fn=self.collate_batch, shuffle=True)
         
@@ -1435,7 +1435,6 @@ class NCES2(BaseNCES):
             batch_size = self.batch_size
         if data is None:
             data = self.generate_training_data(self.knowledge_base_path, num_lps=num_lps, beyond_alc=True, storage_dir=storage_path)
-        self, data, triples_data, vocab, inv_vocab, sampling_strategy="p"
         train_dataset = ROCESDataset(data, triples_data, self.vocab, self.inv_vocab, sampling_strategy=self.sampling_strategy,
                                        shuffle_examples=shuffle_examples, max_length=self.max_length)
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers,

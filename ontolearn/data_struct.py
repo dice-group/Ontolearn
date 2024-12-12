@@ -160,9 +160,9 @@ class TriplesData:
         self.Graph = graph.Graph()
         self.Graph.parse(knowledge_base_path)
         train_data = self.load_data()
-        self.data_triples = train_data
-        self.entities = self.get_entities(self.data_triples)
-        self.relations = self.get_relations(self.data_triples)
+        self.triples = train_data
+        self.entities = self.get_entities(self.triples)
+        self.relations = self.get_relations(self.triples)
         self.relations = train_relations
         self.entity2idx = pd.DataFrame(list(range(len(self.entities))), index=self.entities)
         self.relation2idx = pd.DataFrame(list(range(len(self.relations))), index=self.relations)
@@ -502,7 +502,7 @@ class ROCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):
         return pos_emb_list, neg_emb_list
         
         
-class HeadAndRelationBatchLoader(torch.utils.data.Dataset):
+class TriplesDataset(torch.utils.data.Dataset):
     
     def __init__(self, er_vocab, num_e):
         self.num_e = num_e
