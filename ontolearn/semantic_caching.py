@@ -230,51 +230,39 @@ class CacheWithEviction:
         if self.strategy in ['LRU', 'MRU']:
             self.access_times[key] = time.time()  # Record access timestamp
 
-    def initialize_cache(self, ontology, func, path_onto, third, All_individuals, handle_restriction_func=None):
+    def initialize_cache(self, func, path_onto, third, All_individuals, handle_restriction_func, concepts):
         """
-        Initialize the cache with precomputed results.
+        Initialize the cache with precomputed results for OWLClass and Existential concepts.
         :param ontology: The loaded ontology.
         :param func: Function to retrieve individuals for a given expression.
+        :param concepts: List of OWL concepts to precompute and store instances for.
         """
-
         if self.initialized:
             return
-        
-        # Fetch object properties and classes from ontology
-        roles = list(ontology.object_properties())
-        classes = list(ontology.classes())
 
-        for cls in classes:
-            named_class = OWLClass(cls.iri)
-            named_class_str = str(cls).split(".")[-1]
+        # Filter OWLClass and OWLObjectSomeValuesFrom concepts
+        class_concepts = [concept for concept in concepts if isinstance(concept, OWLClass)]
+        existential_concepts = [concept for concept in concepts if isinstance(concept, OWLObjectSomeValuesFrom)]
 
-            # Add named concept
-            self.put(named_class_str, func(named_class, path_onto, third))
-            negated_named_class_str = f"¬{named_class_str}"
+        # Process OWLClass concepts
+        for cls in class_concepts:
+            concept_str = owl_expression_to_dl(cls)
+            self.put(concept_str, func(cls, path_onto, third))
 
-            # Add negated named concept
-            self.put(negated_named_class_str, All_individuals-self.cache[named_class_str])
-            negated_class = OWLObjectComplementOf(named_class)
-    
-            for role in roles:
-                role_property = OWLObjectProperty(role.iri)
-                existential_a = OWLObjectSomeValuesFrom(property=role_property, filler=named_class)   
+            # Compute and store complement
+            negated_cls = OWLObjectComplementOf(cls)
+            negated_cls_str = owl_expression_to_dl(negated_cls)
+            self.put(negated_cls_str, All_individuals - self.cache[concept_str])
 
-                # Add ∃ r.C
-                if handle_restriction_func is not None:     
-                    self.put(owl_expression_to_dl(existential_a), handle_restriction_func(existential_a))
-                else:
-                    self.put(owl_expression_to_dl(existential_a), func(existential_a, path_onto, third))
+        # Process Existential concepts
+        for existential in existential_concepts:
+            existential_str = owl_expression_to_dl(existential)
+            if handle_restriction_func is not None:
+                self.put(existential_str, handle_restriction_func(existential))
+            else:
+                self.put(existential_str, func(existential, path_onto, third))
 
-                # Add ∃ r.(¬C)
-                existential_negated = OWLObjectSomeValuesFrom(property=role_property, filler=negated_class)
-                existential_negated_str = owl_expression_to_dl(existential_negated)
-                if handle_restriction_func is not None:
-                    self.put(existential_negated_str, handle_restriction_func(existential_negated))
-                else:
-                    self.put(existential_negated_str, func(existential_negated, path_onto, third))
-        
-        self.initialized = True 
+        self.initialized = True
 
     def get_all_items(self):
         return list(self.cache.keys())
@@ -284,7 +272,7 @@ class CacheWithEviction:
         return len(self.cache) >= self.max_size
     
 
-def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cache_type):
+def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cache_type, concepts):
 
     '''This function implements the semantic caching algorithm for ALC concepts as presented in the paper'''
 
@@ -292,6 +280,7 @@ def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cach
     loaded_ontologies = {} #Cache for ontologies
     loaded_individuals = {} #cache for individuals
     cache_type = cache_type
+    concepts = concepts
     stats = {
         'hits': 0,
         'misses': 0,
@@ -360,7 +349,7 @@ def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cach
         # Cold cache initialization
         start_time_initialization = time.time()
         if cache_type == 'cold' and not cache.initialized:
-            cache.initialize_cache(onto, func, path_onto, args[-1], All_individuals, handle_restriction_func=handle_owl_some_values_from)
+            cache.initialize_cache(func, path_onto, args[-1], All_individuals, handle_owl_some_values_from, concepts)
         time_initialization = time.time()- start_time_initialization
 
         # start_time = time.time() #state the timing after the cache initialization 
@@ -482,13 +471,6 @@ def retrieve_other_reasoner(expression, path_kg, name_reasoner='HermiT'): # reas
 
 def run_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, eviction:str, random_seed:int, cache_type:str, shuffle_concepts:str):
 
-    if name_reasoner == 'EBR':
-        # cached_retriever = subsumption_based_caching(retrieve, cache_size=cache_size)
-        cached_retriever = semantic_caching_size(retrieve, cache_size=cache_size, eviction_strategy=eviction, random_seed=random_seed, cache_type=cache_type)
-    else:
-        # cached_retriever = subsumption_based_caching(retrieve, cache_size=cache_size)
-        cached_retriever = semantic_caching_size(retrieve_other_reasoner, cache_size=cache_size, eviction_strategy=eviction, random_seed=random_seed, cache_type=cache_type)
-
     symbolic_kb = KnowledgeBase(path=path_kg)
     D = []
     Avg_jaccard = []
@@ -499,6 +481,13 @@ def run_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, evic
         alc_concepts = get_shuffled_concepts(path_kg, data_name=data_name) 
     else:
         alc_concepts = concept_generator(path_kg)
+
+    if name_reasoner == 'EBR':
+        # cached_retriever = subsumption_based_caching(retrieve, cache_size=cache_size)
+        cached_retriever = semantic_caching_size(retrieve, cache_size=cache_size, eviction_strategy=eviction, random_seed=random_seed, cache_type=cache_type, concepts=alc_concepts)
+    else:
+        # cached_retriever = subsumption_based_caching(retrieve, cache_size=cache_size)
+        cached_retriever = semantic_caching_size(retrieve_other_reasoner, cache_size=cache_size, eviction_strategy=eviction, random_seed=random_seed, cache_type=cache_type, concepts=alc_concepts)
 
     total_time_ebr = 0
 
@@ -558,7 +547,6 @@ def run_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, evic
         'avg_jaccard_reas':  f"{sum(Avg_jaccard_reas) / len(Avg_jaccard_reas):.3f}",
         'strategy': eviction
     }, D
-
 
 
 
