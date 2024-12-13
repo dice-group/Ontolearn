@@ -33,6 +33,7 @@ from collections import OrderedDict
 from owlapy.owlapi_adaptor import OWLAPIAdaptor
 from owlapy.parser import DLSyntaxParser
 import pickle
+from tqdm import tqdm
 
 
 
@@ -124,10 +125,10 @@ def concept_generator(path_kg):
 
     # () Converted to list so that the progress bar works.
     random.seed(0)
-    if len(intersections_unnc)>100:
-        intersections_unnc = random.sample(intersections_unnc, k=100)
-    if len(unions_unnc)>100:
-        unions_unnc = random.sample(unions_unnc, k=100)
+    if len(intersections_unnc)>200:
+        intersections_unnc = random.sample(intersections_unnc, k=200)
+    if len(unions_unnc)>200:
+        unions_unnc = random.sample(unions_unnc, k=200)
     if len(exist_unnc)>100:
         exist_unnc = set(list(exist_unnc)[:100]) #random.sample(exist_unnc, k=100)
     if len(for_all_unnc)>100:
@@ -242,28 +243,31 @@ class CacheWithEviction:
 
         # Filter OWLClass and OWLObjectSomeValuesFrom concepts
         class_concepts = [concept for concept in concepts if isinstance(concept, OWLClass)]
+        negated_class_concepts = [concept for concept in concepts if isinstance(concept, OWLObjectComplementOf)]
         existential_concepts = [concept for concept in concepts if isinstance(concept, OWLObjectSomeValuesFrom)]
-
+        
         # Process OWLClass concepts
-        for cls in class_concepts:
+        for cls in tqdm(class_concepts, desc=f"Adding OWLClass concepts"):
             concept_str = owl_expression_to_dl(cls)
             self.put(concept_str, func(cls, path_onto, third))
 
+        for negated_cls in tqdm(negated_class_concepts, desc=f"Adding Complement concepts"):
             # Compute and store complement
-            negated_cls = OWLObjectComplementOf(cls)
             negated_cls_str = owl_expression_to_dl(negated_cls)
-            self.put(negated_cls_str, All_individuals - self.cache[concept_str])
-
+            cached = self.cache.get(concept_str) or None
+            if cached is None:
+                cached = func(negated_cls, path_onto, third)
+            neg = All_individuals - cached
+            self.put(negated_cls_str, neg)
+            
         # Process Existential concepts
-        for existential in existential_concepts:
+        for existential in tqdm(existential_concepts, desc=f"Adding Existential concepts"):
             existential_str = owl_expression_to_dl(existential)
-            if handle_restriction_func is not None:
-                self.put(existential_str, handle_restriction_func(existential))
-            else:
-                self.put(existential_str, func(existential, path_onto, third))
-
+            self.put(existential_str, handle_restriction_func(existential))
+            
         self.initialized = True
 
+        
     def get_all_items(self):
         return list(self.cache.keys())
     
@@ -319,7 +323,8 @@ def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cach
             When called, return the retrieval of OWLObjectSomeValuesFrom
             based on the Algorithm described in the paper
             """
-            if isinstance(owl_expression, OWLObjectSomeValuesFrom): 
+            
+            if len(All_individuals)<1000: # The loop beomes unscalable when there are too many individuals 
                 object_property = owl_expression.get_property()
                 filler_expression = owl_expression.get_filler()
                 instances = retrieve_from_cache(owl_expression_to_dl(filler_expression))
@@ -342,7 +347,9 @@ def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cach
                                     result.add(ind_a) 
                 else:
                     result = func(*args)
-                return result
+            else:
+                result = func(*args)
+            return result
 
         start_time = time.time() #state the timing before the cache initialization 
 

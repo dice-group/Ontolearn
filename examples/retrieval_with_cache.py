@@ -6,7 +6,7 @@ from plot_metrics import *
 import seaborn as sns
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--cache_size_ratios', type=list, default=[.1, .2, .4, .8, 1.], help="cache size is proportional to num_concepts, cache size = k * num_concepts")
+parser.add_argument('--cache_size_ratios', type=list, default=[.1], help="cache size is proportional to num_concepts, cache size = k * num_concepts")
 parser.add_argument('--path_kg', type=str, default=["KGs/Family/father.owl"])
 parser.add_argument('--path_kge', type=list, default=None)
 parser.add_argument('--name_reasoner', type=str, default='EBR', choices=["EBR",'HermiT', 'Pellet', 'JFact', 'Openllet'])
@@ -48,6 +48,6 @@ for path_kg in args.path_kg:
     
     # Save to CSV
     df.to_csv(f'caching_results_{data_name}/cache_experiments_{args.name_reasoner}_{data_name}_{args.cache_type}.csv', index=False)
-    df.to_csv(f'caching_results_{data_name}/detailled_experiments_{args.name_reasoner}_{data_name}_{args.cache_type}.csv', index=False)
+    all_detailed_results.to_csv(f'caching_results_{data_name}/detailled_experiments_{args.name_reasoner}_{data_name}_{args.cache_type}.csv', index=False)
 
 
