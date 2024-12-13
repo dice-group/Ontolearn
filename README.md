@@ -45,7 +45,7 @@ wget https://files.dice-research.org/projects/Ontolearn/KGs.zip -O ./KGs.zip && 
 wget https://files.dice-research.org/projects/Ontolearn/LPs.zip -O ./LPs.zip && unzip LPs.zip
 ```
 
-## Learning OWL Class Expression
+## Learning OWL Class Expressions
 ```python
 from ontolearn.learners import TDL
 from ontolearn.triple_store import TripleStore
@@ -97,7 +97,7 @@ weighted avg       1.00      1.00      1.00         4
 """
 ```
 
-## Learning OWL Class Expression over DBpedia
+## Learning OWL Class Expressions over DBpedia
 ```python
 from ontolearn.learners import TDL, Drill
 from ontolearn.triple_store import TripleStore
@@ -254,7 +254,7 @@ Below, we report the average test F1 score and the average runtimes of learners.
 |        Aunt        |        0.614 |  13.697 |         0.855 |   13.697 |       0.978 |  5.278 |         0.811 |   60.351 |       0.956 |  0.118 |        0.812 |   1.168 |        0.855 |   14.059 |
 |       Cousin       |        0.712 |  10.846 |         0.789 |   10.846 |       0.993 |  3.311 |         0.701 |   60.485 |       0.820 |  0.176 |        0.677 |   1.050 |        0.779 |   9.050 |
 | Grandgranddaughter |        1.000 |   0.013 |         1.000 |    0.013 |       1.000 |  0.426 |         0.980 |   17.486 |       1.000 |  0.050 |        1.000 |   0.843 |        1.000 |   0.639 |
-|  Grandgrandfather  |        1.000 |   0.897 |         1.000 |    0.897 |       1.000 |  0.404 |         0.947 |   55.728 |       0.947 |  0.059 |        0.927 |   0.902 |        1.000 |   0.746 |
+|  Grandgrandfather  |        1.000 |   0.897 |         1.000 |    0.897 |       1.000 |  0.404 |         0.947 |   55.728 |       0.947 |  0.059 |        0.927 |   0.902 |        1.000 |   0.746 |91.66
 |  Grandgrandmother  |        1.000 |   4.173 |         1.000 |    4.173 |       1.000 |  0.442 |         0.893 |   50.329 |       0.947 |  0.060 |        0.927 |   0.908 |        1.000 |   0.817 |
 |   Grandgrandson    |        1.000 |   1.632 |         1.000 |    1.632 |       1.000 |  0.452 |         0.931 |   60.358 |       0.911 |  0.070 |        0.911 |   1.050 |        1.000 |   0.939 |
 |       Uncle        |        0.876 |  16.244 |         0.891 |   16.244 |       0.964 |  4.516 |         0.876 |   60.416 |       0.933 |  0.098 |        0.891 |   1.256 |        0.928 |   17.682 |
@@ -290,6 +290,17 @@ python examples/concept_learning_cv_evaluation.py --kb ./KGs/Carcinogenesis/carc
 |:---------|--------------:|-------------:|--------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|---------------:|--------------:|---------:|-------------:|------------:|-------:|--------------:|-------------:|--------:|--------------:|-------------:|--------:|
 | NOTKNOWN |         0.737 |        0.711 |  62.048 |          0.740 |         0.701 |   62.048 |        0.822 |       0.628 | 64.508 |          0.740 |         0.707 |   60.120 |        1.000 |       0.616 |  5.196 |         0.705 |        0.704 |   4.157 |         0.740 |        0.701 |   48.475| 
 
+
+### Benchmark Results on DBpedia. Results are based on the training examples only
+
+```shell
+python examples/owl_class_expression_learning_dbpedia.py --model Drill && python examples/owl_class_expression_learning_dbpedia.py --model TDL 
+```
+|           LP-Type         | Train-F1-Drill |   RT-Drill   |  Train-F1-TDL  |     RT-TDL    |
+|:--------------------------|---------------:|-------------:|---------------:|--------------:|
+|  OWLObjectAllValuesFrom   |          0.438 |  240.331     |          1.000 |       206.288 |
+|  OWLObjectIntersectionOf  |          0.213 |  202.558     |          0.717 |        91.660 |
+|  OWLObjectUnionOf         |          0.546 |  187.144     |          0.967 |       129.700 |
 
 </details>
 
