@@ -557,7 +557,7 @@ class CLIP(CELOE):
         'load_pretrained', 'output_size', 'num_examples', 'path_of_embeddings', 'instance_embeddings', 'input_size', 'device', 'length_predictor', \
         'num_workers', 'knowledge_base_path'
 
-    name = 'clip'
+    name = 'CLIP'
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
@@ -827,62 +827,79 @@ class NCES(BaseNCES):
 
         m3 = LSTM(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size,
                          self.proj_dim, self.rnn_n_layers, self.drop_prob)
-        Untrained = []
-        for name in self.learner_names:
-            for m in [m1,m2,m3]:
-                if m.name == name:
-                    Untrained.append(m)
+        Models = {"SetTransformer": {"emb_model": None, "model": m1},
+                     "GRU": {"emb_model": None, "model": m2},
+                     "LSTM": {"emb_model": None, "model": m3}
+                    }
 
-        Models = []
+        for name in Models:
+            if name not in self.learner_names:
+                del Models[name]
 
         if self.load_pretrained:
             if path is None:
+                num_loaded_models = 0
+                loaded_model_names = []
                 try:
                     if len(glob.glob(self.path_of_embeddings.split("embeddings")[0] + "trained_models/*.pt")) == 0:
                         raise FileNotFoundError
                     else:
                         for file_name in glob.glob(self.path_of_embeddings.split("embeddings")[0] + "trained_models/*.pt"):
-                            for m in Untrained:
-                                if m.name in file_name:
+                            for model_name in Models:
+                                if model_name in file_name:
                                     try:
-                                        m.load_state_dict(torch.load(file_name, map_location=self.device, weights_only=True))
-                                        Models.append(m.eval())
+                                        model = Models[model_name]["model"]
+                                        model.load_state_dict(torch.load(file_name, map_location=self.device, weights_only=True))
+                                        Models[model_name]["model"] = model
+                                        num_loaded_models += 1
+                                        loaded_model_names.append(model_name)
                                     except Exception as e:
-                                        print(e)
+                                        print(f"Could not load pretrained weights for {model_name}. Please consider training the model!")
+                                        print("\n", e)
                                         pass
                 except Exception as e:
                     print(e)
                     raise FileNotFoundError(f"The path to pretrained models is None and no models could be found in {self.path_of_embeddings.split("embeddings")[0]}trained_models")
 
-                if Models:
+                if num_loaded_models == len(Models):
                     print("\n Loaded NCES weights!\n")
                     return Models
+                elif num_loaded_models > 0:
+                    print("Some model weights could not be loaded. Successful ones are: ", loaded_model_names)
                 else:
                     print("!!!Returning untrained models, could not load pretrained")
-                    return Untrained
+                    return Models
 
             elif len(glob.glob(path+"/*.pt")) == 0:
                  print("No pretrained model found! If directory is empty or does not exist, set the NCES `load_pretrained` parameter to `False` or make sure `save_model` was set to `True` in the .train() method.")
                 raise FileNotFoundError(f"Path {path} does not contain any pretrained models!")
             else:
+                num_loaded_models = 0
+                loaded_model_names = []
                 for file_name in glob.glob(path+"/*.pt"):
                     for m in Untrained:
                         if m.name in file_name:
                             try:
-                                m.load_state_dict(torch.load(file_name, map_location=self.device, weights_only=True))
-                                Models.append(m.eval())
+                                model = Models[model_name]["model"]
+                                model.load_state_dict(torch.load(file_name, map_location=self.device, weights_only=True))
+                                Models[model_name]["model"] = model
+                                num_loaded_models += 1
+                                loaded_model_names.append(model_name)
                             except Exception as e:
                                 print(e)
                                 pass
-                if Models:
+                if num_loaded_models == len(Models):
                     print("\n Loaded NCES weights!\n")
                     return Models
+                elif num_loaded_models > 0:
+                    print("Some model weights could not be loaded. Successful ones are: ", loaded_model_names)
+                    return Models
                 else:
-                    print("!!!Returning untrained models, could not load pretrained models")
-                    return Untrained
+                    print("!!!Returning untrained models, could not load pretrained")
+                    return Models
         else:
-            print("!!!Returning untrained models, could not load pretrained. Check the `load_pretrained parameter` or train the models using NCES.train(data).")
-            return Untrained
+            print("!!!Returning untrained models, could not load pretrained weights. Check the `load_pretrained parameter` or train the models using NCES.train(data).")
+            return Models
 
 
     def refresh(self, path=None):
@@ -913,7 +930,8 @@ class NCES(BaseNCES):
         negative = np.random.choice(neg, size=min(num_neg_ex, len(neg)), replace=False)
         return positive, negative
 
-    def get_prediction(self, models, x1, x2):
+    def get_prediction(self, x1, x2):
+        models = [self.model[name]["model"] for name in self.model]
         for i, model in enumerate(models):
             model.eval()
             model.to(self.device)
@@ -953,7 +971,7 @@ class NCES(BaseNCES):
                                 collate_fn=self.collate_batch_inference, shuffle=False)
         x_pos, x_neg = next(iter(dataloader))
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
-        predictions_raw = self.get_prediction(self.model, x_pos, x_neg)
+        predictions_raw = self.get_prediction(x_pos, x_neg)
 
         predictions = []
         for prediction in predictions_raw:
@@ -969,6 +987,10 @@ class NCES(BaseNCES):
         return predictions
 
     def fit(self, learning_problem: PosNegLPStandard, **kwargs):
+        for model_name in self.model:
+            self.model[model_name]["model"].eval()
+            self.model[model_name]["model"].to(self.device)
+
         pos = learning_problem.pos
         neg = learning_problem.neg
         if isinstance(pos, set) or isinstance(pos, frozenset):
@@ -1041,7 +1063,7 @@ class NCES(BaseNCES):
         predictions_as_owl_class_expressions = []
         predictions_str = []
         for x_pos, x_neg in dataloader:
-            predictions = self.get_prediction(self.model, x_pos, x_neg)
+            predictions = self.get_prediction(x_pos, x_neg)
             per_lp_preds = []
             for prediction in predictions:
                 try:
@@ -1114,8 +1136,8 @@ class NCES2(BaseNCES):
         self.name = "NCES2"
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.triples_data = TriplesData(knowledge_base_path)
-        self.num_entities = len(self.triplesdata.entity2idx)
-        self.num_relations = len(self.triplesdata.relation2idx)
+        self.num_entities = len(self.triples_data.entity2idx)
+        self.num_relations = len(self.triples_data.relation2idx)
         self.embedding_dim = embedding_dim
         self.sampling_strategy = sampling_strategy
         self.input_dropout = input_dropout
@@ -1175,13 +1197,13 @@ class NCES2(BaseNCES):
                                         weights = torch.load(file_name, map_location=self.device, weights_only=True)
                                         model = Models[str(m)]["model"]
                                         model.load_state_dict(weights)
-                                        Models[str(m)]["model"] = model.eval()
+                                        Models[str(m)]["model"] = model
                                         num_loaded += 1
                                     except Exception:
                                         weights = torch.load(file_name, map_location=self.device, weights_only=True)
                                         emb_model = Models[str(m)]["emb_model"]
                                         emb_model.load_state_dict(weights)
-                                        Models[str(m)]["emb_model"] = emb_model.eval()
+                                        Models[str(m)]["emb_model"] = emb_model
                 except Exception as e:
                     print(e)
                     raise FileNotFoundError(f"The path to pretrained models is None and no models could be found in {self.path_of_trained_models}")
@@ -1206,13 +1228,13 @@ class NCES2(BaseNCES):
                                 weights = torch.load(file_name, map_location=self.device, weights_only=True)
                                 model = Models[str(m)]["model"]
                                 model.load_state_dict(weights)
-                                Models[str(m)]["model"] = model.eval()
+                                Models[str(m)]["model"] = model
                                 num_loaded += 1
                             except Exception:
                                 weights = torch.load(file_name, map_location=self.device, weights_only=True)
                                 emb_model = Models[str(m)]["emb_model"]
                                 emb_model.load_state_dict(weights)
-                                Models[str(m)]["emb_model"] = emb_model.eval()
+                                Models[str(m)]["emb_model"] = emb_model
                 if num_loaded == len(self.m):
                     print(f"\nLoaded {self.name} weights!\n")
                     return Models

@@ -22,7 +22,7 @@
 # SOFTWARE.
 # -----------------------------------------------------------------------------
 
-"""NCES trainers."""
+"""Trainer for NCES instances"""
 import numpy as np
 import copy
 import torch
@@ -50,8 +50,8 @@ def before_pad(arg):
     return arg_temp
 
 
-class Trainer:
-    """Trainer for neural class expression synthesizers, e.g., NCES."""
+class NCESTrainer:
+    """Trainer for neural class expression synthesizers, i.e., NCES, NCES2, ROCES."""
     def __init__(self, synthesizer, epochs=300, batch_size=128, learning_rate=1e-4, decay_rate=0,
                  clip_value=5.0, num_workers=8, nces2_or_roces=False, storage_path="./"):
         self.synthesizer = synthesizer
@@ -211,14 +211,12 @@ class Trainer:
             optimizer = self.get_optimizer(model=model, optimizer=optimizer)
             if self.decay_rate:
                 self.scheduler = ExponentialLR(opt, self.decay_rate)
-            random.shuffle(data)
             if model["emb_model"]:
                 self.er_vocab = self.get_er_vocab()
                 triples_dataloader = iter(DataLoader(TriplesDataset(er_vocab=self.er_vocab, num_e=len(self.synthesizer.triples_data.entities)),
                                           batch_size=2*self.batch_size, num_workers=self.num_workers, shuffle=True))
-                train_dataset = ROCESDataset(data, self.synthesizer.triples_data, self.synthesizer.vocab, self.synthesizer.inv_vocab,
-                                             sampling_strategy=self.synthesizer.sampling_strategy, max_length=self.synthesizer.max_length)
             else:
+                assert hasattr(self.synthesizer, "instance_embeddings"), "If no embedding model is available, `instance_embeddings` must be an attribute of the synthesizer since you are probably training NCES"
                 train_dataset = DataLoader(NCESDataset(data, self.synthesizer.instance_embeddings, self.synthesizer.vocab, self.synthesizer.inv_vocab,
                                                        shuffle_examples=shuffle_examples, max_length=self.synthesizer.max_length, example_sizes=example_sizes),
                                                        batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch, shuffle=True)
@@ -233,32 +231,28 @@ class Trainer:
                 soft_acc, hard_acc = [], []
                 train_losses = []
                 num_batches = len(data) // self.batch_size if len(data) % self.batch_size == 0 else len(data) // self.batch_size + 1
-                    batch_data = trange(len(data), desc=f'Train: <Batch: {batch_count}/{num_batches}, Loss: {np.nan}, Soft Acc: {s_acc}, Hard Acc: {h_acc}>', leave=False)
-                    batch_count = 0
+                batch_data = trange(len(data), desc=f'Train: <Batch: {batch_count}/{num_batches}, Loss: {np.nan}, Soft Acc: {s_acc}, Hard Acc: {h_acc}>', leave=False)
+                batch_count = 0
                 if model["emb_model"]:
+                    # When there is no embedding_model, then we are training NCES2 or ROCES and need to use slicing and shuffling to construct input batches since we need to repeatedly query the embedding model for the updated embeddings
+                    random.shuffle(data)
+                    train_dataset = ROCESDataset(data, self.synthesizer.triples_data, self.synthesizer.vocab, self.synthesizer.inv_vocab,
+                                             sampling_strategy=self.synthesizer.sampling_strategy, max_length=self.synthesizer.max_length)
                     for _, train_idx in zip(batch_data, range(0, len(data), self.batch_size)):
                         batch = train_dataset[train_idx:train_idx+self.batch_size]
                         loss, s_acc, h_acc = self.train_step(batch, model["model"], optimizer, model["emb_model"], triples_dataloader)
                         batch_count += 1
-                        batch_data.set_description('Train: <Batch: {}/{}, Loss: {:.4f}, Soft Acc: {:.2f}, Hard Acc: {:.2f}>'.format(batch_count,
-                                                                                                               num_batches,
-                                                                                                               loss,
-                                                                                                               s_acc,
-                                                                                                               h_acc))
+                        batch_data.set_description('Train: <Batch: {}/{}, Loss: {:.4f}, Soft Acc: {:.2f}, Hard Acc: {:.2f}>'.format(batch_count, num_batches, loss, s_acc, h_acc))
                         batch_data.refresh()
                         soft_acc.append(s_acc)
                         hard_acc.append(h_acc)
                         train_losses.append(loss)
                 else:
-                    # When embedding model is None, then we are training NCES and the training data is a torch.utils.data.DataLoader object
+                    # When an embedding model is None, then we are training NCES and the training data is a torch.utils.data.DataLoader object
                     for _, batch in zip(batch_data, train_dataset):
                         loss, s_acc, h_acc = self.train_step(batch, model["model"], optimizer, model["emb_model"], triples_dataloader)
                         batch_count += 1
-                        batch_data.set_description('Train: <Batch: {}/{}, Loss: {:.4f}, Soft Acc: {:.2f}, Hard Acc: {:.2f}>'.format(batch_count,
-                                                                                                               num_batches,
-                                                                                                               loss,
-                                                                                                               s_acc,
-                                                                                                               h_acc))
+                        batch_data.set_description('Train: <Batch: {}/{}, Loss: {:.4f}, Soft Acc: {:.2f}, Hard Acc: {:.2f}>'.format(batch_count, num_batches, loss, s_acc, h_acc))
                         batch_data.refresh()
                         soft_acc.append(s_acc)
                         hard_acc.append(h_acc)

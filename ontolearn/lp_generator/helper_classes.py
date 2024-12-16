@@ -101,14 +101,16 @@ class KB2Data:
     a json file.
     """
 
-    def __init__(self, path, storage_dir=None, max_num_lps=1000, depth=3, max_child_length=20, refinement_expressivity=0.2,
+    def __init__(self, path, storage_dir=None, max_num_lps=1000, beyond_alc=False, depth=3, max_child_length=20, refinement_expressivity=0.2,
                  downsample_refinements=True, sample_fillers_count=10, num_sub_roots=50, min_num_pos_examples=1):
         """
         Args
         - kb_path: path to the owl file representing the knowledge base/ontology
         - storage_dir: directory in which to store the data to be generated. Not the directory needs not to exists, it would be created automatically
         - max_num_lps: the maximum number of learning problems to store
-        - depth, max_child_length, refinement_expressivity, sample_fillers_count, num_sub_roots all refer to the size of the data (learning problems) to be generated
+        - beyond_alc: whether to generate learning problems in ALCHIQD, i.e., a description logic more expressive than ALC
+        - max_child_length: the maximum length of refinements to be generated for a given node
+        - depth, refinement_expressivity, sample_fillers_count, num_sub_roots all refer to the size of the data (learning problems) to be generated
         - downsample_refinements: whether to downsample refinements in ExpressRefinement. If refinement_expressivity<1, this must be set to True
         """
         self.path = path
@@ -117,16 +119,23 @@ class KB2Data:
         else:
             self.storage_dir = storage_dir
         self.max_num_lps = max_num_lps
+        self.beyond_alc = beyond_alc
         self.dl_syntax_renderer = DLSyntaxObjectRenderer()
         self.kb = KnowledgeBase(path=path)
         self.num_examples = self.find_optimal_number_of_examples()
         self.min_num_pos_examples = min_num_pos_examples
         atomic_concepts = frozenset(self.kb.ontology.classes_in_signature())
         self.atomic_concept_names = frozenset([self.dl_syntax_renderer.render(a) for a in atomic_concepts])
-        rho = ExpressRefinement(knowledge_base=self.kb, max_child_length=max_child_length, sample_fillers_count=sample_fillers_count,
-                                downsample=downsample_refinements, use_inverse=False, use_card_restrictions=False,
-                                use_numeric_datatypes=False, use_time_datatypes=False, use_boolean_datatype=False,
+        if self.beyond_alc:
+            rho = ExpressRefinement(knowledge_base=self.kb, max_child_length=max_child_length, sample_fillers_count=sample_fillers_count,
+                                downsample=downsample_refinements, use_inverse=True, use_card_restrictions=True,
+                                use_numeric_datatypes=True, use_time_datatypes=True, use_boolean_datatype=True,
                                 expressivity=refinement_expressivity)
+        else:
+            rho = ExpressRefinement(knowledge_base=self.kb, max_child_length=max_child_length, sample_fillers_count=sample_fillers_count,
+                                    downsample=downsample_refinements, use_inverse=False, use_card_restrictions=False,
+                                    use_numeric_datatypes=False, use_time_datatypes=False, use_boolean_datatype=False,
+                                    expressivity=refinement_expressivity)
         self.lp_gen = ConceptDescriptionGenerator(knowledge_base=self.kb, refinement_operator=rho, depth=depth,
                                                   num_sub_roots=num_sub_roots)
 
