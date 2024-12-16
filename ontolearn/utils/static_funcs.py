@@ -236,6 +236,26 @@ def compute_f1_score(individuals, pos, neg) -> float:
     return f_1
 
 
+def compute_f1_score_from_confusion_matrix(confusion_matrix:dict)->float:
+    tp=int(confusion_matrix["tp"])
+    fn=int(confusion_matrix["fn"])
+    fp=int(confusion_matrix["fp"])
+    tn=int(confusion_matrix["tn"])
+    try:
+        recall = tp / (tp + fn)
+    except ZeroDivisionError:
+        return 0.0
+    try:
+        precision = tp / (tp + fp)
+    except ZeroDivisionError:
+        return 0.0
+
+    if precision == 0 or recall == 0:
+        return 0.0
+
+    f_1 = 2 * ((precision * recall) / (precision + recall))
+    return f_1
+
 def plot_umap_reduced_embeddings(X: pandas.DataFrame, y: List[float], name: str = "umap_visualization.pdf") -> None:  # pragma: no cover
     # TODO:AB: 'umap' is not part of the dependencies !?
     import umap

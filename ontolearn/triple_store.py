@@ -985,9 +985,10 @@ class TripleStore:
     url: str
     def __init__(self, reasoner=None, url: str = None):
 
+        self.url=url
         if reasoner is None:
-            assert url is not None, f"Reasoner:{reasoner} and url of a triplestore {url} cannot be both None."
-            self.g = TripleStoreReasonerOntology(url=url)
+            assert url is not None, f"Reasoner:{reasoner} and url of a triplestore {self.url} cannot be both None."
+            self.g = TripleStoreReasonerOntology(url=self.url)
         else:
             self.g = reasoner
         self.ontology = self.g
@@ -1192,3 +1193,6 @@ class TripleStore:
 
     def query(self, sparql: str):
         yield from self.g.query(sparql_query=sparql)
+
+    def query_results(self, sparql: str):
+        return self.g.query(sparql_query=sparql)

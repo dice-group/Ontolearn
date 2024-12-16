@@ -21,7 +21,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # -----------------------------------------------------------------------------
-
 import pandas as pd
 import json
 from owlapy.class_expression import OWLClassExpression
@@ -42,11 +41,14 @@ from itertools import chain
 import time
 import os
 # F1 class will be deprecated to become compute_f1_score function.
-from ontolearn.utils.static_funcs import compute_f1_score
+from ontolearn.utils.static_funcs import compute_f1_score, compute_f1_score_from_confusion_matrix
 import random
 from ontolearn.heuristics import CeloeBasedReward
 from ontolearn.data_struct import PrepareBatchOfPrediction
 from tqdm import tqdm
+from owlapy.converter import owl_expression_to_sparql_with_confusion_matrix
+
+from ..triple_store import TripleStore
 from ..utils.static_funcs import make_iterable_verbose
 from owlapy.utils import get_expression_length
 
@@ -162,7 +164,11 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                                                max_num_of_concepts_tested=max_num_of_concepts_tested,
                                                max_runtime=max_runtime)
         # CD: This setting the valiable will be removed later.
-        self.quality_func = compute_f1_score
+
+        if isinstance(self.kb, TripleStore):
+            self.quality_func = compute_f1_score_from_confusion_matrix
+        else:
+            self.quality_func = compute_f1_score
 
     def initialize_training_class_expression_learning_problem(self,
                                                               pos: FrozenSet[OWLNamedIndividual],
@@ -301,9 +307,9 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         if max_runtime:
             assert isinstance(max_runtime, float) or isinstance(max_runtime, int)
             self.max_runtime = max_runtime
-
+        # (1) Reinitialize few attributes to ensure a clean start.
         self.clean()
-        # (1) Initialize the start time
+        # (2) Initialize the start time
         self.start_time = time.time()
         # (2) Two mappings from a unique OWL Concept to integer, where a unique concept represents the type info
         # C(x) s.t. x \in E^+ and  C(y) s.t. y \in E^-.
@@ -429,9 +435,20 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         # (3) Increment the number of tested concepts attribute.
 
         """
+        if isinstance(self.kb,TripleStore):
+            sparql_query=owl_expression_to_sparql_with_confusion_matrix(expression=state.concept,
+                                                           positive_examples=self.pos,
+                                                           negative_examples=self.neg)
+            bindings=self.kb.query_results(sparql_query).json()["results"]["bindings"]
+            assert len(bindings) == 1
+            bindings=bindings.pop()
+            confusion_matrix={k : v["value"]for k,v in bindings.items()}
+            quality = self.quality_func(confusion_matrix=confusion_matrix)
 
-        individuals = frozenset([i for i in self.kb.individuals(state.concept)])
-        quality = self.quality_func(individuals=individuals, pos=self.pos, neg=self.neg)
+
+        else:
+            individuals = frozenset([i for i in self.kb.individuals(state.concept)])
+            quality = self.quality_func(individuals=individuals, pos=self.pos, neg=self.neg)
         state.quality = quality
         self._number_of_tested_concepts += 1
 
