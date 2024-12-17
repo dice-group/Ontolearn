@@ -23,7 +23,7 @@
 # -----------------------------------------------------------------------------
 
 import random
-from .helper_classes import RDFTriples, KB2Data
+from .helper_classes import KB2Data
 
 random.seed(42)
 
@@ -40,10 +40,8 @@ class LPGen:
         - depth, max_child_length, refinement_expressivity, sample_fillers_count, num_sub_roots all refer to the size of the data (learning problems) to be generated
         - downsample_refinements: whether to downsample refinements in ExpressRefinement. If refinement_expressivity<1, this must be set to True
         """
-        self.triple_gen = RDFTriples(kb_path=kb_path, storage_dir=storage_dir)
         self.lp_gen = KB2Data(path=kb_path, storage_dir=storage_dir, max_num_lps=max_num_lps, beyond_alc=beyond_alc, depth=depth,
                       max_child_length=max_child_length, refinement_expressivity=refinement_expressivity,
                       downsample_refinements=downsample_refinements, sample_fillers_count=sample_fillers_count, num_sub_roots=num_sub_roots, min_num_pos_examples=min_num_pos_examples)
     def generate(self):
-        self.triple_gen.export_triples()
         self.lp_gen.generate_descriptions().save_data()

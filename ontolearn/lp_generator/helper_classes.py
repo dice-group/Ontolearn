@@ -205,5 +205,5 @@ class KB2Data:
         data = list(data.items())
         os.makedirs(self.storage_dir, exist_ok=True)
         with open(f'{self.storage_dir}/LPs.json', 'w') as file_train:
-            json.dump(dict(data), file_train, indent=3, ensure_ascii=False)
+            json.dump(data, file_train, indent=3, ensure_ascii=False)
         print(f'Data saved at {self.storage_dir}')

@@ -26,17 +26,18 @@
 import numpy as np
 import copy
 import torch
+from torch.utils.data import DataLoader
 from tqdm import trange
 from collections import defaultdict
-import os
+import os, random
 import json
-from ontolearn.data_struct import NCESBaseDataset
 from torch.optim.lr_scheduler import ExponentialLR
 from torch.nn import functional as F
 from torch.nn.utils import clip_grad_value_
 from torch.nn.utils.rnn import pad_sequence
 import time
 from collections import defaultdict
+from ontolearn.data_struct import NCESDataset, ROCESDataset, TriplesDataset
 
 
 def before_pad(arg):
@@ -53,7 +54,7 @@ def before_pad(arg):
 class NCESTrainer:
     """Trainer for neural class expression synthesizers, i.e., NCES, NCES2, ROCES."""
     def __init__(self, synthesizer, epochs=300, batch_size=128, learning_rate=1e-4, decay_rate=0,
-                 clip_value=5.0, num_workers=8, nces2_or_roces=False, storage_path="./"):
+                 clip_value=5.0, num_workers=8, storage_path="./"):
         self.synthesizer = synthesizer
         self.epochs = epochs
         self.batch_size = batch_size
@@ -61,7 +62,6 @@ class NCESTrainer:
         self.decay_rate = decay_rate
         self.clip_value = clip_value
         self.num_workers = num_workers
-        self.nces2_or_roces = nces2_or_roces
         self.storage_path = storage_path
 
     @staticmethod
@@ -70,11 +70,11 @@ class NCESTrainer:
             arg1_ = arg1
             arg2_ = arg2
             if isinstance(arg1_, str):
-                arg1_ = set(before_pad(NCESBaseDataset.decompose(arg1_)))
+                arg1_ = set(before_pad(NCESDataset.decompose(arg1_)))
             else:
                 arg1_ = set(before_pad(arg1_))
             if isinstance(arg2_, str):
-                arg2_ = set(before_pad(NCESBaseDataset.decompose(arg2_)))
+                arg2_ = set(before_pad(NCESDataset.decompose(arg2_)))
             else:
                 arg2_ = set(before_pad(arg2_))
             return 100*float(len(arg1_.intersection(arg2_)))/len(arg1_.union(arg2_))
@@ -83,11 +83,11 @@ class NCESTrainer:
             arg1_ = arg1
             arg2_ = arg2
             if isinstance(arg1_, str):
-                arg1_ = before_pad(NCESBaseDataset.decompose(arg1_))
+                arg1_ = before_pad(NCESDataset.decompose(arg1_))
             else:
                 arg1_ = before_pad(arg1_)
             if isinstance(arg2_, str):
-                arg2_ = before_pad(NCESBaseDataset.decompose(arg2_))
+                arg2_ = before_pad(NCESDataset.decompose(arg2_))
             else:
                 arg2_ = before_pad(arg2_)
             return 100*float(sum(map(lambda x, y: x == y, arg1_, arg2_)))/max(len(arg1_), len(arg2_))
@@ -95,13 +95,18 @@ class NCESTrainer:
         hard_acc = sum(map(hard, prediction, target))/len(target)
         return soft_acc, hard_acc
 
-    def get_optimizer(self, synthesizer, optimizer='Adam'):  # pragma: no cover
+    def get_optimizer(self, model, emb_model=None, optimizer='Adam'):  # pragma: no cover
+        if emb_model is not None:
+            parameters = list(model.parameters()) + list(emb_model.parameters())
+        else:
+            parameters = model.parameters()
+
         if optimizer == 'Adam':
-            return torch.optim.Adam(synthesizer.parameters(), lr=self.learning_rate)
+            return torch.optim.Adam(parameters, lr=self.learning_rate)
         elif optimizer == 'SGD':
-            return torch.optim.SGD(synthesizer.parameters(), lr=self.learning_rate)
+            return torch.optim.SGD(parameters, lr=self.learning_rate)
         elif optimizer == 'RMSprop':
-            return torch.optim.RMSprop(synthesizer.parameters(), lr=self.learning_rate)
+            return torch.optim.RMSprop(parameters, lr=self.learning_rate)
         else:
             raise ValueError
             print('Unsupported optimizer')
@@ -144,11 +149,9 @@ class NCESTrainer:
             pos_emb_list.append(pos_emb)
             neg_emb_list.append(neg_emb)
             target_labels.append(label)
-        pos_emb_list[0] = F.pad(pos_emb_list[0], (0, 0, 0, self.synthesizer.num_examples - pos_emb_list[0].shape[0]),
-                                "constant", 0)
+        pos_emb_list[0] = F.pad(pos_emb_list[0], (0, 0, 0, self.synthesizer.num_examples - pos_emb_list[0].shape[0]), "constant", 0)
         pos_emb_list = pad_sequence(pos_emb_list, batch_first=True, padding_value=0)
-        neg_emb_list[0] = F.pad(neg_emb_list[0], (0, 0, 0, self.synthesizer.num_examples - neg_emb_list[0].shape[0]),
-                                "constant", 0)
+        neg_emb_list[0] = F.pad(neg_emb_list[0], (0, 0, 0, self.synthesizer.num_examples - neg_emb_list[0].shape[0]), "constant", 0)
         neg_emb_list = pad_sequence(neg_emb_list, batch_first=True, padding_value=0)
         target_labels = pad_sequence(target_labels, batch_first=True, padding_value=-100)
         return pos_emb_list, neg_emb_list, target_labels
@@ -157,7 +160,7 @@ class NCESTrainer:
         return self.synthesizer.inv_vocab[idx_array]
     
     
-    def train_step(self, batch, model, optimizer, emb_model=None, triples_dataloader=None):
+    def train_step(self, batch, model, emb_model, optimizer, device, triples_dataloader=None):
         soft_acc, hard_acc = [], []
         train_losses = []
         if emb_model:
@@ -165,24 +168,31 @@ class NCESTrainer:
                 triples_batch = next(triples_dataloader)
             except:
                 triples_dataloader = iter(DataLoader(TriplesDataset(er_vocab=self.er_vocab, num_e=len(self.synthesizer.triples_data.entities)),
-                                              batch_size=2*self.batch_size, num_workers=self.num_workers, shuffle=True))
+                                                    batch_size=2*self.batch_size, num_workers=self.num_workers, shuffle=True))
                 triples_batch = next(triples_dataloader)
-                
+        
         x_pos, x_neg, labels = batch
         target_sequence = self.map_to_token(labels)
         if device.type == "cuda":
-            x1, x2, labels = x1.cuda(), x2.cuda(), labels.cuda()
-        pred_sequence, scores = model(x1, x2)
+            x_pos, x_neg, labels = x_pos.cuda(), x_neg.cuda(), labels.cuda()
+        pred_sequence, scores = model(x_pos, x_neg)
         loss = model.loss(scores, labels)
         # Forward triples to embedding model
-        if emb_model:
-            loss_ = model.loss(scores, labels)
+        if emb_model is not None:
+            e1_idx, r_idx, emb_targets = triples_batch
+            if device.type == "cuda":
+                emb_targets = emb_targets.cuda()
+                r_idx = r_idx.cuda()
+                e1_idx = e1_idx.cuda()
+            loss_ = emb_model.forward_head_and_loss(e1_idx, r_idx, emb_targets)
             loss = loss + loss_
         s_acc, h_acc = self.compute_accuracy(pred_sequence, target_sequence)
-        opt.zero_grad()
+        optimizer.zero_grad()
         loss.backward()
-        clip_grad_value_(synthesizer.parameters(), clip_value=self.clip_value)
-        opt.step()
+        clip_grad_value_(model.parameters(), clip_value=self.clip_value)
+        if emb_model is not None:
+            clip_grad_value_(emb_model.parameters(), clip_value=self.clip_value)
+        optimizer.step()
         if self.decay_rate:
             self.scheduler.step()
         return loss.item(), s_acc, h_acc
@@ -206,41 +216,44 @@ class NCESTrainer:
             desc = model["model"].name
             if device.type == "cuda":
                 model["model"].cuda()
-                if model["emb_model"]:
+                if model["emb_model"] is not None:
                     model["emb_model"].cuda()
-            optimizer = self.get_optimizer(model=model, optimizer=optimizer)
+            optim_algo = self.get_optimizer(model=model["model"], emb_model=model["emb_model"], optimizer=optimizer)
             if self.decay_rate:
-                self.scheduler = ExponentialLR(opt, self.decay_rate)
-            if model["emb_model"]:
+                self.scheduler = ExponentialLR(optim_algo, self.decay_rate)
+            if model["emb_model"] is not None:
                 self.er_vocab = self.get_er_vocab()
                 triples_dataloader = iter(DataLoader(TriplesDataset(er_vocab=self.er_vocab, num_e=len(self.synthesizer.triples_data.entities)),
                                           batch_size=2*self.batch_size, num_workers=self.num_workers, shuffle=True))
             else:
                 assert hasattr(self.synthesizer, "instance_embeddings"), "If no embedding model is available, `instance_embeddings` must be an attribute of the synthesizer since you are probably training NCES"
-                train_dataset = DataLoader(NCESDataset(data, self.synthesizer.instance_embeddings, self.synthesizer.vocab, self.synthesizer.inv_vocab,
+                train_dataset = DataLoader(NCESDataset(data, embeddings=self.synthesizer.instance_embeddings, vocab=self.synthesizer.vocab, inv_vocab=self.synthesizer.inv_vocab,
                                                        shuffle_examples=shuffle_examples, max_length=self.synthesizer.max_length, example_sizes=example_sizes),
                                                        batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch, shuffle=True)
             Train_loss = []
             Train_acc = defaultdict(list)
             best_score = 0
+            best_weights = (None, None)
             if record_runtime:
                 t0 = time.time()
             s_acc, h_acc = 0, 0
-            Epochs = trange(self.epochs, desc=f'Loss: {np.nan}, Soft Acc: {s_acc}, Hard Acc: {h_acc}', leave=True)
+            Epochs = trange(self.epochs, desc=f'Loss: {np.nan}, Soft Acc: {s_acc}, Hard Acc: {h_acc}', leave=True, colour='green')
             for e in Epochs:
                 soft_acc, hard_acc = [], []
                 train_losses = []
-                num_batches = len(data) // self.batch_size if len(data) % self.batch_size == 0 else len(data) // self.batch_size + 1
-                batch_data = trange(len(data), desc=f'Train: <Batch: {batch_count}/{num_batches}, Loss: {np.nan}, Soft Acc: {s_acc}, Hard Acc: {h_acc}>', leave=False)
                 batch_count = 0
-                if model["emb_model"]:
+                num_batches = len(data) // self.batch_size if len(data) % self.batch_size == 0 else len(data) // self.batch_size + 1
+                batch_data = trange(num_batches, desc=f'Train: <Batch: {batch_count}/{num_batches}, Loss: {np.nan}, Soft Acc: {s_acc}, Hard Acc: {h_acc}>', leave=False)
+                if model["emb_model"] is not None:
                     # When there is no embedding_model, then we are training NCES2 or ROCES and need to use slicing and shuffling to construct input batches since we need to repeatedly query the embedding model for the updated embeddings
                     random.shuffle(data)
-                    train_dataset = ROCESDataset(data, self.synthesizer.triples_data, self.synthesizer.vocab, self.synthesizer.inv_vocab,
+                    train_dataset = ROCESDataset(data, self.synthesizer.triples_data, k=self.synthesizer.k if hasattr(self.synthesizer, 'k') else None, vocab=self.synthesizer.vocab, inv_vocab=self.synthesizer.inv_vocab,
                                              sampling_strategy=self.synthesizer.sampling_strategy, max_length=self.synthesizer.max_length)
+                    # Load currently learned embeddings
+                    train_dataset.load_embeddings(model["emb_model"])
                     for _, train_idx in zip(batch_data, range(0, len(data), self.batch_size)):
                         batch = train_dataset[train_idx:train_idx+self.batch_size]
-                        loss, s_acc, h_acc = self.train_step(batch, model["model"], optimizer, model["emb_model"], triples_dataloader)
+                        loss, s_acc, h_acc = self.train_step(batch, model["model"], model["emb_model"], optim_algo, device, triples_dataloader)
                         batch_count += 1
                         batch_data.set_description('Train: <Batch: {}/{}, Loss: {:.4f}, Soft Acc: {:.2f}, Hard Acc: {:.2f}>'.format(batch_count, num_batches, loss, s_acc, h_acc))
                         batch_data.refresh()
@@ -250,7 +263,7 @@ class NCESTrainer:
                 else:
                     # When an embedding model is None, then we are training NCES and the training data is a torch.utils.data.DataLoader object
                     for _, batch in zip(batch_data, train_dataset):
-                        loss, s_acc, h_acc = self.train_step(batch, model["model"], optimizer, model["emb_model"], triples_dataloader)
+                        loss, s_acc, h_acc = self.train_step(batch, model["model"], model["emb_model"], optim_algo, device)
                         batch_count += 1
                         batch_data.set_description('Train: <Batch: {}/{}, Loss: {:.4f}, Soft Acc: {:.2f}, Hard Acc: {:.2f}>'.format(batch_count, num_batches, loss, s_acc, h_acc))
                         batch_data.refresh()
@@ -262,17 +275,22 @@ class NCESTrainer:
                 Train_loss.append(np.mean(train_losses))
                 Train_acc['soft'].append(train_soft_acc)
                 Train_acc['hard'].append(train_hard_acc)
-                Epochs.set_description('<Epoch: {}/{}> Loss: {:.4f}, Soft Acc: {:.2f}%, Hard Acc: {:.2f}%'.format(e, self.epochs, Train_loss[-1], train_soft_acc, train_hard_acc))
+                Epochs.set_description('<Epoch: {}/{}> Loss: {:.4f}, Soft Acc: {:.2f}%, Hard Acc: {:.2f}%'.format(e+1, self.epochs, Train_loss[-1], train_soft_acc, train_hard_acc))
                 Epochs.refresh()
                 #### Continue here
-                weights = copy.deepcopy(synthesizer.state_dict())
+                model_weights = copy.deepcopy(model["model"].state_dict())
+                emb_model_weights = None
+                if model["emb_model"] is not None:
+                    emb_model_weights = copy.deepcopy(model["emb_model"].state_dict())
                 if Train_acc['hard'] and Train_acc['hard'][-1] > best_score:
                     best_score = Train_acc['hard'][-1]
-                    best_weights = weights
-            synthesizer.load_state_dict(best_weights)
+                    best_weights = (model_weights, emb_model_weights)
+            model["model"].load_state_dict(best_weights[0])
+            if model["emb_model"] is not None:
+                model["emb_model"].load_state_dict(best_weights[1])
             if record_runtime:  # pragma: no cover
                 duration = time.time()-t0
-                runtime_info = {"Architecture": synthesizer.name,
+                runtime_info = {"Architecture": model["model"].name,
                                 "Number of Epochs": self.epochs, "Runtime (s)": duration}
                 if not os.path.exists(self.storage_path+"/runtime/"):
                     os.mkdir(self.storage_path+"/runtime/")
@@ -293,8 +311,15 @@ class NCESTrainer:
 
                 if not os.path.exists(self.storage_path+"/trained_models/"):
                     os.mkdir(self.storage_path+"/trained_models/")
-                torch.save(synthesizer.state_dict(), self.storage_path+"/trained_models/"+"trained_"+desc+".pt")
-                print("{} saved".format(synthesizer.name))
+                model_file_name = "trained_" + model["model"].name
+                if model["model"].name != model_name:
+                    model_file_name += "_" + model_name
+                if model["emb_model"] is not None:
+                    model_file_name += "_" + model["emb_model"].name
+                torch.save(model["model"].state_dict(), self.storage_path+"/trained_models/"+model_file_name+".pt")
+                if model["emb_model"] is not None:
+                    torch.save(model["emb_model"].state_dict(), self.storage_path+"/trained_models/"+model_file_name+"_emb.pt")
+                print("{} saved".format(model["model"].name))
                 if not os.path.exists(self.storage_path+"/metrics/"):
                     os.mkdir(self.storage_path+"/metrics/")
                 with open(self.storage_path+"/metrics/"+"metrics_"+desc+".json", "w") as plot_file:

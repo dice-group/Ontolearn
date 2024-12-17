@@ -73,7 +73,7 @@ from ontolearn.clip_architectures import LengthLearner_LSTM, LengthLearner_GRU, 
 from .utils import read_csv
 from ontolearn.nces_trainer import NCESTrainer, before_pad
 from ontolearn.clip_trainer import CLIPTrainer
-from ontolearn.nces_utils import SimpleSolution, Data
+from ontolearn.nces_utils import SimpleSolution
 from ontolearn.nces_modules import ConEx
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.parser import DLSyntaxParser
@@ -781,8 +781,7 @@ class CLIP(CELOE):
     def train(self, data: Iterable[List[Tuple]], epochs=300, batch_size=256, learning_rate=1e-3, decay_rate=0.0,
               clip_value=5.0, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True,
               example_sizes=None, shuffle_examples=False):
-        train_dataset = CLIPDataset(data, self.instance_embeddings, shuffle_examples=shuffle_examples,
-                                       example_sizes=example_sizes)
+        train_dataset = CLIPDataset(data, self.instance_embeddings, shuffle_examples=shuffle_examples, example_sizes=example_sizes)
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=self.num_workers,
                                       collate_fn=self.collate_batch, shuffle=True)
         if storage_path is None:
@@ -859,7 +858,7 @@ class NCES(BaseNCES):
                                         pass
                 except Exception as e:
                     print(e)
-                    raise FileNotFoundError(f"The path to pretrained models is None and no models could be found in {self.path_of_embeddings.split("embeddings")[0]}trained_models")
+                    raise FileNotFoundError(f"The path to pretrained models is None and no models could be found in {self.path_of_embeddings.split('embeddings')[0]}trained_models")
 
                 if num_loaded_models == len(Models):
                     print("\n Loaded NCES weights!\n")
@@ -871,7 +870,7 @@ class NCES(BaseNCES):
                     return Models
 
             elif len(glob.glob(path+"/*.pt")) == 0:
-                 print("No pretrained model found! If directory is empty or does not exist, set the NCES `load_pretrained` parameter to `False` or make sure `save_model` was set to `True` in the .train() method.")
+                print("No pretrained model found! If directory is empty or does not exist, set the NCES `load_pretrained` parameter to `False` or make sure `save_model` was set to `True` in the .train() method.")
                 raise FileNotFoundError(f"Path {path} does not contain any pretrained models!")
             else:
                 num_loaded_models = 0
@@ -1091,7 +1090,6 @@ class NCES(BaseNCES):
         return lps
 
 
-
     def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, num_lps=1000, learning_rate=1e-4, decay_rate=0.0,
               clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True,
               example_sizes=None, shuffle_examples=False):
@@ -1107,15 +1105,9 @@ class NCES(BaseNCES):
             batch_size = self.batch_size
         if data is None:
             data = self.generate_training_data(self.knowledge_base_path, num_lps=num_lps, storage_dir=storage_path)
-        train_dataset = NCESDataset(data, self.instance_embeddings, self.vocab, self.inv_vocab,
-                                    shuffle_examples=shuffle_examples, max_length=self.max_length,
-                                    example_sizes=example_sizes)
-        train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers,
-                                      collate_fn=self.collate_batch, shuffle=True)
-        
-        trainer = NCESTrainer(self, epochs=epochs, learning_rate=learning_rate, decay_rate=decay_rate,
+        trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, decay_rate=decay_rate,
                               clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
-        trainer.train(train_dataloader, save_model, optimizer, record_runtime)
+        trainer.train(data=data, save_model=save_model, optimizer=optimizer, record_runtime=record_runtime)
         
         
         
@@ -1124,7 +1116,7 @@ class NCES2(BaseNCES):
 
     def __init__(self, knowledge_base_path,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
-                 path_of_trained_models="", proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
+                 path_of_trained_models="", proj_dim=128, drop_prob=0.1,
                  num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=256, sampling_strategy="nces2", 
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, 
                  learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
@@ -1138,6 +1130,7 @@ class NCES2(BaseNCES):
         self.triples_data = TriplesData(knowledge_base_path)
         self.num_entities = len(self.triples_data.entity2idx)
         self.num_relations = len(self.triples_data.relation2idx)
+        self.path_of_trained_models = path_of_trained_models
         self.embedding_dim = embedding_dim
         self.sampling_strategy = sampling_strategy
         self.input_dropout = input_dropout
@@ -1156,23 +1149,22 @@ class NCES2(BaseNCES):
             possible_checkpoints = glob.glob(self.path_of_trained_models + "/*.pt")
         if self.load_pretrained and len(possible_checkpoints):
             stop_outer_loop = False
-            try:
-                for file_name in possible_checkpoints:
-                    for m in self.m:
-                        if m in file_name:
-                            try:
-                                weights = torch.load(file_name, map_location=self.device, weights_only=True)
-                                num_ents, half_emb_dim = weights["emb_ent_real"].weight.data.shape
-                                num_rels, _ = weights["emb_rel_real"].weight.data.shape
-                                self.embedding_dim = 2*half_emb_dim
-                                self.num_entities = num_ents
-                                self.num_relations = num_rels
-                                stop_outer_loop = True
-                                break
-                            except:
-                                pass
-                    if stop_outer_loop:
-                        break
+            for file_name in possible_checkpoints:
+                for m in self.m:
+                    if m in file_name:
+                        try:
+                            weights = torch.load(file_name, map_location=self.device, weights_only=True)
+                            num_ents, half_emb_dim = weights["emb_ent_real"].weight.data.shape
+                            num_rels, _ = weights["emb_rel_real"].weight.data.shape
+                            self.embedding_dim = 2*half_emb_dim
+                            self.num_entities = num_ents
+                            self.num_relations = num_rels
+                            stop_outer_loop = True
+                            break
+                        except:
+                            pass
+                if stop_outer_loop:
+                    break
                 
     
     def get_synthesizer(self, path=None):
@@ -1180,8 +1172,7 @@ class NCES2(BaseNCES):
         Models = {str(m): {"emb_model": ConEx(self.embedding_dim, self.num_entities, self.num_relations, self.input_dropout,
                                               self.feature_map_dropout, self.kernel_size, self.num_of_output_channels), 
                            "model": SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length,
-                                   self.input_size, self.proj_dim, self.num_heads, self.num_seeds, m, self.ln)}
-                  for m in self.m}
+                                   self.embedding_dim, self.proj_dim, self.num_heads, self.num_seeds, m, self.ln)} for m in self.m}
         if self.load_pretrained:
             num_loaded = 0
             if path is None:
@@ -1216,7 +1207,7 @@ class NCES2(BaseNCES):
                     return Models
 
             elif len(glob.glob(path + "/*.pt")) == 0:
-                 print(f"No pretrained model found! If directory is empty or does not exist, set the {self.name} `load_pretrained` parameter to `False` or make sure `save_model` was set to `True` in the .train() method.")
+                print(f"No pretrained model found! If directory is empty or does not exist, set the {self.name} `load_pretrained` parameter to `False` or make sure `save_model` was set to `True` in the .train() method.")
                 raise FileNotFoundError(f"Path {path} does not contain any pretrained models!")
             else:
                 possible_checkpoints = glob.glob(path + "/*.pt")
@@ -1389,8 +1380,7 @@ class NCES2(BaseNCES):
     
 
     def fit_from_iterable(self, data: Union[List[Tuple[str, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]],
-    List[Tuple[str, Set[str], Set[str]]]], shuffle_examples=False,
-                          verbose=False, **kwargs) -> List:  # pragma: no cover
+    List[Tuple[str, Set[str], Set[str]]]], shuffle_examples=False, verbose=False, **kwargs) -> List:  # pragma: no cover
         """
         - data is a list of tuples where the first items are strings corresponding to target concepts.
         
@@ -1407,9 +1397,7 @@ class NCES2(BaseNCES):
                                             sampling_strategy=self.sampling_strategy,
                                             num_pred_per_lp=self.num_predictions)
             dataset.load_embeddings(self.model[num_ind_points]["emb_model"])
-            dataloader = DataLoader(dataset, batch_size=self.batch_size,
-                                num_workers=self.num_workers,
-                                shuffle=False)
+            dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
             dataloaders.append(dataloader)
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions_as_owl_class_expressions = []
@@ -1438,7 +1426,9 @@ class NCES2(BaseNCES):
         lp_gen.generate()
         print("Loading generated data...")
         with open(f"{storage_dir}/LPs.json") as file:
-            lps = list(json.load(file).items())
+            lps = json.load(file)
+            if isinstance(lps, dict):
+                lps = list(lps.items())
             print("Number of learning problems:", len(lps))
         return lps
 
@@ -1457,14 +1447,9 @@ class NCES2(BaseNCES):
             batch_size = self.batch_size
         if data is None:
             data = self.generate_training_data(self.knowledge_base_path, num_lps=num_lps, beyond_alc=True, storage_dir=storage_path)
-        train_dataset = ROCESDataset(data, triples_data, self.vocab, self.inv_vocab, sampling_strategy=self.sampling_strategy,
-                                       shuffle_examples=shuffle_examples, max_length=self.max_length)
-        train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers,
-                                      collate_fn=self.collate_batch, shuffle=True)
-        
-        trainer = NCESTrainer(self, epochs=epochs, learning_rate=learning_rate, decay_rate=decay_rate,
+        trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, decay_rate=decay_rate,
                               clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
-        trainer.train(train_dataloader, save_model, optimizer, record_runtime)
+        trainer.train(data, save_model, optimizer, record_runtime)
 
 
         
@@ -1472,17 +1457,18 @@ class ROCES(NCES2):
     """Robust Class Expression Synthesis in Description Logics via Iterative Sampling."""
 
     def __init__(self, knowledge_base_path,
-                 quality_func: Optional[AbstractScorer] = None, num_predictions=5,
+                 quality_func: Optional[AbstractScorer] = None, num_predictions=5, k=5,
                  path_of_trained_models="", proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
                  num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=256, sampling_strategy="p",
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, 
                  learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
                  max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0):
         super().__init__(knowledge_base_path,
-                 quality_func, num_predictions, path_of_trained_models, proj_dim, rnn_n_layers, drop_prob,
-                 num_heads, num_seeds, m, ln, embedding_dim, sampling_strategy, input_dropout, feature_map_dropout, 
-                 kernel_size, num_of_output_channels, learning_rate, decay_rate, clip_value, batch_size,
-                 num_workers, max_length, load_pretrained=True, sorted_examples, verbose)
+                        quality_func, num_predictions, path_of_trained_models, proj_dim, drop_prob,
+                        num_heads, num_seeds, m, ln, embedding_dim, sampling_strategy, input_dropout, feature_map_dropout, 
+                        kernel_size, num_of_output_channels, learning_rate, decay_rate, clip_value, batch_size,
+                        num_workers, max_length, load_pretrained, sorted_examples, verbose)
         
         self.name = "ROCES"
+        self.k = k
 

@@ -31,7 +31,7 @@ from collections import deque
 import pandas as pd
 import numpy as np
 import random
-from edflib import graph
+from rdflib import graph
 
 
 class PrepareBatchOfPrediction(torch.utils.data.Dataset):  # pragma: no cover
@@ -163,7 +163,6 @@ class TriplesData:
         self.triples = train_data
         self.entities = self.get_entities(self.triples)
         self.relations = self.get_relations(self.triples)
-        self.relations = train_relations
         self.entity2idx = pd.DataFrame(list(range(len(self.entities))), index=self.entities)
         self.relation2idx = pd.DataFrame(list(range(len(self.relations))), index=self.relations)
 
@@ -269,10 +268,10 @@ class CLIPDatasetInference(torch.utils.data.Dataset):  # pragma: no cover
 
 class NCESBaseDataset:  # pragma: no cover
 
-    def __init__(self, vocab, inv_vocab):
+    def __init__(self, vocab, inv_vocab, max_length):
         self.vocab = vocab
         self.inv_vocab = inv_vocab
-        self.vocab_df = pd.DataFrame(self.vocab.values(), index=self.vocab.keys())
+        self.max_length = max_length
 
     @staticmethod
     def decompose(concept_name: str) -> list:
@@ -312,14 +311,12 @@ class NCESBaseDataset:  # pragma: no cover
         return labels, len(target)
 
 
-class NCESDataset(NCESBaseDataset torch.utils.data.Dataset):  # pragma: no cover
+class NCESDataset(NCESBaseDataset, torch.utils.data.Dataset):  # pragma: no cover
 
-    def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, max_length, example_sizes=None,
-                 sorted_examples=True):
-        super().__init__(vocab, inv_vocab)
+    def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, max_length, example_sizes=None, sorted_examples=True):
+        super().__init__(vocab, inv_vocab, max_length)
         self.data = data
         self.embeddings = embeddings
-        self.max_length = max_length
         self.shuffle_examples = shuffle_examples
         self.example_sizes = example_sizes
         self.sorted_examples = sorted_examples
@@ -345,9 +342,7 @@ class NCESDataset(NCESBaseDataset torch.utils.data.Dataset):  # pragma: no cover
         datapoint_neg = torch.FloatTensor(self.embeddings.loc[selected_neg].values.squeeze())
         labels, length = self.get_labels(key)
         
-        return datapoint_pos, datapoint_neg, torch.cat([torch.tensor(labels),
-                                                        self.vocab['PAD'] * torch.ones(
-                                                            max(0, self.max_length-length))]).long()
+        return datapoint_pos, datapoint_neg, torch.cat([torch.tensor(labels), self.vocab['PAD'] * torch.ones(max(0, self.max_length-length))]).long()
 
 
 class NCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):  # pragma: no cover
@@ -375,17 +370,15 @@ class NCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):  # pragma
         
         return datapoint_pos, datapoint_neg
     
-    
 
 class ROCESDataset(NCESBaseDataset, torch.utils.data.Dataset):
     
-    def __init__(self, data, triples_data, vocab, inv_vocab, sampling_strategy="p"):
-        super(ROCESDataset, self).__init__(vocab, inv_vocab)
+    def __init__(self, data, triples_data, k, vocab, inv_vocab, max_length, sampling_strategy="p"):
+        super(ROCESDataset, self).__init__(vocab, inv_vocab, max_length)
         self.data = data
+        print("\n\nData type", type(data))
         self.triples_data = triples_data
         self.k = k
-        self.vocab = vocab
-        self.inv_vocab = inv_vocab
         self.sampling_strategy = sampling_strategy
         
     def load_embeddings(self, embedding_model):
@@ -400,7 +393,9 @@ class ROCESDataset(NCESBaseDataset, torch.utils.data.Dataset):
         return len(self.data)
     
     def __getitem__(self, idx):
+        print(len(self.data[idx]))
         key, value = self.data[idx]
+        1/0
         pos = value['positive examples']
         neg = value['negative examples']
         if self.sampling_strategy == 'p':
@@ -437,13 +432,11 @@ class ROCESDataset(NCESBaseDataset, torch.utils.data.Dataset):
     
 class ROCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):
     
-    def __init__(self, data, triples_data, k, vocab, inv_vocab, num_examples, sampling_strategy='p', num_pred_per_lp=1):
-        super(ROCESDatasetInference, self).__init__(vocab, inv_vocab)
+    def __init__(self, data, triples_data, k, vocab, inv_vocab, max_length, num_examples, sampling_strategy='p', num_pred_per_lp=1):
+        super(ROCESDatasetInference, self).__init__(vocab, inv_vocab, max_length)
         self.data = data
         self.triples_data = triples_data
         self.k = k
-        self.vocab = vocab
-        self.inv_vocab = inv_vocab
         self.sampling_strategy = sampling_strategy
         self.num_examples = num_examples
         self.num_pred_per_lp = num_pred_per_lp
@@ -468,24 +461,16 @@ class ROCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):
             prob_pos_set = prob_pos_set/prob_pos_set.sum()
             prob_neg_set = 1.0/(1+np.array(range(min(self.k, len(neg)), len(neg)+1, self.k)))
             prob_neg_set = prob_neg_set/prob_neg_set.sum()
-            k_pos = np.random.choice(range(min(self.k, len(pos)), len(pos)+1, self.k),
-                                     size=(self.num_predictions,),
-                                     replace=True, p=prob_pos_set)
-            k_neg = np.random.choice(range(min(self.k, len(neg)), len(neg)+1, self.k),
-                                     size=(self.num_predictions,),
-                                     replace=True, p=prob_neg_set)
+            k_pos = np.random.choice(range(min(self.k, len(pos)), len(pos)+1, self.k), size=(self.num_predictions,), replace=True, p=prob_pos_set)
+            k_neg = np.random.choice(range(min(self.k, len(neg)), len(neg)+1, self.k), size=(self.num_predictions,), replace=True, p=prob_neg_set)
         elif self.sampling_strategy == "nces2":
             k_pos = np.random.choice([len(pos), 2*len(pos)//3],
                                      size=(self.num_predictions,),
                                      replace=True)
-            k_neg = np.random.choice([len(neg), 2*len(neg)//3],
-                                     size=(self.num_predictions,),
-                                     replace=True)
+            k_neg = np.random.choice([len(neg), 2*len(neg)//3], size=(self.num_predictions,), replace=True)
         else:
-            k_pos = np.random.choice(range(min(self.k, len(pos)), len(pos)+1, self.k), 
-                                     size=(self.num_predictions,), replace=True)
-            k_neg = np.random.choice(range(min(self.k, len(neg)), len(neg)+1, self.k),
-                                     size=(self.num_predictions,), replace=True)
+            k_pos = np.random.choice(range(min(self.k, len(pos)), len(pos)+1, self.k), size=(self.num_predictions,), replace=True)
+            k_neg = np.random.choice(range(min(self.k, len(neg)), len(neg)+1, self.k), size=(self.num_predictions,), replace=True)
             
         selected_pos = [random.sample(pos, k) for k in k_pos]
         selected_neg = [random.sample(neg, k) for k in k_neg]
