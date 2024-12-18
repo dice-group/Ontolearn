@@ -211,7 +211,7 @@ class NCESTrainer:
             print("#"*50)
             print()
             model = copy.deepcopy(self.synthesizer.model[model_name])
-            print("{} starts training... \n".format(model["model"].name))
+            print("{}: {} starts training... \n".format(self.synthesizer.name, model["model"].name))
             print("#"*50, "\n")
             desc = model["model"].name
             if device.type == "cuda":
@@ -222,21 +222,28 @@ class NCESTrainer:
             if self.decay_rate:
                 self.scheduler = ExponentialLR(optim_algo, self.decay_rate)
             if model["emb_model"] is not None:
+                # When there is no embedding_model, then we are training NCES2 or ROCES and we need to repeatedly query the embedding model for the updated embeddings
+                train_dataset = ROCESDataset(data, self.synthesizer.triples_data, k=self.synthesizer.k if hasattr(self.synthesizer, 'k') else None, vocab=self.synthesizer.vocab, inv_vocab=self.synthesizer.inv_vocab,
+                                         max_length=self.synthesizer.max_length, sampling_strategy=self.synthesizer.sampling_strategy)
+                train_dataset.load_embeddings(model["emb_model"]) # Load embeddings the first time
+                train_dataloader = DataLoader(train_dataset, batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch, shuffle=True)
+                # Get dataloader for the embedding model
                 self.er_vocab = self.get_er_vocab()
                 triples_dataloader = iter(DataLoader(TriplesDataset(er_vocab=self.er_vocab, num_e=len(self.synthesizer.triples_data.entities)),
                                           batch_size=2*self.batch_size, num_workers=self.num_workers, shuffle=True))
             else:
                 assert hasattr(self.synthesizer, "instance_embeddings"), "If no embedding model is available, `instance_embeddings` must be an attribute of the synthesizer since you are probably training NCES"
-                train_dataset = DataLoader(NCESDataset(data, embeddings=self.synthesizer.instance_embeddings, vocab=self.synthesizer.vocab, inv_vocab=self.synthesizer.inv_vocab,
+                train_dataloader = DataLoader(NCESDataset(data, embeddings=self.synthesizer.instance_embeddings, vocab=self.synthesizer.vocab, inv_vocab=self.synthesizer.inv_vocab,
                                                        shuffle_examples=shuffle_examples, max_length=self.synthesizer.max_length, example_sizes=example_sizes),
                                                        batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch, shuffle=True)
             Train_loss = []
             Train_acc = defaultdict(list)
             best_score = 0
             best_weights = (None, None)
+            s_acc, h_acc = 0, 0
             if record_runtime:
                 t0 = time.time()
-            s_acc, h_acc = 0, 0
+
             Epochs = trange(self.epochs, desc=f'Loss: {np.nan}, Soft Acc: {s_acc}, Hard Acc: {h_acc}', leave=True, colour='green')
             for e in Epochs:
                 soft_acc, hard_acc = [], []
@@ -245,14 +252,7 @@ class NCESTrainer:
                 num_batches = len(data) // self.batch_size if len(data) % self.batch_size == 0 else len(data) // self.batch_size + 1
                 batch_data = trange(num_batches, desc=f'Train: <Batch: {batch_count}/{num_batches}, Loss: {np.nan}, Soft Acc: {s_acc}, Hard Acc: {h_acc}>', leave=False)
                 if model["emb_model"] is not None:
-                    # When there is no embedding_model, then we are training NCES2 or ROCES and need to use slicing and shuffling to construct input batches since we need to repeatedly query the embedding model for the updated embeddings
-                    random.shuffle(data)
-                    train_dataset = ROCESDataset(data, self.synthesizer.triples_data, k=self.synthesizer.k if hasattr(self.synthesizer, 'k') else None, vocab=self.synthesizer.vocab, inv_vocab=self.synthesizer.inv_vocab,
-                                             sampling_strategy=self.synthesizer.sampling_strategy, max_length=self.synthesizer.max_length)
-                    # Load currently learned embeddings
-                    train_dataset.load_embeddings(model["emb_model"])
-                    for _, train_idx in zip(batch_data, range(0, len(data), self.batch_size)):
-                        batch = train_dataset[train_idx:train_idx+self.batch_size]
+                    for _, batch in zip(batch_data, train_dataloader):
                         loss, s_acc, h_acc = self.train_step(batch, model["model"], model["emb_model"], optim_algo, device, triples_dataloader)
                         batch_count += 1
                         batch_data.set_description('Train: <Batch: {}/{}, Loss: {:.4f}, Soft Acc: {:.2f}, Hard Acc: {:.2f}>'.format(batch_count, num_batches, loss, s_acc, h_acc))
@@ -260,9 +260,11 @@ class NCESTrainer:
                         soft_acc.append(s_acc)
                         hard_acc.append(h_acc)
                         train_losses.append(loss)
+                        # Load currently learned embeddings
+                        train_dataset.load_embeddings(model["emb_model"])
                 else:
-                    # When an embedding model is None, then we are training NCES and the training data is a torch.utils.data.DataLoader object
-                    for _, batch in zip(batch_data, train_dataset):
+                    # When an embedding model is None, then we are training NCES
+                    for _, batch in zip(batch_data, train_dataloader):
                         loss, s_acc, h_acc = self.train_step(batch, model["model"], model["emb_model"], optim_algo, device)
                         batch_count += 1
                         batch_data.set_description('Train: <Batch: {}/{}, Loss: {:.4f}, Soft Acc: {:.2f}, Hard Acc: {:.2f}>'.format(batch_count, num_batches, loss, s_acc, h_acc))

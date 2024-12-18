@@ -796,13 +796,13 @@ class CLIP(CELOE):
 class NCES(BaseNCES):
     """Neural Class Expression Synthesis."""
 
-    def __init__(self, knowledge_base_path,
+    def __init__(self, knowledge_base_path, nces2_or_roces=False,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
                  learner_names=["SetTransformer"], path_of_embeddings="", proj_dim=128, rnn_n_layers=2,
                  drop_prob=0.1, num_heads=4, num_seeds=1, m=32, ln=False, 
                  learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
                  max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0):
-        super().__init__(knowledge_base_path, quality_func, num_predictions, proj_dim, drop_prob,
+        super().__init__(knowledge_base_path, nces2_or_roces, quality_func, num_predictions, proj_dim, drop_prob,
                  num_heads, num_seeds, m, ln, learning_rate, decay_rate, clip_value,
                  batch_size, num_workers, max_length, load_pretrained, verbose)
         
@@ -866,7 +866,7 @@ class NCES(BaseNCES):
                 elif num_loaded_models > 0:
                     print("Some model weights could not be loaded. Successful ones are: ", loaded_model_names)
                 else:
-                    print("!!!Returning untrained models, could not load pretrained")
+                    print("!!!No pretrained weights, initializing models with random weights")
                     return Models
 
             elif len(glob.glob(path+"/*.pt")) == 0:
@@ -894,10 +894,10 @@ class NCES(BaseNCES):
                     print("Some model weights could not be loaded. Successful ones are: ", loaded_model_names)
                     return Models
                 else:
-                    print("!!!Returning untrained models, could not load pretrained")
+                    print("!!!No pretrained weights were provided, initializing models with random weights")
                     return Models
         else:
-            print("!!!Returning untrained models, could not load pretrained weights. Check the `load_pretrained parameter` or train the models using NCES.train(data).")
+            print("!!!No pretrained weights were provided, initializing models with random weights.")
             return Models
 
 
@@ -1114,14 +1114,14 @@ class NCES(BaseNCES):
 class NCES2(BaseNCES):
     """Neural Class Expression Synthesis in ALCHIQ(D)."""
 
-    def __init__(self, knowledge_base_path,
+    def __init__(self, knowledge_base_path, nces2_or_roces=True,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
-                 path_of_trained_models="", proj_dim=128, drop_prob=0.1,
+                 path_of_trained_models=None, proj_dim=128, drop_prob=0.1,
                  num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=256, sampling_strategy="nces2", 
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, 
                  learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
                  max_length=48, load_pretrained=True, verbose: int = 0):
-        super().__init__(knowledge_base_path, quality_func, num_predictions, proj_dim, drop_prob,
+        super().__init__(knowledge_base_path, nces2_or_roces, quality_func, num_predictions, proj_dim, drop_prob,
                  num_heads, num_seeds, m, ln, learning_rate, decay_rate, clip_value,
                  batch_size, num_workers, max_length, load_pretrained, verbose)
         
@@ -1138,36 +1138,39 @@ class NCES2(BaseNCES):
         self.kernel_size = kernel_size
         self.num_of_output_channels = num_of_output_channels
         self._maybe_load_pretrained_config()
-        self.model = self.get_synthesizer()
+        self.model = self.get_synthesizer(path_of_trained_models)
         
     def _maybe_load_pretrained_config(self, path=None):
         if isinstance(self.m, int):
             self.m = [self.m]
         if path:
             possible_checkpoints = glob.glob(path + "/*.pt")
-        else:
+        elif self.path_of_trained_models:
             possible_checkpoints = glob.glob(self.path_of_trained_models + "/*.pt")
         if self.load_pretrained and len(possible_checkpoints):
             stop_outer_loop = False
             for file_name in possible_checkpoints:
                 for m in self.m:
-                    if m in file_name:
+                    if str(m) in file_name and "emb" in file_name:
                         try:
                             weights = torch.load(file_name, map_location=self.device, weights_only=True)
-                            num_ents, half_emb_dim = weights["emb_ent_real"].weight.data.shape
-                            num_rels, _ = weights["emb_rel_real"].weight.data.shape
+                            #print(weights)
+                            num_ents, half_emb_dim = weights["emb_ent_real.weight"].shape
+                            num_rels, _ = weights["emb_rel_real.weight"].shape
                             self.embedding_dim = 2*half_emb_dim
                             self.num_entities = num_ents
                             self.num_relations = num_rels
                             stop_outer_loop = True
+                            print("Updated number of entities and relation types in embedding model!\n")
                             break
-                        except:
+                        except Exception as e:
+                            print(e)
                             pass
                 if stop_outer_loop:
                     break
                 
     
-    def get_synthesizer(self, path=None):
+    def get_synthesizer(self, path=None, verbose=True):
         
         Models = {str(m): {"emb_model": ConEx(self.embedding_dim, self.num_entities, self.num_relations, self.input_dropout,
                                               self.feature_map_dropout, self.kernel_size, self.num_of_output_channels), 
@@ -1183,14 +1186,14 @@ class NCES2(BaseNCES):
                     else:
                         for file_name in possible_checkpoints:
                             for m in self.m:
-                                if m in file_name:
-                                    try:
+                                if str(m) in file_name:
+                                    if not "emb" in file_name:
                                         weights = torch.load(file_name, map_location=self.device, weights_only=True)
                                         model = Models[str(m)]["model"]
                                         model.load_state_dict(weights)
                                         Models[str(m)]["model"] = model
                                         num_loaded += 1
-                                    except Exception:
+                                    else:
                                         weights = torch.load(file_name, map_location=self.device, weights_only=True)
                                         emb_model = Models[str(m)]["emb_model"]
                                         emb_model.load_state_dict(weights)
@@ -1203,7 +1206,7 @@ class NCES2(BaseNCES):
                     print(f"\nLoaded {self.name} weights!\n")
                     return Models
                 else:
-                    print("!!!Returning untrained models, could not load pretrained models")
+                    print("!!!No pretrained weights were provided, initializing models with random weights")
                     return Models
 
             elif len(glob.glob(path + "/*.pt")) == 0:
@@ -1214,14 +1217,14 @@ class NCES2(BaseNCES):
                 num_loaded = 0
                 for file_name in possible_checkpoints:
                     for m in self.m:
-                        if m in file_name:
-                            try:
+                        if str(m) in file_name:
+                            if not "emb" in file_name:
                                 weights = torch.load(file_name, map_location=self.device, weights_only=True)
                                 model = Models[str(m)]["model"]
                                 model.load_state_dict(weights)
                                 Models[str(m)]["model"] = model
                                 num_loaded += 1
-                            except Exception:
+                            else:
                                 weights = torch.load(file_name, map_location=self.device, weights_only=True)
                                 emb_model = Models[str(m)]["emb_model"]
                                 emb_model.load_state_dict(weights)
@@ -1230,10 +1233,11 @@ class NCES2(BaseNCES):
                     print(f"\nLoaded {self.name} weights!\n")
                     return Models
                 else:
-                    print("!!!Returning untrained models, could not load pretrained")
+                    print("!!!No pretrained weights were found, initializing models with random weights")
                     return Models
         else:
-            print(f"!!!Returning untrained models, could not load any pretrained model. Check the `load_pretrained parameter` or train the models using {self.name}.train(data).")
+            if verbose:
+                print(f"!!!No pretrained weights were provided, initializing models with random weights")
             return Models
 
 
@@ -1421,7 +1425,9 @@ class NCES2(BaseNCES):
         return predictions_as_owl_class_expressions
 
     @staticmethod
-    def generate_training_data(kb_path, num_lps=1000, beyond_alc=False, storage_dir="./Training_Data"):
+    def generate_training_data(kb_path, num_lps=1000, beyond_alc=False, storage_dir=None):
+        if storage_path is None:
+            storage_path = f"./Training_Data_{self.name}"
         lp_gen = LPGen(kb_path=kb_path, max_num_lps=num_lps, beyond_alc=beyond_alc, storage_dir=storage_dir)
         lp_gen.generate()
         print("Loading generated data...")
@@ -1439,7 +1445,7 @@ class NCES2(BaseNCES):
             num_workers = max(0,os.cpu_count()-1)
         if storage_path is None:
             currentDateAndTime = datetime.now()
-            storage_path = f'NCES-Experiment-{currentDateAndTime.strftime("%H-%M-%S")}'
+            storage_path = f'{self.name}-Experiment-{currentDateAndTime.strftime("%H-%M-%S")}'
         if not os.path.exists(storage_path):
             os.mkdir(storage_path)
         self.trained_models_path = storage_path+"/trained_models"
@@ -1447,27 +1453,29 @@ class NCES2(BaseNCES):
             batch_size = self.batch_size
         if data is None:
             data = self.generate_training_data(self.knowledge_base_path, num_lps=num_lps, beyond_alc=True, storage_dir=storage_path)
+        self.add_data_values(data) # Add data values based on training data
+        self.model = self.get_synthesizer(verbose=False)
         trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, decay_rate=decay_rate,
                               clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
-        trainer.train(data, save_model, optimizer, record_runtime)
+        trainer.train(data=data, save_model=save_model, optimizer=optimizer, record_runtime=record_runtime)
 
 
         
 class ROCES(NCES2):
     """Robust Class Expression Synthesis in Description Logics via Iterative Sampling."""
 
-    def __init__(self, knowledge_base_path,
+    def __init__(self, knowledge_base_path, nces2_or_roces=True,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5, k=5,
                  path_of_trained_models="", proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
                  num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=256, sampling_strategy="p",
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, 
                  learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
-                 max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0):
-        super().__init__(knowledge_base_path,
+                 max_length=48, load_pretrained=True, verbose: int = 0):
+        super().__init__(knowledge_base_path, nces2_or_roces,
                         quality_func, num_predictions, path_of_trained_models, proj_dim, drop_prob,
                         num_heads, num_seeds, m, ln, embedding_dim, sampling_strategy, input_dropout, feature_map_dropout, 
                         kernel_size, num_of_output_channels, learning_rate, decay_rate, clip_value, batch_size,
-                        num_workers, max_length, load_pretrained, sorted_examples, verbose)
+                        num_workers, max_length, load_pretrained, verbose)
         
         self.name = "ROCES"
         self.k = k

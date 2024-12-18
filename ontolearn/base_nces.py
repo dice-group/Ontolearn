@@ -30,11 +30,12 @@ import numpy as np
 from torch.functional import F
 from torch.nn.utils.rnn import pad_sequence
 from abc import abstractmethod
+import re
 
 
 class BaseNCES:
 
-    def __init__(self, knowledge_base_path, quality_func, num_predictions, proj_dim=128, drop_prob=0.1,
+    def __init__(self, knowledge_base_path, nces2_or_roces, quality_func, num_predictions, proj_dim=128, drop_prob=0.1,
                  num_heads=4, num_seeds=1, m=32, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0,
                  batch_size=256, num_workers=4, max_length=48, load_pretrained=True, verbose: int = 0):
         kb = KnowledgeBase(path=knowledge_base_path)
@@ -45,6 +46,10 @@ class BaseNCES:
         self.atomic_concept_names = atomic_concept_names
         role_names = [rel.iri.get_remainder() for rel in kb.ontology.object_properties_in_signature()]
         vocab = atomic_concept_names + role_names + ['⊔', '⊓', '∃', '∀', '¬', '⊤', '⊥', '.', ' ', '(', ')']
+        if nces2_or_roces:
+            concrete_role_names = [rel.iri.get_remainder() for rel in kb.ontology.data_properties_in_signature()]
+            vocab.extend(concrete_role_names)
+            vocab.extend(['⁻', '≤', '≥', 'True', 'False', 'true', 'false', '{', '}', ':', '[', ']', 'double', 'integer', 'date', 'xsd'])
         vocab = sorted(vocab) + ['PAD']
         self.knowledge_base_path = knowledge_base_path
         self.kb = kb
@@ -76,24 +81,22 @@ class BaseNCES:
             return min(kb.individuals_count()//2, 1000)
         return kb.individuals_count()
 
-    def collate_batch(self, batch):  # pragma: no cover
-        pos_emb_list = []
-        neg_emb_list = []
-        target_labels = []
-        for pos_emb, neg_emb, label in batch:
-            if pos_emb.ndim != 2:
-                pos_emb = pos_emb.reshape(1, -1)
-            if neg_emb.ndim != 2:
-                neg_emb = neg_emb.reshape(1, -1)
-            pos_emb_list.append(pos_emb)
-            neg_emb_list.append(neg_emb)
-            target_labels.append(label)
-        pos_emb_list[0] = F.pad(pos_emb_list[0], (0, 0, 0, self.num_examples - pos_emb_list[0].shape[0]), "constant", 0)
-        pos_emb_list = pad_sequence(pos_emb_list, batch_first=True, padding_value=0)
-        neg_emb_list[0] = F.pad(neg_emb_list[0], (0, 0, 0, self.num_examples - neg_emb_list[0].shape[0]), "constant", 0)
-        neg_emb_list = pad_sequence(neg_emb_list, batch_first=True, padding_value=0)
-        target_labels = pad_sequence(target_labels, batch_first=True, padding_value=-100)
-        return pos_emb_list, neg_emb_list, target_labels
+    def add_data_values(self, data):
+        print("\nUpdating vocabulary based on training data...\n")
+        quantified_restriction_values = [str(i) for i in range(1,12)]
+        vocab = list(self.vocab.keys())
+        vocab.extend(quantified_restriction_values)
+        values = set()
+        for ce, examples in data:
+            if '[' in ce:
+                for val in re.findall("\[(.*?)\]", ce):
+                    values.add(val.split(' ')[-1])
+        vocab.extend(list(values))
+        vocab = sorted(vocab)
+        self.inv_vocab = np.array(vocab, dtype='object')
+        self.vocab = {vocab[i]: i for i in range(len(vocab))}
+        print("Done.\n")
+
 
     def collate_batch_inference(self, batch):  # pragma: no cover
         pos_emb_list = []

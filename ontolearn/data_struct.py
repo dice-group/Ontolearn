@@ -376,7 +376,6 @@ class ROCESDataset(NCESBaseDataset, torch.utils.data.Dataset):
     def __init__(self, data, triples_data, k, vocab, inv_vocab, max_length, sampling_strategy="p"):
         super(ROCESDataset, self).__init__(vocab, inv_vocab, max_length)
         self.data = data
-        print("\n\nData type", type(data))
         self.triples_data = triples_data
         self.k = k
         self.sampling_strategy = sampling_strategy
@@ -393,9 +392,7 @@ class ROCESDataset(NCESBaseDataset, torch.utils.data.Dataset):
         return len(self.data)
     
     def __getitem__(self, idx):
-        print(len(self.data[idx]))
         key, value = self.data[idx]
-        1/0
         pos = value['positive examples']
         neg = value['negative examples']
         if self.sampling_strategy == 'p':
@@ -407,10 +404,6 @@ class ROCESDataset(NCESBaseDataset, torch.utils.data.Dataset):
             k_neg = np.random.choice(range(min(self.k, len(neg)), len(neg)+1, self.k), replace=False, p=prob_neg_set)
         elif self.sampling_strategy == 'nces2':
             if random.random() > 0.5:
-                prob_pos_set = 1.0/(1+np.array(range(min(self.k, len(pos)), len(pos)+1, self.k)))
-                prob_pos_set = prob_pos_set/prob_pos_set.sum()
-                prob_neg_set = 1.0/(1+np.array(range(min(self.k, len(neg)), len(neg)+1, self.k)))
-                prob_neg_set = prob_neg_set/prob_neg_set.sum()
                 k_pos = max(1, 2*len(pos)//3)
                 k_neg = max(1, 2*len(neg)//3)
             else:
