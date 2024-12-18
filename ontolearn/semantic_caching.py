@@ -254,7 +254,7 @@ class CacheWithEviction:
         for negated_cls in tqdm(negated_class_concepts, desc=f"Adding Complement concepts"):
             # Compute and store complement
             negated_cls_str = owl_expression_to_dl(negated_cls)
-            cached = self.cache.get(concept_str) or None
+            cached = self.cache.get(negated_cls_str.split("¬")[-1])
             if cached is None:
                 cached = func(negated_cls, path_onto, third)
             neg = All_individuals - cached
@@ -554,6 +554,3 @@ def run_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, evic
         'avg_jaccard_reas':  f"{sum(Avg_jaccard_reas) / len(Avg_jaccard_reas):.3f}",
         'strategy': eviction
     }, D
-
-
-

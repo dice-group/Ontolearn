@@ -6,8 +6,8 @@ from plot_metrics import *
 import seaborn as sns
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--cache_size_ratios', type=list, default=[.1], help="cache size is proportional to num_concepts, cache size = k * num_concepts")
-parser.add_argument('--path_kg', type=str, default=["KGs/Family/father.owl"])
+parser.add_argument('--cache_size_ratios', type=list, default=[.1, .2, .4, .8, 1.], help="cache size is proportional to num_concepts, cache size = k * num_concepts")
+parser.add_argument('--path_kg', type=str, default=["KGs/Family/family.owl", "KGs/Family/father.owl"])
 parser.add_argument('--path_kge', type=list, default=None)
 parser.add_argument('--name_reasoner', type=str, default='EBR', choices=["EBR",'HermiT', 'Pellet', 'JFact', 'Openllet'])
 parser.add_argument('--eviction_strategy', type=str, default='LRU', choices=['LIFO', 'FIFO', 'LRU', 'MRU', 'RP'])
