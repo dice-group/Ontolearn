@@ -24,7 +24,6 @@
 
 from tqdm import tqdm
 import random
-from rdflib import graph
 from ontolearn.knowledge_base import KnowledgeBase
 from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.refinement_operators import ExpressRefinement
@@ -57,40 +56,6 @@ class ConceptDescriptionGenerator:
         for root in tqdm(roots_sample, desc="Refining roots..."):
             Refinements.update(self.apply_rho(root))
         return Refinements
-
-
-class RDFTriples:
-    """The knowledge graph/base is converted into triples of the form: individual_i ---role_j---> concept_k or
-    individual_i ---role_j---> individual_k and stored in a txt file for the computation of embeddings."""
-
-    def __init__(self, kb_path, storage_dir=None):
-        """
-        Args
-        - kb_path: path to the owl file representing the knowledge base/ontology
-        - storage_dir: directory in which to store the data to be generated. Not the directory needs not to exists, it would be created automatically
-        """
-        self.Graph = graph.Graph()
-        self.Graph.parse(kb_path)
-        self.kb_path = kb_path
-        if storage_dir is None:
-            self.storage_dir = self.kb_path[:self.kb_path.rfind("/")]
-        else:
-            self.storage_dir = storage_dir
-
-    def export_triples(self, export_folder_name='triples'):
-        os.makedirs(os.path.join(self.storage_dir, export_folder_name), exist_ok=True)
-        if os.path.isfile(os.path.join(self.storage_dir, export_folder_name, "train.txt")):
-            print("\n*** Embedding triples exist ***\n")
-            return None
-        train_file = open("%s/train.txt" % os.path.join(self.storage_dir, export_folder_name), mode="w")
-        for s, p, o in self.Graph:
-            s = s.expandtabs()[s.expandtabs().rfind("/")+1:]
-            p = p.expandtabs()[p.expandtabs().rfind("/")+1:]
-            o = o.expandtabs()[o.expandtabs().rfind("/")+1:]
-            if s and p and o:
-                train_file.write(s+"\t"+p+"\t"+o+"\n")
-        train_file.close()
-        print("*********************Finished exporting triples*********************\n")
 
 
 class KB2Data:

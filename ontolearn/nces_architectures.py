@@ -97,6 +97,7 @@ class SetTransformer(nn.Module):
         super(SetTransformer, self).__init__()
         self.name = 'SetTransformer'
         self.max_len = max_length
+        self.m = m
         self.vocab = vocab
         self.inv_vocab = inv_vocab
         self.loss = nn.CrossEntropyLoss()

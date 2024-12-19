@@ -208,11 +208,15 @@ class NCESTrainer:
             else:
                 print("GPU available !")
             print()
-            print("#"*50)
+            print("#"*80)
             print()
             model = copy.deepcopy(self.synthesizer.model[model_name])
-            print("{}: {} starts training... \n".format(self.synthesizer.name, model["model"].name))
-            print("#"*50, "\n")
+            if model["model"].name == "SetTransformer":
+                start_message = "{}: {} ({} inducing points) starts training... \n".format(self.synthesizer.name, model["model"].name, model["model"].m)
+            else:
+                start_message = "{}: {} starts training... \n".format(self.synthesizer.name, model["model"].name)
+            print(start_message)
+            print("#"*80, "\n")
             desc = model["model"].name
             if device.type == "cuda":
                 model["model"].cuda()
@@ -244,18 +248,18 @@ class NCESTrainer:
             if record_runtime:
                 t0 = time.time()
 
-            Epochs = trange(self.epochs, desc=f'Loss: {np.nan}, Soft Acc: {s_acc}, Hard Acc: {h_acc}', leave=True, colour='green')
+            Epochs = trange(self.epochs, desc=f'Loss: {np.nan}, Soft Acc: {s_acc}%, Hard Acc: {h_acc}%', leave=True, colour='green')
             for e in Epochs:
                 soft_acc, hard_acc = [], []
                 train_losses = []
                 batch_count = 0
                 num_batches = len(data) // self.batch_size if len(data) % self.batch_size == 0 else len(data) // self.batch_size + 1
-                batch_data = trange(num_batches, desc=f'Train: <Batch: {batch_count}/{num_batches}, Loss: {np.nan}, Soft Acc: {s_acc}, Hard Acc: {h_acc}>', leave=False)
+                batch_data = trange(num_batches, desc=f'Train: <Batch: {batch_count}/{num_batches}, Loss: {np.nan}, Soft Acc: {s_acc}%, Hard Acc: {h_acc}%>', leave=False)
                 if model["emb_model"] is not None:
                     for _, batch in zip(batch_data, train_dataloader):
                         loss, s_acc, h_acc = self.train_step(batch, model["model"], model["emb_model"], optim_algo, device, triples_dataloader)
                         batch_count += 1
-                        batch_data.set_description('Train: <Batch: {}/{}, Loss: {:.4f}, Soft Acc: {:.2f}, Hard Acc: {:.2f}>'.format(batch_count, num_batches, loss, s_acc, h_acc))
+                        batch_data.set_description('Train: <Batch: {}/{}, Loss: {:.4f}, Soft Acc: {:.2f}%, Hard Acc: {:.2f}%>'.format(batch_count, num_batches, loss, s_acc, h_acc))
                         batch_data.refresh()
                         soft_acc.append(s_acc)
                         hard_acc.append(h_acc)
@@ -267,7 +271,7 @@ class NCESTrainer:
                     for _, batch in zip(batch_data, train_dataloader):
                         loss, s_acc, h_acc = self.train_step(batch, model["model"], model["emb_model"], optim_algo, device)
                         batch_count += 1
-                        batch_data.set_description('Train: <Batch: {}/{}, Loss: {:.4f}, Soft Acc: {:.2f}, Hard Acc: {:.2f}>'.format(batch_count, num_batches, loss, s_acc, h_acc))
+                        batch_data.set_description('Train: <Batch: {}/{}, Loss: {:.4f}, Soft Acc: {:.2f}%, Hard Acc: {:.2f}%>'.format(batch_count, num_batches, loss, s_acc, h_acc))
                         batch_data.refresh()
                         soft_acc.append(s_acc)
                         hard_acc.append(h_acc)
@@ -277,9 +281,8 @@ class NCESTrainer:
                 Train_loss.append(np.mean(train_losses))
                 Train_acc['soft'].append(train_soft_acc)
                 Train_acc['hard'].append(train_hard_acc)
-                Epochs.set_description('<Epoch: {}/{}> Loss: {:.4f}, Soft Acc: {:.2f}%, Hard Acc: {:.2f}%'.format(e+1, self.epochs, Train_loss[-1], train_soft_acc, train_hard_acc))
+                Epochs.set_description('<Epoch: {}/{}> Loss: {:.4f}, Soft Acc: {:.2f}%, Hard Acc: {:.2f}(%)'.format(e+1, self.epochs, Train_loss[-1], train_soft_acc, train_hard_acc))
                 Epochs.refresh()
-                #### Continue here
                 model_weights = copy.deepcopy(model["model"].state_dict())
                 emb_model_weights = None
                 if model["emb_model"] is not None:
@@ -319,11 +322,27 @@ class NCESTrainer:
                 if model["emb_model"] is not None:
                     model_file_name += "_" + model["emb_model"].name
                 torch.save(model["model"].state_dict(), self.storage_path+"/trained_models/"+model_file_name+".pt")
+                with open(self.storage_path+"/trained_models/config.json", "w") as f:
+                    config = {"max_length": self.synthesizer.max_length,
+                    "proj_dim": self.synthesizer.proj_dim,
+                    "num_heads": self.synthesizer.num_heads,
+                    "num_seeds": self.synthesizer.num_seeds}
+                    if hasattr(self.synthesizer, "rnn_n_layers"):
+                        config.update({"rnn_n_layers": self.synthesizer.rnn_n_layers})
+                    json.dump(config, f) # save common config file
+                with open(self.storage_path+"/trained_models/vocab.json", "w") as f:
+                    json.dump(self.synthesizer.vocab, f) # save vocabulary of tokens
+                np.save(self.storage_path+"/trained_models/inv_vocab.npy", self.synthesizer.inv_vocab) # save inverse vocabulary
                 if model["emb_model"] is not None:
                     torch.save(model["emb_model"].state_dict(), self.storage_path+"/trained_models/"+model_file_name+"_emb.pt")
+                    with open(self.storage_path+"/trained_models/embedding_config.json", "w") as f:
+                        json.dump({"embedding_dim": self.synthesizer.embedding_dim,
+                            "num_entities": self.synthesizer.num_entities,
+                            "num_relations": self.synthesizer.num_relations,
+                            "kernel_size": self.synthesizer.kernel_size,
+                            "num_of_output_channels": self.synthesizer.num_of_output_channels}, f)
                 print("{} saved".format(model["model"].name))
                 if not os.path.exists(self.storage_path+"/metrics/"):
                     os.mkdir(self.storage_path+"/metrics/")
                 with open(self.storage_path+"/metrics/"+"metrics_"+desc+".json", "w") as plot_file:
-                    json.dump({"soft acc": Train_acc['soft'], "hard acc": Train_acc['hard'], "loss": Train_loss}, plot_file,
-                              indent=3)
+                    json.dump({"soft acc": Train_acc['soft'], "hard acc": Train_acc['hard'], "loss": Train_loss}, plot_file, indent=3)

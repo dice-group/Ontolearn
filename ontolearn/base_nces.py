@@ -50,7 +50,7 @@ class BaseNCES:
             concrete_role_names = [rel.iri.get_remainder() for rel in kb.ontology.data_properties_in_signature()]
             vocab.extend(concrete_role_names)
             vocab.extend(['⁻', '≤', '≥', 'True', 'False', 'true', 'false', '{', '}', ':', '[', ']', 'double', 'integer', 'date', 'xsd'])
-        vocab = sorted(vocab) + ['PAD']
+        vocab = sorted(set(vocab)) + ['PAD']
         self.knowledge_base_path = knowledge_base_path
         self.kb = kb
         self.all_individuals = set([ind.str.split("/")[-1] for ind in kb.individuals()])
@@ -85,17 +85,22 @@ class BaseNCES:
         print("\nUpdating vocabulary based on training data...\n")
         quantified_restriction_values = [str(i) for i in range(1,12)]
         vocab = list(self.vocab.keys())
-        vocab.extend(quantified_restriction_values)
+        vocab_set = set(vocab)
+        len_before_update = len(vocab_set)
+        vocab_set.update(set(quantified_restriction_values))
         values = set()
         for ce, examples in data:
             if '[' in ce:
                 for val in re.findall("\[(.*?)\]", ce):
                     values.add(val.split(' ')[-1])
-        vocab.extend(list(values))
-        vocab = sorted(vocab)
+        vocab_set.update(values)
+        vocab = sorted(vocab_set)
         self.inv_vocab = np.array(vocab, dtype='object')
         self.vocab = {vocab[i]: i for i in range(len(vocab))}
-        print("Done.\n")
+        if len_before_update < len(vocab):
+            print("Done.\n")
+        else:
+            print("No update necessary!\n")
 
 
     def collate_batch_inference(self, batch):  # pragma: no cover

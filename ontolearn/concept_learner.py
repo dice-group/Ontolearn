@@ -558,7 +558,6 @@ class CLIP(CELOE):
         'num_workers', 'knowledge_base_path'
 
     name = 'CLIP'
-
     def __init__(self,
                  knowledge_base: KnowledgeBase,
                  knowledge_base_path='',
@@ -623,10 +622,10 @@ class CLIP(CELOE):
             elif predictor_name == 'CNN':
                 model = LengthLearner_CNN(self.input_size, self.output_size, self.num_examples, proj_dim=256,
                                           kernel_size=[[5, 7], [5, 7]], stride=[[3, 3], [3, 3]])
-            pretrained_model_path = self.path_of_embeddings.split("embeddings")[
+            path_of_trained_models = self.path_of_embeddings.split("embeddings")[
                                         0] + "trained_models/trained_" + predictor_name + ".pt"
-            if load_pretrained and os.path.isfile(pretrained_model_path):
-                model.load_state_dict(torch.load(pretrained_model_path, map_location=self.device, weights_only=True))
+            if load_pretrained and os.path.isfile(path_of_trained_models):
+                model.load_state_dict(torch.load(path_of_trained_models, map_location=self.device, weights_only=True))
                 model.eval()
                 print("\n Loaded length predictor!")
             return model
@@ -795,10 +794,10 @@ class CLIP(CELOE):
 
 class NCES(BaseNCES):
     """Neural Class Expression Synthesis."""
-
+    name = "NCES"
     def __init__(self, knowledge_base_path, nces2_or_roces=False,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
-                 learner_names=["SetTransformer"], path_of_embeddings="", proj_dim=128, rnn_n_layers=2,
+                 learner_names=["SetTransformer"], path_of_embeddings=None, path_of_trained_models=None, proj_dim=128, rnn_n_layers=2,
                  drop_prob=0.1, num_heads=4, num_seeds=1, m=32, ln=False, 
                  learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
                  max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0):
@@ -806,18 +805,55 @@ class NCES(BaseNCES):
                  num_heads, num_seeds, m, ln, learning_rate, decay_rate, clip_value,
                  batch_size, num_workers, max_length, load_pretrained, verbose)
         
-        self.name = "NCES"
         self.learner_names = learner_names
         self.path_of_embeddings = path_of_embeddings
+        self.path_of_trained_models = path_of_trained_models if path_of_trained_models else self.path_of_embeddings.split('embeddings')[0] + "trained_models"
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.rnn_n_layers = rnn_n_layers
         self.sorted_examples = sorted_examples
         self.instance_embeddings = read_csv(path_of_embeddings)
         self.input_size = self.instance_embeddings.shape[1]
-        self.model = self.get_synthesizer()
+        self.model = self.get_synthesizer(self.path_of_trained_models)
         
 
     def get_synthesizer(self, path=None):
+        if self.load_pretrained and path and glob.glob(path + "/*.pt"):
+            # Read pretrained model's vocabulary and config files
+            try:
+                with open(f"{path}/config.json") as f:
+                    config = json.load(f)
+                with open(f"{path}/vocab.json") as f:
+                    vocab = json.load(f)
+                inv_vocab = np.load(f"{path}/inv_vocab.npy", allow_pickle=True)
+                self.max_length = config["max_length"]
+                self.proj_dim = config["proj_dim"]
+                self.num_heads = config["num_heads"]
+                self.num_seeds = config["num_seeds"]
+                self.rnn_n_layers = config["rnn_n_layers"]
+                self.vocab = vocab
+                self.inv_vocab = inv_vocab
+            except Exception as e:
+                print(e)
+                print()
+                raise FileNotFoundError(f"{path} does not contain at least one of `vocab.json, inv_vocab.npy or embedding_config.json`")
+        elif self.load_pretrained and glob.glob(self.path_of_trained_models + "/*.pt"):
+            # Read pretrained model's vocabulary and config files
+            try:
+                with open(f"{path}/config.json") as f:
+                    config = json.load(f)
+                with open(f"{path}/vocab.json") as f:
+                    vocab = json.load(f)
+                inv_vocab = np.load(f"{path}/inv_vocab.npy", allow_pickle=True)
+                self.max_length = config["max_length"]
+                self.proj_dim = config["proj_dim"]
+                self.num_heads = config["num_heads"]
+                self.num_seeds = config["num_seeds"]
+                self.rnn_n_layers = config["rnn_n_layers"]
+                self.vocab = vocab
+                self.inv_vocab = inv_vocab
+            except Exception:
+                raise FileNotFoundError(f"{self.path_of_trained_models} does not contain at least one of `vocab.json, inv_vocab.npy or embedding_config.json`")
+
         m1 = SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length,
                                    self.input_size, self.proj_dim, self.num_heads, self.num_seeds, self.m,
                                    self.ln)
@@ -835,69 +871,65 @@ class NCES(BaseNCES):
             if name not in self.learner_names:
                 del Models[name]
 
-        if self.load_pretrained:
-            if path is None:
-                num_loaded_models = 0
-                loaded_model_names = []
-                try:
-                    if len(glob.glob(self.path_of_embeddings.split("embeddings")[0] + "trained_models/*.pt")) == 0:
-                        raise FileNotFoundError
-                    else:
-                        for file_name in glob.glob(self.path_of_embeddings.split("embeddings")[0] + "trained_models/*.pt"):
-                            for model_name in Models:
-                                if model_name in file_name:
-                                    try:
-                                        model = Models[model_name]["model"]
-                                        model.load_state_dict(torch.load(file_name, map_location=self.device, weights_only=True))
-                                        Models[model_name]["model"] = model
-                                        num_loaded_models += 1
-                                        loaded_model_names.append(model_name)
-                                    except Exception as e:
-                                        print(f"Could not load pretrained weights for {model_name}. Please consider training the model!")
-                                        print("\n", e)
-                                        pass
-                except Exception as e:
-                    print(e)
-                    raise FileNotFoundError(f"The path to pretrained models is None and no models could be found in {self.path_of_embeddings.split('embeddings')[0]}trained_models")
-
-                if num_loaded_models == len(Models):
-                    print("\n Loaded NCES weights!\n")
-                    return Models
-                elif num_loaded_models > 0:
-                    print("Some model weights could not be loaded. Successful ones are: ", loaded_model_names)
+        if self.load_pretrained and path is None:
+            num_loaded_models = 0
+            loaded_model_names = []
+            try:
+                if len(glob.glob(self.path_of_trained_models+"/*.pt")) == 0:
+                    raise FileNotFoundError (f"No pretrained weights found in {self.path_of_trained_models}")
                 else:
-                    print("!!!No pretrained weights, initializing models with random weights")
-                    return Models
+                    for file_name in glob.glob(self.path_of_trained_models+"/*.pt"):
+                        for model_name in Models:
+                            if model_name in file_name:
+                                try:
+                                    model = Models[model_name]["model"]
+                                    model.load_state_dict(torch.load(file_name, map_location=self.device, weights_only=True))
+                                    Models[model_name]["model"] = model
+                                    num_loaded_models += 1
+                                    loaded_model_names.append(model_name)
+                                except Exception as e:
+                                    print(f"Could not load pretrained weights for {model_name}. Please consider training the model!")
+                                    print("\n", e)
+                                    pass
+            except Exception as e:
+                print(e)
+                raise FileNotFoundError(f"The path to pretrained models is None and no models could be found in {self.path_of_trained_models+'/*.pt'}")
 
-            elif len(glob.glob(path+"/*.pt")) == 0:
-                print("No pretrained model found! If directory is empty or does not exist, set the NCES `load_pretrained` parameter to `False` or make sure `save_model` was set to `True` in the .train() method.")
-                raise FileNotFoundError(f"Path {path} does not contain any pretrained models!")
+            if num_loaded_models == len(Models):
+                print("\n Loaded NCES weights!\n")
+                return Models
+            elif num_loaded_models > 0:
+                print("\n"+"\x1b[0;30;43m"+f"Some model weights could not be loaded. Successful ones are: {loaded_model_names}"+"\x1b[0m"+"\n")
             else:
-                num_loaded_models = 0
-                loaded_model_names = []
-                for file_name in glob.glob(path+"/*.pt"):
-                    for m in Untrained:
-                        if m.name in file_name:
-                            try:
-                                model = Models[model_name]["model"]
-                                model.load_state_dict(torch.load(file_name, map_location=self.device, weights_only=True))
-                                Models[model_name]["model"] = model
-                                num_loaded_models += 1
-                                loaded_model_names.append(model_name)
-                            except Exception as e:
-                                print(e)
-                                pass
-                if num_loaded_models == len(Models):
-                    print("\n Loaded NCES weights!\n")
-                    return Models
-                elif num_loaded_models > 0:
-                    print("Some model weights could not be loaded. Successful ones are: ", loaded_model_names)
-                    return Models
-                else:
-                    print("!!!No pretrained weights were provided, initializing models with random weights")
-                    return Models
+                print("\n"+"\x1b[0;30;43m"+"!!!No pretrained weights, initializing models with random weights"+"\x1b[0m"+"\n")
+                return Models
+        elif self.load_pretrained and path and glob.glob(path+"/*.pt"):
+            num_loaded_models = 0
+            loaded_model_names = []
+            for file_name in glob.glob(path+"/*.pt"):
+                for model_name in Models:
+                    if model_name in file_name:
+                        try:
+                            model = Models[model_name]["model"]
+                            model.load_state_dict(torch.load(file_name, map_location=self.device, weights_only=True))
+                            Models[model_name]["model"] = model
+                            num_loaded_models += 1
+                            loaded_model_names.append(model_name)
+                        except Exception as e:
+                            print(f"Could not load pretrained weights for {model_name}. Please consider training the model!")
+                            print("\n", e)
+                            pass
+            if num_loaded_models == len(Models):
+                print("\n Loaded NCES weights!\n")
+                return Models
+            elif num_loaded_models > 0:
+                print("\n"+"\x1b[0;30;43m"+f"Some model weights could not be loaded. Successful ones are: {loaded_model_names}"+"\x1b[0m"+"\n")
+                return Models
+            else:
+                print("\n"+"\x1b[0;30;43m"+"!!!No pretrained weights were provided, initializing models with random weights"+"\x1b[0m"+"\n")
+                return Models
         else:
-            print("!!!No pretrained weights were provided, initializing models with random weights.")
+            print("\nNo pretrained weights were provided, initializing models with random weights.\n")
             return Models
 
 
@@ -958,8 +990,7 @@ class NCES(BaseNCES):
         Pos = np.random.choice(pos_str, size=(self.num_predictions, len(pos_str)), replace=True)
         Neg = np.random.choice(neg_str, size=(self.num_predictions, len(neg_str)), replace=True)
 
-        assert self.load_pretrained and self.learner_names, \
-            "No pretrained model found. Please first train NCES, see the <<train>> method below"
+        assert self.load_pretrained and self.learner_names, "No pretrained model found. Please first train NCES, see the <<train>> method below"
 
         dataset = NCESDatasetInference([("", Pos_str, Neg_str) for (Pos_str, Neg_str) in zip(Pos, Neg)],
                                           self.instance_embeddings,
@@ -1100,7 +1131,7 @@ class NCES(BaseNCES):
             storage_path = f'NCES-Experiment-{currentDateAndTime.strftime("%H-%M-%S")}'
         if not os.path.exists(storage_path):
             os.mkdir(storage_path)
-        self.trained_models_path = storage_path+"/trained_models"
+        self.path_of_trained_models = storage_path+"/trained_models"
         if batch_size is None:
             batch_size = self.batch_size
         if data is None:
@@ -1113,7 +1144,7 @@ class NCES(BaseNCES):
         
 class NCES2(BaseNCES):
     """Neural Class Expression Synthesis in ALCHIQ(D)."""
-
+    name = "NCES2"
     def __init__(self, knowledge_base_path, nces2_or_roces=True,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
                  path_of_trained_models=None, proj_dim=128, drop_prob=0.1,
@@ -1125,7 +1156,6 @@ class NCES2(BaseNCES):
                  num_heads, num_seeds, m, ln, learning_rate, decay_rate, clip_value,
                  batch_size, num_workers, max_length, load_pretrained, verbose)
         
-        self.name = "NCES2"
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.triples_data = TriplesData(knowledge_base_path)
         self.num_entities = len(self.triples_data.entity2idx)
@@ -1137,114 +1167,137 @@ class NCES2(BaseNCES):
         self.feature_map_dropout = feature_map_dropout
         self.kernel_size = kernel_size
         self.num_of_output_channels = num_of_output_channels
-        self._maybe_load_pretrained_config()
         self.model = self.get_synthesizer(path_of_trained_models)
-        
-    def _maybe_load_pretrained_config(self, path=None):
-        if isinstance(self.m, int):
-            self.m = [self.m]
-        if path:
-            possible_checkpoints = glob.glob(path + "/*.pt")
-        elif self.path_of_trained_models:
-            possible_checkpoints = glob.glob(self.path_of_trained_models + "/*.pt")
-        if self.load_pretrained and len(possible_checkpoints):
-            stop_outer_loop = False
-            for file_name in possible_checkpoints:
-                for m in self.m:
-                    if str(m) in file_name and "emb" in file_name:
-                        try:
-                            weights = torch.load(file_name, map_location=self.device, weights_only=True)
-                            #print(weights)
-                            num_ents, half_emb_dim = weights["emb_ent_real.weight"].shape
-                            num_rels, _ = weights["emb_rel_real.weight"].shape
-                            self.embedding_dim = 2*half_emb_dim
-                            self.num_entities = num_ents
-                            self.num_relations = num_rels
-                            stop_outer_loop = True
-                            print("Updated number of entities and relation types in embedding model!\n")
-                            break
-                        except Exception as e:
-                            print(e)
-                            pass
-                if stop_outer_loop:
-                    break
                 
     
     def get_synthesizer(self, path=None, verbose=True):
-        
+        if isinstance(self.m, int):
+            self.m = [self.m]
+        if self.load_pretrained and path and glob.glob(path + "/*.pt"):
+            # Read pretrained model's vocabulary and config files
+            try:
+                with open(f"{path}/config.json") as f:
+                    config = json.load(f)
+                with open(f"{path}/vocab.json") as f:
+                    vocab = json.load(f)
+                inv_vocab = np.load(f"{path}/inv_vocab.npy", allow_pickle=True)
+                with open(f"{path}/embedding_config.json") as f:
+                    emb_config = json.load(f)
+                self.max_length = config["max_length"]
+                self.proj_dim = config["proj_dim"]
+                self.num_heads = config["num_heads"]
+                self.num_seeds = config["num_seeds"]
+                self.vocab = vocab
+                self.inv_vocab = inv_vocab
+                self.embedding_dim = emb_config["embedding_dim"]
+                self.num_entities = emb_config["num_entities"]
+                self.num_relations = emb_config["num_relations"]
+            except Exception:
+                raise FileNotFoundError(f"{path} does not contain at least one of `vocab.json, inv_vocab.npy or embedding_config.json`")
+        elif self.load_pretrained and glob.glob(self.path_of_trained_models + "/*.pt"):
+            # Read pretrained model's vocabulary and config files
+            try:
+                with open(f"{path}/config.json") as f:
+                    config = json.load(f)
+                with open(f"{path}/vocab.json") as f:
+                    vocab = json.load(f)
+                inv_vocab = np.load(f"{path}/inv_vocab.npy", allow_pickle=True)
+                with open(f"{path}/embedding_config.json") as f:
+                    emb_config = json.load(f)
+                self.max_length = config["max_length"]
+                self.proj_dim = config["proj_dim"]
+                self.num_heads = config["num_heads"]
+                self.num_seeds = config["num_seeds"]
+                self.vocab = vocab
+                self.inv_vocab = inv_vocab
+                self.embedding_dim = emb_config["embedding_dim"]
+                self.num_entities = emb_config["num_entities"]
+                self.num_relations = emb_config["num_relations"]
+            except Exception:
+                raise FileNotFoundError(f"{self.path_of_trained_models} does not contain at least one of `vocab.json, inv_vocab.npy or embedding_config.json`")
+
         Models = {str(m): {"emb_model": ConEx(self.embedding_dim, self.num_entities, self.num_relations, self.input_dropout,
                                               self.feature_map_dropout, self.kernel_size, self.num_of_output_channels), 
                            "model": SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length,
                                    self.embedding_dim, self.proj_dim, self.num_heads, self.num_seeds, m, self.ln)} for m in self.m}
-        if self.load_pretrained:
-            num_loaded = 0
-            if path is None:
-                possible_checkpoints = glob.glob(self.path_of_trained_models + "/*.pt")
-                try:
-                    if len(possible_checkpoints) == 0:
-                        raise FileNotFoundError(f"`path` is None and no models found in {self.path_of_trained_models}")
-                    else:
-                        for file_name in possible_checkpoints:
-                            for m in self.m:
-                                if str(m) in file_name:
-                                    if not "emb" in file_name:
-                                        weights = torch.load(file_name, map_location=self.device, weights_only=True)
-                                        model = Models[str(m)]["model"]
-                                        model.load_state_dict(weights)
-                                        Models[str(m)]["model"] = model
-                                        num_loaded += 1
-                                    else:
-                                        weights = torch.load(file_name, map_location=self.device, weights_only=True)
-                                        emb_model = Models[str(m)]["emb_model"]
-                                        emb_model.load_state_dict(weights)
-                                        Models[str(m)]["emb_model"] = emb_model
-                except Exception as e:
-                    print(e)
-                    raise FileNotFoundError(f"The path to pretrained models is None and no models could be found in {self.path_of_trained_models}")
-                
-                if num_loaded == len(self.m):
-                    print(f"\nLoaded {self.name} weights!\n")
-                    return Models
-                else:
-                    print("!!!No pretrained weights were provided, initializing models with random weights")
-                    return Models
 
-            elif len(glob.glob(path + "/*.pt")) == 0:
-                print(f"No pretrained model found! If directory is empty or does not exist, set the {self.name} `load_pretrained` parameter to `False` or make sure `save_model` was set to `True` in the .train() method.")
-                raise FileNotFoundError(f"Path {path} does not contain any pretrained models!")
-            else:
-                possible_checkpoints = glob.glob(path + "/*.pt")
-                num_loaded = 0
-                for file_name in possible_checkpoints:
-                    for m in self.m:
-                        if str(m) in file_name:
-                            if not "emb" in file_name:
-                                weights = torch.load(file_name, map_location=self.device, weights_only=True)
-                                model = Models[str(m)]["model"]
-                                model.load_state_dict(weights)
-                                Models[str(m)]["model"] = model
-                                num_loaded += 1
-                            else:
-                                weights = torch.load(file_name, map_location=self.device, weights_only=True)
-                                emb_model = Models[str(m)]["emb_model"]
-                                emb_model.load_state_dict(weights)
-                                Models[str(m)]["emb_model"] = emb_model
-                if num_loaded == len(self.m):
-                    print(f"\nLoaded {self.name} weights!\n")
-                    return Models
+        if self.load_pretrained and path is None:
+            num_loaded = 0
+            loaded_model_names = []
+            possible_checkpoints = glob.glob(self.path_of_trained_models + "/*.pt")
+            try:
+                if len(possible_checkpoints) == 0:
+                    raise FileNotFoundError(f"`path` is None and no models found in {self.path_of_trained_models}")
                 else:
-                    print("!!!No pretrained weights were found, initializing models with random weights")
-                    return Models
+                    for file_name in possible_checkpoints:
+                        for m in self.m:
+                            if str(m) in file_name:
+                                if not "emb" in file_name:
+                                    weights = torch.load(file_name, map_location=self.device, weights_only=True)
+                                    model = Models[str(m)]["model"]
+                                    model.load_state_dict(weights)
+                                    Models[str(m)]["model"] = model
+                                    num_loaded += 1
+                                    loaded_model_names.append(f'SetTransformer ({m} inducing points)')
+                                else:
+                                    weights = torch.load(file_name, map_location=self.device, weights_only=True)
+                                    emb_model = Models[str(m)]["emb_model"]
+                                    emb_model.load_state_dict(weights)
+                                    Models[str(m)]["emb_model"] = emb_model
+            except Exception as e:
+                print(e)
+                raise FileNotFoundError(f"The path to pretrained models is None and no models could be found in {self.path_of_trained_models}")
+            
+            if num_loaded == len(self.m):
+                print(f"\nLoaded {self.name} weights!\n")
+                return Models
+            elif num_loaded_models > 0:
+                print("\n"+"\x1b[0;30;43m"+f"Some model weights could not be loaded. Successful ones are: {loaded_model_names}"+"\x1b[0m"+"\n")
+                return Models
+            else:
+                print("\n"+"\x1b[0;30;43m"+"!!!No pretrained weights were provided, initializing models with random weights"+"\x1b[0m"+"\n")
+                return Models
+
+        elif self.load_pretrained and path and len(glob.glob(path + "/*.pt")) == 0:
+            print("\n"+"\x1b[0;30;43m"+f"No pretrained model found! If {self.path_of_trained_models} is empty or does not exist, set the `load_pretrained` parameter to `False` or make sure `save_model` was set to `True` in the .train() method."+"\x1b[0m"+"\n")
+            raise FileNotFoundError(f"Path {path} does not contain any pretrained models!")
+
+        elif self.load_pretrained and path and glob.glob(path + "/*.pt"):
+            possible_checkpoints = glob.glob(path + "/*.pt")
+            num_loaded = 0
+            loaded_model_names = []
+            for file_name in possible_checkpoints:
+                for m in self.m:
+                    if str(m) in file_name:
+                        if not "emb" in file_name:
+                            weights = torch.load(file_name, map_location=self.device, weights_only=True)
+                            model = Models[str(m)]["model"]
+                            model.load_state_dict(weights)
+                            Models[str(m)]["model"] = model
+                            num_loaded += 1
+                            loaded_model_names.append(f'SetTransformer ({m} inducing points)')
+                        else:
+                            weights = torch.load(file_name, map_location=self.device, weights_only=True)
+                            emb_model = Models[str(m)]["emb_model"]
+                            emb_model.load_state_dict(weights)
+                            Models[str(m)]["emb_model"] = emb_model
+            if num_loaded == len(self.m):
+                print(f"\nLoaded {self.name} weights!\n")
+                return Models
+            elif num_loaded_models > 0:
+                loaded_model_names.append(f'SetTransformer ({m} inducing points)')
+            else:
+                print("\x1b[0;30;43m"+"!!!No pretrained weights were found, initializing models with random weights"+"\x1b[0m"+"\n")
+                return Models
         else:
             if verbose:
-                print(f"!!!No pretrained weights were provided, initializing models with random weights")
+                print(f"\nNo pretrained weights were provided, initializing models with random weights\n")
             return Models
 
 
     def refresh(self, path=None):
         if path is not None:
             self.load_pretrained = True
-            self._maybe_load_pretrained_config(path)
         self.model = self.get_synthesizer(path)
 
     def sample_examples(self, pos, neg):  # pragma: no cover
@@ -1448,13 +1501,16 @@ class NCES2(BaseNCES):
             storage_path = f'{self.name}-Experiment-{currentDateAndTime.strftime("%H-%M-%S")}'
         if not os.path.exists(storage_path):
             os.mkdir(storage_path)
-        self.trained_models_path = storage_path+"/trained_models"
+        self.path_of_trained_models = storage_path+"/trained_models"
         if batch_size is None:
             batch_size = self.batch_size
         if data is None:
             data = self.generate_training_data(self.knowledge_base_path, num_lps=num_lps, beyond_alc=True, storage_dir=storage_path)
+        vocab_size_before = len(self.vocab)
         self.add_data_values(data) # Add data values based on training data
-        self.model = self.get_synthesizer(verbose=False)
+        if len(self.vocab) > vocab_size_before and self.load_pretrained and self.path_of_trained_models is not None:
+            print("\n"+"\x1b[0;30;43m"+"Cannot use pretrained weights for training because new tokens are added from the training data. Model weights will be reinitialized!"+"\x1b[0m"+"\n")
+            self.model = self.get_synthesizer(verbose=False)
         trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, decay_rate=decay_rate,
                               clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
         trainer.train(data=data, save_model=save_model, optimizer=optimizer, record_runtime=record_runtime)
@@ -1463,10 +1519,10 @@ class NCES2(BaseNCES):
         
 class ROCES(NCES2):
     """Robust Class Expression Synthesis in Description Logics via Iterative Sampling."""
-
+    name = "ROCES"
     def __init__(self, knowledge_base_path, nces2_or_roces=True,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5, k=5,
-                 path_of_trained_models="", proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
+                 path_of_trained_models=None, proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
                  num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=256, sampling_strategy="p",
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, 
                  learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
@@ -1477,6 +1533,5 @@ class ROCES(NCES2):
                         kernel_size, num_of_output_channels, learning_rate, decay_rate, clip_value, batch_size,
                         num_workers, max_length, load_pretrained, verbose)
         
-        self.name = "ROCES"
         self.k = k
 
