@@ -10,9 +10,8 @@ import unittest
 import os
 import torch
 import numpy as np
-
+import pathlib
 import warnings
-
 warnings.filterwarnings("ignore")
 
 
@@ -33,21 +32,33 @@ def seed_everything():
 
 seed_everything()
 
+base_path = pathlib.Path(__file__).parent.resolve()._str
 
 class TestNCES(unittest.TestCase):
 
     def test_prediction_quality_family(self):
-        knowledge_base_path = "./KGs/Family/family-benchmark_rich_background.owl"
+        knowledge_base_path = base_path[:base_path.rfind("/")+1] + "KGs/Family/family-benchmark_rich_background.owl"
+        new_knowledge_base_path = knowledge_base_path[:knowledge_base_path.rfind("/")+1] + "train.owl"
+        if not os.path.exists(new_knowledge_base_path):
+            subprocess.run(f"cp -f {knowledge_base_path} {new_knowledge_base_path}",
+             shell = True, executable="/bin/bash")
+        knowledge_base_path = new_knowledge_base_path
+        print("Knowledge base path: ", knowledge_base_path)
         path_of_embeddings = None
         if not os.path.exists(knowledge_base_path):
             raise ValueError(f"{knowledge_base_path} not found")
         if not path_of_embeddings or not os.path.exists(path_of_embeddings):
             print("\n"+"\x1b[0;30;43m"+"Embeddings not found. Will quickly train embeddings beforehand"+"\x1b[0m"+"\n")
-            subprocess.run("dicee --path_single_kg knowledge_base_path --path_to_store_single_run temp_embeddings --dataset_dir None --sparql_endpoint None --backend rdflib --save_embeddings_as_csv --num_epochs 5 --model DeCaL",
+            subprocess.run(f"dicee --path_single_kg {knowledge_base_path} --path_to_store_single_run temp_embeddings --backend rdflib --save_embeddings_as_csv --num_epochs 5 --model DeCaL",
              shell = True, executable="/bin/bash")
             assert os.path.exists("./temp_embeddings/DeCaL_entity_embeddings.csv"), "It seems that embeddings were not stored at the expected directory."
             path_of_embeddings = "./temp_embeddings/DeCaL_entity_embeddings.csv"
             print("\n"+"\x1b[0;30;43m"+"Will also generate some training data and train NCES for 5 epochs"+"\x1b[0m"+"\n")
+            nces = NCES(knowledge_base_path=knowledge_base_path, quality_func=F1(), num_predictions=100,
+                        path_of_embeddings=path_of_embeddings,
+                        learner_names=["SetTransformer"])
+            nces.train(epochs=5, batch_size=64, num_lps=500, storage_path="./temp_models")
+        else:
             nces = NCES(knowledge_base_path=knowledge_base_path, quality_func=F1(), num_predictions=100,
                         path_of_embeddings=path_of_embeddings,
                         learner_names=["SetTransformer"])
