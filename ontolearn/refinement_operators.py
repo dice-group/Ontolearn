@@ -454,7 +454,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
             # TODO probably not correct/complete
             if max_length >= 2 and (self.len(ce) + 1 <= self.max_child_length):
                 # (2.2) Create negation of all leaf_concepts
-                iter_container.append(self.generator.negation_from_iterables(self.kb.get_leaf_concepts(ce)))
+                iter_container.append(self.generator.negation_from_iterables(self.kb.class_hierarchy.leaves(of=ce)))
 
         if max_length >= 3 and (self.len(ce) + 2 <= self.max_child_length):
             # (2.3) Create ∀.r.T and ∃.r.T where r is the most general relation.

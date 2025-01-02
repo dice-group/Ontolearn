@@ -64,7 +64,7 @@ from ontolearn.search import EvoLearnerNode, NCESNode, HeuristicOrderedNode, LBL
     LengthOrderedNode, \
     QualityOrderedNode, EvaluatedConcept
 from ontolearn.utils import oplogging
-from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn
+from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn, evaluate_concept
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter, EntropyValueSplitter
 from ontolearn.base_nces import BaseNCES
 from ontolearn.nces_architectures import LSTM, GRU, SetTransformer
@@ -489,7 +489,7 @@ class EvoLearner(BaseConceptLearner):
             individual.fitness.values = (self._cache[ind_str][1],)
         else:
             concept = gp.compile(individual, self.pset)
-            e = self.kb.evaluate_concept(concept, self.quality_func, self._learning_problem)
+            e = evaluate_concept(self.kb, concept, self.quality_func, self._learning_problem)
             individual.quality.values = (e.q,)
             self.fitness_func.apply(individual)
             self._cache[ind_str] = (e.q, individual.fitness.values[0])

@@ -36,7 +36,8 @@ from owlapy.owl_hierarchy import ClassHierarchy, ObjectPropertyHierarchy, Dataty
 from owlapy.utils import OWLClassExpressionLengthMetric, LRUCache
 import traceback
 from tqdm import tqdm
-
+from ontolearn.abstracts import EncodedLearningProblem, AbstractScorer
+from ontolearn.search import EvaluatedConcept
 from typing import Set, Iterable
 from owlapy.class_expression import (
     OWLQuantifiedObjectRestriction,
@@ -413,3 +414,26 @@ def verbalize(predictions_file_path: str):  # pragma: no cover
         print("Image generated successfully!")
     else:
         print("Images generated successfully!")
+
+
+def evaluate_concept(kb: 'KnowledgeBase', concept: OWLClassExpression, quality_func: AbstractScorer,
+                     encoded_learning_problem: EncodedLearningProblem) -> EvaluatedConcept:
+    """Evaluates a concept by using the encoded learning problem examples, in terms of Accuracy or F1-score.
+
+    Note:
+        This method is useful to tell the quality (e.q) of a generated concept by the concept learners, to get
+        the set of individuals (e.inds) that are classified by this concept and the amount of them (e.ic).
+    Args:
+        kb: The knowledge base where to evaluate the concept.
+        concept: The concept to be evaluated.
+        quality_func: Quality measurement in terms of Accuracy or F1-score.
+        encoded_learning_problem: The encoded learning problem.
+    Return:
+        The evaluated concept.
+    """
+
+    e = EvaluatedConcept()
+    e.inds = kb.individuals_set(concept)
+    e.ic = len(e.inds)
+    _, e.q = quality_func.score_elp(e.inds, encoded_learning_problem)
+    return e

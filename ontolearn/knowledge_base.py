@@ -25,9 +25,8 @@
 """ Knowledge Base."""
 
 import logging
-import random
 from collections import Counter
-from typing import Iterable, Optional, Callable, overload, Union, FrozenSet, Set, Dict, cast, Generator
+from typing import Iterable, Optional, Callable, Union, FrozenSet, Set, Dict, cast, Generator
 import owlapy
 from owlapy.class_expression import OWLClassExpression, OWLClass, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLThing, OWLObjectMinCardinality, OWLObjectOneOf
@@ -37,24 +36,18 @@ from owlapy.owl_axiom import OWLClassAssertionAxiom, OWLObjectPropertyAssertionA
 from owlapy.owl_datatype import OWLDatatype
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import BooleanOWLDatatype, NUMERIC_DATATYPES, DoubleOWLDatatype, TIME_DATATYPES, OWLLiteral
-from owlapy.abstracts import AbstractOWLOntology, AbstractOWLReasoner, AbstractOWLOntologyManager
+from owlapy.abstracts import AbstractOWLOntology, AbstractOWLReasoner
 from owlapy.owl_property import OWLObjectProperty, OWLDataProperty, OWLObjectPropertyExpression, \
     OWLDataPropertyExpression
 from owlapy.owl_ontology import Ontology
-from owlapy.owl_ontology_manager import OntologyManager
 from owlapy.owl_reasoner import StructuralReasoner
 from owlapy.render import DLSyntaxObjectRenderer
-from ontolearn.search import EvaluatedConcept
-from owlapy.utils import iter_count, LRUCache, OWLClassExpressionLengthMetric
-from .abstracts import AbstractKnowledgeBase, AbstractScorer, EncodedLearningProblem
+from owlapy.utils import iter_count, LRUCache
+from .abstracts import AbstractKnowledgeBase
 from .concept_generator import ConceptGenerator
-from .learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from owlapy.owl_hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
-
-from .utils.static_funcs import (init_length_metric, init_hierarchy_instances,
-                                 init_named_individuals, init_individuals_from_concepts)
-
-from owlapy.class_expression import OWLDataMaxCardinality, OWLDataSomeValuesFrom
+from .utils.static_funcs import (init_hierarchy_instances, init_named_individuals, init_individuals_from_concepts)
+from owlapy.class_expression import OWLDataSomeValuesFrom
 from owlapy.owl_data_ranges import OWLDataRange
 from owlapy.class_expression import OWLDataOneOf
 
@@ -71,14 +64,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
     Args:
         path: Path to an ontology file that is to be loaded.
-        ontologymanager_factory: Factory that creates an ontology manager to be used to load the file.
         ontology: OWL ontology object.
         reasoner_factory: Factory that creates a reasoner to reason about the ontology.
         reasoner: reasoner Over the ontology.
-        length_metric_factory: See :attr:`length_metric`.
-        length_metric: Length metric that is used in calculation of class expression lengths.
-        individuals_cache_size: How many individuals of class expressions to cache.
-        backend_store: Whether to sync the world to backend store.
             reasoner of this object, if you enter a reasoner using :arg:`reasoner_factory` or :arg:`reasoner`
             argument it will override this setting.
         include_implicit_individuals: Whether to identify and consider instances which are not set as OWL Named
@@ -89,85 +77,38 @@ class KnowledgeBase(AbstractKnowledgeBase):
         path (str): Path of the ontology file.
         use_individuals_cache (bool): Whether to use individuals cache to store individuals for method efficiency.
     """
-    # __slots__ = '_manager', '_ontology', '_reasoner', '_length_metric', \
-    #    '_ind_set', '_ind_cache', 'path', 'use_individuals_cache', 'generator', '_class_hierarchy', \
+    # __slots__ = '_manager', '_ontology', '_reasoner', \
+    #    '_ind_cache', 'path', 'use_individuals_cache', 'generator', '_class_hierarchy', \
     #    '_object_property_hierarchy', '_data_property_hierarchy', '_op_domains', '_op_ranges', '_dp_domains', \
     #    '_dp_ranges'
 
-    length_metric: OWLClassExpressionLengthMetric
-
-    ind_set: FrozenSet[OWLNamedIndividual]
     ind_cache: LRUCache[OWLClassExpression, FrozenSet[OWLNamedIndividual]]  # class expression => individuals
-
     path: str
     use_individuals_cache: bool
     generator: ConceptGenerator
-    # TODO:CD: We do not benefit from using overloading in the init of KG
-    #  TODO:CD: We need to remove overloading by having a single __init__() filled with default parameters
-
-    @overload
-    def __init__(self, *,
-                 path: str,
-                 ontologymanager_factory: Callable[[], AbstractOWLOntologyManager] = OntologyManager(
-                     world_store=None),
-                 reasoner_factory: Callable[[AbstractOWLOntology], AbstractOWLReasoner] = None,
-                 length_metric: Optional[OWLClassExpressionLengthMetric] = None,
-                 length_metric_factory: Optional[Callable[[], OWLClassExpressionLengthMetric]] = None,
-                 individuals_cache_size=128,
-                 backend_store: bool = False,
-                 include_implicit_individuals=False):
-        ...
-
-    @overload
-    def __init__(self, *,
-                 ontology: AbstractOWLOntology,
-                 reasoner: AbstractOWLReasoner,
-                 load_class_hierarchy: bool = True,
-                 length_metric: Optional[OWLClassExpressionLengthMetric] = None,
-                 length_metric_factory: Optional[Callable[[], OWLClassExpressionLengthMetric]] = None,
-                 individuals_cache_size=128):
-        ...
 
     def __init__(self, *,
                  path: Optional[str] = None,
-
-                 ontologymanager_factory: Optional[Callable[[], AbstractOWLOntologyManager]] = None,
                  reasoner_factory: Optional[Callable[[AbstractOWLOntology], AbstractOWLReasoner]] = None,
-                 length_metric_factory: Optional[Callable[[], OWLClassExpressionLengthMetric]] = None,
-
                  ontology: Optional[AbstractOWLOntology] = None,
                  reasoner: Optional[AbstractOWLReasoner] = None,
-                 length_metric: Optional[OWLClassExpressionLengthMetric] = None,
-                 individuals_cache_size:int=0,
-                 backend_store: bool = False,
                  class_hierarchy: Optional[ClassHierarchy] = None,
                  load_class_hierarchy: bool = True,
                  object_property_hierarchy: Optional[ObjectPropertyHierarchy] = None,
                  data_property_hierarchy: Optional[DatatypePropertyHierarchy] = None,
                  include_implicit_individuals=False):
         AbstractKnowledgeBase.__init__(self)
+
+        assert path is not None or (ontology is not None and reasoner is not None), ("You should either provide a path "
+                                                                                     "of the ontology or the ontology"
+                                                                                     "object!")
         self.path = path
 
-        if ontology is not None:
+        if ontology:
             self.manager = ontology.get_owl_ontology_manager()
             self.ontology = ontology
-        elif ontologymanager_factory is not None:
-            self.manager = ontologymanager_factory()
-        else:  # default to Owlready2 implementation
-            if path is not None and backend_store:
-                self.manager = OntologyManager(world_store=path + ".or2")
-            else:
-                self.manager = OntologyManager(world_store=None)
-            # raise TypeError("neither ontology nor manager factory given")
-
-        if ontology is None:
-            if path is None:
-                raise TypeError("path missing")
-            else:
-                self.ontology = self.manager.load_ontology(IRI.create('file://' + self.path))
-                if isinstance(self.manager, OntologyManager) and backend_store:
-                    self.manager.save_world()
-                    logger.debug("Synced world to backend store")
+        else:
+            self.ontology = self.manager.load_ontology(IRI.create('file://' + self.path))
 
         reasoner: AbstractOWLReasoner
         if reasoner is not None:
@@ -176,8 +117,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
             self.reasoner = reasoner_factory(self.ontology)
         else:
             self.reasoner = StructuralReasoner(ontology=self.ontology)
-
-        self.length_metric = init_length_metric(length_metric, length_metric_factory)
 
         if load_class_hierarchy:
             self.class_hierarchy: ClassHierarchy
@@ -201,34 +140,21 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.dp_ranges = dict()
         # OWL class expression generator
         self.generator = ConceptGenerator()
-        # TODO:CD: We need to remove these next two lines
-        # TODO:CD: No caching: Caching must be done by the reasoners and it must be optional.
-        # TODO:CD: No ind_set. This hinders us scaling large KGs
-        self.use_individuals_cache, self.ind_cache = init_named_individuals(individuals_cache_size)
-        self.ind_set = init_individuals_from_concepts(include_implicit_individuals,
-                                                      reasoner=self.reasoner,
-                                                      ontology=self.ontology,
-                                                      individuals_per_concept=(self.individuals(i) for i in
-                                                                               self.get_concepts()))
         self.describe()
 
-    def individuals(self, concept: Optional[OWLClassExpression] = None, named_individuals:bool=False) -> Iterable[OWLNamedIndividual]:
+    def individuals(self, concept: Optional[OWLClassExpression] = None, named_individuals: bool = False) -> Iterable[OWLNamedIndividual]:
         """Given an OWL class expression, retrieve all individuals belonging to it.
-
 
         Args:
             concept: Class expression of which to list individuals.
-            named_individuals: Ensure that results can be or not named_individuals
         Returns:
             Individuals belonging to the given class.
         """
-        # TODO: CD: is_owl_thing workaround must be implemented by reasoner if it is needed
-        if concept is None or concept.is_owl_thing():
-            for i in self.ind_set:
-                yield i
+        # named_individuals check must be supported by the reasoner .instances method
+        if concept:
+            return self.reasoner.instances(concept)
         else:
-        # TODO: CD: Disable caching
-            yield from self.maybe_cache_individuals(concept)
+            return self.ontology.individuals_in_signature()
 
     def abox(self, individual: Union[OWLNamedIndividual, Iterable[OWLNamedIndividual]] = None, mode='native'):  # pragma: no cover
         """
@@ -330,7 +256,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
             else:
                 raise RuntimeError(f"Unrecognized mode:{mode}")
 
-    # @TODO: entities or namedindividuals ?!
     # AB: This method is to ask for tbox axioms related with the given entity, which can be a class or a property.
     # For named individuals there is the method `get_types`.
     def tbox(self, entities: Union[Iterable[OWLClass], Iterable[OWLDataProperty], Iterable[OWLObjectProperty], OWLClass,
@@ -494,8 +419,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         new.manager = self.manager
         new.ontology = self.ontology
         new.reasoner = self.reasoner
-        new.length_metric = self.length_metric
-        new.ind_set = self.ind_set
         new.path = self.path
         new.use_individuals_cache = self.use_individuals_cache
         new.generator = self.generator
@@ -537,20 +460,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
         return new
 
-    def concept_len(self, ce: OWLClassExpression) -> int:
-        """Calculates the length of a concept and is used by some concept learning algorithms to
-        find the best results considering also the length of the concepts.
-
-        Args:
-            ce: The concept to be measured.
-        Returns:
-            Length of the concept.
-        """
-        # @TODO: CD: Computing the length of a concept should be disantangled from KB
-        # @TODO: CD: Ideally, this should be a static function
-
-        return self.length_metric.length(ce)
-
     def clean(self):
         """Clean all stored values (states and caches) if there is any.
 
@@ -577,24 +486,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
             temp = self.reasoner.instances(ce)
             self.ind_cache[ce] = frozenset(temp)
 
-    def maybe_cache_individuals(self, ce: OWLClassExpression) -> Iterable[OWLNamedIndividual]:
-        # TODO:CD: Disable caching.
-        if self.use_individuals_cache:
-            self.cache_individuals(ce)
-            yield from self.ind_cache[ce]
-        else:
-            yield from self.reasoner.instances(ce)
-
-    def maybe_cache_individuals_count(self, ce: OWLClassExpression) -> int:
-        # TODO:CD: Disable caching.
-        if self.use_individuals_cache:
-            self.cache_individuals(ce)
-            r = self.ind_cache[ce]
-            return len(r)
-        else:
-            return iter_count(self.reasoner.instances(ce))
-
     # TODO:CD: Remove this function from KB. Size count should not be done by KB.
+    # Lets keep this for now since lots of operations depend on this method
     def individuals_count(self, concept: Optional[OWLClassExpression] = None) -> int:
         """Returns the number of all individuals belonging to the concept in the ontology.
 
@@ -603,23 +496,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Number of the individuals belonging to the given class.
         """
-        if concept is None or concept.is_owl_thing():
-            return len(self.ind_set)
-        else:
-            return self.maybe_cache_individuals_count(concept)
-
-    # TODO:CD: Delete  individuals_set functions.
-    @overload
-    def individuals_set(self, concept: OWLClassExpression):
-        ...
-
-    @overload
-    def individuals_set(self, individual: OWLNamedIndividual):
-        ...
-
-    @overload
-    def individuals_set(self, individuals: Iterable[OWLNamedIndividual]):
-        ...
+        return len(set(self.individuals(concept)))
 
     def individuals_set(self,
                         arg: Union[Iterable[OWLNamedIndividual], OWLNamedIndividual, OWLClassExpression]) -> FrozenSet:
@@ -643,20 +520,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
             return frozenset({arg})
         else:
             return frozenset(arg)
-
-    # TODO:CD: Redundant
-    def all_individuals_set(self):
-        """Retrieve all the individuals of the knowledge base.
-
-        Returns:
-            Frozenset of the all individuals.
-        """
-
-        if self.ind_set is not None:
-            return self.ind_set
-        else:
-            return frozenset(self.ontology.individuals_in_signature())
-
 
     def most_general_object_properties(self, *, domain: OWLClassExpression, inverse: bool = False) \
             -> Iterable[OWLObjectProperty]:
@@ -683,89 +546,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         for prop in data_properties:
             if domain.is_owl_thing() or inds_domain <= self.individuals_set(self.get_data_property_domains(prop)):
                 yield prop
-
-    # TODO:CD: A learning problem (DL concept learning problem) should not be a part of a knowledge base
-    def encode_learning_problem(self, lp: PosNegLPStandard):
-        """
-        Provides the encoded learning problem (lp), i.e. the class containing the set of OWLNamedIndividuals
-        as follows:
-            kb_pos --> the positive examples set,
-            kb_neg --> the negative examples set,
-            kb_all --> all lp individuals / all individuals set,
-            kb_diff --> kb_all - (kb_pos + kb_neg).
-        Note:
-            Simple access of the learning problem individuals divided in respective sets.
-            You will need the encoded learning problem to use the method evaluate_concept of this class.
-        Args:
-            lp (PosNegLPStandard): The learning problem.
-        Return:
-            EncodedPosNegLPStandard: The encoded learning problem.
-        """
-        if lp.all is None:
-            kb_all = self.all_individuals_set()
-        else:
-            kb_all = self.individuals_set(lp.all)
-
-        assert 0 < len(lp.pos) < len(kb_all) and len(kb_all) > len(lp.neg)
-        if logger.isEnabledFor(logging.INFO):
-            r = DLSyntaxObjectRenderer()
-            logger.info('E^+:[ {0} ]'.format(', '.join(map(r.render, lp.pos))))
-            logger.info('E^-:[ {0} ]'.format(', '.join(map(r.render, lp.neg))))
-
-        kb_pos = self.individuals_set(lp.pos)
-        if len(lp.neg) == 0:  # if negatives are not provided, randomly sample.
-            kb_neg = type(kb_all)(random.sample(list(kb_all), len(kb_pos)))
-        else:
-            kb_neg = self.individuals_set(lp.neg)
-
-        try:
-            assert len(kb_pos) == len(lp.pos)
-        except AssertionError:
-            print(lp.pos)
-            print(kb_pos)
-            print(kb_all)
-            print('Assertion error. Exiting.')
-            raise
-        if lp.neg:
-            assert len(kb_neg) == len(lp.neg)
-
-        return EncodedPosNegLPStandard(
-            kb_pos=kb_pos,
-            kb_neg=kb_neg,
-            kb_all=kb_all,
-            kb_diff=kb_all.difference(kb_pos.union(kb_neg)))
-    # TODO: CD: A knowledge base is a data structure and the context of "evaluating" a concept seems to be unrelated
-    def evaluate_concept(self, concept: OWLClassExpression, quality_func: AbstractScorer,
-                         encoded_learning_problem: EncodedLearningProblem) -> EvaluatedConcept:
-        """Evaluates a concept by using the encoded learning problem examples, in terms of Accuracy or F1-score.
-
-        Note:
-            This method is useful to tell the quality (e.q) of a generated concept by the concept learners, to get
-            the set of individuals (e.inds) that are classified by this concept and the amount of them (e.ic).
-        Args:
-            concept: The concept to be evaluated.
-            quality_func: Quality measurement in terms of Accuracy or F1-score.
-            encoded_learning_problem: The encoded learning problem.
-        Return:
-            The evaluated concept.
-        """
-
-        e = EvaluatedConcept()
-        e.inds = self.individuals_set(concept)
-        e.ic = len(e.inds)
-        _, e.q = quality_func.score_elp(e.inds, encoded_learning_problem)
-        return e
-    # TODO: CD: We need to do refactoring to remove redundant class methods defined below in our next release
-    def get_leaf_concepts(self, concept: OWLClass):
-        """Get leaf classes.
-
-        Args:
-            concept: Atomic class for which to find leaf classes.
-
-        Returns:
-            Leaf classes { x \\| (x subClassOf concept) AND not exist y: y subClassOf x )}. """
-        assert isinstance(concept, OWLClass)
-        yield from self.class_hierarchy.leaves(of=concept)
 
     def get_least_general_named_concepts(self) -> Generator[OWLClass, None, None]:
         """Get leaf classes.

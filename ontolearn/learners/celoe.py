@@ -17,6 +17,8 @@ import time
 from itertools import islice
 from owlapy.render import DLSyntaxObjectRenderer
 
+from ..utils.static_funcs import evaluate_concept
+
 _concept_operand_sorter = ConceptOperandSorter()
 
 class CELOE(RefinementBasedConceptLearner):
@@ -243,7 +245,7 @@ class CELOE(RefinementBasedConceptLearner):
             self._seen_norm_concepts.add(norm_concept)
 
         self.search_tree[ref.concept] = TreeNode(ref, tree_parent, is_root=ref.is_root)
-        e = self.kb.evaluate_concept(ref.concept, self.quality_func, self._learning_problem)
+        e = evaluate_concept(self.kb, ref.concept, self.quality_func, self._learning_problem)
 
         ref.quality = e.q
         self._number_of_tested_concepts += 1
