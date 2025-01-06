@@ -103,7 +103,7 @@ class PosNegLPStandard(AbstractLearningProblem):
     # def encode_kb(self, knowledge_base: 'KnowledgeBase') -> EncodedPosNegLPStandard:
     #     return knowledge_base.encode_learning_problem(self)
 
-    def encode_learning_problem(self, kb: 'KnowledgeBase') -> EncodedPosNegLPStandard:
+    def encode_kb(self, kb: 'KnowledgeBase') -> EncodedPosNegLPStandard:
         """
         Provides the encoded learning problem (lp), i.e. the class containing the set of OWLNamedIndividuals
         as follows:

@@ -3,6 +3,7 @@ from ..knowledge_base import KnowledgeBase
 
 from ..abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic, EncodedPosNegLPStandardKind
 from ..learning_problem import PosNegLPStandard
+from ..quality_funcs import evaluate_concept
 from ..search import OENode, TreeNode, EvaluatedConcept, HeuristicOrderedNode, QualityOrderedNode, LengthOrderedNode
 
 from typing import Optional, Union, Iterable, Dict
@@ -17,7 +18,6 @@ import time
 from itertools import islice
 from owlapy.render import DLSyntaxObjectRenderer
 
-from ..utils.static_funcs import evaluate_concept
 
 _concept_operand_sorter = ConceptOperandSorter()
 

@@ -28,6 +28,7 @@ import logging
 from collections import Counter
 from typing import Iterable, Optional, Callable, Union, FrozenSet, Set, Dict, cast, Generator
 import owlapy
+from owlapy import OntologyManager
 from owlapy.class_expression import OWLClassExpression, OWLClass, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLThing, OWLObjectMinCardinality, OWLObjectOneOf
 from owlapy.iri import IRI
@@ -46,7 +47,7 @@ from owlapy.utils import iter_count, LRUCache
 from .abstracts import AbstractKnowledgeBase
 from .concept_generator import ConceptGenerator
 from owlapy.owl_hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
-from .utils.static_funcs import (init_hierarchy_instances, init_named_individuals, init_individuals_from_concepts)
+from .utils.static_funcs import init_hierarchy_instances
 from owlapy.class_expression import OWLDataSomeValuesFrom
 from owlapy.owl_data_ranges import OWLDataRange
 from owlapy.class_expression import OWLDataOneOf
@@ -108,6 +109,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             self.manager = ontology.get_owl_ontology_manager()
             self.ontology = ontology
         else:
+            self.manager = OntologyManager()
             self.ontology = self.manager.load_ontology(IRI.create('file://' + self.path))
 
         reasoner: AbstractOWLReasoner
@@ -152,9 +154,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
         # named_individuals check must be supported by the reasoner .instances method
         if concept:
-            return self.reasoner.instances(concept)
+            return frozenset(self.reasoner.instances(concept))
         else:
-            return self.ontology.individuals_in_signature()
+            return frozenset(self.ontology.individuals_in_signature())
 
     def abox(self, individual: Union[OWLNamedIndividual, Iterable[OWLNamedIndividual]] = None, mode='native'):  # pragma: no cover
         """

@@ -21,37 +21,25 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # -----------------------------------------------------------------------------
-from itertools import chain
-from typing import Optional, Callable, Tuple, Generator, List, Union, Final
 import pandas
 import matplotlib.pyplot as plt
 import sklearn
 import numpy as np
-from owlapy.class_expression import OWLClass, OWLClassExpression
+import traceback
+
+from itertools import chain
+from typing import Optional, Callable, Tuple, Generator, List, Union, Final
+from tqdm import tqdm
+from typing import Set, Iterable
+
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLEquivalentClassesAxiom
 from owlapy.abstracts import AbstractOWLOntology, AbstractOWLOntologyManager
 from owlapy.owl_ontology_manager import OntologyManager
 from owlapy.owl_hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from owlapy.utils import OWLClassExpressionLengthMetric, LRUCache
-import traceback
-from tqdm import tqdm
-from ontolearn.abstracts import EncodedLearningProblem, AbstractScorer
-from ontolearn.search import EvaluatedConcept
-from typing import Set, Iterable
-from owlapy.class_expression import (
-    OWLQuantifiedObjectRestriction,
-    OWLObjectCardinalityRestriction,
-)
-from owlapy.class_expression import (
-    OWLObjectUnionOf,
-    OWLObjectIntersectionOf,
-    OWLObjectSomeValuesFrom,
-    OWLObjectAllValuesFrom,
-    OWLObjectMinCardinality,
-    OWLObjectMaxCardinality,
-    OWLObjectOneOf,
-)
+from owlapy.class_expression import OWLQuantifiedObjectRestriction, OWLObjectCardinalityRestriction, \
+                                    OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLClass, OWLClassExpression
 
 
 def f1_set_similarity(y: Set[str], yhat: Set[str]) -> float:
@@ -257,6 +245,7 @@ def compute_f1_score_from_confusion_matrix(confusion_matrix:dict)->float:
     f_1 = 2 * ((precision * recall) / (precision + recall))
     return f_1
 
+
 def plot_umap_reduced_embeddings(X: pandas.DataFrame, y: List[float], name: str = "umap_visualization.pdf") -> None:  # pragma: no cover
     # TODO:AB: 'umap' is not part of the dependencies !?
     import umap
@@ -414,26 +403,3 @@ def verbalize(predictions_file_path: str):  # pragma: no cover
         print("Image generated successfully!")
     else:
         print("Images generated successfully!")
-
-
-def evaluate_concept(kb: 'KnowledgeBase', concept: OWLClassExpression, quality_func: AbstractScorer,
-                     encoded_learning_problem: EncodedLearningProblem) -> EvaluatedConcept:
-    """Evaluates a concept by using the encoded learning problem examples, in terms of Accuracy or F1-score.
-
-    Note:
-        This method is useful to tell the quality (e.q) of a generated concept by the concept learners, to get
-        the set of individuals (e.inds) that are classified by this concept and the amount of them (e.ic).
-    Args:
-        kb: The knowledge base where to evaluate the concept.
-        concept: The concept to be evaluated.
-        quality_func: Quality measurement in terms of Accuracy or F1-score.
-        encoded_learning_problem: The encoded learning problem.
-    Return:
-        The evaluated concept.
-    """
-
-    e = EvaluatedConcept()
-    e.inds = kb.individuals_set(concept)
-    e.ic = len(e.inds)
-    _, e.q = quality_func.score_elp(e.inds, encoded_learning_problem)
-    return e

@@ -27,12 +27,16 @@
 import logging
 from abc import ABCMeta, abstractmethod
 from typing import Set, List, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional
+from collections import OrderedDict
+
 from owlapy.class_expression import OWLClassExpression
 from owlapy.abstracts import AbstractOWLOntology
+from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.utils import iter_count
+
 from .data_struct import Experience
 from .utils import read_csv
-from collections import OrderedDict
+
 
 _N = TypeVar('_N')  #:
 _KB = TypeVar('_KB', bound='AbstractKnowledgeBase')  #:
@@ -393,15 +397,19 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def concept_len(self, ce: OWLClassExpression) -> int:
-        """Calculate the length of a concept.
+    def individuals(self, concept: Optional[OWLClassExpression] = None, named_individuals: bool = False) -> Iterable[OWLNamedIndividual]:
+        pass
 
-        Args:
-            ce: The concept to measure the length for.
+    @abstractmethod
+    def abox(self, *args, **kwargs):
+        pass
 
-        Returns:
-            Length of concept.
-        """
+    @abstractmethod
+    def tbox(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def triples(self, *args, **kwargs):
         pass
 
 

@@ -24,47 +24,48 @@
 
 """Concept learning algorithms of Ontolearn."""
 
-import logging
 import operator
 import time
-from datetime import datetime
-from contextlib import contextmanager
-from itertools import islice, chain
-from typing import Any, Callable, Dict, FrozenSet, Set, List, Tuple, Iterable, Optional, Union
-
 import pandas as pd
 import numpy as np
 import torch
-from owlapy.class_expression import OWLClassExpression
-from owlapy.owl_individual import OWLNamedIndividual
-from owlapy.owl_literal import OWLLiteral
-from owlapy.owl_property import OWLDataProperty
-from owlapy.abstracts import AbstractOWLReasoner
+import os
+import json
+import glob
+
+from datetime import datetime
+from itertools import chain
+from typing import Any, Callable, Dict, FrozenSet, Set, List, Tuple, Iterable, Optional, Union
+from sortedcontainers import SortedSet
+
 from torch.utils.data import DataLoader
 from torch.functional import F
 from torch.nn.utils.rnn import pad_sequence
 from deap import gp, tools, base, creator
 
+from owlapy.class_expression import OWLClassExpression
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_property import OWLDataProperty
+from owlapy.abstracts import AbstractOWLReasoner
+from owlapy.utils import EvaluatedDescriptionSet, ConceptOperandSorter
+from owlapy.parser import DLSyntaxParser
+
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.abstracts import AbstractFitness, AbstractScorer, BaseRefinement, \
-    AbstractHeuristic, EncodedPosNegLPStandardKind
-from ontolearn.base_concept_learner import BaseConceptLearner, RefinementBasedConceptLearner
-from owlapy.utils import EvaluatedDescriptionSet, ConceptOperandSorter, OperandSetTransform
+from ontolearn.abstracts import AbstractFitness, AbstractScorer, BaseRefinement, AbstractHeuristic
+from ontolearn.base_concept_learner import BaseConceptLearner
 from ontolearn.data_struct import NCESDataLoader, NCESDataLoaderInference, CLIPDataLoader, CLIPDataLoaderInference
 from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
 from ontolearn.ea_initialization import AbstractEAInitialization, EARandomInitialization, EARandomWalkInitialization
 from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVocabulary, Tree, escape, ind_to_string, \
     owlliteral_to_primitive_string
 from ontolearn.fitness_functions import LinearPressureFitness
-from ontolearn.heuristics import OCELHeuristic
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from ontolearn.metrics import Accuracy
 from ontolearn.refinement_operators import ExpressRefinement
-from ontolearn.search import EvoLearnerNode, NCESNode, HeuristicOrderedNode, LBLNode, OENode, TreeNode, \
-    LengthOrderedNode, \
-    QualityOrderedNode, EvaluatedConcept
-from ontolearn.utils import oplogging
-from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn, evaluate_concept
+from ontolearn.search import EvoLearnerNode, NCESNode, OENode, TreeNode, QualityOrderedNode
+from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn
+from ontolearn.quality_funcs import evaluate_concept
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter, EntropyValueSplitter
 from ontolearn.base_nces import BaseNCES
 from ontolearn.nces_architectures import LSTM, GRU, SetTransformer
@@ -73,17 +74,11 @@ from ontolearn.clip_architectures import LengthLearner_LSTM, LengthLearner_GRU, 
 from ontolearn.nces_trainer import NCESTrainer, before_pad
 from ontolearn.clip_trainer import CLIPTrainer
 from ontolearn.nces_utils import SimpleSolution
-from owlapy.render import DLSyntaxObjectRenderer
-from owlapy.parser import DLSyntaxParser
-from owlapy.utils import OrderedOWLObject
-from sortedcontainers import SortedSet
-import os
-import json
-import glob
 from ontolearn.lp_generator import LPGen
-from .learners import CELOE
+from ontolearn.learners import CELOE
 
 _concept_operand_sorter = ConceptOperandSorter()
+
 
 class EvoLearner(BaseConceptLearner):
     """An evolutionary approach to learn concepts in ALCQ(D).
