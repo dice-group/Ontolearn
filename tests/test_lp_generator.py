@@ -5,11 +5,11 @@ from ontolearn.utils import setup_logging
 setup_logging("ontolearn/logging_test.conf")
 
 PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
-STORAGE_DIR = 'KGs/Family/new_dir'
+STORAGE_PATH = 'KGs/Family/new_dir'
 
 class LPGen_Test(unittest.TestCase):
     def test_generate_load(self):
-        lp_gen = LPGen(kb_path=PATH_FAMILY, storage_dir=STORAGE_DIR)
+        lp_gen = LPGen(kb_path=PATH_FAMILY, storage_path=STORAGE_PATH)
         lp_gen.generate()
         print("Loading generated data...")
         with open(f"{STORAGE_DIR}/triples/train.txt") as file:

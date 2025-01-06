@@ -337,18 +337,26 @@ class NCESDataset(NCESBaseDataset, torch.utils.data.Dataset):  # pragma: no cove
         else:
             selected_pos = pos
             selected_neg = neg
-            
-        datapoint_pos = torch.FloatTensor(self.embeddings.loc[selected_pos].values.squeeze())
-        datapoint_neg = torch.FloatTensor(self.embeddings.loc[selected_neg].values.squeeze())
+
+        selected_pos = list(filter(lambda x: x in self.embeddings, pos))
+        selected_neg = list(filter(lambda x: x in self.embeddings, neg))
+
         labels, length = self.get_labels(key)
+
+        try:
+            datapoint_pos = torch.FloatTensor(self.embeddings.loc[selected_pos].values.squeeze())
+            datapoint_neg = torch.FloatTensor(self.embeddings.loc[selected_neg].values.squeeze())
+        except:
+            #print(f'\nSome individuals are not found in embedding matrix: {list(filter(lambda x: x not in self.embeddings, pos+neg))}')
+            return torch.zeros(len(pos), self.embeddings.shape[1]), torch.zeros(len(neg), self.embeddings.shape[1]), torch.cat([torch.tensor(labels), self.vocab['PAD'] * torch.ones(max(0, self.max_length-length))]).long()
         
         return datapoint_pos, datapoint_neg, torch.cat([torch.tensor(labels), self.vocab['PAD'] * torch.ones(max(0, self.max_length-length))]).long()
 
 
 class NCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):  # pragma: no cover
 
-    def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, sorted_examples=True):
-        super().__init__(vocab, inv_vocab)
+    def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, max_length=48, sorted_examples=True):
+        super().__init__(vocab, inv_vocab, max_length)
         self.data = data
         self.embeddings = embeddings
         self.shuffle_examples = shuffle_examples
@@ -364,9 +372,16 @@ class NCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):  # pragma
         elif self.shuffle_examples:
             random.shuffle(pos)
             random.shuffle(neg)
-            
-        datapoint_pos = torch.FloatTensor(self.embeddings.loc[pos].values.squeeze())
-        datapoint_neg = torch.FloatTensor(self.embeddings.loc[neg].values.squeeze())
+
+        selected_pos = list(filter(lambda x: x in self.embeddings, pos))
+        selected_neg = list(filter(lambda x: x in self.embeddings, neg))
+        
+        try:
+            datapoint_pos = torch.FloatTensor(self.embeddings.loc[selected_pos].values.squeeze())
+            datapoint_neg = torch.FloatTensor(self.embeddings.loc[selected_neg].values.squeeze())
+        except:
+            print(f'\nSome individuals are not found in embedding matrix: {list(filter(lambda x: x not in self.embeddings, pos+neg))}')
+            return torch.zeros(len(pos), self.embeddings.shape[1]), torch.zeros(len(neg), self.embeddings.shape[1])
         
         return datapoint_pos, datapoint_neg
     
@@ -445,25 +460,23 @@ class ROCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):
         return len(self.data)
     
     def __getitem__(self, idx):
-        _, value = self.data[idx]
-        pos = value['positive examples']
-        neg = value['negative examples']
+        _, pos, neg = self.data[idx]
         
         if self.sampling_strategy == 'p':
             prob_pos_set = 1.0/(1+np.array(range(min(self.k, len(pos)), len(pos)+1, self.k)))
             prob_pos_set = prob_pos_set/prob_pos_set.sum()
             prob_neg_set = 1.0/(1+np.array(range(min(self.k, len(neg)), len(neg)+1, self.k)))
             prob_neg_set = prob_neg_set/prob_neg_set.sum()
-            k_pos = np.random.choice(range(min(self.k, len(pos)), len(pos)+1, self.k), size=(self.num_predictions,), replace=True, p=prob_pos_set)
-            k_neg = np.random.choice(range(min(self.k, len(neg)), len(neg)+1, self.k), size=(self.num_predictions,), replace=True, p=prob_neg_set)
+            k_pos = np.random.choice(range(min(self.k, len(pos)), len(pos)+1, self.k), size=(self.num_pred_per_lp,), replace=True, p=prob_pos_set)
+            k_neg = np.random.choice(range(min(self.k, len(neg)), len(neg)+1, self.k), size=(self.num_pred_per_lp,), replace=True, p=prob_neg_set)
         elif self.sampling_strategy == "nces2":
             k_pos = np.random.choice([len(pos), 2*len(pos)//3],
-                                     size=(self.num_predictions,),
+                                     size=(self.num_pred_per_lp,),
                                      replace=True)
-            k_neg = np.random.choice([len(neg), 2*len(neg)//3], size=(self.num_predictions,), replace=True)
+            k_neg = np.random.choice([len(neg), 2*len(neg)//3], size=(self.num_pred_per_lp,), replace=True)
         else:
-            k_pos = np.random.choice(range(min(self.k, len(pos)), len(pos)+1, self.k), size=(self.num_predictions,), replace=True)
-            k_neg = np.random.choice(range(min(self.k, len(neg)), len(neg)+1, self.k), size=(self.num_predictions,), replace=True)
+            k_pos = np.random.choice(range(min(self.k, len(pos)), len(pos)+1, self.k), size=(self.num_pred_per_lp,), replace=True)
+            k_neg = np.random.choice(range(min(self.k, len(neg)), len(neg)+1, self.k), size=(self.num_pred_per_lp,), replace=True)
             
         selected_pos = [random.sample(pos, k) for k in k_pos]
         selected_neg = [random.sample(neg, k) for k in k_neg]
@@ -472,10 +485,10 @@ class ROCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):
         neg_emb_list = [self.embeddings[self.triples_data.entity2idx.loc[neg_ex].values.squeeze()] for neg_ex in selected_neg]
         
         pos_emb_list[0] = F.pad(pos_emb_list[0], (0, 0, 0, self.num_examples - pos_emb_list[0].shape[0]), "constant", 0)
-        pos_emb_list = pad_sequence(pos_emb_list, batch_first=True, padding_value=0).squeeze()
+        pos_emb_list = pad_sequence(pos_emb_list, batch_first=True, padding_value=0)
         
         neg_emb_list[0] = F.pad(neg_emb_list[0], (0, 0, 0, self.num_examples - neg_emb_list[0].shape[0]), "constant", 0)
-        neg_emb_list = pad_sequence(neg_emb_list, batch_first=True, padding_value=0).squeeze()
+        neg_emb_list = pad_sequence(neg_emb_list, batch_first=True, padding_value=0)
         
         return pos_emb_list, neg_emb_list
         

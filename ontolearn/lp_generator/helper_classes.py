@@ -66,12 +66,12 @@ class KB2Data:
     a json file.
     """
 
-    def __init__(self, path, storage_dir=None, max_num_lps=1000, beyond_alc=False, depth=3, max_child_length=20, refinement_expressivity=0.2,
+    def __init__(self, path, storage_path=None, max_num_lps=1000, beyond_alc=False, depth=3, max_child_length=20, refinement_expressivity=0.2,
                  downsample_refinements=True, sample_fillers_count=10, num_sub_roots=50, min_num_pos_examples=1):
         """
         Args
         - kb_path: path to the owl file representing the knowledge base/ontology
-        - storage_dir: directory in which to store the data to be generated. Not the directory needs not to exists, it would be created automatically
+        - storage_path: directory in which to store the data to be generated. Not the directory needs not to exists, it would be created automatically
         - max_num_lps: the maximum number of learning problems to store
         - beyond_alc: whether to generate learning problems in ALCHIQD, i.e., a description logic more expressive than ALC
         - max_child_length: the maximum length of refinements to be generated for a given node
@@ -79,10 +79,10 @@ class KB2Data:
         - downsample_refinements: whether to downsample refinements in ExpressRefinement. If refinement_expressivity<1, this must be set to True
         """
         self.path = path
-        if storage_dir is None:
-            self.storage_dir = f'{self.path[:self.path.rfind("/")]}/LPs/'
+        if storage_path is None:
+            self.storage_path = f'{self.path[:self.path.rfind("/")]}/LPs/'
         else:
-            self.storage_dir = storage_dir
+            self.storage_path = storage_path
         self.max_num_lps = max_num_lps
         self.beyond_alc = beyond_alc
         self.dl_syntax_renderer = DLSyntaxObjectRenderer()
@@ -168,7 +168,7 @@ class KB2Data:
             concept_name = self.dl_syntax_renderer.render(concept.get_nnf())
             data[concept_name] = {'positive examples': positive, 'negative examples': negative}
         data = list(data.items())
-        os.makedirs(self.storage_dir, exist_ok=True)
-        with open(f'{self.storage_dir}/LPs.json', 'w') as file_train:
+        os.makedirs(self.storage_path, exist_ok=True)
+        with open(f'{self.storage_path}/LPs.json', 'w') as file_train:
             json.dump(data, file_train, indent=3, ensure_ascii=False)
-        print(f'Data saved at {self.storage_dir}')
+        print(f'Data saved at {self.storage_path}')
