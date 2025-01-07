@@ -18,6 +18,7 @@ import time
 from itertools import islice
 from owlapy.render import DLSyntaxObjectRenderer
 
+from ..utils.static_funcs import concept_len
 
 _concept_operand_sorter = ConceptOperandSorter()
 
@@ -140,7 +141,7 @@ class CELOE(RefinementBasedConceptLearner):
                 return [i.concept for i in x]
 
     def make_node(self, c: OWLClassExpression, parent_node: Optional[OENode] = None, is_root: bool = False) -> OENode:
-        return OENode(c, self.kb.concept_len(c), parent_node=parent_node, is_root=is_root)
+        return OENode(c, concept_len(c), parent_node=parent_node, is_root=is_root)
     # TODO:CD: Why do we need this ?
     @contextmanager
     def updating_node(self, node: OENode):

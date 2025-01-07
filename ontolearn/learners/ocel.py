@@ -6,6 +6,8 @@ from ..abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic
 from ..search import OENode, LBLNode
 from owlapy.class_expression import OWLClassExpression
 from ..heuristics import OCELHeuristic
+from ..utils.static_funcs import concept_len
+
 
 class OCEL(CELOE):
     """A limited version of CELOE.
@@ -103,7 +105,7 @@ class OCEL(CELOE):
             OENode: The node.
         """
         assert parent_node is None or isinstance(parent_node, LBLNode)
-        r = LBLNode(c, self.kb.concept_len(c), self.kb.individuals_set(c), parent_node=parent_node, is_root=is_root)
+        r = LBLNode(c, concept_len(c), self.kb.individuals_set(c), parent_node=parent_node, is_root=is_root)
         if parent_node is not None:
             parent_node.add_child(r)
         return r

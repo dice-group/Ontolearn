@@ -31,6 +31,8 @@ from ontolearn.refinement_operators import ExpressRefinement
 import os
 import json
 
+from ontolearn.utils.static_funcs import concept_len
+
 
 class ConceptDescriptionGenerator:
     """
@@ -146,7 +148,7 @@ class KB2Data:
         Concepts = self.lp_gen.generate()
         non_redundancy_hash_map = dict()
         show_some_length = True
-        for concept in tqdm(sorted(Concepts, key=lambda c: self.kb.concept_len(c)), desc="Filtering process..."):
+        for concept in tqdm(sorted(Concepts, key=lambda c: concept_len(c)), desc="Filtering process..."):
             if not self.kb.individuals_set(concept) in non_redundancy_hash_map and \
                     self.min_num_pos_examples <= self.kb.individuals_count(concept):
                 non_redundancy_hash_map[self.kb.individuals_set(concept)] = concept
@@ -157,7 +159,7 @@ class KB2Data:
         print("Concepts generation done!\n")
         print("Number of atomic concepts: ", len(self.atomic_concept_names))
         print("Longest concept length: ",
-              max({l for l in [self.kb.concept_len(c) for c in non_redundancy_hash_map.values()]}), "\n")
+              max({l for l in [concept_len(c) for c in non_redundancy_hash_map.values()]}), "\n")
         print("Total number of concepts: ", len(non_redundancy_hash_map), "\n")
         self.train_concepts = list(non_redundancy_hash_map.values())
         print("Data generation completed")

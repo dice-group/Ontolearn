@@ -64,7 +64,7 @@ from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from ontolearn.metrics import Accuracy
 from ontolearn.refinement_operators import ExpressRefinement
 from ontolearn.search import EvoLearnerNode, NCESNode, OENode, TreeNode, QualityOrderedNode
-from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn
+from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn, concept_len
 from ontolearn.quality_funcs import evaluate_concept
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter, EntropyValueSplitter
 from ontolearn.base_nces import BaseNCES
@@ -473,7 +473,7 @@ class EvoLearner(BaseConceptLearner):
 
         for con, ind in zip(best_concepts, best_inds):
             individuals_count = len(self.kb.individuals_set(con))
-            yield EvoLearnerNode(con, self.kb.concept_len(con), individuals_count, ind.quality.values[0],
+            yield EvoLearnerNode(con, concept_len(con), individuals_count, ind.quality.values[0],
                                  len(ind), ind.height)
 
     def _fitness_func(self, individual: Tree):
@@ -668,7 +668,7 @@ class CLIP(CELOE):
         neg_emb_list = pad_sequence(neg_emb_list, batch_first=True, padding_value=0)
         return pos_emb_list, neg_emb_list
 
-    def pos_neg_to_tensor(self, pos: Union[Set[OWLNamedIndividual]], neg: Union[Set[OWLNamedIndividual], Set[str]]):
+    def pos_neg_to_tensor(self, pos: Union[List[OWLNamedIndividual], List[str]], neg: Union[List[OWLNamedIndividual], List[str]]):
         if isinstance(pos[0], OWLNamedIndividual):
             pos_str = [ind.str.split("/")[-1] for ind in pos][:self.num_examples]
             neg_str = [ind.str.split("/")[-1] for ind in neg][:self.num_examples]

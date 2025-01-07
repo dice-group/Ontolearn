@@ -144,6 +144,11 @@ def init_length_metric(length_metric: Optional[OWLClassExpressionLengthMetric] =
     return length_metric
 
 
+def concept_len(ce: OWLClassExpression, length_metric: Optional[OWLClassExpressionLengthMetric] = None,
+                length_metric_factory: Optional[Callable[[], OWLClassExpressionLengthMetric]] = None):
+    length_metric = init_length_metric(length_metric, length_metric_factory)
+    return length_metric.length(ce)
+
 def init_hierarchy_instances(reasoner, class_hierarchy, object_property_hierarchy, data_property_hierarchy) -> Tuple[
     ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy]:
     """ Initialize class, object property, and data property hierarchies """

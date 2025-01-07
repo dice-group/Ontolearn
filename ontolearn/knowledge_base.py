@@ -76,16 +76,14 @@ class KnowledgeBase(AbstractKnowledgeBase):
     Attributes:
         generator (ConceptGenerator): Instance of concept generator.
         path (str): Path of the ontology file.
-        use_individuals_cache (bool): Whether to use individuals cache to store individuals for method efficiency.
     """
     # __slots__ = '_manager', '_ontology', '_reasoner', \
-    #    '_ind_cache', 'path', 'use_individuals_cache', 'generator', '_class_hierarchy', \
+    #    '_ind_cache', 'path', 'generator', '_class_hierarchy', \
     #    '_object_property_hierarchy', '_data_property_hierarchy', '_op_domains', '_op_ranges', '_dp_domains', \
     #    '_dp_ranges'
 
     ind_cache: LRUCache[OWLClassExpression, FrozenSet[OWLNamedIndividual]]  # class expression => individuals
     path: str
-    use_individuals_cache: bool
     generator: ConceptGenerator
 
     def __init__(self, *,
@@ -422,15 +420,12 @@ class KnowledgeBase(AbstractKnowledgeBase):
         new.ontology = self.ontology
         new.reasoner = self.reasoner
         new.path = self.path
-        new.use_individuals_cache = self.use_individuals_cache
         new.generator = self.generator
         new.op_domains = self.op_domains
         new.op_ranges = self.op_ranges
         new.dp_domains = self.dp_domains
         new.dp_ranges = self.dp_ranges
 
-        if self.use_individuals_cache:
-            new.ind_cache = LRUCache(maxsize=self.ind_cache.maxsize)
 
         if ignored_classes is not None:
             owl_concepts_to_ignore = set()
@@ -474,19 +469,17 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
 
         self.op_domains.clear()
-        if self.use_individuals_cache:
-            self.ind_cache.cache_clear()
 
-    def cache_individuals(self, ce: OWLClassExpression) -> None:
-        if not self.use_individuals_cache:
-            raise TypeError
-        if ce in self.ind_cache:
-            return
-        if isinstance(self.reasoner, StructuralReasoner):
-            self.ind_cache[ce] = self.reasoner._find_instances(ce)  # performance hack
-        else:
-            temp = self.reasoner.instances(ce)
-            self.ind_cache[ce] = frozenset(temp)
+    # def cache_individuals(self, ce: OWLClassExpression) -> None:
+    #     if not self.use_individuals_cache:
+    #         raise TypeError
+    #     if ce in self.ind_cache:
+    #         return
+    #     if isinstance(self.reasoner, StructuralReasoner):
+    #         self.ind_cache[ce] = self.reasoner._find_instances(ce)  # performance hack
+    #     else:
+    #         temp = self.reasoner.instances(ce)
+    #         self.ind_cache[ce] = frozenset(temp)
 
     # TODO:CD: Remove this function from KB. Size count should not be done by KB.
     # Lets keep this for now since lots of operations depend on this method
@@ -512,12 +505,13 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
 
         if isinstance(arg, OWLClassExpression):
-            if self.use_individuals_cache:
-                self.cache_individuals(arg)
-                r = self.ind_cache[arg]
-                return r
-            else:
-                return frozenset(self.individuals(arg))
+            return frozenset(self.individuals(arg))
+            # if self.use_individuals_cache:
+            #     self.cache_individuals(arg)
+            #     r = self.ind_cache[arg]
+            #     return r
+            # else:
+            #     return frozenset(self.individuals(arg))
         elif isinstance(arg, OWLNamedIndividual):
             return frozenset({arg})
         else:

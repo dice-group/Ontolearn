@@ -36,7 +36,7 @@ from owlapy.utils import iter_count
 
 from .data_struct import Experience
 from .utils import read_csv
-
+from .utils.static_funcs import concept_len
 
 _N = TypeVar('_N')  #:
 _KB = TypeVar('_KB', bound='AbstractKnowledgeBase')  #:
@@ -243,7 +243,7 @@ class BaseRefinement(Generic[_N], metaclass=ABCMeta):
         Returns:
             Length of concept according to some metric configured in the knowledge base.
         """
-        return self.kb.concept_len(concept)
+        return concept_len(concept)
 
 
 class AbstractNode(metaclass=ABCMeta):
