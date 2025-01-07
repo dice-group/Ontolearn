@@ -397,7 +397,7 @@ class ROCESDataset(NCESBaseDataset, torch.utils.data.Dataset):
         
     def load_embeddings(self, embedding_model):
         embeddings, _ = embedding_model.get_embeddings()
-        self.embeddings = embeddings.cpu()
+        self.embeddings = embeddings.detach().cpu()
         
 
     def set_k(self, k):
@@ -451,7 +451,7 @@ class ROCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):
         
     def load_embeddings(self, embedding_model):
         embeddings, _ = embedding_model.get_embeddings()
-        self.embeddings = embeddings.cpu()
+        self.embeddings = embeddings.detach().cpu()
         
     def set_k(self, k):
         self.k = k

@@ -33,11 +33,11 @@ seed_everything()
 
 base_path = pathlib.Path(__file__).parent.resolve()._str
 
-class TestNCES2(unittest.TestCase):
+class TestROCES(unittest.TestCase):
 
     def test_prediction_quality_family(self):
         knowledge_base_path = base_path[:base_path.rfind("/")+1] + "KGs/Family/family-benchmark_rich_background.owl"
-        model = ROCES(knowledge_base_path=knowledge_base_path, max_length=48, proj_dim=128, drop_prob=0.1, 
+        model = ROCES(knowledge_base_path=knowledge_base_path, k=5, max_length=48, proj_dim=128, drop_prob=0.1, 
             num_heads=4, num_seeds=1, m=32, load_pretrained=True, verbose=True)
         KB = KnowledgeBase(path=model.knowledge_base_path)
         dl_parser = DLSyntaxParser(model.kb_namespace)

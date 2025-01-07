@@ -819,7 +819,7 @@ class NCES(BaseNCES):
                 return individual_name.split('/')[-1]
             return individual_name
 
-        if self.path_of_embeddings is None or (os.path.idir(self.path_of_embeddings) and not glob.glob(self.path_of_embeddings+'*_entity_embeddings.csv')) or not self.path_of_embeddings.endswith('.csv'):
+        if self.path_of_embeddings is None or (os.path.isdir(self.path_of_embeddings) and not glob.glob(self.path_of_embeddings+'*_entity_embeddings.csv')) or not self.path_of_embeddings.endswith('.csv'):
             if not os.path.exists(self.knowledge_base_path):
                 raise ValueError(f"{knowledge_base_path} not found")
             try:
@@ -829,11 +829,13 @@ class NCES(BaseNCES):
             except Exception:
                 print('\x1b[0;30;43m dicee is not installed, will first install it\x1b[0m\n')
                 subprocess.run('pip install dicee==0.1.4')
-            print("\n"+"\x1b[0;30;43m"+"Embeddings not found. Will quickly train embeddings beforehand"+"Poor performance is expected as we will also train the synthesizer for a few epochs.\
-                For maximum performance, use pretrained models or train embeddings for many epochs, and the neural synthesizer on massive amounts of data and for many epochs\x1b[0m"+"\n")
-            subprocess.run(f"dicee --path_single_kg {self.knowledge_base_path} --path_to_store_single_run temp_embeddings --backend rdflib --save_embeddings_as_csv --num_epochs 20 --model DeCaL",
-             shell = True, executable="/bin/bash")
-            assert os.path.exists("./temp_embeddings/DeCaL_entity_embeddings.csv"), "It seems that embeddings were not stored at the expected directory (/temp_embeddings/DeCaL_entity_embeddings.csv)"
+            print("\n"+"\x1b[0;30;43m"+"Embeddings not found. Will quickly train embeddings beforehand. "+"Poor performance is expected as we will also train the synthesizer for a few epochs.\nFor maximum performance, use pretrained models or train embeddings for many epochs, and the neural synthesizer on massive amounts of data and for many epochs\x1b[0m"+"\n")
+            try:
+                subprocess.run(f"dicee --path_single_kg {self.knowledge_base_path} --path_to_store_single_run temp_embeddings --backend rdflib --save_embeddings_as_csv --num_epochs 20 --model DeCaL",
+                 shell = True, executable="/bin/bash")
+                assert os.path.exists("./temp_embeddings/DeCaL_entity_embeddings.csv"), "It seems that embeddings were not stored at the expected directory (/temp_embeddings/DeCaL_entity_embeddings.csv)"
+            except Exception:
+                raise ValueError("\nPlease try providing the absolute path to the knowledge base, e.g., /home/ndah/Dev/Ontolean/KGs/Family/family-benchmark_rich_background.owl\n")
             self.path_of_embeddings = "./temp_embeddings/DeCaL_entity_embeddings.csv"
             if self.auto_train:
                 print("\n"+"\x1b[0;30;43m"+f"Will also generate some training data and train {self.name} for 5 epochs"+"\x1b[0m"+"\n")
@@ -1117,8 +1119,8 @@ class NCES(BaseNCES):
         return predictions_as_owl_class_expressions
 
     @staticmethod
-    def generate_training_data(kb_path, num_lps=1000, storage_path="./NCES_Training_Data"):
-        lp_gen = LPGen(kb_path=kb_path, max_num_lps=num_lps, storage_path=storage_path)
+    def generate_training_data(kb_path, max_num_lps=1000, refinement_expressivity=0.2, storage_path="./NCES_Training_Data"):
+        lp_gen = LPGen(kb_path=kb_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity, storage_path=storage_path)
         lp_gen.generate()
         print("Loading generated data...")
         with open(f"{storage_path}/LPs.json") as file:
@@ -1129,7 +1131,7 @@ class NCES(BaseNCES):
         return lps
 
 
-    def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, num_lps=1000, learning_rate=1e-4, decay_rate=0.0,
+    def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, max_num_lps=1000, refinement_expressivity=0.2, learning_rate=1e-4, decay_rate=0.0,
               clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True,
               example_sizes=None, shuffle_examples=False):
         if os.cpu_count() <= num_workers:
@@ -1143,7 +1145,7 @@ class NCES(BaseNCES):
         if batch_size is None:
             batch_size = self.batch_size
         if data is None:
-            data = self.generate_training_data(self.knowledge_base_path, num_lps=num_lps, storage_path=storage_path)
+            data = self.generate_training_data(self.knowledge_base_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity, storage_path=storage_path)
 
         trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, decay_rate=decay_rate,
                               clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
@@ -1351,7 +1353,7 @@ class NCES2(BaseNCES):
         dataloaders = []
         for num_ind_points in self.model:
             dataset = ROCESDatasetInference([("", pos_str, neg_str)],
-                                              triples_data=self.triples_data, k=None,
+                                              triples_data=self.triples_data, k=self.k if hasattr(self, "k") else None,
                                               vocab=self.vocab, inv_vocab=self.inv_vocab,
                                               max_length=self.max_length, num_examples=self.num_examples,
                                               sampling_strategy=self.sampling_strategy,
@@ -1447,9 +1449,9 @@ class NCES2(BaseNCES):
         dataloaders = []
         for num_ind_points in self.model:
             dataset = ROCESDatasetInference(data,
-                                            self.triples_data,
-                                            self.vocab, self.inv_vocab,
-                                            self.max_length, self.num_examples,
+                                            self.triples_data, k=self.k if hasattr(self, "k") else None,
+                                            vocab=self.vocab, inv_vocab=self.inv_vocab,
+                                            max_length=self.max_length, num_examples=self.num_examples,
                                             sampling_strategy=self.sampling_strategy,
                                             num_pred_per_lp=self.num_predictions)
             dataset.load_embeddings(self.model[num_ind_points]["emb_model"])
@@ -1477,10 +1479,10 @@ class NCES2(BaseNCES):
         return predictions_as_owl_class_expressions
 
     @staticmethod
-    def generate_training_data(kb_path, num_lps=1000, beyond_alc=False, storage_path=None):
+    def generate_training_data(kb_path, max_num_lps=1000, refinement_expressivity=0.2, beyond_alc=False, storage_path=None):
         if storage_path is None:
             storage_path = f"./Training_Data_{self.name}"
-        lp_gen = LPGen(kb_path=kb_path, max_num_lps=num_lps, beyond_alc=beyond_alc, storage_path=storage_path)
+        lp_gen = LPGen(kb_path=kb_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity, beyond_alc=beyond_alc, storage_path=storage_path)
         lp_gen.generate()
         print("Loading generated data...")
         with open(f"{storage_path}/LPs.json") as file:
@@ -1491,7 +1493,7 @@ class NCES2(BaseNCES):
         return lps
 
 
-    def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, num_lps=1000, learning_rate=1e-4, decay_rate=0.0,
+    def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, max_num_lps=1000, refinement_expressivity=0.2, learning_rate=1e-4, decay_rate=0.0,
               clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True, shuffle_examples=False):
         if os.cpu_count() <= num_workers:
             num_workers = max(0,os.cpu_count()-1)
@@ -1503,11 +1505,11 @@ class NCES2(BaseNCES):
         if batch_size is None:
             batch_size = self.batch_size
         if data is None:
-            data = self.generate_training_data(self.knowledge_base_path, num_lps=num_lps, beyond_alc=True, storage_path=storage_path)
+            data = self.generate_training_data(self.knowledge_base_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity, beyond_alc=True, storage_path=storage_path)
         vocab_size_before = len(self.vocab)
         self.add_data_values(data) # Add data values based on training data
         self.path_of_trained_models = storage_path+"/trained_models"
-        if len(self.vocab) > vocab_size_before and self.load_pretrained:
+        if len(self.vocab) > vocab_size_before:
             self.model = self.get_synthesizer(verbose=False)
         trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, decay_rate=decay_rate,
                               clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
@@ -1525,11 +1527,11 @@ class ROCES(NCES2):
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, 
                  learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
                  max_length=48, load_pretrained=True, verbose: int = 0):
+
+        self.k = k
         super().__init__(knowledge_base_path, nces2_or_roces,
                         quality_func, num_predictions, path_of_trained_models, auto_train, proj_dim, drop_prob,
                         num_heads, num_seeds, m, ln, embedding_dim, sampling_strategy, input_dropout, feature_map_dropout, 
                         kernel_size, num_of_output_channels, learning_rate, decay_rate, clip_value, batch_size,
                         num_workers, max_length, load_pretrained, verbose)
-        
-        self.k = k
 

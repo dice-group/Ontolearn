@@ -11,11 +11,7 @@ class LPGen_Test(unittest.TestCase):
     def test_generate_load(self):
         lp_gen = LPGen(kb_path=PATH_FAMILY, storage_path=STORAGE_PATH)
         lp_gen.generate()
-        print("Loading generated data...")
-        with open(f"{STORAGE_DIR}/triples/train.txt") as file:
-            triples_data = file.readlines()
-            print("Number of triples:", len(triples_data))
-        with open(f"{STORAGE_DIR}/LPs.json") as file:
+        with open(f"{STORAGE_PATH}/LPs.json") as file:
             lps = json.load(file)
             print("Number of learning problems:", len(lps))
         self.assertGreaterEqual(lp_gen.lp_gen.max_num_lps, len(lps))
