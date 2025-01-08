@@ -439,7 +439,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             sparql_query=owl_expression_to_sparql_with_confusion_matrix(expression=state.concept,
                                                            positive_examples=self.pos,
                                                            negative_examples=self.neg)
-            bindings=self.kb.query_results(sparql_query).json()["results"]["bindings"]
+            bindings=self.kb.query(sparql_query).json()["results"]["bindings"]
             assert len(bindings) == 1
             bindings=bindings.pop()
             confusion_matrix={k : v["value"]for k,v in bindings.items()}

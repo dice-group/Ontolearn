@@ -154,7 +154,7 @@ class LengthBasedRefinement(BaseRefinement):
         # TODO: Most general_double_data_pro
         if not isinstance(self.kb, KnowledgeBase):  # pragma: no cover
             for i in self.kb.get_double_data_properties():
-                doubles = [i.parse_double() for i in self.kb.get_range_of_double_data_properties(i)]
+                doubles = [i.parse_double() for i in self.kb.get_values_of_double_data_property(i)]
                 mean_doubles = sum(doubles) / len(doubles)
                 yield OWLDataSomeValuesFrom(property=i,
                                             filler=owl_datatype_min_inclusive_restriction(
@@ -171,8 +171,7 @@ class LengthBasedRefinement(BaseRefinement):
         assert isinstance(class_expression, OWLClass), class_expression
         for i in self.top_refinements:
             if i.is_owl_nothing() is False:
-                # TODO: Include are_owl_concept_disjoint into Knowledgebase class
-                if isinstance(i, OWLClass):  #:and self.kb.are_owl_concept_disjoint(class_expression, i) is False:
+                if isinstance(i, OWLClass) and self.kb.are_owl_concept_disjoint(class_expression, i) is False:
                     yield OWLObjectIntersectionOf((class_expression, i))
                 else:
                     yield OWLObjectIntersectionOf((class_expression, i))

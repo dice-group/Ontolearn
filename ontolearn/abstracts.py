@@ -412,6 +412,157 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
     def triples(self, *args, **kwargs):
         pass
 
+    @abstractmethod
+    def most_general_object_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def data_properties_for_domain(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_least_general_named_concepts(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def least_general_named_concepts(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_most_general_classes(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_object_property_domains(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_object_property_ranges(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_data_property_domains(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_data_property_ranges(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_boolean_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_numeric_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_time_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_existential_restrictions(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_universal_restrictions(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_existential_restrictions_inverse(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_universal_restrictions_inverse(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_direct_parents(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_all_direct_sub_concepts(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_all_sub_concepts(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_concepts(self, *args, **kwargs):
+        pass
+
+    @property
+    @abstractmethod
+    def concepts(self, *args, **kwargs):
+        pass
+
+    @property
+    @abstractmethod
+    def object_properties(self, *args, **kwargs):
+        pass
+
+    @property
+    @abstractmethod
+    def data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_object_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_boolean_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_numeric_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_double_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_time_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_types(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_object_properties_for_ind(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_data_properties_for_ind(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_object_property_values(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_data_property_values(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def contains_class(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def are_owl_concept_disjoint(self, *args, **kwargs):
+        pass
+
 
 class AbstractLearningProblem(metaclass=ABCMeta):
     """Abstract learning problem."""

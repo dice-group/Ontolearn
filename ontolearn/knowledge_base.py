@@ -563,6 +563,11 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:"""
         yield from self.class_hierarchy.roots()
 
+    def are_owl_concept_disjoint(self, c: OWLClass, cc: OWLClass) -> bool:
+        if cc in self.reasoner.disjoint_classes(c):
+            return True
+        return False
+
     def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
         """Direct sub-classes of atomic class.
 
@@ -795,8 +800,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
         yield from self.class_hierarchy.items()
 
-    def get_classes_in_signature(self):
-        return self.get_concepts()
 
     @property
     def concepts(self) -> Iterable[OWLClass]:
