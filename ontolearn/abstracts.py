@@ -372,11 +372,6 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
                     f'Number of properties: {properties_count}')
 
     @abstractmethod
-    def clean(self) -> None:
-        """This method should reset any caches and statistics in the knowledge base."""
-        raise NotImplementedError
-
-    @abstractmethod
     def individuals_count(self) -> int:
         """Total number of individuals in this knowledge base."""
         pass
