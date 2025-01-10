@@ -537,18 +537,11 @@ class KnowledgeBase(AbstractKnowledgeBase):
     def data_properties_for_domain(self, domain: OWLClassExpression, data_properties: Iterable[OWLDataProperty]) \
             -> Iterable[OWLDataProperty]:
         assert isinstance(domain, OWLClassExpression)
-
+        # TODO AB: It is unclear what this method is supposed to do and why is it implemented this way.
         inds_domain = self.individuals_set(domain)
         for prop in data_properties:
             if domain.is_owl_thing() or inds_domain <= self.individuals_set(self.get_data_property_domains(prop)):
                 yield prop
-
-    def get_least_general_named_concepts(self) -> Generator[OWLClass, None, None]:
-        """Get leaf classes.
-        @TODO: Docstring needed
-        Returns:
-        """
-        yield from self.class_hierarchy.leaves()
 
     def least_general_named_concepts(self) -> Generator[OWLClass, None, None]:
         """Get leaf classes.
@@ -557,7 +550,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         """
         yield from self.class_hierarchy.leaves()
 
-    def get_most_general_classes(self) -> Generator[OWLClass, None, None]:
+    def most_general_classes(self) -> Generator[OWLClass, None, None]:
         """Get most general named concepts classes.
         @TODO: Docstring needed
         Returns:"""
@@ -914,7 +907,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Object properties.
         """
-        properties = set(self.get_object_properties())
+        properties = self.get_object_properties()
         yield from (pe for pe in self.reasoner.ind_object_properties(ind, direct) if pe in properties)
 
     def get_data_properties_for_ind(self, ind: OWLNamedIndividual, direct: bool = True) -> Iterable[OWLDataProperty]:
@@ -929,7 +922,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Data properties.
         """
-        properties = set(self.get_data_properties())
+        properties = self.get_data_properties()
         yield from (pe for pe in self.reasoner.ind_data_properties(ind, direct) if pe in properties)
 
     def get_object_property_values(self, ind: OWLNamedIndividual,

@@ -108,7 +108,7 @@ class LengthBasedRefinement(BaseRefinement):
 
         """
         # (1) Most General OWL Named Concepts
-        most_general_concepts = [i for i in self.kb.get_most_general_classes()]
+        most_general_concepts = [i for i in self.kb.most_general_classes()]
         yield from most_general_concepts
         # (2) Complement of Least General OWL Named Concepts General
         neg_concepts = [OWLObjectComplementOf(i) for i in self.kb.least_general_named_concepts()]

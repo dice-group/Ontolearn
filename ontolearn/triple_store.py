@@ -27,7 +27,7 @@
 import logging
 import re
 from itertools import chain
-from typing import Iterable, Set, Optional, Generator, Union, Tuple, Callable
+from typing import Iterable, Set, Optional, Generator, Union, Tuple, Callable, FrozenSet
 import requests
 
 from owlapy import owl_expression_to_sparql
@@ -44,7 +44,7 @@ from owlapy.owl_axiom import (
 )
 from owlapy.owl_datatype import OWLDatatype
 from owlapy.owl_individual import OWLNamedIndividual
-from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_literal import OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES
 from owlapy.owl_ontology import OWLOntologyID
 from owlapy.abstracts import AbstractOWLOntology, AbstractOWLReasoner
 from owlapy.owl_property import (
@@ -52,7 +52,7 @@ from owlapy.owl_property import (
     OWLObjectPropertyExpression,
     OWLObjectInverseOf,
     OWLObjectProperty,
-    OWLProperty,
+    OWLProperty, OWLDataPropertyExpression,
 )
 from requests import Response
 from requests.exceptions import RequestException, JSONDecodeError
@@ -306,9 +306,7 @@ class TripleStoreReasoner(AbstractOWLReasoner):
         return requests.Session().post(self.url, data={"query": sparql_query})
 
     def data_property_domains(self, pe: OWLDataProperty, direct: bool = False) -> Iterable[OWLClassExpression]:
-        domains = {
-            d.get_domain() for d in self.ontology.data_property_domain_axioms(pe)
-        }
+        domains = {d.get_domain() for d in self.ontology.data_property_domain_axioms(pe)}
         sub_domains = set(chain.from_iterable([self.sub_classes(d) for d in domains]))
         yield from domains - sub_domains
         if not direct:
@@ -597,11 +595,12 @@ class TripleStoreKnowledgeBase(KnowledgeBase):
 
 
 class TripleStore(AbstractKnowledgeBase):
-    url: str
 
     def __init__(self, ontology=None, reasoner=None, url: str = None):
 
         self.url = url
+        self.ontology = ontology
+        self.reasoner = reasoner
         if url is None:
             if ontology is not None:
                 self.url = ontology.url
@@ -618,10 +617,10 @@ class TripleStore(AbstractKnowledgeBase):
         if reasoner is None:
             self.reasoner = TripleStoreReasoner(self.ontology)
 
-        assert url == self.ontology.url == self.reasoner.url, "URLs do not match"
+        assert self.url == self.ontology.url == self.reasoner.url, "URLs do not match"
 
     def __str__(self):
-        return f"TripleStore:{self.g}"
+        return f"TripleStore:{self.ontology, self.reasoner, self.url}"
 
     def query(self, sparql_query: str):
         return requests.Session().post(self.url, data={"query": sparql_query})
@@ -817,6 +816,13 @@ class TripleStore(AbstractKnowledgeBase):
         elif mode == "axiom":
             raise NotImplementedError("Axioms should be checked.")
 
+    def tbox(self, entities: Union[Iterable[OWLClass], Iterable[OWLDataProperty], Iterable[OWLObjectProperty], OWLClass,
+             OWLDataProperty, OWLObjectProperty, None] = None, mode='native'):
+        raise NotImplementedError()
+
+    def triples(self, mode=None):
+        raise NotImplementedError()
+
     def are_owl_concept_disjoint(self, c: OWLClass, cc: OWLClass) -> bool:
         if cc in self.reasoner.disjoint_classes(c):
             return True
@@ -825,40 +831,30 @@ class TripleStore(AbstractKnowledgeBase):
     def get_object_properties(self) -> Iterable[OWLObjectProperty]:
         yield from self.ontology.object_properties_in_signature()
 
-    def get_data_properties(
-            self, ranges: Set[OWLDatatype] = None
-    ) -> Iterable[OWLDataProperty]:
-
-        if ranges is not None:
-            for dp in self.ontology.data_properties_in_signature():
-                if self.get_data_property_ranges(dp) & ranges:
-                    yield dp
-        else:
+    def get_data_properties(self, ranges: Union[OWLDatatype, Iterable[OWLDatatype]] = None) \
+            -> Iterable[OWLDataProperty]:
+        if ranges is None:
             yield from self.ontology.data_properties_in_signature()
+        else:
+            def get_properties_from_xsd_range(r: OWLDatatype):
+                query = (f"{rdf_prefix}\n{rdfs_prefix}\n{xsd_prefix}SELECT DISTINCT ?x " +
+                         f"WHERE {{?x rdfs:range xsd:{r.iri.reminder}}}")
+                for binding in self.query(query).json()["results"]["bindings"]:
+                    yield OWLDataProperty(binding["x"]["value"])
+            if isinstance(ranges, OWLDatatype):
+                yield from get_properties_from_xsd_range(ranges)
+            else:
+                for rng in ranges:
+                    yield from get_properties_from_xsd_range(rng)
 
     def get_concepts(self) -> Iterable[OWLClass]:
         yield from self.ontology.classes_in_signature()
 
-    def most_general_classes(self) -> Iterable[OWLClass]:
-        """At least it has single subclass and there is no superclass"""
-        query = f"""{rdf_prefix}{rdfs_prefix}{owl_prefix} SELECT ?x WHERE {{
-        ?concept rdf:type owl:Class .
-        FILTER EXISTS {{ ?x rdfs:subClassOf ?z . }}
-        FILTER NOT EXISTS {{ ?y rdfs:subClassOf ?x . }}
-        }}
-        """
-        for binding in self.query(query).json()["results"]["bindings"]:
-            yield OWLClass(binding["x"]["value"])
-
-    def get_boolean_data_properties(self):
-        query = f"{rdf_prefix}\n{rdfs_prefix}\n{xsd_prefix}SELECT DISTINCT ?x WHERE {{?x rdfs:range xsd:boolean}}"
-        for binding in self.query(query).json()["results"]["bindings"]:
-            yield OWLDataProperty(binding["x"]["value"])
+    def get_boolean_data_properties(self) -> Iterable[OWLDataProperty]:
+        yield from self.get_data_properties(BooleanOWLDatatype)
 
     def get_double_data_properties(self):
-        query = f"{rdf_prefix}\n{rdfs_prefix}\n{xsd_prefix}SELECT DISTINCT ?x WHERE {{?x rdfs:range xsd:double}}"
-        for binding in self.query(query).json()["results"]["bindings"]:
-            yield OWLDataProperty(binding["x"]["value"])
+        yield from self.get_data_properties(DoubleOWLDatatype)
 
     def get_values_of_double_data_property(self, prop: OWLDataProperty):
         query = f"{rdf_prefix}\n{rdfs_prefix}\n{xsd_prefix}SELECT DISTINCT ?x WHERE {{?z <{prop.str}> ?x}}"
@@ -921,16 +917,6 @@ class TripleStore(AbstractKnowledgeBase):
         assert isinstance(concept, OWLClass)
         yield from self.reasoner.super_classes(concept, direct=True)
 
-    def least_general_named_concepts(self) -> Generator[OWLClass, None, None]:
-        """At least it has single superclass and there is no subclass"""
-        query = f"""{rdf_prefix}{rdfs_prefix}{owl_prefix} SELECT ?concept WHERE {{
-        ?concept rdf:type owl:Class .
-        FILTER EXISTS {{ ?concept rdfs:subClassOf ?x . }}
-        FILTER NOT EXISTS {{ ?y rdfs:subClassOf ?concept . }}
-        }}"""
-        for binding in self.query(query).json()["results"]["bindings"]:
-            yield OWLClass(binding["concept"]["value"])
-
     def get_direct_sub_concepts(self, concept: OWLClass) -> Iterable[OWLClass]:
         assert isinstance(concept, OWLClass)
         yield from self.reasoner.sub_classes(concept, direct=True)
@@ -947,21 +933,6 @@ class TripleStore(AbstractKnowledgeBase):
         assert isinstance(concept, OWLClass)
         return concept in self.ontology.classes_in_signature()
 
-    def most_general_object_properties(
-            self, *, domain: OWLClassExpression, inverse: bool = False) -> Iterable[OWLObjectProperty]:
-        assert isinstance(domain, OWLClassExpression)
-        func: Callable
-        func = (
-            self.get_object_property_ranges
-            if inverse
-            else self.get_object_property_domains
-        )
-
-        inds_domain = self.individuals_set(domain)
-        for prop in self.ontology.object_properties_in_signature():
-            if domain.is_owl_thing() or inds_domain <= self.individuals_set(func(prop)):
-                yield prop
-
     @property
     def object_properties(self) -> Iterable[OWLObjectProperty]:
         yield from self.ontology.object_properties_in_signature()
@@ -970,3 +941,168 @@ class TripleStore(AbstractKnowledgeBase):
     def data_properties(self) -> Iterable[OWLDataProperty]:
         yield from self.ontology.data_properties_in_signature()
 
+    def individuals_count(self, concept: Optional[OWLClassExpression] = None) -> int:
+        return len(set(self.individuals(concept)))
+
+    def individuals_set(self,
+                        arg: Union[Iterable[OWLNamedIndividual], OWLNamedIndividual, OWLClassExpression]) -> FrozenSet:
+        if isinstance(arg, OWLClassExpression):
+            return frozenset(self.individuals(arg))
+        elif isinstance(arg, OWLNamedIndividual):
+            return frozenset({arg})
+        else:
+            return frozenset(arg)
+
+    def most_general_object_properties(
+            self, *, domain: OWLClassExpression, inverse: bool = False) -> Iterable[OWLObjectProperty]:
+        assert isinstance(domain, OWLClassExpression)
+        # TODO AB: Implementation copied from KnowledgeBase but is unclear what this method actually does.
+        func: Callable
+        func = (self.get_object_property_ranges if inverse else self.get_object_property_domains)
+
+        # TODO AB: There is a contradiction in the implementation below because if domain is owl:thing then,
+        #          the property is returned, meaning that the domain of the property is a subclass of the 'domain'
+        #          argument. On the other side if set of individuals covered by the 'domain' argument is a subset
+        #          of the set of individuals covered by the property's domain then the property is returned. That means
+        #          that the 'domain' argument is a subclass of the property's domain, which contradict the first
+        #          condition.
+        inds_domain = self.individuals_set(domain)
+        for prop in self.ontology.object_properties_in_signature():
+            if domain.is_owl_thing() or inds_domain <= self.individuals_set(func(prop)):
+                yield prop
+
+    def data_properties_for_domain(self, domain: OWLClassExpression, data_properties: Iterable[OWLDataProperty]) \
+            -> Iterable[OWLDataProperty]:
+        # TODO AB: Its unclear what this method is supposed to do but by the name I can say that it is supposed to
+        #          return the data properties from the given collection of data properties that have the
+        #          specified 'domain'. However old implementation is commented below and is similar to the one in
+        #          method 'most_general_object_properties' which is contradicting.
+        assert isinstance(domain, OWLClassExpression)
+        sub_domains = self.reasoner.sub_classes(domain)
+        for dp in data_properties:
+            dp_domains = self.get_data_property_domains(dp)
+            for d in dp_domains:
+                if d == domain or d in sub_domains:
+                    yield dp
+
+        # inds_domain = self.individuals_set(domain)
+        # for prop in data_properties:
+        #     if domain.is_owl_thing() or inds_domain <= self.individuals_set(next(self.get_data_property_domains(prop))):
+        #         yield prop
+
+    def most_general_classes(self) -> Iterable[OWLClass]:
+        """At least it has single subclass and there is no superclass"""
+        query = f"""{rdf_prefix}{rdfs_prefix}{owl_prefix} SELECT ?x WHERE {{
+        ?concept rdf:type owl:Class .
+        FILTER EXISTS {{ ?x rdfs:subClassOf ?z . }}
+        FILTER NOT EXISTS {{ ?y rdfs:subClassOf ?x . }}
+        }}
+        """
+        for binding in self.query(query).json()["results"]["bindings"]:
+            yield OWLClass(binding["x"]["value"])
+
+    def least_general_named_concepts(self) -> Generator[OWLClass, None, None]:
+        """At least it has single superclass and there is no subclass"""
+        query = f"""{rdf_prefix}{rdfs_prefix}{owl_prefix} SELECT ?concept WHERE {{
+        ?concept rdf:type owl:Class .
+        FILTER EXISTS {{ ?concept rdfs:subClassOf ?x . }}
+        FILTER NOT EXISTS {{ ?y rdfs:subClassOf ?concept . }}
+        }}"""
+        for binding in self.query(query).json()["results"]["bindings"]:
+            yield OWLClass(binding["concept"]["value"])
+
+    def get_object_property_domains(self, prop: OWLObjectProperty, direct=True) -> Iterable[OWLClassExpression]:
+        yield from self.reasoner.object_property_domains(prop, direct)
+
+    def get_object_property_ranges(self, prop: OWLObjectProperty, direct=True) -> Iterable[OWLClassExpression]:
+        yield from self.reasoner.object_property_ranges(prop, direct)
+
+    def get_data_property_domains(self, prop: OWLDataProperty, direct=True) -> Iterable[OWLClassExpression]:
+        yield from self.reasoner.data_property_domains(prop, direct)
+
+    def get_data_property_ranges(self, prop: OWLDataProperty, direct=True) -> Iterable[OWLClassExpression]:
+        yield from self.reasoner.data_property_ranges(prop, direct)
+
+    def most_general_data_properties(self, *, domain: OWLClassExpression) -> Iterable[OWLDataProperty]:
+        yield from self.data_properties_for_domain(domain, self.get_data_properties())
+
+    def most_general_boolean_data_properties(self, *, domain: OWLClassExpression) -> Iterable[OWLDataProperty]:
+        yield from self.data_properties_for_domain(domain, self.get_boolean_data_properties())
+
+    def most_general_numeric_data_properties(self, *, domain: OWLClassExpression) -> Iterable[OWLDataProperty]:
+        yield from self.data_properties_for_domain(domain, self.get_numeric_data_properties())
+
+    def most_general_time_data_properties(self, *, domain: OWLClassExpression) -> Iterable[OWLDataProperty]:
+        yield from self.data_properties_for_domain(domain, self.get_time_data_properties())
+
+    def most_general_existential_restrictions(self, *,
+                                              domain: OWLClassExpression, filler: Optional[OWLClassExpression] = None) \
+            -> Iterable[OWLObjectSomeValuesFrom]:
+        if filler is None:
+            filler = OWLThing
+        assert isinstance(filler, OWLClassExpression)
+
+        for prop in self.most_general_object_properties(domain=domain):
+            yield OWLObjectSomeValuesFrom(property=prop, filler=filler)
+
+    def most_general_universal_restrictions(self, *,
+                                            domain: OWLClassExpression, filler: Optional[OWLClassExpression] = None) \
+            -> Iterable[OWLObjectAllValuesFrom]:
+        if filler is None:
+            filler = OWLThing
+        assert isinstance(filler, OWLClassExpression)
+
+        for prop in self.most_general_object_properties(domain=domain):
+            yield OWLObjectAllValuesFrom(property=prop, filler=filler)
+
+    def most_general_existential_restrictions_inverse(self, *,
+                                                      domain: OWLClassExpression,
+                                                      filler: Optional[OWLClassExpression] = None) \
+            -> Iterable[OWLObjectSomeValuesFrom]:
+        if filler is None:
+            filler = OWLThing
+        assert isinstance(filler, OWLClassExpression)
+
+        for prop in self.most_general_object_properties(domain=domain, inverse=True):
+            yield OWLObjectSomeValuesFrom(property=prop.get_inverse_property(), filler=filler)
+
+    def most_general_universal_restrictions_inverse(self, *,
+                                                    domain: OWLClassExpression,
+                                                    filler: Optional[OWLClassExpression] = None) \
+            -> Iterable[OWLObjectAllValuesFrom]:
+        if filler is None:
+            filler = OWLThing
+        assert isinstance(filler, OWLClassExpression)
+
+        for prop in self.most_general_object_properties(domain=domain, inverse=True):
+            yield OWLObjectAllValuesFrom(property=prop.get_inverse_property(), filler=filler)
+
+    def get_numeric_data_properties(self) -> Iterable[OWLDataProperty]:
+        yield from self.get_data_properties(NUMERIC_DATATYPES)
+
+    def get_time_data_properties(self) -> Iterable[OWLDataProperty]:
+        """Get all time data properties of this concept generator.
+
+        Returns:
+            Time data properties.
+        """
+        yield from self.get_data_properties(TIME_DATATYPES)
+
+    def get_object_properties_for_ind(self, ind: OWLNamedIndividual, direct: bool = True) \
+            -> Iterable[OWLObjectProperty]:
+        properties = self.get_object_properties()
+        yield from (pe for pe in self.reasoner.ind_object_properties(ind, direct) if pe in properties)
+
+    def get_data_properties_for_ind(self, ind: OWLNamedIndividual, direct: bool = True) -> Iterable[OWLDataProperty]:
+        properties = self.get_data_properties()
+        yield from (pe for pe in self.reasoner.ind_data_properties(ind, direct) if pe in properties)
+
+    def get_object_property_values(self, ind: OWLNamedIndividual,
+                                   property_: OWLObjectPropertyExpression,
+                                   direct: bool = True) -> Iterable[OWLNamedIndividual]:
+        yield from self.reasoner.object_property_values(ind, property_, direct)
+
+    def get_data_property_values(self, ind: OWLNamedIndividual,
+                                 property_: OWLDataPropertyExpression,
+                                 direct: bool = True) -> Iterable[OWLLiteral]:
+        yield from self.reasoner.data_property_values(ind, property_, direct)

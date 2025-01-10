@@ -416,15 +416,11 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_least_general_named_concepts(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
     def least_general_named_concepts(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def get_most_general_classes(self, *args, **kwargs):
+    def most_general_classes(self, *args, **kwargs):
         pass
 
     @abstractmethod
