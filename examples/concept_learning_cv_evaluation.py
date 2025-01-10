@@ -13,9 +13,9 @@ import subprocess
 import platform
 import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, NCES, CLIP
+from ontolearn.concept_learner import CELOE, EvoLearner, NCES, CLIP
 from ontolearn.refinement_operators import ExpressRefinement, ModifiedCELOERefinement
-from ontolearn.learners import Drill, TDL
+from ontolearn.learners import Drill, TDL, OCEL
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1
 from owlapy.owl_individual import OWLNamedIndividual, IRI
@@ -75,9 +75,11 @@ def dl_concept_learning(args):
     with open(args.lps) as json_file:
         settings = json.load(json_file)
     kb = KnowledgeBase(path=args.kb)
+
     ocel = OCEL(knowledge_base=kb,
                 quality_func=F1(),
                 max_runtime=args.max_runtime)
+
     celoe = CELOE(knowledge_base=kb,
                   quality_func=F1(),
                   max_runtime=args.max_runtime)
@@ -93,6 +95,7 @@ def dl_concept_learning(args):
     nces = NCES(knowledge_base_path=args.kb,
                 quality_func=F1(),
                 path_of_embeddings=args.path_of_nces_embeddings,
+                path_of_trained_models=args.path_of_nces_trained_models,
                 learner_names=["LSTM", "GRU", "SetTransformer"],
                 num_predictions=100,
                 verbose=0)
@@ -146,7 +149,9 @@ def dl_concept_learning(args):
                                         neg={OWLNamedIndividual(i) for i in train_neg})
 
             test_lp = PosNegLPStandard(pos={OWLNamedIndividual(i) for i in test_pos},
+            
                                        neg={OWLNamedIndividual(i) for i in test_neg})
+
             print("OCEL starts..", end="\t")
             start_time = time.time()
             pred_ocel = ocel.fit(train_lp).best_hypotheses()
@@ -168,6 +173,7 @@ def dl_concept_learning(args):
             print(f"OCEL Test Quality: {test_f1_ocel:.3f}", end="\t")
             print(f"OCEL Runtime: {rt_ocel:.3f}")
 
+
             print("CELOE starts..", end="\t")
             start_time = time.time()
             pred_celoe = celoe.fit(train_lp).best_hypotheses()
@@ -184,7 +190,7 @@ def dl_concept_learning(args):
             # Reporting
             data.setdefault("Train-F1-CELOE", []).append(train_f1_celoe)
             data.setdefault("Test-F1-CELOE", []).append(test_f1_celoe)
-            data.setdefault("RT-CELOE", []).append(rt_ocel)
+            data.setdefault("RT-CELOE", []).append(rt_celoe)
             print(f"CELOE Train Quality: {train_f1_celoe:.3f}", end="\t")
             print(f"CELOE Test Quality: {test_f1_celoe:.3f}", end="\t")
             print(f"CELOE Runtime: {rt_celoe:.3f}")
@@ -318,6 +324,7 @@ if __name__ == '__main__':
                         help="Knowledge base")
     parser.add_argument("--path_drill_embeddings", type=str, default=None)
     parser.add_argument("--path_of_nces_embeddings", type=str, default=None)
+    parser.add_argument("--path_of_nces_trained_models", type=str, default=None)
     parser.add_argument("--path_of_clip_embeddings", type=str, default=None)
     parser.add_argument("--report", type=str, default="report.csv")
     parser.add_argument("--random_seed", type=int, default=1)

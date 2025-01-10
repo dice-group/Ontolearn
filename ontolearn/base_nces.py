@@ -61,6 +61,8 @@ class BaseNCES:
         self.vocab = {vocab[i]: i for i in range(len(vocab))}
         if quality_func is None:
             self.quality_func = F1()
+        else:
+            self.quality_func = quality_func
         self.num_predictions = num_predictions
         self.auto_train = auto_train
         self.proj_dim = proj_dim

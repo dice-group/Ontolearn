@@ -599,15 +599,16 @@ class CLIP(CELOE):
         self.output_size = output_size
         self.num_examples = num_examples
         self.path_of_embeddings = path_of_embeddings
-        assert os.path.isfile(self.path_of_embeddings), '!!! Wrong path for CLIP embeddings'
-        self.instance_embeddings = pd.read_csv(path_of_embeddings, index_col=0)
-        self.input_size = self.instance_embeddings.shape[1]
+        if self.path_of_embeddings:
+            assert os.path.isfile(self.path_of_embeddings), '!!! Wrong path for CLIP embeddings'
+            self.instance_embeddings = pd.read_csv(path_of_embeddings, index_col=0)
+            self.input_size = self.instance_embeddings.shape[1]
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.length_predictor = self.get_length_predictor()
 
     def get_length_predictor(self):
         def load_model(predictor_name, load_pretrained):
-            if predictor_name is None:
+            if predictor_name is None or not self.path_of_embeddings:
                 return []
             if predictor_name == 'SetTransformer':
                 model = LengthLearner_SetTransformer(self.input_size, self.output_size, proj_dim=256, num_heads=4,
@@ -724,7 +725,7 @@ class CLIP(CELOE):
         else:
             self._max_runtime = self.max_runtime
 
-        if (self.pretrained_predictor_name is not None) and (self.length_predictor is not None):
+        if (self.pretrained_predictor_name is not None) and self.length_predictor[0] != []:
             x_pos, x_neg = self.pos_neg_to_tensor(list(self._learning_problem.kb_pos)[:self.num_examples],
                                                   list(self._learning_problem.kb_neg)[:self.num_examples])
             max_length = self.predict_length(self.length_predictor, x_pos, x_neg)
@@ -870,7 +871,7 @@ class NCES(BaseNCES):
                 self.vocab = vocab
                 self.inv_vocab = inv_vocab
             except Exception as e:
-                print(e+'\n')
+                print(e,'\n')
                 raise FileNotFoundError(f"{path} does not contain at least one of `vocab.json, inv_vocab.npy or embedding_config.json`")
         elif self.load_pretrained and self.path_of_trained_models and glob.glob(self.path_of_trained_models + "/*.pt"):
             # Read pretrained model's vocabulary and config files

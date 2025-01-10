@@ -1,9 +1,7 @@
 from ontolearn.concept_learner import NCES
-import time
 import random
 import unittest
 import os
-import json
 import numpy as np
 import torch
 import pathlib

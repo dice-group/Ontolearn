@@ -1,9 +1,7 @@
 from ontolearn.concept_learner import ROCES
 from ontolearn.knowledge_base import KnowledgeBase
 from owlapy.parser import DLSyntaxParser
-from ontolearn.metrics import F1
 from ontolearn.learning_problem import PosNegLPStandard
-import subprocess
 import random
 import unittest
 import os

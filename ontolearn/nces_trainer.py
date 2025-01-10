@@ -28,8 +28,7 @@ import copy
 import torch
 from torch.utils.data import DataLoader
 from tqdm import trange
-from collections import defaultdict
-import os, random
+import os
 import json
 from torch.optim.lr_scheduler import ExponentialLR
 from torch.nn import functional as F
@@ -161,8 +160,6 @@ class NCESTrainer:
     
     
     def train_step(self, batch, model, emb_model, optimizer, device, triples_dataloader=None):
-        soft_acc, hard_acc = [], []
-        train_losses = []
         if emb_model:
             try:
                 triples_batch = next(triples_dataloader)

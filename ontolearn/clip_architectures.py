@@ -23,9 +23,7 @@
 # -----------------------------------------------------------------------------
 
 import torch, torch.nn as nn
-import random
-from typing import List
-from ontolearn.nces_modules import *    
+from ontolearn.nces_modules import ISAB, PMA
 
 class LengthLearner_LSTM(nn.Module):
     """LSTM architecture"""
