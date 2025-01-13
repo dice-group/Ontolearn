@@ -25,13 +25,10 @@
 """Learning problem in Ontolearn."""
 import logging
 import random
-from typing import Set, Optional, TYPE_CHECKING
-
+from typing import Set, Optional
 from owlapy.render import DLSyntaxObjectRenderer
-
-if TYPE_CHECKING:
-    from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.abstracts import AbstractLearningProblem, EncodedLearningProblem, EncodedPosNegLPStandardKind
+from ontolearn.abstracts import AbstractLearningProblem, EncodedLearningProblem, EncodedPosNegLPStandardKind, \
+    AbstractKnowledgeBase
 from owlapy.owl_individual import OWLNamedIndividual
 
 logger = logging.getLogger(__name__)
@@ -103,7 +100,7 @@ class PosNegLPStandard(AbstractLearningProblem):
     # def encode_kb(self, knowledge_base: 'KnowledgeBase') -> EncodedPosNegLPStandard:
     #     return knowledge_base.encode_learning_problem(self)
 
-    def encode_kb(self, kb: 'KnowledgeBase') -> EncodedPosNegLPStandard:
+    def encode_kb(self, kb: 'AbstractKnowledgeBase') -> EncodedPosNegLPStandard:
         """
         Provides the encoded learning problem (lp), i.e. the class containing the set of OWLNamedIndividuals
         as follows:
@@ -117,9 +114,9 @@ class PosNegLPStandard(AbstractLearningProblem):
             EncodedPosNegLPStandard: The encoded learning problem.
         """
         if self.all is None:
-            kb_all = kb.individuals()
+            kb_all = set(kb.individuals())
         else:
-            kb_all = kb.individuals_set(self.all)
+            kb_all = set(kb.individuals_set(self.all))
 
         assert 0 < len(self.pos) < len(kb_all) and len(kb_all) > len(self.neg)
         if logger.isEnabledFor(logging.INFO):

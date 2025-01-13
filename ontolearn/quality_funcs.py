@@ -24,8 +24,7 @@
 
 from typing import Set
 from owlapy.class_expression import OWLClassExpression
-from ontolearn.abstracts import EncodedLearningProblem, AbstractScorer
-from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.abstracts import EncodedLearningProblem, AbstractScorer, AbstractKnowledgeBase
 from ontolearn.search import EvaluatedConcept
 
 
@@ -70,7 +69,7 @@ def acc(*, individuals: Set, pos: Set, neg: Set):
     return (tp + tn) / (tp + tn + fp + fn)
 
 
-def evaluate_concept(kb: KnowledgeBase, concept: OWLClassExpression, quality_func: AbstractScorer,
+def evaluate_concept(kb: AbstractKnowledgeBase, concept: OWLClassExpression, quality_func: AbstractScorer,
                      encoded_learning_problem: EncodedLearningProblem) -> EvaluatedConcept:
     """Evaluates a concept by using the encoded learning problem examples, in terms of Accuracy or F1-score.
 

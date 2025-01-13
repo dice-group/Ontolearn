@@ -47,7 +47,7 @@ from owlapy.owl_ontology import Ontology
 from owlapy.owl_ontology_manager import OntologyManager
 from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
-    AbstractConceptNode, AbstractLearningProblem
+    AbstractConceptNode, AbstractLearningProblem, AbstractKnowledgeBase
 from .utils import oplogging
 
 _N = TypeVar('_N', bound=AbstractConceptNode)  #:
@@ -81,7 +81,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
           ∀  H \\in \\hypotheses: { (K \\wedge H \\models E^+) \\wedge  \\neg( K \\wedge H \\models E^-) }.
 
     Attributes:
-        kb (KnowledgeBase): The knowledge base that the concept learner is using.
+        kb (AbstractKnowledgeBase): The knowledge base that the concept learner is using.
         quality_func (AbstractScorer) The quality function to be used.
         max_num_of_concepts_tested (int) Limit to stop the algorithm after n concepts tested.
         terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found.
@@ -96,7 +96,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
     name: ClassVar[str]
 
-    kb: KnowledgeBase
+    kb: AbstractKnowledgeBase
     quality_func: Optional[AbstractScorer]
     max_num_of_concepts_tested: Optional[int]
     terminate_on_goal: Optional[bool]
@@ -107,7 +107,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self,
-                 knowledge_base: KnowledgeBase,
+                 knowledge_base: AbstractKnowledgeBase,
                  reasoner: Optional[AbstractOWLReasoner] = None,
                  quality_func: Optional[AbstractScorer] = None,
                  max_num_of_concepts_tested: Optional[int] = None,
@@ -405,7 +405,7 @@ class RefinementBasedConceptLearner(BaseConceptLearner):
     Base class for refinement based Concept Learning approaches.
 
     Attributes:
-        kb (KnowledgeBase): The knowledge base that the concept learner is using.
+        kb (AbstractKnowledgeBase): The knowledge base that the concept learner is using.
         quality_func (AbstractScorer) The quality function to be used.
         max_num_of_concepts_tested (int) Limit to stop the algorithm after n concepts tested.
         terminate_on_goal (bool): Whether to stop the algorithm if a perfect solution is found.
@@ -432,7 +432,7 @@ class RefinementBasedConceptLearner(BaseConceptLearner):
 
     @abstractmethod
     def __init__(self,
-                 knowledge_base: KnowledgeBase,
+                 knowledge_base: AbstractKnowledgeBase,
                  reasoner: Optional[AbstractOWLReasoner] = None,
                  refinement_operator: Optional[BaseRefinement] = None,
                  heuristic_func: Optional[AbstractHeuristic] = None,

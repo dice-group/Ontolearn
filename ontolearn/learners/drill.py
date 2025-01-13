@@ -28,7 +28,7 @@ from owlapy.owl_individual import OWLNamedIndividual
 from owlapy import owl_expression_to_dl
 from ontolearn.base_concept_learner import RefinementBasedConceptLearner
 from ontolearn.refinement_operators import LengthBasedRefinement
-from ontolearn.abstracts import AbstractNode
+from ontolearn.abstracts import AbstractNode, AbstractKnowledgeBase
 from ontolearn.search import RL_State
 from typing import Set, List, Tuple, Optional, Generator, SupportsFloat, Iterable, FrozenSet, Callable, Union
 from ontolearn.learning_problem import PosNegLPStandard
@@ -56,7 +56,7 @@ from owlapy.utils import get_expression_length
 class Drill(RefinementBasedConceptLearner):  # pragma: no cover
     """ Neuro-Symbolic Class Expression Learning (https://www.ijcai.org/proceedings/2023/0403.pdf)"""
 
-    def __init__(self, knowledge_base,
+    def __init__(self, knowledge_base: AbstractKnowledgeBase,
                  path_embeddings: str = None,
                  refinement_operator: LengthBasedRefinement = None,
                  use_inverse: bool = True,

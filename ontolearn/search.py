@@ -816,7 +816,8 @@ class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
 
 
 class EvaluatedConcept:
-    """Explicitly declare the attributes that should be returned by the evaluate_concept method of a KnowledgeBase.
+    """Explicitly declare the attributes that should be returned by the evaluate_concept method of a
+       AbstractKnowledgeBase.
 
     This way, Python uses a more efficient way to store the instance attributes, which can significantly reduce the
     memory usage.

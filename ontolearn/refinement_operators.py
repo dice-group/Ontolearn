@@ -41,18 +41,16 @@ from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter
 from owlapy.providers import owl_datatype_max_inclusive_restriction, owl_datatype_min_inclusive_restriction
 from owlapy.vocab import OWLFacet
 
-from .abstracts import BaseRefinement
+from .abstracts import BaseRefinement, AbstractKnowledgeBase
 from .concept_generator import ConceptGenerator
 from .knowledge_base import KnowledgeBase
 from .search import OENode
-from typing import Tuple
-import itertools
 
 
 class LengthBasedRefinement(BaseRefinement):
     """ A top-down length based ("no semantic information leveraged) refinement operator in ALC."""
 
-    def __init__(self, knowledge_base: KnowledgeBase,
+    def __init__(self, knowledge_base: AbstractKnowledgeBase,
                  use_inverse: bool = True,
                  use_data_properties: bool = False,
                  use_card_restrictions: bool = True,
@@ -314,7 +312,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
     _Node: Final = OENode
 
-    kb: KnowledgeBase
+    kb: AbstractKnowledgeBase
     value_splitter: Optional[AbstractValueSplitter]
     max_child_length: int
     use_negation: bool
@@ -330,7 +328,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
     generator: ConceptGenerator
 
     def __init__(self,
-                 knowledge_base: KnowledgeBase,
+                 knowledge_base: AbstractKnowledgeBase,
                  value_splitter: Optional[AbstractValueSplitter] = None,
                  max_child_length: int = 10,
                  use_negation: bool = True,
@@ -791,7 +789,7 @@ class ExpressRefinement(ModifiedCELOERefinement):
     sample_fillers_count: int
     generator: ConceptGenerator
 
-    def __init__(self, knowledge_base,
+    def __init__(self, knowledge_base: AbstractKnowledgeBase,
                  downsample: bool = True,
                  expressivity: float = 0.8,
                  sample_fillers_count: int = 5,

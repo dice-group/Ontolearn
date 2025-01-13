@@ -51,8 +51,9 @@ from owlapy.abstracts import AbstractOWLReasoner
 from owlapy.utils import EvaluatedDescriptionSet, ConceptOperandSorter
 from owlapy.parser import DLSyntaxParser
 
-from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.abstracts import AbstractFitness, AbstractScorer, BaseRefinement, AbstractHeuristic
+from ontolearn.concept_generator import ConceptGenerator
+from ontolearn.abstracts import AbstractFitness, AbstractScorer, BaseRefinement, AbstractHeuristic, \
+    AbstractKnowledgeBase
 from ontolearn.base_concept_learner import BaseConceptLearner
 from ontolearn.data_struct import NCESDataLoader, NCESDataLoaderInference, CLIPDataLoader, CLIPDataLoaderInference
 from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
@@ -89,7 +90,7 @@ class EvoLearner(BaseConceptLearner):
         fitness_func (AbstractFitness): Fitness function.
         height_limit (int): The maximum value allowed for the height of the Crossover and Mutation operations.
         init_method (AbstractEAInitialization): The evolutionary algorithm initialization method.
-        kb (KnowledgeBase): The knowledge base that the concept learner is using.
+        kb (AbstractKnowledgeBase): The knowledge base that the concept learner is using.
         max_num_of_concepts_tested (int): Limit to stop the algorithm after n concepts tested.
         max_runtime (int): max_runtime: Limit to stop the algorithm after n seconds.
         mut_uniform_gen (AbstractEAInitialization): The initialization method to create the tree for mutation operation.
@@ -117,11 +118,11 @@ class EvoLearner(BaseConceptLearner):
     __slots__ = 'fitness_func', 'init_method', 'algorithm', 'value_splitter', 'tournament_size', \
         'population_size', 'num_generations', 'height_limit', 'use_data_properties', 'pset', 'toolbox', \
         '_learning_problem', '_result_population', 'mut_uniform_gen', '_dp_to_prim_type', '_dp_splits', \
-        '_split_properties', '_cache', 'use_card_restrictions', 'card_limit', 'use_inverse', 'total_fits'
+        '_split_properties', '_cache', 'use_card_restrictions', 'card_limit', 'use_inverse', 'total_fits', 'generator'
 
     name = 'evolearner'
 
-    kb: KnowledgeBase
+    kb: AbstractKnowledgeBase
     fitness_func: AbstractFitness
     init_method: AbstractEAInitialization
     algorithm: AbstractEvolutionaryAlgorithm
@@ -135,6 +136,7 @@ class EvoLearner(BaseConceptLearner):
     population_size: int
     num_generations: int
     height_limit: int
+    generator: ConceptGenerator
 
     pset: gp.PrimitiveSetTyped
     toolbox: base.Toolbox
@@ -146,7 +148,7 @@ class EvoLearner(BaseConceptLearner):
     _cache: Dict[str, Tuple[float, float]]
 
     def __init__(self,
-                 knowledge_base: KnowledgeBase,
+                 knowledge_base: AbstractKnowledgeBase,
                  reasoner: Optional[AbstractOWLReasoner] = None,
                  quality_func: Optional[AbstractScorer] = None,
                  fitness_func: Optional[AbstractFitness] = None,
@@ -174,7 +176,7 @@ class EvoLearner(BaseConceptLearner):
                                 Defaults to 17.
             init_method (AbstractEAInitialization): The evolutionary algorithm initialization method. Defaults
                                                     to EARandomWalkInitialization.
-            knowledge_base (KnowledgeBase): The knowledge base that the concept learner is using.
+            knowledge_base (AbstractKnowledgeBase): The knowledge base that the concept learner is using.
             max_runtime (int): max_runtime: Limit to stop the algorithm after n seconds. Defaults to 5.
             mut_uniform_gen (AbstractEAInitialization): The initialization method to create the tree for mutation
                                                         operation. Defaults to
@@ -217,6 +219,7 @@ class EvoLearner(BaseConceptLearner):
         self.num_generations = num_generations
         self.height_limit = height_limit
         self.total_fits = 0
+        self.generator = ConceptGenerator()
         self.__setup()
 
     def __setup(self):
@@ -251,7 +254,7 @@ class EvoLearner(BaseConceptLearner):
         intersection = factory.create_intersection()
 
         pset = gp.PrimitiveSetTyped("concept_tree", [], OWLClassExpression)
-        pset.addPrimitive(self.kb.generator.negation, [OWLClassExpression], OWLClassExpression,
+        pset.addPrimitive(self.generator.negation, [OWLClassExpression], OWLClassExpression,
                           name=OperatorVocabulary.NEGATION)
         pset.addPrimitive(union, [OWLClassExpression, OWLClassExpression], OWLClassExpression,
                           name=OperatorVocabulary.UNION)
@@ -323,10 +326,10 @@ class EvoLearner(BaseConceptLearner):
         for class_ in self.kb.get_concepts():
             pset.addTerminal(class_, OWLClassExpression, name=escape(class_.iri.get_remainder()))
 
-        pset.addTerminal(self.kb.generator.thing, OWLClassExpression,
-                         name=escape(self.kb.generator.thing.iri.get_remainder()))
-        pset.addTerminal(self.kb.generator.nothing, OWLClassExpression,
-                         name=escape(self.kb.generator.nothing.iri.get_remainder()))
+        pset.addTerminal(self.generator.thing, OWLClassExpression,
+                         name=escape(self.generator.thing.iri.get_remainder()))
+        pset.addTerminal(self.generator.nothing, OWLClassExpression,
+                         name=escape(self.generator.nothing.iri.get_remainder()))
         return pset
 
     def __build_toolbox(self) -> base.Toolbox:
@@ -527,7 +530,7 @@ class CLIP(CELOE):
         heuristic_func (AbstractHeuristic): Function to guide the search heuristic.
         heuristic_queue (SortedSet[OENode]): A sorted set that compares the nodes based on Heuristic.
         iter_bound (int): Limit to stop the algorithm after n refinement steps are done.
-        kb (KnowledgeBase): The knowledge base that the concept learner is using.
+        kb (AbstractKnowledgeBase): The knowledge base that the concept learner is using.
         max_child_length (int): Limit the length of concepts generated by the refinement operator.
         max_he (int): Maximal value of horizontal expansion.
         max_num_of_concepts_tested (int) Limit to stop the algorithm after n concepts tested.
@@ -553,7 +556,7 @@ class CLIP(CELOE):
     name = 'clip'
 
     def __init__(self,
-                 knowledge_base: KnowledgeBase,
+                 knowledge_base: AbstractKnowledgeBase,
                  knowledge_base_path='',
                  reasoner: Optional[AbstractOWLReasoner] = None,
                  refinement_operator: Optional[BaseRefinement[OENode]] = ExpressRefinement,
