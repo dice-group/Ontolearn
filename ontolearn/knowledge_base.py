@@ -907,7 +907,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Object properties.
         """
-        properties = self.get_object_properties()
+        properties = set(self.get_object_properties())
         yield from (pe for pe in self.reasoner.ind_object_properties(ind, direct) if pe in properties)
 
     def get_data_properties_for_ind(self, ind: OWLNamedIndividual, direct: bool = True) -> Iterable[OWLDataProperty]:
@@ -922,7 +922,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Data properties.
         """
-        properties = self.get_data_properties()
+        properties = set(self.get_data_properties())
         yield from (pe for pe in self.reasoner.ind_data_properties(ind, direct) if pe in properties)
 
     def get_object_property_values(self, ind: OWLNamedIndividual,

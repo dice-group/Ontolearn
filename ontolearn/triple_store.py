@@ -30,7 +30,6 @@ from itertools import chain
 from typing import Iterable, Set, Optional, Generator, Union, Tuple, Callable, FrozenSet
 import requests
 
-from owlapy import owl_expression_to_sparql
 from owlapy.class_expression import *
 from owlapy.class_expression import OWLThing
 from owlapy.iri import IRI
@@ -342,7 +341,7 @@ class TripleStoreReasoner(AbstractOWLReasoner):
                          + "UNION {" + f"<{ce.str}>" + " owl:equivalentClass ?x.}" + "FILTER(?x != " + f"<{ce.str}>)}}")
                 yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLClass)
             else:
-                print(f"Equivalent classes for complex class expressions is not implemented\t{ce}")
+                logger.info(msg=f"Equivalent classes for complex class expressions is not implemented\t{ce}")
                 # raise NotImplementedError(f"Equivalent classes for complex class expressions is not implemented\t{ce}")
                 yield from {}
         else:
@@ -581,19 +580,6 @@ class TripleStoreReasoner(AbstractOWLReasoner):
         pass
 
 
-class TripleStoreKnowledgeBase(KnowledgeBase):
-    url: str
-    ontology: TripleStoreOntology
-    reasoner: TripleStoreReasoner
-
-    def __init__(self, url: str = None):
-        assert url is not None, "url must be string"
-        self.url = url
-        self.ontology = TripleStoreOntology(url)
-        self.reasoner = TripleStoreReasoner(self.ontology)
-        super().__init__( ontology=self.ontology, reasoner=self.reasoner, load_class_hierarchy=False)
-
-
 class TripleStore(AbstractKnowledgeBase):
 
     def __init__(self, ontology=None, reasoner=None, url: str = None):
@@ -658,10 +644,11 @@ class TripleStore(AbstractKnowledgeBase):
                     if data_type == "http://www.w3.org/2001/XMLSchema#boolean":
                         yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=bool(o["value"]))
                     elif data_type == "http://www.w3.org/2001/XMLSchema#integer":
-                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=float(o["value"]))
+                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=int(o["value"]))
                     elif data_type == "http://www.w3.org/2001/XMLSchema#nonNegativeInteger":
-                        # TODO: We do not have http://www.w3.org/2001/XMLSchema#nonNegativeInteger implemented
-                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=float(o["value"]))
+                        # TODO AB: set type to NonNegativeInteger for OWLLiteral below
+                        #       after integrating the new owlapy release (> 1.3.3)
+                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=int(o["value"]))
                     elif data_type == "http://www.w3.org/2001/XMLSchema#double":
                         yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=float(o["value"]))
                     else:
@@ -861,11 +848,8 @@ class TripleStore(AbstractKnowledgeBase):
         for binding in self.query(query).json()["results"]["bindings"]:
             yield OWLLiteral(value=float(binding["x"]["value"]))
 
-    def individuals(
-            self,
-            concept: Optional[OWLClassExpression] = None,
-            named_individuals: bool = False,
-    ) -> Generator[OWLNamedIndividual, None, None]:
+    def individuals(self, concept: Optional[OWLClassExpression] = None, named_individuals: bool = False) \
+            -> Iterable[OWLNamedIndividual]:
         """Given an OWL class expression, retrieve all individuals belonging to it.
         Args:
             concept: Class expression of which to list individuals.
@@ -960,7 +944,7 @@ class TripleStore(AbstractKnowledgeBase):
         func: Callable
         func = (self.get_object_property_ranges if inverse else self.get_object_property_domains)
 
-        # TODO AB: There is a contradiction in the implementation below because if domain is owl:thing then,
+        # TODO AB: <<REVIEW>> There is a contradiction in the implementation below because if domain is owl:thing then,
         #          the property is returned, meaning that the domain of the property is a subclass of the 'domain'
         #          argument. On the other side if set of individuals covered by the 'domain' argument is a subset
         #          of the set of individuals covered by the property's domain then the property is returned. That means
@@ -973,8 +957,8 @@ class TripleStore(AbstractKnowledgeBase):
 
     def data_properties_for_domain(self, domain: OWLClassExpression, data_properties: Iterable[OWLDataProperty]) \
             -> Iterable[OWLDataProperty]:
-        # TODO AB: Its unclear what this method is supposed to do but by the name I can say that it is supposed to
-        #          return the data properties from the given collection of data properties that have the
+        # TODO AB: <<REVIEW>> Its unclear what this method is supposed to do but by the name I can say that it is
+        #          supposed to return the data properties from the given collection of data properties that have the
         #          specified 'domain'. However old implementation is commented below and is similar to the one in
         #          method 'most_general_object_properties' which is contradicting.
         assert isinstance(domain, OWLClassExpression)
@@ -1090,11 +1074,11 @@ class TripleStore(AbstractKnowledgeBase):
 
     def get_object_properties_for_ind(self, ind: OWLNamedIndividual, direct: bool = True) \
             -> Iterable[OWLObjectProperty]:
-        properties = self.get_object_properties()
+        properties = set(self.get_object_properties())
         yield from (pe for pe in self.reasoner.ind_object_properties(ind, direct) if pe in properties)
 
     def get_data_properties_for_ind(self, ind: OWLNamedIndividual, direct: bool = True) -> Iterable[OWLDataProperty]:
-        properties = self.get_data_properties()
+        properties = set(self.get_data_properties())
         yield from (pe for pe in self.reasoner.ind_data_properties(ind, direct) if pe in properties)
 
     def get_object_property_values(self, ind: OWLNamedIndividual,
