@@ -48,7 +48,6 @@ from owlapy.owl_ontology_manager import OntologyManager
 from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
     AbstractConceptNode, AbstractLearningProblem, AbstractKnowledgeBase
-from .utils import oplogging
 
 _N = TypeVar('_N', bound=AbstractConceptNode)  #:
 _X = TypeVar('_X', bound=AbstractLearningProblem)  #:

@@ -35,10 +35,9 @@ from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.utils import as_index, OrderedOWLObject
 from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree, \
     AbstractConceptNode, EncodedLearningProblem, DRILLAbstractTree
+from owlapy import owl_expression_to_dl
 
 _N = TypeVar('_N')  #:
-
-from owlapy import owl_expression_to_dl
 
 
 # Due to a bug in Python, we cannot use the slots like we should be able to. Hence, the attribute access is also

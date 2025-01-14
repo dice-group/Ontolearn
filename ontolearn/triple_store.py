@@ -58,8 +58,7 @@ from requests.exceptions import RequestException, JSONDecodeError
 from owlapy.converter import Owl2SparqlConverter
 
 from ontolearn.abstracts import AbstractKnowledgeBase
-from ontolearn.knowledge_base import KnowledgeBase
-import traceback
+# import traceback
 from collections import Counter
 
 logger = logging.getLogger(__name__)

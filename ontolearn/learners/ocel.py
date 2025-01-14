@@ -1,5 +1,4 @@
 from .celoe import CELOE
-from ..knowledge_base import KnowledgeBase
 from typing import Optional
 import owlapy
 from ..abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic, AbstractKnowledgeBase

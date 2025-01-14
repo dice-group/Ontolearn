@@ -26,16 +26,12 @@ import numpy as np
 import copy
 import torch
 from tqdm import trange
-from collections import defaultdict
 import os
 import json
 from torch.optim.lr_scheduler import ExponentialLR
-from torch.nn import functional as F
 from torch.nn.utils import clip_grad_value_
-from torch.nn.utils.rnn import pad_sequence
 from sklearn.metrics import f1_score, accuracy_score
 import time
-
 
 
 class CLIPTrainer:
