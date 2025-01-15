@@ -79,10 +79,9 @@ make use of the replace all functionality to change them.
 ## Download External Files
 
 Some resources like pre-calculated embeddings or `pre_trained_agents` and datasets (ontologies)
-are not included in the repository directly. Use the command line command `wget`
-to download them from our data server.
+are not included in the repository directly. Use the command `wget` to download them from our data server.
 
-> **NOTE: Before you run this commands in your terminal, make sure you are 
+> **NOTE: Before you run the following commands in your terminal, make sure you are 
 in the root directory of the project!**
 
 To download the datasets:
@@ -109,6 +108,14 @@ Finally, remove the _.zip_ file:
 rm KGs.zip
 ```
 
+To download learning problems:
+
+```shell
+wget https://files.dice-research.org/projects/Ontolearn/LPs.zip
+```
+
+Follow the same steps to unzip as the in the KGs case.
+
 --------------------------------------------------------
 
 ### NCES data: 
@@ -130,7 +137,7 @@ rm -f NCESData.zip
 
 ### CLIP data:
 
-```commandline
+```shell
 wget https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip
 unzip CLIPData.zip
 rm CLIPData.zip 
@@ -143,11 +150,18 @@ it is necessary to use the `build` tool. It can be invoked with:
 
 ```shell
 python -m build
+
+# or
+
+python setup.py bdist_wheel sdist
 ```
 
-from the main source code folder. Packages created by `build` can then
-be uploaded as releases to the [Python Package Index (PyPI)](https://pypi.org/) using
-[twine](https://pypi.org/project/twine/).
+Distribution packages that are created, can then
+be published to the [Python Package Index (PyPI)](https://pypi.org/) using [twine](https://pypi.org/project/twine/).
+
+```shell
+py -m twine upload --repository pypi dist/*
+```
 
 
 ### Building the docs
@@ -167,12 +181,17 @@ sphinx-build -M latex docs/ docs/_build/
 
 ## Simple Linting
 
-Using the following command will run the linting tool [flake8](https://flake8.pycqa.org/) on the source code.
+You can lint check using [flake8](https://flake8.pycqa.org/):
 ```shell
 flake8
 ```
 
-Additionally, you can specify the path where you want to flake8 to run.
+or ruff:
+```shell
+ruff check
+```
+
+Additionally, you can specify the path where you want to execute the linter.
 
 
 ----------------------------------------------------------------------
