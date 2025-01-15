@@ -39,7 +39,6 @@ from .utils import read_csv
 from .utils.static_funcs import concept_len
 
 _N = TypeVar('_N')  #:
-_KB = TypeVar('_KB', bound='AbstractKnowledgeBase')  #:
 
 logger = logging.getLogger(__name__)
 
@@ -182,68 +181,6 @@ class AbstractFitness(metaclass=ABCMeta):
             individual: Individual to set the fitness on.
         """
         pass
-
-
-class BaseRefinement(Generic[_N], metaclass=ABCMeta):
-    """
-    Base class for Refinement Operators.
-
-    Let C, D \\in N_c where N_c os a finite set of concepts.
-
-    * Proposition 3.3 (Complete and Finite Refinement Operators) [1]
-      * ρ(C) = {C ⊓ T} ∪ {D \\| D is not empty AND D \\sqset C}
-        * The operator is finite,
-        * The operator is complete as given a concept C, we can reach an arbitrary concept D such that D subset of C.
-
-    *) Theoretical Foundations of Refinement Operators [1].
-
-
-
-
-    *) Defining a top-down refimenent operator that is a proper is crutial.
-        4.1.3 Achieving Properness [1]
-    *) Figure 4.1 [1] defines of the refinement operator.
-
-    [1] Learning OWL Class Expressions.
-
-    Attributes:
-        kb (AbstractKnowledgeBase): The knowledge base used by this refinement operator.
-    """
-    __slots__ = 'kb'
-
-    kb: _KB
-
-    @abstractmethod
-    def __init__(self, knowledge_base: _KB):
-        """Construct a new base refinement operator.
-
-        Args:
-            knowledge_base: Knowledge base to operate on.
-        """
-        self.kb = knowledge_base
-
-    @abstractmethod
-    def refine(self, *args, **kwargs) -> Iterable[OWLClassExpression]:
-        """Refine a given concept.
-
-        Args:
-            ce (OWLClassExpression): Concept to refine.
-
-        Returns:
-            New refined concepts.
-        """
-        pass
-
-    def len(self, concept: OWLClassExpression) -> int:
-        """The length of a concept.
-
-        Args:
-            concept: The concept to measure the length for.
-
-        Returns:
-            Length of concept according to some metric configured in the knowledge base.
-        """
-        return concept_len(concept)
 
 
 class AbstractNode(metaclass=ABCMeta):
@@ -553,6 +490,65 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
     @abstractmethod
     def are_owl_concept_disjoint(self, *args, **kwargs):
         pass
+
+
+class BaseRefinement(Generic[_N], metaclass=ABCMeta):
+    """
+    Base class for Refinement Operators.
+
+    Let C, D \\in N_c where N_c os a finite set of concepts.
+
+    * Proposition 3.3 (Complete and Finite Refinement Operators) [1]
+      * ρ(C) = {C ⊓ T} ∪ {D \\| D is not empty AND D \\sqset C}
+        * The operator is finite,
+        * The operator is complete as given a concept C, we can reach an arbitrary concept D such that D subset of C.
+
+    *) Theoretical Foundations of Refinement Operators [1].
+
+    *) Defining a top-down refimenent operator that is a proper is crutial.
+        4.1.3 Achieving Properness [1]
+    *) Figure 4.1 [1] defines of the refinement operator.
+
+    [1] Learning OWL Class Expressions.
+
+    Attributes:
+        kb (AbstractKnowledgeBase): The knowledge base used by this refinement operator.
+    """
+    __slots__ = 'kb'
+
+    kb: AbstractKnowledgeBase
+
+    @abstractmethod
+    def __init__(self, knowledge_base: AbstractKnowledgeBase):
+        """Construct a new base refinement operator.
+
+        Args:
+            knowledge_base: Knowledge base to operate on.
+        """
+        self.kb = knowledge_base
+
+    @abstractmethod
+    def refine(self, *args, **kwargs) -> Iterable[OWLClassExpression]:
+        """Refine a given concept.
+
+        Args:
+            ce (OWLClassExpression): Concept to refine.
+
+        Returns:
+            New refined concepts.
+        """
+        pass
+
+    def len(self, concept: OWLClassExpression) -> int:
+        """The length of a concept.
+
+        Args:
+            concept: The concept to measure the length for.
+
+        Returns:
+            Length of concept according to some metric configured in the knowledge base.
+        """
+        return concept_len(concept)
 
 
 class AbstractLearningProblem(metaclass=ABCMeta):
