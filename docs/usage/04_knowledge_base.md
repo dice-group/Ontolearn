@@ -41,7 +41,7 @@ saved.
 functionalities that each of them has.
 
 
-## Create an Object of KnowledgeBase
+## Create an Instance of KnowledgeBase
 
 Let us show how you can initialize an object of `KnowledgeBase`.
 We consider that you have already an OWL 2.0 ontology (containing *.owl* extension).
@@ -365,5 +365,5 @@ requires only the `mode` parameter.
 Since we cannot cover everything here in details, check the API docs for knowledge base related classes
 to see all the methods that these classes have to offer.
 
-In the next guide we will walk through _how to define a learning problem_, _how to use concept learners_ and other fancy 
-stuff, like evaluating a class expression.
+In the next guide we will show and explain a basic example on how to evaluate a class expression on a given 
+knowledge base.

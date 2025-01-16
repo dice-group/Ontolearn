@@ -4,18 +4,21 @@ You can find more details in the related papers for each algorithm:
 
 Concept Learning:
 
-- **NCES2** &rarr; (soon) [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
+- **NCES2**&ast; &rarr; [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
 - **Drill** &rarr; [Deep Reinforcement Learning for Refinement Operators in ALC](https://arxiv.org/pdf/2106.15373.pdf)
-- **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13)
-- **NERO** &rarr; (soon) [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://github.com/dice-group/Nero)
+- **NCES**&ast; &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13)
+- **NERO** &rarr; [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://github.com/dice-group/Nero)
 - **EvoLearner** &rarr; [An evolutionary approach to learn concepts in ALCQ(D)](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
 - **CLIP** &rarr; [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
 - **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
+- **TDL** &rarr; Manuscript will be added soon.
 
 Sampling:
 - **OntoSample** &rarr; [Accelerating Concept Learning via Sampling](https://dl.acm.org/doi/10.1145/3583780.3615158)
 
 Also check OWLAPY's documentation [here](https://dice-group.github.io/owlapy/usage/main.html).
+
+&ast;  _Not implemented in our library yet._
 
 ## Citing
 
@@ -97,7 +100,8 @@ address="Cham"
 
 Examples and test cases provide a good starting point to get to know
 the project better. Find them in the folders 
-[examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) and [tests](https://github.com/dice-group/Ontolearn/tree/develop/tests).
+[examples](https://github.com/dice-group/Ontolearn/tree/master/examples) and 
+[tests](https://github.com/dice-group/Ontolearn/tree/master/tests).
 
 ## Contribution
 
