@@ -38,7 +38,7 @@ from ontolearn.metrics import F1
 class BaseNCES:
 
     def __init__(self, knowledge_base_path, nces2_or_roces, quality_func, num_predictions, auto_train=True, proj_dim=128, drop_prob=0.1,
-                 num_heads=4, num_seeds=1, m=32, ln=False, learning_rate=1e-4, decay_rate=0.0, clip_value=5.0,
+                 num_heads=4, num_seeds=1, m=32, ln=False, learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0,
                  batch_size=256, num_workers=4, max_length=48, load_pretrained=True, verbose: int = 0):
         kb = KnowledgeBase(path=knowledge_base_path)
         self.kb_namespace = list(kb.ontology.classes_in_signature())[0].iri.get_namespace()
@@ -52,7 +52,7 @@ class BaseNCES:
         if nces2_or_roces:
             concrete_role_names = [rel.iri.get_remainder() for rel in kb.ontology.data_properties_in_signature()]
             vocab.extend(concrete_role_names)
-            vocab.extend(['⁻', '≤', '≥', 'True', 'False', '{', '}', ':', '[', ']', 'double', 'integer', 'date', 'xsd'])
+            vocab.extend(['⁻', '≤', '≥', 'True', 'False', 'true', 'false', '{', '}', ':', '[', ']', 'double', 'integer', 'date', 'xsd'])
         vocab = sorted(set(vocab)) + ['PAD']
         self.knowledge_base_path = knowledge_base_path
         self.kb = kb
@@ -72,7 +72,8 @@ class BaseNCES:
         self.m = m
         self.ln = ln
         self.learning_rate = learning_rate
-        self.decay_rate = decay_rate
+        self.tmax = tmax
+        self.eta_min = eta_min
         self.clip_value = clip_value
         self.batch_size = batch_size
         self.num_workers = num_workers

@@ -36,25 +36,34 @@ def start(args):
         except FileNotFoundError:
             print("Couldn't find training data in the specified path. Defaulting to generating training data.")
     if args.synthesizer == "NCES":
-        synthesizer = NCES(knowledge_base_path=args.kb, learner_names=['SetTransformer', 'GRU', 'LSTM'], path_of_embeddings=args.path_of_embeddings, auto_train=False,
-            max_length=48, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, m=32, load_pretrained=args.load_pretrained, verbose=True)
+        synthesizer = NCES(knowledge_base_path=args.kb, learner_names=['SetTransformer', 'GRU', 'LSTM'], path_of_embeddings=args.path_of_embeddings, auto_train=False, max_length=48, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, m=32, load_pretrained=args.load_pretrained, path_of_trained_models=args.path_of_trained_models, verbose=True)
     elif args.synthesizer == "NCES2":
-        synthesizer = NCES2(knowledge_base_path=args.kb, auto_train=False, max_length=48, proj_dim=128,
-         drop_prob=0.1, num_heads=4, num_seeds=1, m=32, load_pretrained=args.load_pretrained, verbose=True)
+        synthesizer = NCES2(knowledge_base_path=args.kb, auto_train=False, max_length=48, proj_dim=128, embedding_dim=args.embedding_dim,
+         drop_prob=0.1, num_heads=4, num_seeds=1, m=[32, 64, 128], load_pretrained=args.load_pretrained, path_of_trained_models=args.path_of_trained_models, verbose=True)
     else:
-        synthesizer = ROCES(knowledge_base_path=args.kb, auto_train=False, k=5, max_length=48, proj_dim=128,
-         drop_prob=0.1, num_heads=4, num_seeds=1, m=32, load_pretrained=args.load_pretrained, verbose=True)
-    synthesizer.train(training_data, epochs=args.epochs, max_num_lps=args.max_num_lps, refinement_expressivity=args.refinement_expressivity)
+        synthesizer = ROCES(knowledge_base_path=args.kb, auto_train=False, k=5, max_length=48, proj_dim=128, embedding_dim=args.embedding_dim,
+         drop_prob=0.1, num_heads=4, num_seeds=1, m=[32, 64, 128], load_pretrained=args.load_pretrained, path_of_trained_models=args.path_of_trained_models, verbose=True)
+    synthesizer.train(training_data, epochs=args.epochs, batch_size=args.batch_size, learning_rate=args.lr, tmax=args.tmax, max_num_lps=args.max_num_lps, refinement_expressivity=args.refinement_expressivity, refs_sample_size=args.sample_size, storage_path=args.storage_path)
 
 if __name__ == '__main__':
     set_seed(42)
     parser = argparse.ArgumentParser()
     parser.add_argument('--kb', type=str, default=None, help='Paths of a knowledge base (OWL file)')
     parser.add_argument('--synthesizer', type=str, default="ROCES", help='Name of the neural synthesizer')
+    parser.add_argument('--embedding_dim', type=int, default=128, help='Number of embedding dimensions.')
     parser.add_argument('--refinement_expressivity', type=float, default=0.9, help='The expressivity of the refinement operator during training data generation')
     parser.add_argument('--max_num_lps', type=int, default=20000, help='Maximum number of learning problems to generate if no training data is provided')
+    parser.add_argument('--sample_size', type=int, default=200, help='The number of concepts to sample from the refs of $\top$ during learning problem generation')
     parser.add_argument('--path_of_embeddings', type=str, default=None, help='Path to a csv file containing embeddings for the KB.')
     parser.add_argument('--path_train_data', type=str, default=None, help='Path to training data')
-    parser.add_argument('--epochs', type=int, default=50, help='Number of training epochs')
+    parser.add_argument('--storage_path', type=str, default=None, help='Path to save the trained models')
+    parser.add_argument('--epochs', type=int, default=500, help='Number of training epochs')
+    parser.add_argument('--batch_size', type=int, default=256, help='Minibatch size for training')
+    parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate for training. The optimizer is Adam.')
+    parser.add_argument('--tmax', type=int, default=100, help='Tmax in CosineLR scheduler. The optimizer is Adam.')
+    parser.add_argument('--eta_min', type=float, default=1e-5, help='eta_min in CosineLR scheduler. The optimizer is Adam.')
     parser.add_argument('--load_pretrained', type=str2bool, default=False, help='Whether to load the pretrained model')
-    start(parser.parse_args())
+    parser.add_argument('--path_of_trained_models', type=str, default=None, help='Path to pretrained models in case we want to finetune pretrained models')
+    args = parser.parse_args()
+    args.tmax = min(args.tmax, args.epochs)
+    start(args)

@@ -799,10 +799,10 @@ class NCES(BaseNCES):
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
                  learner_names=["SetTransformer"], path_of_embeddings=None, path_of_trained_models=None, auto_train=True, proj_dim=128, rnn_n_layers=2,
                  drop_prob=0.1, num_heads=4, num_seeds=1, m=32, ln=False, 
-                 learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
+                 learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4, 
                  max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0):
         super().__init__(knowledge_base_path, nces2_or_roces, quality_func, num_predictions, auto_train, proj_dim, drop_prob,
-                 num_heads, num_seeds, m, ln, learning_rate, decay_rate, clip_value,
+                 num_heads, num_seeds, m, ln, learning_rate, tmax, eta_min, clip_value,
                  batch_size, num_workers, max_length, load_pretrained, verbose)
         
         self.learner_names = learner_names
@@ -830,9 +830,9 @@ class NCES(BaseNCES):
             except Exception:
                 print('\x1b[0;30;43m dicee is not installed, will first install it\x1b[0m\n')
                 subprocess.run('pip install dicee==0.1.4')
-            print("\n"+"\x1b[0;30;43m"+"Embeddings not found. Will quickly train embeddings beforehand. "+"Poor performance is expected as we will also train the synthesizer for a few epochs.\nFor maximum performance, use pretrained models or train embeddings for many epochs, and the neural synthesizer on massive amounts of data and for many epochs\x1b[0m"+"\n")
+            print("\n"+"\x1b[0;30;43m"+"Embeddings not found. Will quickly train embeddings beforehand. "+"Poor performance is expected as we will also train the synthesizer for a few epochs.\nFor maximum performance, use pretrained models or train embeddings for many epochs, and the neural synthesizer on massive amounts of data and for many epochs. See the example script in `examples/train_nces.py` for this. You could first train embeddings using `dicee --path_single_kg {self.knowledge_base_path} --path_to_store_single_run temp_embeddings --backend rdflib --save_embeddings_as_csv --num_epochs 20 --model DeCaL --embedding_dim 128`.\x1b[0m"+"\n")
             try:
-                subprocess.run(f"dicee --path_single_kg {self.knowledge_base_path} --path_to_store_single_run temp_embeddings --backend rdflib --save_embeddings_as_csv --num_epochs 20 --model DeCaL",
+                subprocess.run(f"dicee --path_single_kg {self.knowledge_base_path} --path_to_store_single_run temp_embeddings --backend rdflib --save_embeddings_as_csv --num_epochs 20 --model DeCaL --embedding_dim 128",
                  shell = True, executable="/bin/bash")
                 assert os.path.exists("./temp_embeddings/DeCaL_entity_embeddings.csv"), "It seems that embeddings were not stored at the expected directory (/temp_embeddings/DeCaL_entity_embeddings.csv)"
             except Exception:
@@ -1120,8 +1120,8 @@ class NCES(BaseNCES):
         return predictions_as_owl_class_expressions
 
     @staticmethod
-    def generate_training_data(kb_path, max_num_lps=1000, refinement_expressivity=0.2, storage_path="./NCES_Training_Data"):
-        lp_gen = LPGen(kb_path=kb_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity, storage_path=storage_path)
+    def generate_training_data(kb_path, max_num_lps=1000, refinement_expressivity=0.2, refs_sample_size=50, storage_path="./NCES_Training_Data"):
+        lp_gen = LPGen(kb_path=kb_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity, num_sub_roots=refs_sample_size, storage_path=storage_path)
         lp_gen.generate()
         print("Loading generated data...")
         with open(f"{storage_path}/LPs.json") as file:
@@ -1132,9 +1132,9 @@ class NCES(BaseNCES):
         return lps
 
 
-    def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, max_num_lps=1000, refinement_expressivity=0.2, learning_rate=1e-4, decay_rate=0.0,
-              clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True,
-              example_sizes=None, shuffle_examples=False):
+    def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, max_num_lps=1000, refinement_expressivity=0.2,
+              refs_sample_size=50, learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, num_workers=8, 
+              save_model=True, storage_path=None, optimizer='Adam', record_runtime=True, example_sizes=None, shuffle_examples=False):
         if os.cpu_count() <= num_workers:
             num_workers = max(0,os.cpu_count()-1)
         if storage_path is None:
@@ -1146,9 +1146,10 @@ class NCES(BaseNCES):
         if batch_size is None:
             batch_size = self.batch_size
         if data is None:
-            data = self.generate_training_data(self.knowledge_base_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity, storage_path=storage_path)
+            data = self.generate_training_data(self.knowledge_base_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity,
+                                               refs_sample_size=refs_sample_size, storage_path=storage_path)
 
-        trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, decay_rate=decay_rate,
+        trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, tmax=tmax, eta_min=eta_min,
                               clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
         trainer.train(data=data, save_model=save_model, optimizer=optimizer, record_runtime=record_runtime)
         
@@ -1160,12 +1161,12 @@ class NCES2(BaseNCES):
     def __init__(self, knowledge_base_path, nces2_or_roces=True,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
                  path_of_trained_models=None, auto_train=True, proj_dim=128, drop_prob=0.1,
-                 num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=256, sampling_strategy="nces2", 
+                 num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=128, sampling_strategy="nces2", 
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, 
-                 learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
+                 learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4, 
                  max_length=48, load_pretrained=True, verbose: int = 0, data=[]):
         super().__init__(knowledge_base_path, nces2_or_roces, quality_func, num_predictions, auto_train, proj_dim, drop_prob,
-                 num_heads, num_seeds, m, ln, learning_rate, decay_rate, clip_value,
+                 num_heads, num_seeds, m, ln, learning_rate, tmax, eta_min, clip_value,
                  batch_size, num_workers, max_length, load_pretrained, verbose)
         
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -1179,9 +1180,6 @@ class NCES2(BaseNCES):
         self.feature_map_dropout = feature_map_dropout
         self.kernel_size = kernel_size
         self.num_of_output_channels = num_of_output_channels
-        print("\nBefore updating vocab: ", len(self.vocab))
-        self.add_data_values(data)
-        print("After updating vocab: ", len(self.vocab))
         self._set_prerequisites()
 
     
@@ -1195,7 +1193,7 @@ class NCES2(BaseNCES):
                                    self.embedding_dim, self.proj_dim, self.num_heads, self.num_seeds, m, self.ln)} for m in self.m}
 
         if self.load_pretrained and self.path_of_trained_models is None and self.auto_train:
-            print(f"\n\x1b[0;30;43mPath to pretrained models is None and load_pretrained is True and auto_train is True. Will quickly train neural synthesizers.\x1b[0m\n")
+            print(f"\n\x1b[0;30;43mPath to pretrained models is None and load_pretrained is True and auto_train is True. Will quickly train neural synthesizers. However, it is advisable that you properly train {self.name} using the example script in `examples/train_nces.py`.\x1b[0m\n")
             self.train(epochs=5)
             self.refresh(self.path_of_trained_models)
         else:
@@ -1481,10 +1479,11 @@ class NCES2(BaseNCES):
         return predictions_as_owl_class_expressions
 
     @staticmethod
-    def generate_training_data(kb_path, max_num_lps=1000, refinement_expressivity=0.2, beyond_alc=False, storage_path=None):
+    def generate_training_data(kb_path, max_num_lps=1000, refinement_expressivity=0.2, refs_sample_size=50, beyond_alc=True, storage_path=None):
         if storage_path is None:
             storage_path = f"./Training_Data_{self.name}"
-        lp_gen = LPGen(kb_path=kb_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity, beyond_alc=beyond_alc, storage_path=storage_path)
+        lp_gen = LPGen(kb_path=kb_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity, num_sub_roots=refs_sample_size,
+                       beyond_alc=beyond_alc, storage_path=storage_path)
         lp_gen.generate()
         print("Loading generated data...")
         with open(f"{storage_path}/LPs.json") as file:
@@ -1495,8 +1494,7 @@ class NCES2(BaseNCES):
         return lps
 
 
-    def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, max_num_lps=1000, refinement_expressivity=0.2, learning_rate=1e-4, decay_rate=0.0,
-              clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True, shuffle_examples=False):
+    def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, max_num_lps=1000, refinement_expressivity=0.2, refs_sample_size=50, learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True, shuffle_examples=False):
         if os.cpu_count() <= num_workers:
             num_workers = max(0,os.cpu_count()-1)
         if storage_path is None:
@@ -1507,13 +1505,13 @@ class NCES2(BaseNCES):
         if batch_size is None:
             batch_size = self.batch_size
         if data is None:
-            data = self.generate_training_data(self.knowledge_base_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity, beyond_alc=True, storage_path=storage_path)
+            data = self.generate_training_data(self.knowledge_base_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity, refs_sample_size=refs_sample_size, beyond_alc=True, storage_path=storage_path)
         vocab_size_before = len(self.vocab)
         self.add_data_values(data) # Add data values based on training data
         self.path_of_trained_models = storage_path+"/trained_models"
         if len(self.vocab) > vocab_size_before:
             self.model = self.get_synthesizer(verbose=False)
-        trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, decay_rate=decay_rate,
+        trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, tmax=tmax, eta_min=eta_min,
                               clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
         trainer.train(data=data, save_model=save_model, optimizer=optimizer, record_runtime=record_runtime)
 
@@ -1525,15 +1523,15 @@ class ROCES(NCES2):
     def __init__(self, knowledge_base_path, nces2_or_roces=True,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5, k=5,
                  path_of_trained_models=None, auto_train=True, proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
-                 num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=256, sampling_strategy="p",
+                 num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=128, sampling_strategy="p",
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, 
-                 learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
+                 learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4, 
                  max_length=48, load_pretrained=True, verbose: int = 0, data=[]):
 
         self.k = k
         super().__init__(knowledge_base_path, nces2_or_roces,
                         quality_func, num_predictions, path_of_trained_models, auto_train, proj_dim, drop_prob,
                         num_heads, num_seeds, m, ln, embedding_dim, sampling_strategy, input_dropout, feature_map_dropout, 
-                        kernel_size, num_of_output_channels, learning_rate, decay_rate, clip_value, batch_size,
+                        kernel_size, num_of_output_channels, learning_rate, tmax, eta_min, clip_value, batch_size,
                         num_workers, max_length, load_pretrained, verbose)
 

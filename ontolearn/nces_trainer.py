@@ -30,7 +30,7 @@ from torch.utils.data import DataLoader
 from tqdm import trange
 import os
 import json
-from torch.optim.lr_scheduler import ExponentialLR
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.nn import functional as F
 from torch.nn.utils import clip_grad_value_
 from torch.nn.utils.rnn import pad_sequence
@@ -52,13 +52,14 @@ def before_pad(arg):
 
 class NCESTrainer:
     """Trainer for neural class expression synthesizers, i.e., NCES, NCES2, ROCES."""
-    def __init__(self, synthesizer, epochs=300, batch_size=128, learning_rate=1e-4, decay_rate=0,
+    def __init__(self, synthesizer, epochs=300, batch_size=128, learning_rate=1e-4, tmax=20, eta_min=1e-5,
                  clip_value=5.0, num_workers=8, storage_path="./"):
         self.synthesizer = synthesizer
         self.epochs = epochs
         self.batch_size = batch_size
         self.learning_rate = learning_rate
-        self.decay_rate = decay_rate
+        self.tmax = tmax
+        self.eta_min = eta_min
         self.clip_value = clip_value
         self.num_workers = num_workers
         self.storage_path = storage_path
@@ -190,8 +191,6 @@ class NCESTrainer:
         if emb_model is not None:
             clip_grad_value_(emb_model.parameters(), clip_value=self.clip_value)
         optimizer.step()
-        if self.decay_rate:
-            self.scheduler.step()
         return loss.item(), s_acc, h_acc
         
 
@@ -215,13 +214,14 @@ class NCESTrainer:
             print(start_message)
             print("#"*80, "\n")
             desc = model["model"].name
+            if model["model"].name != model_name:
+                desc += "_" + model_name
             if device.type == "cuda":
                 model["model"].cuda()
                 if model["emb_model"] is not None:
                     model["emb_model"].cuda()
             optim_algo = self.get_optimizer(model=model["model"], emb_model=model["emb_model"], optimizer=optimizer)
-            if self.decay_rate:
-                self.scheduler = ExponentialLR(optim_algo, self.decay_rate)
+            self.scheduler = CosineAnnealingLR(optim_algo, T_max=self.tmax, eta_min=self.eta_min)
             if model["emb_model"] is not None:
                 # When there is no embedding_model, then we are training NCES2 or ROCES and we need to repeatedly query the embedding model for the updated embeddings
                 train_dataset = ROCESDataset(data, self.synthesizer.triples_data, k=self.synthesizer.k if hasattr(self.synthesizer, 'k') else None, vocab=self.synthesizer.vocab, inv_vocab=self.synthesizer.inv_vocab,
@@ -245,7 +245,7 @@ class NCESTrainer:
             if record_runtime:
                 t0 = time.time()
 
-            Epochs = trange(self.epochs, desc=f'Loss: {np.nan}, Soft Acc: {s_acc}%, Hard Acc: {h_acc}%', leave=True, colour='green')
+            Epochs = trange(self.epochs, desc=f'Loss: {np.nan}, Soft Acc: {s_acc}%, Hard Acc: {h_acc}%, Lr: {self.learning_rate}', leave=True, colour='green')
             for e in Epochs:
                 soft_acc, hard_acc = [], []
                 train_losses = []
@@ -278,7 +278,9 @@ class NCESTrainer:
                 Train_loss.append(np.mean(train_losses))
                 Train_acc['soft'].append(train_soft_acc)
                 Train_acc['hard'].append(train_hard_acc)
-                Epochs.set_description('<Epoch: {}/{}> Loss: {:.4f}, Soft Acc: {:.2f}%, Hard Acc: {:.2f}(%)'.format(e+1, self.epochs, Train_loss[-1], train_soft_acc, train_hard_acc))
+                self.scheduler.step()
+                last_lr = self.scheduler.get_last_lr()[0]
+                Epochs.set_description('<Epoch: {}/{}> Loss: {:.4f}, Soft Acc: {:.2f}%, Hard Acc: {:.2f}(%), Lr: {:.6f}'.format(e+1, self.epochs, Train_loss[-1], train_soft_acc, train_hard_acc, last_lr))
                 Epochs.refresh()
                 model_weights = copy.deepcopy(model["model"].state_dict())
                 emb_model_weights = None
@@ -308,6 +310,7 @@ class NCESTrainer:
             if save_model:  # pragma: no cover
                 if not os.path.exists(self.storage_path+"/results/"):
                     os.mkdir(self.storage_path+"/results/")
+
                 with open(self.storage_path+"/results/"+"results"+"_"+desc+".json", "w") as file:
                     json.dump(results_dict, file, indent=3)
 
