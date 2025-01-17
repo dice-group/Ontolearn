@@ -1163,7 +1163,7 @@ class NCES2(BaseNCES):
                  num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=256, sampling_strategy="nces2", 
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, 
                  learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
-                 max_length=48, load_pretrained=True, verbose: int = 0):
+                 max_length=48, load_pretrained=True, verbose: int = 0, data=[]):
         super().__init__(knowledge_base_path, nces2_or_roces, quality_func, num_predictions, auto_train, proj_dim, drop_prob,
                  num_heads, num_seeds, m, ln, learning_rate, decay_rate, clip_value,
                  batch_size, num_workers, max_length, load_pretrained, verbose)
@@ -1179,6 +1179,9 @@ class NCES2(BaseNCES):
         self.feature_map_dropout = feature_map_dropout
         self.kernel_size = kernel_size
         self.num_of_output_channels = num_of_output_channels
+        print("\nBefore updating vocab: ", len(self.vocab))
+        self.add_data_values(data)
+        print("After updating vocab: ", len(self.vocab))
         self._set_prerequisites()
 
     
@@ -1257,7 +1260,7 @@ class NCES2(BaseNCES):
 
         elif self.load_pretrained and path and glob.glob(path + "/*.pt"):
             possible_checkpoints = glob.glob(path + "/*.pt")
-            num_loaded = 0
+            num_loaded_models = 0
             loaded_model_names = []
             for file_name in possible_checkpoints:
                 for m in self.m:
@@ -1267,23 +1270,21 @@ class NCES2(BaseNCES):
                             model = Models[str(m)]["model"]
                             model.load_state_dict(weights)
                             Models[str(m)]["model"] = model
-                            num_loaded += 1
+                            num_loaded_models += 1
                             loaded_model_names.append(f'SetTransformer ({m} inducing points)')
                         else:
                             weights = torch.load(file_name, map_location=self.device, weights_only=True)
                             emb_model = Models[str(m)]["emb_model"]
                             emb_model.load_state_dict(weights)
                             Models[str(m)]["emb_model"] = emb_model
-            if num_loaded == len(self.m):
+            if num_loaded_models == len(self.m):
                 print(f"\nLoaded {self.name} weights!\n")
                 return Models
             elif num_loaded_models > 0:
                 models_to_remove = []
                 for name in Models:
-                    if name not in list(map(str, self.m)):
-                        models_to_remove.append(str(name))
-                    else:
-                        loaded_model_names.append(f'SetTransformer ({name} inducing points)')
+                    if not any(name in loaded_model_name for loaded_model_name in loaded_model_names):
+                        models_to_remove.append(name)
                 for name in models_to_remove:
                     del Models[name]
                 print("\x1b[0;30;43m"+f"!!!Some pretrained weights could not be found, successfully loaded models are {loaded_model_names}"+"\x1b[0m"+"\n")
@@ -1527,7 +1528,7 @@ class ROCES(NCES2):
                  num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=256, sampling_strategy="p",
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, 
                  learning_rate=1e-4, decay_rate=0.0, clip_value=5.0, batch_size=256, num_workers=4, 
-                 max_length=48, load_pretrained=True, verbose: int = 0):
+                 max_length=48, load_pretrained=True, verbose: int = 0, data=[]):
 
         self.k = k
         super().__init__(knowledge_base_path, nces2_or_roces,

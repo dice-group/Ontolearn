@@ -52,7 +52,7 @@ class BaseNCES:
         if nces2_or_roces:
             concrete_role_names = [rel.iri.get_remainder() for rel in kb.ontology.data_properties_in_signature()]
             vocab.extend(concrete_role_names)
-            vocab.extend(['⁻', '≤', '≥', 'True', 'False', 'true', 'false', '{', '}', ':', '[', ']', 'double', 'integer', 'date', 'xsd'])
+            vocab.extend(['⁻', '≤', '≥', 'True', 'False', '{', '}', ':', '[', ']', 'double', 'integer', 'date', 'xsd'])
         vocab = sorted(set(vocab)) + ['PAD']
         self.knowledge_base_path = knowledge_base_path
         self.kb = kb
