@@ -326,7 +326,8 @@ class NCESTrainer:
                     config = {"max_length": self.synthesizer.max_length,
                     "proj_dim": self.synthesizer.proj_dim,
                     "num_heads": self.synthesizer.num_heads,
-                    "num_seeds": self.synthesizer.num_seeds}
+                    "num_seeds": self.synthesizer.num_seeds,
+                    "k": self.synthesizer.k}
                     if hasattr(self.synthesizer, "rnn_n_layers"):
                         config.update({"rnn_n_layers": self.synthesizer.rnn_n_layers})
                     json.dump(config, f) # save common config file
