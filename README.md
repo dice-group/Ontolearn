@@ -336,6 +336,22 @@ pytest -p no:warnings -x # Running 76 tests takes ~ 17 mins
 Currently, we are working on our manuscript describing our framework. 
 If you find our work useful in your research, please consider citing the respective paper:
 ```
+# ROCES
+@inproceedings{kouagou2024roces,
+  title     = {ROCES: Robust Class Expression Synthesis in Description Logics via Iterative Sampling},
+  author    = {Kouagou, N'Dah Jean and Heindorf, Stefan and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+  booktitle = {Proceedings of the Thirty-Third International Joint Conference on
+               Artificial Intelligence, {IJCAI-24}},
+  publisher = {International Joint Conferences on Artificial Intelligence Organization},
+  editor    = {Kate Larson},
+  pages     = {4335--4343},
+  year      = {2024},
+  month     = {8},
+  note      = {Main Track},
+  doi       = {10.24963/ijcai.2024/479},
+  url       = {https://doi.org/10.24963/ijcai.2024/479},
+}
+
 # DRILL
 @inproceedings{demir2023drill,
   author = {Demir, Caglar and Ngomo, Axel-Cyrille Ngonga},

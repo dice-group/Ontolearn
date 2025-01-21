@@ -326,10 +326,11 @@ class NCESTrainer:
                     config = {"max_length": self.synthesizer.max_length,
                     "proj_dim": self.synthesizer.proj_dim,
                     "num_heads": self.synthesizer.num_heads,
-                    "num_seeds": self.synthesizer.num_seeds,
-                    "k": self.synthesizer.k}
+                    "num_seeds": self.synthesizer.num_seeds}
                     if hasattr(self.synthesizer, "rnn_n_layers"):
                         config.update({"rnn_n_layers": self.synthesizer.rnn_n_layers})
+                    if hasattr(self.synthesizer, "k"):
+                        config.update({"k": self.synthesizer.k})
                     json.dump(config, f) # save common config file
                 with open(self.storage_path+"/trained_models/vocab.json", "w") as f:
                     json.dump(self.synthesizer.vocab, f) # save vocabulary of tokens

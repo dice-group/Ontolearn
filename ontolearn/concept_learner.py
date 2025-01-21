@@ -797,18 +797,20 @@ class NCES(BaseNCES):
     name = "NCES"
     def __init__(self, knowledge_base_path, nces2_or_roces=False,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
-                 learner_names=["SetTransformer"], path_of_embeddings=None, path_of_trained_models=None, auto_train=True, proj_dim=128, rnn_n_layers=2,
-                 drop_prob=0.1, num_heads=4, num_seeds=1, m=32, ln=False, 
-                 learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4, 
+                 learner_names=["SetTransformer", "LSTM", "GRU"], path_of_embeddings=None, path_temp_embeddings=None, path_of_trained_models=None, auto_train=True, proj_dim=128, rnn_n_layers=2,
+                 drop_prob=0.1, num_heads=4, num_seeds=1, m=32, ln=False, dicee_model="DeCaL", dicee_epochs=5, dicee_lr=0.01, dicee_emb_dim=128, learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4, 
                  max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0):
-        super().__init__(knowledge_base_path, nces2_or_roces, quality_func, num_predictions, auto_train, proj_dim, drop_prob,
-                 num_heads, num_seeds, m, ln, learning_rate, tmax, eta_min, clip_value,
-                 batch_size, num_workers, max_length, load_pretrained, verbose)
+        
+        super().__init__(knowledge_base_path=knowledge_base_path, nces2_or_roces=nces2_or_roces, quality_func=quality_func, num_predictions=num_predictions, auto_train=auto_train, proj_dim=proj_dim, drop_prob=drop_prob, num_heads=num_heads, num_seeds=num_seeds, m=m, ln=ln, learning_rate=learning_rate, tmax=tmax, eta_min=eta_min, clip_value=clip_value, batch_size=batch_size, num_workers=num_workers, max_length=max_length, load_pretrained=load_pretrained, verbose=verbose)
         
         self.learner_names = learner_names
         self.path_of_embeddings = path_of_embeddings
+        self.path_temp_embeddings = path_temp_embeddings
         self.path_of_trained_models = path_of_trained_models
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.dicee_model = dicee_model
+        self.dicee_emb_dim = dicee_emb_dim
+        self.dicee_epochs = dicee_epochs
+        self.dicee_lr = dicee_lr
         self.rnn_n_layers = rnn_n_layers
         self.sorted_examples = sorted_examples
         self._set_prerequisites()
@@ -828,22 +830,24 @@ class NCES(BaseNCES):
                 print('\nĆheck packages... OK: dicee is installed.')
                 del dicee
             except Exception:
-                print('\x1b[0;30;43m dicee is not installed, will first install it\x1b[0m\n')
+                print('\x1b[0;30;43m dicee is not installed, will first install it...\x1b[0m\n')
                 subprocess.run('pip install dicee==0.1.4')
-            print("\n"+"\x1b[0;30;43m"+"Embeddings not found. Will quickly train embeddings beforehand. "+"Poor performance is expected as we will also train the synthesizer for a few epochs.\nFor maximum performance, use pretrained models or train embeddings for many epochs, and the neural synthesizer on massive amounts of data and for many epochs. See the example script in `examples/train_nces.py` for this. You could first train embeddings using `dicee --path_single_kg {self.knowledge_base_path} --path_to_store_single_run temp_embeddings --backend rdflib --save_embeddings_as_csv --num_epochs 20 --model DeCaL --embedding_dim 128`.\x1b[0m"+"\n")
+            print("\n"+"\x1b[0;30;43m"+"Embeddings not found. Will quickly train embeddings beforehand. "+"Poor performance is expected as we will also train the synthesizer for a few epochs.\nFor maximum performance, use pretrained models or train embeddings for many epochs, and the neural synthesizer on massive amounts of data and for many epochs. See the example script in `examples/train_nces.py` for this. Use `examples/train_nces.py -h` to view options.\x1b[0m"+"\n")
             try:
-                subprocess.run(f"dicee --path_single_kg {self.knowledge_base_path} --path_to_store_single_run temp_embeddings --backend rdflib --save_embeddings_as_csv --num_epochs 20 --model DeCaL --embedding_dim 128",
+                path_temp_embeddings = self.path_temp_embeddings if self.path_temp_embeddings and isinstance(self.path_temp_embeddings, str) else "temp_embeddings"
+                subprocess.run(f"dicee --path_single_kg {self.knowledge_base_path} --path_to_store_single_run {path_temp_embeddings} --backend rdflib --save_embeddings_as_csv --num_epochs {self.dicee_epochs} --lr {self.dicee_lr} --model {self.dicee_model} --embedding_dim {self.dicee_emb_dim} --eval_mode test",
                  shell = True, executable="/bin/bash")
-                assert os.path.exists("./temp_embeddings/DeCaL_entity_embeddings.csv"), "It seems that embeddings were not stored at the expected directory (/temp_embeddings/DeCaL_entity_embeddings.csv)"
+                assert os.path.exists(f"{path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv"), f"It seems that embeddings were not stored at the expected directory ({path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv)"
             except Exception:
                 raise ValueError("\nPlease try providing the absolute path to the knowledge base, e.g., /home/ndah/Dev/Ontolean/KGs/Family/family-benchmark_rich_background.owl\n")
-            self.path_of_embeddings = "./temp_embeddings/DeCaL_entity_embeddings.csv"
+            self.path_of_embeddings = f"{path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv"
             if self.auto_train:
-                print("\n"+"\x1b[0;30;43m"+f"Will also generate some training data and train {self.name} for 5 epochs"+"\x1b[0m"+"\n")
+                print("\n"+"\x1b[0;30;43m"+f"Will also train {self.name} for 5 epochs"+"\x1b[0m"+"\n")
             self.instance_embeddings = read_csv(self.path_of_embeddings)
             self.instance_embeddings.index = self.instance_embeddings.index.map(_rename_individuals)
             self.input_size = self.instance_embeddings.shape[1]
             self.model = self.get_synthesizer(self.path_of_trained_models)
+            print(f"\nUsing embeddings at: {self.path_of_embeddings} with {self.input_size} dimensions.\n")
             if self.auto_train:
                 # Train NCES for 5 epochs
                 self.train(epochs=5)
@@ -872,7 +876,7 @@ class NCES(BaseNCES):
                 self.inv_vocab = inv_vocab
             except Exception as e:
                 print(e,'\n')
-                raise FileNotFoundError(f"{path} does not contain at least one of `vocab.json, inv_vocab.npy or embedding_config.json`")
+                #raise FileNotFoundError(f"{path} does not contain at least one of `vocab.json, inv_vocab.npy or embedding_config.json`")
         elif self.load_pretrained and self.path_of_trained_models and glob.glob(self.path_of_trained_models + "/*.pt"):
             # Read pretrained model's vocabulary and config files
             try:
@@ -889,7 +893,8 @@ class NCES(BaseNCES):
                 self.vocab = vocab
                 self.inv_vocab = inv_vocab
             except Exception:
-                raise FileNotFoundError(f"{self.path_of_trained_models} does not contain at least one of `vocab.json, inv_vocab.npy or embedding_config.json`")
+                pass
+                #raise FileNotFoundError(f"{self.path_of_trained_models} does not contain at least one of `vocab.json, inv_vocab.npy or embedding_config.json`")
 
         m1 = SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length,
                                    self.input_size, self.proj_dim, self.num_heads, self.num_seeds, self.m,
@@ -1169,7 +1174,6 @@ class NCES2(BaseNCES):
                  num_heads, num_seeds, m, ln, learning_rate, tmax, eta_min, clip_value,
                  batch_size, num_workers, max_length, load_pretrained, verbose)
         
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.triples_data = TriplesData(knowledge_base_path)
         self.num_entities = len(self.triples_data.entity2idx)
         self.num_relations = len(self.triples_data.relation2idx)

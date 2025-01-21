@@ -28,6 +28,7 @@ from ontolearn.knowledge_base import KnowledgeBase
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.parser import DLSyntaxParser
 import numpy as np
+import torch
 from torch.functional import F
 from torch.nn.utils.rnn import pad_sequence
 from abc import abstractmethod
@@ -37,9 +38,9 @@ from ontolearn.metrics import F1
 
 class BaseNCES:
 
-    def __init__(self, knowledge_base_path, nces2_or_roces, quality_func, num_predictions, auto_train=True, proj_dim=128, drop_prob=0.1,
-                 num_heads=4, num_seeds=1, m=32, ln=False, learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0,
+    def __init__(self, knowledge_base_path, nces2_or_roces, quality_func, num_predictions, auto_train=True, proj_dim=128, drop_prob=0.1, num_heads=4, num_seeds=1, m=32, ln=False, learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0,
                  batch_size=256, num_workers=4, max_length=48, load_pretrained=True, verbose: int = 0):
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         kb = KnowledgeBase(path=knowledge_base_path)
         self.kb_namespace = list(kb.ontology.classes_in_signature())[0].iri.get_namespace()
         self.dl_parser = DLSyntaxParser(self.kb_namespace)
