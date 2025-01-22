@@ -54,7 +54,7 @@ def start(args):
     else:
         synthesizer = ROCES(knowledge_base_path=args.kb, auto_train=False, k=5, max_length=48, proj_dim=128, embedding_dim=args.embedding_dim,
          drop_prob=0.1, num_heads=4, num_seeds=1, m=[32, 64, 128], load_pretrained=args.load_pretrained, path_of_trained_models=args.path_of_trained_models, verbose=True)
-    synthesizer.train(training_data, epochs=args.epochs, batch_size=args.batch_size, learning_rate=args.lr, tmax=args.tmax, max_num_lps=args.max_num_lps, refinement_expressivity=args.refinement_expressivity, refs_sample_size=args.sample_size, storage_path=args.storage_path)
+    synthesizer.train(training_data, epochs=args.epochs, batch_size=args.batch_size, learning_rate=args.lr, clip_value=1.0, tmax=args.tmax, max_num_lps=args.max_num_lps, refinement_expressivity=args.refinement_expressivity, refs_sample_size=args.sample_size, storage_path=args.storage_path)
 
 if __name__ == '__main__':
     set_seed(42)
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=500, help='Number of training epochs')
     parser.add_argument('--dicee_model', type=str, default="DeCaL", help='The model to use for DICE embeddings (only for NCES)')
     parser.add_argument('--dicee_emb_dim', type=int, default=128, help='Number of embedding dimensions for DICE embeddings (only for NCES)')
-    parser.add_argument('--dicee_epochs', type=int, default=100, help='Number of training epochs for the NCES (DICE) embeddings (only for NCES)')
+    parser.add_argument('--dicee_epochs', type=int, default=300, help='Number of training epochs for the NCES (DICE) embeddings (only for NCES)')
     parser.add_argument('--dicee_lr', type=float, default=0.01, help='Learning rate for computing DICE embeddings (only for NCES)')
     parser.add_argument('--batch_size', type=int, default=256, help='Minibatch size for training')
     parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate for training. The optimizer is Adam.')

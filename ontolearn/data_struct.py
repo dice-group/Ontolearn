@@ -32,6 +32,7 @@ import pandas as pd
 import numpy as np
 import random
 from rdflib import graph
+from .nces_utils import try_get_embs
 
 
 class PrepareBatchOfPrediction(torch.utils.data.Dataset):  # pragma: no cover
@@ -193,11 +194,12 @@ class TriplesData:
         
 class CLIPDataset(torch.utils.data.Dataset):  # pragma: no cover
 
-    def __init__(self, data: list, embeddings, shuffle_examples, example_sizes: list=None,
+    def __init__(self, data, embeddings, num_examples, shuffle_examples, example_sizes=None,
                  k=5, sorted_examples=True):
         super().__init__()
         self.data = data
         self.embeddings = embeddings
+        self.num_examples = num_examples
         self.shuffle_examples = shuffle_examples
         self.example_sizes = example_sizes
         self.k = k
@@ -210,6 +212,7 @@ class CLIPDataset(torch.utils.data.Dataset):  # pragma: no cover
         key, value = self.data[idx]
         pos = value['positive examples']
         neg = value['negative examples']
+        pos, neg = try_get_embs(pos, neg, self.embeddings, self.num_examples)
         length = value['length']
         if self.example_sizes is not None:
             k_pos, k_neg = random.choice(self.example_sizes)
@@ -241,11 +244,12 @@ class CLIPDataset(torch.utils.data.Dataset):  # pragma: no cover
     
 class CLIPDatasetInference(torch.utils.data.Dataset):  # pragma: no cover
 
-    def __init__(self, data: list, embeddings, shuffle_examples,
+    def __init__(self, data: list, embeddings, num_examples, shuffle_examples,
                  sorted_examples=True):
         super().__init__()
         self.data = data
         self.embeddings = embeddings
+        self.num_examples = num_examples
         self.shuffle_examples = shuffle_examples
         self.sorted_examples = sorted_examples
 
@@ -254,6 +258,7 @@ class CLIPDatasetInference(torch.utils.data.Dataset):  # pragma: no cover
 
     def __getitem__(self, idx):
         _, pos, neg = self.data[idx]
+        pos, neg = try_get_embs(pos, neg, self.embeddings, self.num_examples)
         if self.sorted_examples:
             pos, neg = sorted(pos), sorted(neg)
         elif self.shuffle_examples:
@@ -313,10 +318,11 @@ class NCESBaseDataset:  # pragma: no cover
 
 class NCESDataset(NCESBaseDataset, torch.utils.data.Dataset):  # pragma: no cover
 
-    def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, max_length, example_sizes=None, sorted_examples=True):
+    def __init__(self, data, embeddings, num_examples, vocab, inv_vocab, shuffle_examples, max_length, example_sizes=None, sorted_examples=True):
         super().__init__(vocab, inv_vocab, max_length)
         self.data = data
         self.embeddings = embeddings
+        self.num_examples = num_examples
         self.shuffle_examples = shuffle_examples
         self.example_sizes = example_sizes
         self.sorted_examples = sorted_examples
@@ -328,6 +334,7 @@ class NCESDataset(NCESBaseDataset, torch.utils.data.Dataset):  # pragma: no cove
         key, value = self.data[idx]
         pos = value['positive examples']
         neg = value['negative examples']
+        pos, neg = try_get_embs(pos, neg, self.embeddings, self.num_examples)
         if self.example_sizes is not None:
             k_pos, k_neg = random.choice(self.example_sizes)
             k_pos = min(k_pos, len(pos))
@@ -338,27 +345,26 @@ class NCESDataset(NCESBaseDataset, torch.utils.data.Dataset):  # pragma: no cove
             selected_pos = pos
             selected_neg = neg
 
-        selected_pos = list(filter(lambda x: x in self.embeddings, pos))
-        selected_neg = list(filter(lambda x: x in self.embeddings, neg))
-
         labels, length = self.get_labels(key)
 
         try:
             datapoint_pos = torch.FloatTensor(self.embeddings.loc[selected_pos].values.squeeze())
             datapoint_neg = torch.FloatTensor(self.embeddings.loc[selected_neg].values.squeeze())
-        except:
-            #print(f'\nSome individuals are not found in embedding matrix: {list(filter(lambda x: x not in self.embeddings, pos+neg))}')
-            return torch.zeros(len(pos), self.embeddings.shape[1]), torch.zeros(len(neg), self.embeddings.shape[1]), torch.cat([torch.tensor(labels), self.vocab['PAD'] * torch.ones(max(0, self.max_length-length))]).long()
+        except Exception as e:
+            print(e)
+            return None
+            #torch.zeros(len(pos), self.embeddings.shape[1]), torch.zeros(len(neg), self.embeddings.shape[1]), torch.cat([torch.tensor(labels), self.vocab['PAD'] * torch.ones(max(0, self.max_length-length))]).long()
         
         return datapoint_pos, datapoint_neg, torch.cat([torch.tensor(labels), self.vocab['PAD'] * torch.ones(max(0, self.max_length-length))]).long()
 
 
 class NCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):  # pragma: no cover
 
-    def __init__(self, data: list, embeddings, vocab, inv_vocab, shuffle_examples, max_length=48, sorted_examples=True):
+    def __init__(self, data, embeddings, num_examples, vocab, inv_vocab, shuffle_examples, max_length=48, sorted_examples=True):
         super().__init__(vocab, inv_vocab, max_length)
         self.data = data
         self.embeddings = embeddings
+        self.num_examples = num_examples
         self.shuffle_examples = shuffle_examples
         self.sorted_examples = sorted_examples
 
@@ -367,14 +373,12 @@ class NCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):  # pragma
 
     def __getitem__(self, idx):
         _, pos, neg = self.data[idx]
+        pos, neg = try_get_embs(pos, neg, self.embeddings, self.num_examples)
         if self.sorted_examples:
             pos, neg = sorted(pos), sorted(neg)
         elif self.shuffle_examples:
             random.shuffle(pos)
             random.shuffle(neg)
-
-        selected_pos = list(filter(lambda x: x in self.embeddings, pos))
-        selected_neg = list(filter(lambda x: x in self.embeddings, neg))
         
         try:
             datapoint_pos = torch.FloatTensor(self.embeddings.loc[selected_pos].values.squeeze())
@@ -388,10 +392,11 @@ class NCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):  # pragma
 
 class ROCESDataset(NCESBaseDataset, torch.utils.data.Dataset):
     
-    def __init__(self, data, triples_data, k, vocab, inv_vocab, max_length, sampling_strategy="p"):
+    def __init__(self, data, triples_data, num_examples, k, vocab, inv_vocab, max_length, sampling_strategy="p"):
         super(ROCESDataset, self).__init__(vocab, inv_vocab, max_length)
         self.data = data
         self.triples_data = triples_data
+        self.num_examples = num_examples
         self.k = k
         self.sampling_strategy = sampling_strategy
         
@@ -410,6 +415,7 @@ class ROCESDataset(NCESBaseDataset, torch.utils.data.Dataset):
         key, value = self.data[idx]
         pos = value['positive examples']
         neg = value['negative examples']
+        pos, neg = try_get_embs(pos, neg, self.embeddings, self.num_examples)
         if self.sampling_strategy == 'p':
             prob_pos_set = 1.0/(1+np.array(range(min(self.k, len(pos)), len(pos)+1, self.k)))
             prob_pos_set = prob_pos_set/prob_pos_set.sum()
@@ -440,7 +446,7 @@ class ROCESDataset(NCESBaseDataset, torch.utils.data.Dataset):
     
 class ROCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):
     
-    def __init__(self, data, triples_data, k, vocab, inv_vocab, max_length, num_examples, sampling_strategy='p', num_pred_per_lp=1):
+    def __init__(self, data, triples_data, num_examples, k, vocab, inv_vocab, max_length, sampling_strategy='p', num_pred_per_lp=1):
         super(ROCESDatasetInference, self).__init__(vocab, inv_vocab, max_length)
         self.data = data
         self.triples_data = triples_data
@@ -461,7 +467,7 @@ class ROCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):
     
     def __getitem__(self, idx):
         _, pos, neg = self.data[idx]
-        
+        pos, neg = try_get_embs(pos, neg, self.embeddings, self.num_examples)
         if self.sampling_strategy == 'p':
             prob_pos_set = 1.0/(1+np.array(range(min(self.k, len(pos)), len(pos)+1, self.k)))
             prob_pos_set = prob_pos_set/prob_pos_set.sum()

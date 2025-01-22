@@ -30,6 +30,7 @@ from tokenizers.pre_tokenizers import WhitespaceSplit
 from transformers import PreTrainedTokenizerFast
 import os
 import random
+import torch, numpy as np
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -53,3 +54,81 @@ class SimpleSolution:
             random.shuffle(self.atomic_concept_names)
             atomic_classes = self.atomic_concept_names[:3]
         return " ⊔ ".join(atomic_classes)
+
+
+def sample_examples(pos, neg, num_ex):
+    if min(len(pos), len(neg)) >= num_ex // 2:
+        if len(pos) > len(neg):
+            num_neg_ex = num_ex // 2
+            num_pos_ex = num_ex - num_neg_ex
+        else:
+            num_pos_ex = num_ex // 2
+            num_neg_ex = num_ex - num_pos_ex
+    elif len(pos) + len(neg) >= num_ex and len(pos) > len(neg):
+        num_neg_ex = len(neg)
+        num_pos_ex = num_ex - num_neg_ex
+    elif len(pos) + len(neg) >= num_ex and len(pos) < len(neg):
+        num_pos_ex = len(pos)
+        num_neg_ex = num_ex - num_pos_ex
+    else:
+        num_pos_ex = len(pos)
+        num_neg_ex = len(neg)
+    positive = np.random.choice(pos, size=min(num_pos_ex, len(pos)), replace=False)
+    negative = np.random.choice(neg, size=min(num_neg_ex, len(neg)), replace=False)
+    return positive, negative
+    
+def try_get_embs(pos, neg, embeddings, num_examples):
+    """
+    Depending on the KGE model, some individuals do not get assigned to any embedding during training. This function filters out such individuals from the provided positive/negative examples. It also
+    """
+    try:
+        _ = embeddings.loc[pos]
+    except Exception as e:
+        # Some individuals do not appear in the embeddings
+        new_pos = list(filter(lambda x: x in embeddings.index, pos))
+        if new_pos:
+            pos = new_pos + new_pos[:len(pos)-len(new_pos)]
+        else:
+            i = 0
+            while not new_pos:
+                new_pos, _ = sample_examples(examples["positive examples"], examples["negative examples"], num_examples)
+                new_pos = list(filter(lambda x: x in embeddings.index, new_pos))
+                i += 1
+                if i > 3:
+                    break
+            if not new_pos:
+                pos = np.random.choice(list(embeddings.index), num_examples//2)
+            elif len(new_pos) > len(pos):
+                pos = new_pos[:len(pos)]
+            else:
+                pos = new_pos + new_pos[:len(pos)-len(new_pos)]
+        
+    if len(pos) + len(neg) < num_examples:
+        neg = neg + neg[:num_examples-len(pos)-len(neg)]
+        
+    elif len(pos) + len(neg) > num_examples:
+        neg = neg[:num_examples-len(pos)]
+        
+    try:
+        _ = embeddings.loc[neg]
+    except Exception as e:
+        # Some individuals do not appear in the embeddings
+        new_neg = list(filter(lambda x: x in embeddings.index, neg))
+        if new_neg:
+            neg = new_neg + new_neg[:len(neg)-len(new_neg)]
+        else:
+            i = 0
+            while not new_neg:
+                _, new_neg = sample_examples(examples["positive examples"], examples["negative examples"], num_examples)
+                new_neg = list(filter(lambda x: x in embeddings.index, new_neg))
+                i += 1
+                if i > 3:
+                    break
+            if not new_neg:
+                neg = np.random.choice(list(embeddings.index), num_examples-len(pos))
+            elif len(new_neg) > len(neg):
+                neg = new_neg[:len(neg)]
+            else:
+                neg = new_neg + new_neg[:len(neg)-len(new_neg)]
+
+    return pos, neg

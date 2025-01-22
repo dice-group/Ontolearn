@@ -687,7 +687,7 @@ class CLIP(CELOE):
         assert self.load_pretrained and self.pretrained_predictor_name, \
             "No pretrained model found. Please first train length predictors, see the <<train>> method below"
 
-        dataset = CLIPDatasetInference([("", pos_str, neg_str)], self.instance_embeddings, False, False)
+        dataset = CLIPDatasetInference([("", pos_str, neg_str)], self.instance_embeddings, self.num_examples, False, False)
         dataloader = DataLoader(dataset, batch_size=1, num_workers=self.num_workers,
                                 collate_fn=self.collate_batch_inference, shuffle=False)
         x_pos, x_neg = next(iter(dataloader))
@@ -780,7 +780,7 @@ class CLIP(CELOE):
     def train(self, data: Iterable[List[Tuple]], epochs=300, batch_size=256, learning_rate=1e-3, decay_rate=0.0,
               clip_value=5.0, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True,
               example_sizes=None, shuffle_examples=False):
-        train_dataset = CLIPDataset(data, self.instance_embeddings, shuffle_examples=shuffle_examples, example_sizes=example_sizes)
+        train_dataset = CLIPDataset(data, self.instance_embeddings, num_examples=self.num_examples, shuffle_examples=shuffle_examples, example_sizes=example_sizes)
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=self.num_workers,
                                       collate_fn=self.collate_batch, shuffle=True)
         if storage_path is None:
@@ -814,15 +814,15 @@ class NCES(BaseNCES):
         self.rnn_n_layers = rnn_n_layers
         self.sorted_examples = sorted_examples
         self._set_prerequisites()
+        self.has_renamed_inds = False
 
+    def _rename_individuals(self, individual_name):
+        if isinstance(individual_name, str) and '/' in individual_name:
+            return individual_name.split('/')[-1]
+        return individual_name
+        
     def _set_prerequisites(self):
-
-        def _rename_individuals(individual_name):
-            if isinstance(individual_name, str) and '/' in individual_name:
-                return individual_name.split('/')[-1]
-            return individual_name
-
-        if self.path_of_embeddings is None or (os.path.isdir(self.path_of_embeddings) and not glob.glob(self.path_of_embeddings+'*_entity_embeddings.csv')) or not self.path_of_embeddings.endswith('.csv'):
+        if self.path_of_embeddings is None or (os.path.isdir(self.path_of_embeddings) and not glob.glob(self.path_of_embeddings+'*_entity_embeddings.csv')) or not os.path.exists(self.path_of_embeddings) or not self.path_of_embeddings.endswith('.csv'):
             if not os.path.exists(self.knowledge_base_path):
                 raise ValueError(f"{knowledge_base_path} not found")
             try:
@@ -844,7 +844,6 @@ class NCES(BaseNCES):
             if self.auto_train:
                 print("\n"+"\x1b[0;30;43m"+f"Will also train {self.name} for 5 epochs"+"\x1b[0m"+"\n")
             self.instance_embeddings = read_csv(self.path_of_embeddings)
-            self.instance_embeddings.index = self.instance_embeddings.index.map(_rename_individuals)
             self.input_size = self.instance_embeddings.shape[1]
             self.model = self.get_synthesizer(self.path_of_trained_models)
             print(f"\nUsing embeddings at: {self.path_of_embeddings} with {self.input_size} dimensions.\n")
@@ -854,7 +853,6 @@ class NCES(BaseNCES):
                 self.refresh(self.path_of_trained_models)
         else:
             self.instance_embeddings = read_csv(self.path_of_embeddings)
-            self.instance_embeddings.index = self.instance_embeddings.index.map(_rename_individuals)
             self.input_size = self.instance_embeddings.shape[1]
             self.model = self.get_synthesizer(self.path_of_trained_models)
 
@@ -1007,7 +1005,7 @@ class NCES(BaseNCES):
 
         assert self.load_pretrained and self.learner_names, "No pretrained model found. Please first train NCES, see the <<train>> method below"
 
-        dataset = NCESDatasetInference([("", Pos_str, Neg_str) for (Pos_str, Neg_str) in zip(Pos, Neg)], self.instance_embeddings,
+        dataset = NCESDatasetInference([("", Pos_str, Neg_str) for (Pos_str, Neg_str) in zip(Pos, Neg)], self.instance_embeddings, self.num_examples,
                                           self.vocab, self.inv_vocab, shuffle_examples=False, max_length=self.max_length, sorted_examples=self.sorted_examples)
 
         dataloader = DataLoader(dataset, batch_size=self.batch_size,
@@ -1040,6 +1038,9 @@ class NCES(BaseNCES):
         if isinstance(pos, set) or isinstance(pos, frozenset):
             pos_list = list(pos)
             neg_list = list(neg)
+            if not "/" in pos_list[0] and not self.has_renamed_inds:
+                self.instance_embeddings.index = self.instance_embeddings.index.map(self._rename_individuals)
+                self.has_renamed_inds = True
             if self.sorted_examples:
                 pos_list = sorted(pos_list)
                 neg_list = sorted(neg_list)
@@ -1101,7 +1102,7 @@ class NCES(BaseNCES):
         assert self.load_pretrained and self.learner_names, \
             "No pretrained model found. Please first train NCES, refer to the <<train>> method"
         dataset = [self.convert_to_list_str_from_iterable(datapoint) for datapoint in dataset]
-        dataset = NCESDatasetInference(dataset, self.instance_embeddings, self.vocab, self.inv_vocab, shuffle_examples, max_length=self.max_length)
+        dataset = NCESDatasetInference(dataset, self.instance_embeddings, self.num_examples, self.vocab, self.inv_vocab, shuffle_examples, max_length=self.max_length)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch_inference, shuffle=False)
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions_as_owl_class_expressions = []
@@ -1153,7 +1154,10 @@ class NCES(BaseNCES):
         if data is None:
             data = self.generate_training_data(self.knowledge_base_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity,
                                                refs_sample_size=refs_sample_size, storage_path=storage_path)
-
+        example_ind = data[0][-1]["positive examples"][0]
+        if not "/" in example_ind and not self.has_renamed_inds:
+            self.instance_embeddings.index = self.instance_embeddings.index.map(self._rename_individuals)
+            self.has_renamed_inds = True
         trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, tmax=tmax, eta_min=eta_min,
                               clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
         trainer.train(data=data, save_model=save_model, optimizer=optimizer, record_runtime=record_runtime)
@@ -1357,9 +1361,10 @@ class NCES2(BaseNCES):
         dataloaders = []
         for num_ind_points in self.model:
             dataset = ROCESDatasetInference([("", pos_str, neg_str)],
-                                              triples_data=self.triples_data, k=self.k if hasattr(self, "k") else None,
+                                              triples_data=self.triples_data, num_examples=self.num_examples,
+                                              k=self.k if hasattr(self, "k") else None,
                                               vocab=self.vocab, inv_vocab=self.inv_vocab,
-                                              max_length=self.max_length, num_examples=self.num_examples,
+                                              max_length=self.max_length,
                                               sampling_strategy=self.sampling_strategy,
                                               num_pred_per_lp=self.num_predictions)
             dataset.load_embeddings(self.model[num_ind_points]["emb_model"])
@@ -1453,9 +1458,9 @@ class NCES2(BaseNCES):
         dataloaders = []
         for num_ind_points in self.model:
             dataset = ROCESDatasetInference(data,
-                                            self.triples_data, k=self.k if hasattr(self, "k") else None,
+                                            self.triples_data, num_examples=self.num_examples, k=self.k if hasattr(self, "k") else None,
                                             vocab=self.vocab, inv_vocab=self.inv_vocab,
-                                            max_length=self.max_length, num_examples=self.num_examples,
+                                            max_length=self.max_length,
                                             sampling_strategy=self.sampling_strategy,
                                             num_pred_per_lp=self.num_predictions)
             dataset.load_embeddings(self.model[num_ind_points]["emb_model"])

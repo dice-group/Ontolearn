@@ -38,7 +38,6 @@ import time
 from collections import defaultdict
 from ontolearn.data_struct import NCESDataset, ROCESDataset, TriplesDataset
 
-
 def before_pad(arg):
     arg_temp = []
     for atm in arg:
@@ -225,7 +224,7 @@ class NCESTrainer:
             if model["emb_model"] is not None:
                 # When there is no embedding_model, then we are training NCES2 or ROCES and we need to repeatedly query the embedding model for the updated embeddings
                 train_dataset = ROCESDataset(data, self.synthesizer.triples_data, k=self.synthesizer.k if hasattr(self.synthesizer, 'k') else None, vocab=self.synthesizer.vocab, inv_vocab=self.synthesizer.inv_vocab,
-                                         max_length=self.synthesizer.max_length, sampling_strategy=self.synthesizer.sampling_strategy)
+                                         max_length=self.synthesizer.max_length, num_examples=self.synthesizer.num_examples, sampling_strategy=self.synthesizer.sampling_strategy)
                 train_dataset.load_embeddings(model["emb_model"]) # Load embeddings the first time
                 train_dataloader = DataLoader(train_dataset, batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch, shuffle=True)
                 # Get dataloader for the embedding model
@@ -234,8 +233,7 @@ class NCESTrainer:
                                           batch_size=2*self.batch_size, num_workers=self.num_workers, shuffle=True))
             else:
                 assert hasattr(self.synthesizer, "instance_embeddings"), "If no embedding model is available, `instance_embeddings` must be an attribute of the synthesizer since you are probably training NCES"
-                train_dataloader = DataLoader(NCESDataset(data, embeddings=self.synthesizer.instance_embeddings, vocab=self.synthesizer.vocab, inv_vocab=self.synthesizer.inv_vocab,
-                                                       shuffle_examples=shuffle_examples, max_length=self.synthesizer.max_length, example_sizes=example_sizes),
+                train_dataloader = DataLoader(NCESDataset(data, embeddings=self.synthesizer.instance_embeddings, num_examples=self.synthesizer.num_examples, vocab=self.synthesizer.vocab, inv_vocab=self.synthesizer.inv_vocab, shuffle_examples=shuffle_examples, max_length=self.synthesizer.max_length, example_sizes=example_sizes),
                                                        batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch, shuffle=True)
             Train_loss = []
             Train_acc = defaultdict(list)
