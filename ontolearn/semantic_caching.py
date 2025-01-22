@@ -446,6 +446,69 @@ def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cach
 
 
 
+
+def non_semantic_caching_size(func, cache_size):
+    '''This function implements a caching algorithm for ALC concepts without semantics.'''
+    cache = OrderedDict()  # Cache for instances
+    stats = {
+        'hits': 0,
+        'misses': 0,
+        'time': 0
+    }
+    
+    def wrapper(*args):
+        nonlocal stats
+        str_expression = owl_expression_to_dl(args[0])  
+
+        def retrieve_from_cache(expression):
+            if expression in cache:
+                # Move the accessed item to the end to mark it as recently used
+                cache.move_to_end(expression)
+                stats['hits'] += 1
+                return cache[expression]
+            else:
+                stats['misses'] += 1
+                return None
+
+        # Start timing before cache access and function execution
+        start_time = time.time()
+        
+        # Try to retrieve the result from the cache If result is in cache, return it directly
+        cached_result = retrieve_from_cache(str_expression)
+        if cached_result is not None:
+            stats['time'] += (time.time() - start_time)
+            return cached_result
+        
+        # Compute the result and store it in the cache
+        result = func(*args)
+        cache[str_expression] = result
+        
+        # Apply LRU strategy: remove the least recently used item if the cache exceeds its size
+        if len(cache) > cache_size:
+            cache.popitem(last=False)  # Remove the first item (least recently used)
+
+        stats['time'] += (time.time() - start_time)
+        return result
+    
+    # Function to get cache statistics
+    def get_stats():
+        total_requests = stats['hits'] + stats['misses']
+        hit_ratio = stats['hits'] / total_requests if total_requests > 0 else 0
+        miss_ratio = stats['misses'] / total_requests if total_requests > 0 else 0
+        avg_time = stats['time'] / total_requests if total_requests > 0 else 0
+        
+        return {
+            'hit_ratio': hit_ratio,
+            'miss_ratio': miss_ratio,
+            'average_time_per_request': avg_time,
+            'total_time': stats['time']
+        }
+    
+    wrapper.get_stats = get_stats
+    return wrapper
+
+
+
 def retrieve(expression:str, path_kg:str, path_kge_model:str) -> Tuple[Set[str], Set[str]]:
     'take a concept c and returns it set of retrieved individual'
 
@@ -476,7 +539,7 @@ def retrieve_other_reasoner(expression, path_kg, name_reasoner='HermiT'): # reas
          
 
 
-def run_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, eviction:str, random_seed:int, cache_type:str, shuffle_concepts:str):
+def run_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, eviction:str, random_seed:int, cache_type:str, shuffle_concepts:str):
 
     symbolic_kb = KnowledgeBase(path=path_kg)
     D = []
@@ -554,3 +617,162 @@ def run_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, evic
         'avg_jaccard_reas':  f"{sum(Avg_jaccard_reas) / len(Avg_jaccard_reas):.3f}",
         'strategy': eviction
     }, D
+
+
+
+def run_non_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, shuffle_concepts:str):
+
+    symbolic_kb = KnowledgeBase(path=path_kg)
+    D = []
+    Avg_jaccard = []
+    Avg_jaccard_reas = []
+    data_name = path_kg.split("/")[-1].split("/")[-1].split(".")[0]
+
+    if shuffle_concepts:
+        alc_concepts = get_shuffled_concepts(path_kg, data_name=data_name) 
+    else:
+        alc_concepts = concept_generator(path_kg)
+
+    if name_reasoner == 'EBR':
+        # cached_retriever = subsumption_based_caching(retrieve, cache_size=cache_size)
+        cached_retriever = non_semantic_caching_size(retrieve, cache_size=cache_size)
+    else:
+        # cached_retriever = subsumption_based_caching(retrieve, cache_size=cache_size)
+        cached_retriever = non_semantic_caching_size(retrieve_other_reasoner, cache_size=cache_size)
+
+    total_time_ebr = 0
+
+    for expr in alc_concepts: 
+        if name_reasoner == 'EBR':
+            time_start_cache = time.time()
+            A  = cached_retriever(expr, path_kg, path_kge) #Retrieval with cache
+            time_cache = time.time()-time_start_cache
+
+            time_start = time.time()
+            retrieve_ebr = retrieve(expr, path_kg, path_kge) #Retrieval without cache
+            time_ebr = time.time()-time_start
+            total_time_ebr += time_ebr
+
+        else:
+            time_start_cache = time.time()
+            A  = cached_retriever(expr, path_kg, name_reasoner)  #Retrieval with cache
+            time_cache = time.time()-time_start_cache
+
+            time_start = time.time()
+            retrieve_ebr = retrieve_other_reasoner(expr, path_kg, name_reasoner=name_reasoner) #Retrieval without cache
+            time_ebr = time.time()-time_start
+            total_time_ebr += time_ebr
+
+        ground_truth = concept_retrieval(symbolic_kb, expr)
+
+        jacc = jaccard_similarity(A, ground_truth)
+        jacc_reas = jaccard_similarity(retrieve_ebr, ground_truth)
+        Avg_jaccard.append(jacc)
+        Avg_jaccard_reas.append(jacc_reas)
+        D.append({'dataset':data_name,'Expression':owl_expression_to_dl(expr), "Type": type(expr).__name__ ,'cache_size':cache_size, "time_ebr":time_ebr, "time_cache": time_cache, "Jaccard":jacc})
+        print(f'Expression: {owl_expression_to_dl(expr)}')
+        print(f'Jaccard similarity: {jacc}')
+        # assert jacc == 1.0 
+
+    stats = cached_retriever.get_stats()
+    
+    print('-'*50)
+    print("Cache Statistics:")
+    print(f"Hit Ratio: {stats['hit_ratio']:.2f}")
+    print(f"Miss Ratio: {stats['miss_ratio']:.2f}")
+    print(f"Average Time per Request: {stats['average_time_per_request']:.4f} seconds")
+    print(f"Total Time with Caching: {stats['total_time']:.4f} seconds")
+    print(f"Total Time Without Caching: {total_time_ebr:.4f} seconds")
+    print(f"Total number of concepts: {len(alc_concepts)}")
+    print(f"Average Jaccard for the {data_name} dataset", sum(Avg_jaccard)/len(Avg_jaccard))
+
+    return {
+        'dataset': data_name,
+        'cache_size': cache_size,
+        'hit_ratio': f"{stats['hit_ratio']:.2f}",
+        'miss_ratio': f"{stats['miss_ratio']:.2f}",
+        'RT_cache': f"{stats['total_time']:.3f}",
+        'RT': f"{total_time_ebr:.3f}",
+        '#concepts': len(alc_concepts),
+        'avg_jaccard': f"{sum(Avg_jaccard) / len(Avg_jaccard):.3f}",
+        'avg_jaccard_reas':  f"{sum(Avg_jaccard_reas) / len(Avg_jaccard_reas):.3f}"
+    }, D
+
+
+
+
+
+# def subsumption_based_caching(func, cache_size):
+#     cache = {}  # Dictionary to store cached results
+    
+#     def store(concept, instances):
+#         # Check if cache limit will be exceeded
+#         if len(instances) + len(cache) > cache_size:
+#             purge(len(instances))  # Adjusted to ensure cache size limit
+#         # Add concept and instances to cache
+#         cache[concept] = instances
+
+#     def purge(needed_space):
+#         # Remove oldest items until there's enough space
+#         while len(cache) > needed_space:
+#             cache.pop(next(iter(cache)))
+
+#     def wrapper(*args):
+#         path_onto = args[1]
+#         onto = get_ontology(path_onto).load()
+        
+#         # Synchronize the reasoner (e.g., using Pellet)
+#         # with onto:
+#         #     sync_reasoner(infer_property_values=True)
+
+#         all_individuals = {a for a in onto.individuals()}       
+#         str_expression = owl_expression_to_dl(args[0])
+#         owl_expression = args[0]
+
+#         # Check cache for existing results
+#         if str_expression in cache:
+#             return cache[str_expression]
+
+#         super_concepts = set()
+#         namespace, class_name = owl_expression.str.split('#') 
+#         class_expression = f"{namespace.split('/')[-1]}.{class_name}"
+
+#         all_classes = [i for i in list(onto.classes())]
+
+#         for j in all_classes:
+#             if str(j) == class_expression:
+#                 class_expression = j
+    
+#         for D in list(cache.keys()):
+#             # print(owl_expression)
+#             # exit(0)
+#             if D in class_expression.ancestors():  # Check if C ⊑ D
+#                 super_concepts.add(D)
+
+#         print(super_concepts)
+#         exit(0)
+#         # Compute instances based on subsumption
+#         if len(super_concepts) == 0:
+#             instances = all_individuals
+#         else:
+#             instances = set.intersection(
+#                 *[wrapper(D, path_onto) for D in super_concepts]
+#             )
+
+#         # Filter instances by checking if each is an instance of the concept
+#         instance_set = set()
+    
+#         for individual in instances:
+#              for type_entry in individual.is_a:
+#                 type_iri = str(type_entry.iri)
+#                 if owl_expression.str == type_iri:
+#                     instance_set.add(individual)
+#                     break
+
+#         # Store in cache
+#         store(str_expression, instance_set)
+#         return instance_set
+
+#     return wrapper
+
+

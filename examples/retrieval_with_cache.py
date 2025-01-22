@@ -1,13 +1,13 @@
 
 import argparse 
 import pandas as pd
-from ontolearn.semantic_caching import run_cache, concept_generator
+from ontolearn.semantic_caching import run_semantic_cache, concept_generator, run_non_semantic_cache
 from plot_metrics import *
 import seaborn as sns
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--cache_size_ratios', type=list, default=[.1, .2, .4, .8, 1.], help="cache size is proportional to num_concepts, cache size = k * num_concepts")
-parser.add_argument('--path_kg', type=str, default=["KGs/Family/family.owl", "KGs/Family/father.owl"])
+parser.add_argument('--path_kg', type=str, default=["KGs/Family/family.owl"])
 parser.add_argument('--path_kge', type=list, default=None)
 parser.add_argument('--name_reasoner', type=str, default='EBR', choices=["EBR",'HermiT', 'Pellet', 'JFact', 'Openllet'])
 parser.add_argument('--eviction_strategy', type=str, default='LRU', choices=['LIFO', 'FIFO', 'LRU', 'MRU', 'RP'])
@@ -28,7 +28,7 @@ detailed_results = []
 for path_kg in args.path_kg:
     for cache_size in get_cache_size(args.cache_size_ratios, path_kg):
         for strategy in ['LIFO', 'FIFO', 'LRU', 'MRU', 'RP']:
-            result, detailed = run_cache(
+            result, detailed = run_semantic_cache(
                 path_kg=path_kg,
                 path_kge=args.path_kge,
                 cache_size=cache_size,
@@ -40,6 +40,29 @@ for path_kg in args.path_kg:
             )
             results.append(result)
             detailed_results.append(detailed)
+
+    data_name = result['dataset']
+    df = pd.DataFrame(results)
+    all_detailed_results = pd.DataFrame([item for sublist in detailed_results for item in sublist])
+    print(df)
+    
+    # Save to CSV
+    df.to_csv(f'caching_results_{data_name}/cache_experiments_{args.name_reasoner}_{data_name}_{args.cache_type}.csv', index=False)
+    all_detailed_results.to_csv(f'caching_results_{data_name}/detailled_experiments_{args.name_reasoner}_{data_name}_{args.cache_type}.csv', index=False)
+
+results = []
+detailed_results = []
+for path_kg in args.path_kg:
+    for cache_size in get_cache_size(args.cache_size_ratios, path_kg):
+        result, detailed = run_non_semantic_cache(
+            path_kg=path_kg,
+            path_kge=args.path_kge,
+            cache_size=cache_size,
+            name_reasoner=args.name_reasoner,
+            shuffle_concepts=args.shuffle_concepts
+        )
+        results.append(result)
+        detailed_results.append(detailed)
 
     data_name = result['dataset']
     df = pd.DataFrame(results)
