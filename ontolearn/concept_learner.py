@@ -813,8 +813,8 @@ class NCES(BaseNCES):
         self.dicee_lr = dicee_lr
         self.rnn_n_layers = rnn_n_layers
         self.sorted_examples = sorted_examples
-        self._set_prerequisites()
         self.has_renamed_inds = False
+        self._set_prerequisites()
 
     def _rename_individuals(self, individual_name):
         if isinstance(individual_name, str) and '/' in individual_name:
