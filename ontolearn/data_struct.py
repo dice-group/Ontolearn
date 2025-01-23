@@ -367,12 +367,14 @@ class NCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):  # pragma
         self.num_examples = num_examples
         self.shuffle_examples = shuffle_examples
         self.sorted_examples = sorted_examples
-
+        
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
         _, pos, neg = self.data[idx]
+        #print(pos)
+        #print(neg)
         pos, neg = try_get_embs(pos, neg, self.embeddings, self.num_examples)
         if self.sorted_examples:
             pos, neg = sorted(pos), sorted(neg)
@@ -381,10 +383,10 @@ class NCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):  # pragma
             random.shuffle(neg)
         
         try:
-            datapoint_pos = torch.FloatTensor(self.embeddings.loc[selected_pos].values.squeeze())
-            datapoint_neg = torch.FloatTensor(self.embeddings.loc[selected_neg].values.squeeze())
+            datapoint_pos = torch.FloatTensor(self.embeddings.loc[pos].values.squeeze())
+            datapoint_neg = torch.FloatTensor(self.embeddings.loc[neg].values.squeeze())
         except:
-            print(f'\nSome individuals are not found in embedding matrix: {list(filter(lambda x: x not in self.embeddings, pos+neg))}')
+            print(f'\nSome individuals are not found in embedding matrix: {list(filter(lambda x: x not in self.embeddings.index, pos+neg))}')
             return torch.zeros(len(pos), self.embeddings.shape[1]), torch.zeros(len(neg), self.embeddings.shape[1])
         
         return datapoint_pos, datapoint_neg
@@ -415,7 +417,6 @@ class ROCESDataset(NCESBaseDataset, torch.utils.data.Dataset):
         key, value = self.data[idx]
         pos = value['positive examples']
         neg = value['negative examples']
-        pos, neg = try_get_embs(pos, neg, self.embeddings, self.num_examples)
         if self.sampling_strategy == 'p':
             prob_pos_set = 1.0/(1+np.array(range(min(self.k, len(pos)), len(pos)+1, self.k)))
             prob_pos_set = prob_pos_set/prob_pos_set.sum()
@@ -467,7 +468,6 @@ class ROCESDatasetInference(NCESBaseDataset, torch.utils.data.Dataset):
     
     def __getitem__(self, idx):
         _, pos, neg = self.data[idx]
-        pos, neg = try_get_embs(pos, neg, self.embeddings, self.num_examples)
         if self.sampling_strategy == 'p':
             prob_pos_set = 1.0/(1+np.array(range(min(self.k, len(pos)), len(pos)+1, self.k)))
             prob_pos_set = prob_pos_set/prob_pos_set.sum()

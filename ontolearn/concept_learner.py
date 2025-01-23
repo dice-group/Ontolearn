@@ -874,7 +874,7 @@ class NCES(BaseNCES):
                 self.inv_vocab = inv_vocab
             except Exception as e:
                 print(e,'\n')
-                #raise FileNotFoundError(f"{path} does not contain at least one of `vocab.json, inv_vocab.npy or embedding_config.json`")
+                raise FileNotFoundError(f"{path} does not contain at least one of `vocab.json, inv_vocab.npy or embedding_config.json`")
         elif self.load_pretrained and self.path_of_trained_models and glob.glob(self.path_of_trained_models + "/*.pt"):
             # Read pretrained model's vocabulary and config files
             try:
@@ -891,8 +891,7 @@ class NCES(BaseNCES):
                 self.vocab = vocab
                 self.inv_vocab = inv_vocab
             except Exception:
-                pass
-                #raise FileNotFoundError(f"{self.path_of_trained_models} does not contain at least one of `vocab.json, inv_vocab.npy or embedding_config.json`")
+                raise FileNotFoundError(f"{self.path_of_trained_models} does not contain at least one of `vocab.json, inv_vocab.npy or embedding_config.json`")
 
         m1 = SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length,
                                    self.input_size, self.proj_dim, self.num_heads, self.num_seeds, self.m,
@@ -951,28 +950,6 @@ class NCES(BaseNCES):
             self.load_pretrained = True
         self.model = self.get_synthesizer(path)
 
-    def sample_examples(self, pos, neg):  # pragma: no cover
-        assert type(pos[0]) == type(neg[0]), f"The two iterables pos and neg must be of same type, got {type(pos[0])} and {type(neg[0])}"
-        num_ex = self.num_examples
-        if min(len(pos), len(neg)) >= num_ex // 2:
-            if len(pos) > len(neg):
-                num_neg_ex = num_ex // 2
-                num_pos_ex = num_ex - num_neg_ex
-            else:
-                num_pos_ex = num_ex // 2
-                num_neg_ex = num_ex - num_pos_ex
-        elif len(pos) + len(neg) >= num_ex and len(pos) > len(neg):
-            num_neg_ex = len(neg)
-            num_pos_ex = num_ex - num_neg_ex
-        elif len(pos) + len(neg) >= num_ex and len(pos) < len(neg):
-            num_pos_ex = len(pos)
-            num_neg_ex = num_ex - num_pos_ex
-        else:
-            num_pos_ex = len(pos)
-            num_neg_ex = len(neg)
-        positive = np.random.choice(pos, size=min(num_pos_ex, len(pos)), replace=False)
-        negative = np.random.choice(neg, size=min(num_neg_ex, len(neg)), replace=False)
-        return positive, negative
 
     def get_prediction(self, x_pos, x_neg):
         models = [self.model[name]["model"] for name in self.model]
@@ -1000,8 +977,8 @@ class NCES(BaseNCES):
             neg_str = neg
         else:
             raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
-        Pos = np.random.choice(pos_str, size=(self.num_predictions, len(pos_str)), replace=True)
-        Neg = np.random.choice(neg_str, size=(self.num_predictions, len(neg_str)), replace=True)
+        Pos = np.random.choice(pos_str, size=(self.num_predictions, len(pos_str)), replace=True).tolist()
+        Neg = np.random.choice(neg_str, size=(self.num_predictions, len(neg_str)), replace=True).tolist()
 
         assert self.load_pretrained and self.learner_names, "No pretrained model found. Please first train NCES, see the <<train>> method below"
 
@@ -1038,7 +1015,7 @@ class NCES(BaseNCES):
         if isinstance(pos, set) or isinstance(pos, frozenset):
             pos_list = list(pos)
             neg_list = list(neg)
-            if not "/" in pos_list[0] and not self.has_renamed_inds:
+            if not "/" in pos_list[0].str and not self.has_renamed_inds:
                 self.instance_embeddings.index = self.instance_embeddings.index.map(self._rename_individuals)
                 self.has_renamed_inds = True
             if self.sorted_examples:
@@ -1308,29 +1285,6 @@ class NCES2(BaseNCES):
         if path is not None:
             self.load_pretrained = True
         self.model = self.get_synthesizer(path)
-
-    def sample_examples(self, pos, neg):  # pragma: no cover
-        assert type(pos[0]) == type(neg[0]), f"The two iterables pos and neg must be of same type, got {type(pos[0])} and {type(neg[0])}"
-        num_ex = self.num_examples
-        if min(len(pos), len(neg)) >= num_ex // 2:
-            if len(pos) > len(neg):
-                num_neg_ex = num_ex // 2
-                num_pos_ex = num_ex - num_neg_ex
-            else:
-                num_pos_ex = num_ex // 2
-                num_neg_ex = num_ex - num_pos_ex
-        elif len(pos) + len(neg) >= num_ex and len(pos) > len(neg):
-            num_neg_ex = len(neg)
-            num_pos_ex = num_ex - num_neg_ex
-        elif len(pos) + len(neg) >= num_ex and len(pos) < len(neg):
-            num_pos_ex = len(pos)
-            num_neg_ex = num_ex - num_pos_ex
-        else:
-            num_pos_ex = len(pos)
-            num_neg_ex = len(neg)
-        positive = np.random.choice(pos, size=min(num_pos_ex, len(pos)), replace=False)
-        negative = np.random.choice(neg, size=min(num_neg_ex, len(neg)), replace=False)
-        return positive, negative
 
     def get_prediction(self, dataloaders):
         for i, (num_ind_points, dataloader) in enumerate(zip(self.m, dataloaders)):

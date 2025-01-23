@@ -75,7 +75,7 @@ def sample_examples(pos, neg, num_ex):
         num_neg_ex = len(neg)
     positive = np.random.choice(pos, size=min(num_pos_ex, len(pos)), replace=False)
     negative = np.random.choice(neg, size=min(num_neg_ex, len(neg)), replace=False)
-    return positive, negative
+    return positive.tolist(), negative.tolist()
     
 def try_get_embs(pos, neg, embeddings, num_examples):
     """
@@ -86,18 +86,20 @@ def try_get_embs(pos, neg, embeddings, num_examples):
     except Exception as e:
         # Some individuals do not appear in the embeddings
         new_pos = list(filter(lambda x: x in embeddings.index, pos))
-        if new_pos:
+        if new_pos and len(new_pos) >= len(pos)-len(new_pos):
             pos = new_pos + new_pos[:len(pos)-len(new_pos)]
         else:
             i = 0
             while not new_pos:
-                new_pos, _ = sample_examples(examples["positive examples"], examples["negative examples"], num_examples)
+                new_pos, _ = sample_examples(pos, neg, num_examples)
                 new_pos = list(filter(lambda x: x in embeddings.index, new_pos))
                 i += 1
                 if i > 3:
                     break
             if not new_pos:
-                pos = np.random.choice(list(embeddings.index), num_examples//2)
+                pos = np.random.choice(list(embeddings.index), num_examples//2).tolist()
+                #if contains_prefix:
+                #    pos = list(map(lambda x: x.split("/")[-1], pos))
             elif len(new_pos) > len(pos):
                 pos = new_pos[:len(pos)]
             else:
@@ -114,18 +116,18 @@ def try_get_embs(pos, neg, embeddings, num_examples):
     except Exception as e:
         # Some individuals do not appear in the embeddings
         new_neg = list(filter(lambda x: x in embeddings.index, neg))
-        if new_neg:
+        if new_neg and len(new_neg) >= len(neg)-len(new_neg):
             neg = new_neg + new_neg[:len(neg)-len(new_neg)]
         else:
             i = 0
             while not new_neg:
-                _, new_neg = sample_examples(examples["positive examples"], examples["negative examples"], num_examples)
+                _, new_neg = sample_examples(pos, neg, num_examples)
                 new_neg = list(filter(lambda x: x in embeddings.index, new_neg))
                 i += 1
                 if i > 3:
                     break
             if not new_neg:
-                neg = np.random.choice(list(embeddings.index), num_examples-len(pos))
+                neg = np.random.choice(list(embeddings.index), num_examples-len(pos)).tolist()
             elif len(new_neg) > len(neg):
                 neg = new_neg[:len(neg)]
             else:
