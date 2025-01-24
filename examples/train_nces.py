@@ -49,7 +49,7 @@ def start(args):
     if args.synthesizer == "NCES":
         synthesizer = NCES(knowledge_base_path=args.kb, learner_names=['SetTransformer', 'GRU', 'LSTM'], path_of_embeddings=args.path_of_nces_embeddings, path_temp_embeddings=args.path_temp_embeddings, auto_train=False, dicee_model=args.dicee_model, dicee_emb_dim=args.dicee_emb_dim, dicee_epochs=args.dicee_epochs, dicee_lr=args.dicee_lr, max_length=48, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, m=32, load_pretrained=args.load_pretrained, path_of_trained_models=args.path_of_trained_models, verbose=True)
     elif args.synthesizer == "NCES2":
-        synthesizer = NCES2(knowledge_base_path=args.kb, auto_train=False, max_length=48, proj_dim=128, dicee_emb_dim=args.dicee_emb_dim,
+        synthesizer = NCES2(knowledge_base_path=args.kb, auto_train=False, max_length=48, proj_dim=128, embedding_dim=args.embedding_dim,
          drop_prob=0.1, num_heads=4, num_seeds=1, m=[32, 64, 128], load_pretrained=args.load_pretrained, path_of_trained_models=args.path_of_trained_models, verbose=True)
     else:
         synthesizer = ROCES(knowledge_base_path=args.kb, auto_train=False, k=5, max_length=48, proj_dim=128, embedding_dim=args.embedding_dim,
