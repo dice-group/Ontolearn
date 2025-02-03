@@ -679,9 +679,6 @@ class CLIP(CELOE):
         else:
             raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
 
-        assert self.load_pretrained and self.pretrained_predictor_name, \
-            "No pretrained model found. Please first train length predictors, see the <<train>> method below"
-
         dataset = CLIPDatasetInference([("", pos_str, neg_str)], self.instance_embeddings, self.num_examples, False, False)
         dataloader = DataLoader(dataset, batch_size=1, num_workers=self.num_workers,
                                 collate_fn=self.collate_batch_inference, shuffle=False)
@@ -827,7 +824,8 @@ class NCES(BaseNCES):
             except Exception:
                 print('\x1b[0;30;43m dicee is not installed, will first install it...\x1b[0m\n')
                 subprocess.run('pip install dicee==0.1.4')
-            print("\n"+"\x1b[0;30;43m"+"Embeddings not found. Will quickly train embeddings beforehand. "+"Poor performance is expected as we will also train the synthesizer for a few epochs.\nFor maximum performance, use pretrained models or train embeddings for many epochs, and the neural synthesizer on massive amounts of data and for many epochs. See the example script in `examples/train_nces.py` for this. Use `examples/train_nces.py -h` to view options.\x1b[0m"+"\n")
+            if self.auto_train:
+                print("\n"+"\x1b[0;30;43m"+"Embeddings not found. Will quickly train embeddings beforehand. "+"Poor performance is expected as we will also train the synthesizer for a few epochs.\nFor maximum performance, use pretrained models or train embeddings for many epochs, and the neural synthesizer on massive amounts of data and for many epochs. See the example script in `examples/train_nces.py` for this. Use `examples/train_nces.py -h` to view options.\x1b[0m"+"\n")
             try:
                 path_temp_embeddings = self.path_temp_embeddings if self.path_temp_embeddings and isinstance(self.path_temp_embeddings, str) else "temp_embeddings"
                 subprocess.run(f"dicee --path_single_kg {self.knowledge_base_path} --path_to_store_single_run {path_temp_embeddings} --backend rdflib --save_embeddings_as_csv --num_epochs {self.dicee_epochs} --lr {self.dicee_lr} --model {self.dicee_model} --embedding_dim {self.dicee_emb_dim} --eval_mode test",
@@ -975,8 +973,6 @@ class NCES(BaseNCES):
         Pos = np.random.choice(pos_str, size=(self.num_predictions, len(pos_str)), replace=True).tolist()
         Neg = np.random.choice(neg_str, size=(self.num_predictions, len(neg_str)), replace=True).tolist()
 
-        assert self.load_pretrained and self.learner_names, "No pretrained model found. Please first train NCES, see the <<train>> method below"
-
         dataset = NCESDatasetInference([("", Pos_str, Neg_str) for (Pos_str, Neg_str) in zip(Pos, Neg)], self.instance_embeddings, self.num_examples,
                                           self.vocab, self.inv_vocab, shuffle_examples=False, max_length=self.max_length, sorted_examples=self.sorted_examples)
 
@@ -1076,8 +1072,6 @@ class NCES(BaseNCES):
         
         - This function returns predictions as owl class expressions, not nodes as in fit
         """
-        assert self.load_pretrained and self.learner_names, \
-            "No pretrained model found. Please first train NCES, refer to the <<train>> method"
         dataset = [self.convert_to_list_str_from_iterable(datapoint) for datapoint in dataset]
         dataset = NCESDatasetInference(dataset, self.instance_embeddings, self.num_examples, self.vocab, self.inv_vocab, shuffle_examples, max_length=self.max_length)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch_inference, shuffle=False)
@@ -1297,7 +1291,6 @@ class NCES2(BaseNCES):
             neg_str = neg
         else:
             raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
-        assert self.load_pretrained and self.m, f"No pretrained model found. Please first train {self.name}"
         
         # dataloader objects
         dataloaders = []
@@ -1400,7 +1393,6 @@ class NCES2(BaseNCES):
         
         - This function returns predictions as owl class expressions, not nodes as in fit
         """
-        assert self.load_pretrained and self.m, "No pretrained model found. Please first train NCES, refer to the <<train>> method"
         data = [self.convert_to_list_str_from_iterable(datapoint) for datapoint in data]
         dataloaders = []
         for num_ind_points in self.model:
