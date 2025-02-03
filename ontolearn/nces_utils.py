@@ -23,14 +23,18 @@
 # -----------------------------------------------------------------------------
 
 """NCES utils."""
+import os
+import random
+import numpy as np
+import json
+
 from tokenizers import Tokenizer
 from tokenizers.models import BPE
 from tokenizers.trainers import BpeTrainer
 from tokenizers.pre_tokenizers import WhitespaceSplit
 from transformers import PreTrainedTokenizerFast
-import os
-import random
-import torch, numpy as np
+from ontolearn.lp_generator import LPGen
+
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -76,7 +80,8 @@ def sample_examples(pos, neg, num_ex):
     positive = np.random.choice(pos, size=min(num_pos_ex, len(pos)), replace=False)
     negative = np.random.choice(neg, size=min(num_neg_ex, len(neg)), replace=False)
     return positive.tolist(), negative.tolist()
-    
+
+
 def try_get_embs(pos, neg, embeddings, num_examples):
     """
     Depending on the KGE model, some individuals do not get assigned to any embedding during training. This function filters out such individuals from the provided positive/negative examples. It also
@@ -134,3 +139,20 @@ def try_get_embs(pos, neg, embeddings, num_examples):
                 neg = new_neg + new_neg[:len(neg)-len(new_neg)]
 
     return pos, neg
+
+
+def generate_training_data(kb_path, max_num_lps=1000, refinement_expressivity=0.2, refs_sample_size=50,
+                           beyond_alc=True, storage_path=None):
+    if storage_path is None:
+        storage_path = "./Training_Data"
+    lp_gen = LPGen(kb_path=kb_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity,
+                   num_sub_roots=refs_sample_size,
+                   beyond_alc=beyond_alc, storage_path=storage_path)
+    lp_gen.generate()
+    print("Loading generated data...")
+    with open(f"{storage_path}/LPs.json") as file:
+        lps = json.load(file)
+        if isinstance(lps, dict):
+            lps = list(lps.items())
+        print("Number of learning problems:", len(lps))
+    return lps

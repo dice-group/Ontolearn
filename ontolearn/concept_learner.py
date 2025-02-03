@@ -24,12 +24,10 @@
 
 """Concept learning algorithms of Ontolearn."""
 
-import logging
 import operator
 import time
 from datetime import datetime
-from contextlib import contextmanager
-from itertools import islice, chain
+from itertools import chain
 from typing import Any, Callable, Dict, FrozenSet, Set, List, Tuple, Iterable, Optional, Union
 
 import pandas as pd
@@ -47,23 +45,20 @@ from deap import gp, tools, base, creator
 
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.abstracts import AbstractFitness, AbstractScorer, BaseRefinement, \
-    AbstractHeuristic, EncodedPosNegLPStandardKind
-from ontolearn.base_concept_learner import BaseConceptLearner, RefinementBasedConceptLearner
-from owlapy.utils import EvaluatedDescriptionSet, ConceptOperandSorter, OperandSetTransform
-from ontolearn.data_struct import TriplesData, NCESDataset, NCESDatasetInference, CLIPDataset, CLIPDatasetInference, ROCESDataset, ROCESDatasetInference
+    AbstractHeuristic, AbstractNode
+from ontolearn.base_concept_learner import BaseConceptLearner
+from owlapy.utils import EvaluatedDescriptionSet, ConceptOperandSorter
+from ontolearn.data_struct import (TriplesData, NCESDatasetInference, CLIPDataset, CLIPDatasetInference,
+                                   ROCESDatasetInference)
 from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
 from ontolearn.ea_initialization import AbstractEAInitialization, EARandomInitialization, EARandomWalkInitialization
 from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVocabulary, Tree, escape, ind_to_string, \
     owlliteral_to_primitive_string
 from ontolearn.fitness_functions import LinearPressureFitness
-from ontolearn.heuristics import OCELHeuristic
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from ontolearn.metrics import Accuracy
 from ontolearn.refinement_operators import ExpressRefinement
-from ontolearn.search import EvoLearnerNode, NCESNode, HeuristicOrderedNode, LBLNode, OENode, TreeNode, \
-    LengthOrderedNode, \
-    QualityOrderedNode, EvaluatedConcept
-from ontolearn.utils import oplogging
+from ontolearn.search import EvoLearnerNode, NCESNode, OENode, TreeNode, QualityOrderedNode
 from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter, EntropyValueSplitter
 from ontolearn.base_nces import BaseNCES
@@ -73,18 +68,18 @@ from ontolearn.clip_architectures import LengthLearner_LSTM, LengthLearner_GRU, 
 from .utils import read_csv
 from ontolearn.nces_trainer import NCESTrainer, before_pad
 from ontolearn.clip_trainer import CLIPTrainer
-from ontolearn.nces_utils import SimpleSolution
+from ontolearn.nces_utils import SimpleSolution, generate_training_data
 from ontolearn.nces_modules import ConEx
-from owlapy.render import DLSyntaxObjectRenderer
-from owlapy.utils import OrderedOWLObject
 from sortedcontainers import SortedSet
 import os
 import json
-import glob, subprocess
+import glob
+import subprocess
 from ontolearn.lp_generator import LPGen
 from .learners import CELOE
 
 _concept_operand_sorter = ConceptOperandSorter()
+
 
 class EvoLearner(BaseConceptLearner):
     """An evolutionary approach to learn concepts in ALCQ(D).
@@ -1044,13 +1039,18 @@ class NCES(BaseNCES):
         self.best_predictions = predictions_as_nodes
         return self
 
-    def best_hypotheses(self, n=1) -> Union[OWLClassExpression, Iterable[OWLClassExpression]]:  # pragma: no cover
+    def best_hypotheses(self, n=1, return_node: bool = False) \
+            -> Union[OWLClassExpression, Iterable[OWLClassExpression], AbstractNode, Iterable[AbstractNode], None]:  # pragma: no cover
         if self.best_predictions is None:
             print("NCES needs to be fitted to a problem first")
             return None
         elif len(self.best_predictions) == 1 or n == 1:
+            if return_node:
+                return self.best_predictions[0]
             return self.best_predictions[0].concept
         else:
+            if return_node:
+                return self.best_predictions
             return [best.concept for best in self.best_predictions[:n]]
 
     def convert_to_list_str_from_iterable(self, data):  # pragma: no cover
@@ -1102,19 +1102,6 @@ class NCES(BaseNCES):
                 print("Predictions: ", predictions_str)
         return predictions_as_owl_class_expressions
 
-    @staticmethod
-    def generate_training_data(kb_path, max_num_lps=1000, refinement_expressivity=0.2, refs_sample_size=50, storage_path="./NCES_Training_Data"):
-        lp_gen = LPGen(kb_path=kb_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity, num_sub_roots=refs_sample_size, storage_path=storage_path)
-        lp_gen.generate()
-        print("Loading generated data...")
-        with open(f"{storage_path}/LPs.json") as file:
-            lps = json.load(file)
-            if isinstance(lps, dict):
-                lps = list(lps.items())
-            print("Number of learning problems:", len(lps))
-        return lps
-
-
     def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, max_num_lps=1000, refinement_expressivity=0.2,
               refs_sample_size=50, learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, num_workers=8, 
               save_model=True, storage_path=None, optimizer='Adam', record_runtime=True, example_sizes=None, shuffle_examples=False):
@@ -1129,8 +1116,9 @@ class NCES(BaseNCES):
         if batch_size is None:
             batch_size = self.batch_size
         if data is None:
-            data = self.generate_training_data(self.knowledge_base_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity,
-                                               refs_sample_size=refs_sample_size, storage_path=storage_path)
+            data = generate_training_data(self.knowledge_base_path, max_num_lps=max_num_lps,
+                                          refinement_expressivity=refinement_expressivity, beyond_alc=False,
+                                          refs_sample_size=refs_sample_size, storage_path=storage_path)
         example_ind = data[0][-1]["positive examples"][0]
         if not "/" in example_ind and not self.has_renamed_inds:
             self.instance_embeddings.index = self.instance_embeddings.index.map(self._rename_individuals)
@@ -1377,13 +1365,18 @@ class NCES2(BaseNCES):
         self.best_predictions = predictions_as_nodes
         return self
 
-    def best_hypotheses(self, n=1) -> Union[OWLClassExpression, Iterable[OWLClassExpression]]:  # pragma: no cover
+    def best_hypotheses(self, n=1, return_node: bool = False) \
+            -> Union[OWLClassExpression, Iterable[OWLClassExpression], AbstractNode, Iterable[AbstractNode], None]:  # pragma: no cover
         if self.best_predictions is None:
             print(f"{self.name} needs to be fitted to a problem first")
             return None
         elif len(self.best_predictions) == 1 or n == 1:
+            if return_node:
+                return self.best_predictions[0]
             return self.best_predictions[0].concept
         else:
+            if return_node:
+                return self.best_predictions
             return [best.concept for best in self.best_predictions[:n]]
 
     def convert_to_list_str_from_iterable(self, data):  # pragma: no cover
@@ -1441,23 +1434,10 @@ class NCES2(BaseNCES):
                 print("Predictions: ", predictions_str)
         return predictions_as_owl_class_expressions
 
-    @staticmethod
-    def generate_training_data(kb_path, max_num_lps=1000, refinement_expressivity=0.2, refs_sample_size=50, beyond_alc=True, storage_path=None):
-        if storage_path is None:
-            storage_path = f"./Training_Data_{self.name}"
-        lp_gen = LPGen(kb_path=kb_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity, num_sub_roots=refs_sample_size,
-                       beyond_alc=beyond_alc, storage_path=storage_path)
-        lp_gen.generate()
-        print("Loading generated data...")
-        with open(f"{storage_path}/LPs.json") as file:
-            lps = json.load(file)
-            if isinstance(lps, dict):
-                lps = list(lps.items())
-            print("Number of learning problems:", len(lps))
-        return lps
-
-
-    def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, max_num_lps=1000, refinement_expressivity=0.2, refs_sample_size=50, learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True, shuffle_examples=False):
+    def train(self, data: Iterable[List[Tuple]] = None, epochs=50, batch_size=64, max_num_lps=1000,
+              refinement_expressivity=0.2, refs_sample_size=50, learning_rate=1e-4, tmax=20, eta_min=1e-5,
+              clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam',
+              record_runtime=True, shuffle_examples=False):
         if os.cpu_count() <= num_workers:
             num_workers = max(0,os.cpu_count()-1)
         if storage_path is None:
@@ -1468,7 +1448,9 @@ class NCES2(BaseNCES):
         if batch_size is None:
             batch_size = self.batch_size
         if data is None:
-            data = self.generate_training_data(self.knowledge_base_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity, refs_sample_size=refs_sample_size, beyond_alc=True, storage_path=storage_path)
+            data = generate_training_data(self.knowledge_base_path, max_num_lps=max_num_lps,
+                                          refinement_expressivity=refinement_expressivity, beyond_alc=True,
+                                          refs_sample_size=refs_sample_size, storage_path=storage_path)
         vocab_size_before = len(self.vocab)
         self.add_data_values(data) # Add data values based on training data
         self.path_of_trained_models = storage_path+"/trained_models"
@@ -1479,10 +1461,10 @@ class NCES2(BaseNCES):
         trainer.train(data=data, save_model=save_model, optimizer=optimizer, record_runtime=record_runtime)
 
 
-        
 class ROCES(NCES2):
     """Robust Class Expression Synthesis in Description Logics via Iterative Sampling."""
     name = "ROCES"
+
     def __init__(self, knowledge_base_path, nces2_or_roces=True,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5, k=5,
                  path_of_trained_models=None, auto_train=True, proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
