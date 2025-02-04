@@ -93,16 +93,17 @@ class GRU(nn.Module):
 class SetTransformer(nn.Module):
     """SetTransformer module."""
     def __init__(self, knowledge_base_path, vocab, inv_vocab, max_length, input_size, proj_dim, num_heads, num_seeds,
-                 num_inds, ln):
+                 m, ln):
         super(SetTransformer, self).__init__()
         self.name = 'SetTransformer'
         self.max_len = max_length
+        self.m = m
         self.vocab = vocab
         self.inv_vocab = inv_vocab
         self.loss = nn.CrossEntropyLoss()
         self.enc = nn.Sequential(
-                ISAB(input_size, proj_dim, num_heads, num_inds, ln=ln),
-                ISAB(proj_dim, proj_dim, num_heads, num_inds, ln=ln))
+                ISAB(input_size, proj_dim, num_heads, m, ln=ln),
+                ISAB(proj_dim, proj_dim, num_heads, m, ln=ln))
         self.dec = nn.Sequential(
                 PMA(proj_dim, num_heads, num_seeds, ln=ln),
                 nn.Linear(proj_dim, len(self.vocab)*max_length))

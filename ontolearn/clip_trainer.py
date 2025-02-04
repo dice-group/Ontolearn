@@ -26,13 +26,10 @@ import numpy as np
 import copy
 import torch
 from tqdm import trange
-from collections import defaultdict
 import os
 import json
 from torch.optim.lr_scheduler import ExponentialLR
-from torch.nn import functional as F
 from torch.nn.utils import clip_grad_value_
-from torch.nn.utils.rnn import pad_sequence
 from sklearn.metrics import f1_score, accuracy_score
 import time
 
@@ -68,17 +65,15 @@ class CLIPTrainer:
     def show_num_learnable_params(self):
         print("*"*20+"Trainable model size"+"*"*20)
         size = sum([p.numel() for p in self.clip.length_predictor.parameters()])
-        size_ = 0
         print("Length Predictor: ", size)
         print("*"*20+"Trainable model size"+"*"*20)
         print()
-        return size
     
     def train(self, train_dataloader, save_model=True, optimizer='Adam', record_runtime=True):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if isinstance(self.clip.length_predictor, list):
             self.clip.length_predictor = copy.deepcopy(self.clip.length_predictor[0])
-        model_size = self.show_num_learnable_params()
+        self.show_num_learnable_params()
         if device.type == "cpu":
             print("Training on CPU, it may take long...")
         else:

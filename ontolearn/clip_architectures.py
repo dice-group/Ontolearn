@@ -23,9 +23,7 @@
 # -----------------------------------------------------------------------------
 
 import torch, torch.nn as nn
-import random
-from typing import List
-from ontolearn.nces_modules import *    
+from ontolearn.nces_modules import ISAB, PMA
 
 class LengthLearner_LSTM(nn.Module):
     """LSTM architecture"""
@@ -121,13 +119,13 @@ class LengthLearner_CNN(nn.Module):
         
 class LengthLearner_SetTransformer(nn.Module):
     """SetTransformer architecture."""
-    def __init__(self, input_size, output_size, proj_dim=256, num_heads=4, num_seeds=1, num_inds=32):
+    def __init__(self, input_size, output_size, proj_dim=256, num_heads=4, num_seeds=1, m=32):
         super().__init__()
         self.name = 'SetTransformer'
         self.loss = nn.CrossEntropyLoss()
         self.enc = nn.Sequential(
-                ISAB(input_size, proj_dim, num_heads, num_inds),
-                ISAB(proj_dim, proj_dim, num_heads, num_inds))
+                ISAB(input_size, proj_dim, num_heads, m),
+                ISAB(proj_dim, proj_dim, num_heads, m))
         self.dec = nn.Sequential(
                 PMA(proj_dim, num_heads, num_seeds),
                 nn.Linear(proj_dim, output_size))
