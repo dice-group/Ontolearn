@@ -56,7 +56,9 @@ from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVoca
 from ontolearn.fitness_functions import LinearPressureFitness
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from ontolearn.metrics import Accuracy
+from ontolearn.nces_modules import ConEx
 from ontolearn.refinement_operators import ExpressRefinement
+from ontolearn.utils import read_csv
 
 from ontolearn.utils.static_funcs import concept_len
 from ontolearn.quality_funcs import evaluate_concept
@@ -817,7 +819,7 @@ class NCES(BaseNCES):
     def _set_prerequisites(self):
         if self.path_of_embeddings is None or (os.path.isdir(self.path_of_embeddings) and not glob.glob(self.path_of_embeddings+'*_entity_embeddings.csv')) or not os.path.exists(self.path_of_embeddings) or not self.path_of_embeddings.endswith('.csv'):
             if not os.path.exists(self.knowledge_base_path):
-                raise ValueError(f"{knowledge_base_path} not found")
+                raise ValueError(f"{self.knowledge_base_path} not found")
             try:
                 import dicee
                 print('\nĆheck packages... OK: dicee is installed.')
