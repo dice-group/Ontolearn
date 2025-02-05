@@ -21,6 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # -----------------------------------------------------------------------------
+from abc import abstractmethod
+
 import pandas as pd
 import json
 from owlapy.class_expression import OWLClassExpression
@@ -40,6 +42,7 @@ from collections import Counter, deque
 from itertools import chain
 import time
 import os
+from ontolearn.utils import read_csv
 # F1 class will be deprecated to become compute_f1_score function.
 from ontolearn.utils.static_funcs import compute_f1_score, compute_f1_score_from_confusion_matrix, concept_len
 import random
@@ -918,3 +921,89 @@ class DrillNet(torch.nn.Module):  # pragma: no cover
         # N x 1
         scores = self.fc2(X).flatten()
         return scores
+
+
+class DepthAbstractDrill:   # pragma: no cover
+    """
+    Abstract class for Convolutional DQL concept learning.
+    """
+
+    def __init__(self, path_of_embeddings, reward_func, learning_rate=None,
+                 num_episode=None, num_episodes_per_replay=None, epsilon=None,
+                 num_of_sequential_actions=None, max_len_replay_memory=None,
+                 representation_mode=None, batch_size=None, epsilon_decay=None, epsilon_min=None,
+                 num_epochs_per_replay=None, num_workers=None, verbose=0):
+        self.name = 'DRILL'
+        self.instance_embeddings = read_csv(path_of_embeddings)
+        if not self.instance_embeddings:
+            print("No embeddings found")
+            self.embedding_dim = None
+        else:
+            self.embedding_dim = self.instance_embeddings.shape[1]
+        self.reward_func = reward_func
+        self.representation_mode = representation_mode
+        assert representation_mode in ['averaging', 'sampling']
+        # Will be filled by child class
+        self.heuristic_func = None
+        self.num_workers = num_workers
+        # constants
+        self.epsilon = epsilon
+        self.learning_rate = learning_rate
+        self.num_episode = num_episode
+        self.num_of_sequential_actions = num_of_sequential_actions
+        self.num_epochs_per_replay = num_epochs_per_replay
+        self.max_len_replay_memory = max_len_replay_memory
+        self.epsilon_decay = epsilon_decay
+        self.epsilon_min = epsilon_min
+        self.batch_size = batch_size
+        self.verbose = verbose
+        self.num_episodes_per_replay = num_episodes_per_replay
+
+        # will be filled
+        self.optimizer = None  # torch.optim.Adam(self.model_net.parameters(), lr=self.learning_rate)
+
+        self.seen_examples = dict()
+        self.emb_pos, self.emb_neg = None, None
+        self.start_time = None
+        self.goal_found = False
+        self.experiences = Experience(maxlen=self.max_len_replay_memory)
+
+    def attributes_sanity_checking_rl(self):
+        assert len(self.instance_embeddings) > 0
+        assert self.embedding_dim > 0
+        if self.num_workers is None:
+            self.num_workers = 4
+        if self.epsilon is None:
+            self.epsilon = 1
+        if self.learning_rate is None:
+            self.learning_rate = .001
+        if self.num_episode is None:
+            self.num_episode = 1
+        if self.num_of_sequential_actions is None:
+            self.num_of_sequential_actions = 3
+        if self.num_epochs_per_replay is None:
+            self.num_epochs_per_replay = 1
+        if self.max_len_replay_memory is None:
+            self.max_len_replay_memory = 256
+        if self.epsilon_decay is None:
+            self.epsilon_decay = 0.01
+        if self.epsilon_min is None:
+            self.epsilon_min = 0
+        if self.batch_size is None:
+            self.batch_size = 1024
+        if self.verbose is None:
+            self.verbose = 0
+        if self.num_episodes_per_replay is None:
+            self.num_episodes_per_replay = 2
+
+    @abstractmethod
+    def init_training(self, *args, **kwargs):
+        """
+        Initialize training for a given E+,E- and K.
+        """
+
+    @abstractmethod
+    def terminate_training(self):
+        """
+        Save weights and training data after training phase.
+        """
