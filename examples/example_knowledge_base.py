@@ -12,7 +12,7 @@ def example(args):
         print(i)
     print('*' * 100)
     # All individuals.
-    for i in kb.all_individuals_set():
+    for i in kb.individuals():
         print(i)
     print('*' * 100)
     # Count of individuals for each class
@@ -20,7 +20,7 @@ def example(args):
         print(f'{i} ==> {kb.individuals_count(i)}')
     print('*' * 100)
     # IRIs of all individuals.
-    for i in kb.all_individuals_set():
+    for i in kb.individuals():
         print(i.str)
     print('*' * 100)
     # Direct concept hierarchy from Top to Bottom.

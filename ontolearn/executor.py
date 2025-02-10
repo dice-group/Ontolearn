@@ -47,7 +47,7 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.metrics import Accuracy, F1, Recall, Precision, WeightedAccuracy
-from ontolearn.triple_store import TripleStoreKnowledgeBase
+from ontolearn.triple_store import TripleStore
 from ontolearn.value_splitter import BinningValueSplitter, EntropyValueSplitter
 
 logger = logging.getLogger(__name__)
@@ -200,7 +200,7 @@ def execute(args): # pragma: no cover
     learner_type = models[args.model]
     optargs = {}
     if args.sparql_endpoint:
-        kb = TripleStoreKnowledgeBase(args.sparql_endpoint)
+        kb = TripleStore(args.sparql_endpoint)
     else:
         kb = KnowledgeBase(path=args.knowledge_base_path)
 

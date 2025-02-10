@@ -34,7 +34,6 @@ from sklearn.metrics import f1_score, accuracy_score
 import time
 
 
-
 class CLIPTrainer:
     """CLIP trainer."""
     def __init__(self, clip, epochs=300, learning_rate=1e-4, decay_rate=0, clip_value=5.0,

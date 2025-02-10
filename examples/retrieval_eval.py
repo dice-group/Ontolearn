@@ -119,10 +119,10 @@ def execute(args):
     # (8) NC*: NC UNION NC⁻.
     nc_star = nc.union(nnc)
     # (9) Retrieve 10 random Nominals.
-    if len(symbolic_kb.all_individuals_set())>args.num_nominals:
-        nominals = set(random.sample(symbolic_kb.all_individuals_set(), args.num_nominals))
+    if len(symbolic_kb.individuals())>args.num_nominals:
+        nominals = set(random.sample(symbolic_kb.individuals(), args.num_nominals))
     else:
-        nominals = symbolic_kb.all_individuals_set()
+        nominals = symbolic_kb.individuals()
     # (10) All combinations of 3 for Nominals, e.g. {martin, heinz, markus}
     nominal_combinations = set( OWLObjectOneOf(combination)for combination in itertools.combinations(nominals, 3))
 

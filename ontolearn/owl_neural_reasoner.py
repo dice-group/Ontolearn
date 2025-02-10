@@ -7,12 +7,11 @@ from owlapy.owl_property import (
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
 from owlapy.class_expression import *
-from typing import Generator, Tuple, Iterable, List, Set
+from typing import Generator, Tuple, List, Set
 from dicee.knowledge_graph_embeddings import KGE
 import os
 import re
 from collections import Counter, OrderedDict
-from owlapy.iri import IRI
 from functools import lru_cache
 
 # TODO:

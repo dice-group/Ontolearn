@@ -26,24 +26,23 @@
 
 import operator
 import time
-from datetime import datetime
-from itertools import chain
-from typing import Any, Callable, Dict, FrozenSet, Set, List, Tuple, Iterable, Optional, Union
-
 import pandas as pd
 import numpy as np
 import torch
+from datetime import datetime
+from itertools import chain
+from typing import Any, Callable, Dict, FrozenSet, Set, List, Tuple, Iterable, Optional, Union
+from torch.utils.data import DataLoader
+from torch.functional import F
+from torch.nn.utils.rnn import pad_sequence
+from deap import gp, tools, base, creator
 from owlapy.class_expression import OWLClassExpression
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_property import OWLDataProperty
 from owlapy.abstracts import AbstractOWLReasoner
-from torch.utils.data import DataLoader
-from torch.functional import F
-from torch.nn.utils.rnn import pad_sequence
-from deap import gp, tools, base, creator
-
-from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.concept_generator import ConceptGenerator
+from ontolearn.abstracts import AbstractKnowledgeBase
 from ontolearn.abstracts import AbstractFitness, AbstractScorer, BaseRefinement, \
     AbstractHeuristic, AbstractNode
 from ontolearn.base_concept_learner import BaseConceptLearner
@@ -57,7 +56,12 @@ from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVoca
 from ontolearn.fitness_functions import LinearPressureFitness
 from ontolearn.learning_problem import PosNegLPStandard, EncodedPosNegLPStandard
 from ontolearn.metrics import Accuracy
+from ontolearn.nces_modules import ConEx
 from ontolearn.refinement_operators import ExpressRefinement
+from ontolearn.utils import read_csv
+
+from ontolearn.utils.static_funcs import concept_len
+from ontolearn.quality_funcs import evaluate_concept
 from ontolearn.search import EvoLearnerNode, NCESNode, OENode, TreeNode, QualityOrderedNode
 from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter, EntropyValueSplitter
@@ -65,18 +69,15 @@ from ontolearn.base_nces import BaseNCES
 from ontolearn.nces_architectures import LSTM, GRU, SetTransformer
 from ontolearn.clip_architectures import LengthLearner_LSTM, LengthLearner_GRU, LengthLearner_CNN, \
     LengthLearner_SetTransformer
-from .utils import read_csv
 from ontolearn.nces_trainer import NCESTrainer, before_pad
 from ontolearn.clip_trainer import CLIPTrainer
 from ontolearn.nces_utils import SimpleSolution, generate_training_data
-from ontolearn.nces_modules import ConEx
 from sortedcontainers import SortedSet
 import os
 import json
 import glob
 import subprocess
-from ontolearn.lp_generator import LPGen
-from .learners import CELOE
+from ontolearn.learners import CELOE
 
 _concept_operand_sorter = ConceptOperandSorter()
 
@@ -90,7 +91,7 @@ class EvoLearner(BaseConceptLearner):
         fitness_func (AbstractFitness): Fitness function.
         height_limit (int): The maximum value allowed for the height of the Crossover and Mutation operations.
         init_method (AbstractEAInitialization): The evolutionary algorithm initialization method.
-        kb (KnowledgeBase): The knowledge base that the concept learner is using.
+        kb (AbstractKnowledgeBase): The knowledge base that the concept learner is using.
         max_num_of_concepts_tested (int): Limit to stop the algorithm after n concepts tested.
         max_runtime (int): max_runtime: Limit to stop the algorithm after n seconds.
         mut_uniform_gen (AbstractEAInitialization): The initialization method to create the tree for mutation operation.
@@ -118,11 +119,11 @@ class EvoLearner(BaseConceptLearner):
     __slots__ = 'fitness_func', 'init_method', 'algorithm', 'value_splitter', 'tournament_size', \
         'population_size', 'num_generations', 'height_limit', 'use_data_properties', 'pset', 'toolbox', \
         '_learning_problem', '_result_population', 'mut_uniform_gen', '_dp_to_prim_type', '_dp_splits', \
-        '_split_properties', '_cache', 'use_card_restrictions', 'card_limit', 'use_inverse', 'total_fits'
+        '_split_properties', '_cache', 'use_card_restrictions', 'card_limit', 'use_inverse', 'total_fits', 'generator'
 
     name = 'evolearner'
 
-    kb: KnowledgeBase
+    kb: AbstractKnowledgeBase
     fitness_func: AbstractFitness
     init_method: AbstractEAInitialization
     algorithm: AbstractEvolutionaryAlgorithm
@@ -136,6 +137,7 @@ class EvoLearner(BaseConceptLearner):
     population_size: int
     num_generations: int
     height_limit: int
+    generator: ConceptGenerator
 
     pset: gp.PrimitiveSetTyped
     toolbox: base.Toolbox
@@ -147,7 +149,7 @@ class EvoLearner(BaseConceptLearner):
     _cache: Dict[str, Tuple[float, float]]
 
     def __init__(self,
-                 knowledge_base: KnowledgeBase,
+                 knowledge_base: AbstractKnowledgeBase,
                  reasoner: Optional[AbstractOWLReasoner] = None,
                  quality_func: Optional[AbstractScorer] = None,
                  fitness_func: Optional[AbstractFitness] = None,
@@ -169,13 +171,14 @@ class EvoLearner(BaseConceptLearner):
 
         Args:
             algorithm (AbstractEvolutionaryAlgorithm): The evolutionary algorithm. Defaults to `EASimple`.
-            card_limit (int): The upper cardinality limit if using cardinality restriction for object properties. Defaults to 10.
+            card_limit (int): The upper cardinality limit if using cardinality restriction for object properties.
+                                Defaults to 10.
             fitness_func (AbstractFitness): Fitness function. Defaults to `LinearPressureFitness`.
             height_limit (int): The maximum value allowed for the height of the Crossover and Mutation operations.
                                 Defaults to 17.
             init_method (AbstractEAInitialization): The evolutionary algorithm initialization method. Defaults
                                                     to EARandomWalkInitialization.
-            knowledge_base (KnowledgeBase): The knowledge base that the concept learner is using.
+            knowledge_base (AbstractKnowledgeBase): The knowledge base that the concept learner is using.
             max_runtime (int): max_runtime: Limit to stop the algorithm after n seconds. Defaults to 5.
             mut_uniform_gen (AbstractEAInitialization): The initialization method to create the tree for mutation
                                                         operation. Defaults to
@@ -218,6 +221,7 @@ class EvoLearner(BaseConceptLearner):
         self.num_generations = num_generations
         self.height_limit = height_limit
         self.total_fits = 0
+        self.generator = ConceptGenerator()
         self.__setup()
 
     def __setup(self):
@@ -252,12 +256,12 @@ class EvoLearner(BaseConceptLearner):
         intersection = factory.create_intersection()
 
         pset = gp.PrimitiveSetTyped("concept_tree", [], OWLClassExpression)
-        pset.addPrimitive(self.kb.generator.negation, [OWLClassExpression], OWLClassExpression,
-                          name=OperatorVocabulary.NEGATION)
+        pset.addPrimitive(self.generator.negation, [OWLClassExpression], OWLClassExpression,
+                          name=OperatorVocabulary.NEGATION.value)
         pset.addPrimitive(union, [OWLClassExpression, OWLClassExpression], OWLClassExpression,
-                          name=OperatorVocabulary.UNION)
+                          name=OperatorVocabulary.UNION.value)
         pset.addPrimitive(intersection, [OWLClassExpression, OWLClassExpression], OWLClassExpression,
-                          name=OperatorVocabulary.INTERSECTION)
+                          name=OperatorVocabulary.INTERSECTION.value)
 
         for op in self.kb.get_object_properties():
             name = escape(op.iri.get_remainder())
@@ -324,10 +328,10 @@ class EvoLearner(BaseConceptLearner):
         for class_ in self.kb.get_concepts():
             pset.addTerminal(class_, OWLClassExpression, name=escape(class_.iri.get_remainder()))
 
-        pset.addTerminal(self.kb.generator.thing, OWLClassExpression,
-                         name=escape(self.kb.generator.thing.iri.get_remainder()))
-        pset.addTerminal(self.kb.generator.nothing, OWLClassExpression,
-                         name=escape(self.kb.generator.nothing.iri.get_remainder()))
+        pset.addTerminal(self.generator.thing, OWLClassExpression,
+                         name=escape(self.generator.thing.iri.get_remainder()))
+        pset.addTerminal(self.generator.nothing, OWLClassExpression,
+                         name=escape(self.generator.nothing.iri.get_remainder()))
         return pset
 
     def __build_toolbox(self) -> base.Toolbox:
@@ -336,20 +340,20 @@ class EvoLearner(BaseConceptLearner):
         creator.create("Individual", gp.PrimitiveTree, fitness=creator.Fitness, quality=creator.Quality)
 
         toolbox = base.Toolbox()
-        toolbox.register(ToolboxVocabulary.INIT_POPULATION, self.init_method.get_population,
+        toolbox.register(ToolboxVocabulary.INIT_POPULATION.value, self.init_method.get_population,
                          creator.Individual, self.pset)
-        toolbox.register(ToolboxVocabulary.COMPILE, gp.compile, pset=self.pset)
+        toolbox.register(ToolboxVocabulary.COMPILE.value, gp.compile, pset=self.pset)
 
-        toolbox.register(ToolboxVocabulary.FITNESS_FUNCTION, self._fitness_func)
-        toolbox.register(ToolboxVocabulary.SELECTION, tools.selTournament, tournsize=self.tournament_size)
-        toolbox.register(ToolboxVocabulary.CROSSOVER, gp.cxOnePoint)
+        toolbox.register(ToolboxVocabulary.FITNESS_FUNCTION.value, self._fitness_func)
+        toolbox.register(ToolboxVocabulary.SELECTION.value, tools.selTournament, tournsize=self.tournament_size)
+        toolbox.register(ToolboxVocabulary.CROSSOVER.value, gp.cxOnePoint)
         toolbox.register("create_tree_mut", self.mut_uniform_gen.get_expression)
-        toolbox.register(ToolboxVocabulary.MUTATION, gp.mutUniform, expr=toolbox.create_tree_mut, pset=self.pset)
+        toolbox.register(ToolboxVocabulary.MUTATION.value, gp.mutUniform, expr=toolbox.create_tree_mut, pset=self.pset)
 
-        toolbox.decorate(ToolboxVocabulary.CROSSOVER,
+        toolbox.decorate(ToolboxVocabulary.CROSSOVER.value,
                          gp.staticLimit(key=operator.attrgetter(ToolboxVocabulary.HEIGHT_KEY),
                                         max_value=self.height_limit))
-        toolbox.decorate(ToolboxVocabulary.MUTATION,
+        toolbox.decorate(ToolboxVocabulary.MUTATION.value,
                          gp.staticLimit(key=operator.attrgetter(ToolboxVocabulary.HEIGHT_KEY),
                                         max_value=self.height_limit))
 
@@ -409,7 +413,7 @@ class EvoLearner(BaseConceptLearner):
         learning_problem = self.construct_learning_problem(PosNegLPStandard, args, kwargs)
         self._learning_problem = learning_problem.encode_kb(self.kb)
 
-        verbose = kwargs.pop("verbose", 0)
+        verbose = kwargs.pop("verbose", False)
 
         population = self._initialize(learning_problem.pos, learning_problem.neg)
         self.start_time = time.time()
@@ -474,7 +478,7 @@ class EvoLearner(BaseConceptLearner):
 
         for con, ind in zip(best_concepts, best_inds):
             individuals_count = len(self.kb.individuals_set(con))
-            yield EvoLearnerNode(con, self.kb.concept_len(con), individuals_count, ind.quality.values[0],
+            yield EvoLearnerNode(con, concept_len(con), individuals_count, ind.quality.values[0],
                                  len(ind), ind.height)
 
     def _fitness_func(self, individual: Tree):
@@ -485,7 +489,7 @@ class EvoLearner(BaseConceptLearner):
             individual.fitness.values = (self._cache[ind_str][1],)
         else:
             concept = gp.compile(individual, self.pset)
-            e = self.kb.evaluate_concept(concept, self.quality_func, self._learning_problem)
+            e = evaluate_concept(self.kb, concept, self.quality_func, self._learning_problem)
             individual.quality.values = (e.q,)
             self.fitness_func.apply(individual)
             self._cache[ind_str] = (e.q, individual.fitness.values[0])
@@ -519,7 +523,8 @@ class EvoLearner(BaseConceptLearner):
 
 class CLIP(CELOE):
     """Concept Learner with Integrated Length Prediction.
-    This algorithm extends the CELOE algorithm by using concept length predictors and a different refinement operator, i.e., ExpressRefinement
+    This algorithm extends the CELOE algorithm by using concept length predictors and a different refinement operator,
+    i.e., ExpressRefinement
 
     Attributes:
         best_descriptions (EvaluatedDescriptionSet[OENode, QualityOrderedNode]): Best hypotheses ordered.
@@ -528,7 +533,7 @@ class CLIP(CELOE):
         heuristic_func (AbstractHeuristic): Function to guide the search heuristic.
         heuristic_queue (SortedSet[OENode]): A sorted set that compares the nodes based on Heuristic.
         iter_bound (int): Limit to stop the algorithm after n refinement steps are done.
-        kb (KnowledgeBase): The knowledge base that the concept learner is using.
+        kb (AbstractKnowledgeBase): The knowledge base that the concept learner is using.
         max_child_length (int): Limit the length of concepts generated by the refinement operator.
         max_he (int): Maximal value of horizontal expansion.
         max_num_of_concepts_tested (int) Limit to stop the algorithm after n concepts tested.
@@ -547,13 +552,13 @@ class CLIP(CELOE):
 
     """
     __slots__ = 'best_descriptions', 'max_he', 'min_he', 'best_only', 'calculate_min_max', 'heuristic_queue', \
-        'search_tree', '_learning_problem', '_max_runtime', '_seen_norm_concepts', 'predictor_name', 'pretrained_predictor_name', \
-        'load_pretrained', 'output_size', 'num_examples', 'path_of_embeddings', 'instance_embeddings', 'input_size', 'device', 'length_predictor', \
-        'num_workers', 'knowledge_base_path'
+        'search_tree', '_learning_problem', '_max_runtime', '_seen_norm_concepts', 'predictor_name', \
+        'pretrained_predictor_name', 'load_pretrained', 'output_size', 'num_examples', 'path_of_embeddings', \
+        'instance_embeddings', 'input_size', 'device', 'length_predictor', 'num_workers', 'knowledge_base_path'
 
     name = 'CLIP'
     def __init__(self,
-                 knowledge_base: KnowledgeBase,
+                 knowledge_base: AbstractKnowledgeBase,
                  knowledge_base_path='',
                  reasoner: Optional[AbstractOWLReasoner] = None,
                  refinement_operator: Optional[BaseRefinement[OENode]] = ExpressRefinement,
@@ -669,7 +674,8 @@ class CLIP(CELOE):
         neg_emb_list = pad_sequence(neg_emb_list, batch_first=True, padding_value=0)
         return pos_emb_list, neg_emb_list
 
-    def pos_neg_to_tensor(self, pos: Union[Set[OWLNamedIndividual]], neg: Union[Set[OWLNamedIndividual], Set[str]]):
+    def pos_neg_to_tensor(self, pos: Union[List[OWLNamedIndividual], List[str]],
+                          neg: Union[List[OWLNamedIndividual], List[str]]):
         if isinstance(pos[0], OWLNamedIndividual):
             pos_str = [ind.str.split("/")[-1] for ind in pos][:self.num_examples]
             neg_str = [ind.str.split("/")[-1] for ind in neg][:self.num_examples]
@@ -679,7 +685,8 @@ class CLIP(CELOE):
         else:
             raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
 
-        dataset = CLIPDatasetInference([("", pos_str, neg_str)], self.instance_embeddings, self.num_examples, False, False)
+        dataset = CLIPDatasetInference([("", pos_str, neg_str)], self.instance_embeddings, self.num_examples, False,
+                                       False)
         dataloader = DataLoader(dataset, batch_size=1, num_workers=self.num_workers,
                                 collate_fn=self.collate_batch_inference, shuffle=False)
         x_pos, x_neg = next(iter(dataloader))
@@ -772,7 +779,8 @@ class CLIP(CELOE):
     def train(self, data: Iterable[List[Tuple]], epochs=300, batch_size=256, learning_rate=1e-3, decay_rate=0.0,
               clip_value=5.0, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True,
               example_sizes=None, shuffle_examples=False):
-        train_dataset = CLIPDataset(data, self.instance_embeddings, num_examples=self.num_examples, shuffle_examples=shuffle_examples, example_sizes=example_sizes)
+        train_dataset = CLIPDataset(data, self.instance_embeddings, num_examples=self.num_examples,
+                                    shuffle_examples=shuffle_examples, example_sizes=example_sizes)
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=self.num_workers,
                                       collate_fn=self.collate_batch, shuffle=True)
         if storage_path is None:
@@ -786,15 +794,24 @@ class CLIP(CELOE):
 
 class NCES(BaseNCES):
     """Neural Class Expression Synthesis."""
+
     name = "NCES"
+
     def __init__(self, knowledge_base_path, nces2_or_roces=False,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
-                 learner_names=["SetTransformer", "LSTM", "GRU"], path_of_embeddings=None, path_temp_embeddings=None, path_of_trained_models=None, auto_train=True, proj_dim=128, rnn_n_layers=2,
-                 drop_prob=0.1, num_heads=4, num_seeds=1, m=32, ln=False, dicee_model="DeCaL", dicee_epochs=5, dicee_lr=0.01, dicee_emb_dim=128, learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4, 
+                 learner_names=["SetTransformer", "LSTM", "GRU"], path_of_embeddings=None, path_temp_embeddings=None,
+                 path_of_trained_models=None, auto_train=True, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4,
+                 num_seeds=1, m=32, ln=False, dicee_model="DeCaL", dicee_epochs=5, dicee_lr=0.01, dicee_emb_dim=128,
+                 learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4,
                  max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0):
-        
-        super().__init__(knowledge_base_path=knowledge_base_path, nces2_or_roces=nces2_or_roces, quality_func=quality_func, num_predictions=num_predictions, auto_train=auto_train, proj_dim=proj_dim, drop_prob=drop_prob, num_heads=num_heads, num_seeds=num_seeds, m=m, ln=ln, learning_rate=learning_rate, tmax=tmax, eta_min=eta_min, clip_value=clip_value, batch_size=batch_size, num_workers=num_workers, max_length=max_length, load_pretrained=load_pretrained, verbose=verbose)
-        
+
+        super().__init__(knowledge_base_path=knowledge_base_path, nces2_or_roces=nces2_or_roces,
+                         quality_func=quality_func, num_predictions=num_predictions, auto_train=auto_train,
+                         proj_dim=proj_dim, drop_prob=drop_prob, num_heads=num_heads, num_seeds=num_seeds,
+                         m=m, ln=ln, learning_rate=learning_rate, tmax=tmax, eta_min=eta_min, clip_value=clip_value,
+                         batch_size=batch_size, num_workers=num_workers, max_length=max_length,
+                         load_pretrained=load_pretrained, verbose=verbose)
+
         self.learner_names = learner_names
         self.path_of_embeddings = path_of_embeddings
         self.path_temp_embeddings = path_temp_embeddings
@@ -812,11 +829,13 @@ class NCES(BaseNCES):
         if isinstance(individual_name, str) and '/' in individual_name:
             return individual_name.split('/')[-1]
         return individual_name
-        
+
     def _set_prerequisites(self):
-        if self.path_of_embeddings is None or (os.path.isdir(self.path_of_embeddings) and not glob.glob(self.path_of_embeddings+'*_entity_embeddings.csv')) or not os.path.exists(self.path_of_embeddings) or not self.path_of_embeddings.endswith('.csv'):
+        if self.path_of_embeddings is None or (os.path.isdir(self.path_of_embeddings) and not glob.glob(
+                self.path_of_embeddings + '*_entity_embeddings.csv')) or not os.path.exists(
+                self.path_of_embeddings) or not self.path_of_embeddings.endswith('.csv'):
             if not os.path.exists(self.knowledge_base_path):
-                raise ValueError(f"{knowledge_base_path} not found")
+                raise ValueError(f"{self.knowledge_base_path} not found")
             try:
                 import dicee
                 print('\nĆheck packages... OK: dicee is installed.')
@@ -825,14 +844,30 @@ class NCES(BaseNCES):
                 print('\x1b[0;30;43m dicee is not installed, will first install it...\x1b[0m\n')
                 subprocess.run('pip install dicee==0.1.4')
             if self.auto_train:
-                print("\n"+"\x1b[0;30;43m"+"Embeddings not found. Will quickly train embeddings beforehand. "+"Poor performance is expected as we will also train the synthesizer for a few epochs.\nFor maximum performance, use pretrained models or train embeddings for many epochs, and the neural synthesizer on massive amounts of data and for many epochs. See the example script in `examples/train_nces.py` for this. Use `examples/train_nces.py -h` to view options.\x1b[0m"+"\n")
+                print("\n"+"\x1b[0;30;43m"+"Embeddings not found. Will quickly train embeddings beforehand. "
+                      +"Poor performance is expected as we will also train the synthesizer for a few epochs."
+                       "\nFor maximum performance, use pretrained models or train embeddings for many epochs, "
+                       "and the neural synthesizer on massive amounts of data and for many epochs. "
+                       "See the example script in `examples/train_nces.py` for this. "
+                       "Use `examples/train_nces.py -h` to view options.\x1b[0m"+"\n")
             try:
-                path_temp_embeddings = self.path_temp_embeddings if self.path_temp_embeddings and isinstance(self.path_temp_embeddings, str) else "temp_embeddings"
-                subprocess.run(f"dicee --path_single_kg {self.knowledge_base_path} --path_to_store_single_run {path_temp_embeddings} --backend rdflib --save_embeddings_as_csv --num_epochs {self.dicee_epochs} --lr {self.dicee_lr} --model {self.dicee_model} --embedding_dim {self.dicee_emb_dim} --eval_mode test",
-                 shell = True, executable="/bin/bash")
-                assert os.path.exists(f"{path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv"), f"It seems that embeddings were not stored at the expected directory ({path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv)"
+                path_temp_embeddings = self.path_temp_embeddings if self.path_temp_embeddings and isinstance(
+                    self.path_temp_embeddings, str) else "temp_embeddings"
+                subprocess.run(f"dicee --path_single_kg {self.knowledge_base_path} "
+                               f"--path_to_store_single_run {path_temp_embeddings} "
+                               f"--backend rdflib --save_embeddings_as_csv "
+                               f"--num_epochs {self.dicee_epochs} "
+                               f"--lr {self.dicee_lr} "
+                               f"--model {self.dicee_model} "
+                               f"--embedding_dim {self.dicee_emb_dim} "
+                               f"--eval_mode test",
+                               shell=True, executable="/bin/bash")
+                assert os.path.exists(f"{path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv"), \
+                    (f"It seems that embeddings were not stored at the expected directory "
+                     f"({path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv)")
             except Exception:
-                raise ValueError("\nPlease try providing the absolute path to the knowledge base, e.g., /home/ndah/Dev/Ontolean/KGs/Family/family-benchmark_rich_background.owl\n")
+                raise ValueError("\nPlease try providing the absolute path to the knowledge base, "
+                                 "e.g., /home/ndah/Dev/Ontolean/KGs/Family/family-benchmark_rich_background.owl\n")
             self.path_of_embeddings = f"{path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv"
             if self.auto_train:
                 print("\n"+"\x1b[0;30;43m"+f"Will also train {self.name} for 5 epochs"+"\x1b[0m"+"\n")
@@ -867,7 +902,8 @@ class NCES(BaseNCES):
                 self.inv_vocab = inv_vocab
             except Exception as e:
                 print(e,'\n')
-                raise FileNotFoundError(f"{path} does not contain at least one of `vocab.json, inv_vocab.npy or embedding_config.json`")
+                raise FileNotFoundError(f"{path} does not contain at least one of `vocab.json, inv_vocab.npy "
+                                        f"or embedding_config.json`")
         elif self.load_pretrained and self.path_of_trained_models and glob.glob(self.path_of_trained_models + "/*.pt"):
             # Read pretrained model's vocabulary and config files
             try:
@@ -884,7 +920,8 @@ class NCES(BaseNCES):
                 self.vocab = vocab
                 self.inv_vocab = inv_vocab
             except Exception:
-                raise FileNotFoundError(f"{self.path_of_trained_models} does not contain at least one of `vocab.json, inv_vocab.npy or embedding_config.json`")
+                raise FileNotFoundError(f"{self.path_of_trained_models} does not contain at least one of `vocab.json, "
+                                        f"inv_vocab.npy or embedding_config.json`")
 
         m1 = SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length,
                                    self.input_size, self.proj_dim, self.num_heads, self.num_seeds, self.m,
@@ -906,7 +943,8 @@ class NCES(BaseNCES):
             del Models[name]
 
         if self.load_pretrained and path is None:
-            print(f"\x1b[0;30;43mThe path to pretrained models is None and load_pretrained is True. Will return models with random weights.\x1b[0m")
+            print(f"\x1b[0;30;43mThe path to pretrained models is None and load_pretrained is True. "
+                  f"Will return models with random weights.\x1b[0m")
             return Models
         elif self.load_pretrained and path and glob.glob(path+"/*.pt"):
             num_loaded_models = 0
@@ -921,28 +959,29 @@ class NCES(BaseNCES):
                             num_loaded_models += 1
                             loaded_model_names.append(model_name)
                         except Exception as e:
-                            print(f"Could not load pretrained weights for {model_name}. Please consider training the model!")
+                            print(f"Could not load pretrained weights for {model_name}. "
+                                  f"Please consider training the model!")
                             print("\n", e)
                             pass
             if num_loaded_models == len(Models):
                 print("\n Loaded NCES weights!\n")
                 return Models
             elif num_loaded_models > 0:
-                print("\n"+"\x1b[0;30;43m"+f"Some model weights could not be loaded. Successful ones are: {loaded_model_names}"+"\x1b[0m"+"\n")
+                print("\n"+"\x1b[0;30;43m"+f"Some model weights could not be loaded. "
+                                           f"Successful ones are: {loaded_model_names}"+"\x1b[0m"+"\n")
                 return Models
             else:
-                print("\n"+"\x1b[0;30;43m"+"!!!No pretrained weights were provided, initializing models with random weights"+"\x1b[0m"+"\n")
+                print("\n"+"\x1b[0;30;43m"+"!!!No pretrained weights were provided, "
+                                           "initializing models with random weights"+"\x1b[0m"+"\n")
                 return Models
         else:
             print("\nNo pretrained weights were provided, initializing models with random weights.\n")
             return Models
 
-
     def refresh(self, path=None):
         if path is not None:
             self.load_pretrained = True
         self.model = self.get_synthesizer(path)
-
 
     def get_prediction(self, x_pos, x_neg):
         models = [self.model[name]["model"] for name in self.model]
@@ -960,8 +999,8 @@ class NCES(BaseNCES):
         prediction = model.inv_vocab[scores.argmax(1).cpu()]
         return prediction
 
-    def fit_one(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]]):
-        #print("\n\n#### In fit one\n\n")
+    def fit_one(self, pos: Union[List[OWLNamedIndividual], List[str]], neg: Union[List[OWLNamedIndividual], List[str]]):
+
         if isinstance(pos[0], OWLNamedIndividual):
             pos_str = [ind.str.split("/")[-1] for ind in pos]
             neg_str = [ind.str.split("/")[-1] for ind in neg]
@@ -973,8 +1012,10 @@ class NCES(BaseNCES):
         Pos = np.random.choice(pos_str, size=(self.num_predictions, len(pos_str)), replace=True).tolist()
         Neg = np.random.choice(neg_str, size=(self.num_predictions, len(neg_str)), replace=True).tolist()
 
-        dataset = NCESDatasetInference([("", Pos_str, Neg_str) for (Pos_str, Neg_str) in zip(Pos, Neg)], self.instance_embeddings, self.num_examples,
-                                          self.vocab, self.inv_vocab, shuffle_examples=False, max_length=self.max_length, sorted_examples=self.sorted_examples)
+        dataset = NCESDatasetInference([("", Pos_str, Neg_str) for (Pos_str, Neg_str) in zip(Pos, Neg)],
+                                       self.instance_embeddings, self.num_examples, self.vocab, self.inv_vocab,
+                                       shuffle_examples=False, max_length=self.max_length,
+                                       sorted_examples=self.sorted_examples)
 
         dataloader = DataLoader(dataset, batch_size=self.batch_size,
                                 num_workers=self.num_workers,
@@ -1006,7 +1047,7 @@ class NCES(BaseNCES):
         if isinstance(pos, set) or isinstance(pos, frozenset):
             pos_list = list(pos)
             neg_list = list(neg)
-            if not "/" in pos_list[0].str and not self.has_renamed_inds:
+            if "/" not in pos_list[0].str and not self.has_renamed_inds:
                 self.instance_embeddings.index = self.instance_embeddings.index.map(self._rename_individuals)
                 self.has_renamed_inds = True
             if self.sorted_examples:
@@ -1029,14 +1070,16 @@ class NCES(BaseNCES):
                 [ind.str.split("/")[-1] for ind in self.kb.individuals(concept)])
             tp, fn, fp, tn = compute_tp_fn_fp_tn(concept_instances, pos, neg)
             quality = self.quality_func.score2(tp, fn, fp, tn)[1]
-            node = NCESNode(concept, length=concept_length, individuals_count=concept_individuals_count, quality=quality)
+            node = NCESNode(concept, length=concept_length, individuals_count=concept_individuals_count,
+                            quality=quality)
             predictions_as_nodes.append(node)
         predictions_as_nodes = sorted(predictions_as_nodes, key=lambda x: -x.quality)
         self.best_predictions = predictions_as_nodes
         return self
 
     def best_hypotheses(self, n=1, return_node: bool = False) \
-            -> Union[OWLClassExpression, Iterable[OWLClassExpression], AbstractNode, Iterable[AbstractNode], None]:  # pragma: no cover
+            -> Union[OWLClassExpression, Iterable[OWLClassExpression],
+                     AbstractNode, Iterable[AbstractNode], None]:  # pragma: no cover
         if self.best_predictions is None:
             print("NCES needs to be fitted to a problem first")
             return None
@@ -1073,8 +1116,10 @@ class NCES(BaseNCES):
         - This function returns predictions as owl class expressions, not nodes as in fit
         """
         dataset = [self.convert_to_list_str_from_iterable(datapoint) for datapoint in dataset]
-        dataset = NCESDatasetInference(dataset, self.instance_embeddings, self.num_examples, self.vocab, self.inv_vocab, shuffle_examples, max_length=self.max_length)
-        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_batch_inference, shuffle=False)
+        dataset = NCESDatasetInference(dataset, self.instance_embeddings, self.num_examples, self.vocab, self.inv_vocab,
+                                       shuffle_examples, max_length=self.max_length)
+        dataloader = DataLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers,
+                                collate_fn=self.collate_batch_inference, shuffle=False)
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions_as_owl_class_expressions = []
         predictions_str = []
@@ -1096,9 +1141,10 @@ class NCES(BaseNCES):
                 print("Predictions: ", predictions_str)
         return predictions_as_owl_class_expressions
 
-    def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, max_num_lps=1000, refinement_expressivity=0.2,
-              refs_sample_size=50, learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, num_workers=8, 
-              save_model=True, storage_path=None, optimizer='Adam', record_runtime=True, example_sizes=None, shuffle_examples=False):
+    def train(self, data: Iterable[List[Tuple]]=None, epochs=50, batch_size=64, max_num_lps=1000,
+              refinement_expressivity=0.2, refs_sample_size=50, learning_rate=1e-4, tmax=20, eta_min=1e-5,
+              clip_value=5.0, num_workers=8, save_model=True, storage_path=None, optimizer='Adam', record_runtime=True,
+              example_sizes=None, shuffle_examples=False):
         if os.cpu_count() <= num_workers:
             num_workers = max(0,os.cpu_count()-1)
         if storage_path is None:
@@ -1117,26 +1163,27 @@ class NCES(BaseNCES):
         if not "/" in example_ind and not self.has_renamed_inds:
             self.instance_embeddings.index = self.instance_embeddings.index.map(self._rename_individuals)
             self.has_renamed_inds = True
-        trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, tmax=tmax, eta_min=eta_min,
-                              clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
+        trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, tmax=tmax,
+                              eta_min=eta_min, clip_value=clip_value, num_workers=num_workers,
+                              storage_path=storage_path)
         trainer.train(data=data, save_model=save_model, optimizer=optimizer, record_runtime=record_runtime)
-        
-        
-        
+
+
 class NCES2(BaseNCES):
     """Neural Class Expression Synthesis in ALCHIQ(D)."""
     name = "NCES2"
+
     def __init__(self, knowledge_base_path, nces2_or_roces=True,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
                  path_of_trained_models=None, auto_train=True, proj_dim=128, drop_prob=0.1,
-                 num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=128, sampling_strategy="nces2", 
-                 input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, 
-                 learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4, 
+                 num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=128, sampling_strategy="nces2",
+                 input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32,
+                 learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4,
                  max_length=48, load_pretrained=True, verbose: int = 0, data=[]):
-        super().__init__(knowledge_base_path, nces2_or_roces, quality_func, num_predictions, auto_train, proj_dim, drop_prob,
-                 num_heads, num_seeds, m, ln, learning_rate, tmax, eta_min, clip_value,
-                 batch_size, num_workers, max_length, load_pretrained, verbose)
-        
+        super().__init__(knowledge_base_path, nces2_or_roces, quality_func, num_predictions, auto_train, proj_dim,
+                         drop_prob, num_heads, num_seeds, m, ln, learning_rate, tmax, eta_min, clip_value, batch_size,
+                         num_workers, max_length, load_pretrained, verbose)
+
         self.triples_data = TriplesData(knowledge_base_path)
         self.num_entities = len(self.triples_data.entity2idx)
         self.num_relations = len(self.triples_data.relation2idx)
@@ -1149,18 +1196,22 @@ class NCES2(BaseNCES):
         self.num_of_output_channels = num_of_output_channels
         self._set_prerequisites()
 
-    
     def _set_prerequisites(self):
         if isinstance(self.m, int):
             self.m = [self.m]
 
-        Models = {str(m): {"emb_model": ConEx(self.embedding_dim, self.num_entities, self.num_relations, self.input_dropout,
-                                              self.feature_map_dropout, self.kernel_size, self.num_of_output_channels), 
-                           "model": SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length,
-                                   self.embedding_dim, self.proj_dim, self.num_heads, self.num_seeds, m, self.ln)} for m in self.m}
+        Models = {str(m): {"emb_model": ConEx(self.embedding_dim, self.num_entities, self.num_relations,
+                                              self.input_dropout, self.feature_map_dropout, self.kernel_size,
+                                              self.num_of_output_channels),
+                           "model": SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab,
+                                                   self.max_length, self.embedding_dim, self.proj_dim, self.num_heads,
+                                                   self.num_seeds, m, self.ln)} for m in self.m}
 
         if self.load_pretrained and self.path_of_trained_models is None and self.auto_train:
-            print(f"\n\x1b[0;30;43mPath to pretrained models is None and load_pretrained is True and auto_train is True. Will quickly train neural synthesizers. However, it is advisable that you properly train {self.name} using the example script in `examples/train_nces.py`.\x1b[0m\n")
+            print(f"\n\x1b[0;30;43mPath to pretrained models is None and load_pretrained is True "
+                  f"and auto_train is True. Will quickly train neural synthesizers. "
+                  f"However, it is advisable that you properly train {self.name} using the "
+                  f"example script in `examples/train_nces.py`.\x1b[0m\n")
             self.train(epochs=5)
             self.refresh(self.path_of_trained_models)
         else:
@@ -1187,7 +1238,8 @@ class NCES2(BaseNCES):
                 self.num_entities = emb_config["num_entities"]
                 self.num_relations = emb_config["num_relations"]
             except Exception:
-                raise FileNotFoundError(f"{path} does not contain at least one of `vocab.json, inv_vocab.npy or embedding_config.json`")
+                raise FileNotFoundError(f"{path} does not contain at least one of "
+                                        f"`vocab.json, inv_vocab.npy or embedding_config.json`")
         elif self.load_pretrained and self.path_of_trained_models and glob.glob(self.path_of_trained_models + "/*.pt"):
             # Read pretrained model's vocabulary and config files
             try:
@@ -1208,19 +1260,26 @@ class NCES2(BaseNCES):
                 self.num_entities = emb_config["num_entities"]
                 self.num_relations = emb_config["num_relations"]
             except Exception:
-                raise FileNotFoundError(f"{self.path_of_trained_models} does not contain at least one of `vocab.json, inv_vocab.npy or embedding_config.json`")
+                raise FileNotFoundError(f"{self.path_of_trained_models} does not contain at least one of "
+                                        f"`vocab.json, inv_vocab.npy or embedding_config.json`")
 
-        Models = {str(m): {"emb_model": ConEx(self.embedding_dim, self.num_entities, self.num_relations, self.input_dropout,
-                                              self.feature_map_dropout, self.kernel_size, self.num_of_output_channels), 
-                           "model": SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length,
-                                   self.embedding_dim, self.proj_dim, self.num_heads, self.num_seeds, m, self.ln)} for m in self.m}
+        Models = {str(m): {"emb_model": ConEx(self.embedding_dim, self.num_entities, self.num_relations,
+                                              self.input_dropout, self.feature_map_dropout, self.kernel_size,
+                                              self.num_of_output_channels),
+                           "model": SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab,
+                                                   self.max_length, self.embedding_dim, self.proj_dim, self.num_heads,
+                                                   self.num_seeds, m, self.ln)} for m in self.m}
 
         if self.load_pretrained and path is None:
-            print(f"\n\x1b[0;30;43mPath to pretrained models is None and load_pretrained is True. Will return models with random weights.\x1b[0m\n")
+            print(f"\n\x1b[0;30;43mPath to pretrained models is None and load_pretrained is True. "
+                  f"Will return models with random weights.\x1b[0m\n")
             return Models
 
         elif self.load_pretrained and path and len(glob.glob(path + "/*.pt")) == 0:
-            print("\n"+"\x1b[0;30;43m"+f"No pretrained model found! If {self.path_of_trained_models} is empty or does not exist, set the `load_pretrained` parameter to `False` or make sure `save_model` was set to `True` in the .train() method."+"\x1b[0m"+"\n")
+            print("\n"+"\x1b[0;30;43m"+f"No pretrained model found! If {self.path_of_trained_models} "
+                                       f"is empty or does not exist, set the `load_pretrained` parameter to `False` or "
+                                       f"make sure `save_model` was set to `True` in the .train() "
+                                       f"method."+"\x1b[0m"+"\n")
             raise FileNotFoundError(f"Path {path} does not contain any pretrained models!")
 
         elif self.load_pretrained and path and glob.glob(path + "/*.pt"):
@@ -1252,14 +1311,17 @@ class NCES2(BaseNCES):
                         models_to_remove.append(name)
                 for name in models_to_remove:
                     del Models[name]
-                print("\x1b[0;30;43m"+f"!!!Some pretrained weights could not be found, successfully loaded models are {loaded_model_names}"+"\x1b[0m"+"\n")
+                print("\x1b[0;30;43m"+f"!!!Some pretrained weights could not be found, successfully "
+                                      f"loaded models are {loaded_model_names}"+"\x1b[0m"+"\n")
                 return Models
             else:
-                print("\x1b[0;30;43m"+"!!!No pretrained weights were found, initializing models with random weights"+"\x1b[0m"+"\n")
+                print("\x1b[0;30;43m"+"!!!No pretrained weights were found, initializing models "
+                                      "with random weights"+"\x1b[0m"+"\n")
                 return Models
         else:
             if verbose:
-                print(f"\nNo pretrained weights were provided, initializing models with random weights. You may want to first train the synthesizer using {self.name}.train()\n")
+                print(f"\nNo pretrained weights were provided, initializing models with random weights. "
+                      f"You may want to first train the synthesizer using {self.name}.train()\n")
             return Models
 
 
@@ -1282,7 +1344,7 @@ class NCES2(BaseNCES):
         prediction = self.inv_vocab[scores.argmax(1).cpu()]
         return prediction
 
-    def fit_one(self, pos: Union[Set[OWLNamedIndividual], Set[str]], neg: Union[Set[OWLNamedIndividual], Set[str]]):
+    def fit_one(self, pos: Union[List[OWLNamedIndividual], List[str]], neg: Union[List[OWLNamedIndividual], List[str]]):
         if isinstance(pos[0], OWLNamedIndividual):
             pos_str = [ind.str.split("/")[-1] for ind in pos]
             neg_str = [ind.str.split("/")[-1] for ind in neg]
@@ -1291,7 +1353,7 @@ class NCES2(BaseNCES):
             neg_str = neg
         else:
             raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
-        
+
         # dataloader objects
         dataloaders = []
         for num_ind_points in self.model:
@@ -1306,7 +1368,7 @@ class NCES2(BaseNCES):
             dataloader = DataLoader(dataset, batch_size=self.batch_size,
                                 num_workers=self.num_workers, shuffle=False)
             dataloaders.append(dataloader)
-            
+
         # Initialize a simple solution constructor
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions_raw = self.get_prediction(dataloaders)
@@ -1330,7 +1392,7 @@ class NCES2(BaseNCES):
             for model_type in self.model[num_ind_points]:
                 self.model[num_ind_points][model_type].eval()
                 self.model[num_ind_points][model_type].to(self.device)
-            
+
         pos = learning_problem.pos
         neg = learning_problem.neg
         if isinstance(pos, set) or isinstance(pos, frozenset):
@@ -1352,14 +1414,16 @@ class NCES2(BaseNCES):
                 OWLNamedIndividual) else set([ind.str.split("/")[-1] for ind in self.kb.individuals(concept)])
             tp, fn, fp, tn = compute_tp_fn_fp_tn(concept_instances, pos, neg)
             quality = self.quality_func.score2(tp, fn, fp, tn)[1]
-            node = NCESNode(concept, length=concept_length, individuals_count=concept_individuals_count, quality=quality)
+            node = NCESNode(concept, length=concept_length, individuals_count=concept_individuals_count,
+                            quality=quality)
             predictions_as_nodes.append(node)
         predictions_as_nodes = sorted(predictions_as_nodes, key=lambda x: -x.quality)
         self.best_predictions = predictions_as_nodes
         return self
 
     def best_hypotheses(self, n=1, return_node: bool = False) \
-            -> Union[OWLClassExpression, Iterable[OWLClassExpression], AbstractNode, Iterable[AbstractNode], None]:  # pragma: no cover
+            -> Union[OWLClassExpression, Iterable[OWLClassExpression],
+                     AbstractNode, Iterable[AbstractNode], None]:  # pragma: no cover
         if self.best_predictions is None:
             print(f"{self.name} needs to be fitted to a problem first")
             return None
@@ -1384,7 +1448,7 @@ class NCES2(BaseNCES):
         else:
             raise ValueError(f"Invalid input type, was expecting OWLNamedIndividual or str but found {type(pos[0])}")
         return (target_concept_str, pos_str, neg_str)
-    
+
 
     def fit_from_iterable(self, data: Union[List[Tuple[str, Set[OWLNamedIndividual], Set[OWLNamedIndividual]]],
     List[Tuple[str, Set[str], Set[str]]]], shuffle_examples=False, verbose=False, **kwargs) -> List:  # pragma: no cover
@@ -1397,7 +1461,8 @@ class NCES2(BaseNCES):
         dataloaders = []
         for num_ind_points in self.model:
             dataset = ROCESDatasetInference(data,
-                                            self.triples_data, num_examples=self.num_examples, k=self.k if hasattr(self, "k") else None,
+                                            self.triples_data, num_examples=self.num_examples,
+                                            k=self.k if hasattr(self, "k") else None,
                                             vocab=self.vocab, inv_vocab=self.inv_vocab,
                                             max_length=self.max_length,
                                             sampling_strategy=self.sampling_strategy,
@@ -1448,8 +1513,9 @@ class NCES2(BaseNCES):
         self.path_of_trained_models = storage_path+"/trained_models"
         if len(self.vocab) > vocab_size_before:
             self.model = self.get_synthesizer(verbose=False)
-        trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, tmax=tmax, eta_min=eta_min,
-                              clip_value=clip_value, num_workers=num_workers, storage_path=storage_path)
+        trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, tmax=tmax,
+                              eta_min=eta_min, clip_value=clip_value, num_workers=num_workers,
+                              storage_path=storage_path)
         trainer.train(data=data, save_model=save_model, optimizer=optimizer, record_runtime=record_runtime)
 
 
@@ -1461,14 +1527,14 @@ class ROCES(NCES2):
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5, k=5,
                  path_of_trained_models=None, auto_train=True, proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
                  num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=128, sampling_strategy="p",
-                 input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32, 
-                 learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4, 
+                 input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32,
+                 learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4,
                  max_length=48, load_pretrained=True, verbose: int = 0, data=[]):
 
         self.k = k
         super().__init__(knowledge_base_path, nces2_or_roces,
-                        quality_func, num_predictions, path_of_trained_models, auto_train, proj_dim, drop_prob,
-                        num_heads, num_seeds, m, ln, embedding_dim, sampling_strategy, input_dropout, feature_map_dropout, 
-                        kernel_size, num_of_output_channels, learning_rate, tmax, eta_min, clip_value, batch_size,
-                        num_workers, max_length, load_pretrained, verbose)
+                         quality_func, num_predictions, path_of_trained_models, auto_train, proj_dim, drop_prob,
+                         num_heads, num_seeds, m, ln, embedding_dim, sampling_strategy, input_dropout,
+                         feature_map_dropout, kernel_size, num_of_output_channels, learning_rate, tmax, eta_min,
+                         clip_value, batch_size, num_workers, max_length, load_pretrained, verbose)
 

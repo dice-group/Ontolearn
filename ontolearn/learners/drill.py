@@ -30,7 +30,7 @@ from owlapy.owl_individual import OWLNamedIndividual
 from owlapy import owl_expression_to_dl
 from ontolearn.base_concept_learner import RefinementBasedConceptLearner
 from ontolearn.refinement_operators import LengthBasedRefinement
-from ontolearn.abstracts import AbstractNode
+from ontolearn.abstracts import AbstractNode, AbstractKnowledgeBase
 from ontolearn.search import RL_State
 from typing import Set, List, Tuple, Optional, Generator, SupportsFloat, Iterable, FrozenSet, Callable, Union
 from ontolearn.learning_problem import PosNegLPStandard
@@ -44,7 +44,7 @@ import time
 import os
 from ontolearn.utils import read_csv
 # F1 class will be deprecated to become compute_f1_score function.
-from ontolearn.utils.static_funcs import compute_f1_score, compute_f1_score_from_confusion_matrix
+from ontolearn.utils.static_funcs import compute_f1_score, compute_f1_score_from_confusion_matrix, concept_len
 import random
 from ontolearn.heuristics import CeloeBasedReward
 from ontolearn.data_struct import PrepareBatchOfPrediction
@@ -59,7 +59,7 @@ from owlapy.utils import get_expression_length
 class Drill(RefinementBasedConceptLearner):  # pragma: no cover
     """ Neuro-Symbolic Class Expression Learning (https://www.ijcai.org/proceedings/2023/0403.pdf)"""
 
-    def __init__(self, knowledge_base,
+    def __init__(self, knowledge_base: AbstractKnowledgeBase,
                  path_embeddings: str = None,
                  refinement_operator: LengthBasedRefinement = None,
                  use_inverse: bool = True,
@@ -442,7 +442,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             sparql_query=owl_expression_to_sparql_with_confusion_matrix(expression=state.concept,
                                                            positive_examples=self.pos,
                                                            negative_examples=self.neg)
-            bindings=self.kb.query_results(sparql_query).json()["results"]["bindings"]
+            bindings=self.kb.query(sparql_query).json()["results"]["bindings"]
             assert len(bindings) == 1
             bindings=bindings.pop()
             confusion_matrix={k : v["value"]for k,v in bindings.items()}
@@ -771,13 +771,13 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         sequence_of_states = []
         while len(sequence_of_goal_path) > 0:
             self.assign_embeddings(current_state)
-            current_state.length = self.kb.concept_len(current_state.concept)
+            current_state.length = concept_len(current_state.concept)
             if current_state.quality is None:
                 self.compute_quality_of_class_expression(current_state)
 
             next_state = sequence_of_goal_path.pop(0)
             self.assign_embeddings(next_state)
-            next_state.length = self.kb.concept_len(next_state.concept)
+            next_state.length = concept_len(next_state.concept)
             if next_state.quality is None:
                 self.compute_quality_of_class_expression(next_state)
             sequence_of_states.append((current_state, next_state))

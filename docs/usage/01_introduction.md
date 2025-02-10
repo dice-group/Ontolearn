@@ -20,8 +20,7 @@ exactly what our library offers. The main contribution are the exclusive concept
 algorithms that are part of this library. Currently, we have 6 fully functioning algorithms that 
 learn concept in description logics. Papers can be found [here](09_further_resources.md).
 
-For the base (core) module of Ontolearn we use [owlapy](https://github.com/dice-group/owlapy)
-which on its end uses [Owlready2](https://owlready2.readthedocs.io/en/latest/index.html). _Owlapy_ is a python package
+For the base (core) module of Ontolearn we use [owlapy](https://github.com/dice-group/owlapy). _Owlapy_ is a python package
 based on owlapi (the java counterpart), and implemented by us, the Ontolearn team. 
 For the sake of modularization we have moved it in a separate repository.
 The modularization aspect helps us to increase readability and reduce complexity.
@@ -46,4 +45,4 @@ for ontology manipulation and reasoning as well.
 ------------------------------------
 
 The rest of content after "examples" is build as a top-to-bottom guide, but nevertheless self-containing, where
-you can learn more in depth about the capabilities of Ontolearn.
+you can learn more in depth about the components of Ontolearn.
