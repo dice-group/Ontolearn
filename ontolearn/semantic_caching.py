@@ -1,8 +1,31 @@
+# -----------------------------------------------------------------------------
+# MIT License
+#
+# Copyright (c) 2024 Ontolearn Team
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+# -----------------------------------------------------------------------------
+
 """python examples/retrieval_eval.py"""
 from ontolearn.owl_neural_reasoner import TripleStoreNeuralReasoner
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.triple_store import TripleStore
-from ontolearn.utils import jaccard_similarity, f1_set_similarity, concept_reducer, concept_reducer_properties
+from ontolearn.utils import jaccard_similarity, concept_reducer, concept_reducer_properties
 from owlapy.class_expression import (
     OWLObjectUnionOf,
     OWLObjectIntersectionOf,
@@ -14,15 +37,9 @@ from owlapy.class_expression import (
     OWLObjectComplementOf,
     OWLClass,
 )
-from owlapy.owl_property import (
-    OWLDataProperty,
-    OWLObjectInverseOf,
-    OWLObjectProperty,
-    OWLProperty,
-)
+from owlapy.owl_property import OWLObjectInverseOf
 import time
 from typing import Tuple, Set
-import pandas as pd
 from owlapy import owl_expression_to_dl
 from itertools import chain
 import os
@@ -30,12 +47,9 @@ import random
 import itertools
 from owlready2 import *
 from collections import OrderedDict
-from owlapy.owlapi_adaptor import OWLAPIAdaptor
-from owlapy.parser import DLSyntaxParser
+from owlapy.owl_reasoner import SyncReasoner
 import pickle
 from tqdm import tqdm
-
-
 
 
 def concept_generator(path_kg):
@@ -67,8 +81,9 @@ def concept_generator(path_kg):
     # (8) UNNC: NC UNION NC⁻.
     unnc = nc.union(nnc)
 
-    # (9) Retrieve 10 random Nominals.
-    nominals = set(random.sample(symbolic_kb.all_individuals_set(), 3))
+    # (9) Retrieve 3 random Nominals.
+    inds = list(symbolic_kb.individuals())
+    nominals = set(random.sample(inds, 3))
 
     # (10) All Combinations of 3 for Nominals.
     nominal_combinations = set(
@@ -125,13 +140,13 @@ def concept_generator(path_kg):
 
     # () Converted to list so that the progress bar works.
     random.seed(0)
-    if len(intersections_unnc)>500:
+    if len(intersections_unnc) > 500:
         intersections_unnc = random.sample(intersections_unnc, k=500)
-    if len(unions_unnc)>500:
+    if len(unions_unnc) > 500:
         unions_unnc = random.sample(unions_unnc, k=500)
-    if len(exist_unnc)>200:
+    if len(exist_unnc) > 200:
         exist_unnc = set(list(exist_unnc)[:200])  
-    if len(for_all_unnc)>200:
+    if len(for_all_unnc) > 200:
         for_all_unnc = set(list(for_all_unnc)[:200])  
 
     concepts = list(
@@ -201,7 +216,6 @@ class CacheWithEviction:
                 random_key = random.choice(list(self.cache.keys()))
                 del self.cache[random_key]
                 self.access_times.pop(random_key, None)
-            
 
     def get(self, key):
         """
@@ -523,18 +537,13 @@ def retrieve(expression:str, path_kg:str, path_kge_model:str) -> Tuple[Set[str],
 def retrieve_other_reasoner(expression, path_kg, name_reasoner='HermiT'): 
     '''Retrieve instances with symbolic reasoners'''
     
-    owlapi_adaptor = OWLAPIAdaptor(path=path_kg, name_reasoner=name_reasoner)
+    reasoner = SyncReasoner(path_kg, reasoner=name_reasoner)
    
-    if owlapi_adaptor.has_consistent_ontology():
-
-        owlapi_adaptor = OWLAPIAdaptor(path=path_kg, name_reasoner=name_reasoner)
-
-        return {i.str for i in (owlapi_adaptor.instances(expression, direct=False))}
-
+    if reasoner.has_consistent_ontology():
+        return {i.str for i in (reasoner.instances(expression, direct=False))}
     else:
         print("The knowledge base is not consistent") 
          
-
 
 def run_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, eviction:str, random_seed:int, cache_type:str, shuffle_concepts:str):
     '''Return cache performnace with semantics'''
