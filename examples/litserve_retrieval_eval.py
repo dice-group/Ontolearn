@@ -53,7 +53,7 @@ def generate_concepts_from_kb(symbolic_kb: KnowledgeBase):
 	# (8) NC*: NC UNION NC⁻.
 	nc_star = nc.union(nnc)
 	# (9) Retrieve 10 random Nominals.
-	nominals = symbolic_kb.all_individuals_set()
+	nominals = symbolic_kb.individuals()
 	# (10) All combinations of 3 for Nominals, e.g. {martin, heinz, markus}
 	nominal_combinations = set( OWLObjectOneOf(combination)for combination in itertools.combinations(nominals, 3))
 	# (13) NC* UNION NC*.

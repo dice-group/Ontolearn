@@ -27,15 +27,14 @@
 import logging
 from abc import ABCMeta, abstractmethod
 from typing import Set, List, Tuple, Iterable, TypeVar, Generic, ClassVar, Optional
+from collections import OrderedDict
 from owlapy.class_expression import OWLClassExpression
 from owlapy.abstracts import AbstractOWLOntology
+from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.utils import iter_count
-from .data_struct import Experience
-from .utils import read_csv
-from collections import OrderedDict
+from .utils.static_funcs import concept_len
 
 _N = TypeVar('_N')  #:
-_KB = TypeVar('_KB', bound='AbstractKnowledgeBase')  #:
 
 logger = logging.getLogger(__name__)
 
@@ -180,68 +179,6 @@ class AbstractFitness(metaclass=ABCMeta):
         pass
 
 
-class BaseRefinement(Generic[_N], metaclass=ABCMeta):
-    """
-    Base class for Refinement Operators.
-
-    Let C, D \\in N_c where N_c os a finite set of concepts.
-
-    * Proposition 3.3 (Complete and Finite Refinement Operators) [1]
-      * ρ(C) = {C ⊓ T} ∪ {D \\| D is not empty AND D \\sqset C}
-        * The operator is finite,
-        * The operator is complete as given a concept C, we can reach an arbitrary concept D such that D subset of C.
-
-    *) Theoretical Foundations of Refinement Operators [1].
-
-
-
-
-    *) Defining a top-down refimenent operator that is a proper is crutial.
-        4.1.3 Achieving Properness [1]
-    *) Figure 4.1 [1] defines of the refinement operator.
-
-    [1] Learning OWL Class Expressions.
-
-    Attributes:
-        kb (AbstractKnowledgeBase): The knowledge base used by this refinement operator.
-    """
-    __slots__ = 'kb'
-
-    kb: _KB
-
-    @abstractmethod
-    def __init__(self, knowledge_base: _KB):
-        """Construct a new base refinement operator.
-
-        Args:
-            knowledge_base: Knowledge base to operate on.
-        """
-        self.kb = knowledge_base
-
-    @abstractmethod
-    def refine(self, *args, **kwargs) -> Iterable[OWLClassExpression]:
-        """Refine a given concept.
-
-        Args:
-            ce (OWLClassExpression): Concept to refine.
-
-        Returns:
-            New refined concepts.
-        """
-        pass
-
-    def len(self, concept: OWLClassExpression) -> int:
-        """The length of a concept.
-
-        Args:
-            concept: The concept to measure the length for.
-
-        Returns:
-            Length of concept according to some metric configured in the knowledge base.
-        """
-        return self.kb.concept_len(concept)
-
-
 class AbstractNode(metaclass=ABCMeta):
     """Abstract search tree node."""
     __slots__ = ()
@@ -368,11 +305,6 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
                     f'Number of properties: {properties_count}')
 
     @abstractmethod
-    def clean(self) -> None:
-        """This method should reset any caches and statistics in the knowledge base."""
-        raise NotImplementedError
-
-    @abstractmethod
     def individuals_count(self) -> int:
         """Total number of individuals in this knowledge base."""
         pass
@@ -393,16 +325,226 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def concept_len(self, ce: OWLClassExpression) -> int:
-        """Calculate the length of a concept.
+    def individuals(self, concept: Optional[OWLClassExpression] = None, named_individuals: bool = False) -> Iterable[OWLNamedIndividual]:
+        pass
+
+    @abstractmethod
+    def abox(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def tbox(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def triples(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_object_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def data_properties_for_domain(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def least_general_named_concepts(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_classes(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_object_property_domains(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_object_property_ranges(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_data_property_domains(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_data_property_ranges(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_boolean_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_numeric_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_time_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_existential_restrictions(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_universal_restrictions(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_existential_restrictions_inverse(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def most_general_universal_restrictions_inverse(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_direct_parents(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_all_direct_sub_concepts(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_all_sub_concepts(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_concepts(self, *args, **kwargs):
+        pass
+
+    @property
+    @abstractmethod
+    def concepts(self, *args, **kwargs):
+        pass
+
+    @property
+    @abstractmethod
+    def object_properties(self, *args, **kwargs):
+        pass
+
+    @property
+    @abstractmethod
+    def data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_object_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_boolean_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_numeric_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_double_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_time_data_properties(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_types(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_object_properties_for_ind(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_data_properties_for_ind(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_object_property_values(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def get_data_property_values(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def contains_class(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def are_owl_concept_disjoint(self, *args, **kwargs):
+        pass
+
+
+class BaseRefinement(Generic[_N], metaclass=ABCMeta):
+    """
+    Base class for Refinement Operators.
+
+    Let C, D \\in N_c where N_c os a finite set of concepts.
+
+    * Proposition 3.3 (Complete and Finite Refinement Operators) [1]
+      * ρ(C) = {C ⊓ T} ∪ {D \\| D is not empty AND D \\sqset C}
+        * The operator is finite,
+        * The operator is complete as given a concept C, we can reach an arbitrary concept D such that D subset of C.
+
+    *) Theoretical Foundations of Refinement Operators [1].
+
+    *) Defining a top-down refimenent operator that is a proper is crutial.
+        4.1.3 Achieving Properness [1]
+    *) Figure 4.1 [1] defines of the refinement operator.
+
+    [1] Learning OWL Class Expressions.
+
+    Attributes:
+        kb (AbstractKnowledgeBase): The knowledge base used by this refinement operator.
+    """
+    __slots__ = 'kb'
+
+    kb: AbstractKnowledgeBase
+
+    @abstractmethod
+    def __init__(self, knowledge_base: AbstractKnowledgeBase):
+        """Construct a new base refinement operator.
 
         Args:
-            ce: The concept to measure the length for.
+            knowledge_base: Knowledge base to operate on.
+        """
+        self.kb = knowledge_base
+
+    @abstractmethod
+    def refine(self, *args, **kwargs) -> Iterable[OWLClassExpression]:
+        """Refine a given concept.
+
+        Args:
+            ce (OWLClassExpression): Concept to refine.
 
         Returns:
-            Length of concept.
+            New refined concepts.
         """
         pass
+
+    def len(self, concept: OWLClassExpression) -> int:
+        """The length of a concept.
+
+        Args:
+            concept: The concept to measure the length for.
+
+        Returns:
+            Length of concept according to some metric configured in the knowledge base.
+        """
+        return concept_len(concept)
 
 
 class AbstractLearningProblem(metaclass=ABCMeta):
@@ -479,92 +621,6 @@ class LBLSearchTree(Generic[_N], metaclass=ABCMeta):
             kb_learning_problem: Underlying learning problem to compare the quality to.
         """
         pass
-
-
-class DepthAbstractDrill:   # pragma: no cover
-    """
-    Abstract class for Convolutional DQL concept learning.
-    """
-
-    def __init__(self, path_of_embeddings, reward_func, learning_rate=None,
-                 num_episode=None, num_episodes_per_replay=None, epsilon=None,
-                 num_of_sequential_actions=None, max_len_replay_memory=None,
-                 representation_mode=None, batch_size=None, epsilon_decay=None, epsilon_min=None,
-                 num_epochs_per_replay=None, num_workers=None, verbose=0):
-        self.name = 'DRILL'
-        self.instance_embeddings = read_csv(path_of_embeddings)
-        if not self.instance_embeddings:
-            print("No embeddings found")
-            self.embedding_dim = None
-        else:
-            self.embedding_dim = self.instance_embeddings.shape[1]
-        self.reward_func = reward_func
-        self.representation_mode = representation_mode
-        assert representation_mode in ['averaging', 'sampling']
-        # Will be filled by child class
-        self.heuristic_func = None
-        self.num_workers = num_workers
-        # constants
-        self.epsilon = epsilon
-        self.learning_rate = learning_rate
-        self.num_episode = num_episode
-        self.num_of_sequential_actions = num_of_sequential_actions
-        self.num_epochs_per_replay = num_epochs_per_replay
-        self.max_len_replay_memory = max_len_replay_memory
-        self.epsilon_decay = epsilon_decay
-        self.epsilon_min = epsilon_min
-        self.batch_size = batch_size
-        self.verbose = verbose
-        self.num_episodes_per_replay = num_episodes_per_replay
-
-        # will be filled
-        self.optimizer = None  # torch.optim.Adam(self.model_net.parameters(), lr=self.learning_rate)
-
-        self.seen_examples = dict()
-        self.emb_pos, self.emb_neg = None, None
-        self.start_time = None
-        self.goal_found = False
-        self.experiences = Experience(maxlen=self.max_len_replay_memory)
-
-    def attributes_sanity_checking_rl(self):
-        assert len(self.instance_embeddings) > 0
-        assert self.embedding_dim > 0
-        if self.num_workers is None:
-            self.num_workers = 4
-        if self.epsilon is None:
-            self.epsilon = 1
-        if self.learning_rate is None:
-            self.learning_rate = .001
-        if self.num_episode is None:
-            self.num_episode = 1
-        if self.num_of_sequential_actions is None:
-            self.num_of_sequential_actions = 3
-        if self.num_epochs_per_replay is None:
-            self.num_epochs_per_replay = 1
-        if self.max_len_replay_memory is None:
-            self.max_len_replay_memory = 256
-        if self.epsilon_decay is None:
-            self.epsilon_decay = 0.01
-        if self.epsilon_min is None:
-            self.epsilon_min = 0
-        if self.batch_size is None:
-            self.batch_size = 1024
-        if self.verbose is None:
-            self.verbose = 0
-        if self.num_episodes_per_replay is None:
-            self.num_episodes_per_replay = 2
-
-    @abstractmethod
-    def init_training(self, *args, **kwargs):
-        """
-        Initialize training for a given E+,E- and K.
-        """
-
-    @abstractmethod
-    def terminate_training(self):
-        """
-        Save weights and training data after training phase.
-        """
 
 
 class DRILLAbstractTree:  # pragma: no cover

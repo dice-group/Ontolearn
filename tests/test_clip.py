@@ -2,11 +2,6 @@ from ontolearn.concept_learner import CLIP
 from ontolearn.refinement_operators import ExpressRefinement
 from ontolearn.knowledge_base import KnowledgeBase
 from owlapy.parser import DLSyntaxParser
-import sys
-from ontolearn.metrics import F1
-import time
-import random
-import unittest
 import os
 import warnings
 warnings.filterwarnings("ignore")

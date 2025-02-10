@@ -27,7 +27,7 @@ def test_concept():
         ic = kb.individuals_count(cls)
         assert ic > 0
         inds = kb.individuals_set(cls)
-        assert inds.issubset(kb.all_individuals_set())
+        assert inds.issubset(kb.individuals())
 
 
 if __name__ == '__main__':

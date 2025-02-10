@@ -31,7 +31,7 @@ from typing import DefaultDict, Dict, Set, Optional, Iterable, List, Type, Final
 from owlapy.class_expression import OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, OWLObjectIntersectionOf, \
     OWLClassExpression, OWLNothing, OWLThing, OWLNaryBooleanClassExpression, OWLObjectUnionOf, OWLClass, \
     OWLObjectComplementOf, OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLDataSomeValuesFrom, \
-    OWLDatatypeRestriction, OWLDataHasValue, OWLObjectExactCardinality, OWLObjectHasValue, OWLObjectOneOf
+    OWLDatatypeRestriction, OWLDataHasValue, OWLObjectExactCardinality, OWLObjectOneOf
 from owlapy.owl_individual import OWLIndividual
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_property import OWLObjectPropertyExpression, OWLObjectInverseOf, OWLDataProperty, \
@@ -41,18 +41,16 @@ from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter
 from owlapy.providers import owl_datatype_max_inclusive_restriction, owl_datatype_min_inclusive_restriction
 from owlapy.vocab import OWLFacet
 
-from .abstracts import BaseRefinement
+from .abstracts import BaseRefinement, AbstractKnowledgeBase
 from .concept_generator import ConceptGenerator
 from .knowledge_base import KnowledgeBase
 from .search import OENode
-from typing import Tuple
-import itertools
 
 
 class LengthBasedRefinement(BaseRefinement):
     """ A top-down length based ("no semantic information leveraged) refinement operator in ALC."""
 
-    def __init__(self, knowledge_base: KnowledgeBase,
+    def __init__(self, knowledge_base: AbstractKnowledgeBase,
                  use_inverse: bool = True,
                  use_data_properties: bool = False,
                  use_card_restrictions: bool = True,
@@ -108,7 +106,7 @@ class LengthBasedRefinement(BaseRefinement):
 
         """
         # (1) Most General OWL Named Concepts
-        most_general_concepts = [i for i in self.kb.get_most_general_classes()]
+        most_general_concepts = [i for i in self.kb.most_general_classes()]
         yield from most_general_concepts
         # (2) Complement of Least General OWL Named Concepts General
         neg_concepts = [OWLObjectComplementOf(i) for i in self.kb.least_general_named_concepts()]
@@ -154,7 +152,7 @@ class LengthBasedRefinement(BaseRefinement):
         # TODO: Most general_double_data_pro
         if not isinstance(self.kb, KnowledgeBase):  # pragma: no cover
             for i in self.kb.get_double_data_properties():
-                doubles = [i.parse_double() for i in self.kb.get_range_of_double_data_properties(i)]
+                doubles = [i.parse_double() for i in self.kb.get_values_of_double_data_property(i)]
                 mean_doubles = sum(doubles) / len(doubles)
                 yield OWLDataSomeValuesFrom(property=i,
                                             filler=owl_datatype_min_inclusive_restriction(
@@ -171,8 +169,7 @@ class LengthBasedRefinement(BaseRefinement):
         assert isinstance(class_expression, OWLClass), class_expression
         for i in self.top_refinements:
             if i.is_owl_nothing() is False:
-                # TODO: Include are_owl_concept_disjoint into Knowledgebase class
-                if isinstance(i, OWLClass):  #:and self.kb.are_owl_concept_disjoint(class_expression, i) is False:
+                if isinstance(i, OWLClass) and self.kb.are_owl_concept_disjoint(class_expression, i) is False:
                     yield OWLObjectIntersectionOf((class_expression, i))
                 else:
                     yield OWLObjectIntersectionOf((class_expression, i))
@@ -315,7 +312,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
 
     _Node: Final = OENode
 
-    kb: KnowledgeBase
+    kb: AbstractKnowledgeBase
     value_splitter: Optional[AbstractValueSplitter]
     max_child_length: int
     use_negation: bool
@@ -331,7 +328,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
     generator: ConceptGenerator
 
     def __init__(self,
-                 knowledge_base: KnowledgeBase,
+                 knowledge_base: AbstractKnowledgeBase,
                  value_splitter: Optional[AbstractValueSplitter] = None,
                  max_child_length: int = 10,
                  use_negation: bool = True,
@@ -454,7 +451,7 @@ class ModifiedCELOERefinement(BaseRefinement[OENode]):
             # TODO probably not correct/complete
             if max_length >= 2 and (self.len(ce) + 1 <= self.max_child_length):
                 # (2.2) Create negation of all leaf_concepts
-                iter_container.append(self.generator.negation_from_iterables(self.kb.get_leaf_concepts(ce)))
+                iter_container.append(self.generator.negation_from_iterables(self.kb.class_hierarchy.leaves(of=ce)))
 
         if max_length >= 3 and (self.len(ce) + 2 <= self.max_child_length):
             # (2.3) Create ∀.r.T and ∃.r.T where r is the most general relation.
@@ -792,7 +789,7 @@ class ExpressRefinement(ModifiedCELOERefinement):
     sample_fillers_count: int
     generator: ConceptGenerator
 
-    def __init__(self, knowledge_base,
+    def __init__(self, knowledge_base: AbstractKnowledgeBase,
                  downsample: bool = True,
                  expressivity: float = 0.8,
                  sample_fillers_count: int = 5,

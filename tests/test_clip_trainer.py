@@ -7,10 +7,9 @@ import torch
 import os
 import json
 import random
-import unittest
 import warnings
 warnings.filterwarnings("ignore")
-import os
+
 def seed_everything():
     seed = 42
     os.environ['PYTHONHASHSEED'] = str(seed)

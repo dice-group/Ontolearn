@@ -23,6 +23,9 @@
 # -----------------------------------------------------------------------------
 
 from typing import Set
+from owlapy.class_expression import OWLClassExpression
+from ontolearn.abstracts import EncodedLearningProblem, AbstractScorer, AbstractKnowledgeBase
+from ontolearn.search import EvaluatedConcept
 
 
 def f1(*, individuals: Set, pos: Set, neg: Set):
@@ -64,3 +67,26 @@ def acc(*, individuals: Set, pos: Set, neg: Set):
     fp = len(neg.intersection(individuals))
     fn = len(pos.difference(individuals))
     return (tp + tn) / (tp + tn + fp + fn)
+
+
+def evaluate_concept(kb: AbstractKnowledgeBase, concept: OWLClassExpression, quality_func: AbstractScorer,
+                     encoded_learning_problem: EncodedLearningProblem) -> EvaluatedConcept:
+    """Evaluates a concept by using the encoded learning problem examples, in terms of Accuracy or F1-score.
+
+    Note:
+        This method is useful to tell the quality (e.q) of a generated concept by the concept learners, to get
+        the set of individuals (e.inds) that are classified by this concept and the amount of them (e.ic).
+    Args:
+        kb: The knowledge base where to evaluate the concept.
+        concept: The concept to be evaluated.
+        quality_func: Quality measurement in terms of Accuracy or F1-score.
+        encoded_learning_problem: The encoded learning problem.
+    Return:
+        The evaluated concept.
+    """
+
+    e = EvaluatedConcept()
+    e.inds = kb.individuals_set(concept)
+    e.ic = len(e.inds)
+    _, e.q = quality_func.score_elp(e.inds, encoded_learning_problem)
+    return e
