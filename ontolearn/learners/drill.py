@@ -25,9 +25,11 @@ from abc import abstractmethod
 
 import pandas as pd
 import json
-from owlapy.class_expression import OWLClassExpression
+from owlapy.class_expression import OWLClassExpression, OWLThing, OWLClass
+from owlapy.iri import IRI
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy import owl_expression_to_dl
+
 from ontolearn.base_concept_learner import RefinementBasedConceptLearner
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.abstracts import AbstractNode, AbstractKnowledgeBase
@@ -51,8 +53,8 @@ from ontolearn.data_struct import PrepareBatchOfPrediction
 from tqdm import tqdm
 from owlapy.converter import owl_expression_to_sparql_with_confusion_matrix
 
-from ..triple_store import TripleStore
-from ..utils.static_funcs import make_iterable_verbose
+from ontolearn.triple_store import TripleStore
+from ontolearn.utils.static_funcs import make_iterable_verbose
 from owlapy.utils import get_expression_length
 
 
@@ -438,16 +440,22 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         # (3) Increment the number of tested concepts attribute.
 
         """
-        if isinstance(self.kb,TripleStore):
-            sparql_query=owl_expression_to_sparql_with_confusion_matrix(expression=state.concept,
-                                                           positive_examples=self.pos,
-                                                           negative_examples=self.neg)
-            bindings=self.kb.query(sparql_query).json()["results"]["bindings"]
-            assert len(bindings) == 1
-            bindings=bindings.pop()
-            confusion_matrix={k : v["value"]for k,v in bindings.items()}
-            quality = self.quality_func(confusion_matrix=confusion_matrix)
+        if isinstance(self.kb, TripleStore):
+            c = state.concept
+            if c is OWLThing:
+                tp = list(self.kb.reasoner.types(list(self.pos)[0], True))  # get types of a lp example
+                if OWLThing not in tp:  # if owl:Thing not explicitly specified check for owl:NamedIndividual
+                    named_individual = OWLClass(IRI('http://www.w3.org/2002/07/owl#', 'NamedIndividual'))
+                    if named_individual in tp:
+                        c = named_individual
 
+            sparql_query = owl_expression_to_sparql_with_confusion_matrix(expression=c, positive_examples=self.pos,
+                                                                          negative_examples=self.neg)
+            bindings = self.kb.query(sparql_query).json()["results"]["bindings"]
+            assert len(bindings) == 1
+            bindings = bindings.pop()
+            confusion_matrix = {k: v["value"]for k, v in bindings.items()}
+            quality = self.quality_func(confusion_matrix=confusion_matrix)
 
         else:
             individuals = frozenset([i for i in self.kb.individuals(state.concept)])

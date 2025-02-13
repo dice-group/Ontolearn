@@ -565,11 +565,7 @@ class TripleStoreReasoner(AbstractOWLReasoner):
             query = "SELECT ?x WHERE {" + f"<{ind.str}> a" + " ?x. }"
         else:
             query = rdfs_prefix + "SELECT DISTINCT ?x WHERE {" + f"<{ind.str}> a ?cls. " " ?cls rdfs:subClassOf* ?x}"
-        yield from [
-            i
-            for i in send_http_request_to_ts_and_fetch_results(self.url, query, OWLClass)
-            if i != OWLClass(IRI("http://www.w3.org/2002/07/owl#", "NamedIndividual"))
-        ]
+        yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLClass)
 
     def get_root_ontology(self) -> AbstractOWLOntology:
         return self.ontology
