@@ -29,7 +29,7 @@ random.seed(42)
 
 
 class LPGen:
-    def __init__(self, kb_path, storage_path=None, max_num_lps=1000, beyond_alc=False, depth=3, max_child_length=20, refinement_expressivity=0.2,
+    def __init__(self, kb_path, storage_path=None, max_num_lps=1000, beyond_alc=False, rho_name="ELRefinement", depth=3, max_child_length=20, refinement_expressivity=0.2,
                  downsample_refinements=True, sample_fillers_count=10, num_sub_roots=50, min_num_pos_examples=1):
         """
         Args
@@ -40,7 +40,7 @@ class LPGen:
         - depth, max_child_length, refinement_expressivity, sample_fillers_count, num_sub_roots all refer to the size of the data (learning problems) to be generated
         - downsample_refinements: whether to downsample refinements in ExpressRefinement. If refinement_expressivity<1, this must be set to True
         """
-        self.lp_gen = KB2Data(path=kb_path, storage_path=storage_path, max_num_lps=max_num_lps, beyond_alc=beyond_alc, depth=depth,
+        self.lp_gen = KB2Data(path=kb_path, storage_path=storage_path, max_num_lps=max_num_lps, beyond_alc=beyond_alc, rho_name=rho_name, depth=depth,
                       max_child_length=max_child_length, refinement_expressivity=refinement_expressivity,
                       downsample_refinements=downsample_refinements, sample_fillers_count=sample_fillers_count, num_sub_roots=num_sub_roots, min_num_pos_examples=min_num_pos_examples)
     def generate(self):

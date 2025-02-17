@@ -26,7 +26,7 @@ from tqdm import tqdm
 import random
 from ontolearn.knowledge_base import KnowledgeBase
 from owlapy.render import DLSyntaxObjectRenderer
-from ontolearn.refinement_operators import ExpressRefinement
+from ontolearn.refinement_operators import ExpressRefinement, ELRefinement
 import os
 import json
 
@@ -68,7 +68,7 @@ class KB2Data:
     a json file.
     """
 
-    def __init__(self, path, storage_path=None, max_num_lps=1000, beyond_alc=False, depth=3, max_child_length=20, refinement_expressivity=0.2,
+    def __init__(self, path, storage_path=None, max_num_lps=1000, beyond_alc=False, rho_name="ExpressRefinement", depth=3, max_child_length=20, refinement_expressivity=0.2,
                  downsample_refinements=True, sample_fillers_count=10, num_sub_roots=50, min_num_pos_examples=1):
         """
         Args
@@ -95,6 +95,11 @@ class KB2Data:
         self.atomic_concept_names = frozenset([self.dl_syntax_renderer.render(a) for a in atomic_concepts])
         if self.beyond_alc:
             rho = ExpressRefinement(knowledge_base=self.kb, max_child_length=max_child_length, sample_fillers_count=sample_fillers_count,
+                                downsample=downsample_refinements, use_inverse=True, use_card_restrictions=True,
+                                use_numeric_datatypes=True, use_time_datatypes=True, use_boolean_datatype=True,
+                                expressivity=refinement_expressivity)
+        elif rho_name == "ELRefinement":
+            rho = ELRefinement(knowledge_base=self.kb, max_child_length=max_child_length, sample_fillers_count=sample_fillers_count,
                                 downsample=downsample_refinements, use_inverse=True, use_card_restrictions=True,
                                 use_numeric_datatypes=True, use_time_datatypes=True, use_boolean_datatype=True,
                                 expressivity=refinement_expressivity)
