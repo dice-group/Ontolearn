@@ -5,7 +5,7 @@ class TestSemanticCache:
     def setup_method(self):
         self.path_kg = "KGs/Family/family.owl" # path to the family datasets
         self.path_kge = None
-        self.symbolic_reasoner = "Pellet"
+        self.symbolic_reasoner = "HermiT"
         self.neural_reasoner = "EBR"
         self.num_concepts = 800
         self.cache_size = 0.8*self.num_concepts
