@@ -3,7 +3,7 @@ from ontolearn.semantic_caching import run_semantic_cache, run_non_semantic_cach
 
 class TestSemanticCache:
     def setup_method(self):
-        self.path_kg = "KGs/Family/family.owl" # path to the family datasets
+        self.path_kg = "KGs/Family/family-benchmark_rich_background.owl" # path to the family datasets
         self.path_kge = None
         self.symbolic_reasoner = "HermiT"
         self.neural_reasoner = "EBR"
