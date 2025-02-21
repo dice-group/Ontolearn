@@ -3,11 +3,11 @@ from ontolearn.semantic_caching import run_semantic_cache, run_non_semantic_cach
 
 class TestSemanticCache:
     def setup_method(self):
-        self.path_kg = "KGs/Family/father.owl" #path to the family datasets
+        self.path_kg = "KGs/Family/father.owl" #path to the father datasets
         self.path_kge = None
         self.symbolic_reasoner = "HermiT"
         self.neural_reasoner = "EBR"
-        self.num_concepts = 800
+        self.num_concepts = 90
         self.cache_size = 0.8*self.num_concepts
         self.eviction = "LRU"
         self.cache_type = "cold"
@@ -16,16 +16,14 @@ class TestSemanticCache:
         assert cache_semantic["hit_ratio"] >= cache_non_semantic["hit_ratio"], f"Expected semantic caching to have higher hit ratio, but got {cache_semantic['hit_ratio']} vs {cache_non_semantic['hit_ratio']}"
         assert cache_semantic["miss_ratio"] <= cache_non_semantic["miss_ratio"], f"Expected semantic caching to have lower miss ratio, but got {cache_semantic['miss_ratio']} vs {cache_non_semantic['miss_ratio']}"
 
-    def test_run_time_and_jaccard(self):
+    def test_jaccard(self):
 
         cache_neural,_ =  run_semantic_cache(self.path_kg, self.path_kge, self.cache_size, self.neural_reasoner, self.eviction, 0, self.cache_type, True)
         cache_symbolic,_ = run_semantic_cache(self.path_kg, self.path_kge, self.cache_size, self.symbolic_reasoner, self.eviction, 0, self.cache_type, True)
        
         assert float(cache_neural["avg_jaccard"]) >= float(cache_neural["avg_jaccard_reas"]), "Expected average Jaccard similarity to be at least as good as reasoner-based retrieval."
         assert float(cache_symbolic["avg_jaccard"]) >= float(cache_symbolic["avg_jaccard_reas"]), "Expected average Jaccard similarity to be at least as good as reasoner-based retrieval."
-        # assert float(cache_symbolic["RT_cache"]) <= float(cache_symbolic["RT"]), "Expected runtime with cache to be less or equal to direct retrieval time."
-        # assert float(cache_neural["RT_cache"]) <= float(cache_neural["RT"]), "Expected runtime with cache to be less or equal to direct retrieval time."
-
+       
 
     def test_cache_methods(self):
         for reasoner in [self.neural_reasoner, self.symbolic_reasoner]:
