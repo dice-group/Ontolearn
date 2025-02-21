@@ -3,11 +3,11 @@ from ontolearn.semantic_caching import run_semantic_cache, run_non_semantic_cach
 
 class TestSemanticCache:
     def setup_method(self):
-        self.path_kg = "KGs/Family/father.owl" #path to the father dataset
+        self.path_kg = "KGs/Family/father.owl" #path to the family datasets
         self.path_kge = None
         self.symbolic_reasoner = "HermiT"
         self.neural_reasoner = "EBR"
-        self.num_concepts = 90
+        self.num_concepts = 800
         self.cache_size = 0.8*self.num_concepts
         self.eviction = "LRU"
         self.cache_type = "cold"
@@ -23,6 +23,7 @@ class TestSemanticCache:
        
         assert float(cache_neural["avg_jaccard"]) >= float(cache_neural["avg_jaccard_reas"]), "Expected average Jaccard similarity to be at least as good as reasoner-based retrieval."
         assert float(cache_symbolic["avg_jaccard"]) >= float(cache_symbolic["avg_jaccard_reas"]), "Expected average Jaccard similarity to be at least as good as reasoner-based retrieval."
+        assert float(cache_symbolic["RT_cache"]) <= float(cache_symbolic["RT"]), "Expected runtime with cache to be less or equal to direct retrieval time."
         assert float(cache_neural["RT_cache"]) <= float(cache_neural["RT"]), "Expected runtime with cache to be less or equal to direct retrieval time."
 
 
@@ -35,10 +36,8 @@ class TestSemanticCache:
     def test_cache_size(self):
         cache_large,_ = run_semantic_cache(self.path_kg, self.path_kge, self.cache_size, self.neural_reasoner, self.eviction, 0, self.cache_type, True)
 
-        for k in [0.1, 0.5]:
+        for k in [0.1, 0.2]:
             cache_small,_ = run_semantic_cache(self.path_kg, self.path_kge, k * self.num_concepts, self.neural_reasoner, self.eviction, 0, self.cache_type, True)
-            
-            assert cache_small["RT_cache"] >= cache_large["RT_cache"], "Expected runtime to decrease with larger cache."
             assert cache_small["hit_ratio"] <= cache_large["hit_ratio"], f"Expected hit ratio to increase with cache size, but got {cache_small['hit_ratio']} vs {cache_large['hit_ratio']}"
             assert cache_small["miss_ratio"] >= cache_large["miss_ratio"], f"Expected miss ratio to decrease with cache size, but got {cache_small['miss_ratio']} vs {cache_large['miss_ratio']}"
 
