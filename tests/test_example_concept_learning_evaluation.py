@@ -9,6 +9,7 @@ Example to run the script
 python examples/concept_learning_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 3 --report family.csv
 
 """
+import os
 import json
 import time
 import pandas as pd
@@ -24,22 +25,27 @@ from ontolearn.utils.static_funcs import compute_f1_score
 pd.set_option("display.precision", 5)
 
 class TestConceptLearning:
+    def __init__(self, data_path: str | None):
+        self.data_path = data_path if data_path else os.getcwd()
+    
     def test_learning(self):
 
-        with open('LPs/Family/lps.json') as json_file:
+        with open(self.data_path +'LPs/Family/lps.json') as json_file:
             settings = json.load(json_file)
 
-        path_kb="KGs/Family/family-benchmark_rich_background.owl"
+        path_kb=self.data_path +"KGs/Family/family-benchmark_rich_background.owl"
+
         max_runtime=1
         kb = KnowledgeBase(path=path_kb)
-        ocel = OCEL(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime)
-        celoe = CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime)
-        drill = Drill(knowledge_base=KnowledgeBase(path=path_kb),
-                      quality_func=F1(),
-                      max_runtime=max_runtime)
-        tdl = TDL(knowledge_base=KnowledgeBase(path=path_kb),
+        # ocel = OCEL(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime)
+        # celoe = CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime)
+        # drill = Drill(knowledge_base=kb,
+        #               quality_func=F1(),
+        #               max_runtime=max_runtime)
+        tdl = TDL(knowledge_base=kb,
                   kwargs_classifier={"random_state": 0},
                   max_runtime=max_runtime)
+        
         # dictionary to store the data
         data = dict()
         for str_target_concept, examples in settings['problems'].items():
@@ -54,50 +60,50 @@ class TestConceptLearning:
             typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
             lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
 
-            print("OCEL starts..", end="\t")
-            start_time = time.time()
-            pred_ocel = ocel.fit(lp).best_hypotheses(n=1)
-            print("OCEL ends..", end="\t")
-            rt_ocel = time.time() - start_time
-            f1_ocel = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_ocel)}), pos=lp.pos, neg=lp.neg)
-            data.setdefault("F1-OCEL", []).append(f1_ocel)
-            data.setdefault("RT-OCEL", []).append(rt_ocel)
-            print(f"OCEL Quality: {f1_ocel:.3f}", end="\t")
-            print(f"OCEL Runtime: {rt_ocel:.3f}")
-            print("CELOE starts..", end="\t")
-            start_time = time.time()
-            pred_celoe = celoe.fit(lp).best_hypotheses(n=1)
-            print("CELOE Ends..", end="\t")
-            rt_celoe = time.time() - start_time
-            f1_celoe = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_celoe)}), pos=lp.pos, neg=lp.neg)
-            data.setdefault("F1-CELOE", []).append(f1_celoe)
-            data.setdefault("RT-CELOE", []).append(rt_celoe)
-            print(f"CELOE Quality: {f1_celoe:.3f}", end="\t")
-            print(f"CELOE Runtime: {rt_celoe:.3f}")
+            # print("OCEL starts..", end="\t")
+            # start_time = time.time()
+            # pred_ocel = ocel.fit(lp).best_hypotheses(n=1)
+            # print("OCEL ends..", end="\t")
+            # rt_ocel = time.time() - start_time
+            # f1_ocel = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_ocel)}), pos=lp.pos, neg=lp.neg)
+            # data.setdefault("F1-OCEL", []).append(f1_ocel)
+            # data.setdefault("RT-OCEL", []).append(rt_ocel)
+            # print(f"OCEL Quality: {f1_ocel:.3f}", end="\t")
+            # print(f"OCEL Runtime: {rt_ocel:.3f}")
+            # print("CELOE starts..", end="\t")
+            # start_time = time.time()
+            # pred_celoe = celoe.fit(lp).best_hypotheses(n=1)
+            # print("CELOE Ends..", end="\t")
+            # rt_celoe = time.time() - start_time
+            # f1_celoe = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_celoe)}), pos=lp.pos, neg=lp.neg)
+            # data.setdefault("F1-CELOE", []).append(f1_celoe)
+            # data.setdefault("RT-CELOE", []).append(rt_celoe)
+            # print(f"CELOE Quality: {f1_celoe:.3f}", end="\t")
+            # print(f"CELOE Runtime: {rt_celoe:.3f}")
 
-            print("Evo starts..", end="\t")
-            start_time = time.time()
-            # Evolearner has a bug and KB needs to be reloaded
-            evo = EvoLearner(knowledge_base=KnowledgeBase(path=path_kb), quality_func=F1(), max_runtime=max_runtime)
-            pred_evo = evo.fit(lp).best_hypotheses(n=1)
-            print("Evo ends..", end="\t")
-            rt_evo = time.time() - start_time
-            f1_evo = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_evo)}), pos=lp.pos, neg=lp.neg)
-            data.setdefault("F1-Evo", []).append(f1_evo)
-            data.setdefault("RT-Evo", []).append(rt_evo)
-            print(f"Evo Quality: {f1_evo:.3f}", end="\t")
-            print(f"Evo Runtime: {rt_evo:.3f}")
+            # print("Evo starts..", end="\t")
+            # start_time = time.time()
+            # # Evolearner has a bug and KB needs to be reloaded
+            # evo = EvoLearner(knowledge_base=kb, quality_func=F1(), max_runtime=max_runtime)
+            # pred_evo = evo.fit(lp).best_hypotheses(n=1)
+            # print("Evo ends..", end="\t")
+            # rt_evo = time.time() - start_time
+            # f1_evo = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_evo)}), pos=lp.pos, neg=lp.neg)
+            # data.setdefault("F1-Evo", []).append(f1_evo)
+            # data.setdefault("RT-Evo", []).append(rt_evo)
+            # print(f"Evo Quality: {f1_evo:.3f}", end="\t")
+            # print(f"Evo Runtime: {rt_evo:.3f}")
 
-            print("DRILL starts..", end="\t")
-            start_time = time.time()
-            pred_drill = drill.fit(lp).best_hypotheses(n=1)
-            print("DRILL ends..", end="\t")
-            rt_drill = time.time() - start_time
-            f1_drill = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_drill)}), pos=lp.pos, neg=lp.neg)
-            data.setdefault("F1-DRILL", []).append(f1_drill)
-            data.setdefault("RT-DRILL", []).append(rt_drill)
-            print(f"DRILL Quality: {f1_drill:.3f}", end="\t")
-            print(f"DRILL Runtime: {rt_drill:.3f}")
+            # print("DRILL starts..", end="\t")
+            # start_time = time.time()
+            # pred_drill = drill.fit(lp).best_hypotheses(n=1)
+            # print("DRILL ends..", end="\t")
+            # rt_drill = time.time() - start_time
+            # f1_drill = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_drill)}), pos=lp.pos, neg=lp.neg)
+            # data.setdefault("F1-DRILL", []).append(f1_drill)
+            # data.setdefault("RT-DRILL", []).append(rt_drill)
+            # print(f"DRILL Quality: {f1_drill:.3f}", end="\t")
+            # print(f"DRILL Runtime: {rt_drill:.3f}")
 
             print("TDL starts..", end="\t")
             start_time = time.time()
@@ -140,3 +146,6 @@ class TestConceptLearning:
                                                                                                   0.3])):
             if i==0 or i%2==0:
                 assert x>y
+
+if __name__ == '__main__':
+    TestConceptLearning(data_path='../data/').test_learning()
