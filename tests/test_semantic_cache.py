@@ -7,7 +7,7 @@ class TestSemanticCache:
         self.path_kge = None
         self.symbolic_reasoner = "HermiT"
         self.neural_reasoner = "EBR"
-        self.num_concepts = 90
+        self.num_concepts = 800
         self.cache_size = 0.8*self.num_concepts
         self.eviction = "LRU"
         self.cache_type = "cold"
