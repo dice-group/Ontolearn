@@ -1,8 +1,8 @@
 [![Downloads](https://static.pepy.tech/badge/ontolearn)](https://pepy.tech/project/ontolearn)
 [![Downloads](https://img.shields.io/pypi/dm/ontolearn)](https://pypi.org/project/ontolearn/)
 [![Coverage](https://img.shields.io/badge/coverage-86%25-green)](https://ontolearn-docs-dice-group.netlify.app/usage/09_further_resources#code-coverage)
-[![Pypi](https://img.shields.io/badge/pypi-0.8.1-blue)](https://pypi.org/project/ontolearn/0.8.1/)
-[![Docs](https://img.shields.io/badge/documentation-0.8.1-yellow)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
+[![Pypi](https://img.shields.io/badge/pypi-0.9.0-blue)](https://pypi.org/project/ontolearn/0.9.0/)
+[![Docs](https://img.shields.io/badge/documentation-0.9.0-yellow)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
 [![Python](https://img.shields.io/badge/python-3.10.13+-4584b6)](https://www.python.org/downloads/release/python-31013/)
 &nbsp;
 
@@ -18,6 +18,7 @@ $E^+$ and $E^-$, learning [OWL Class expression](https://www.w3.org/TR/owl2-synt
 $$\forall p \in E^+\ \mathcal{K} \models H(p) \wedge \forall n \in E^-\ \mathcal{K} \not \models H(n).$$
 
 To tackle this supervised learning problem, ontolearn offers many symbolic, neuro-symbolic and deep learning based Learning algorithms: 
+- **TDL** &rarr; Tree-based OWL Class Expression Learner for Large Graphs
 - **Drill** &rarr; [Neuro-Symbolic Class Expression Learning](https://www.ijcai.org/proceedings/2023/0403.pdf)
 - **EvoLearner** &rarr; [EvoLearner: Learning Description Logics with Evolutionary Algorithms](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
 - **NCES2** &rarr; [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
@@ -121,7 +122,7 @@ print(owl_expression_to_sparql(expression=h))
 save_owl_class_expressions(expressions=h,path="#owl_prediction")
 ```
 
-Fore more please refer to  the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder.
+Fore more please refer to the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder.
 
 ## ontolearn-webservice 
 

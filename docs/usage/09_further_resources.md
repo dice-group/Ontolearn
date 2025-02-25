@@ -4,21 +4,24 @@ You can find more details in the related papers for each algorithm:
 
 Concept Learning:
 
-- **NCES2**&ast; &rarr; [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
-- **Drill** &rarr; [Deep Reinforcement Learning for Refinement Operators in ALC](https://arxiv.org/pdf/2106.15373.pdf)
-- **NCES**&ast; &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13)
-- **NERO** &rarr; [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://github.com/dice-group/Nero)
-- **EvoLearner** &rarr; [An evolutionary approach to learn concepts in ALCQ(D)](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
+- **TDL** &rarr; Tree-based OWL Class Expression Learner for Large Graphs (manuscript will be added soon)
+- **Drill** &rarr; [Neuro-Symbolic Class Expression Learning](https://www.ijcai.org/proceedings/2023/0403.pdf)
+- **EvoLearner** &rarr; [EvoLearner: Learning Description Logics with Evolutionary Algorithms](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
+- **NCES2** &rarr; [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
+- **ROCES** &rarr; [Robust Class Expression Synthesis in Description Logics via Iterative Sampling](https://www.ijcai.org/proceedings/2024/0479.pdf)
+- **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13) 
+- **NERO*** &rarr; (soon) [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://link.springer.com/chapter/10.1007/978-3-031-30047-9_9)
 - **CLIP** &rarr; [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
 - **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
-- **TDL** &rarr; Manuscript will be added soon.
+- **OCEL** &rarr; A limited version of CELOE
+
+&ast;  _Not implemented in our library yet._
 
 Sampling:
 - **OntoSample** &rarr; [Accelerating Concept Learning via Sampling](https://dl.acm.org/doi/10.1145/3583780.3615158)
 
-Also check OWLAPY's documentation [here](https://dice-group.github.io/owlapy/usage/main.html).
+Also check Owlapy's documentation [here](https://dice-group.github.io/owlapy/usage/main.html).
 
-&ast;  _Not implemented in our library yet._
 
 ## Citing
 
@@ -65,6 +68,21 @@ address="Cham"
   year={2022}
 }
 
+# ROCES
+@inproceedings{kouagou2024roces,
+  title     = {ROCES: Robust Class Expression Synthesis in Description Logics via Iterative Sampling},
+  author    = {Kouagou, N'Dah Jean and Heindorf, Stefan and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+  booktitle = {Proceedings of the Thirty-Third International Joint Conference on
+               Artificial Intelligence, {IJCAI-24}},
+  publisher = {International Joint Conferences on Artificial Intelligence Organization},
+  editor    = {Kate Larson},
+  pages     = {4335--4343},
+  year      = {2024},
+  month     = {8},
+  note      = {Main Track},
+  doi       = {10.24963/ijcai.2024/479},
+  url       = {https://doi.org/10.24963/ijcai.2024/479},
+}
 
 # CLIP
 @inproceedings{kouagou2022learning,
@@ -105,57 +123,71 @@ the project better. Find them in the folders
 
 ## Contribution
 
-Feel free to create a pull request and our developers will take a look on it. 
-We appreciate your commitment. 
+We try to keep documentation up to day to the latest changes, but sometimes we may
+overlook some details or make mistakes. If you notice any of such things please let us know :).
+As for coding part, feel free to create a pull request and our developers will take a look 
+on it. We appreciate your commitment. 
 
 ## Questions
 
-In case you have any question, please contact:  `onto-learn@lists.uni-paderborn.de`
-or open an issue on our [GitHub issues page](https://github.com/dice-group/Ontolearn/issues).
+In case you have any question or issue you are welcomed to open an issue on our [GitHub issues page](https://github.com/dice-group/Ontolearn/issues).
+You can also reach us privately in any of the emails below:
+
+- [cdemir@mail.uni-paderborn.de](mailto:cdemir@mail.uni-paderborn.de) 
+- [alkid@mail.uni-paderborn.de](mailto:alkid@mail.uni-paderborn.de)
+
 
 ## Code Coverage
 
-The coverage report is generated using [coverage.py](https://coverage.readthedocs.io/en).
+The coverage report is generated using [coverage.py](https://coverage.readthedocs.io/en) for Ontolearn v0.9.0.
+
 
 ```
-Name                                       Stmts   Miss  Cover   Missing
-------------------------------------------------------------------------
-ontolearn/__init__.py                          1      0   100%
-ontolearn/abstracts.py                        60      0   100%
-ontolearn/base_concept_learner.py            158      2    99%   311, 315
-ontolearn/base_nces.py                        38      0   100%
-ontolearn/clip_architectures.py               93     77    17%   33-41, 45-56, 61-69, 73-84, 90-101, 105-119, 125-131, 137-141
-ontolearn/clip_trainer.py                     94     76    19%   45-50, 53-55, 69-75, 78-151
-ontolearn/concept_generator.py                95      2    98%   68, 84
-ontolearn/concept_learner.py                 748    173    77%   219, 294, 339, 414, 469-470, 536, 975-976, 1036, 1047, 1056, 1068, 1187-1211, 1214-1242, 1245, 1282-1298, 1301-1314, 1320-1382, 1387-1397, 1450, 1458-1463, 1469-1490, 1497-1499, 1544-1548, 1575, 1586-1589, 1596-1598, 1672-1678, 1688-1689, 1694, 1696
-ontolearn/data_struct.py                       5      0   100%
-ontolearn/ea_algorithms.py                    57      1    98%   93
-ontolearn/ea_initialization.py               216      7    97%   93, 97, 310-315
-ontolearn/ea_utils.py                         88      5    94%   93, 110-111, 114-115
-ontolearn/fitness_functions.py                13      0   100%
-ontolearn/heuristics.py                       45      0   100%
-ontolearn/knowledge_base.py                  340     53    84%   120, 130, 153-154, 156, 159, 166, 170-171, 175, 479-480, 512, 520, 528, 531, 537, 571, 574-582, 587-588, 595-597, 618, 622, 626, 641-643, 647, 662, 711, 721, 727-732, 779, 1027, 1036, 1046, 1055, 1104
-ontolearn/learners/__init__.py                 2      0   100%
-ontolearn/learners/drill.py                   30      0   100%
-ontolearn/learners/tree_learner.py           205     28    86%   190, 273-303, 391, 398, 400-404, 420, 423, 444, 453
-ontolearn/learning_problem.py                 31      1    97%   98
-ontolearn/learning_problem_generator.py       16      0   100%
-ontolearn/lp_generator/__init__.py             2      0   100%
-ontolearn/lp_generator/generate_data.py       10      0   100%
-ontolearn/lp_generator/helper_classes.py     125     14    89%   76, 85-93, 116, 135, 169-170
-ontolearn/metrics.py                          50      0   100%
-ontolearn/nces_architectures.py               72      0   100%
-ontolearn/nces_modules.py                     53      5    91%   44-45, 68-69, 72
-ontolearn/nces_trainer.py                    127     11    91%   48, 70, 74, 83, 87, 147, 156, 159, 164, 173, 185
-ontolearn/nces_utils.py                       24      0   100%
-ontolearn/owl_neural_reasoner.py             215     11    95%   57, 93, 121, 126, 137, 193, 281, 475, 488-491
-ontolearn/refinement_operators.py            521     31    94%   167-168, 226, 299, 400-401, 447, 541, 565, 599-601, 746, 782, 867-868, 888, 916, 935, 961-963, 967-968, 970, 991-993, 995, 997, 1065, 1087
-ontolearn/search.py                          293     25    91%   70, 133, 196, 216, 303, 307, 310, 339, 392, 429, 433, 441, 457, 467, 482, 484, 509, 511, 576-577, 666-667, 762, 766, 770
-ontolearn/utils/__init__.py                   33      2    94%   58, 98
-ontolearn/utils/log_config.py                 19      0   100%
-ontolearn/utils/oplogging.py                   8      0   100%
-ontolearn/utils/static_funcs.py               77     31    60%   63-79, 102-106, 124-135, 151, 180
-ontolearn/value_splitter.py                  159      6    96%   111-113, 118, 127, 130
-------------------------------------------------------------------------
-TOTAL                                       4123    561    86%
+Name                                          Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------
+examples/retrieval_eval.py                      112     16    86%   78, 83, 123, 221, 277-290
+examples/retrieval_eval_under_incomplete.py     124     31    75%   78-83, 116, 141-144, 196-219, 235-247
+ontolearn/__init__.py                             1      0   100%
+ontolearn/abstracts.py                           59      3    95%   193-195
+ontolearn/base_concept_learner.py               154      2    99%   310, 314
+ontolearn/base_nces.py                           78      5    94%   66, 91, 104-105, 113
+ontolearn/clip_architectures.py                  91      0   100%
+ontolearn/clip_trainer.py                        89      7    92%   79, 88, 91, 96, 103, 116, 139
+ontolearn/concept_generator.py                   95     26    73%   63-72, 78-88, 173-174, 221-222, 251-252
+ontolearn/concept_learner.py                    811    120    85%   370-371, 431, 442, 451, 612, 634, 636, 641, 682-686, 723, 734, 754, 769, 777, 787, 789, 831, 838, 843-845, 868-869, 883-885, 903-905, 909-923, 961-964, 969-976, 996-997, 1007-1011, 1051-1052, 1054-1057, 1064-1066, 1157, 1218, 1240-1241, 1245-1263, 1279-1283, 1307-1325, 1341-1342, 1351-1355, 1402, 1409-1411, 1506
+ontolearn/data_struct.py                        132     53    60%   179-180, 411, 417-445, 464, 470-499, 516-518
+ontolearn/ea_algorithms.py                       57      1    98%   93
+ontolearn/ea_initialization.py                  216      7    97%   93, 97, 310-315
+ontolearn/ea_utils.py                            88      5    94%   93, 110-111, 114-115
+ontolearn/fitness_functions.py                   13      0   100%
+ontolearn/heuristics.py                          45      0   100%
+ontolearn/incomplete_kb.py                       79     66    16%   47-74, 115, 134-223
+ontolearn/knowledge_base.py                     234     18    92%   107-108, 115, 400-401, 436, 444, 447, 453, 516, 561, 639, 773-774, 804, 814, 823, 872
+ontolearn/learners/__init__.py                    5      0   100%
+ontolearn/learners/celoe.py                     167     25    85%   158, 183, 237, 241, 314-318, 332, 335-360
+ontolearn/learners/drill.py                      31      0   100%
+ontolearn/learners/ocel.py                       21      0   100%
+ontolearn/learners/tree_learner.py              193     28    85%   160, 243-273, 361, 368, 370-374, 390, 393, 414, 423
+ontolearn/learning_problem.py                    55      9    84%   98, 119, 129, 135-140
+ontolearn/learning_problem_generator.py          17      0   100%
+ontolearn/lp_generator/__init__.py                2      0   100%
+ontolearn/lp_generator/generate_data.py           8      0   100%
+ontolearn/lp_generator/helper_classes.py        106      4    96%   85, 111, 145-146
+ontolearn/metrics.py                             50      0   100%
+ontolearn/nces_architectures.py                  73      0   100%
+ontolearn/nces_modules.py                       143     29    80%   44-45, 68-69, 72, 200-203, 213-242, 245-246
+ontolearn/nces_trainer.py                       196     12    94%   72, 76, 85, 89, 174, 181-183, 204, 219-221
+ontolearn/nces_utils.py                          99     62    37%   58-59, 64-82, 89-141, 147, 156
+ontolearn/owl_neural_reasoner.py                178     21    88%   94, 101, 121, 127, 133, 137, 165-173, 196, 240, 251, 256, 271, 399-402
+ontolearn/quality_funcs.py                       39     27    31%   32-56, 60-69
+ontolearn/refinement_operators.py               519     33    94%   165-166, 217-226, 296, 397-398, 444, 538, 562, 596-598, 743, 779, 885, 913, 958-960, 967, 988-990, 992, 994, 1062, 1084
+ontolearn/search.py                             293     43    85%   69, 132, 163-170, 195, 215, 264, 302, 306, 309, 338, 391, 411, 428, 432, 440, 451-452, 455-463, 466, 481, 483, 508, 510, 575-576, 665-666, 761, 765, 769
+ontolearn/semantic_caching.py                   379     80    79%   57-156, 174-179, 200, 202, 208-218, 228, 251, 268, 281, 285, 326-327, 343, 352-353, 358-360, 383-385, 394, 403, 411-413, 422, 475-477, 488-489, 497, 526, 545, 560, 640
+ontolearn/utils/__init__.py                      33      1    97%   98
+ontolearn/utils/log_config.py                    19      0   100%
+ontolearn/utils/oplogging.py                      8      0   100%
+ontolearn/utils/static_funcs.py                 113     26    77%   55, 66, 140, 172-177, 218-219, 234-251
+ontolearn/value_splitter.py                     159      6    96%   111-113, 118, 127, 130
+---------------------------------------------------------------------------
+TOTAL                                          5384    766    86%
 ```

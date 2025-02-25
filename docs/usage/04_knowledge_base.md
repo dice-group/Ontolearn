@@ -7,7 +7,7 @@ and a reasoner of type [AbstractOWLReasoner](https://dice-group.github.io/owlapy
 are not compatible with each other. For example, you can not use [TripleStore](ontolearn.triple_store.TripleStore) 
 knowledge base with 
 [StructuralReasoner](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_reasoner/index.html#owlapy.owl_reasoner.StructuralReasoner), 
-but you can use _TripleStore_ KB with [TripleStoreReasoner](ontolearn.triple_store.TripleStoreReasoner).
+but you can use [TripleStore](ontolearn.triple_store.TripleStore) knowledge base with [TripleStoreReasoner](ontolearn.triple_store.TripleStoreReasoner).
 _AbstractKnowledgeBase_ contains the necessary methods to facilitate _Structured Machine Learning_.
 
 Currently, there are two implementation of _AbstractKnowledgeBase_:
@@ -20,9 +20,10 @@ Currently, there are two implementation of _AbstractKnowledgeBase_:
 These terms may be used interchangeably sometimes but in Ontolearn they are not the same thing,
 although they share a lot of similarities. An ontology in owlapy, as explained 
 [here](https://dice-group.github.io/owlapy/usage/ontologies.html) is the object where we load 
-the OWL 2.0 ontologies from a _.owl_ file containing the ontology in an RDF/XML or OWL/XML format.
-On the other side a knowledge base combines an ontology and a reasoner together.
-Therefore, differently from the ontology you can use methods that require reasoning. You can check 
+the OWL 2.0 ontologies (supporting different formats OWL/XML, RDF/XML, Triples etc.)
+On the other side a knowledge base combines an ontology and a reasoner together and is main purpose
+is to ease the process of concept learning serving as both a storing entity and a data retrieval entity.
+Therefore, differently from the ontology object you can use reasoning methods. You can check 
 the methods for each in the links below:
 
 - [AbstractKnowledgeBase](ontolearn.knowledge_base.AbstractKnowledgeBase)
@@ -37,16 +38,13 @@ is required to run a learning algorithm.
 can retrieve information from signature of this ontology. In case of a local the ontology, it can be modified and 
 saved.
 
-- Although they have some similar functionalities, there are a lot of other distinct 
-functionalities that each of them has.
-
-
+  
 ## Create an Instance of KnowledgeBase
 
-Let us show how you can initialize an object of `KnowledgeBase`.
-We consider that you have already an OWL 2.0 ontology (containing *.owl* extension).
+Let us show how you can initialize an instance of `KnowledgeBase`.
+We consider that you have already an OWL 2.0 ontology locally (for example a file ending with *.owl*).
 
-The simplest way is to use the path of your _.owl_ file as follows:
+The simplest way is to use the path of your local ontology as follows:
 
 ```python 
 from ontolearn.knowledge_base import KnowledgeBase
@@ -55,7 +53,10 @@ kb = KnowledgeBase(path="file://KGs/Family/father.owl")
 ```
 
 What happens in the background is that the ontology located in this path will be loaded
-in the `AbstractOWLOntology` object of `kb` as done [here](https://dice-group.github.io/owlapy/usage/ontologies.html#loading-an-ontology).
+in the `AbstractOWLOntology` object of `kb` as well as a reasoner will be created using that
+ontology during initialisation. You may as well initialise an instance of `KnowledgeBase` using
+an instance of an ontology and reasoner. For this example we are using a minimalistic ontology
+called the _father_ ontology which you can download as instructed [here](02_installation.md#download-external-files).
 
 
 ## Ignore Concepts
@@ -145,8 +146,8 @@ male_individuals = kb.individuals(male_concept)
 Sometimes ontologies and therefore knowledge bases can get very large and our
 concept learners become inefficient in terms of runtime. Sampling is an approach
 to extract a portion of the whole knowledge base without changing its semantic and
-still being expressive enough to yield results with as little loss of quality as 
-possible. [OntoSample](https://github.com/alkidbaci/OntoSample/tree/main) is 
+still being expressive enough to yield results (in the learning task) with as little 
+loss of quality as possible. [OntoSample](https://github.com/alkidbaci/OntoSample/tree/main) is 
 a library that we use to perform the sampling process. It offers different sampling 
 techniques which fall into the following categories:
 
@@ -164,7 +165,10 @@ You can check them [here](https://github.com/alkidbaci/OntoSample/tree/main).
 
 When operated on its own, Ontosample uses a light version of Ontolearn (`ontolearn_light`) 
 to reason over ontologies, but when both packages are installed in the same environment 
-it will use `ontolearn` module instead. This is made for compatibility reasons.
+it will use `ontolearn` module instead. This is made for compatibility reasons. However, since
+the libraries are managed separately, you may encounter potential errors when installing them
+in the same environment. In this case we recommend using Ontosample in another environment 
+to perform sampling.
 
 Ontosample treats the knowledge base as a graph where nodes are individuals
 and edges are object properties. However, Ontosample also offers support for 
@@ -237,15 +241,17 @@ folder. You will find descriptive comments in that script that will help you und
 
 For more details about OntoSample you can see [this paper](https://dl.acm.org/doi/10.1145/3583780.3615158).
 
+Note: You cannot use sampling on a `TripleStore` knowledge base.
+
 ## TripleSore Knowledge Base
 
-Instead of going through nodes using expensive computation resources why not just make use of the
+Instead of querying knowledge graphs loaded locally using expensive computation resources why not just make use of the
 efficient approach of querying a triplestore using SPARQL queries. We have brought this 
-functionality to Ontolearn for our learning algorithms, and we take care of the conversion part behind the scene.
+functionality to Ontolearn for our learning algorithms.
 Let's see what it takes to make use of it.
 
 First of all you need a server which should host the triplestore for your ontology. If you don't
-already have one, see [Loading and Launching a Triplestore](#loading-and-launching-a-triplestore) below.
+already have one and just want to try things out, see [Loading and Launching a Triplestore](#loading-and-launching-a-triplestore) below.
 
 Now you can simply initialize an instance of `TripleStore` class that will serve as an input for your desired 
 concept learner:
