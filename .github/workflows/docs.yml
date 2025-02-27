@@ -53,7 +53,7 @@ jobs:
       uses: nwtgck/actions-netlify@v1.2
       with:
         publish-dir: 'docs/_build/html'
-        production-branch: develop
+        production-branch: master
         github-token: ${{ secrets.GITHUB_TOKEN }}
         deploy-message: "Deploy from GitHub Actions ${{ github.sha }}"
         alias: ${{ github.head_ref }}
