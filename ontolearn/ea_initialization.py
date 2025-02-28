@@ -30,6 +30,7 @@ from enum import Enum, auto
 from itertools import chain, cycle
 
 from owlapy.class_expression import OWLClass, OWLClassExpression, OWLThing
+from owlapy.iri import IRI
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_property import OWLDataProperty, OWLObjectProperty
@@ -241,6 +242,8 @@ class EARandomWalkInitialization(AbstractEAInitialization):
     @lru_cache(maxsize=_cache_size)
     def _get_types(self, ind: OWLNamedIndividual, direct: bool = False) -> Set[OWLClass]:
         inds = set(self.kb.get_types(ind, direct))
+        if OWLClass(IRI("http://www.w3.org/2002/07/owl#", "NamedIndividual")) in inds:
+            inds.remove(OWLClass(IRI("http://www.w3.org/2002/07/owl#", "NamedIndividual")))
         return inds if inds else {OWLThing}
 
     @lru_cache(maxsize=_cache_size)
