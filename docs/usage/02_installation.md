@@ -116,29 +116,23 @@ Follow the same steps to unzip as the in the KGs case.
 
 --------------------------------------------------------
 
-### NCES data: 
+### Other Data
+Below you will find the links to get the necesseray data for _NCES_, _NCES2_, _ROCES_ and _CLIP_.
+The process to extract the data is the same as shown earlier with "KGs".
 
-```shell
-wget https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip -O ./NCESData.zip
-unzip NCESData.zip
-rm NCESData.zip
 ```
 
-If you are getting any error check if the following flags can help:
+#NCES:
+https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCESData.zip
 
-```shell
-unzip -o NCESData.zip
-rm -f NCESData.zip
-```
+#NCES2:
+https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/NCES2Data.zip
 
--------------------------------------------------------
+#ROCES:
+https://files.dice-research.org/projects/NCES/NCES_Ontolearn_Data/ROCESData.zip
 
-### CLIP data:
-
-```shell
-wget https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip
-unzip CLIPData.zip
-rm CLIPData.zip 
+#CLIP:
+https://files.dice-research.org/projects/Ontolearn/CLIP/CLIPData.zip
 ```
 
 ## Building (sdist and bdist_wheel)
