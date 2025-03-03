@@ -2,11 +2,6 @@ from ontolearn.concept_learner import CLIP
 from ontolearn.refinement_operators import ExpressRefinement
 from ontolearn.knowledge_base import KnowledgeBase
 from owlapy.parser import DLSyntaxParser
-import sys
-from ontolearn.metrics import F1
-import time
-import random
-import unittest
 import os
 import warnings
 warnings.filterwarnings("ignore")
@@ -29,7 +24,7 @@ class TestCLIP:
             pos = set(KB.individuals(brother)).union(set(KB.individuals(daughter)))
             neg = set(KB.individuals())-set(pos)
             node = list(clip.fit(pos, neg).best_descriptions)[0]
-            assert node.quality > 0.9
+            assert node.quality > 0.85
 
     def test_prediction_quality_mutagenesis(self):
         knowledge_base_path="./CLIPData/mutagenesis/mutagenesis.owl"

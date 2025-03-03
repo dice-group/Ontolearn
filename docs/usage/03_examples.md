@@ -2,7 +2,7 @@
 
 In this guide we will show some non-trival examples of typical use-cases of Ontolearn
 which you can also find in the
-[examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder.
+[examples](https://github.com/dice-group/Ontolearn/tree/master/examples) folder.
 
 
 ## Ex. 1: Learning Over a Local Ontology
@@ -133,7 +133,7 @@ save_owl_class_expressions(expressions=h, path="owl_prediction")
 Here we have used the triplestore endpoint as you see in step _(1)_ which is
 available only on a private network. However, you can host your own triplestore
 server following [this guide](06_concept_learners.md#loading-and-launching-a-triplestore)
-and run TDL using you own local endpoint.
+and run TDL using you own local endpoint. We have a [script](https://github.com/dice-group/Ontolearn/blob/master/examples/concept_learning_via_triplestore_example.py) for that also.
 
 --------------------------------------------------------------
 
@@ -263,6 +263,6 @@ if __name__ == '__main__':
 
 -----------------------------------------------------------
 
-In the next guide we will explore the [KnowledgeBase](ontolearn.knowledge_base.KnowledgeBase) class that is needed to 
+In the next guide we will explore the [KnowledgeBase](ontolearn.knowledge_base.KnowledgeBase) class which is needed to 
 run a concept learner.
 

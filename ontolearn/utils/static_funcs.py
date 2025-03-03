@@ -21,36 +21,25 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # -----------------------------------------------------------------------------
-from itertools import chain
-from typing import Optional, Callable, Tuple, Generator, List, Union, Final
 import pandas
 import matplotlib.pyplot as plt
 import sklearn
 import numpy as np
-from owlapy.class_expression import OWLClass, OWLClassExpression
+import traceback
+
+from itertools import chain
+from typing import Optional, Callable, Tuple, Generator, List, Union, Final
+from tqdm import tqdm
+from typing import Set, Iterable
+
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLEquivalentClassesAxiom
 from owlapy.abstracts import AbstractOWLOntology, AbstractOWLOntologyManager
 from owlapy.owl_ontology_manager import OntologyManager
 from owlapy.owl_hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from owlapy.utils import OWLClassExpressionLengthMetric, LRUCache
-import traceback
-from tqdm import tqdm
-
-from typing import Set, Iterable
-from owlapy.class_expression import (
-    OWLQuantifiedObjectRestriction,
-    OWLObjectCardinalityRestriction,
-)
-from owlapy.class_expression import (
-    OWLObjectUnionOf,
-    OWLObjectIntersectionOf,
-    OWLObjectSomeValuesFrom,
-    OWLObjectAllValuesFrom,
-    OWLObjectMinCardinality,
-    OWLObjectMaxCardinality,
-    OWLObjectOneOf,
-)
+from owlapy.class_expression import OWLQuantifiedObjectRestriction, OWLObjectCardinalityRestriction, \
+                                    OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLClass, OWLClassExpression
 
 
 def f1_set_similarity(y: Set[str], yhat: Set[str]) -> float:
@@ -155,6 +144,11 @@ def init_length_metric(length_metric: Optional[OWLClassExpressionLengthMetric] =
     return length_metric
 
 
+def concept_len(ce: OWLClassExpression, length_metric: Optional[OWLClassExpressionLengthMetric] = None,
+                length_metric_factory: Optional[Callable[[], OWLClassExpressionLengthMetric]] = None):
+    length_metric = init_length_metric(length_metric, length_metric_factory)
+    return length_metric.length(ce)
+
 def init_hierarchy_instances(reasoner, class_hierarchy, object_property_hierarchy, data_property_hierarchy) -> Tuple[
     ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy]:
     """ Initialize class, object property, and data property hierarchies """
@@ -224,6 +218,27 @@ def compute_f1_score(individuals, pos, neg) -> float:
     except ZeroDivisionError:
         return 0.0
 
+    try:
+        precision = tp / (tp + fp)
+    except ZeroDivisionError:
+        return 0.0
+
+    if precision == 0 or recall == 0:
+        return 0.0
+
+    f_1 = 2 * ((precision * recall) / (precision + recall))
+    return f_1
+
+
+def compute_f1_score_from_confusion_matrix(confusion_matrix:dict)->float:
+    tp=int(confusion_matrix["tp"])
+    fn=int(confusion_matrix["fn"])
+    fp=int(confusion_matrix["fp"])
+    tn=int(confusion_matrix["tn"])
+    try:
+        recall = tp / (tp + fn)
+    except ZeroDivisionError:
+        return 0.0
     try:
         precision = tp / (tp + fp)
     except ZeroDivisionError:

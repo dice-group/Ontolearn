@@ -1,21 +1,18 @@
 """ StratifiedKFold Cross Validating DL Concept Learning Algorithms
-python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family.owl --max_runtime 3 --report family.csv
-python examples/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 3 --report carcinogenesis.csv
+python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps_difficult.json --kb KGs/Family/family.owl --max_runtime 60 --report family.csv --path_of_nces_embeddings ./NCESData/family/embeddings/DeCaL_entity_embeddings.csv --path_of_nces_trained_models ./NCESData/family/trained_models/ --path_of_nces2_trained_models ./NCES2Data/family/trained_models/ --path_of_roces_trained_models ./ROCESData/family/trained_models/ --path_of_clip_embeddings ./CLIPData/family/embeddings/ConEx_entity_embeddings.csv
 
-python examples/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 3 --report carcinogenesis.csv --path_of_nces_embeddings "TODO" --path_of_clip_embeddings "TODO"
+python examples/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 60 --report carcinogenesis.csv --path_of_nces_embeddings ./NCESData/carcinogenesis/embeddings/DeCaL_entity_embeddings.csv --path_of_nces_trained_models ./NCESData/carcinogenesis/trained_models/ --path_of_nces2_trained_models ./NCES2Data/carcinogenesis/trained_models/ --path_of_roces_trained_models ./ROCESData/carcinogenesis/trained_models/ --path_of_clip_embeddings ./CLIPData/carcinogenesis/embeddings/ConEx_entity_embeddings.csv
 
-
+python examples/concept_learning_cv_evaluation.py --lps LPs/Mutagenesis/lps.json --kb KGs/Mutagenesis/mutagenesis.owl --max_runtime 60 --report mutagenesis.csv --path_of_nces_embeddings ./NCESData/mutagenesis/embeddings/DeCaL_entity_embeddings.csv --path_of_nces_trained_models ./NCESData/mutagenesis/trained_models/ --path_of_nces2_trained_models ./NCES2Data/mutagenesis/trained_models/ --path_of_roces_trained_models ./ROCESData/mutagenesis/trained_models/ --path_of_clip_embeddings ./CLIPData/mutagenesis/embeddings/ConEx_entity_embeddings.csv
 """
 import json
 import time
 import os
-import subprocess
-import platform
 import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import CELOE, OCEL, EvoLearner, NCES, CLIP
+from ontolearn.concept_learner import CELOE, EvoLearner, NCES, NCES2, ROCES, CLIP
 from ontolearn.refinement_operators import ExpressRefinement, ModifiedCELOERefinement
-from ontolearn.learners import Drill, TDL
+from ontolearn.learners import Drill, TDL, OCEL
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1
 from owlapy.owl_individual import OWLNamedIndividual, IRI
@@ -26,58 +23,16 @@ import numpy as np
 from ontolearn.utils.static_funcs import compute_f1_score
 
 pd.set_option("display.precision", 5)
-"""
-
-def get_embedding_path(ftp_link: str, embeddings_path_arg: str, kb_path_arg: str)->str:
-    # ftp_link: ftp link to download data
-    # embeddings_path_arg:local path of an embedding file
-    # kb_path_arg:local path of an RDF KG
-    
-
-    if embeddings_path_arg is None or (embeddings_path_arg is not None and not os.path.exists(embeddings_path_arg)):
-        file_name = ftp_link.split("/")[-1]
-        if not os.path.exists(os.path.join(os.getcwd(), file_name)):
-            subprocess.run(['curl', '-O', ftp_link])
-
-            if platform.system() == "Windows":
-                subprocess.run(['tar', '-xf', file_name])
-            else:
-                subprocess.run(['unzip', file_name])
-            os.remove(os.path.join(os.getcwd(), file_name))
-
-        embeddings_path = os.path.join(os.getcwd(), file_name[:-4] + '/')
-        if "family" in kb_path_arg:
-            embeddings_path += "family/embeddings/ConEx_entity_embeddings.csv"
-        elif "carcinogenesis" in kb_path_arg:
-            embeddings_path += "carcinogenesis/embeddings/ConEx_entity_embeddings.csv"
-        elif "mutagenesis" in kb_path_arg:
-            embeddings_path += "mutagenesis/embeddings/ConEx_entity_embeddings.csv"
-        elif "nctrer" in kb_path_arg:
-            embeddings_path += "nctrer/embeddings/ConEx_entity_embeddings.csv"
-        elif "animals" in kb_path_arg:
-            embeddings_path += "animals/embeddings/ConEx_entity_embeddings.csv"
-        elif "lymphography" in kb_path_arg:
-            embeddings_path += "lymphography/embeddings/ConEx_entity_embeddings.csv"
-        elif "semantic_bible" in kb_path_arg:
-            embeddings_path += "semantic_bible/embeddings/ConEx_entity_embeddings.csv"
-        elif "suramin" in kb_path_arg:
-            embeddings_path += "suramin/embeddings/ConEx_entity_embeddings.csv"
-        elif "vicodi" in kb_path_arg:
-            embeddings_path += "vicodi/embeddings/ConEx_entity_embeddings.csv"
-
-        return embeddings_path
-    else:
-        return embeddings_path_arg
-
-"""
 
 def dl_concept_learning(args):
     with open(args.lps) as json_file:
         settings = json.load(json_file)
     kb = KnowledgeBase(path=args.kb)
+
     ocel = OCEL(knowledge_base=kb,
                 quality_func=F1(),
                 max_runtime=args.max_runtime)
+
     celoe = CELOE(knowledge_base=kb,
                   quality_func=F1(),
                   max_runtime=args.max_runtime)
@@ -92,10 +47,27 @@ def dl_concept_learning(args):
     
     nces = NCES(knowledge_base_path=args.kb,
                 quality_func=F1(),
+                load_pretrained=True,
                 path_of_embeddings=args.path_of_nces_embeddings,
+                path_of_trained_models=args.path_of_nces_trained_models,
                 learner_names=["LSTM", "GRU", "SetTransformer"],
-                num_predictions=100,
+                num_predictions=200,
                 verbose=0)
+
+    nces2 = NCES2(knowledge_base_path=args.kb,
+                  quality_func=F1(),
+                  load_pretrained=True,
+                  path_of_trained_models=args.path_of_nces2_trained_models,
+                  num_predictions=200,
+                  verbose=0)
+
+    roces = ROCES(knowledge_base_path=args.kb,
+                  k=50,
+                  quality_func=F1(),
+                  load_pretrained=True,
+                  path_of_trained_models=args.path_of_roces_trained_models,
+                  num_predictions=200,
+                  verbose=0)
     
     clip = CLIP(knowledge_base=kb,
                 refinement_operator=ModifiedCELOERefinement(kb),
@@ -146,7 +118,9 @@ def dl_concept_learning(args):
                                         neg={OWLNamedIndividual(i) for i in train_neg})
 
             test_lp = PosNegLPStandard(pos={OWLNamedIndividual(i) for i in test_pos},
+            
                                        neg={OWLNamedIndividual(i) for i in test_neg})
+            
             print("OCEL starts..", end="\t")
             start_time = time.time()
             pred_ocel = ocel.fit(train_lp).best_hypotheses()
@@ -168,6 +142,7 @@ def dl_concept_learning(args):
             print(f"OCEL Test Quality: {test_f1_ocel:.3f}", end="\t")
             print(f"OCEL Runtime: {rt_ocel:.3f}")
 
+
             print("CELOE starts..", end="\t")
             start_time = time.time()
             pred_celoe = celoe.fit(train_lp).best_hypotheses()
@@ -184,7 +159,7 @@ def dl_concept_learning(args):
             # Reporting
             data.setdefault("Train-F1-CELOE", []).append(train_f1_celoe)
             data.setdefault("Test-F1-CELOE", []).append(test_f1_celoe)
-            data.setdefault("RT-CELOE", []).append(rt_ocel)
+            data.setdefault("RT-CELOE", []).append(rt_celoe)
             print(f"CELOE Train Quality: {train_f1_celoe:.3f}", end="\t")
             print(f"CELOE Test Quality: {test_f1_celoe:.3f}", end="\t")
             print(f"CELOE Runtime: {rt_celoe:.3f}")
@@ -239,7 +214,7 @@ def dl_concept_learning(args):
 
             print("TDL starts..", end="\t")
             start_time = time.time()
-            # () Fit model training dataset
+            # () Fit model on training dataset
             pred_tdl = tdl.fit(train_lp).best_hypotheses(n=1)
             print("TDL ends..", end="\t")
             rt_tdl = time.time() - start_time
@@ -261,7 +236,7 @@ def dl_concept_learning(args):
             print(f"TDL Runtime: {rt_tdl:.3f}")
 
             start_time = time.time()
-            # () Fit model training dataset
+            # () Fit model on training dataset
             pred_nces = nces.fit(train_lp).best_hypotheses(n=1)
             print("NCES ends..", end="\t")
             rt_nces = time.time() - start_time
@@ -282,6 +257,51 @@ def dl_concept_learning(args):
             print(f"NCES Test Quality: {test_f1_nces:.3f}", end="\t")
             print(f"NCES Runtime: {rt_nces:.3f}")
 
+            start_time = time.time()
+            # () Fit model on training dataset
+            pred_nces2 = nces2.fit(train_lp).best_hypotheses(n=1)
+            print("NCES2 ends..", end="\t")
+            rt_nces2 = time.time() - start_time
+            
+            # () Quality on the training data
+            train_f1_nces2 = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_nces2)}),
+                                             pos=train_lp.pos,
+                                             neg=train_lp.neg)
+            # () Quality on test data
+            test_f1_nces2 = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_nces2)}),
+                                            pos=test_lp.pos,
+                                            neg=test_lp.neg)
+
+            data.setdefault("Train-F1-NCES2", []).append(train_f1_nces2)
+            data.setdefault("Test-F1-NCES2", []).append(test_f1_nces2)
+            data.setdefault("RT-NCES2", []).append(rt_nces2)
+            print(f"NCES2 Train Quality: {train_f1_nces2:.3f}", end="\t")
+            print(f"NCES2 Test Quality: {test_f1_nces2:.3f}", end="\t")
+            print(f"NCES2 Runtime: {rt_nces2:.3f}")
+            ##
+            start_time = time.time()
+            # () Fit model on training dataset
+            pred_roces = roces.fit(train_lp).best_hypotheses(n=1)
+            print("ROCES ends..", end="\t")
+            rt_roces = time.time() - start_time
+            
+            # () Quality on the training data
+            train_f1_roces = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_roces)}),
+                                             pos=train_lp.pos,
+                                             neg=train_lp.neg)
+            # () Quality on test data
+            test_f1_roces = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_roces)}),
+                                            pos=test_lp.pos,
+                                            neg=test_lp.neg)
+
+            data.setdefault("Train-F1-ROCES", []).append(train_f1_roces)
+            data.setdefault("Test-F1-ROCES", []).append(test_f1_roces)
+            data.setdefault("RT-ROCES", []).append(rt_roces)
+            print(f"ROCES Train Quality: {train_f1_roces:.3f}", end="\t")
+            print(f"ROCES Test Quality: {test_f1_roces:.3f}", end="\t")
+            print(f"ROCES Runtime: {rt_roces:.3f}")
+
+            ##
             print("CLIP starts..", end="\t")
             start_time = time.time()
             pred_clip = clip.fit(train_lp).best_hypotheses()
@@ -318,6 +338,9 @@ if __name__ == '__main__':
                         help="Knowledge base")
     parser.add_argument("--path_drill_embeddings", type=str, default=None)
     parser.add_argument("--path_of_nces_embeddings", type=str, default=None)
+    parser.add_argument("--path_of_nces_trained_models", type=str, default=None)
+    parser.add_argument("--path_of_nces2_trained_models", type=str, default=None)
+    parser.add_argument("--path_of_roces_trained_models", type=str, default=None)
     parser.add_argument("--path_of_clip_embeddings", type=str, default=None)
     parser.add_argument("--report", type=str, default="report.csv")
     parser.add_argument("--random_seed", type=int, default=1)

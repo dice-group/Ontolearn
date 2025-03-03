@@ -112,7 +112,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--drop_prob", type=float, default=0.1, help="Drop probability.")
     parser.add_argument("--num_heads", type=int, default=4, help="Number of heads")
     parser.add_argument("--num_seeds", type=int, default=1, help="Number of seeds (only for SetTransformer).")
-    parser.add_argument("--num_inds", type=int, default=32, help="Number of inducing points (only for SetTransformer).")
+    parser.add_argument("--m", type=int, default=32, help="Number of inducing points (only for SetTransformer).")
     parser.add_argument("--ln", type=bool, default=False, help="Layer normalization (only for SetTransformer).")
     parser.add_argument("--learning_rate", type=float, default=1e-4, help="Learning rate.")
     parser.add_argument("--decay_rate", type=int, default=0, help="Decay rate.")

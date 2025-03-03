@@ -1,44 +1,50 @@
 # Knowledge Bases
 
-In Ontolearn we represent a knowledge base 
-by the class [KnowledgeBase](ontolearn.knowledge_base.KnowledgeBase) which contains two main class attributes, 
-an ontology [AbstractOWLOntology](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_ontology/index.html#owlapy.owl_ontology.AbstractOWLOntology)
-and a reasoner [AbstractOWLReasoner](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_reasoner/index.html#owlapy.owl_reasoner.AbstractOWLReasoner).
-It also contains the class and properties hierarchy as well as other
-Ontology-related attributes required for the Structured Machine Learning library.
+In Ontolearn a knowledge base is represented
+by an implementor of [AbstractKnowledgeBase](ontolearn.abstracts.AbstractKnowledgeBase) which contains two main
+attributes, an ontology of type [AbstractOWLOntology](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_ontology/index.html#owlapy.owl_ontology.AbstractOWLOntology)
+and a reasoner of type [AbstractOWLReasoner](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_reasoner/index.html#owlapy.owl_reasoner.AbstractOWLReasoner). Be careful, different implementations of these abstract classes 
+are not compatible with each other. For example, you can not use [TripleStore](ontolearn.triple_store.TripleStore) 
+knowledge base with 
+[StructuralReasoner](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_reasoner/index.html#owlapy.owl_reasoner.StructuralReasoner), 
+but you can use [TripleStore](ontolearn.triple_store.TripleStore) knowledge base with [TripleStoreReasoner](ontolearn.triple_store.TripleStoreReasoner).
+_AbstractKnowledgeBase_ contains the necessary methods to facilitate _Structured Machine Learning_.
 
+Currently, there are two implementation of _AbstractKnowledgeBase_:
+
+- [KnowledgeBase](ontolearn.knowledge_base.KnowledgeBase) &rarr; used for local datasets.
+- [TripleStore](ontolearn.triple_store.TripleStore) &rarr; used for datasets hosted on a server.
 
 ## Knowledge Base vs Ontology
 
 These terms may be used interchangeably sometimes but in Ontolearn they are not the same thing,
 although they share a lot of similarities. An ontology in owlapy, as explained 
 [here](https://dice-group.github.io/owlapy/usage/ontologies.html) is the object where we load 
-the OWL 2.0 ontologies from a _.owl_ file containing the ontology in an RDF/XML or OWL/XML format.
-On the other side a KnowledgeBase is a class which combines an ontology and a reasoner together.
-Therefore, differently from the ontology you can use methods that require reasoning. You can check 
+the OWL 2.0 ontologies (supporting different formats OWL/XML, RDF/XML, Triples etc.)
+On the other side a knowledge base combines an ontology and a reasoner together and is main purpose
+is to ease the process of concept learning serving as both a storing entity and a data retrieval entity.
+Therefore, differently from the ontology object you can use reasoning methods. You can check 
 the methods for each in the links below:
 
-- [KnowledgeBase](ontolearn.knowledge_base.KnowledgeBase)
+- [AbstractKnowledgeBase](ontolearn.knowledge_base.AbstractKnowledgeBase)
 - [AbstractOWLOntology](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_ontology/index.html#owlapy.owl_ontology.AbstractOWLOntology)
 
 In summary:
 
-- An instance of `KnowledgeBase` contains an ontology and a reasoner and 
+- An implementation of `AbstractKnowledgeBase` contains an ontology and a reasoner and 
 is required to run a learning algorithm.
 
-- The ontology object can load an OWL 2.0 ontology,
-be modified using the ontology manager and saved.
+- An ontology represents the OWL 2 ontology you have locally or hosted on triplestore server. Using class methods you
+can retrieve information from signature of this ontology. In case of a local the ontology, it can be modified and 
+saved.
 
-- Although they have some similar functionalities, there are a lot of other distinct 
-functionalities that each of them has.
+  
+## Create an Instance of KnowledgeBase
 
+Let us show how you can initialize an instance of `KnowledgeBase`.
+We consider that you have already an OWL 2.0 ontology locally (for example a file ending with *.owl*).
 
-## Create an Object of KnowledgeBase
-
-Let us show how you can initialize an object of `KnowledgeBase`.
-We consider that you have already an OWL 2.0 ontology (containing *.owl* extension).
-
-The simplest way is to use the path of your _.owl_ file as follows:
+The simplest way is to use the path of your local ontology as follows:
 
 ```python 
 from ontolearn.knowledge_base import KnowledgeBase
@@ -47,12 +53,11 @@ kb = KnowledgeBase(path="file://KGs/Family/father.owl")
 ```
 
 What happens in the background is that the ontology located in this path will be loaded
-in the `AbstractOWLOntology` object of `kb` as done [here](https://dice-group.github.io/owlapy/usage/ontologies.html#loading-an-ontology).
+in the `AbstractOWLOntology` object of `kb` as well as a reasoner will be created using that
+ontology during initialisation. You may as well initialise an instance of `KnowledgeBase` using
+an instance of an ontology and reasoner. For this example we are using a minimalistic ontology
+called the _father_ ontology which you can download as instructed [here](02_installation.md#download-external-files).
 
-In our recent version you can also initialize a knowledge base using a dataset hosted in a triplestore.
-Since that knowledge base is mainly used for executing a concept learner, we cover that matter more in depth 
-in _[Use Triplestore Knowledge Base](06_concept_learners.md#use-triplestore-knowledge-base)_ 
-section of _[Concept Learning](06_concept_learners.md)_.
 
 ## Ignore Concepts
 
@@ -120,181 +125,29 @@ all_individuals = kb.individuals()
 You can as well get all the individuals using:
 <!--pytest-codeblocks:cont-->
 ```python
-all_individuals_set  = kb.all_individuals_set()
+from owlapy.class_expression import OWLThing
+
+all_individuals_set  = kb.individuals_set(OWLThing)
 ```
-The difference is that `individuals()` return type is `Iterable[OWLNamedIndividual]` 
-and `all_individuals_set()` return type is `frozenset(OWLNamedIndividual)`.
+The difference is that `individuals()` return type is generator. 
+and `individuals_set()` return type is frozenset.
 
-In case you need your result as frozenset, `individual_set` method is a better option
-then the `individuals` method:
-<!--pytest-codeblocks:cont-->
-```python
-male_individuals_set = kb.individuals_set(male_concept)
-```
-
-Or you can even combine both methods:
-<!--pytest-codeblocks:cont-->
-```python
-male_individuals_set = kb.individuals_set(male_individuals)
-```
-
-
-## Evaluate a Concept
-
-When using a concept learner, the generated concepts (class expressions) for a certain learning problem
-need to be evaluated to see the performance. 
-To do that you can use the method `evaluate_concept` of `KnowledgeBase`. It requires the following arguments:
-
-1. a concept to evaluate: [OWLClassExpression](https://dice-group.github.io/owlapy/autoapi/owlapy/class_expression/class_expression/index.html#owlapy.class_expression.class_expression.OWLClassExpression)
-2. a quality metric: [AbstractScorer](ontolearn.abstracts.AbstractScorer)
-3. the encoded learning problem: [EncodedLearningProblem](ontolearn.learning_problem.EncodedPosNegLPStandard)
-
-The evaluation should be done for the learning problem that you used to generate the 
-concept. The main result of the evaluation is the quality score describing how well the generated
-concept is doing on the job of classifying the positive individuals. The concept learners do this 
-process automatically.
-
-### Construct a learning problem
-
-To evaluate a concept you need a learning problem. Firstly, we create two simple sets containing 
-the positive and negative examples for the concept of 'Father'. Our positive examples 
-(individuals to describe) are stefan, markus, and martin. And our negative examples
-(individuals to not describe) are heinz, anna, and michelle.
+For large amount of data `individuals()` is more computationally efficient:
 
 <!--pytest-codeblocks:cont-->
 ```python
-from owlapy.owl_individual import OWLNamedIndividual
+male_individuals = kb.individuals(male_concept)
 
-positive_examples = {OWLNamedIndividual(IRI.create(NS, 'stefan')),
-                     OWLNamedIndividual(IRI.create(NS, 'markus')),
-                     OWLNamedIndividual(IRI.create(NS, 'martin'))}
-
-negative_examples = {OWLNamedIndividual(IRI.create(NS, 'heinz')),
-                     OWLNamedIndividual(IRI.create(NS, 'anna')),
-                     OWLNamedIndividual(IRI.create(NS, 'michelle'))}
+[print(ind) for ind in male_individuals] # print male individuals
 ```
-
-Now the learning problem can be captured in its respective object, the
-[positive-negative standard learning problem](ontolearn.learning_problem.PosNegLPStandard) and 
-encode it using the method `encode_learning_problem` of `KnowledgeBase`:
-
-<!--pytest-codeblocks:cont-->
-```python
-from ontolearn.learning_problem import PosNegLPStandard
-
-lp = PosNegLPStandard(pos=positive_examples, neg=negative_examples)
-
-encoded_lp = kb.encode_learning_problem(lp)
-```
-
-Now that we have an encoded learning problem, we need a concept to evaluate.
-
-### Construct a concept
-
-Suppose that the class expression `(¬female) ⊓ (∃ hasChild.⊤)` 
-was generated by [CELOE](ontolearn.concept_learner.CELOE)
-for the concept of 'Father'. We will see how that can happen later
-but for now we let's construct this class expression manually:
-
-<!--pytest-codeblocks:cont-->
-```python
-from owlapy.owl_property import OWLObjectProperty
-from owlapy.class_expression import OWLObjectSomeValuesFrom , OWLObjectIntersectionOf
-
-female = OWLClass(IRI(NS,'female'))
-not_female = kb.generator.negation(female)
-has_child_property = OWLObjectProperty(IRI(NS, "hasChild"))
-thing = OWLClass(IRI('http://www.w3.org/2002/07/owl#', 'Thing'))
-exist_has_child_T = OWLObjectSomeValuesFrom(property=has_child_property, filler=thing)
-
-concept_to_test = OWLObjectIntersectionOf([not_female, exist_has_child_T])
-```
-
-`kb` has an instance of [ConceptGenerator](ontolearn.concept_generator.ConceptGenerator)
-which we use in this case to create the negated concept `¬female`. The other classes 
-[OWLObjectProperty](https://dice-group.github.io/owlapy/autoapi/owlapy/owl_property/index.html#owlapy.owl_property.OWLObjectProperty), 
-[OWLObjectSomeValuesFrom](https://dice-group.github.io/owlapy/autoapi/owlapy/class_expression/index.html#owlapy.class_expression.OWLObjectSomeValuesFrom) 
-and [OWLObjectIntersectionOf](https://dice-group.github.io/owlapy/autoapi/owlapy/class_expression/nary_boolean_expression/index.html#owlapy.class_expression.nary_boolean_expression.OWLObjectIntersectionOf) are classes
-that represent different kind of axioms in owlapy and can be found in 
-[owlapy.class_expression](https://dice-group.github.io/owlapy/autoapi/owlapy/class_expression/index.html) module. There are more kind of axioms there which you
-can use to construct class expressions like we did in the example above.
-
-### Evaluation and results
-
-You can now evaluate the concept you just constructed as follows:
-
-<!--pytest-codeblocks:cont-->
-```python
-from ontolearn.metrics import F1
-
-evaluated_concept = kb.evaluate_concept(concept_to_test, F1(), encoded_lp)
-```
-In this example we use F1-score to evaluate the concept, but there are more [metrics](ontolearn.metrics) 
-which you can use including Accuracy, Precision and Recall. 
-
-You can now:
-
-- Print the quality:
-    <!--pytest-codeblocks:cont-->
-    ```python
-    print(evaluated_concept.q) # 1.0
-    ```
-
-- Print the set of individuals covered by the hypothesis:
-    <!--pytest-codeblocks:cont-->
-    ```python
-    for ind in evaluated_concept.inds:
-        print(ind) 
-  
-    # OWLNamedIndividual(http://example.com/father#markus)
-    # OWLNamedIndividual(http://example.com/father#martin)
-    # OWLNamedIndividual(http://example.com/father#stefan)
-    ```
-- Print the amount of them:
-    <!--pytest-codeblocks:cont-->
-    ```python
-    print(evaluated_concept.ic) # 3
-    ```
-
-## Obtaining axioms
-
-You can retrieve Tbox and Abox axioms by using `tbox` and `abox` methods respectively.
-Let us take them one at a time. The `tbox` method has 2 parameters, `entities` and `mode`.
-`entities` specifies the owl entity from which we want to obtain the Tbox axioms. It can be 
-a single entity, a `Iterable` of entities, or `None`. 
-
-The allowed types of entities are: 
-- OWLClass
-- OWLObjectProperty
-- OWLDataProperty
-
-Only the Tbox axioms related to the given entit-y/ies will be returned. If no entities are 
-passed, then it returns all the Tbox axioms.
-The second parameter `mode` _(str)_ sets the return format type. It can have the
-following values:
-1) `'native'` -> triples are represented as tuples of owlapy objects.
-2) `'iri'` -> triples are represented as tuples of IRIs as strings.
-3) `'axiom'` -> triples are represented as owlapy axioms.
-
-For the `abox` method the idea is similar. Instead of the parameter `entities`, there is the parameter 
-`individuals` which accepts an object of type OWLNamedIndividuals or Iterable[OWLNamedIndividuals].
-
-If you want to obtain all the axioms (Tbox + Abox) of the knowledge base, you can use the method `triples`. It
-requires only the `mode` parameter.
-
-> **NOTE**: The results of these methods are limited only to named and direct entities. 
-> That means that especially the axioms that contain anonymous owl objects (objects that don't have an IRI)
-> will not be part of the result set. For example, if there is a Tbox T={ C ⊑ (A ⊓ B), C ⊑ D }, 
-> only the latter subsumption axiom will be returned.
-
 
 ## Sampling the Knowledge Base
 
 Sometimes ontologies and therefore knowledge bases can get very large and our
 concept learners become inefficient in terms of runtime. Sampling is an approach
 to extract a portion of the whole knowledge base without changing its semantic and
-still being expressive enough to yield results with as little loss of quality as 
-possible. [OntoSample](https://github.com/alkidbaci/OntoSample/tree/main) is 
+still being expressive enough to yield results (in the learning task) with as little 
+loss of quality as possible. [OntoSample](https://github.com/alkidbaci/OntoSample/tree/main) is 
 a library that we use to perform the sampling process. It offers different sampling 
 techniques which fall into the following categories:
 
@@ -312,7 +165,10 @@ You can check them [here](https://github.com/alkidbaci/OntoSample/tree/main).
 
 When operated on its own, Ontosample uses a light version of Ontolearn (`ontolearn_light`) 
 to reason over ontologies, but when both packages are installed in the same environment 
-it will use `ontolearn` module instead. This is made for compatibility reasons.
+it will use `ontolearn` module instead. This is made for compatibility reasons. However, since
+the libraries are managed separately, you may encounter potential errors when installing them
+in the same environment. In this case we recommend using Ontosample in another environment 
+to perform sampling.
 
 Ontosample treats the knowledge base as a graph where nodes are individuals
 and edges are object properties. However, Ontosample also offers support for 
@@ -385,12 +241,135 @@ folder. You will find descriptive comments in that script that will help you und
 
 For more details about OntoSample you can see [this paper](https://dl.acm.org/doi/10.1145/3583780.3615158).
 
+Note: You cannot use sampling on a `TripleStore` knowledge base.
+
+## TripleSore Knowledge Base
+
+Instead of querying knowledge graphs loaded locally using expensive computation resources why not just make use of the
+efficient approach of querying a triplestore using SPARQL queries. We have brought this 
+functionality to Ontolearn for our learning algorithms.
+Let's see what it takes to make use of it.
+
+First of all you need a server which should host the triplestore for your ontology. If you don't
+already have one and just want to try things out, see [Loading and Launching a Triplestore](#loading-and-launching-a-triplestore) below.
+
+Now you can simply initialize an instance of `TripleStore` class that will serve as an input for your desired 
+concept learner:
+
+```python
+from ontolearn.triple_store import TripleStore
+
+kb = TripleStore(url="http://your_domain/some_path/sparql")
+```
+
+Notice that the triplestore endpoint is enough to initialize an object of `TripleStore`.
+Also keep in mind that this knowledge base can be initialized by using either one of 
+[TripleStoreOntology](ontolearn.triple_store.TripleStoreOntology) or [TripleStoreReasoner](ontolearn.triple_store.TripleStoreReasoner). Using the `TripleStore` KB means that 
+every querying process taking place during concept learning is now done using SPARQL queries.
+
+> **Important notice:** The performance of a concept learner may differentiate when using TripleStore instead of
+> KnowledgeBase for the same ontology. This happens because some SPARQL queries may not yield the exact same results
+> as the local querying methods.
+
+
+## Loading and Launching a Triplestore
+
+We will provide a simple approach to load and launch a triplestore in a local server. For this,
+we will be using _apache-jena_ and _apache-jena-fuseki_. As a prerequisite you need
+JDK 11 or higher and if you are on Windows, you need [Cygwin](https://www.cygwin.com/). In case of
+issues or any further reference please visit the official page of [Apache Jena](https://jena.apache.org/index.html) 
+and check the documentation under "Triple Store".
+
+Having that said, let us now load and launch a triplestore on the "Father" ontology:
+
+Open a terminal window and make sure you are in the root directory. Create a directory to 
+store the files for Fuseki server:
+
+```shell
+mkdir Fuseki && cd Fuseki
+```
+Install _apache-jena_ and _apache-jena-fuseki_. We will use version 4.7.0.
+
+```shell
+# install Jena
+wget https://archive.apache.org/dist/jena/binaries/apache-jena-4.7.0.tar.gz
+#install Jena-Fuseki
+wget https://archive.apache.org/dist/jena/binaries/apache-jena-fuseki-4.7.0.tar.gz
+```
+
+Unzip the files:
+
+```shell
+tar -xzf apache-jena-fuseki-4.7.0.tar.gz
+tar -xzf apache-jena-4.7.0.tar.gz
+```
+
+Make a directory for our 'father' database inside jena-fuseki:
+
+```shell
+mkdir -p apache-jena-fuseki-4.7.0/databases/father/
+```
+
+Now just load the 'father' ontology using the following commands:
+
+```shell
+cd ..
+
+Fuseki/apache-jena-4.7.0/bin/tdb2.tdbloader --loader=parallel --loc Fuseki/apache-jena-fuseki-4.7.0/databases/father/ KGs/Family/father.owl
+```
+
+Launch the server, and it will be waiting eagerly for your queries.
+
+```shell
+cd Fuseki/apache-jena-fuseki-4.7.0 
+
+java -Xmx4G -jar fuseki-server.jar --tdb2 --loc=databases/father /father
+```
+
+Notice that we launched the database found in `Fuseki/apache-jena-fuseki-4.7.0/databases/father` to the path `/father`.
+By default, jena-fuseki runs on port 3030 so the full URL would be: `http://localhost:3030/father`. When 
+you pass this url to `triplestore_address` argument, you have to add the
+`/sparql` sub-path indicating to the server that we are querying via SPARQL queries. Full path now should look like:
+`http://localhost:3030/father/sparql`.
+
+You can now create a triplestore knowledge base, a reasoner or an ontology that uses this URL for their 
+operations.
+
+## Obtaining axioms
+
+You can retrieve Tbox and Abox axioms by using `tbox` and `abox` methods respectively.
+Let us take them one at a time. The `tbox` method has 2 parameters, `entities` and `mode`.
+`entities` specifies the owl entity from which we want to obtain the Tbox axioms. It can be 
+a single entity, a `Iterable` of entities, or `None`. 
+
+The allowed types of entities are: 
+- OWLClass
+- OWLObjectProperty
+- OWLDataProperty
+
+Only the Tbox axioms related to the given entit-y/ies will be returned. If no entities are 
+passed, then it returns all the Tbox axioms.
+The second parameter `mode` _(str)_ sets the return format type. It can have the
+following values:
+1) `'native'` -> triples are represented as tuples of owlapy objects.
+2) `'iri'` -> triples are represented as tuples of IRIs as strings.
+3) `'axiom'` -> triples are represented as owlapy axioms.
+
+For the `abox` method the idea is similar. Instead of the parameter `entities`, there is the parameter 
+`individuals` which accepts an object of type OWLNamedIndividuals or Iterable[OWLNamedIndividuals].
+
+If you want to obtain all the axioms (Tbox + Abox) of the knowledge base, you can use the method `triples`. It
+requires only the `mode` parameter.
+
+> **NOTE**: The results of these methods are limited only to named and direct entities. 
+> That means that especially the axioms that contain anonymous owl objects (objects that don't have an IRI)
+> will not be part of the result set. For example, if there is a Tbox T={ C ⊑ (A ⊓ B), C ⊑ D }, 
+> only the latter subsumption axiom will be returned.
+
 -----------------------------------------------------------------------------------------------------
 
-Since we cannot cover everything here in details, see [KnowledgeBase API documentation](ontolearn.knowledge_base.KnowledgeBase)
-to check all the methods that this class has to offer. You will find convenient methods to 
-access the class/property hierarchy, methods that use the reasoner indirectly and 
-a lot more.
+Since we cannot cover everything here in details, check the API docs for knowledge base related classes
+to see all the methods that these classes have to offer.
 
-In the next guide we will walk through how to use concept learners to learn class expressions in a 
-knowledge base for a certain learning problem.
+In the next guide we will show and explain a basic example on how to evaluate a class expression on a given 
+knowledge base.

@@ -30,12 +30,13 @@ from enum import Enum, auto
 from itertools import chain, cycle
 
 from owlapy.class_expression import OWLClass, OWLClassExpression, OWLThing
+from owlapy.iri import IRI
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_property import OWLDataProperty, OWLObjectProperty
 
+from ontolearn.abstracts import AbstractKnowledgeBase
 from ontolearn.ea_utils import OperatorVocabulary, Tree, escape, owlliteral_to_primitive_string
-from ontolearn.knowledge_base import KnowledgeBase
 import random
 from abc import ABCMeta, abstractmethod
 from typing import Any, Callable, Dict, Final, List, Set, Union
@@ -153,7 +154,7 @@ class EARandomWalkInitialization(AbstractEAInitialization):
     type_counts: Dict[OWLClass, int]
     dp_to_prim_type: Dict[OWLDataProperty, Any]
     dp_splits: Dict[OWLDataProperty, List[OWLLiteral]]
-    kb: KnowledgeBase
+    kb: AbstractKnowledgeBase
 
     def __init__(self, max_t: int = 2, jump_pr: float = 0.5):
         """
@@ -175,7 +176,7 @@ class EARandomWalkInitialization(AbstractEAInitialization):
                        pos: List[OWLNamedIndividual] = None,
                        dp_to_prim_type: Dict[OWLDataProperty, Any] = None,
                        dp_splits: Dict[OWLDataProperty, List[OWLLiteral]] = None,
-                       kb: KnowledgeBase = None) -> List[Tree]:
+                       kb: AbstractKnowledgeBase = None) -> List[Tree]:
         assert pos is not None
         assert kb is not None
         assert dp_to_prim_type is not None
@@ -241,6 +242,8 @@ class EARandomWalkInitialization(AbstractEAInitialization):
     @lru_cache(maxsize=_cache_size)
     def _get_types(self, ind: OWLNamedIndividual, direct: bool = False) -> Set[OWLClass]:
         inds = set(self.kb.get_types(ind, direct))
+        if OWLClass(IRI("http://www.w3.org/2002/07/owl#", "NamedIndividual")) in inds:
+            inds.remove(OWLClass(IRI("http://www.w3.org/2002/07/owl#", "NamedIndividual")))
         return inds if inds else {OWLThing}
 
     @lru_cache(maxsize=_cache_size)
