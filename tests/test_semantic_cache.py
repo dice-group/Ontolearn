@@ -1,5 +1,19 @@
+import os
+
+if "CUDA_VISIBLE_DEVICES" not in os.environ:
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+import torch
 from ontolearn.semantic_caching import run_semantic_cache, run_non_semantic_cache
 
+
+def check_cuda():
+    if torch.cuda.is_available():
+        print("GPU detected. Setting CUDA_VISIBLE_DEVICES=0")
+    else:
+         print("No GPU detected. Running on CPU.")
+            
+check_cuda()
 
 class TestSemanticCache:
     def setup_method(self):
