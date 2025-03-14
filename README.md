@@ -5,7 +5,7 @@ This repository contains the implementation of the paper "Tree-based OWL Class E
 
 ## Installation
 
-1. Download the repository to your machine using the 'Download Repository' button or [click here](https://anonymous.4open.science/r/TDL-AED8)
+1. Download the repository to your machine using the 'Download Repository' button or [click here](https://anonymous.4open.science/api/repo/Ontolearn-BE38/zip)
 2. Navigage into the project directory: <br>
    - ``` Ontolearn-BE38 ```
 3. Download the knowledge graphs and the learning problems:
