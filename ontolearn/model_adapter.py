@@ -392,9 +392,9 @@ def execute(args):
                 #   kwargs_classifier={"random_state": 1, 'criterion': 'entropy'},
                   kwargs_classifier={"random_state": 1},
                   max_runtime=max_runtime)
-    # elif args.model == "drill":
-    #     optargs = {"knowledge_base": kb,
-    #                "quality_func": metrics[args.quality_metric]()}
+    elif args.model == "drill":
+        optargs = {"knowledge_base": kb,
+                   "quality_func": metrics[args.quality_metric]()}
 
     if args.model not in ['tdl']:
         model = learner_type(**_get_matching_opts(learner_type, optargs, args_d))
@@ -437,9 +437,6 @@ def execute(args):
             data.setdefault("RT-TDL", []).append(rt_tdl)
             print(f"TDL Quality: {f1_tdl:.3f}", end="\t")
             print(f"TDL Runtime: {rt_tdl:.3f}")
-
-        if str_target_concept == "Aunt":
-            break
 
         df = pd.DataFrame.from_dict(data)
         """

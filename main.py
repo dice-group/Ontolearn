@@ -9,7 +9,7 @@ def get_default_arguments(description=None):
                         help="Available concept learning models.")
 
     # Knowledge graph related arguments
-    parser.add_argument("--knowledge_base_path", type=str, default="../data/KGs/Family/family-benchmark_rich_background.owl",
+    parser.add_argument("--knowledge_base_path", type=str, default="/KGs/Family/family-benchmark_rich_background.owl",
                         help="Path to the knowledge base/ontology. This file contains '.owl' extension,"
                              "e.g. 'some/path/kb.owl'")
     parser.add_argument("--sparql_endpoint", type=str, default=None,

@@ -23,16 +23,16 @@ This repository contains the implementation of the paper "Tree-based OWL Class E
 ### 10-Fold Cross Validation Family Benchmark Results
  
 ```shell
-python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 60 --report family_results.csv 
+python3 examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 60 --report family_results.csv 
 ```
 
 ### 10-Fold Cross Validation Mutagenesis Benchmark Results
 ```shell
-python examples/concept_learning_cv_evaluation.py --lps LPs/Mutagenesis/lps.json --kb KGs/Mutagenesis/mutagenesis.owl --max_runtime 60 --report mutagenesis_results.csv 
+python3 examples/concept_learning_cv_evaluation.py --lps LPs/Mutagenesis/lps.json --kb KGs/Mutagenesis/mutagenesis.owl --max_runtime 60 --report mutagenesis_results.csv 
 ```
 
 
 ### 10-Fold Cross Validation Carcinogenesis Benchmark Results
 ```shell
-python examples/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 60 --report carcinogenesis.csv 
+python3 examples/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 60 --report carcinogenesis.csv 
 ```

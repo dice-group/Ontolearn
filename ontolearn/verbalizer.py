@@ -48,11 +48,8 @@ def verbalize_learner_prediction(prediction: Union[str, object] = None):
     if prediction is None:
         raise ValueError("Learner prediction cannot be None")
     
-    verbalizer = LLMVerbalizer(url='http://tentris-ml.cs.upb.de:8501/v1', model='tentris', api_key='token-tentris-upb')
-    # return [verbalizer(text=prediction, api_endpoint=False) for _ in range(3)]
-    a = [verbalizer(text=prediction, api_endpoint=False) for _ in range(3)]
-    print(a)
-# if __name__ == '__main__':
-#     pass
+    verbalizer = LLMVerbalizer(url='http://tentris-ml.cs.upb.de:8501/v1', model='tentris', api_key='ENTER YOUR API KEY')
+    predicitions = [verbalizer(text=prediction, api_endpoint=False) for _ in range(3)]
+    print(predicitions)
 
 
