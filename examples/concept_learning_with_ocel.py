@@ -6,6 +6,10 @@ from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.utils import setup_logging
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 from owlapy.class_expression import OWLClass
+from ontolearn.owl_neural_reasoner import TripleStoreNeuralReasoner
+from owlapy.owl_reasoner import SyncReasoner
+
+
 
 setup_logging()
 
@@ -18,6 +22,12 @@ with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 
 kb = KnowledgeBase(path=settings['data_path'])
+# print(settings['data_path'])
+# exit(0)
+
+symbolic_reasoner = SyncReasoner(settings['data_path'], reasoner="HermiT")
+
+neural_owl_reasoner = TripleStoreNeuralReasoner(path_neural_embedding="../KGs_Family_family-benchmark_rich_background_owl", gamma=0.9)
 
 for str_target_concept, examples in settings['problems'].items():
     p = set(examples['positive_examples'])
@@ -53,6 +63,7 @@ for str_target_concept, examples in settings['problems'].items():
     lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
 
     model = OCEL(knowledge_base=target_kb,
+                 reasoner= symbolic_reasoner,
                  max_runtime=10,
                  max_num_of_concepts_tested=10_000_000_000,
                  iter_bound=10_000_000_000)

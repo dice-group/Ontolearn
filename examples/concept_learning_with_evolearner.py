@@ -7,6 +7,8 @@ from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 from owlapy.class_expression import OWLClass
 from ontolearn.utils import setup_logging
+from ontolearn.owl_neural_reasoner import TripleStoreNeuralReasoner
+from owlapy.owl_reasoner import SyncReasoner
 
 setup_logging()
 
@@ -19,6 +21,10 @@ with open('synthetic_problems.json') as json_file:
     settings = json.load(json_file)
 
 kb = KnowledgeBase(path=settings['data_path'])
+
+symbolic_reasoner = SyncReasoner(settings['data_path'], reasoner="HermiT")
+
+neural_owl_reasoner = TripleStoreNeuralReasoner(path_neural_embedding="../KGs_Family_family-benchmark_rich_background_owl", gamma=0.9)
 
 
 # noinspection DuplicatedCode
