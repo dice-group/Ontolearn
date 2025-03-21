@@ -10,8 +10,8 @@ from owlapy.owl_reasoner import StructuralReasoner
 
 setup_logging("ontolearn/logging_test.conf")
 
-PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
-with open('examples/synthetic_problems.json') as json_file:
+PATH_FAMILY = '../data/KGs/Family/family-benchmark_rich_background.owl'
+with open('../data/LPs/Family/lps.json') as json_file:
     settings = json.load(json_file)
 kb = KnowledgeBase(path=PATH_FAMILY, reasoner_factory=StructuralReasoner)
 

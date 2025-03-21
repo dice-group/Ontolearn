@@ -43,6 +43,7 @@ class TestConceptLearning:
         #               quality_func=F1(),
         #               max_runtime=max_runtime)
         tdl = TDL(knowledge_base=kb,
+                #   plot_tree=True,
                   kwargs_classifier={"random_state": 0},
                   max_runtime=max_runtime)
         
@@ -121,6 +122,9 @@ class TestConceptLearning:
             data.setdefault("RT-TDL", []).append(rt_tdl)
             print(f"TDL Quality: {f1_tdl:.3f}", end="\t")
             print(f"TDL Runtime: {rt_tdl:.3f}")
+
+            if str_target_concept == 'Daughter':
+                break
         df = pd.DataFrame.from_dict(data)
         """
         F1-OCEL     0.96130

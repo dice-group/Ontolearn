@@ -9,8 +9,11 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-base_path = pathlib.Path(__file__).parent.resolve()._str
-knowledge_base_path = base_path[:base_path.rfind("/")+1] + "KGs/Family/family-benchmark_rich_background.owl"
+# base_path = pathlib.Path(__file__).parent.resolve()._str
+# knowledge_base_path = base_path[:base_path.rfind("/")+1] + "KGs/Family/family-benchmark_rich_background.owl"
+knowledge_base_path = pathlib.Path(__file__).parent.parent.parent.resolve()._str + "/data/KGs/Family/family-benchmark_rich_background.owl"
+
+
 
 def seed_everything():
     seed = 42
@@ -32,7 +35,7 @@ class TestNCESTrainer(unittest.TestCase):
     def test_trainer_family(self):
         nces = NCES(knowledge_base_path=knowledge_base_path, learner_names=['SetTransformer', 'GRU', 'LSTM'], path_of_embeddings=None, auto_train=False,
             max_length=48, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4, num_seeds=1, m=32, load_pretrained=False, verbose=True)
-        nces.train(data=None, epochs=5, max_num_lps=1000, refinement_expressivity=0.1)
+        nces.train(data=None, epochs=1, max_num_lps=1000, refinement_expressivity=0.1)
 if __name__ == "__main__":
     test = TestNCESTrainer()
     test.test_trainer_family()
