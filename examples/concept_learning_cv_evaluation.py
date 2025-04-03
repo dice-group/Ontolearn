@@ -53,6 +53,7 @@ def dl_concept_learning(args):
                 kwargs_classifier={"random_state": 1},
                 max_runtime=args.max_runtime,
                 verbose=0)
+    
     if not learner_type or learner_type == 'NCES':
         nces = NCES(knowledge_base_path=args.kb,
                     quality_func=F1(),
@@ -79,6 +80,7 @@ def dl_concept_learning(args):
                     path_of_trained_models=args.path_of_roces_trained_models,
                     num_predictions=200,
                     verbose=0)
+    
     if not learner_type or learner_type == 'CLIP':
         clip = CLIP(knowledge_base=kb,
                     refinement_operator=ModifiedCELOERefinement(kb),
