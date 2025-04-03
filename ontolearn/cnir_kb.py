@@ -30,10 +30,8 @@ import numpy as np
 import torch
 from transformers import AutoModel, AutoTokenizer, AutoConfig
 
-
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.parser import DLSyntaxParser
-
 
 from cnir import InferenceDataset
 from cnir.config import CNIRConfig
@@ -42,10 +40,14 @@ from cnir.models.pmanet import PMAnet
 from cnir.utils import str2bool, read_embs_and_apply_agg
 from cnir.utils import score_all_inds, score_all_inds_composite
 
+
 class CNIRKB(KnowledgeBase):
-    def __init__(self, dataset_dir, model, model_path, use_pma, pma_model_path, th=0.5):
+    def __init__(self, dataset_dir, model, model_path, use_pma, pma_model_path, tokenizer_path=None,
+                 chunksize = 1024, th=0.5):
         self.th = th
         self.pma_net = None
+        self.model_name = model
+        self.chunksize = chunksize
 
         if model.lower() == "composite" and use_pma:
             self.pma_net = PMAnet(CNIRConfig().embedding_dim, CNIRConfig().num_attention_heads, 1)
@@ -71,16 +73,22 @@ class CNIRKB(KnowledgeBase):
             self.kb_namespace = kb_namespace[:kb_namespace.rfind(":")] + ":"
         else:
             self.kb_namespace = kb_namespace
-
         self.expression_parser = DLSyntaxParser(self.kb_namespace)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         AutoConfig.register("cnir", CNIRConfig)
-        AutoModel.register(CNIRConfig, CNIRComposite)
+        if model.lower() == "composite":
+            AutoModel.register(CNIRConfig, CNIRComposite)
+        elif model.lower() == "lstm":
+            AutoModel.register(CNIRConfig, CNIRLSTM)
+        elif model.lower() == "gru":
+            AutoModel.register(CNIRConfig, CNIRGRU)
+        elif model.lower() == "transformer":
+            AutoModel.register(CNIRConfig, CNIRTransformer)
         self.model = AutoModel.from_pretrained(model_path)
-        """super().__init__(path='cnir/mutagenesis/kb/ontology.owl', reasoner_factory=None,
-                         ontology=None, reasoner=None, class_hierarchy=None,
-                         load_class_hierarchy=True, object_property_hierarchy=None,
-                         data_property_hierarchy=None, include_implicit_individuals=False)"""
+        if model.lower() != "composite":
+            self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+        AutoConfig.register("cnir", CNIRConfig)
+        AutoModel.register(CNIRConfig, CNIRComposite)
 
     def cnir_predict(self, expr):
         start_time = time.time()
@@ -107,10 +115,29 @@ class CNIRKB(KnowledgeBase):
         time_taken = time.time() - start_time
         return retrieved, time_taken
 
+    def cnir_encoders_predict(self, expr):
+        start_time = time.time()
+        if isinstance(expr, str):
+            expr = [expr]
+        outputs = score_all_inds(self.model, self.tokenizer, self.all_ind_embs, expr,
+                                 hidden_size=self.all_ind_embs.shape[1],
+                                 chunk_size= self.chunksize).squeeze()
+        retrieved = set(self.all_individuals_arr[np.where(outputs > self.th)[0]])
+        time_taken = time.time() - start_time
+        return retrieved, time_taken
     def individuals(self, concept):
         expr = concept if isinstance(concept, str) else self.dls_renderer.render(concept)
-        individuals, _ = self.cnir_predict(expr)
+        if self.model_name.lower() == "composite":
+            individuals, _ = self.cnir_predict(expr)
+        else:
+            individuals, _ = self.cnir_encoders_predict(expr)
+        # represent the individuals in kb namespace format
+        namespace = self.kb_namespace.split("/", 3)
+        namespace = "/".join(namespace[:3]) + "/"
+        individuals = {namespace+i for i in individuals}
+
         return individuals
+
 
 if __name__ == "__main__":
     data_dir = "cnir/mutagenesis"
@@ -121,4 +148,3 @@ if __name__ == "__main__":
     th = 0.5
     cnir_kb = CNIRKB(data_dir, model, model_path, use_pma, pma_model_path, th)
     print(cnir_kb.individuals("Carbon-29"))
-
