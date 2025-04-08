@@ -347,7 +347,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
         if rdf_format != 'rdfxml':
             raise NotImplementedError(f'Format {rdf_format} not implemented.')
 
-        assert isinstance(self.kb, KnowledgeBase)
+        # assert isinstance(self.kb, KnowledgeBase)
 
         manager: AbstractOWLOntologyManager = OntologyManager()
 
@@ -481,7 +481,7 @@ class RefinementBasedConceptLearner(BaseConceptLearner):
             self.max_child_length = 10
 
         if self.operator is None:
-            assert isinstance(self.kb, KnowledgeBase)
+            # assert isinstance(self.kb, KnowledgeBase)
             self.operator = ModifiedCELOERefinement(self.kb, max_child_length=self.max_child_length)
 
         if self.heuristic_func is None:

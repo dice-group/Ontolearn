@@ -66,3 +66,4 @@ class TestSemanticCache:
         assert results, "No results were generated, possibly due to a failure in the cache evaluation process."
         for strategy, hit_ratio in results.items():
             assert 0.0 <= hit_ratio <= 1.0, f"Hit ratio for {strategy} is out of bounds: {hit_ratio}"
+

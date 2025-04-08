@@ -30,7 +30,7 @@ from typing import Iterable, Optional, Callable, Union, FrozenSet, Set, Dict, ca
 import owlapy
 from owlapy import OntologyManager
 from owlapy.class_expression import OWLClassExpression, OWLClass, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
-    OWLThing, OWLObjectMinCardinality, OWLObjectOneOf
+    OWLThing, OWLObjectMinCardinality, OWLObjectOneOf, OWLObjectComplementOf
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLClassAssertionAxiom, OWLObjectPropertyAssertionAxiom, OWLDataPropertyAssertionAxiom, \
     OWLSubClassOfAxiom, OWLEquivalentClassesAxiom
@@ -51,7 +51,9 @@ from .utils.static_funcs import init_hierarchy_instances
 from owlapy.class_expression import OWLDataSomeValuesFrom
 from owlapy.owl_data_ranges import OWLDataRange
 from owlapy.class_expression import OWLDataOneOf
-
+from ontolearn.owl_neural_reasoner import TripleStoreNeuralReasoner
+from owlapy.owl_reasoner import SyncReasoner
+from ontolearn.semantic_caching import run_semantic_cache, concept_generator, run_subsumption_cache, semantic_caching_size
 
 
 
@@ -64,7 +66,8 @@ def depth_Default_ReasonerFactory(onto: AbstractOWLOntology) -> AbstractOWLReaso
     return StructuralReasoner(onto)
 
 
-class KnowledgeBase(AbstractKnowledgeBase):
+
+class KnowledgeBaseEBR(AbstractKnowledgeBase):
     """Representation of an OWL knowledge base in Ontolearn.
 
     Args:
@@ -99,13 +102,23 @@ class KnowledgeBase(AbstractKnowledgeBase):
                  load_class_hierarchy: bool = True,
                  object_property_hierarchy: Optional[ObjectPropertyHierarchy] = None,
                  data_property_hierarchy: Optional[DatatypePropertyHierarchy] = None,
-                 include_implicit_individuals=False):
+                 include_implicit_individuals=False,
+                 which_reasoner: str,
+                 path_kge: str=None, 
+                 use_cache: bool = False):
+                 
         AbstractKnowledgeBase.__init__(self)
 
-        assert path is not None or (ontology is not None and reasoner is not None), ("You should either provide a path "
-                                                                                     "of the ontology or the ontology"
-                                                                                     "object!")
+       
+        assert path is not None, ("You should either provide a path "
+                                 "of the ontology or the ontology"
+                                 "object!")
+        
+       
+        self.use_cache = use_cache
+
         self.path = path
+        self.path_kge = path_kge
 
         if ontology:
             self.manager = ontology.get_owl_ontology_manager()
@@ -122,6 +135,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
         else:
             self.reasoner = StructuralReasoner(ontology=self.ontology)
 
+        
+        self.which_reasoner = which_reasoner
+
+
         if load_class_hierarchy:
             self.class_hierarchy: ClassHierarchy
             self.object_property_hierarchy: ObjectPropertyHierarchy
@@ -132,6 +149,17 @@ class KnowledgeBase(AbstractKnowledgeBase):
                                                                       class_hierarchy=class_hierarchy,
                                                                       object_property_hierarchy=object_property_hierarchy,
                                                                       data_property_hierarchy=data_property_hierarchy)
+            
+        named_concepts = set(self.get_concepts())
+        complements = {OWLObjectComplementOf(c) for c in named_concepts}
+        self.concepts_ = named_concepts.union(complements)
+
+        # Initialize the cache ONCE in the constructor
+        self.cache = semantic_caching_size(
+            self.individuals_, cache_size=1024, eviction_strategy="LRU",
+            random_seed=10, cache_type='cold', concepts=self.concepts_
+        )
+
         # Object property domain and range:
         self.op_domains: Dict[OWLObjectProperty, OWLClassExpression]
         self.op_domains = dict()
@@ -146,7 +174,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.generator = ConceptGenerator()
         self.describe()
 
-    def individuals(self, concept: Optional[OWLClassExpression] = None, named_individuals: bool = False) -> Iterable[OWLNamedIndividual]:
+        
+
+    def individuals_(self, concept: Optional[OWLClassExpression] = None, path_kg:str=None, path_kge_model:str=None) -> Iterable[OWLNamedIndividual]:
         """Given an OWL class expression, retrieve all individuals belonging to it.
 
         Args:
@@ -155,10 +185,51 @@ class KnowledgeBase(AbstractKnowledgeBase):
             Individuals belonging to the given class.
         """
         # named_individuals check must be supported by the reasoner .instances method
-        if concept:
-            return frozenset(self.reasoner.instances(concept))
-        else:
+        
+        if not concept:
             return frozenset(self.ontology.individuals_in_signature())
+
+        if self.which_reasoner == "EBR":
+            ebr_reasoner = TripleStoreNeuralReasoner(path_neural_embedding=self.path_kge, gamma=0.9) \
+                if self.path_kge else TripleStoreNeuralReasoner(path_of_kb=self.path, gamma=0.9)
+            
+            return frozenset(ebr_reasoner.individuals(concept))
+
+        elif self.which_reasoner == "abstract_reasoner":
+            return frozenset(self.reasoner.instances(concept))
+
+        elif self.which_reasoner in {"HermiT", "Pellet", "JFact", "Openllet", "Structural"}:  # Add expected reasoners
+            other_reasoner = SyncReasoner(self.path, reasoner=self.which_reasoner)
+            if other_reasoner.has_consistent_ontology():
+                return frozenset(other_reasoner.instances(concept, direct=False))
+            else:
+                raise ValueError("The knowledge base is not consistent")
+
+        raise ValueError(f"Unsupported reasoner: {self.which_reasoner}")
+    
+    
+    def individuals(self, concept: Optional[OWLClassExpression] = None):
+        """
+        Retrieve individuals of a given OWL class expression, with an option to use caching.
+
+        Args:
+            concept: OWL class expression whose instances need to be retrieved.
+            use_cache: Whether to use the caching mechanism to boost retrieval.
+
+        Returns:
+            A set of OWLNamedIndividuals.
+        """
+
+        if concept:
+            if self.use_cache:
+                return self.cache(concept, self.path, None)  # Use cached retrieval
+            else:
+                return self.individuals_(concept)  # Call the base method without cache
+
+        return frozenset(self.ontology.individuals_in_signature())  # Default case
+
+
+
 
     def abox(self, individual: Union[OWLNamedIndividual, Iterable[OWLNamedIndividual]] = None, mode='native'):  # pragma: no cover
         """
@@ -406,7 +477,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
     def ignore_and_copy(self, ignored_classes: Optional[Iterable[OWLClass]] = None,
                         ignored_object_properties: Optional[Iterable[OWLObjectProperty]] = None,
-                        ignored_data_properties: Optional[Iterable[OWLDataProperty]] = None) -> 'KnowledgeBase':
+                        ignored_data_properties: Optional[Iterable[OWLDataProperty]] = None) -> 'KnowledgeBaseEBR':
         """Makes a copy of the knowledge base while ignoring specified concepts and properties.
 
         Args:
@@ -417,7 +488,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
             A new KnowledgeBase with the hierarchies restricted as requested.
         """
 
-        new = object.__new__(KnowledgeBase)
+        new = object.__new__(KnowledgeBaseEBR)
 
         AbstractKnowledgeBase.__init__(new)
         new.manager = self.manager
@@ -981,8 +1052,3 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
         return f'KnowledgeBase(path={repr(self.path)} <{class_count} classes, {properties_count} properties, ' \
                f'{individuals_count} individuals)'
-
-
-
-
-
