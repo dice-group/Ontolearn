@@ -34,8 +34,6 @@ from typing import Set, Iterable
 
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLEquivalentClassesAxiom
-from owlapy.abstracts import AbstractOWLOntology, AbstractOWLOntologyManager
-from owlapy.owl_ontology_manager import OntologyManager
 from owlapy.owl_hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from owlapy.utils import OWLClassExpressionLengthMetric, LRUCache
 from owlapy.class_expression import OWLQuantifiedObjectRestriction, OWLObjectCardinalityRestriction, \
@@ -328,9 +326,7 @@ def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLCl
     # @TODO: CD: Lazy import. CD: Can we use rdflib to serialize concepts ?!
     from owlapy.owl_ontology import Ontology
     # ()
-    manager: AbstractOWLOntologyManager = OntologyManager()
-    # ()
-    ontology: AbstractOWLOntology = manager.create_ontology(IRI.create(NS))
+    ontology = Ontology(IRI.create(NS))
     # () Iterate over concepts
     for th, i in enumerate(expressions):
         cls_a = OWLClass(IRI.create(NS, str(th)))

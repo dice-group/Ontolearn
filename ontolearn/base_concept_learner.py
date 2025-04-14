@@ -35,16 +35,14 @@ from owlapy.class_expression import OWLClass, OWLClassExpression, OWLThing
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLDeclarationAxiom, OWLEquivalentClassesAxiom, OWLAxiom
 from owlapy.owl_individual import OWLNamedIndividual
-from owlapy.abstracts import AbstractOWLOntology, AbstractOWLOntologyManager, AbstractOWLReasoner
-from owlapy.owl_ontology_manager import AddImport, OWLImportsDeclaration
+from owlapy.abstracts import AbstractOWLOntology, AbstractOWLReasoner
 from owlapy.owl_reasoner import StructuralReasoner
 
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.metrics import F1
 from ontolearn.refinement_operators import ModifiedCELOERefinement
-from owlapy.owl_ontology import Ontology
-from owlapy.owl_ontology_manager import OntologyManager
+from owlapy.owl_ontology import Ontology, SyncOntology
 from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
     AbstractConceptNode, AbstractLearningProblem, AbstractKnowledgeBase
@@ -300,7 +298,6 @@ class BaseConceptLearner(metaclass=ABCMeta):
         # If axioms are provided they need to be added to the ontology
         if axioms is not None:
             ontology: AbstractOWLOntology = cast(Ontology, self.kb.ontology)
-            manager: AbstractOWLOntologyManager = ontology.get_owl_ontology_manager()
             for axiom in axioms:
                 ontology.add_axiom(axiom)
             if reasoner is None:
@@ -349,11 +346,11 @@ class BaseConceptLearner(metaclass=ABCMeta):
 
         assert isinstance(self.kb, KnowledgeBase)
 
-        manager: AbstractOWLOntologyManager = OntologyManager()
+        if isinstance(self.kb.ontology, Ontology):
+            ontology = Ontology(IRI.create(NS), load=False)
+        elif isinstance(self.kb.ontology, SyncOntology):
+            ontology = SyncOntology(IRI.create(NS), load=False)
 
-        ontology: AbstractOWLOntology = manager.create_ontology(IRI.create(NS))
-        manager.load_ontology(IRI.create(self.kb.path))
-        manager.apply_change(AddImport(ontology, OWLImportsDeclaration(IRI.create('file://' + self.kb.path))))
         best = [self.best_hypotheses(n=n)] if n==1 else self.best_hypotheses(n=n)
 
         for ith, h in enumerate(best):
@@ -390,8 +387,10 @@ class BaseConceptLearner(metaclass=ABCMeta):
         Args:
             path: Path to the file containing hypotheses.
         """
-        manager: OntologyManager = OntologyManager()
-        ontology: Ontology = manager.load_ontology(IRI.create('file://' + path))
+        if isinstance(self.kb.ontology, Ontology):
+            ontology = Ontology(IRI.create('file://' + path), load=False)
+        elif isinstance(self.kb.ontology, SyncOntology):
+            ontology = SyncOntology(IRI.create('file://' + path), load=False)
         for c in ontology.classes_in_signature():
             for equivalent_classes in ontology.equivalent_classes_axioms(c):
                 for equivalent_c in equivalent_classes.class_expressions():

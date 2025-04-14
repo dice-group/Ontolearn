@@ -28,7 +28,6 @@ import logging
 from collections import Counter
 from typing import Iterable, Optional, Callable, Union, FrozenSet, Set, Dict, cast, Generator
 import owlapy
-from owlapy import OntologyManager
 from owlapy.class_expression import OWLClassExpression, OWLClass, OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, \
     OWLThing, OWLObjectMinCardinality, OWLObjectOneOf
 from owlapy.iri import IRI
@@ -40,8 +39,8 @@ from owlapy.owl_literal import BooleanOWLDatatype, NUMERIC_DATATYPES, DoubleOWLD
 from owlapy.abstracts import AbstractOWLOntology, AbstractOWLReasoner
 from owlapy.owl_property import OWLObjectProperty, OWLDataProperty, OWLObjectPropertyExpression, \
     OWLDataPropertyExpression
-from owlapy.owl_ontology import Ontology
-from owlapy.owl_reasoner import StructuralReasoner
+from owlapy.owl_ontology import Ontology, SyncOntology
+from owlapy.owl_reasoner import StructuralReasoner, SyncReasoner
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy.utils import iter_count, LRUCache
 from .abstracts import AbstractKnowledgeBase
@@ -53,12 +52,6 @@ from owlapy.owl_data_ranges import OWLDataRange
 from owlapy.class_expression import OWLDataOneOf
 
 logger = logging.getLogger(__name__)
-
-
-def depth_Default_ReasonerFactory(onto: AbstractOWLOntology) -> AbstractOWLReasoner:  # pragma: no cover
-    assert isinstance(onto, Ontology)
-    return StructuralReasoner(onto)
-
 
 class KnowledgeBase(AbstractKnowledgeBase):
     """Representation of an OWL knowledge base in Ontolearn.
@@ -101,14 +94,22 @@ class KnowledgeBase(AbstractKnowledgeBase):
         assert path is not None or (ontology is not None and reasoner is not None), ("You should either provide a path "
                                                                                      "of the ontology or the ontology"
                                                                                      "object!")
+
+        if ontology is not None and reasoner is not None:
+            assert ((isinstance(ontology, Ontology) and isinstance(reasoner, StructuralReasoner))
+                    or (isinstance(ontology,SyncOntology) and isinstance(reasoner,SyncReasoner))),\
+                "You should either use a native ontology and reasoner or use both a SyncOntology and a SyncReasoner!"
+            if reasoner.ontology != ontology:
+                print("WARNING: The ontology provided in the constructor is not the same as the one "
+                      "provided in the reasoner. This could lead to inconsistencies.")
+
         self.path = path
 
         if ontology:
-            self.manager = ontology.get_owl_ontology_manager()
             self.ontology = ontology
         else:
-            self.manager = OntologyManager()
-            self.ontology = self.manager.load_ontology(IRI.create('file://' + self.path))
+            # default to native Ontology of owlapy. To use SyncOntology, pass the ontology explicitly as an argument.
+            self.ontology = Ontology(IRI.create('file://' + self.path))
 
         reasoner: AbstractOWLReasoner
         if reasoner is not None:
@@ -116,6 +117,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         elif reasoner_factory is not None:
             self.reasoner = reasoner_factory(self.ontology)
         else:
+            # default to native Reasoner of owlapy. To use SyncReasoner, pass the reasoner explicitly as an argument.
             self.reasoner = StructuralReasoner(ontology=self.ontology)
 
         if load_class_hierarchy:
@@ -172,6 +174,9 @@ class KnowledgeBase(AbstractKnowledgeBase):
 
         assert mode in ['native', 'iri', 'axiom',
                         "expression"], "Valid modes are: 'native', 'iri' ,'expression' or 'axiom'"
+
+        if isinstance(self.ontology, SyncOntology) and mode=="axiom" and individual is None:
+            return self.ontology.get_abox_axioms()
 
         if isinstance(individual, OWLNamedIndividual):
             inds = [individual]
@@ -279,6 +284,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
         assert mode in ['native', 'iri', 'axiom'], "Valid modes are: 'native', 'iri' or 'axiom'"
         if mode == "iri":
             print("WARN  KnowledgeBase.tbox()    :: Ranges of data properties are not implemented for the 'iri' mode!")
+        if isinstance(self.ontology, SyncOntology) and mode=="axiom" and entities is None:
+            return self.ontology.get_tbox_axioms()
         include_all = False
         results = set()  # Using a set to avoid yielding duplicated results.
         classes = False
@@ -416,7 +423,6 @@ class KnowledgeBase(AbstractKnowledgeBase):
         new = object.__new__(KnowledgeBase)
 
         AbstractKnowledgeBase.__init__(new)
-        new.manager = self.manager
         new.ontology = self.ontology
         new.reasoner = self.reasoner
         new.path = self.path

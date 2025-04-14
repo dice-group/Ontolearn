@@ -20,14 +20,9 @@ import os
 from ontolearn.utils import jaccard_similarity
 import subprocess
 from owlapy.class_expression import *
-from owlapy.iri import IRI
 from owlapy.parser import DLSyntaxParser
 import ast
-from owlapy import owl_expression_to_dl
 from owlapy.owl_reasoner import SyncReasoner
-from owlapy.owl_ontology_manager import OntologyManager
-import pandas as pd
-import re
 from owlapy.static_funcs import stopJVM
 
 # Create incomplete/noisy KGs

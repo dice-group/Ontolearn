@@ -33,8 +33,7 @@ from owlapy.owl_axiom import OWLEquivalentClassesAxiom, OWLAnnotationAssertionAx
     OWLAnnotationProperty
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
-from owlapy.abstracts import AbstractOWLOntology, AbstractOWLOntologyManager
-from owlapy.owl_ontology_manager import AddImport, OWLImportsDeclaration
+from owlapy.owl_ontology import Ontology, SyncOntology
 from ontolearn.knowledge_base import KnowledgeBase
 from .refinement_operators import LengthBasedRefinement
 from .search import Node, RL_State
@@ -95,13 +94,11 @@ class LearningProblemGenerator:  # pragma: no cover
 
         assert isinstance(self.kb, KnowledgeBase)
 
-        from owlapy.owl_ontology_manager import OntologyManager
-        manager: AbstractOWLOntologyManager = OntologyManager()
+        if isinstance(self.kb.ontology, Ontology):
+            ontology = Ontology(IRI.create(NS), load=False)
+        elif isinstance(self.kb.ontology, SyncOntology):
+            ontology = SyncOntology(IRI.create(NS), load=False)
 
-        ontology: AbstractOWLOntology = manager.create_ontology(IRI.create(NS))
-        manager.load_ontology(IRI.create(self.kb.path))
-        kb_iri = self.kb.ontology().get_ontology_id().get_ontology_iri()
-        manager.apply_change(AddImport(ontology, OWLImportsDeclaration(kb_iri)))
         for ith, h in enumerate(concepts):
             cls_a: OWLClass = OWLClass(IRI.create(NS, "Pred_" + str(ith)))
             equivalent_classes_axiom = OWLEquivalentClassesAxiom([cls_a, h.concept])
