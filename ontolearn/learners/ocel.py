@@ -98,7 +98,7 @@ class OCEL(CELOE):
 
 
         """
-
+       
         if heuristic_func is None:
             heuristic_func = OCELHeuristic()
 
@@ -114,6 +114,7 @@ class OCEL(CELOE):
                          max_results=max_results,
                          best_only=best_only,
                          calculate_min_max=calculate_min_max)
+        
 
     def make_node(self, c: OWLClassExpression, parent_node: Optional[OENode] = None, is_root: bool = False) -> OENode:
         """

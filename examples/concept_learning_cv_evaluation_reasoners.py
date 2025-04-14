@@ -132,119 +132,73 @@ def dl_concept_learning(args):
             print(f"OCEL Runtime: {rt_ocel:.3f}")
 
 
-            # print("CELOE starts..", end="\t")
-            # start_time = time.time()
-            # pred_celoe = celoe.fit(train_lp).best_hypotheses()
-            # rt_celoe = time.time() - start_time
-            # print("CELOE ends..", end="\t")
-            # # () Quality on the training data
-            # train_f1_celoe = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_celoe)}),
-            #                                   pos=train_lp.pos,
-            #                                   neg=train_lp.neg)
-            # # () Quality on test data
-            # test_f1_celoe = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_celoe)}),
-            #                                  pos=test_lp.pos,
-            #                                  neg=test_lp.neg)
-            # # Reporting
-            # data.setdefault("Train-F1-CELOE", []).append(train_f1_celoe)
-            # data.setdefault("Test-F1-CELOE", []).append(test_f1_celoe)
-            # data.setdefault("RT-CELOE", []).append(rt_celoe)
-            # print(f"CELOE Train Quality: {train_f1_celoe:.3f}", end="\t")
-            # print(f"CELOE Test Quality: {test_f1_celoe:.3f}", end="\t")
-            # print(f"CELOE Runtime: {rt_celoe:.3f}")
+            print("CELOE starts..", end="\t")
+            start_time = time.time()
+            pred_celoe = celoe.fit(train_lp).best_hypotheses()
+            rt_celoe = time.time() - start_time
+            print("CELOE ends..", end="\t")
+            # () Quality on the training data
+            train_f1_celoe = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_celoe)}),
+                                              pos=train_lp.pos,
+                                              neg=train_lp.neg)
+            # () Quality on test data
+            test_f1_celoe = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_celoe)}),
+                                             pos=test_lp.pos,
+                                             neg=test_lp.neg)
+            # Reporting
+            data.setdefault("Train-F1-CELOE", []).append(train_f1_celoe)
+            data.setdefault("Test-F1-CELOE", []).append(test_f1_celoe)
+            data.setdefault("RT-CELOE", []).append(rt_celoe)
+            print(f"CELOE Train Quality: {train_f1_celoe:.3f}", end="\t")
+            print(f"CELOE Test Quality: {test_f1_celoe:.3f}", end="\t")
+            print(f"CELOE Runtime: {rt_celoe:.3f}")
 
-            # print("Evo starts..", end="\t")
-            # start_time = time.time()
-            # # BUG: Evolearner needs to be initalized for each learning problem
-            # evolearner = EvoLearner(knowledge_base=KnowledgeBaseEBR(path=args.kb, which_reasoner="Pellet"),
-            #                         quality_func=F1(),
-            #                         max_runtime=args.max_runtime)
-            # pred_evo = evolearner.fit(train_lp).best_hypotheses()
-            # rt_evo = time.time() - start_time
-            # print("Evo ends..", end="\t")
-            # # () Quality on the training data
-            # train_f1_evo = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_evo)}),
-            #                                 pos=train_lp.pos,
-            #                                 neg=train_lp.neg)
-            # # () Quality on test data
-            # test_f1_evo = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_evo)}),
-            #                                pos=test_lp.pos,
-            #                                neg=test_lp.neg)
-            # # Reporting
-            # data.setdefault("Train-F1-Evo", []).append(train_f1_evo)
-            # data.setdefault("Test-F1-Evo", []).append(test_f1_evo)
-            # data.setdefault("RT-Evo", []).append(rt_evo)
-            # print(f"Evo Train Quality: {train_f1_evo:.3f}", end="\t")
-            # print(f"Evo Test Quality: {test_f1_evo:.3f}", end="\t")
-            # print(f"Evo Runtime: {rt_evo:.3f}")
+            print("Evo starts..", end="\t")
+            start_time = time.time()
+            # BUG: Evolearner needs to be initalized for each learning problem
+            evolearner = EvoLearner(knowledge_base=KnowledgeBaseEBR(path=args.kb, which_reasoner="Pellet"),
+                                    quality_func=F1(),
+                                    max_runtime=args.max_runtime)
+            pred_evo = evolearner.fit(train_lp).best_hypotheses()
+            rt_evo = time.time() - start_time
+            print("Evo ends..", end="\t")
+            # () Quality on the training data
+            train_f1_evo = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_evo)}),
+                                            pos=train_lp.pos,
+                                            neg=train_lp.neg)
+            # () Quality on test data
+            test_f1_evo = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_evo)}),
+                                           pos=test_lp.pos,
+                                           neg=test_lp.neg)
+            # Reporting
+            data.setdefault("Train-F1-Evo", []).append(train_f1_evo)
+            data.setdefault("Test-F1-Evo", []).append(test_f1_evo)
+            data.setdefault("RT-Evo", []).append(rt_evo)
+            print(f"Evo Train Quality: {train_f1_evo:.3f}", end="\t")
+            print(f"Evo Test Quality: {test_f1_evo:.3f}", end="\t")
+            print(f"Evo Runtime: {rt_evo:.3f}")
 
-            # print("DRILL starts..", end="\t")
-            # start_time = time.time()
-            # pred_drill = drill.fit(train_lp).best_hypotheses()
-            # rt_drill = time.time() - start_time
-            # print("DRILL ends..", end="\t")
-
-            # # () Quality on the training data
-            # train_f1_drill = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_drill)}),
-            #                                   pos=train_lp.pos,
-            #                                   neg=train_lp.neg)
-            # # () Quality on test data
-            # test_f1_drill = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_drill)}),
-            #                                  pos=test_lp.pos,
-            #                                  neg=test_lp.neg)
-            # # Reporting
-            # data.setdefault("Train-F1-DRILL", []).append(train_f1_drill)
-            # data.setdefault("Test-F1-DRILL", []).append(test_f1_drill)
-            # data.setdefault("RT-DRILL", []).append(rt_drill)
-            # print(f"DRILL Train Quality: {train_f1_drill:.3f}", end="\t")
-            # print(f"DRILL Test Quality: {test_f1_drill:.3f}", end="\t")
-            # print(f"DRILL Runtime: {rt_drill:.3f}")
-
-
-            # print("TDL starts..", end="\t")
-            # start_time = time.time()
-            # # () Fit model on training dataset
-            # pred_tdl = tdl.fit(train_lp).best_hypotheses(n=1)
-            # print("TDL ends..", end="\t")
-            # rt_tdl = time.time() - start_time
-
-            # # () Quality on the training data
-            # train_f1_tdl = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_tdl)}),
-            #                                 pos=train_lp.pos,
-            #                                 neg=train_lp.neg)
-            # # () Quality on test data
-            # test_f1_tdl = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_tdl)}),
-            #                                pos=test_lp.pos,
-            #                                neg=test_lp.neg)
-
-            # data.setdefault("Train-F1-TDL", []).append(train_f1_tdl)
-            # data.setdefault("Test-F1-TDL", []).append(test_f1_tdl)
-            # data.setdefault("RT-TDL", []).append(rt_tdl)
-            # print(f"TDL Train Quality: {train_f1_tdl:.3f}", end="\t")
-            # print(f"TDL Test Quality: {test_f1_tdl:.3f}", end="\t")
-            # print(f"TDL Runtime: {rt_tdl:.3f}")
-
-            ##
-            # print("CLIP starts..", end="\t")
-            # start_time = time.time()
-            # pred_clip = clip.fit(train_lp).best_hypotheses()
-            # rt_clip = time.time() - start_time
-            # print("CLIP ends..", end="\t")
-            # # () Quality on the training data
-            # train_f1_clip = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_clip)}),
-            #                                   pos=train_lp.pos,
-            #                                   neg=train_lp.neg)
-            # # () Quality on test data
-            # test_f1_clip = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_clip)}),
-            #                                  pos=test_lp.pos,
-            #                                  neg=test_lp.neg)
+            #
+            print("CLIP starts..", end="\t")
+            start_time = time.time()
+            pred_clip = clip.fit(train_lp).best_hypotheses()
+            rt_clip = time.time() - start_time
+            print("CLIP ends..", end="\t")
+            # () Quality on the training data
+            train_f1_clip = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_clip)}),
+                                              pos=train_lp.pos,
+                                              neg=train_lp.neg)
+            # () Quality on test data
+            test_f1_clip = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_clip)}),
+                                             pos=test_lp.pos,
+                                             neg=test_lp.neg)
             
-            # data.setdefault("Train-F1-CLIP", []).append(train_f1_clip)
-            # data.setdefault("Test-F1-CLIP", []).append(test_f1_clip)
-            # data.setdefault("RT-CLIP", []).append(rt_clip)
-            # print(f"CLIP Train Quality: {train_f1_clip:.3f}", end="\t")
-            # print(f"CLIP Test Quality: {test_f1_clip:.3f}", end="\t")
-            # print(f"CLIP Runtime: {rt_clip:.3f}")
+            data.setdefault("Train-F1-CLIP", []).append(train_f1_clip)
+            data.setdefault("Test-F1-CLIP", []).append(test_f1_clip)
+            data.setdefault("RT-CLIP", []).append(rt_clip)
+            print(f"CLIP Train Quality: {train_f1_clip:.3f}", end="\t")
+            print(f"CLIP Test Quality: {test_f1_clip:.3f}", end="\t")
+            print(f"CLIP Runtime: {rt_clip:.3f}")
 
     df = pd.DataFrame.from_dict(data)
     df.to_csv(args.report, index=False)
@@ -267,6 +221,6 @@ if __name__ == '__main__':
     parser.add_argument("--path_of_clip_embeddings", type=str, default=None)
     parser.add_argument("--report", type=str, default="report.csv")
     parser.add_argument("--random_seed", type=int, default=1)
-    parser.add_argument("--reasoner", type=str, default="Pellet", choices=["EBR", "Pellet", "HermiT", "JFact", "Openllet"])
+    parser.add_argument("--reasoner", type=str, default="Pellet", choices=["EBR", "Pellet", "HermiT", "JFact", "Openllet", "abstract_reasoner"])
 
     dl_concept_learning(parser.parse_args())

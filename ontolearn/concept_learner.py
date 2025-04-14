@@ -164,8 +164,8 @@ class EvoLearner(BaseConceptLearner):
                  use_inverse: bool = False,
                  tournament_size: int = 7,
                  card_limit: int = 10,
-                 population_size: int = 800,
-                 num_generations: int = 200,
+                 population_size: int = 20,#800,
+                 num_generations: int = 10,#200,
                  height_limit: int = 17):
         """ Create a new instance of EvoLearner
 
@@ -1173,14 +1173,14 @@ class NCES2(BaseNCES):
     """Neural Class Expression Synthesis in ALCHIQ(D)."""
     name = "NCES2"
 
-    def __init__(self, knowledge_base_path, nces2_or_roces=True,
+    def __init__(self, kb, knowledge_base_path, nces2_or_roces=True,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5,
                  path_of_trained_models=None, auto_train=True, proj_dim=128, drop_prob=0.1,
                  num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=128, sampling_strategy="nces2",
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32,
                  learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4,
                  max_length=48, load_pretrained=True, verbose: int = 0, data=[]):
-        super().__init__(knowledge_base_path, nces2_or_roces, quality_func, num_predictions, auto_train, proj_dim,
+        super().__init__(kb, knowledge_base_path, nces2_or_roces, quality_func, num_predictions, auto_train, proj_dim,
                          drop_prob, num_heads, num_seeds, m, ln, learning_rate, tmax, eta_min, clip_value, batch_size,
                          num_workers, max_length, load_pretrained, verbose)
 
@@ -1195,6 +1195,7 @@ class NCES2(BaseNCES):
         self.kernel_size = kernel_size
         self.num_of_output_channels = num_of_output_channels
         self._set_prerequisites()
+      
 
     def _set_prerequisites(self):
         if isinstance(self.m, int):
@@ -1523,7 +1524,7 @@ class ROCES(NCES2):
     """Robust Class Expression Synthesis in Description Logics via Iterative Sampling."""
     name = "ROCES"
 
-    def __init__(self, knowledge_base_path, nces2_or_roces=True,
+    def __init__(self, kb, knowledge_base_path, nces2_or_roces=True,
                  quality_func: Optional[AbstractScorer] = None, num_predictions=5, k=5,
                  path_of_trained_models=None, auto_train=True, proj_dim=128, rnn_n_layers=2, drop_prob=0.1,
                  num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=128, sampling_strategy="p",
@@ -1532,7 +1533,7 @@ class ROCES(NCES2):
                  max_length=48, load_pretrained=True, verbose: int = 0, data=[]):
 
         self.k = k
-        super().__init__(knowledge_base_path, nces2_or_roces,
+        super().__init__(kb, knowledge_base_path, nces2_or_roces,
                          quality_func, num_predictions, path_of_trained_models, auto_train, proj_dim, drop_prob,
                          num_heads, num_seeds, m, ln, embedding_dim, sampling_strategy, input_dropout,
                          feature_map_dropout, kernel_size, num_of_output_channels, learning_rate, tmax, eta_min,

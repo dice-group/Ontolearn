@@ -123,6 +123,7 @@ class CELOE(RefinementBasedConceptLearner):
                          iter_bound=iter_bound,
                          max_num_of_concepts_tested=max_num_of_concepts_tested,
                          max_runtime=max_runtime)
+        
         self.search_tree: Dict[OWLClassExpression, TreeNode[OENode]] = dict()
         self.heuristic_queue = SortedSet(key=HeuristicOrderedNode)
         self._seen_norm_concepts = set()
@@ -209,7 +210,7 @@ class CELOE(RefinementBasedConceptLearner):
         self._max_runtime = max_runtime if max_runtime is not None else self.max_runtime
         root = self.make_node(_concept_operand_sorter.sort(self.start_class), is_root=True)
         self._add_node(root, None)
-        assert len(self.heuristic_queue) == 1, "The length of heuristic_queue must be equal to 1 after root init."
+        assert len(self.heuristic_queue) == 1, f"The length of heuristic_queue must be equal to 1 after root init got {len(self.heuristic_queue)} ."
         self.start_time = time.time()
         for j in range(1, self.iter_bound):
             most_promising = self.next_node_to_expand(j)

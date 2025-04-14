@@ -190,8 +190,8 @@ class KnowledgeBaseEBR(AbstractKnowledgeBase):
             return frozenset(self.ontology.individuals_in_signature())
 
         if self.which_reasoner == "EBR":
-            ebr_reasoner = TripleStoreNeuralReasoner(path_neural_embedding=self.path_kge, gamma=0.9) \
-                if self.path_kge else TripleStoreNeuralReasoner(path_of_kb=self.path, gamma=0.9)
+            ebr_reasoner = TripleStoreNeuralReasoner(path_neural_embedding=self.path_kge, gamma=.5) \
+                if self.path_kge else TripleStoreNeuralReasoner(path_of_kb=self.path, gamma=.5)
             
             return frozenset(ebr_reasoner.individuals(concept))
 
