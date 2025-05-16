@@ -185,6 +185,6 @@ class KB2Data:
                                   'length': concept_len(concept.get_nnf())}
         data = list(data.items())
         os.makedirs(self.storage_path, exist_ok=True)
-        with open(f'{self.storage_path}/LPs.json', 'w') as file_train:
+        with open(f'{self.storage_path}/LPs.json', 'w', encoding="utf-8") as file_train:
             json.dump(data, file_train, indent=3, ensure_ascii=False)
         print(f'Data saved at {self.storage_path}')
