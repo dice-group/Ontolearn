@@ -326,7 +326,7 @@ def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLCl
     # @TODO: CD: Lazy import. CD: Can we use rdflib to serialize concepts ?!
     from owlapy.owl_ontology import Ontology
     # ()
-    ontology = Ontology(IRI.create(NS))
+    ontology = Ontology(IRI.create(NS), load=False)
     # () Iterate over concepts
     for th, i in enumerate(expressions):
         cls_a = OWLClass(IRI.create(NS, str(th)))
@@ -341,7 +341,7 @@ def save_owl_class_expressions(expressions: Union[OWLClassExpression, List[OWLCl
             print(i)
             print(expressions)
             exit(1)
-    ontology.save(IRI.create(path + '.owl'))
+    ontology.save(IRI.create(path + '.owl', is_file_path=True))
 
 
 def verbalize(predictions_file_path: str):  # pragma: no cover

@@ -374,7 +374,7 @@ class BaseConceptLearner(metaclass=ABCMeta):
                 ontology.add_axiom(f1_score)
             """
         # TODO:# must be added for the time being
-        ontology.save(IRI.create(path + '#.owl'))
+        ontology.save(IRI.create(path + '.owl', is_file_path=True))
 
     def load_hypotheses(self, path: str) -> Iterable[OWLClassExpression]:
         """

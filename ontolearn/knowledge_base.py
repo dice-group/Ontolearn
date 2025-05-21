@@ -945,7 +945,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Individuals.
         """
-        yield from self.reasoner.object_property_values(ind, property_, direct)
+        if isinstance(self.reasoner, SyncReasoner):
+            yield from self.reasoner.object_property_values(ind, property_)
+        else:
+            yield from self.reasoner.object_property_values(ind, property_, direct)
 
     def get_data_property_values(self, ind: OWLNamedIndividual,
                                  property_: OWLDataPropertyExpression,
@@ -961,7 +964,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
         Returns:
             Literals.
         """
-        yield from self.reasoner.data_property_values(ind, property_, direct)
+        if isinstance(self.reasoner, SyncReasoner):
+            yield from self.reasoner.data_property_values(ind, property_)
+        else:
+            yield from self.reasoner.data_property_values(ind, property_, direct)
 
     def contains_class(self, concept: OWLClassExpression) -> bool:
         """Check if an atomic class is contained within this concept generator.

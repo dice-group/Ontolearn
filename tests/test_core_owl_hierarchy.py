@@ -1,7 +1,7 @@
 import unittest
 from typing import TypeVar
 
-from owlapy.class_expression import OWLClass, OWLNothing
+from owlapy.class_expression import OWLClass
 from owlapy.iri import IRI
 from owlapy.owl_ontology import Ontology
 from owlapy.owl_property import OWLObjectProperty
@@ -90,7 +90,7 @@ class Owl_Core_ClassHierarchy_Test(unittest.TestCase):
                                 OWLClass(IRI(NS, 'Grandparent'))})
         assert frozenset(ch.super_classes(grandmother))== target_cls
 
-        target_cls = frozenset({OWLClass(IRI(NS, 'Person')), OWLNothing})
+        target_cls = frozenset({OWLClass(IRI(NS, 'Person'))})
         assert frozenset(ch.roots())== target_cls
 
     def test_class_hierarchy_siblings(self):
