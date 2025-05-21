@@ -20,7 +20,7 @@ from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 from owlapy.class_expression import OWLClass
 
-PATH_FAMILY = '../KGs/Family/family-benchmark_rich_background.owl'
+PATH_FAMILY = 'KGs/Family/family-benchmark_rich_background.owl'
 
 class TestIntegrationWithSyncReasoner(unittest.TestCase):
 
@@ -28,7 +28,7 @@ class TestIntegrationWithSyncReasoner(unittest.TestCase):
         self.kb = KnowledgeBase(path=PATH_FAMILY,reasoner=SyncReasoner(PATH_FAMILY, "Pellet"))
         self.hasChild = OWLObjectProperty("http://www.benchmark.org/family#hasChild")
         self.father = OWLClass("http://www.benchmark.org/family#Father")
-        with open('../LPs/Family/lps.json') as json_file:
+        with open('LPs/Family/lps.json') as json_file:
             settings = json.load(json_file)
         self.p = settings['problems']['Aunt']['positive_examples']
         self.n = settings['problems']['Aunt']['negative_examples']
