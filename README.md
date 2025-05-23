@@ -1,8 +1,8 @@
 [![Downloads](https://static.pepy.tech/badge/ontolearn)](https://pepy.tech/project/ontolearn)
 [![Downloads](https://img.shields.io/pypi/dm/ontolearn)](https://pypi.org/project/ontolearn/)
 [![Coverage](https://img.shields.io/badge/coverage-86%25-green)](https://ontolearn-docs-dice-group.netlify.app/usage/09_further_resources#code-coverage)
-[![Pypi](https://img.shields.io/badge/pypi-0.9.0-blue)](https://pypi.org/project/ontolearn/0.9.0/)
-[![Docs](https://img.shields.io/badge/documentation-0.9.0-yellow)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
+[![Pypi](https://img.shields.io/badge/pypi-0.9.1-blue)](https://pypi.org/project/ontolearn/0.9.1/)
+[![Docs](https://img.shields.io/badge/documentation-0.9.1-yellow)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
 [![Python](https://img.shields.io/badge/python-3.10.13+-4584b6)](https://www.python.org/downloads/release/python-31013/)
 &nbsp;
 
@@ -30,6 +30,9 @@ To tackle this supervised learning problem, ontolearn offers many symbolic, neur
 - **OCEL** &rarr; A limited version of CELOE
 
 Find more in the [Documentation](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction).
+
+[DeepWiki](https://deepwiki.com/dice-group/Ontolearn) can also help you get started with Ontolearn.
+
 
 ## Installation
 
