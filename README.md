@@ -338,6 +338,17 @@ pytest -p no:warnings -x # Running 76 tests takes ~ 17 mins
 Currently, we are working on our manuscript describing our framework. 
 If you find our work useful in your research, please consider citing the respective paper:
 ```
+# Ontolearn
+@article{demir2025ontolearn,
+  title={Ontolearn---A Framework for Large-scale OWL Class Expression Learning in Python},
+  author={Demir, Caglar and Baci, Alkid and Kouagou, N'Dah Jean and Sieger, Leonie Nora and Heindorf, Stefan and Bin, Simon and Bl{\"u}baum, Lukas and Bigerl, Alexander and Ngomo, Axel-Cyrille Ngonga},
+  journal={Journal of Machine Learning Research},
+  volume={26},
+  number={63},
+  pages={1--6},
+  year={2025}
+}
+
 # ROCES
 @inproceedings{kouagou2024roces,
   title     = {ROCES: Robust Class Expression Synthesis in Description Logics via Iterative Sampling},
