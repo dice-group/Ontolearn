@@ -1,6 +1,20 @@
+# import os
+#
+# if "CUDA_VISIBLE_DEVICES" not in os.environ:
+#     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+#
+# import torch
 # from ontolearn.semantic_caching import run_semantic_cache, run_non_semantic_cache
 #
-
+#
+# def check_cuda():
+#     if torch.cuda.is_available():
+#         print("GPU detected. Setting CUDA_VISIBLE_DEVICES=0")
+#     else:
+#          print("No GPU detected. Running on CPU.")
+#
+# check_cuda()
+#
 # class TestSemanticCache:
 #     def setup_method(self):
 #         self.path_kg = "KGs/Family/father.owl" #path to the father datasets
@@ -8,7 +22,7 @@
 #         self.symbolic_reasoner = "HermiT"
 #         self.neural_reasoner = "EBR"
 #         self.num_concepts = 800
-#         self.cache_size = 0.8*self.num_concepts
+#         self.cache_size = int(0.8*self.num_concepts)
 #         self.eviction = "LRU"
 #         self.cache_type = "cold"
 #
@@ -35,7 +49,7 @@
 #         cache_large,_ = run_semantic_cache(self.path_kg, self.path_kge, self.cache_size, self.neural_reasoner, self.eviction, 0, self.cache_type, True)
 #
 #         for k in [0.1, 0.2]:
-#             cache_small,_ = run_semantic_cache(self.path_kg, self.path_kge, k * self.num_concepts, self.neural_reasoner, self.eviction, 0, self.cache_type, True)
+#             cache_small,_ = run_semantic_cache(self.path_kg, self.path_kge, int(k * self.num_concepts), self.neural_reasoner, self.eviction, 0, self.cache_type, True)
 #             assert cache_small["hit_ratio"] <= cache_large["hit_ratio"], f"Expected hit ratio to increase with cache size, but got {cache_small['hit_ratio']} vs {cache_large['hit_ratio']}"
 #             assert cache_small["miss_ratio"] >= cache_large["miss_ratio"], f"Expected miss ratio to decrease with cache size, but got {cache_small['miss_ratio']} vs {cache_large['miss_ratio']}"
 #

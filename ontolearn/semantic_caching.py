@@ -23,6 +23,8 @@
 # -----------------------------------------------------------------------------
 
 """python examples/retrieval_eval.py"""
+from owlapy.owl_literal import OWLBottomObjectProperty, OWLTopObjectProperty
+
 from ontolearn.owl_neural_reasoner import TripleStoreNeuralReasoner
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.utils import jaccard_similarity, concept_reducer, concept_reducer_properties
@@ -157,26 +159,35 @@ def concept_generator(path_kg):
 
 
 
-def get_shuffled_concepts(path_kg, data_name):
-    '''Shuffle the generated concept and save it in a folder for reproducibility'''
-     # Create the directory if it does not exist
+
+def get_saved_concepts(path_kg, data_name, shuffle):
+    """Shuffle or not the generated concept and save it in a folder for reproducibility."""
+    
+    # Create the directory if it does not exist
     cache_dir = f"caching_results_{data_name}"
     os.makedirs(cache_dir, exist_ok=True)
-    save_file = os.path.join(cache_dir, "shuffled_concepts.pkl")
+
+    # Determine the filename based on shuffle flag
+    filename = "shuffled_concepts.pkl" if shuffle else "unshuffled_concepts.pkl"
+    save_file = os.path.join(cache_dir, filename)
 
     if os.path.exists(save_file):
-        # Load the saved shuffled concepts
         with open(save_file, "rb") as f:
             alc_concepts = pickle.load(f)
-        print("Loaded shuffled concepts from file.")
+        print(f"Loaded concepts from {filename}.")
     else:
-        # Generate, shuffle, and save the concepts
+        # Generate concepts and optionally shuffle
         alc_concepts = concept_generator(path_kg)
-        random.seed(0)
-        random.shuffle(alc_concepts)
+        if shuffle:
+            random.seed(0)
+            random.shuffle(alc_concepts)
+
+        # Save the concepts
         with open(save_file, "wb") as f:
             pickle.dump(alc_concepts, f)
-        print("Generated, shuffled, and saved concepts.")   
+
+        print(f"Generated and saved {'shuffled' if shuffle else 'unshuffled'} concepts.")
+    
     return alc_concepts
 
 
@@ -335,6 +346,8 @@ def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cach
             
             if len(All_individuals)<1000: # The loop beomes unscalable when there are too many individuals 
                 object_property = owl_expression.get_property()
+                if object_property == OWLBottomObjectProperty or object_property == OWLTopObjectProperty:
+                    return set()
                 filler_expression = owl_expression.get_filler()
                 instances = retrieve_from_cache(owl_expression_to_dl(filler_expression))
                 if instances is not None:
@@ -545,7 +558,7 @@ def retrieve_other_reasoner(expression, path_kg, name_reasoner='HermiT'):
         print("The knowledge base is not consistent") 
          
 
-def run_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, eviction:str, random_seed:int, cache_type:str, shuffle_concepts:str):
+def run_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, eviction:str, random_seed:int, cache_type:str, shuffle_concepts:bool):
     '''Return cache performnace with semantics'''
 
     symbolic_kb = KnowledgeBase(path=path_kg)
@@ -555,9 +568,9 @@ def run_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:
     data_name = path_kg.split("/")[-1].split("/")[-1].split(".")[0]
 
     if shuffle_concepts:
-        alc_concepts = get_shuffled_concepts(path_kg, data_name=data_name) 
+        alc_concepts = get_saved_concepts(path_kg, data_name=data_name, shuffle=True) 
     else:
-        alc_concepts = concept_generator(path_kg)
+        alc_concepts = get_saved_concepts(path_kg, data_name=data_name, shuffle=False) 
 
     if name_reasoner == 'EBR':
         cached_retriever = semantic_caching_size(retrieve, cache_size=cache_size, eviction_strategy=eviction, random_seed=random_seed, cache_type=cache_type, concepts=alc_concepts)
@@ -625,7 +638,7 @@ def run_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:
 
 
 
-def run_non_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, shuffle_concepts:str):
+def run_non_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, shuffle_concepts:bool):
     '''Return cache performnace without any semantics'''
 
     symbolic_kb = KnowledgeBase(path=path_kg)
@@ -635,9 +648,9 @@ def run_non_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reaso
     data_name = path_kg.split("/")[-1].split("/")[-1].split(".")[0]
 
     if shuffle_concepts:
-        alc_concepts = get_shuffled_concepts(path_kg, data_name=data_name) 
+        alc_concepts = get_saved_concepts(path_kg, data_name=data_name, shuffle=True) 
     else:
-        alc_concepts = concept_generator(path_kg)
+        alc_concepts = get_saved_concepts(path_kg, data_name=data_name, shuffle=False) 
 
     if name_reasoner == 'EBR':
         cached_retriever = non_semantic_caching_size(retrieve, cache_size=cache_size)
