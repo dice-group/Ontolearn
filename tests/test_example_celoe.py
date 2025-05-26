@@ -1,16 +1,4 @@
 import json
-import os
-import random
-from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.learners import CELOE
-from ontolearn.heuristics import CELOEHeuristic
-from ontolearn.learning_problem import PosNegLPStandard
-from ontolearn.metrics import Accuracy
-from owlapy.owl_individual import OWLNamedIndividual, IRI
-from owlapy.class_expression import OWLClass
-from ontolearn.refinement_operators import ModifiedCELOERefinement
-import json
-import os
 import random
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learners import CELOE
