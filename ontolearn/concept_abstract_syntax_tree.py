@@ -124,6 +124,7 @@ class ConceptAbstractSyntaxTreeBuilder:
         assert isinstance(knowledge_base_path, str) and knowledge_base_path.strip(), "Knowledge base path is required"
         
         self.knowledge_base = KnowledgeBase(path=knowledge_base_path)
+        print(self.knowledge_base)
         self.max_length = max_length
         
         ontology = self.knowledge_base.ontology
@@ -142,8 +143,6 @@ class ConceptAbstractSyntaxTreeBuilder:
 
         # TODO: handle concrete roles and other extended vocabs
         self.vocabs = self.unique_atom_concept_names | self.unique_roles | self.binary_ops | self.negation | self.quantifiers | self.parenthesis | self.dot | self.cardinals | self.digits
-
-        self.parse_tokens = None
 
     def _current_token(self):
         return self.tokens[self.index] if self.index < self.length else None
@@ -372,7 +371,6 @@ class ConceptAbstractSyntaxTreeBuilder:
 
         self.index = 0
         self.length = len(self.tokens)
-        self.parse_tokens = self.tokens
 
         try:
             ast = self._parse_expression()
@@ -546,6 +544,8 @@ class ConceptAbstractSyntaxTreeBuilder:
             token = self.tokens[indx]
             prev_token = self.tokens[indx-1] if indx != 0 else None 
             ahead_token = self.tokens[indx+1] if (indx+1) < len(self.tokens) else None
+            next_ahead_token = self.tokens[indx+2] if (indx+2) < len(self.tokens) else None
+
 
             # --- 1. Handling nonsensical or incomplete parts early ---
             if not curr_valid_cum and token in self.quantifiers | self.negation | self.binary_ops | {')'} | self.unique_atom_concept_names | self.dot | self.unique_roles:
@@ -578,6 +578,9 @@ class ConceptAbstractSyntaxTreeBuilder:
                                 continue
                             elif ahead_token in self.unique_atom_concept_names:
                                 indx += 1
+                                continue
+                            elif ahead_token in {')'}:
+                                indx +=2
                                 continue
                     elif token in self.quantifiers and prev_token not in self.binary_ops:
                         ops_choice = random.choice(list(self.binary_ops))
@@ -650,8 +653,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                             indx += 1
                             continue
                         elif ahead_token in self.dot:
-                            if (indx + 2) < len(self.tokens):
-                                next_ahead_token = self.tokens[indx + 2]
+                            if next_ahead_token:
 
                                 if next_ahead_token in self.parenthesis | self.unique_atom_concept_names:
                                     corrected_tokens.append(token)
@@ -694,7 +696,7 @@ class ConceptAbstractSyntaxTreeBuilder:
 
                     if token in self.negation:
                         if ahead_token in self.quantifiers:
-                            if indx + 2 < len(self.tokens) and self.tokens[indx + 2] in self.unique_roles:
+                            if next_ahead_token and next_ahead_token in self.unique_roles:
                                 atomic_choice = random.choice(list(self.unique_atom_concept_names))
                                 ops_choice = random.choice(list(self.binary_ops))
                                 corrected_tokens.extend([token, atomic_choice, ops_choice])
@@ -742,8 +744,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                                     indx += 1
                                     continue
                                 else:
-                                    if (indx + 2) < len(self.tokens):
-                                        next_ahead_token = self.tokens[indx+2]
+                                    if next_ahead_token:
 
                                         if ahead_token in self.negation:
                                             if next_ahead_token not in self.unique_atom_concept_names:
@@ -756,12 +757,11 @@ class ConceptAbstractSyntaxTreeBuilder:
                                                     ops_choice = random.choice(list(self.binary_ops))
                                                     corrected_tokens.extend([token, atomic_choice, ops_choice])
                                                     ahead_token = ops_choice
-                                                print(self.tokens[indx + 2])
                                                 indx +=2
                                                 continue
                             else:
                                 if ahead_token in self.binary_ops:
-                                    if (indx + 2) <= len(self.tokens) and self.tokens[indx + 2] in self.negation | self.unique_atom_concept_names:
+                                    if next_ahead_token and next_ahead_token in self.negation | self.unique_atom_concept_names:
                                         print('=========', self.tokens)
                                         pass
                                     # TODO: keep the ops but swap with neg_atomic move next ahead_token
@@ -801,13 +801,17 @@ class ConceptAbstractSyntaxTreeBuilder:
                                 continue
                             elif ahead_token in self.negation:
                                 if prev_token and prev_token in self.unique_roles:
-                                    corrected_tokens.extend(list(choices))
+                                    if next_ahead_token and next_ahead_token in self.unique_atom_concept_names:
+                                        corrected_tokens.extend([token, '.', ahead_token, next_ahead_token])
+                                        cap, choices, curr_valid_syn_cum = None, None, []
+                                        indx += 3
+                                        continue
                                 elif (indx - 2 != 0 and self.tokens[indx-2] in self.unique_roles) and prev_token and prev_token in self.dot:
                                     corrected_tokens.extend([token, ahead_token])
 
-                                    if indx + 2 < len(self.tokens) and (indx + 3) < len(self.tokens):
-                                        if self.tokens[indx + 2] in self.unique_atom_concept_names and self.tokens[indx + 3] in {')'}:
-                                            corrected_tokens.extend([self.tokens[indx + 2], self.tokens[indx + 3]])
+                                    if next_ahead_token and (indx + 3) < len(self.tokens):
+                                        if next_ahead_token in self.unique_atom_concept_names and self.tokens[indx + 3] in {')'}:
+                                            corrected_tokens.extend([next_ahead_token, self.tokens[indx + 3]])
                                             indx += 2
                                     indx += 1
                                     choices, curr_valid_cum = None, []
@@ -826,12 +830,11 @@ class ConceptAbstractSyntaxTreeBuilder:
                             # break
                                 
                     elif ahead_token in self.quantifiers:
-                        if curr_valid_cum: # atomic_choices are available
+                        if curr_valid_cum:
                             if all(choice in self.atom_concepts_with_negation for choice in choices):
                                 atomic_choice = random.choice(list(choices))
                             else:
-                                atomic_choice = random.choice(list(self.atom_concepts_with_negation)) # self.atom_concepts_with_negation
-
+                                atomic_choice = random.choice(list(self.atom_concepts_with_negation)) 
 
                             if isinstance(atomic_choice, tuple):
                                 _token = [token] + list(atomic_choice)
@@ -839,9 +842,9 @@ class ConceptAbstractSyntaxTreeBuilder:
                                 _token = [token, atomic_choice]    
                             
                             corrected_tokens.extend(_token)
-                            choices, curr_valid_cum = None, []
+                            cap, choices, curr_valid_cum = None, None, []
 
-                            if (indx+2 < len(self.tokens) and self.tokens[indx+2] in self.unique_roles):
+                            if next_ahead_token and next_ahead_token in self.unique_roles:
                                 ops_choice = random.choice(list(self.binary_ops))
                                 corrected_tokens.append(ops_choice)
                                 indx +=1
@@ -995,7 +998,7 @@ if __name__ == "__main__":
 
     '''
     TODO
-        - new pushable branch 
+        - Knowledge base fix with Alkid
         - decoding strategy - greed*, beam [constrained beam search]
         - recursive handlinding to [enforce] its validility
         - can I get the transE, ConEx embeddings

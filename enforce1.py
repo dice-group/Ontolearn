@@ -24,6 +24,7 @@ def validate_and_correct_sequence(tokens, max_length):
         token = tokens[indx]
         prev_token = tokens[indx-1] if indx != 0 else None 
         ahead_token = tokens[indx+1] if (indx+1) < len(tokens) else None
+        next_ahead_token = tokens[indx+2] if (indx+2) < len(tokens) else None
 
         # --- 1. Handling nonsensical or incomplete parts early ---
         if not curr_valid_syn_cum and token in QUANTIFIERS | UNARY_OPS | BINARY_OPS | {')'} | ATOMIC_CONCEPTS | DOT | ROLES:
@@ -56,6 +57,9 @@ def validate_and_correct_sequence(tokens, max_length):
                             continue
                         elif ahead_token in ATOMIC_CONCEPTS:
                             indx += 1
+                            continue
+                        elif ahead_token in {')'}:
+                            indx +=2
                             continue
                 elif token in QUANTIFIERS and prev_token not in BINARY_OPS:
                     ops_choice = random.choice(list(BINARY_OPS))
@@ -128,8 +132,7 @@ def validate_and_correct_sequence(tokens, max_length):
                         indx += 1
                         continue
                     elif ahead_token in DOT:
-                        if (indx + 2) < len(tokens):
-                            next_ahead_token = tokens[indx + 2]
+                        if next_ahead_token:
 
                             if next_ahead_token in PARENTHESES | ATOMIC_CONCEPTS:
                                 corrected_tokens.append(token)
@@ -172,7 +175,7 @@ def validate_and_correct_sequence(tokens, max_length):
 
                 if token in UNARY_OPS:
                     if ahead_token in QUANTIFIERS:
-                        if indx + 2 < len(tokens) and tokens[indx + 2] in ROLES:
+                        if next_ahead_token and next_ahead_token in ROLES:
                             atomic_choice = random.choice(list(ATOMIC_CONCEPTS))
                             ops_choice = random.choice(list(BINARY_OPS))
                             corrected_tokens.extend([token, atomic_choice, ops_choice])
@@ -222,8 +225,7 @@ def validate_and_correct_sequence(tokens, max_length):
                                 indx += 1
                                 continue
                             else:
-                                if (indx + 2) < len(tokens):
-                                    next_ahead_token = tokens[indx+2]
+                                if next_ahead_token:
 
                                     if ahead_token in UNARY_OPS:
                                         if next_ahead_token not in ATOMIC_CONCEPTS:
@@ -240,7 +242,7 @@ def validate_and_correct_sequence(tokens, max_length):
                                             continue
                         else:
                             if ahead_token in BINARY_OPS:
-                                if (indx + 2) <= len(tokens) and tokens[indx + 2] in  UNARY_OPS | ATOMIC_CONCEPTS:
+                                if next_ahead_token and next_ahead_token in  UNARY_OPS | ATOMIC_CONCEPTS:
                                     pass
                                 # print('fix me OPS', choices) 
                                 # # TODO: keep the ops but swap with neg_atomic move next ahead_token
@@ -283,13 +285,17 @@ def validate_and_correct_sequence(tokens, max_length):
                             continue
                         elif ahead_token in UNARY_OPS:
                             if prev_token and prev_token in ROLES:
-                                corrected_tokens.extend(list(choices))
+                                if next_ahead_token and next_ahead_token in ATOMIC_CONCEPTS:
+                                    corrected_tokens.extend([token, '.', ahead_token, next_ahead_token])
+                                    cap, choices, curr_valid_syn_cum = None, None, []
+                                    indx += 3
+                                    continue
                             elif (indx - 2 != 0 and tokens[indx-2] in ROLES) and prev_token and prev_token in DOT:
                                 corrected_tokens.extend([token, ahead_token])
 
-                                if indx + 2 < len(tokens) and (indx + 3) < len(tokens):
-                                    if tokens[indx + 2] in ATOMIC_CONCEPTS and tokens[indx + 3] in {')'}:
-                                        corrected_tokens.extend([tokens[indx + 2], tokens[indx + 3]])
+                                if next_ahead_token and (indx + 3) < len(tokens):
+                                    if next_ahead_token in ATOMIC_CONCEPTS and tokens[indx + 3] in {')'}:
+                                        corrected_tokens.extend([next_ahead_token, tokens[indx + 3]])
                                         indx += 2
                                 indx += 1
                                 cap, choices, curr_valid_syn_cum = None, None, []
@@ -324,9 +330,9 @@ def validate_and_correct_sequence(tokens, max_length):
                             _token = [token, atomic_choice]    
                         
                         corrected_tokens.extend(_token)
-                        choices, curr_valid_syn_cum = None, []
+                        cap, choices, curr_valid_syn_cum = None, None, []
 
-                        if (indx+2 < len(tokens) and tokens[indx+2] in ROLES):
+                        if (next_ahead_token and next_ahead_token in ROLES):
                             ops_choice = random.choice(list(BINARY_OPS))
                             corrected_tokens.append(ops_choice)
                             indx +=1
@@ -430,7 +436,7 @@ def validate_and_correct_sequence(tokens, max_length):
     return corrected_tokens
 
 def fix_mid_tokens_errors(tokens: list[str]) -> list[str]:
-    fixed = []
+    container = []
     i = 0
 
     while i < len(tokens):
@@ -449,8 +455,8 @@ def fix_mid_tokens_errors(tokens: list[str]) -> list[str]:
             if next_next_token in ATOMIC_CONCEPTS | UNARY_OPS:
                 i += 2
             else:
-                fixed.append(choice(list(ATOMIC_CONCEPTS)))
-                fixed.append(token)
+                container.append(choice(list(ATOMIC_CONCEPTS)))
+                container.append(token)
                 i += 1
             i += 1
             continue
@@ -458,17 +464,17 @@ def fix_mid_tokens_errors(tokens: list[str]) -> list[str]:
         if prev_token in ROLES and token == '(':
             if next_token:
                 if next_token in ATOMIC_CONCEPTS | UNARY_OPS:
-                    fixed.append('.')
-                    fixed.append(token)
+                    container.append('.')
+                    container.append(token)
                 elif next_token in DOT and next_next_token and next_next_token in ATOMIC_CONCEPTS | UNARY_OPS:
                     i += 1
-                    fixed.append('.')
-                    fixed.append(token)
+                    container.append('.')
+                    container.append(token)
                 i += 1
                 continue
 
         if prev_token == '(' and token == '.' and next_token == ')':
-            fixed.append(choice(list(ATOMIC_CONCEPTS)))
+            container.append(choice(list(ATOMIC_CONCEPTS)))
             i += 1
             continue
         
@@ -489,40 +495,40 @@ def fix_mid_tokens_errors(tokens: list[str]) -> list[str]:
             continue
 
         if prev_token in BINARY_OPS and token == ')':
-            fixed.pop() 
-            fixed.append(token)
+            container.pop() 
+            container.append(token)
             i += 1
             continue
 
         if prev_token == ')' and token == '(':
-            fixed.append(choice(list(BINARY_OPS)))
-            fixed.append(token)
+            container.append(choice(list(BINARY_OPS)))
+            container.append(token)
             i += 1
             continue
 
         if (prev_token == ')' and token not in BINARY_OPS and next_token == '('):
-            fixed.append(choice(list(BINARY_OPS)))
+            container.append(choice(list(BINARY_OPS)))
             i += 1  
             continue
 
         if prev_token in ATOMIC_CONCEPTS | {')'} and token in ATOMIC_CONCEPTS | UNARY_OPS | {'('} | DOT:
-            fixed.append(choice(list(BINARY_OPS)))
+            container.append(choice(list(BINARY_OPS)))
             if token in DOT:
                 i += 1
             else:
-                fixed.append(token)
+                container.append(token)
                 i += 1
             continue
 
         if prev_token in BINARY_OPS and token in QUANTIFIERS and next_token in BINARY_OPS:
-            fixed.append(choice(list(ATOMIC_CONCEPTS)))
+            container.append(choice(list(ATOMIC_CONCEPTS)))
             i += 1
             continue
 
-        fixed.append(token)
+        container.append(token)
         i += 1
 
-    return fixed
+    return container
 
 def postprocess_tail_fix(tokens: list[str], max_length: int) -> list[str]:
     def is_incomplete_tail(toks):
@@ -643,10 +649,10 @@ invalid_sequences = [
     
     # todo: considering iterating fix_mid and enforce
     # ['Person', '⊓', '(', '(', '⊔', '(', '∀', 'hasChild', '.', 'Daughter', ')', ')']
-    ['Person', '⊓', '(', '∀', 'hasSibling', '.', '(', '∃', 'married', '(', ')', ')', ')', '(', ')', ')'],
-    ['Person', '⊔', '(', '⊔', 'Sister'],
-    ['Brother', '⊔', '(', 'married', 'Sister', ')'],
-    ['Brother', '⊔', '(', '¬', 'hasSibling', '.', 'Sister', ')']
+    # ['Person', '⊓', '(', '∀', 'hasSibling', '.', '(', '∃', 'married', '(', ')', ')', ')', '(', ')', ')'],
+    # ['Person', '⊔', '(', '⊔', 'Sister'],
+    # ['Brother', '⊔', '(', 'married', 'Sister', ')'],
+    # ['Brother', '⊔', '(', '¬', 'hasSibling', '.', 'Sister', ')']
     # ['(', 'Daughter', '⊓', '(', '(', '¬', 'married', '.', '.', ')', ')', ')', ')', ' '],
     # ['Person', '⊓', '(', 'Grandmother', '⊔', '(', '∃', 'married', '.', '(', '¬', ')', ')', ')', ')', '(', '∀', ' '],
     # ['(', 'Parent', '⊓', '(', '∀', 'hasSibling', '.', '∀', ')', ')', '⊔', '(', ')', ')', ')'],
@@ -656,15 +662,15 @@ invalid_sequences = [
     # ['Sister', '⊔', '(', '∃', 'married', '.', ')']
     # ['Father', '⊔', '(', '∃', 'hasSibling']
     # ['∀', '⊔', '(', '¬', 'married']
-    # ['Person', '⊓', 'Grandson', '⊔', '(', '∀', 'hasSibling', '.', '(', '¬', 'Grandson', ')', ')', '⊔', '⊓', '(', '⊤', ')']
+    # ['Person', '⊓', 'Grandson', '⊔', '(', '∀', 'hasSibling', '.', '(', '¬', 'Grandson', ')', ')', '⊔', '⊓', '(', '⊤', ')'],
     
     # ##### working cases
-    # ['∀', 'hasChild', '(', '¬', 'Father', ')'],
     # ['Person', '⊔', '(', '∃', 'hasSibling', '.', '(', '∃', '⊓', '(', ')', 'hasChild', ')', 'Father', ')', ')', ')'],
+    # ['∀', 'hasChild', '(', '¬', 'Father', ')'],
     # ['Person', '⊓', '(', 'Mother', '⊔', '(', '∀', 'hasSibling', '.', '(', '¬', 'Mother', ')', ')', ')', '(', ')', ')', ')'],
+    # ['(', '⊓', '∀', 'hasSibling', '(', '(', ')', '.', 'Daughter', ')', ')', '⊔', '(', '∃', 'hasParent', '.', ')'],
     # ['Person', '⊓', '(', '∀', 'married', '(', '∃', 'hasSibling', '.', 'Parent', ')', ')'],
     # ['Person', '⊓', '(', '∃', 'married', '.', '(', '∀', 'hasChild', '.', '(', ')', ')', ')'],
-    # ['(', '⊓', '∀', 'hasSibling', '(', '(', ')', '.', 'Daughter', ')', ')', '⊔', '(', '∃', 'hasParent', '.', ')'],
     # ['Person', '⊓', '(', '∀', '(', '¬', ')', ')', ')', ')'],
     # ['Brother', '⊔', '(', '∃', '(', '∀', '.', ')', ')'],
     # ['Person', '⊓', '(', 'Sister', '⊔', '(', '∀', 'hasChild', '.', '(', '¬', 'Mother', ')', ')', ')', '⊓', '(', '∀', 'hasParent'],
