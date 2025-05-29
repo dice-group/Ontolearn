@@ -86,46 +86,78 @@ class Forall(Expr):
     def to_dict(self):
         return {"type": "Forall", "role": self.role, "filler": self.filler.to_dict()}
 
-# class IncompleteBinary(Expr):
-#     def __init__(self, left: Expr, op: str):
-#         self.left = left
-#         self.op = op
-#     def to_string(self):
-#         return f"{self.left.to_string()} {self.op}"
-#     def __repr__(self):
-#         return f"({self.left} {self.op})"
-#     def to_dict(self):
-#         return {"type": "IncompleteBinary", "left": self.left.to_dict(), "op": self.op}
+class Cardinality(Expr):
+    def __init__(self, kind: str, n: int, role: str, filler: Expr):
+        self.kind = kind  # either "≥" or "≤" or 
+        self.n = n
+        self.role = role
+        self.filler = filler
+    def to_string(self):
+        return f"{self.kind}{self.n} {self.role}.{self.filler.to_string()}"
+    def __repr__(self):
+        return f"({self.kind}{self.n} {self.role}.{self.filler})"
+    def to_dict(self):
+        return {
+            "type": "Cardinality",
+            "kind": self.kind,
+            "n": self.n,
+            "role": self.role,
+            "filler": self.filler.to_dict()
+        }
+
 
 # --- Allowed Vocabulary ---
-ATOMIC_CONCEPTS = {"Person", "Animal", "Thing", "Female", "Father", "Brother"}
-ROLES = {"hasChild", "hasParent", "hasSibling", "married"}
-BINARY_OPS = {"⊓", "⊔"}
-UNARY_OPS = {"¬"}
-QUANTIFIERS = {"∃", "∀"}
-PARENTHESES = {"(", ")"}
-DOT = {'.'}
-VOCAB = ATOMIC_CONCEPTS | ROLES | BINARY_OPS | UNARY_OPS | QUANTIFIERS | PARENTHESES | DOT
+
+ATOMIC_CONCEPTS = frozenset({'Oxygen',"PersonWithASibling","Person", "Animal","Daughter", "Sister", "Thing", "Female", "Father", "Brother", "Granddaughter", "Son", 'Mother', 'Grandson', 'Child', 'Grandchild', 'Grandmother'})
+ROLES = frozenset({"hasChild", "hasParent", "hasSibling", "married", "inBond"})
+BINARY_OPS = frozenset({"⊓", "⊔"})
+UNARY_OPS = frozenset({"¬"})
+QUANTIFIERS = frozenset({"∃", "∀"})
+PARENTHESES = frozenset({"(", ")"})
+DOT = frozenset({'.'})
+CARDINALITY_OPS = frozenset({"≥", "≤"})
+DIGITS = frozenset({str(i) for i in range(10)})
+VOCAB = ATOMIC_CONCEPTS | ROLES | BINARY_OPS | UNARY_OPS | QUANTIFIERS | PARENTHESES | DOT | CARDINALITY_OPS | DIGITS
 
 def allowed_tokens(context_tokens):
     if not context_tokens:
-        return UNARY_OPS | QUANTIFIERS | ATOMIC_CONCEPTS | {"("}
+        return UNARY_OPS | QUANTIFIERS | CARDINALITY_OPS | ATOMIC_CONCEPTS | {'('}
+    
     last = context_tokens[-1]
+    
     if last in QUANTIFIERS:
         return ROLES
+
+    if last in CARDINALITY_OPS:
+        return DIGITS
+
+    if last in DIGITS:
+        return DIGITS | ROLES
+
     if last in ROLES:
         return DOT
+
     if last == '.':
-        return UNARY_OPS | QUANTIFIERS | ATOMIC_CONCEPTS | {"("}
+        return UNARY_OPS | QUANTIFIERS | CARDINALITY_OPS | ATOMIC_CONCEPTS | {'('}
+
     if last == '(':
-        return UNARY_OPS | QUANTIFIERS | ATOMIC_CONCEPTS | {"("}
+        return UNARY_OPS | QUANTIFIERS | CARDINALITY_OPS | ATOMIC_CONCEPTS | {'('}
+
     if last in ATOMIC_CONCEPTS:
         return BINARY_OPS | {')'}
+
     if last in BINARY_OPS:
-        return UNARY_OPS | QUANTIFIERS | ATOMIC_CONCEPTS | {"("}
+        return UNARY_OPS | QUANTIFIERS | CARDINALITY_OPS | ATOMIC_CONCEPTS | {'('}
+    
+    if last in UNARY_OPS:
+        return ATOMIC_CONCEPTS | QUANTIFIERS | CARDINALITY_OPS | {'('}
+
     if last == ')':
         return BINARY_OPS | {')'}
+
     return VOCAB
+
+
 
 def format_token_sequence(tokens):
     result = ""
@@ -212,6 +244,29 @@ class ConceptAbstractSyntaxTreeBuilder:
             self._advance()
             filler = self._parse_term()
             return Exists(role, filler) if quant == '∃' else Forall(role, filler)
+        
+        if token in CARDINALITY_OPS:
+            kind = token
+            self._advance()
+
+            num_token = self._current_token()
+            if num_token is None or not num_token.isdigit():
+                raise Exception(f"Expected number after '{kind}', got '{num_token}'.")
+            number = int(num_token)
+            self._advance()
+
+            role = self._current_token()
+            if role not in ROLES:
+                raise Exception(f"Expected role after number in cardinality, got '{role}'.")
+            self._advance()
+
+            if self._current_token() != '.':
+                raise Exception("Expected '.' after role in cardinality.")
+            self._advance()
+
+            filler = self._parse_term()
+            return Cardinality(kind, number, role, filler)
+
 
         if token == '(':
             self._advance()
@@ -228,22 +283,80 @@ class ConceptAbstractSyntaxTreeBuilder:
 
         raise Exception(f"Unexpected token '{token}' at position {self.index}.")
 
+# def grammar_constrained_decoder(max_length=12):
+#     generated_tokens = []
+#     for _ in range(max_length):
+#         allowed = allowed_tokens(generated_tokens)
+#         logits = {token: np.random.rand() for token in VOCAB}
+#         for token in VOCAB:
+#             if token not in allowed:
+#                 logits[token] = -np.inf
+#         next_token = max(logits, key=logits.get)
+#         generated_tokens.append(next_token)
+#         if generated_tokens[-1] == ')' and generated_tokens.count('(') <= generated_tokens.count(')'):
+#             break
+#     return generated_tokens
 def grammar_constrained_decoder(max_length=12):
     generated_tokens = []
-    for _ in range(max_length):
-        allowed = allowed_tokens(generated_tokens)
+    number_buffer = ""
+    t = 0
+
+    while t < max_length:
+        context = generated_tokens + ([number_buffer] if number_buffer else [])
+        allowed = allowed_tokens(context)
+        print
+
+        # Simulate logits from neural model or uniform sampling
         logits = {token: np.random.rand() for token in VOCAB}
         for token in VOCAB:
             if token not in allowed:
                 logits[token] = -np.inf
+
+        # Select the next token
         next_token = max(logits, key=logits.get)
+
+        # If it's a digit, accumulate it into number_buffer
+        if next_token.isdigit() and len(number_buffer) <= 3:
+            number_buffer += next_token
+            continue
+
+        # If number_buffer is non-empty and current token is non-digit, flush it as a full number
+        if number_buffer:
+            generated_tokens.append(number_buffer)
+            t += 1
+            number_buffer = ""
+
+            # If we hit max after flushing number, exit early
+            if t >= max_length:
+                break
+
+        # Add the current non-digit token
         generated_tokens.append(next_token)
-        if generated_tokens[-1] == ')' and generated_tokens.count('(') <= generated_tokens.count(')'):
+        t += 1
+
+        # Stop if expression seems complete
+        if next_token == ')' and generated_tokens.count('(') <= generated_tokens.count(')'):
             break
+
+    # Flush any remaining number at the end
+    if number_buffer and t < max_length:
+        generated_tokens.append(number_buffer)
+
     return generated_tokens
 
 def generate_class_expression(relax_parentheses=True, save_as_json=False):
-    token_sequence = grammar_constrained_decoder(max_length=50)
+    # Generated Token Sequence: ['Female', '⊔', '≥', '2', '9', 'married', '.', 'Thing', '⊔', 'Female', ')']
+    # Error constructing AST: Expected role after number in cardinality, got '9'.
+    # Incomplete AST: Female ⊔ ≥29married.Thing ⊔ Female)
+    # token_sequence = ['¬', 'Person', '⊓', '≤', '3001', 'hasSibling', '.', 'Female']
+    # token_sequence = ['≤', '6', 'hasSibling', '.', 'Person', '⊓', '∃', 'hasChild', '.', 'Brother', ')']
+    # token_sequence = ['≥', '27', 'hasChild', '.', 'Person', '⊔', 'Father', '⊔', 'Animal', '⊓', 'Female', ')', '⊓', '∃', 'married', '.', 'Brother']
+    # token_sequence = ["≥", "1", "hasChild", ".", "(", "Person", "⊔", "Animal", ")"]
+    # token_sequence =  ['Person', '⊓', '(', '∀', '⊔', '(', '¬', ')', ')', 'Grandparent', ')', ')', '(', ')']
+    # ['≥', '55', 'hasParent', '.', '¬', 'Person', ')']
+
+    # token_sequence = grammar_constrained_decoder(max_length=10)
+    token_sequence = ['Person', '⊔', '(', '∃', 'married', '.', '(', 'Father', ')']
     print("Generated Token Sequence:", token_sequence)
     try:
         builder = ConceptAbstractSyntaxTreeBuilder(token_sequence, relax_parentheses=relax_parentheses)
@@ -261,6 +374,9 @@ def generate_class_expression(relax_parentheses=True, save_as_json=False):
         else:
             print("Incomplete AST:", format_token_sequence(token_sequence))
 
+
+
 if __name__ == "__main__":
-    generate_class_expression(save_as_json=False)
+    generate_class_expression()
+    # generate_concept_with_logits()
 

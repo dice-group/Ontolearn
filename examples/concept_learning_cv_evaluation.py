@@ -20,11 +20,14 @@ import argparse
 from sklearn.model_selection import StratifiedKFold
 import numpy as np
 
+
 from ontolearn.utils.static_funcs import compute_f1_score
 
 pd.set_option("display.precision", 5)
 
 def dl_concept_learning(args):
+    args.kb = os.path.abspath(args.kb)
+    
     if args.learner_type:
         learner_type =  args.learner_type.upper()
 
@@ -62,7 +65,8 @@ def dl_concept_learning(args):
                     path_of_trained_models=args.path_of_nces_trained_models,
                     learner_names=["LSTM", "GRU", "SetTransformer"],
                     num_predictions=200,
-                    verbose=0)
+                    verbose=0, 
+                    decoding_strategy=args.decoding_strategy)
         
     if not learner_type or learner_type == 'NCES2':
         nces2 = NCES2(knowledge_base_path=args.kb,
@@ -70,7 +74,8 @@ def dl_concept_learning(args):
                     load_pretrained=True,
                     path_of_trained_models=args.path_of_nces2_trained_models,
                     num_predictions=200,
-                    verbose=0)
+                    verbose=0,
+                    decoding_strategy=args.decoding_strategy)
 
     if not learner_type or learner_type == 'ROCES':
         roces = ROCES(knowledge_base_path=args.kb,
@@ -99,6 +104,7 @@ def dl_concept_learning(args):
         problems = settings.items()
         positives_key = "positive examples"
         negatives_key = "negative examples"
+
     for str_target_concept, examples in problems:
         print('Target concept: ', str_target_concept)
         p = examples[positives_key]
@@ -127,6 +133,7 @@ def dl_concept_learning(args):
             # Sanity checking for individuals used for testing.
             assert test_pos.issubset(examples[positives_key])
             assert test_neg.issubset(examples[negatives_key])
+
             train_lp = PosNegLPStandard(pos={OWLNamedIndividual(i) for i in train_pos},
                                         neg={OWLNamedIndividual(i) for i in train_neg})
 
@@ -156,7 +163,7 @@ def dl_concept_learning(args):
                 print(f"OCEL Test Quality: {test_f1_ocel:.3f}", end="\t")
                 print(f"OCEL Runtime: {rt_ocel:.3f}")
 
-            if not learner_type or learner_type == 'CELEO':
+            if not learner_type or learner_type == 'CELOE':
                 print("CELOE starts..", end="\t")
                 start_time = time.time()
                 pred_celoe = celoe.fit(train_lp).best_hypotheses()
@@ -350,7 +357,7 @@ def dl_concept_learning(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Description Logic Concept Learning')
-    parser.add_argument("--max_runtime", type=int, default=10, help="Max runtime")
+    parser.add_argument("--max_runtime", type=int, default=60, help="Max runtime")
     parser.add_argument("--lps", type=str, required=True, help="Path to the learning problems")
     parser.add_argument("--folds", type=int, default=10, help="Number of folds of cross validation.")
     parser.add_argument("--kb", type=str, required=True,
@@ -364,4 +371,8 @@ if __name__ == '__main__':
     parser.add_argument("--path_of_clip_embeddings", type=str, default=None)
     parser.add_argument("--report", type=str, default="report.csv")
     parser.add_argument("--random_seed", type=int, default=1)
+
+    # valid neural concept guarantee
+    parser.add_argument("--decoding_strategy", type=str, choices=["greedy", "beam", "sample"],
+                        help="Available decoding strategies for neural concept learners - NCES, NCES2, ROCES.")
     dl_concept_learning(parser.parse_args())
