@@ -653,6 +653,8 @@ invalid_sequences = [
     # ['∀', '⊔', '(', '¬', 'married', '.'],
     # ['Father', '⊔', '(', '¬', 'married', '.'],
     # ['Brother', '⊔', '(', '¬', 'married']
+    # ['Sister', '⊔', '(', '∃', 'married', '.', ')']
+    # ['Father', '⊔', '(', '∃', 'hasSibling']
     # ['∀', '⊔', '(', '¬', 'married']
     # ['Person', '⊓', 'Grandson', '⊔', '(', '∀', 'hasSibling', '.', '(', '¬', 'Grandson', ')', ')', '⊔', '⊓', '(', '⊤', ')']
     
