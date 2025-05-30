@@ -537,7 +537,7 @@ class ConceptAbstractSyntaxTreeBuilder:
 
         corrected_tokens, curr_valid_cum = [], []
         choices, cap = None, None
-        cap_curr_val = {'neg': 2, 'atom': 1, 'role': 3, 'roleCard': 4}
+        cap_curr_val = {'atom': 1, 'neg_atom': 2, 'role': 3, 'roleCard': 4}
 
         indx = 0
         while indx < len(self.tokens) and len(corrected_tokens) < max_length:
@@ -546,8 +546,6 @@ class ConceptAbstractSyntaxTreeBuilder:
             ahead_token = self.tokens[indx+1] if (indx+1) < len(self.tokens) else None
             next_ahead_token = self.tokens[indx+2] if (indx+2) < len(self.tokens) else None
 
-
-            # --- 1. Handling nonsensical or incomplete parts early ---
             if not curr_valid_cum and token in self.quantifiers | self.negation | self.binary_ops | {')'} | self.unique_atom_concept_names | self.dot | self.unique_roles:
                 if indx != 0 and prev_token:
                     if token in self.negation:
@@ -585,7 +583,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                     elif token in self.quantifiers and prev_token not in self.binary_ops:
                         ops_choice = random.choice(list(self.binary_ops))
 
-                        if prev_token in self.unique_atom_concept_names and (ahead_token in self.unique_roles or (indx + 2 < len(self.tokens) and self.tokens[indx +2] in self.unique_roles)):
+                        if prev_token in self.unique_atom_concept_names and (ahead_token in self.unique_roles or (next_ahead_token and next_ahead_token in self.unique_roles)):
                             corrected_tokens.extend([ops_choice, token])
                             choices = self.unique_roles
                             indx += 1
@@ -594,14 +592,6 @@ class ConceptAbstractSyntaxTreeBuilder:
                         if prev_token in self.quantifiers and ahead_token in self.unique_roles:
                             self.tokens.pop(indx)
                             continue
-                    # elif token in self.unique_atom_concept_names: # Has been cater for in another scope
-                    #     if prev_token in self.quantifiers | {")"}:
-                    #         print('===========')
-                    #         ops_choice = random.choice(list(self.binary_ops))
-                    #         corrected_tokens.extend([ops_choice, token])
-                    #         indx +=1
-                    #         continue
-
 
                 if ahead_token:
                     if token in self.quantifiers:
@@ -660,8 +650,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                                     indx += 2
                                     continue
                                 # elif next_ahead_token in self.unique_atom_concept_names:
-
-                            break
+                            pass
 
                     if token == ')':
                         if indx != 0:
@@ -716,20 +705,6 @@ class ConceptAbstractSyntaxTreeBuilder:
                             indx +=1
                             continue
 
-            
-            # # # --- 6. Special fixes after ')' must be binop or ')' ---
-            # if token == ')':
-            #     if (indx + 1) < len(self.tokens) and self.tokens[indx + 1] not in self.binary_ops | {')'}:
-            #         binop_choice = random.choice(list(self.binary_ops))
-            #         corrected_tokens.append(binop_choice)
-
-            # # --- 5. Special fixes after digits: digits must be followed by role ---
-            # if token in self.digits:
-            #     if (indx + 1) < len(self.tokens) and self.tokens[indx + 1] not in self.digits | self.unique_roles:
-            #         role_choice = random.choice(list(self.unique_roles))
-            #         corrected_tokens.append(role_choice)
-
-            # --- 2. Special case: After '(' and next illegal ---
             if token == '(':
                 if ahead_token or prev_token:
                     if ahead_token in self.negation | self.binary_ops | {')'} | self.dot: #TODO: self.dot
@@ -762,7 +737,6 @@ class ConceptAbstractSyntaxTreeBuilder:
                             else:
                                 if ahead_token in self.binary_ops:
                                     if next_ahead_token and next_ahead_token in self.negation | self.unique_atom_concept_names:
-                                        print('=========', self.tokens)
                                         pass
                                     # TODO: keep the ops but swap with neg_atomic move next ahead_token
                                     indx +=1
@@ -795,7 +769,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                                     _token = [token, atomic_choice]    
                                 
                                 corrected_tokens.extend(_token)
-                                choices, curr_valid_cum = None, []
+                                cap, choices, curr_valid_cum = None, None, []
 
                                 indx += 1
                                 continue
@@ -803,7 +777,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                                 if prev_token and prev_token in self.unique_roles:
                                     if next_ahead_token and next_ahead_token in self.unique_atom_concept_names:
                                         corrected_tokens.extend([token, '.', ahead_token, next_ahead_token])
-                                        cap, choices, curr_valid_syn_cum = None, None, []
+                                        cap, choices, curr_valid_cum = None, None, []
                                         indx += 3
                                         continue
                                 elif (indx - 2 != 0 and self.tokens[indx-2] in self.unique_roles) and prev_token and prev_token in self.dot:
@@ -823,12 +797,6 @@ class ConceptAbstractSyntaxTreeBuilder:
 
                                 indx +=2
                                 continue
-                            # elif ahead_token in self.binary_ops:
-                            #     print('======')
-                            #     pass
-
-                            # break
-                                
                     elif ahead_token in self.quantifiers:
                         if curr_valid_cum:
                             if all(choice in self.atom_concepts_with_negation for choice in choices):
@@ -853,6 +821,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                             indx +=2
                             continue
                         else:
+                            # TODO: check for case(s)
                             # atomic_choice = random.choice(list(self.atom_concepts_with_negation))
 
                             # if isinstance(atomic_choice, tuple):
@@ -902,14 +871,13 @@ class ConceptAbstractSyntaxTreeBuilder:
                         indx +=1
                         continue
 
-            # --- 3. Progressive construction ---
             if token not in self.binary_ops | self.parenthesis | self.quantifiers:
                 _token = token
 
                 if _token in self.negation | self.unique_atom_concept_names:
                     if _token in self.negation:
                         if not cap:
-                            cap = cap_curr_val['neg']
+                            cap = cap_curr_val['neg_atom']
                         choices = self.unique_atom_concept_names
                     else:
                         if not cap:
@@ -921,7 +889,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                             cap = cap_curr_val['roleCard']
                         if curr_valid_cum and (ahead_token and ahead_token in self.digits):
                             _token += ahead_token
-                            indx += 1  # skip next
+                            indx += 1
                         choices = self.unique_roles
                     elif _token in self.unique_roles:
                         if not cap:
@@ -931,7 +899,6 @@ class ConceptAbstractSyntaxTreeBuilder:
                         choices = self.atom_concepts_with_negation
                 curr_valid_cum.append(_token)
 
-            # --- 4. Token validation ---
             if not self._is_valid_token(token, corrected_tokens):
                 token = random.choice(list(choices))
                 curr_valid_cum.append(token)
@@ -941,91 +908,9 @@ class ConceptAbstractSyntaxTreeBuilder:
             else:
                 corrected_tokens.append(token)
 
-            # --- 8. cap logic reset ---
             if len(curr_valid_cum) == cap or (curr_valid_cum and curr_valid_cum[0] == '.' and len(curr_valid_cum) == 2):
                 cap, choices, curr_valid_cum = None, None, []
 
             indx +=1
         return corrected_tokens
-    
-def generate_class_expression(kb_path:str, leaners_prediction = None, save_as_json: bool=False, relax_parentheses=False):
-    if not leaners_prediction:
-        # token_sequence = ['¬', 'hasSibling', '.', '(', 'Thing', '⊓', '∃', 'hasChild', '.', 'Female', '⊓', 'Grandfather'] 
-        # token_sequence =['¬', ' Brother ', ' ) ']
-        # token_sequence = ['Female','⊓','(','∃','hasSibling','.','Father',')']
-        # token_sequence = ['∃','hasSibling','.','Father',')']
-        # token_sequence = ['Female','⊓','¬','(','∃','hasSibling','.','Father',')','⊓','(','∃','married','.','Brother',')']
-        # token_sequence = ['Thing','⊓','∀','hasChild ','.','Brother','⊓','¬','Thing','⊓','Father']
-        # token_sequence = ['Grandfather', '⊓', '¬', '∀', 'hasSibling', '.', 'Brother', '⊓', 'Female', '⊓', 'Brother']
-        # token_sequence = ['(', '∀', 'married', '.', 'Thing', '⊔', 'Person', '⊔', '(', '∃', 'married', '.', 'Father']
-        # token_sequence = ['∀', 'hasChild', '.', 'Father', '⊔', '¬', '.', 'Brother', '⊔', 'Person', ')']
-        # token_sequence = ['Father', '⊓', 'Grandfather', '⊔', '∀', 'hasParent', '.', '¬', '∀', 'hasChild', '.', 'Brother']
-        # token_sequence = ['Grandfather', '⊓', 'Brother', '⊓', '(', 'Thing', '⊔', '∃', 'married', '.', 'Grandfather', ')']
-        # token_sequence = ['Father', '⊔', 'Female', '⊓', 'Female', '⊔', 'Thing', '⊔', 'Female', ')']
-        # token_sequence = ['≥', '27', 'hasChild', '.', '(','Person', '⊔', 'Father',')', '⊔', 'Grandfather', '⊓', 'Female', '⊓', '∃', 'married', '.', 'Brother']
-
-        # token_sequence = ['≥', '27', 'hasChild', '.', '(','Person', '⊔', 'Father',')', '⊔', '∃', 'hasSibling', '.', 'Brother', '⊓', ' Father ', '⊓', '(','∀', ' hasSibling', '.', 'Grandfather', ')']
-        # token_sequence = ['Female', ' ', '⊓', ' ', '(', 'Female', ' ', '⊔', ' ', '(', '∃', ' ', 'married', '.', 'PersonWithASibling', ')', ')']
-        # token_sequence = ['Female', ' ', '⊔', ' ', '(', '∃', ' ', 'married', '.', '(', ')',' ', '⊓', ' ', '(', '∃', ' ', 'hasSibling', '.', '⊤', ')']
-        # token_sequence = ['Female', ' ', '⊔', ' ', '(', '∃', ' ', 'married', '.', '(', '¬','Grandfather', ')', ')']
-        # token_sequence = ['Daughter', ' ', '⊔', ' ', '(', '∃', ' ', ' ', '.', 'Grandfather',')']
-        # token_sequence = ['Granddaughter', ' ', '⊔', ' ', ' ', 'PersonWithASibling', ' ', ' ', '⊔', ' ', '(', '∃', ' ', 'hasParent', '.','PersonWithASibling', ')']
-        # token_sequence = ['Person', '⊓', '(', 'Grandmother', '⊔', '(', '∃', 'married', '.', 'Grandfather', ')', ')', ')', ')', ')']
-        token_sequence = ['Grandparent', '⊔', '(', '∃', 'married', '.', '(', '¬', 'Grandson', ')', ')'] 
-
-    try:
-        builder = ConceptAbstractSyntaxTreeBuilder(knowledge_base_path=kb_path)
-        concept, result = builder.parse(token_sequence=token_sequence, relax_parentheses=relax_parentheses, enforce_validity=True)
-
-        if concept is not None:
-            print("Constructed concept abstract syntax tree:", concept)
-
-            if save_as_json:
-                with open("concept_abstract_syntax_tree.json", "w") as f:
-                    json.dump(result, f, indent=2)
-                print("Saving... as concept_abstract_syntax_tree.json")
-        else:
-            print("Error constructing the concept abstract syntax tree:", result["error"])
-            print("Invalid concept representation", result["expr"])
-
-    except Exception as e:
-        print("Unexpected error constructing the concept abstract syntax tree:", e)
-
-if __name__ == "__main__":
-    knowledge_base_path = pathlib.Path(__file__).parent.parent.parent.resolve()._str + "/data/KGs/Family/family-benchmark_rich_background.owl"
-    generate_class_expression(knowledge_base_path)
-    
-
-    '''
-    TODO
-        - Knowledge base fix with Alkid
-        - decoding strategy - greed*, beam [constrained beam search]
-        - recursive handlinding to [enforce] its validility
-        - can I get the transE, ConEx embeddings
-
-        - why the choice of the number of predictions* and check its same at this dimension
-        - Get unique predicitons from all learners excluding PAD | nces 12 roces [By today] i.e working with argmax
-        - token masking, parser_prefixing
-        
-
-        - heirachy-awareness, best_hypothesis paradigm
-        - ask jean about self.synthensizer beyond NCESTrainer
-        - DD
-            - where or how can I get the label for each given lps of a given dataset
-
-        - [sequence of data] how does the adopted archs knows which e+ vs e- belongs to T since (e+, e-, T), how can naively 1, 0 markers any other ways?
-            - how do you compute metrics within pred vs actual sequences vs incase of Aunt! can your reward be based on conformity with valid generated
-        - unknown T via preprocessing
-
-
-
-        "" https://huggingface.co/blog/vivien/llm-decoding-with-regex-constraints
-        At decoding time, the DFA is used to determine, for each new token, which potential tokens are allowed. For this and starting from the initial 
-        state of the DFA, we determine the allowed tokens with the outgoing transitions from the current state, apply the corresponding mask to the 
-        next token probabilities and renormalize these probabilities. We can then sample a new token and update the state of the DFA.
-
-        - https://arxiv.org/pdf/2405.00218   - constrained vs unconstrained beam sampling
-        There are mainly two strategies for autoregressive decoding: maximization-based decoding and stochastic decoding.
-        ""
-    '''
 
