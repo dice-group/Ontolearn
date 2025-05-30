@@ -766,9 +766,12 @@ class ConceptAbstractSyntaxTreeBuilder:
                             else:
                                 if ahead_token in self.binary_ops:
                                     if next_ahead_token and next_ahead_token in self.negation | self.unique_atom_concept_names:
-                                        if prev_token and prev_token in self.binary_ops:
-                                            indx +=2
-                                            continue
+                                        print('=========', self.tokens)
+                                        pass
+                                    # TODO: keep the ops but swap with neg_atomic move next ahead_token
+                                    indx +=1
+                                    continue
+
                                 elif ahead_token in {')'} | self.dot :
                                     atomic_choice = random.choice(list(self.atom_concepts_with_negation))
                                     ops_choice = random.choice(list(self.binary_ops))
@@ -999,11 +1002,14 @@ if __name__ == "__main__":
     TODO
         - Knowledge base fix with Alkid
         - decoding strategy - greed*, beam [constrained beam search]
+        - recursive handlinding to [enforce] its validility
+        - can I get the transE, ConEx embeddings
 
         - why the choice of the number of predictions* and check its same at this dimension
         - Get unique predicitons from all learners excluding PAD | nces 12 roces [By today] i.e working with argmax
         - token masking, parser_prefixing
         
+
         - heirachy-awareness, best_hypothesis paradigm
         - ask jean about self.synthensizer beyond NCESTrainer
         - DD
