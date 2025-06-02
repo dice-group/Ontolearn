@@ -700,17 +700,17 @@ class ConceptAbstractSyntaxTreeBuilder:
                                     self.tokens[indx + 1] = random.choice(list(self.unique_atom_concept_names))
                                 indx += 1
                                 continue
-                        elif ahead_token in ROLES:
+                        elif ahead_token in self.unique_roles:
                             if next_ahead_token and next_ahead_token in {'.'}:
                                 quant_choice = random.choice(list(self.quantifiers))
-                                tokens[indx] = quant_choice
+                                self.tokens[indx] = quant_choice
                                 corrected_tokens.append(quant_choice)
                                 indx +=1
                                 continue
                             
                             corrected_tokens.append(token)
                             atomic_choice = random.choice(list(self.unique_atom_concept_names))
-                            tokens[indx+1] = atomic_choice
+                            self.tokens[indx+1] = atomic_choice
                             indx +=1
                             continue
                     
@@ -728,10 +728,10 @@ class ConceptAbstractSyntaxTreeBuilder:
 
                         if isinstance(atomic_choice, tuple):
                             corrected_tokens.extend(atomic_choice)
-                            tokens[indx] = atomic_choice[1]
+                            self.tokens[indx] = atomic_choice[1]
                         else:
                             corrected_tokens.append(atomic_choice)
-                            tokens[indx] = atomic_choice
+                            self.tokens[indx] = atomic_choice
                         
                         cap, choices, curr_valid_cum = None, None, []
                         indx +=1
@@ -800,7 +800,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                                 else:
                                     _token = [token, atomic_choice]
 
-                                if prev_token and prev_token in ROLES:
+                                if prev_token and prev_token in self.unique_roles:
                                     _token = ['.'] + _token
                                 
                                 corrected_tokens.extend(_token)
@@ -864,7 +864,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                             if not next_ahead_token:
                                 atomic_choice = random.choice(list(self.unique_atom_concept_names))
                                 corrected_tokens.append(token)
-                                tokens[indx+1] = atomic_choice
+                                self.tokens[indx+1] = atomic_choice
                                 indx +=1
                                 continue
                     elif prev_token:
