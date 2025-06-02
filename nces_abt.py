@@ -119,7 +119,7 @@ CARDINALITY_OPS = frozenset({"≥", "≤"})
 DIGITS = frozenset({str(i) for i in range(10)})
 VOCAB = ATOMIC_CONCEPTS | ROLES | BINARY_OPS | UNARY_OPS | QUANTIFIERS | PARENTHESES | DOT | CARDINALITY_OPS | DIGITS
 
-def allowed_tokens(context_tokens):
+def lookahead_grammar_strategy(context_tokens):
     if not context_tokens:
         return UNARY_OPS | QUANTIFIERS | CARDINALITY_OPS | ATOMIC_CONCEPTS | {'('}
     
@@ -286,7 +286,7 @@ class ConceptAbstractSyntaxTreeBuilder:
 # def grammar_constrained_decoder(max_length=12):
 #     generated_tokens = []
 #     for _ in range(max_length):
-#         allowed = allowed_tokens(generated_tokens)
+#         allowed = lookahead_grammar_strategy(generated_tokens)
 #         logits = {token: np.random.rand() for token in VOCAB}
 #         for token in VOCAB:
 #             if token not in allowed:
@@ -303,7 +303,7 @@ def grammar_constrained_decoder(max_length=12):
 
     while t < max_length:
         context = generated_tokens + ([number_buffer] if number_buffer else [])
-        allowed = allowed_tokens(context)
+        allowed = lookahead_grammar_strategy(context)
         print
 
         # Simulate logits from neural model or uniform sampling

@@ -1,15 +1,19 @@
 import random
-from nces_abt import ATOMIC_CONCEPTS, BINARY_OPS, DIGITS, DOT, PARENTHESES, QUANTIFIERS, ROLES, UNARY_OPS, allowed_tokens
+from nces_abt import ATOMIC_CONCEPTS, BINARY_OPS, DIGITS, DOT, PARENTHESES, QUANTIFIERS, ROLES, UNARY_OPS, lookahead_grammar_strategy
 from random import choice
 
-NEG_ATOMIC_CONCEPTS = ATOMIC_CONCEPTS | {("¬", atom) for atom in ATOMIC_CONCEPTS}
+def atomic_concepts_with_negation(replace_with_negation=False):
+    if replace_with_negation:
+        return ATOMIC_CONCEPTS | {("¬", atom) for atom in ATOMIC_CONCEPTS}
+    return ATOMIC_CONCEPTS
+NEG_ATOMIC_CONCEPTS = atomic_concepts_with_negation(replace_with_negation=True) #ATOMIC_CONCEPTS | {("¬", atom) for atom in ATOMIC_CONCEPTS}
 # NEG_ATOMIC_CONCEPTS = frozenset(set(ATOMIC_CONCEPTS) | {frozenset(("¬", atom)) for atom in ATOMIC_CONCEPTS})
 # if isinstance(item, str):
 # print("Plain item:", item)
 # elif isinstance(item, frozenset):
 
-def is_valid_token(token, context_tokens):
-    allowed = sorted(allowed_tokens(context_tokens))
+def is_valid_next_token(token, context_tokens):
+    allowed = sorted(lookahead_grammar_strategy(context_tokens))
     return token in allowed
 
 def validate_and_correct_sequence(tokens, max_length):
@@ -61,10 +65,14 @@ def validate_and_correct_sequence(tokens, max_length):
                         elif ahead_token in {')'}:
                             indx +=2
                             continue
+                    elif ahead_token and ahead_token in UNARY_OPS | ATOMIC_CONCEPTS:
+                        if prev_token in BINARY_OPS | PARENTHESES:
+                            indx += 1
+                            continue
                 elif token in QUANTIFIERS and prev_token not in BINARY_OPS:
                     ops_choice = random.choice(list(BINARY_OPS))
 
-                    if prev_token in ATOMIC_CONCEPTS and (ahead_token in ROLES or (indx + 2 < len(tokens) and tokens[indx +2] in ROLES)):
+                    if prev_token in ATOMIC_CONCEPTS and (ahead_token in ROLES or (next_ahead_token and next_ahead_token in ROLES)):
                         corrected_tokens.extend([ops_choice, token])
                         choices = ROLES
                         indx += 1
@@ -139,9 +147,6 @@ def validate_and_correct_sequence(tokens, max_length):
                                 indx += 2
                                 continue
                             # elif next_ahead_token in ATOMIC_CONCEPTS:
-
-                        break
-
                 if token == ')':
                     if indx != 0:
                         if prev_token and prev_token in ATOMIC_CONCEPTS:
@@ -150,7 +155,7 @@ def validate_and_correct_sequence(tokens, max_length):
                             continue
 
                         elif ahead_token in PARENTHESES | QUANTIFIERS | DOT:
-                            if ahead_token in PARENTHESES:
+                            if ahead_token in {')'}:
                                 indx += 1
                                 continue
 
@@ -187,7 +192,20 @@ def validate_and_correct_sequence(tokens, max_length):
                                 tokens[indx + 1] = random.choice(list(ATOMIC_CONCEPTS))
                             indx += 1
                             continue
-                
+                    elif ahead_token in ROLES:
+                        if next_ahead_token and next_ahead_token in {'.'}:
+                            quant_choice = random.choice(list(QUANTIFIERS))
+                            tokens[indx] = quant_choice
+                            corrected_tokens.append(quant_choice)
+                            indx +=1
+                            continue
+                        
+                        corrected_tokens.append(token)
+                        atomic_choice = random.choice(list(ATOMIC_CONCEPTS))
+                        tokens[indx+1] = atomic_choice
+                        indx +=1
+                        continue
+                        
                 if token in ROLES and prev_token not in QUANTIFIERS:
                     if prev_token in ATOMIC_CONCEPTS and ahead_token in ATOMIC_CONCEPTS:
                         ops_choice = random.choice(list(BINARY_OPS))
@@ -211,9 +229,25 @@ def validate_and_correct_sequence(tokens, max_length):
         #         corrected_tokens.append(role_choice)
 
         # --- 2. Special case: After '(' and next illegal ---
+        if token in QUANTIFIERS:
+            if curr_valid_syn_cum:
+                if cap == 3 and len(curr_valid_syn_cum) == 2:
+                    atomic_choice = random.choice(list(choices))
+
+                    if isinstance(atomic_choice, tuple):
+                        corrected_tokens.extend(atomic_choice)
+                        tokens[indx] = atomic_choice[1]
+                    else:
+                        corrected_tokens.append(atomic_choice)
+                        tokens[indx] = atomic_choice
+                    
+                    cap, choices, curr_valid_syn_cum = None, None, []
+                    indx +=1
+                    continue 
+
         if token == '(':
             if ahead_token or prev_token:
-                if ahead_token in UNARY_OPS | BINARY_OPS | {')'} | DOT: #TODO:
+                if ahead_token in UNARY_OPS | BINARY_OPS | {')'} | DOT:
                     if not curr_valid_syn_cum:
                         if indx == 0:
                             if ahead_token not in UNARY_OPS | ATOMIC_CONCEPTS:
@@ -242,10 +276,22 @@ def validate_and_correct_sequence(tokens, max_length):
                                             continue
                         else:
                             if ahead_token in BINARY_OPS:
-                                if next_ahead_token and next_ahead_token in  UNARY_OPS | ATOMIC_CONCEPTS:
-                                    pass
-                                # print('fix me OPS', choices) 
-                                # # TODO: keep the ops but swap with neg_atomic move next ahead_token
+                                if next_ahead_token and next_ahead_token in UNARY_OPS | ATOMIC_CONCEPTS:
+                                    if prev_token and prev_token in BINARY_OPS:
+                                        indx +=2
+                                        continue
+                                elif next_ahead_token in PARENTHESES and prev_token and prev_token not in ATOMIC_CONCEPTS:
+                                    atomic_choice = random.choice(list(NEG_ATOMIC_CONCEPTS))
+
+                                    if isinstance(atomic_choice, tuple):
+                                        _token = list(atomic_choice)
+                                        tokens[indx:indx] = _token
+                                        indx += 1
+                                    else:
+                                        _token = [atomic_choice]
+                                        tokens[indx] = _token
+
+                                    corrected_tokens.extend(_token)
                                 indx +=1
                                 continue
 
@@ -269,15 +315,18 @@ def validate_and_correct_sequence(tokens, max_length):
                     else:
                         if ahead_token in {')'}:
                             if all(choice in NEG_ATOMIC_CONCEPTS for choice in choices):
-                                atomic_choice = random.choice(list(NEG_ATOMIC_CONCEPTS))
-                            else:
                                 atomic_choice = random.choice(list(choices))
-
+                            else:
+                                atomic_choice = random.choice(list(NEG_ATOMIC_CONCEPTS))
+                            
                             if isinstance(atomic_choice, tuple):
                                 _token = [token] + list(atomic_choice)
                             else:
-                                _token = [token, atomic_choice]    
-                            
+                                _token = [token, atomic_choice]
+
+                            if prev_token and prev_token in ROLES:
+                                _token = ['.'] + _token
+
                             corrected_tokens.extend(_token)
                             cap, choices, curr_valid_syn_cum = None, None, []
 
@@ -293,8 +342,8 @@ def validate_and_correct_sequence(tokens, max_length):
                             elif (indx - 2 != 0 and tokens[indx-2] in ROLES) and prev_token and prev_token in DOT:
                                 corrected_tokens.extend([token, ahead_token])
 
-                                if next_ahead_token and (indx + 3) < len(tokens):
-                                    if next_ahead_token in ATOMIC_CONCEPTS and tokens[indx + 3] in {')'}:
+                                if next_ahead_token:
+                                    if next_ahead_token in ATOMIC_CONCEPTS and (indx + 3) < len(tokens) and tokens[indx + 3] in {')'}:
                                         corrected_tokens.extend([next_ahead_token, tokens[indx + 3]])
                                         indx += 2
                                 indx += 1
@@ -310,12 +359,6 @@ def validate_and_correct_sequence(tokens, max_length):
 
                             indx +=2
                             continue
-                        # elif ahead_token in BINARY_OPS:
-                        #     print('======')
-                        #     pass
-
-                        # break
-                            
                 elif ahead_token in QUANTIFIERS:
                     if curr_valid_syn_cum: # atomic_choices are available
                         if all(choice in NEG_ATOMIC_CONCEPTS for choice in choices):
@@ -329,6 +372,8 @@ def validate_and_correct_sequence(tokens, max_length):
                         else:
                             _token = [token, atomic_choice]    
                         
+                        if next_ahead_token and next_ahead_token not in {')'} or next_ahead_token not in BINARY_OPS:
+                            _token += [')']
                         corrected_tokens.extend(_token)
                         cap, choices, curr_valid_syn_cum = None, None, []
 
@@ -341,17 +386,12 @@ def validate_and_correct_sequence(tokens, max_length):
                         indx +=2
                         continue
                     else:
-                        # atomic_choice = random.choice(list(NEG_ATOMIC_CONCEPTS))
-
-                        # if isinstance(atomic_choice, tuple):
-                        #     _token = [token] + list(atomic_choice)
-                        # else:
-                        #     _token = [token, atomic_choice]    
-                        
-                        # corrected_tokens.extend(_token)
-                        # indx += 1
-                        # continue
-                        pass
+                        if not next_ahead_token:
+                            atomic_choice = random.choice(list(ATOMIC_CONCEPTS))
+                            corrected_tokens.append(token)
+                            tokens[indx+1] = atomic_choice
+                            indx +=1
+                            continue
                 elif prev_token:
                     if prev_token in ATOMIC_CONCEPTS:
                         ops_choice = random.choice(list(BINARY_OPS))
@@ -420,7 +460,7 @@ def validate_and_correct_sequence(tokens, max_length):
             curr_valid_syn_cum.append(_token)
 
         # --- 4. Token validation ---
-        if not is_valid_token(token, corrected_tokens):
+        if not is_valid_next_token(token, corrected_tokens):
             token = random.choice(list(choices))
             curr_valid_syn_cum.append(token)
 
@@ -448,10 +488,8 @@ def fix_mid_tokens_errors(tokens: list[str]) -> list[str]:
         if (
             prev_token == '(' and
             token in BINARY_OPS and
-            next_next_token and 
-            next_token == '.'
-            
-        ):
+            next_token == '.' and
+            next_next_token):
             if next_next_token in ATOMIC_CONCEPTS | UNARY_OPS:
                 i += 2
             else:
@@ -646,28 +684,26 @@ invalid_sequences = [
     # ['(', '⊓', '⊓', '(', '(', 'Granddaughter', ')', '(', ')', '.', '(', ')', '(', ')'], 
     # ['Person', '⊓', '(', 'Brother', '⊔', '(', '∀', 'married', '.', '(', ')', '⊓', '(', '⊓', '(', 'Son', ')', ')']
     # ['Person',  '⊓',  '(', 'Mother',  '⊔',  '(', 'Daughter',  ')',  '(', '¬', '(', ')', ')', ')'],
-    
-    # todo: considering iterating fix_mid and enforce
-    # ['Person', '⊓', '(', '(', '⊔', '(', '∀', 'hasChild', '.', 'Daughter', ')', ')']
-    # ['Person', '⊓', '(', '∀', 'hasSibling', '.', '(', '∃', 'married', '(', ')', ')', ')', '(', ')', ')'],
-    # ['Person', '⊔', '(', '⊔', 'Sister'],
-    # ['Brother', '⊔', '(', 'married', 'Sister', ')'],
-    # ['Brother', '⊔', '(', '¬', 'hasSibling', '.', 'Sister', ')']
-    # ['(', 'Daughter', '⊓', '(', '(', '¬', 'married', '.', '.', ')', ')', ')', ')', ' '],
-    # ['Person', '⊓', '(', 'Grandmother', '⊔', '(', '∃', 'married', '.', '(', '¬', ')', ')', ')', ')', '(', '∀', ' '],
-    # ['(', 'Parent', '⊓', '(', '∀', 'hasSibling', '.', '∀', ')', ')', '⊔', '(', ')', ')', ')'],
-    # ['∀', '⊔', '(', '¬', 'married', '.'],
-    # ['Father', '⊔', '(', '¬', 'married', '.'],
-    # ['Brother', '⊔', '(', '¬', 'married']
-    # ['Sister', '⊔', '(', '∃', 'married', '.', ')']
-    # ['Father', '⊔', '(', '∃', 'hasSibling']
-    # ['∀', '⊔', '(', '¬', 'married']
-    # ['Person', '⊓', 'Grandson', '⊔', '(', '∀', 'hasSibling', '.', '(', '¬', 'Grandson', ')', ')', '⊔', '⊓', '(', '⊤', ')'],
+
     
     # ##### working cases
+    ['Person', '⊓', '(', 'Mother', '⊔', '(', '∀', 'hasSibling', '.', '(', '¬', 'Mother', ')', ')', ')', '(', ')', ')', ')'],
+    # ['Person', '⊓', '(', 'Grandmother', '⊔', '(', '∃', 'married', '.', '(', '¬', ')', ')', ')', ')', '(', '∀'],
+    # ['Brother', '⊔', '(', '¬', 'married'],
+    # ['Sister', '⊔', '(', '∃', 'married', '.', ')'],
+    # ['Father', '⊔', '(', '∃', 'hasSibling'],
+    # ['∀', '⊔', '(', '¬', 'married'],
+    # ['Father', '⊔', '(', '¬', 'married', '.'],
+    # ['∀', '⊔', '(', '¬', 'married', '.'],
+    # ['(', 'Parent', '⊓', '(', '∀', 'hasSibling', '.', '∀', ')', ')', '⊔', '(', ')', ')', ')'],
+    # ['(', 'Daughter', '⊓', '(', '(', '¬', 'married', '.', '.', ')', ')', ')', ')', ' '],
+    # ['Brother', '⊔', '(', '¬', 'hasSibling', '.', 'Sister', ')'],
+    # ['Brother', '⊔', '(', 'married', 'Sister', ')'],
+    # ['Person', '⊔', '(', '⊔', 'Sister'],
+    # ['Person', '⊓', '(', '∀', 'hasSibling', '.', '(', '∃', 'married', '(', ')', ')', ')', '(', ')', ')'],
+    # ['Person', '⊓', '(', '(', '⊔', '(', '∀', 'hasChild', '.', 'Daughter', ')', ')'],
     # ['Person', '⊔', '(', '∃', 'hasSibling', '.', '(', '∃', '⊓', '(', ')', 'hasChild', ')', 'Father', ')', ')', ')'],
     # ['∀', 'hasChild', '(', '¬', 'Father', ')'],
-    # ['Person', '⊓', '(', 'Mother', '⊔', '(', '∀', 'hasSibling', '.', '(', '¬', 'Mother', ')', ')', ')', '(', ')', ')', ')'],
     # ['(', '⊓', '∀', 'hasSibling', '(', '(', ')', '.', 'Daughter', ')', ')', '⊔', '(', '∃', 'hasParent', '.', ')'],
     # ['Person', '⊓', '(', '∀', 'married', '(', '∃', 'hasSibling', '.', 'Parent', ')', ')'],
     # ['Person', '⊓', '(', '∃', 'married', '.', '(', '∀', 'hasChild', '.', '(', ')', ')', ')'],
