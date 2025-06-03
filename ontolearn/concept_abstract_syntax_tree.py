@@ -544,8 +544,6 @@ class ConceptAbstractSyntaxTreeBuilder:
             ahead_token = self.tokens[indx+1] if (indx+1) < len(self.tokens) else None
             next_ahead_token = self.tokens[indx+2] if (indx+2) < len(self.tokens) else None
 
-
-            # --- 1. Handling nonsensical or incomplete parts early ---
             if not curr_valid_cum and token in self.quantifiers | self.negation | self.binary_ops | {')'} | self.unique_atom_concept_names | self.dot | self.unique_roles:
                 if indx != 0 and prev_token:
                     if token in self.negation:
@@ -735,7 +733,8 @@ class ConceptAbstractSyntaxTreeBuilder:
                         
                         cap, choices, curr_valid_cum = None, None, []
                         indx +=1
-                        continue 
+                        continue
+
             if token == '(':
                 if ahead_token or prev_token:
                     if ahead_token in self.negation | self.binary_ops | {')'} | self.dot:
@@ -905,7 +904,6 @@ class ConceptAbstractSyntaxTreeBuilder:
                         indx +=1
                         continue
 
-            # --- 3. Progressive construction ---
             if token not in self.binary_ops | self.parenthesis | self.quantifiers:
                 _token = token
 
@@ -934,7 +932,6 @@ class ConceptAbstractSyntaxTreeBuilder:
                         choices = self.atom_concepts_with_negation
                 curr_valid_cum.append(_token)
 
-            # --- 4. Token validation ---
             if not self._is_valid_next_token(token, corrected_tokens):
                 token = random.choice(list(choices))
                 curr_valid_cum.append(token)
@@ -944,7 +941,6 @@ class ConceptAbstractSyntaxTreeBuilder:
             else:
                 corrected_tokens.append(token)
 
-            # --- 8. cap logic reset ---
             if len(curr_valid_cum) == cap or (curr_valid_cum and curr_valid_cum[0] == '.' and len(curr_valid_cum) == 2):
                 cap, choices, curr_valid_cum = None, None, []
 
