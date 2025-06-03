@@ -733,7 +733,8 @@ class ConceptAbstractSyntaxTreeBuilder:
                         
                         cap, choices, curr_valid_cum = None, None, []
                         indx +=1
-                        continue 
+                        continue
+
             if token == '(':
                 if ahead_token or prev_token:
                     if ahead_token in self.negation | self.binary_ops | {')'} | self.dot:
@@ -766,12 +767,9 @@ class ConceptAbstractSyntaxTreeBuilder:
                             else:
                                 if ahead_token in self.binary_ops:
                                     if next_ahead_token and next_ahead_token in self.negation | self.unique_atom_concept_names:
-                                        print('=========', self.tokens)
-                                        pass
-                                    # TODO: keep the ops but swap with neg_atomic move next ahead_token
-                                    indx +=1
-                                    continue
-
+                                        if prev_token and prev_token in self.binary_ops:
+                                            indx +=2
+                                            continue
                                 elif ahead_token in {')'} | self.dot :
                                     atomic_choice = random.choice(list(self.atom_concepts_with_negation))
                                     ops_choice = random.choice(list(self.binary_ops))
@@ -934,7 +932,6 @@ class ConceptAbstractSyntaxTreeBuilder:
                         choices = self.atom_concepts_with_negation
                 curr_valid_cum.append(_token)
 
-            # --- 4. Token validation ---
             if not self._is_valid_next_token(token, corrected_tokens):
                 token = random.choice(list(choices))
                 curr_valid_cum.append(token)
@@ -1002,14 +999,11 @@ if __name__ == "__main__":
     TODO
         - Knowledge base fix with Alkid
         - decoding strategy - greed*, beam [constrained beam search]
-        - recursive handlinding to [enforce] its validility
-        - can I get the transE, ConEx embeddings
 
         - why the choice of the number of predictions* and check its same at this dimension
         - Get unique predicitons from all learners excluding PAD | nces 12 roces [By today] i.e working with argmax
         - token masking, parser_prefixing
         
-
         - heirachy-awareness, best_hypothesis paradigm
         - ask jean about self.synthensizer beyond NCESTrainer
         - DD
