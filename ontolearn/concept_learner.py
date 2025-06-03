@@ -1077,8 +1077,6 @@ class NCES(BaseNCES):
                 except Exception as e:
                     concept_parser_failer.append(prediction)
                     pass
-                    # print("Unexpected error constructing the concept abstract syntax tree:", e)
-                # print()
         print(counter)
         if fail_parser_tokens:
             with open(f'{self.decoding_strategy}_cases.txt', 'w') as f:

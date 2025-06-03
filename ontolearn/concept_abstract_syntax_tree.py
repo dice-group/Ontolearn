@@ -129,7 +129,7 @@ class ConceptAbstractSyntaxTreeBuilder:
         ontology = self.knowledge_base.ontology
         atoms_concepts = list(ontology.classes_in_signature())
         self.unique_atom_concept_names = {'⊤', '⊥'}.union({DLSyntaxObjectRenderer().render(atom) for atom in atoms_concepts})
-        self.atom_concepts_with_negation = self.unique_atom_concept_names | {("¬", atom) for atom in self.unique_atom_concept_names}
+        # self.atom_concepts_with_negation = self.unique_atom_concept_names | {("¬", atom) for atom in self.unique_atom_concept_names}
         self.unique_roles = {relation.iri.get_remainder() for relation in ontology.object_properties_in_signature()}
 
         self.negation = {"¬"}
@@ -142,7 +142,13 @@ class ConceptAbstractSyntaxTreeBuilder:
 
         # TODO: handle concrete roles and other extended vocabs
         self.vocabs = self.unique_atom_concept_names | self.unique_roles | self.binary_ops | self.negation | self.quantifiers | self.parenthesis | self.dot | self.cardinals | self.digits
+        self.atom_concepts_with_negation = None
 
+    def _negate_unique_atomic_concepts(self, replace_with_negation=False):
+        if replace_with_negation:
+            return self.unique_atom_concept_names | {("¬", atom) for atom in self.unique_atom_concept_names}
+        return self.unique_atom_concept_names
+    
     def _current_token(self):
         return self.tokens[self.index] if self.index < self.length else None
 
@@ -354,7 +360,7 @@ class ConceptAbstractSyntaxTreeBuilder:
 
         return result
 
-    def parse(self, token_sequence:List[str], relax_parentheses:bool=False, enforce_validity:Optional[bool]=False):
+    def parse(self, token_sequence:List[str], relax_parentheses:bool=False, enforce_validity:Optional[bool]=False, replace_with_negation:bool=False):
         assert isinstance(token_sequence, list) and len(token_sequence) > 0, "Token sequence must be a non-empty list of non-empty strings"
         
         tokens = (token for token in token_sequence if token.strip() not in {'(', ')'}) if relax_parentheses else token_sequence
@@ -364,8 +370,10 @@ class ConceptAbstractSyntaxTreeBuilder:
             self.max_length = len(self.tokens) + 10
 
         if enforce_validity:
-            self.tokens = self._fix_mid_tokens_errors(self._enforce())
+            self.tokens = self._fix_mid_tokens_errors(self._enforce(replace_with_negation=replace_with_negation))
             self.tokens = self.balance_flatten_parentheses(self._postprocess_tail_fix(self.tokens.copy(), self.max_length))
+
+        print(self.tokens)
 
         self.index = 0
         self.length = len(self.tokens)
@@ -529,9 +537,11 @@ class ConceptAbstractSyntaxTreeBuilder:
         valid_candidate_tokens = sorted(self._lookahead_grammar_strategy(context_tokens))
         return token in valid_candidate_tokens
 
-    def _enforce(self, max_length:Optional[int] = None):
+    def _enforce(self, max_length:Optional[int]=None, replace_with_negation:bool=False):
         if not max_length:
             max_length = len(self.tokens) + 50
+
+        self.atom_concepts_with_negation = self._negate_unique_atomic_concepts(replace_with_negation=replace_with_negation)
 
         corrected_tokens, curr_valid_cum = [], []
         choices, cap = None, None
@@ -554,7 +564,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                             continue
                     elif token in self.dot and prev_token not in self.unique_roles:
                             if ahead_token and ahead_token not in {')'}:
-                                if ahead_token in self.unique_atom_concept_names | self.negation:
+                                if ahead_token in self.unique_atom_concept_names | self.negation | {'('}:
                                     ops_choice = random.choice(list(self.binary_ops))
                                     corrected_tokens.append(ops_choice)
                                     indx +=1
@@ -595,6 +605,12 @@ class ConceptAbstractSyntaxTreeBuilder:
                         if prev_token in self.quantifiers and ahead_token in self.unique_roles:
                             self.tokens.pop(indx)
                             continue
+                    elif token in {'('} and prev_token in {')'} | self.unique_atom_concept_names:
+                        ops_choice = random.choice(list(self.binary_ops))
+                        corrected_tokens.extend([ops_choice, token])
+                        choices = self.atom_concepts_with_negation
+                        indx += 1
+                        continue
    
                 if ahead_token:
                     if token in self.quantifiers:
@@ -606,6 +622,9 @@ class ConceptAbstractSyntaxTreeBuilder:
                             indx += 1
                             continue
                         elif ahead_token in self.parenthesis:
+                            if prev_token and prev_token in {')'}:
+                                corrected_tokens.append(random.choice(list(self.binary_ops)))
+
                             role_choice = random.choice(list(self.unique_roles))
                             corrected_tokens.extend([token, role_choice])
                             curr_valid_cum.append(role_choice)
@@ -661,7 +680,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                                 continue
 
                             elif ahead_token in self.parenthesis | self.quantifiers | self.dot:
-                                if ahead_token in self.parenthesis:
+                                if ahead_token in {')'}:
                                     indx += 1
                                     continue
 
@@ -970,11 +989,12 @@ def generate_class_expression(kb_path:str, leaners_prediction = None, save_as_js
         # token_sequence = ['Daughter', ' ', '⊔', ' ', '(', '∃', ' ', ' ', '.', 'Grandfather',')']
         # token_sequence = ['Granddaughter', ' ', '⊔', ' ', ' ', 'PersonWithASibling', ' ', ' ', '⊔', ' ', '(', '∃', ' ', 'hasParent', '.','PersonWithASibling', ')']
         # token_sequence = ['Person', '⊓', '(', 'Grandmother', '⊔', '(', '∃', 'married', '.', 'Grandfather', ')', ')', ')', ')', ')']
-        token_sequence = ['Grandparent', '⊔', '(', '∃', 'married', '.', '(', '¬', 'Grandson', ')', ')'] 
+        # token_sequence = ['Grandparent', '⊔', '(', '∃', 'married', '.', '(', ')', ')']
+        token_sequence = ['(', '⊓', '(', '∀', 'married', '.', '(', '(', ')', ')', '(', '¬', ')', '(', ')', ')', ')']
 
     try:
         builder = ConceptAbstractSyntaxTreeBuilder(knowledge_base_path=kb_path)
-        concept, result = builder.parse(token_sequence=token_sequence, relax_parentheses=relax_parentheses, enforce_validity=True)
+        concept, result = builder.parse(token_sequence=token_sequence, relax_parentheses=relax_parentheses, enforce_validity=True, replace_with_negation=False)
 
         if concept is not None:
             print("Constructed concept abstract syntax tree:", concept)

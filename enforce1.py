@@ -6,7 +6,7 @@ def atomic_concepts_with_negation(replace_with_negation=False):
     if replace_with_negation:
         return ATOMIC_CONCEPTS | {("¬", atom) for atom in ATOMIC_CONCEPTS}
     return ATOMIC_CONCEPTS
-NEG_ATOMIC_CONCEPTS = atomic_concepts_with_negation(replace_with_negation=True) #ATOMIC_CONCEPTS | {("¬", atom) for atom in ATOMIC_CONCEPTS}
+NEG_ATOMIC_CONCEPTS = atomic_concepts_with_negation(replace_with_negation=False) #ATOMIC_CONCEPTS | {("¬", atom) for atom in ATOMIC_CONCEPTS}
 # NEG_ATOMIC_CONCEPTS = frozenset(set(ATOMIC_CONCEPTS) | {frozenset(("¬", atom)) for atom in ATOMIC_CONCEPTS})
 # if isinstance(item, str):
 # print("Plain item:", item)
@@ -41,7 +41,7 @@ def validate_and_correct_sequence(tokens, max_length):
                         continue
                 elif token in DOT and prev_token not in ROLES:
                         if ahead_token and ahead_token not in {')'}:
-                            if ahead_token in ATOMIC_CONCEPTS | UNARY_OPS:
+                            if ahead_token in ATOMIC_CONCEPTS | UNARY_OPS | {'('}:
                                 ops_choice = random.choice(list(BINARY_OPS))
                                 corrected_tokens.append(ops_choice)
                                 indx +=1
@@ -81,6 +81,12 @@ def validate_and_correct_sequence(tokens, max_length):
                     if prev_token in QUANTIFIERS and ahead_token in ROLES:
                         tokens.pop(indx)
                         continue
+                elif token in {'('} and prev_token in {')'} | ATOMIC_CONCEPTS:
+                    ops_choice = random.choice(list(BINARY_OPS))
+                    corrected_tokens.extend([ops_choice, token])
+                    choices = NEG_ATOMIC_CONCEPTS
+                    indx += 1
+                    continue
                 # elif token in ATOMIC_CONCEPTS: # Has been cater for in another scope
                 #     if prev_token in QUANTIFIERS | {")"}:
                 #         print('===========')
@@ -100,6 +106,9 @@ def validate_and_correct_sequence(tokens, max_length):
                         indx += 1
                         continue
                     elif ahead_token in PARENTHESES:
+                        if prev_token and prev_token in {')'}:
+                            corrected_tokens.append(random.choice(list(BINARY_OPS)))
+
                         role_choice = random.choice(list(ROLES))
                         corrected_tokens.extend([token, role_choice])
                         curr_valid_syn_cum.append(role_choice)
@@ -243,7 +252,7 @@ def validate_and_correct_sequence(tokens, max_length):
                     
                     cap, choices, curr_valid_syn_cum = None, None, []
                     indx +=1
-                    continue 
+                    continue
 
         if token == '(':
             if ahead_token or prev_token:
@@ -682,12 +691,20 @@ invalid_sequences = [
     # ['(', '⊓', '⊓', '(', 'Person', '⊔', '(', '∃', 'hasSibling', '.', 'Sister', ')', ')', '⊓', '(', '∀', 'hasChild', '.', '(', '¬', ')'],
     # ['(', '⊓', '⊓', '(', 'Person', '⊔', '(', '∃', 'hasSibling', '.', 'Brother', ')', ')', '⊓', '(', '∀', 'hasChild', '.', '(', ')'],
     # ['(', '⊓', '⊓', '(', '(', 'Granddaughter', ')', '(', ')', '.', '(', ')', '(', ')'], 
+    
+
+
+    # ##### working cases
     # ['Person', '⊓', '(', 'Brother', '⊔', '(', '∀', 'married', '.', '(', ')', '⊓', '(', '⊓', '(', 'Son', ')', ')']
     # ['Person',  '⊓',  '(', 'Mother',  '⊔',  '(', 'Daughter',  ')',  '(', '¬', '(', ')', ')', ')'],
-
-    
-    # ##### working cases
-    ['Person', '⊓', '(', 'Mother', '⊔', '(', '∀', 'hasSibling', '.', '(', '¬', 'Mother', ')', ')', ')', '(', ')', ')', ')'],
+    # ['Person', '⊓', '(', 'Sister', '.', '(', 'Brother', ')', ')', ')', ')', ')', ')'],
+    # ['Person', '⊓', '(', '∃', '⊔', '.', '(', '(', '⊓', '(', ')', ')', ')'],
+    # ['Person', '⊓', '(', 'Mother', '⊔', '(', 'Sister', ')', '(', '¬', ')', ')', ')'],
+    # ['Person', '⊔', '(', '∃', 'hasSibling', '.', '(', 'Sister', ')', '(', '∀', 'hasChild', '.', '(', '¬', 'Grandson', ')', ')', ')', ')'],
+    # ['∃', '⊓', '(', 'Sister', ')', '∀', ')', '.', ')', ')', ')'],
+    # ['∃', '⊓', '(', 'Sister', ')', '(', '∀', ')', '.', ')', ')', ')'],
+    # ['(', '⊓', '(', '∀', 'married', '.', '(', '(', ')', ')', '(', '¬', ')', '(', ')', ')', ')'],
+    # ['Person', '⊓', '(', 'Mother', '⊔', '(', '∀', 'hasSibling', '.', '(', '¬', 'Mother', ')', ')', ')', '(', ')', ')', ')'],
     # ['Person', '⊓', '(', 'Grandmother', '⊔', '(', '∃', 'married', '.', '(', '¬', ')', ')', ')', ')', '(', '∀'],
     # ['Brother', '⊔', '(', '¬', 'married'],
     # ['Sister', '⊔', '(', '∃', 'married', '.', ')'],
