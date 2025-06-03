@@ -692,7 +692,11 @@ invalid_sequences = [
     # ['(', '⊓', '⊓', '(', 'Person', '⊔', '(', '∃', 'hasSibling', '.', 'Brother', ')', ')', '⊓', '(', '∀', 'hasChild', '.', '(', ')'],
     # ['(', '⊓', '⊓', '(', '(', 'Granddaughter', ')', '(', ')', '.', '(', ')', '(', ')'], 
     
-
+    # ['Mother', '⊔', '(', '∃', 'married', '.', '(', '¬', 'Grandparent', ')', '(', ')', ')', ')'],
+    # ['(', '⊓', '(', 'Granddaughter', '⊔', '(', '∀', ')', ')', ')', ')', ')', ')', '.', ')'],
+    # ['Person', '⊓', '(', '∀', 'married', '.', '(', 'Grandmother', ')', '(', '¬', ')', ')'],
+    # ['Person', '⊓', '(', '(', '⊔', '(', '∃', 'married', '.', 'Granddaughter', ')', ')', '⊓', '(', '∀', 'hasParent', '.', '(', ')', ')']
+    ['∀','married','.','(','(','Brother', '⊔','Sister', ')']
 
     # ##### working cases
     # ['Person', '⊓', '(', 'Brother', '⊔', '(', '∀', 'married', '.', '(', ')', '⊓', '(', '⊓', '(', 'Son', ')', ')']
@@ -793,8 +797,8 @@ for seq in invalid_sequences:
     tokens = fix_mid_tokens_errors(valid_sequence)
     # print(tokens)
     post_fix  = postprocess_tail_fix(tokens, 50)
+    # print(post_fix)
     post_fix_paren_balance = balance_flatten_parentheses(post_fix)
-
     print(post_fix_paren_balance)
     print()
 

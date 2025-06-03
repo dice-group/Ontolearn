@@ -120,7 +120,7 @@ class Cardinality(Expr):
         }
 
 class ConceptAbstractSyntaxTreeBuilder:
-    def __init__(self, knowledge_base_path: str, max_length:Optional[int]=None): 
+    def __init__(self, knowledge_base_path: str, max_length: Optional[int] = None): 
         assert isinstance(knowledge_base_path, str) and knowledge_base_path.strip(), "Knowledge base path is required"
         
         self.knowledge_base = KnowledgeBase(path=knowledge_base_path)
@@ -159,10 +159,8 @@ class ConceptAbstractSyntaxTreeBuilder:
         return [token for token in (t.strip() for t in tokens) if token]
     
     def _strip_trailing_parentheses(self, concept_str:str):
-        if concept_str.startswith('('):
-            concept_str = concept_str[1:]
-        if concept_str.endswith(')'):
-            concept_str = concept_str[:-1]
+        if concept_str.startswith('(') and concept_str.endswith(')'):
+            concept_str = concept_str[1:-1]
         return concept_str
     
     def _fix_mid_tokens_errors(self, tokens: list[str]) -> list[str]:
@@ -355,7 +353,7 @@ class ConceptAbstractSyntaxTreeBuilder:
 
                 if j < len(result) and result[j] == ')':
                     result = result[:i+1] + result[i+2:j] + result[j+1:]
-                    continue  # recheck from i after collapse
+                    continue
             i += 1
 
         return result
@@ -372,8 +370,7 @@ class ConceptAbstractSyntaxTreeBuilder:
         if enforce_validity:
             self.tokens = self._fix_mid_tokens_errors(self._enforce(replace_with_negation=replace_with_negation))
             self.tokens = self.balance_flatten_parentheses(self._postprocess_tail_fix(self.tokens.copy(), self.max_length))
-
-        print(self.tokens)
+            print(self.tokens)
 
         self.index = 0
         self.length = len(self.tokens)
@@ -990,7 +987,8 @@ def generate_class_expression(kb_path:str, leaners_prediction = None, save_as_js
         # token_sequence = ['Granddaughter', ' ', '⊔', ' ', ' ', 'PersonWithASibling', ' ', ' ', '⊔', ' ', '(', '∃', ' ', 'hasParent', '.','PersonWithASibling', ')']
         # token_sequence = ['Person', '⊓', '(', 'Grandmother', '⊔', '(', '∃', 'married', '.', 'Grandfather', ')', ')', ')', ')', ')']
         # token_sequence = ['Grandparent', '⊔', '(', '∃', 'married', '.', '(', ')', ')']
-        token_sequence = ['(', '⊓', '(', '∀', 'married', '.', '(', '(', ')', ')', '(', '¬', ')', '(', ')', ')', ')']
+        # token_sequence = ['(', '⊓', '(', '∀', 'married', '.', '(', '(', ')', ')', '(', '¬', ')', '(', ')', ')', ')']
+        token_sequence = ['∀', 'married', '.', '(', 'Brother', '⊔', 'Sister']
 
     try:
         builder = ConceptAbstractSyntaxTreeBuilder(knowledge_base_path=kb_path)
