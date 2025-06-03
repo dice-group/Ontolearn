@@ -826,7 +826,7 @@ class ConceptAbstractSyntaxTreeBuilder:
                                     cap, choices, curr_valid_cum = None, None, []
                                     continue
                                 elif cap == 3 and len(curr_valid_cum) == 1:
-                                    dot_choice = list(choices) if choices in DOT else '.'
+                                    dot_choice = list(choices) if choices in self.dot else '.'
                                     corrected_tokens.append(dot_choice)
 
                                 atomic_choice = random.choice(list(self.unique_atom_concept_names))
