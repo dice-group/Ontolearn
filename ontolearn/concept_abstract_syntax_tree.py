@@ -551,7 +551,7 @@ class ConceptAbstractSyntaxTreeBuilder:
             ahead_token = self.tokens[indx+1] if (indx+1) < len(self.tokens) else None
             next_ahead_token = self.tokens[indx+2] if (indx+2) < len(self.tokens) else None
 
-            if not curr_valid_cum and token in self.quantifiers | self.negation | self.binary_ops | {')'} | self.unique_atom_concept_names | self.dot | self.unique_roles:
+            if not curr_valid_cum and token in self.quantifiers | self.negation | self.binary_ops | self.parenthesis | self.unique_atom_concept_names | self.dot | self.unique_roles:
                 if indx != 0 and prev_token:
                     if token in self.negation:
                         if prev_token in self.negation | self.unique_atom_concept_names:
@@ -889,6 +889,15 @@ class ConceptAbstractSyntaxTreeBuilder:
                             indx +=1
                             continue
 
+            if token == ')':
+                if curr_valid_cum:
+                    if cap == 3 and len(curr_valid_cum) == 2:
+                        atomic_choice = random.choice(list(self.unique_atom_concept_names))
+                        corrected_tokens.append(atomic_choice)
+                        cap, choices, curr_valid_cum = None, None, []
+                        indx +=1
+                        continue
+            
             if not curr_valid_cum and token in self.unique_atom_concept_names | self.unique_roles and ahead_token:
                 if token in self.unique_atom_concept_names:
                     ops_choice = random.choice(list(self.binary_ops))

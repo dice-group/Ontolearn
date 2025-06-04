@@ -108,7 +108,7 @@ class Cardinality(Expr):
 
 # --- Allowed Vocabulary ---
 
-ATOMIC_CONCEPTS = frozenset({'Oxygen',"PersonWithASibling","Person", "Animal","Daughter", "Sister", "Thing", "Female", "Father", "Brother", "Parent", "Granddaughter", "Son", 'Mother', 'Grandson', 'Child', 'Grandchild', 'Grandmother'})
+ATOMIC_CONCEPTS = frozenset({'Oxygen',"PersonWithASibling","Person", "Animal","Daughter", "Sister", "Thing", "Female", "Father", "Brother", "Parent", "Granddaughter", "Grandparent", "Son", 'Mother', 'Grandson', 'Child', 'Grandchild', 'Grandmother'})
 ROLES = frozenset({"hasChild", "hasParent", "hasSibling", "married", "inBond"})
 BINARY_OPS = frozenset({"⊓", "⊔"})
 UNARY_OPS = frozenset({"¬"})

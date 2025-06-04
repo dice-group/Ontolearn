@@ -31,7 +31,7 @@ def validate_and_correct_sequence(tokens, max_length):
         next_ahead_token = tokens[indx+2] if (indx+2) < len(tokens) else None
 
         # --- 1. Handling nonsensical or incomplete parts early ---
-        if not curr_valid_syn_cum and token in QUANTIFIERS | UNARY_OPS | BINARY_OPS | {')'} | ATOMIC_CONCEPTS | DOT | ROLES:
+        if not curr_valid_syn_cum and token in QUANTIFIERS | UNARY_OPS | BINARY_OPS | PARENTHESES | ATOMIC_CONCEPTS | DOT | ROLES:
             if indx != 0 and prev_token:
                 if token in UNARY_OPS:
                     if prev_token in UNARY_OPS | ATOMIC_CONCEPTS:
@@ -407,6 +407,15 @@ def validate_and_correct_sequence(tokens, max_length):
                         corrected_tokens.extend([ops_choice, token])
                         indx +=1
                         continue
+        
+        if token == ')':
+            if curr_valid_syn_cum:
+                if cap == 3 and len(curr_valid_syn_cum) == 2:
+                    atomic_choice = random.choice(list(ATOMIC_CONCEPTS))
+                    corrected_tokens.append(atomic_choice)
+                    cap, choices, curr_valid_syn_cum = None, None, []
+                    indx +=1
+                    continue
 
         if not curr_valid_syn_cum and token in ATOMIC_CONCEPTS | ROLES and ahead_token:
             if token in ATOMIC_CONCEPTS:
@@ -692,14 +701,14 @@ invalid_sequences = [
     # ['(', '⊓', '⊓', '(', 'Person', '⊔', '(', '∃', 'hasSibling', '.', 'Brother', ')', ')', '⊓', '(', '∀', 'hasChild', '.', '(', ')'],
     # ['(', '⊓', '⊓', '(', '(', 'Granddaughter', ')', '(', ')', '.', '(', ')', '(', ')'], 
     
-    # ['Mother', '⊔', '(', '∃', 'married', '.', '(', '¬', 'Grandparent', ')', '(', ')', ')', ')'],
-    # ['(', '⊓', '(', 'Granddaughter', '⊔', '(', '∀', ')', ')', ')', ')', ')', ')', '.', ')'],
     # ['Person', '⊓', '(', '∀', 'married', '.', '(', 'Grandmother', ')', '(', '¬', ')', ')'],
     # ['Person', '⊓', '(', '(', '⊔', '(', '∃', 'married', '.', 'Granddaughter', ')', ')', '⊓', '(', '∀', 'hasParent', '.', '(', ')', ')']
-    ['∀','married','.','(','(','Brother', '⊔','Sister', ')']
+
 
     # ##### working cases
-    # ['Person', '⊓', '(', 'Brother', '⊔', '(', '∀', 'married', '.', '(', ')', '⊓', '(', '⊓', '(', 'Son', ')', ')']
+    ['(', '⊓', '(', 'Granddaughter', '⊔', '(', '∀', ')', ')', ')', ')', ')', ')', '.', ')'],
+    # ['Mother', '⊔', '(', '∃', 'married', '.', '(', '¬', 'Grandparent', ')', '(', ')', ')', ')'],
+    # ['Person', '⊓', '(', 'Brother', '⊔', '(', '∀', 'married', '.', '(', ')', '⊓', '(', '⊓', '(', 'Son', ')', ')'],
     # ['Person',  '⊓',  '(', 'Mother',  '⊔',  '(', 'Daughter',  ')',  '(', '¬', '(', ')', ')', ')'],
     # ['Person', '⊓', '(', 'Sister', '.', '(', 'Brother', ')', ')', ')', ')', ')', ')'],
     # ['Person', '⊓', '(', '∃', '⊔', '.', '(', '(', '⊓', '(', ')', ')', ')'],
@@ -797,8 +806,8 @@ for seq in invalid_sequences:
     tokens = fix_mid_tokens_errors(valid_sequence)
     # print(tokens)
     post_fix  = postprocess_tail_fix(tokens, 50)
-    # print(post_fix)
     post_fix_paren_balance = balance_flatten_parentheses(post_fix)
+
     print(post_fix_paren_balance)
     print()
 
