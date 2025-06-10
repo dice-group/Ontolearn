@@ -26,7 +26,9 @@
 import inspect
 import json
 import logging
+import os
 import re
+import time
 from typing import TypeVar, List, Optional, Union
 
 from owlapy.class_expression import OWLClassExpression
@@ -34,9 +36,11 @@ from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLAxiom
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.abstracts import AbstractOWLReasoner
+import pandas as pd
 
 from ontolearn.abstracts import AbstractNode
 from ontolearn.base_concept_learner import BaseConceptLearner
+from ontolearn.utils.static_funcs import compute_f1_score
 from .learners import CELOE, OCEL
 from ontolearn.concept_learner import EvoLearner, NCES
 from ontolearn.ea_algorithms import EASimple
@@ -196,6 +200,7 @@ class Trainer:  # pragma: no cover
 
 def execute(args): # pragma: no cover
 
+    args.knowledge_base_path = os.path.abspath(args.knowledge_base_path)
     args_d = args.__dict__
     learner_type = models[args.model]
     optargs = {}
@@ -205,52 +210,89 @@ def execute(args): # pragma: no cover
         kb = KnowledgeBase(path=args.knowledge_base_path)
 
     with open(args.path_learning_problem) as json_file:
-        examples = json.load(json_file)
-    pos = set(map(OWLNamedIndividual, map(IRI.create, set(examples['positive_examples']))))
-    neg = set(map(OWLNamedIndividual, map(IRI.create, set(examples['negative_examples']))))
-    lp = PosNegLPStandard(pos=pos, neg=neg)
+        settings = json.load(json_file)
+        
+    if "problems" in settings:
+        problems = settings['problems'].items()
+        positives_key = "positive_examples"
+        negatives_key = "negative_examples"
+    else:
+        problems = settings.items()
+        positives_key = "positive examples"
+        negatives_key = "negative examples"
 
-    if args.model in ["celoe", "ocel"]:
-        heur_func = heuristics[args.model](**_get_matching_opts(heuristics[args.model], {}, args_d))
-        refinement_op = ModifiedCELOERefinement(**_get_matching_opts(ModifiedCELOERefinement,
-                                                {"knowledge_base": kb,
-                                                 "value_splitter": BinningValueSplitter(args.max_nr_splits)},
-                                                args_d))
-        optargs = {"knowledge_base": kb,
-                   "quality_func": metrics[args.quality_metric](),
-                   "heuristic_func": heur_func,
-                   "refinement_operator": refinement_op}
-    elif args.model == "evolearner":
-        fit_func = LinearPressureFitness(**_get_matching_opts(LinearPressureFitness, {}, args_d))
-        init_rw_method = EARandomWalkInitialization(**_get_matching_opts(EARandomWalkInitialization, {}, args_d))
-        algorithm = EASimple(**_get_matching_opts(EASimple, {}, args_d))
-        mut_uniform_gen = EARandomInitialization(**_get_matching_opts(
-            EARandomInitialization, {"method": getattr(RandomInitMethod, args.init_method_type)}, args_d))
-        value_splitter = EntropyValueSplitter(**_get_matching_opts(EntropyValueSplitter, {}, args_d))
+    data = dict()
+    for str_target_concept, examples in problems:
+        print('Target concept: ', str_target_concept)
+        
+        pos = set(map(OWLNamedIndividual, map(IRI.create, set(examples[positives_key]))))
+        neg = set(map(OWLNamedIndividual, map(IRI.create, set(examples[negatives_key]))))
+        lp = PosNegLPStandard(pos=pos, neg=neg)
 
-        optargs = {"knowledge_base": kb,
-                   "quality_func": metrics[args.quality_metric](),
-                   "fitness_func": fit_func,
-                   "init_method": init_rw_method,
-                   "algorithm": algorithm,
-                   "mut_uniform_gen": mut_uniform_gen,
-                   "value_splitter": value_splitter}
-    # elif args.model == "drill":
-    #     optargs = {"knowledge_base": kb,
-    #                "quality_func": metrics[args.quality_metric]()}
+        if args.model in ["celoe", "ocel"]:
+            heur_func = heuristics[args.model](**_get_matching_opts(heuristics[args.model], {}, args_d))
+            refinement_op = ModifiedCELOERefinement(**_get_matching_opts(ModifiedCELOERefinement,
+                                                    {"knowledge_base": kb,
+                                                    "value_splitter": BinningValueSplitter(args.max_nr_splits)},
+                                                    args_d))
+            optargs = {"knowledge_base": kb,
+                    "quality_func": metrics[args.quality_metric](),
+                    "heuristic_func": heur_func,
+                    "refinement_operator": refinement_op}
+        elif args.model == "evolearner":
+            fit_func = LinearPressureFitness(**_get_matching_opts(LinearPressureFitness, {}, args_d))
+            init_rw_method = EARandomWalkInitialization(**_get_matching_opts(EARandomWalkInitialization, {}, args_d))
+            algorithm = EASimple(**_get_matching_opts(EASimple, {}, args_d))
+            mut_uniform_gen = EARandomInitialization(**_get_matching_opts(
+                EARandomInitialization, {"method": getattr(RandomInitMethod, args.init_method_type)}, args_d))
+            value_splitter = EntropyValueSplitter(**_get_matching_opts(EntropyValueSplitter, {}, args_d))
 
-    model = learner_type(**_get_matching_opts(learner_type, optargs, args_d))
+            optargs = {"knowledge_base": kb,
+                    "quality_func": metrics[args.quality_metric](),
+                    "fitness_func": fit_func,
+                    "init_method": init_rw_method,
+                    "algorithm": algorithm,
+                    "mut_uniform_gen": mut_uniform_gen,
+                    "value_splitter": value_splitter}
+        # elif args.model == "drill":
+        #     optargs = {"knowledge_base": kb,
+        #                "quality_func": metrics[args.quality_metric]()}
+        if args.model not in ["nces"]:
+            model = learner_type(**_get_matching_opts(learner_type, optargs, args_d))
 
-    if args.model in ["celoe", "evolearner", "ocel"]:
-        trainer = Trainer(model, kb.reasoner)
-        trainer.fit(lp)
-        print(trainer.best_hypotheses(1))
-        if args.save:
-            trainer.save_best_hypothesis()
+        if args.model in ["celoe", "evolearner", "ocel"]:
+            trainer = Trainer(model, kb.reasoner)
+            trainer.fit(lp)
+            print(trainer.best_hypotheses(1))
+            if args.save:
+                trainer.save_best_hypothesis()
 
-    elif args.model in ["nces"]:
-        hypothesis = model.fit(pos, neg)  # This will also print the prediction
-        # @TODO:CD: model.fit() should return a train model itself, not predictions
-        report = f"Quality: {compute_quality(kb, hypothesis, pos, neg, args.quality_metric)} \nIndividuals: " + \
-                 f"{kb.individuals_count(hypothesis)}"
-        print(report)
+        elif args.model in ["nces"]:
+            data.setdefault("LP", []).append(str_target_concept)
+            model = NCES(knowledge_base_path=args.knowledge_base_path,
+                    quality_func=F1(),
+                    load_pretrained=True,
+                    path_of_embeddings=args.path_of_nces_embeddings,
+                    path_of_trained_models=args.path_of_nces_trained_models,
+                    learner_names=["LSTM", "GRU", "SetTransformer"],
+                    num_predictions=200,
+                    verbose=0)
+            lp = PosNegLPStandard(pos=pos, neg=neg)
+            print("NCES starts..", end="\t")
+            start_time = time.time()
+            hypothesis = model.fit(lp).best_hypotheses(n=1)  # This will also print the prediction
+            print("NCES ends..", end="\t")
+            rt_tdl = time.time() - start_time
+            f1_tdl = compute_f1_score(individuals=frozenset({i for i in kb.individuals(hypothesis)}),
+                                            pos=lp.pos,
+                                            neg=lp.neg)
+            data.setdefault("F1-TDL", []).append(f1_tdl)
+            data.setdefault("RT-TDL", []).append(rt_tdl)
+
+            # @TODO:CD: model.fit() should return a train model itself, not predictions
+            # report = f"Quality: {compute_quality(kb, hypothesis, pos, neg, args.quality_metric)} \nIndividuals: " + \
+            #         f"{kb.individuals_count(hypothesis)}"
+            # print(report)
+    # df = pd.DataFrame.from_dict(data)
+    # df.to_csv('mutagenesis_tdl_nces_report.csv', index=False)
+
