@@ -28,7 +28,7 @@ from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.metrics import Accuracy, F1, Recall, Precision, WeightedAccuracy
 from ontolearn.triple_store import TripleStoreKnowledgeBase
-from ontolearn.utils.static_funcs import compute_f1_score
+from ontolearn.utils.static_funcs import compute_f1_score, save_dataframe_to_csv
 from ontolearn.value_splitter import BinningValueSplitter, EntropyValueSplitter
 
 logger = logging.getLogger(__name__)
@@ -385,13 +385,13 @@ def execute(args):
                    "value_splitter": value_splitter}
     elif args.model == "tdl":
         model = TDL(knowledge_base=kb,
-                  plot_tree=True,
-                  plot_feature_importance=True,
-                  grid_search_apply=True,
-                  verbalize=True,
-                #   kwargs_classifier={"random_state": 1, 'criterion': 'entropy'},
-                  kwargs_classifier={"random_state": 1},
-                  max_runtime=max_runtime)
+                  plot_tree=False,
+                  plot_feature_importance=False,
+                  grid_search_apply=False,
+                  verbalize=False,
+                  kwargs_classifier={"random_state": args.random_state, 'criterion': 'entropy'},
+                  max_runtime=max_runtime,
+                  ablation_mode=args.ablation_mode)
     elif args.model == "drill":
         optargs = {"knowledge_base": kb,
                    "quality_func": metrics[args.quality_metric]()}

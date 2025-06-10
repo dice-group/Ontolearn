@@ -1,4 +1,5 @@
 from itertools import chain
+import os
 from typing import Optional, Callable, Tuple, Generator, List, Union, Final
 import pandas
 import matplotlib.pyplot as plt
@@ -223,4 +224,10 @@ def assert_class_expression_type(class_expr):
         OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLDataHasValue, OWLObjectHasValue,
     )
     return isinstance(class_expr, expression_types)
+
+def save_dataframe_to_csv(results_df: pandas.DataFrame, filename: str, output_dir: str):
+    os.makedirs(output_dir, exist_ok=True)
+    path = os.path.join(output_dir, filename)
+    results_df.to_csv(path, index=False)
+    print(f"Results saved to {path}")
 

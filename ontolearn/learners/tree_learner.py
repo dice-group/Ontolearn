@@ -2,7 +2,7 @@ from typing import Dict, Set, Tuple, List, Union, Callable, Iterable
 import numpy as np
 import pandas as pd
 from owlapy.class_expression import OWLObjectIntersectionOf, OWLClassExpression, OWLObjectUnionOf, OWLDataHasValue, \
-    OWLDataSomeValuesFrom, OWLClass
+    OWLDataSomeValuesFrom, OWLClass, OWLThing
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_property import OWLDataProperty
@@ -13,6 +13,7 @@ from ontolearn.learning_problem import PosNegLPStandard
 from tqdm import tqdm
 import sklearn
 from sklearn import tree
+from sklearn.feature_selection import mutual_info_classif
 from owlapy.render import DLSyntaxObjectRenderer, ManchesterOWLSyntaxOWLObjectRenderer
 
 from ontolearn.verbalizer import verbalize_learner_prediction
@@ -115,6 +116,44 @@ def concepts_reducer(concepts: List[OWLClassExpression], reduced_cls: Callable) 
     return dl_concept_path
 
 
+def flatten_conjuctive(expr: OWLClassExpression) -> Set[OWLClassExpression]:
+    if isinstance(expr, OWLObjectIntersectionOf):
+        result = set()
+        for op in expr.operands():
+            result.update(flatten_conjuctive(op))
+        return result
+    else:
+        return {expr}
+    
+def factor_of_conjuctives(conjuctives: List[OWLClassExpression]) -> OWLClassExpression:
+    if len(conjuctives) == 1:
+        return conjuctives[0]
+
+    conjunct_sets = [flatten_conjuctive(conjuctive) for conjuctive in conjuctives]
+    common = set.intersection(*conjunct_sets)
+
+    if not common:
+        return OWLObjectUnionOf(conjuctives)
+
+    remainder_disjuncts = []
+    for conjunct_set in conjunct_sets:
+        remainder = conjunct_set - common
+        if not remainder:
+            remainder_expr = OWLThing()
+        elif len(remainder) == 1:
+            remainder_expr = next(iter(remainder))
+        else:
+            remainder_expr = OWLObjectIntersectionOf(remainder)
+        remainder_disjuncts.append(remainder_expr)
+
+    union_expr = remainder_disjuncts[0] if len(remainder_disjuncts) == 1 else OWLObjectUnionOf(remainder_disjuncts)
+
+    # ordered_conjuncts = list(common) + [union_expr]
+    ordered_conjuncts = sorted(common, key=str) + [union_expr]
+
+    return OWLObjectIntersectionOf(ordered_conjuncts)
+
+
 class TDL:
     """Tree-based Description Logic Concept Learner"""
 
@@ -132,7 +171,8 @@ class TDL:
                  plot_embeddings: bool = False,
                  plot_feature_importance: bool = False,
                  verbalize: bool = False,
-                 verbose: int = 1):
+                 verbose: int = 1,
+                 ablation_mode: bool = False):
         assert use_inverse is False, "use_inverse not implemented"
         assert use_data_properties is False, "use_data_properties not implemented"
         assert use_card_restrictions is False, "use_card_restrictions not implemented"
@@ -172,6 +212,8 @@ class TDL:
         self.verbalize = verbalize
         self.verbose = verbose
         self.data_property_cast = dict()
+        self.ablation_mode = ablation_mode
+        self.ablation_evaluations: Union[List[dict], pd.DataFrame] = None
 
     def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> List[
         OWLClassExpression]:
@@ -312,6 +354,57 @@ class TDL:
         # From list to set to remove identical paths from the root to leafs.
         prediction_per_example = {pred for pred, positive_example in prediction_per_example}
         return list(prediction_per_example)
+    
+    def compute_mutual_info(self, X, y, random_state):
+        mutual_info = mutual_info_classif(X, y, random_state=random_state)
+        feature_scores = pd.Series(mutual_info, index=X.columns)
+        return feature_scores
+
+    def get_top_k_features(self, feature_scores, k):
+        return feature_scores.sort_values(ascending=False).head(k).index
+    
+    def run_ablation_study(self, X, y, params_space, random_state):
+        evaluations = []
+        feature_scores = self.compute_mutual_info(X, y.iloc[:, 0], random_state)
+
+        for max_depth, min_samples_leaf, k in itertools.product(
+            params_space['depths'], params_space['min_samples'], params_space['top_k']
+        ):
+            top_features = self.get_top_k_features(feature_scores, k)
+            X_sub = X[top_features]
+
+            self.clf = tree.DecisionTreeClassifier(
+                max_depth=max_depth,
+                min_samples_leaf=min_samples_leaf,
+                random_state=random_state
+            )
+
+            # start = time.time()
+            self.clf.fit(X=X_sub.values, y=y.values)
+
+            self.owl_class_expressions.clear()
+            self.conjunctive_concepts = self.construct_owl_expression_from_tree(X_sub, y)
+            for i in self.conjunctive_concepts:
+                self.owl_class_expressions.add(i)
+
+            self.disjunction_of_conjunctive_concepts = concepts_reducer(concepts=self.conjunctive_concepts,
+                                                                        reduced_cls=OWLObjectUnionOf)
+
+            evaluations.append({
+                # "model": self.clf,
+                # "params": {
+                #     "max_depth": max_depth,
+                #     "min_samples_leaf": min_samples_leaf,
+                #     "top_k_features": k,
+                # },
+                "max_depth": max_depth,
+                "min_samples_leaf": min_samples_leaf,
+                "top_k_features": k,
+                "unique_conjunctive_concepts": self.owl_class_expressions,
+                "disjunction_of_conjunctive_concepts": self.disjunction_of_conjunctive_concepts
+            })
+
+        return evaluations, pd.DataFrame(evaluations)
 
     def fit(self, learning_problem: PosNegLPStandard = None, max_runtime: int = None):
         """ Fit the learner to the given learning problem
@@ -337,6 +430,17 @@ class TDL:
         X: pd.DataFrame
         y: Union[pd.DataFrame, pd.Series]
         X, y = self.create_training_data(learning_problem=learning_problem)
+
+        self.conjunctive_concepts: List[OWLObjectIntersectionOf]
+        # if self.ablation_mode and not self.grid_search_over:
+        #     ablation_params_space = {
+        #         'depths': [2, 4, 6, 8, 10, None],
+        #         'min_samples': [1, 3, 5, 7, 9, 10],
+        #         'top_k': [3, 5, 7, 9, 10] #X.shape[1]] #list(range(50, X.shape[1]+1, 50)) 
+        #     }
+
+        #     self.ablation_evaluations = self.run_ablation_study(X, y, ablation_params_space, self.kwargs_classifier['random_state'])
+        #     return self
 
         if self.plot_embeddings:
             plot_umap_reduced_embeddings(X, y.label.to_list(), "umap_visualization.pdf")
@@ -366,7 +470,6 @@ class TDL:
         # Each item can be considered is a path of OWL Class Expressions
         # starting from the root node in the decision tree and
         # ending in a leaf node.
-        self.conjunctive_concepts: List[OWLObjectIntersectionOf]
         self.conjunctive_concepts = self.construct_owl_expression_from_tree(X, y)
         for i in self.conjunctive_concepts:
             self.owl_class_expressions.add(i)
@@ -381,6 +484,14 @@ class TDL:
 
     def best_hypotheses(self, n=1) -> Tuple[OWLClassExpression, List[OWLClassExpression]]:
         """ Return the prediction"""
+        if self.ablation_mode:
+            if n != 1:
+                for indx, evaluation in enumerate(self.ablation_evaluations):
+                    hypothesis = [evaluation['disjunction_of_conjunctive_concepts']] + [i for i in
+                                                                 itertools.islice(evaluation['unique_conjunctive_concepts'], n)]         
+                    self.ablation_evaluations[indx]['disjunction_of_conjunctive_concepts'] = hypothesis
+            return self.ablation_evaluations
+
         if n == 1:
             return self.disjunction_of_conjunctive_concepts
         else:

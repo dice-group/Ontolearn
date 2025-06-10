@@ -32,40 +32,40 @@ def get_embedding_path(ftp_link: str, embeddings_path_arg: str, kb_path_arg: str
     kb_path_arg:local path of an RDF KG
     """
 
-    if embeddings_path_arg is None or (embeddings_path_arg is not None and not os.path.exists(embeddings_path_arg)):
-        file_name = ftp_link.split("/")[-1]
-        if not os.path.exists(os.path.join(os.getcwd(), file_name)):
-            subprocess.run(['curl', '-O', ftp_link])
+    # if embeddings_path_arg is None or (embeddings_path_arg is not None and not os.path.exists(embeddings_path_arg)):
+    #     file_name = ftp_link.split("/")[-1]
+    #     if not os.path.exists(os.path.join(os.getcwd(), file_name)):
+    #         subprocess.run(['curl', '-O', ftp_link])
 
-            if platform.system() == "Windows":
-                subprocess.run(['tar', '-xf', file_name])
-            else:
-                subprocess.run(['unzip', file_name])
-            os.remove(os.path.join(os.getcwd(), file_name))
+    #         if platform.system() == "Windows":
+    #             subprocess.run(['tar', '-xf', file_name])
+    #         else:
+    #             subprocess.run(['unzip', file_name])
+    #         os.remove(os.path.join(os.getcwd(), file_name))
 
-        embeddings_path = os.path.join(os.getcwd(), file_name[:-4] + '/')
-        if "family" in kb_path_arg:
-            embeddings_path += "family/embeddings/ConEx_entity_embeddings.csv"
-        elif "carcinogenesis" in kb_path_arg:
-            embeddings_path += "carcinogenesis/embeddings/ConEx_entity_embeddings.csv"
-        elif "mutagenesis" in kb_path_arg:
-            embeddings_path += "mutagenesis/embeddings/ConEx_entity_embeddings.csv"
-        elif "nctrer" in kb_path_arg:
-            embeddings_path += "nctrer/embeddings/ConEx_entity_embeddings.csv"
-        elif "animals" in kb_path_arg:
-            embeddings_path += "animals/embeddings/ConEx_entity_embeddings.csv"
-        elif "lymphography" in kb_path_arg:
-            embeddings_path += "lymphography/embeddings/ConEx_entity_embeddings.csv"
-        elif "semantic_bible" in kb_path_arg:
-            embeddings_path += "semantic_bible/embeddings/ConEx_entity_embeddings.csv"
-        elif "suramin" in kb_path_arg:
-            embeddings_path += "suramin/embeddings/ConEx_entity_embeddings.csv"
-        elif "vicodi" in kb_path_arg:
-            embeddings_path += "vicodi/embeddings/ConEx_entity_embeddings.csv"
+        # embeddings_path = os.path.join(os.getcwd(), file_name[:-4] + '/')
+    if "family" in kb_path_arg:
+        embeddings_path_arg += "family/embeddings/DeCaL_entity_embeddings.csv"
+    elif "carcinogenesis" in kb_path_arg:
+        embeddings_path_arg += "carcinogenesis/embeddings/DeCaL_entity_embeddings.csv"
+    elif "mutagenesis" in kb_path_arg:
+        embeddings_path_arg += "mutagenesis/embeddings/DeCaL_entity_embeddings.csv"
+    elif "nctrer" in kb_path_arg:
+        embeddings_path_arg += "nctrer/embeddings/DeCaL_entity_embeddings.csv"
+    elif "animals" in kb_path_arg:
+        embeddings_path_arg += "animals/embeddings/DeCaL_entity_embeddings.csv"
+    elif "lymphography" in kb_path_arg:
+        embeddings_path_arg += "lymphography/embeddings/DeCaL_entity_embeddings.csv"
+    elif "semantic_bible" in kb_path_arg:
+        embeddings_path_arg += "semantic_bible/embeddings/DeCaL_entity_embeddings.csv"
+    elif "suramin" in kb_path_arg:
+        embeddings_path_arg += "suramin/embeddings/DeCaL_entity_embeddings.csv"
+    elif "vicodi" in kb_path_arg:
+        embeddings_path_arg += "vicodi/embeddings/DeCaL_entity_embeddings.csv"
 
-        return embeddings_path
-    else:
-        return embeddings_path_arg
+    return embeddings_path_arg
+    # else:
+    #     return embeddings_path_arg
 
 
 def dl_concept_learning(args):
@@ -73,16 +73,16 @@ def dl_concept_learning(args):
         settings = json.load(json_file)
 
     kb = KnowledgeBase(path=args.kb)
-    ocel = OCEL(knowledge_base=kb,
-                quality_func=F1(),
-                max_runtime=args.max_runtime)
-    celoe = CELOE(knowledge_base=kb,
-                  quality_func=F1(),
-                  max_runtime=args.max_runtime)
-    drill = Drill(knowledge_base=kb,
-                  path_embeddings=args.path_drill_embeddings,
-                  quality_func=F1(),
-                  max_runtime=args.max_runtime, verbose=0)
+    # ocel = OCEL(knowledge_base=kb,
+    #             quality_func=F1(),
+    #             max_runtime=args.max_runtime)
+    # celoe = CELOE(knowledge_base=kb,
+    #               quality_func=F1(),
+    #               max_runtime=args.max_runtime)
+    # drill = Drill(knowledge_base=kb,
+    #               path_embeddings=args.path_drill_embeddings,
+    #               quality_func=F1(),
+    #               max_runtime=args.max_runtime, verbose=0)
     tdl = TDL(knowledge_base=kb,
               kwargs_classifier={"random_state": 1},
               max_runtime=args.max_runtime,
@@ -138,94 +138,94 @@ def dl_concept_learning(args):
             test_lp = PosNegLPStandard(pos={OWLNamedIndividual(i) for i in test_pos},
                                        neg={OWLNamedIndividual(i) for i in test_neg})
 
-            print("OCEL starts..", end="\t")
-            start_time = time.time()
-            pred_ocel = ocel.fit(train_lp).best_hypotheses()
-            rt_ocel = time.time() - start_time
-            print("OCEL ends..", end="\t")
-            # () Quality on the training data
-            train_f1_ocel = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_ocel)}),
-                                             pos=train_lp.pos,
-                                             neg=train_lp.neg)
-            # () Quality on test data
-            test_f1_ocel = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_ocel)}),
-                                            pos=test_lp.pos,
-                                            neg=test_lp.neg)
-            # Reporting
-            data.setdefault("Train-F1-OCEL", []).append(train_f1_ocel)
-            data.setdefault("Test-F1-OCEL", []).append(test_f1_ocel)
-            data.setdefault("RT-OCEL", []).append(rt_ocel)
-            print(f"OCEL Train Quality: {train_f1_ocel:.3f}", end="\t")
-            print(f"OCEL Test Quality: {test_f1_ocel:.3f}", end="\t")
-            print(f"OCEL Runtime: {rt_ocel:.3f}")
+            # print("OCEL starts..", end="\t")
+            # start_time = time.time()
+            # pred_ocel = ocel.fit(train_lp).best_hypotheses()
+            # rt_ocel = time.time() - start_time
+            # print("OCEL ends..", end="\t")
+            # # () Quality on the training data
+            # train_f1_ocel = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_ocel)}),
+            #                                  pos=train_lp.pos,
+            #                                  neg=train_lp.neg)
+            # # () Quality on test data
+            # test_f1_ocel = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_ocel)}),
+            #                                 pos=test_lp.pos,
+            #                                 neg=test_lp.neg)
+            # # Reporting
+            # data.setdefault("Train-F1-OCEL", []).append(train_f1_ocel)
+            # data.setdefault("Test-F1-OCEL", []).append(test_f1_ocel)
+            # data.setdefault("RT-OCEL", []).append(rt_ocel)
+            # print(f"OCEL Train Quality: {train_f1_ocel:.3f}", end="\t")
+            # print(f"OCEL Test Quality: {test_f1_ocel:.3f}", end="\t")
+            # print(f"OCEL Runtime: {rt_ocel:.3f}")
 
-            print("CELOE starts..", end="\t")
-            start_time = time.time()
-            pred_celoe = celoe.fit(train_lp).best_hypotheses()
-            rt_celoe = time.time() - start_time
-            print("CELOE ends..", end="\t")
-            # () Quality on the training data
-            train_f1_celoe = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_celoe)}),
-                                              pos=train_lp.pos,
-                                              neg=train_lp.neg)
-            # () Quality on test data
-            test_f1_celoe = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_celoe)}),
-                                             pos=test_lp.pos,
-                                             neg=test_lp.neg)
-            # Reporting
-            data.setdefault("Train-F1-CELOE", []).append(train_f1_celoe)
-            data.setdefault("Test-F1-CELOE", []).append(test_f1_celoe)
-            data.setdefault("RT-CELOE", []).append(rt_ocel)
-            print(f"CELOE Train Quality: {train_f1_celoe:.3f}", end="\t")
-            print(f"CELOE Test Quality: {test_f1_celoe:.3f}", end="\t")
-            print(f"CELOE Runtime: {rt_celoe:.3f}")
+            # print("CELOE starts..", end="\t")
+            # start_time = time.time()
+            # pred_celoe = celoe.fit(train_lp).best_hypotheses()
+            # rt_celoe = time.time() - start_time
+            # print("CELOE ends..", end="\t")
+            # # () Quality on the training data
+            # train_f1_celoe = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_celoe)}),
+            #                                   pos=train_lp.pos,
+            #                                   neg=train_lp.neg)
+            # # () Quality on test data
+            # test_f1_celoe = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_celoe)}),
+            #                                  pos=test_lp.pos,
+            #                                  neg=test_lp.neg)
+            # # Reporting
+            # data.setdefault("Train-F1-CELOE", []).append(train_f1_celoe)
+            # data.setdefault("Test-F1-CELOE", []).append(test_f1_celoe)
+            # data.setdefault("RT-CELOE", []).append(rt_ocel)
+            # print(f"CELOE Train Quality: {train_f1_celoe:.3f}", end="\t")
+            # print(f"CELOE Test Quality: {test_f1_celoe:.3f}", end="\t")
+            # print(f"CELOE Runtime: {rt_celoe:.3f}")
 
-            print("Evo starts..", end="\t")
-            start_time = time.time()
-            # BUG: Evolearner needs to be initalized for each learning problem
-            evolearner = EvoLearner(knowledge_base=KnowledgeBase(path=args.kb),
-                                    quality_func=F1(),
-                                    max_runtime=args.max_runtime)
-            pred_evo = evolearner.fit(train_lp).best_hypotheses()
-            rt_evo = time.time() - start_time
-            print("Evo ends..", end="\t")
-            # () Quality on the training data
-            train_f1_evo = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_evo)}),
-                                            pos=train_lp.pos,
-                                            neg=train_lp.neg)
-            # () Quality on test data
-            test_f1_evo = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_evo)}),
-                                           pos=test_lp.pos,
-                                           neg=test_lp.neg)
-            # Reporting
-            data.setdefault("Train-F1-Evo", []).append(train_f1_evo)
-            data.setdefault("Test-F1-Evo", []).append(test_f1_evo)
-            data.setdefault("RT-Evo", []).append(rt_evo)
-            print(f"Evo Train Quality: {train_f1_evo:.3f}", end="\t")
-            print(f"Evo Test Quality: {test_f1_evo:.3f}", end="\t")
-            print(f"Evo Runtime: {rt_evo:.3f}")
+            # print("Evo starts..", end="\t")
+            # start_time = time.time()
+            # # BUG: Evolearner needs to be initalized for each learning problem
+            # evolearner = EvoLearner(knowledge_base=KnowledgeBase(path=args.kb),
+            #                         quality_func=F1(),
+            #                         max_runtime=args.max_runtime)
+            # pred_evo = evolearner.fit(train_lp).best_hypotheses()
+            # rt_evo = time.time() - start_time
+            # print("Evo ends..", end="\t")
+            # # () Quality on the training data
+            # train_f1_evo = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_evo)}),
+            #                                 pos=train_lp.pos,
+            #                                 neg=train_lp.neg)
+            # # () Quality on test data
+            # test_f1_evo = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_evo)}),
+            #                                pos=test_lp.pos,
+            #                                neg=test_lp.neg)
+            # # Reporting
+            # data.setdefault("Train-F1-Evo", []).append(train_f1_evo)
+            # data.setdefault("Test-F1-Evo", []).append(test_f1_evo)
+            # data.setdefault("RT-Evo", []).append(rt_evo)
+            # print(f"Evo Train Quality: {train_f1_evo:.3f}", end="\t")
+            # print(f"Evo Test Quality: {test_f1_evo:.3f}", end="\t")
+            # print(f"Evo Runtime: {rt_evo:.3f}")
 
-            print("DRILL starts..", end="\t")
-            start_time = time.time()
-            pred_drill = drill.fit(train_lp).best_hypotheses()
-            rt_drill = time.time() - start_time
-            print("DRILL ends..", end="\t")
+            # print("DRILL starts..", end="\t")
+            # start_time = time.time()
+            # pred_drill = drill.fit(train_lp).best_hypotheses()
+            # rt_drill = time.time() - start_time
+            # print("DRILL ends..", end="\t")
 
             # () Quality on the training data
-            train_f1_drill = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_drill)}),
-                                              pos=train_lp.pos,
-                                              neg=train_lp.neg)
-            # () Quality on test data
-            test_f1_drill = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_drill)}),
-                                             pos=test_lp.pos,
-                                             neg=test_lp.neg)
+            # train_f1_drill = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_drill)}),
+            #                                   pos=train_lp.pos,
+            #                                   neg=train_lp.neg)
+            # # () Quality on test data
+            # test_f1_drill = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_drill)}),
+            #                                  pos=test_lp.pos,
+            #                                  neg=test_lp.neg)
             # Reporting
-            data.setdefault("Train-F1-DRILL", []).append(train_f1_drill)
-            data.setdefault("Test-F1-DRILL", []).append(test_f1_drill)
-            data.setdefault("RT-DRILL", []).append(rt_drill)
-            print(f"DRILL Train Quality: {train_f1_drill:.3f}", end="\t")
-            print(f"DRILL Test Quality: {test_f1_drill:.3f}", end="\t")
-            print(f"DRILL Runtime: {rt_drill:.3f}")
+            # data.setdefault("Train-F1-DRILL", []).append(train_f1_drill)
+            # data.setdefault("Test-F1-DRILL", []).append(test_f1_drill)
+            # data.setdefault("RT-DRILL", []).append(rt_drill)
+            # print(f"DRILL Train Quality: {train_f1_drill:.3f}", end="\t")
+            # print(f"DRILL Test Quality: {test_f1_drill:.3f}", end="\t")
+            # print(f"DRILL Runtime: {rt_drill:.3f}")
 
 
             print("TDL starts..", end="\t")

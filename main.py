@@ -9,7 +9,7 @@ def get_default_arguments(description=None):
                         help="Available concept learning models.")
 
     # Knowledge graph related arguments
-    parser.add_argument("--knowledge_base_path", type=str, default="/KGs/Family/family-benchmark_rich_background.owl",
+    parser.add_argument("--knowledge_base_path", type=str, default="../data/KGs/Family/family-benchmark_rich_background.owl",
                         help="Path to the knowledge base/ontology. This file contains '.owl' extension,"
                              "e.g. 'some/path/kb.owl'")
     parser.add_argument("--sparql_endpoint", type=str, default=None,
@@ -100,6 +100,14 @@ def get_default_arguments(description=None):
     parser.add_argument("--sorted_examples", type=bool, default=True, help="Sorted examples.")
     parser.add_argument("--pretrained_model_name", type=str, default="SetTransformer", help="Pretrained model name",
                         choices=["SetTransformer", "GRU", "LSTM"])
+    
+    # TDL only
+    parser.add_argument("--random_state", type=int, default=1, help="Random seed for reproducibility")
+    parser.add_argument("--ablation_mode", action="store_true",
+        help="Run systematic ablation parameters' variation on TDL baseline model")
+    # parser.add_argument("--grid_search_over", action="store_true",
+    #     help="Run grid search over hyperparameters")
+    
 
     if description is None:
         return parser.parse_args()
