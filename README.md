@@ -4,6 +4,7 @@
 [![Pypi](https://img.shields.io/badge/pypi-0.9.1-blue)](https://pypi.org/project/ontolearn/0.9.1/)
 [![Docs](https://img.shields.io/badge/documentation-0.9.1-yellow)](https://ontolearn-docs-dice-group.netlify.app/usage/01_introduction)
 [![Python](https://img.shields.io/badge/python-3.10.13+-4584b6)](https://www.python.org/downloads/release/python-31013/)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dice-group/Ontolearn)
 &nbsp;
 
 ![Ontolearn](docs/_static/images/Ontolearn_logo.png)
