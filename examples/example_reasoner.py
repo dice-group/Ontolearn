@@ -116,7 +116,6 @@ r1T = OWLObjectSomeValuesFrom(property=r1, filler=OWLClass(IRI('http://www.w3.or
 
 kb = KnowledgeBase(path=data_file)
 onto = kb.ontology
-manager = onto.get_owl_ontology_manager()
 
 onto.add_axiom(OWLEquivalentObjectPropertiesAxiom([r6, r5]))
 onto.add_axiom(OWLEquivalentObjectPropertiesAxiom([r5, r6]))

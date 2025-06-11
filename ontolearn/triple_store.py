@@ -260,11 +260,6 @@ class TripleStoreOntology(AbstractOWLOntology):
         else:
             raise NotImplementedError
 
-    def get_owl_ontology_manager(self):
-        # no manager for this kind of Ontology
-        # doc strings inherited from abstract method in base class
-        pass
-
     def get_ontology_id(self) -> OWLOntologyID:
         # doc strings inherited from abstract method in base class
 
@@ -281,6 +276,10 @@ class TripleStoreOntology(AbstractOWLOntology):
         """Cant modify a triplestore ontology. Implemented because of the base class."""
         pass
 
+    def save(self, document_iri: Optional[IRI] = None):
+        """Cant save a triplestore ontology. Implemented because of the base class."""
+        pass
+
     def __eq__(self, other):
         if isinstance(other, type(self)):
             return self.url == other.url
@@ -291,9 +290,6 @@ class TripleStoreOntology(AbstractOWLOntology):
 
     def __repr__(self):
         return f"TripleStoreOntology({self.url})"
-
-    def save(self, document_iri: Optional[IRI] = None):
-        pass
 
 
 
