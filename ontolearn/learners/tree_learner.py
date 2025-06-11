@@ -148,7 +148,8 @@ class TDL:
                  plot_tree: bool = False,
                  plot_embeddings: bool = False,
                  plot_feature_importance: bool = False,
-                 verbose: int = 10):
+                 verbose: int = 10,
+                 verbalize: bool = False):
 
         assert use_inverse is False, "use_inverse not implemented"
         assert use_data_properties is False, "use_data_properties not implemented"
