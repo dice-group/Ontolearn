@@ -22,9 +22,12 @@
 # SOFTWARE.
 # -----------------------------------------------------------------------------
 
-from openai import OpenAI
-from typing import Optional, Union
 import requests
+
+from openai import OpenAI
+from ontolearn.utils.static_funcs import assert_class_expression_type
+from typing import Optional, Union
+
 
 
 class LLMVerbalizer:
@@ -37,14 +40,16 @@ class LLMVerbalizer:
         if api_key:
             self.client = OpenAI(base_url=self.url, api_key=self.api_key)
 
-    def __call__(self, text: str, use_openai_endpoint: Optional[bool] = False):
+    def __call__(self, text: str):
         """
         :param text: String representation of an OWL Class Expression
         """
+        assert isinstance(text, str) or assert_class_expression_type(text), "Input must be a string or either of the family OWL class expression"
+
         prompt = f"<s> [INST] You are an expert in description logics. You are particularly good at explaining complex concepts with few sentences. [/INST] Model answer</s> [INST] Verbalize {text} in natural language with 1 sentence. Provide no explanations or write no notes.[/INST]"
         print("Waiting for the verbalization..")
         try:
-            if not use_openai_endpoint:
+            if not self.api_key:
                 response = requests.get(url=self.url,
                                         headers={"accept": "application/json", "Content-Type": "application/json"},
                                         json={"model": self.model, "prompt": prompt}, timeout=30)
@@ -53,7 +58,7 @@ class LLMVerbalizer:
                 else:
                     return f"No verbalization due to the HTTP connection\t{response.text}"
             else:
-                assert self.api_key is not None and isinstance(self.api_key, str) and self.api_key != '', "Use a valid api key as string"
+                assert isinstance(self.api_key, str) and self.api_key != '', "Use a valid api key as string"
 
                 response = self.client.chat.completions.create(
                     model=self.model,
@@ -67,9 +72,8 @@ class LLMVerbalizer:
             return f"No verbalization. Error at HTTP connection"
         
 def verbalize_learner_prediction(prediction: Union[str, object] = None):
-
     assert prediction is not None, "Learner prediction cannot be None"
     
-    verbalizer = LLMVerbalizer() # Insert access credentials and set use_openai_endpoint = True
+    verbalizer = LLMVerbalizer() #Insert your access credentials
     predicitions = [verbalizer(text=prediction) for _ in range(3)]
     print(predicitions)

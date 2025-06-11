@@ -37,9 +37,11 @@ from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLEquivalentClassesAxiom
 from owlapy.owl_hierarchy import ClassHierarchy, ObjectPropertyHierarchy, DatatypePropertyHierarchy
 from owlapy.utils import OWLClassExpressionLengthMetric, LRUCache
-from owlapy.class_expression import OWLQuantifiedObjectRestriction, OWLObjectCardinalityRestriction, \
-                                    OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLClass, OWLClassExpression
-
+from owlapy.class_expression import (
+    OWLClass, OWLClassExpression, OWLObjectUnionOf, OWLObjectIntersectionOf,
+    OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectExactCardinality, OWLObjectSomeValuesFrom,
+    OWLQuantifiedObjectRestriction, OWLObjectCardinalityRestriction,
+    OWLObjectAllValuesFrom, OWLObjectComplementOf, OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLDataHasValue, OWLObjectHasValue)
 
 def f1_set_similarity(y: Set[str], yhat: Set[str]) -> float:
     """
@@ -412,3 +414,12 @@ def get_file_base_name(file_path):
 def prepare_output_path(base_name, output_dir="results", extension=".csv"):
     os.makedirs(output_dir, exist_ok=True)
     return os.path.join(output_dir, f"{base_name}{extension}")
+
+def assert_class_expression_type(class_expr):
+    expression_types = (
+        OWLClassExpression, OWLObjectUnionOf, OWLObjectIntersectionOf,
+        OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectExactCardinality,
+        OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, OWLObjectComplementOf,
+        OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLDataHasValue, OWLObjectHasValue,
+    )
+    return isinstance(class_expr, expression_types)
