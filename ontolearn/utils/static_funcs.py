@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # -----------------------------------------------------------------------------
+import os
 import pandas
 import matplotlib.pyplot as plt
 import sklearn
@@ -404,3 +405,10 @@ def verbalize(predictions_file_path: str):  # pragma: no cover
         print("Image generated successfully!")
     else:
         print("Images generated successfully!")
+
+def get_file_base_name(file_path):
+    return os.path.splitext(os.path.basename(file_path))[0]
+
+def prepare_output_path(base_name, output_dir="results", extension=".csv"):
+    os.makedirs(output_dir, exist_ok=True)
+    return os.path.join(output_dir, f"{base_name}{extension}")
