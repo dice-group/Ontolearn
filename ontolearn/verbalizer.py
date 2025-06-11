@@ -22,28 +22,54 @@
 # SOFTWARE.
 # -----------------------------------------------------------------------------
 
+from openai import OpenAI
+from typing import Optional, Union
 import requests
 
 
 class LLMVerbalizer:
     def __init__(self, model: str = "mixtral:8x7b",
-                 url: str = "http://tentris-ml.cs.upb.de:8000/api/generate"):
+                 url: str = "http://tentris-ml.cs.upb.de:8000/api/generate", api_key: Optional[str] = None):
         self.model = model
         self.url = url
+        self.api_key = api_key
 
-    def __call__(self, text: str):
+        if api_key:
+            self.client = OpenAI(base_url=self.url, api_key=self.api_key)
+
+    def __call__(self, text: str, use_openai_endpoint: Optional[bool] = False):
         """
         :param text: String representation of an OWL Class Expression
         """
         prompt = f"<s> [INST] You are an expert in description logics. You are particularly good at explaining complex concepts with few sentences. [/INST] Model answer</s> [INST] Verbalize {text} in natural language with 1 sentence. Provide no explanations or write no notes.[/INST]"
         print("Waiting for the verbalization..")
         try:
-            response = requests.get(url=self.url,
-                                    headers={"accept": "application/json", "Content-Type": "application/json"},
-                                    json={"model": self.model, "prompt": prompt}, timeout=30)
-            if response.ok:
-                return response.json()["response"]
+            if not use_openai_endpoint:
+                response = requests.get(url=self.url,
+                                        headers={"accept": "application/json", "Content-Type": "application/json"},
+                                        json={"model": self.model, "prompt": prompt}, timeout=30)
+                if response.ok:
+                    return response.json()["response"]
+                else:
+                    return f"No verbalization due to the HTTP connection\t{response.text}"
             else:
-                return f"No verbalization due to the HTTP connection\t{response.text}"
+                assert self.api_key is not None and isinstance(self.api_key, str) and self.api_key != '', "Use a valid api key as string"
+
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant."},
+                        {"role": "user", "content": prompt}]
+                )
+
+                return (response.choices[0].message.content)
         except:
             return f"No verbalization. Error at HTTP connection"
+        
+def verbalize_learner_prediction(prediction: Union[str, object] = None):
+
+    assert prediction is not None, "Learner prediction cannot be None"
+    
+    verbalizer = LLMVerbalizer() # Insert access credentials and set use_openai_endpoint = True
+    predicitions = [verbalizer(text=prediction) for _ in range(3)]
+    print(predicitions)
