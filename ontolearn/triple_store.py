@@ -292,6 +292,10 @@ class TripleStoreOntology(AbstractOWLOntology):
     def __repr__(self):
         return f"TripleStoreOntology({self.url})"
 
+    def save(self, document_iri: Optional[IRI] = None):
+        pass
+
+
 
 class TripleStoreReasoner(AbstractOWLReasoner):
 

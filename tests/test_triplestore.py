@@ -10,6 +10,21 @@ import json
 
 
 class TestTriplestore:
+
+    def test_triplestore_runs_error_free(self):
+        kb = TripleStore(url="http://localhost:3030/mutagenesis/sparql")
+        model = TDL(knowledge_base=kb)
+        with open('LPs/Mutagenesis/lps.json') as json_file:
+            settings = json.load(json_file)
+        p = set(settings['problems']['NotKnown']['positive_examples'])
+        n = set(settings['problems']['NotKnown']['negative_examples'])
+        typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
+        typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
+        lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
+        model.fit(lp)
+        hypotheses = list(model.best_hypotheses(n=3))
+        [print(_) for _ in hypotheses]
+
     def test_local_triplestore_family_tdl(self):
         # @TODO: CD: Removed because rdflib does not produce correct results
         """
