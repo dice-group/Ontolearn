@@ -29,7 +29,7 @@ def dl_concept_learning(args):
     
     if args.learner_types:
         learner_types = args.learner_types
-        
+
     with open(args.lps) as json_file:
         settings = json.load(json_file)
     kb = KnowledgeBase(path=args.kb)
@@ -180,7 +180,7 @@ def dl_concept_learning(args):
                 print(f"CELOE Test Quality: {test_f1_celoe:.3f}", end="\t")
                 print(f"CELOE Runtime: {rt_celoe:.3f}")
 
-            if not learner_types or 'EVOLEARNER' in learner_types:
+            if not learner_types or 'evolearner' in learner_types:
                 print("Evo starts..", end="\t")
                 start_time = time.time()
                 # BUG: Evolearner needs to be initalized for each learning problem
