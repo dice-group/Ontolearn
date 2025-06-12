@@ -139,7 +139,7 @@ You can also reach us privately in any of the emails below:
 
 ## Code Coverage
 
-The coverage report is generated using [coverage.py](https://coverage.readthedocs.io/en) for Ontolearn v0.9.1.
+The coverage report is generated using [coverage.py](https://coverage.readthedocs.io/en) for Ontolearn v0.9.2.
 
 
 ```
