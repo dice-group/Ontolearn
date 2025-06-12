@@ -80,6 +80,7 @@ def verbalize_learner_prediction(prediction: Union[str, object] = None, num_pred
 
     Parameters:
         prediction (Union[str, object]): The learner's prediction to verbalize. Must not be None.
+        num_predictions (int): Number of prediction ouputs from the verbalizer with default value of 3
 
     Raises:
         AssertionError: If the prediction is None.
