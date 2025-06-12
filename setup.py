@@ -59,7 +59,8 @@ _deps = [
     "myst-parser>=2.0.0",
     "flake8>=6.0.0",
     "fastapi>=0.110.1",
-    "uvicorn>=0.29.0"]
+    "uvicorn>=0.29.0",
+    "openai>=1.86.0"]
 
 deps = {b: a for a, b in (re.findall(r"^(([^!=<>~ ]+)(?:[!=<>~ ].*)?$)", x)[0] for x in _deps)}
 
@@ -81,7 +82,8 @@ extras["min"] = deps_list(
     "dicee",  # Drill
     "deap",  # Evolearner
     "fastapi",
-    "uvicorn")
+    "uvicorn",
+    "openai")
 
 extras["doc"] = (deps_list("sphinx",
                            "sphinx-autoapi",
