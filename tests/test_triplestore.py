@@ -47,7 +47,7 @@ class TestTriplestore(unittest.TestCase):
         typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
         lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
         model.fit(lp)
-        hypotheses = model.best_hypotheses(n=1)
+        hypotheses = model.best_hypotheses(n=3)
         [print(_) for _ in hypotheses]
 
     def test_ontology_signature_methods(self):
