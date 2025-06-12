@@ -23,7 +23,6 @@
 # -----------------------------------------------------------------------------
 
 import requests
-
 from openai import OpenAI
 from ontolearn.utils.static_funcs import assert_class_expression_type
 from typing import Optional, Union
@@ -71,9 +70,22 @@ class LLMVerbalizer:
         except:
             return f"No verbalization. Error at HTTP connection"
         
-def verbalize_learner_prediction(prediction: Union[str, object] = None):
+def verbalize_learner_prediction(prediction: Union[str, object] = None) -> None:
+    """
+    Generate and print multiple verbalized versions of a learner's prediction using an LLM verbalizer.
+
+    This function takes a prediction (either a string or object), uses an LLMVerbalizer to generate
+    three verbalized responses, and prints them. This is useful for inspecting how the model might 
+    rephrase or interpret a given prediction.
+
+    Parameters:
+        prediction (Union[str, object]): The learner's prediction to verbalize. Must not be None.
+
+    Raises:
+        AssertionError: If the prediction is None.
+    """
     assert prediction is not None, "Learner prediction cannot be None"
-    
-    verbalizer = LLMVerbalizer() #Insert your access credentials
-    predicitions = [verbalizer(text=prediction) for _ in range(3)]
-    print(predicitions)
+
+    verbalizer = LLMVerbalizer()  # Insert your access credentials if needed
+    predictions = [verbalizer(text=prediction) for _ in range(3)]
+    print(predictions)

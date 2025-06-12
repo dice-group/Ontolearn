@@ -26,37 +26,34 @@ pd.set_option("display.precision", 5)
 
 def dl_concept_learning(args):
     args.kb = os.path.abspath(args.kb)
-    
-    if args.learner_types:
-        learner_types = args.learner_types
 
     with open(args.lps) as json_file:
         settings = json.load(json_file)
     kb = KnowledgeBase(path=args.kb)
 
-    if not learner_types or 'ocel' in learner_types:
+    if not args.learner_types or 'ocel' in args.learner_types:
         ocel = OCEL(knowledge_base=kb,
                     quality_func=F1(),
                     max_runtime=args.max_runtime)
         
-    if not learner_types or 'celoe' in learner_types:
+    if not args.learner_types or 'celoe' in args.learner_types:
         celoe = CELOE(knowledge_base=kb,
                     quality_func=F1(),
                     max_runtime=args.max_runtime)
         
-    if not learner_types or 'drill' in learner_types:
+    if not args.learner_types or 'drill' in args.learner_types:
         drill = Drill(knowledge_base=kb,
                     path_embeddings=args.path_drill_embeddings,
                     quality_func=F1(),
                     max_runtime=args.max_runtime, verbose=0)
         
-    if not learner_types or 'tdl' in learner_types:
+    if not args.learner_types or 'tdl' in args.learner_types:
         tdl = TDL(knowledge_base=kb,
                 kwargs_classifier={"random_state": 1},
                 max_runtime=args.max_runtime,
                 verbose=0)
         
-    if not learner_types or 'nces' in learner_types:
+    if not args.learner_types or 'nces' in args.learner_types:
         nces = NCES(knowledge_base_path=args.kb,
                     quality_func=F1(),
                     load_pretrained=True,
@@ -66,7 +63,7 @@ def dl_concept_learning(args):
                     num_predictions=200,
                     verbose=0)
         
-    if not learner_types or 'nces2' in learner_types:
+    if not args.learner_types or 'nces2' in args.learner_types:
         nces2 = NCES2(knowledge_base_path=args.kb,
                     quality_func=F1(),
                     load_pretrained=True,
@@ -74,7 +71,7 @@ def dl_concept_learning(args):
                     num_predictions=200,
                     verbose=0)
         
-    if not learner_types or 'roces' in learner_types:
+    if not args.learner_types or 'roces' in args.learner_types:
         roces = ROCES(knowledge_base_path=args.kb,
                     k=50,
                     quality_func=F1(),
@@ -83,7 +80,7 @@ def dl_concept_learning(args):
                     num_predictions=200,
                     verbose=0)
         
-    if not learner_types or 'clip' in learner_types:
+    if not args.learner_types or 'clip' in args.learner_types:
         clip = CLIP(knowledge_base=kb,
                     refinement_operator=ModifiedCELOERefinement(kb),
                     quality_func=F1(),
@@ -136,7 +133,7 @@ def dl_concept_learning(args):
             
                                        neg={OWLNamedIndividual(i) for i in test_neg})
             
-            if not learner_types or 'ocel' in learner_types:
+            if not args.learner_types or 'ocel' in args.learner_types:
                 print("OCEL starts..", end="\t")
                 start_time = time.time()
                 pred_ocel = ocel.fit(train_lp).best_hypotheses()
@@ -158,7 +155,7 @@ def dl_concept_learning(args):
                 print(f"OCEL Test Quality: {test_f1_ocel:.3f}", end="\t")
                 print(f"OCEL Runtime: {rt_ocel:.3f}")
 
-            if not learner_types or 'celoe' in learner_types:
+            if not args.learner_types or 'celoe' in args.learner_types:
                 print("CELOE starts..", end="\t")
                 start_time = time.time()
                 pred_celoe = celoe.fit(train_lp).best_hypotheses()
@@ -180,7 +177,7 @@ def dl_concept_learning(args):
                 print(f"CELOE Test Quality: {test_f1_celoe:.3f}", end="\t")
                 print(f"CELOE Runtime: {rt_celoe:.3f}")
 
-            if not learner_types or 'evolearner' in learner_types:
+            if not args.learner_types or 'evolearner' in args.learner_types:
                 print("Evo starts..", end="\t")
                 start_time = time.time()
                 # BUG: Evolearner needs to be initalized for each learning problem
@@ -206,7 +203,7 @@ def dl_concept_learning(args):
                 print(f"Evo Test Quality: {test_f1_evo:.3f}", end="\t")
                 print(f"Evo Runtime: {rt_evo:.3f}")
 
-            if not learner_types or 'drill' in learner_types:
+            if not args.learner_types or 'drill' in args.learner_types:
                 print("DRILL starts..", end="\t")
                 start_time = time.time()
                 pred_drill = drill.fit(train_lp).best_hypotheses()
@@ -229,7 +226,7 @@ def dl_concept_learning(args):
                 print(f"DRILL Test Quality: {test_f1_drill:.3f}", end="\t")
                 print(f"DRILL Runtime: {rt_drill:.3f}")
 
-            if not learner_types or 'tdl' in learner_types:
+            if not args.learner_types or 'tdl' in args.learner_types:
                 print("TDL starts..", end="\t")
                 start_time = time.time()
                 # () Fit model on training dataset
@@ -253,7 +250,7 @@ def dl_concept_learning(args):
                 print(f"TDL Test Quality: {test_f1_tdl:.3f}", end="\t")
                 print(f"TDL Runtime: {rt_tdl:.3f}")
 
-            if not learner_types or 'nces' in learner_types:
+            if not args.learner_types or 'nces' in args.learner_types:
                 start_time = time.time()
                 # () Fit model on training dataset
                 pred_nces = nces.fit(train_lp).best_hypotheses(n=1)
@@ -276,7 +273,8 @@ def dl_concept_learning(args):
                 print(f"NCES Test Quality: {test_f1_nces:.3f}", end="\t")
                 print(f"NCES Runtime: {rt_nces:.3f}")
 
-            if not learner_types or 'nces2' in learner_types:
+            if not args.learner_types or 'nces2' in args.learner_types:
+                continue
                 start_time = time.time()
                 # () Fit model on training dataset
                 pred_nces2 = nces2.fit(train_lp).best_hypotheses(n=1)
@@ -300,7 +298,8 @@ def dl_concept_learning(args):
                 print(f"NCES2 Runtime: {rt_nces2:.3f}")
                 ##
 
-            if not learner_types or 'roces' in learner_types:
+            if not args.learner_types or 'roces' in args.learner_types:
+                continue
                 start_time = time.time()
                 # () Fit model on training dataset
                 pred_roces = roces.fit(train_lp).best_hypotheses(n=1)
@@ -323,7 +322,7 @@ def dl_concept_learning(args):
                 print(f"ROCES Test Quality: {test_f1_roces:.3f}", end="\t")
                 print(f"ROCES Runtime: {rt_roces:.3f}")
 
-            if not learner_types or 'clip' in learner_types:
+            if not args.learner_types or 'clip' in args.learner_types:
                 print("CLIP starts..", end="\t")
                 start_time = time.time()
                 pred_clip = clip.fit(train_lp).best_hypotheses()
@@ -358,7 +357,7 @@ if __name__ == '__main__':
     parser.add_argument("--folds", type=int, default=10, help="Number of folds of cross validation.")
     parser.add_argument("--kb", type=str, required=True,
                         help="Knowledge base")
-    parser.add_argument("--learner_types", type=str, nargs='+', default=None, 
+    parser.add_argument("--learner_types", type=str, nargs='*', default=None, 
                         choices=["celoe", "ocel", "evolearner", "drill", "nces", "tdl", "nces2", "roces", "clip"],
                         help="List of available concept learning models")
     parser.add_argument("--path_drill_embeddings", type=str, default=None)

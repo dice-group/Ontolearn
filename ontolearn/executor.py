@@ -301,7 +301,7 @@ def execute(args): # pragma: no cover
                   plot_tree=False,
                   plot_feature_importance=False,
                   grid_search_apply=False,
-                  verbalize=False,
+                  verbalize=True,
                   kwargs_classifier={"random_state": 123, 'criterion': 'entropy'})
             
             print("TDL starts..", end="\t")

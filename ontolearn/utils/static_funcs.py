@@ -29,7 +29,7 @@ import numpy as np
 import traceback
 
 from itertools import chain
-from typing import Optional, Callable, Tuple, Generator, List, Union, Final
+from typing import Any, Optional, Callable, Tuple, Generator, List, Union, Final
 from tqdm import tqdm
 from typing import Set, Iterable
 
@@ -408,14 +408,59 @@ def verbalize(predictions_file_path: str):  # pragma: no cover
     else:
         print("Images generated successfully!")
 
-def get_file_base_name(file_path):
+def get_file_base_name(file_path: str) -> str:
+    """
+    Extract the base name of a file from a given file path, excluding its extension.
+
+    Parameters:
+        file_path (str): The full path to the file.
+
+    Returns:
+        str: The base name of the file without its extension.
+
+    Example:
+        >>> get_file_base_name("/path/to/file.txt")
+        'file'
+    """
     return os.path.splitext(os.path.basename(file_path))[0]
 
-def prepare_output_path(base_name, output_dir="results", extension=".csv"):
+
+def prepare_output_path(base_name: str, output_dir: str = "results", extension: str = ".csv") -> str:
+    """
+    Create the output directory if it doesn't exist and return the full path for an output file.
+
+    Parameters:
+        base_name (str): The base name of the output file (without extension).
+        output_dir (str, optional): Directory where the output file will be saved. Defaults to "results".
+        extension (str, optional): File extension to use. Defaults to ".csv".
+
+    Returns:
+        str: The full path to the output file.
+
+    Example:
+        >>> prepare_output_path("summary")
+        'results/summary.csv'
+    """
     os.makedirs(output_dir, exist_ok=True)
     return os.path.join(output_dir, f"{base_name}{extension}")
 
-def assert_class_expression_type(class_expr):
+def assert_class_expression_type(class_expr: Any) -> bool:
+    """
+    Check whether the given object is a valid OWL class expression.
+
+    This function verifies if the input object is an instance of any recognized OWL class
+    expression types (e.g., union, intersection, cardinality restrictions, value restrictions, etc.).
+
+    Parameters:
+        class_expr (Any): The object to check.
+
+    Returns:
+        bool: True if the object is a valid OWL class expression; False otherwise.
+
+    Example:
+        >>> assert_class_expression_type(some_owl_expression)
+        True
+    """
     expression_types = (
         OWLClassExpression, OWLObjectUnionOf, OWLObjectIntersectionOf,
         OWLObjectMaxCardinality, OWLObjectMinCardinality, OWLObjectExactCardinality,

@@ -249,6 +249,11 @@ python examples/concept_learning_cv_evaluation.py --kb ./KGs/Family/family-bench
 # To download learning problems and benchmark with selected learners on the Family benchmark dataset with benchmark learning problems.
 python examples/concept_learning_cv_evaluation.py --kb ./KGs/Family/family-benchmark_rich_background.owl --lps ./LPs/Family/lps_difficult.json --learner_types ocel drill tdl nces --path_of_nces_embeddings ./NCESData/family/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings ./CLIPData/family/embeddings/ConEx_entity_embeddings.csv --max_runtime 60 --report family_results.csv 
 ```
+
+```shell
+# To download learning problems and benchmark with a single learner on the Family benchmark dataset with benchmark learning problems.
+python examples/concept_learning_cv_evaluation.py --kb ./KGs/Family/family-benchmark_rich_background.owl --lps ./LPs/Family/lps_difficult.json --learner_types nces --path_of_nces_embeddings ./NCESData/family/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings ./CLIPData/family/embeddings/ConEx_entity_embeddings.csv --max_runtime 60 --report family_results.csv 
+```
 In the following python script, the results are summarized and the markdown displayed below generated.
 ```python
 import pandas as pd
