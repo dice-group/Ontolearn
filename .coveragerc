@@ -1,7 +1,6 @@
 [run]
 omit =
     tests/*
-    ontolearn/triple_store.py
 
 [report]
 exclude_lines =
