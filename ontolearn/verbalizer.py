@@ -70,7 +70,7 @@ class LLMVerbalizer:
         except:
             return f"No verbalization. Error at HTTP connection"
         
-def verbalize_learner_prediction(prediction: Union[str, object] = None) -> None:
+def verbalize_learner_prediction(prediction: Union[str, object] = None, num_predictions: int = 3) -> None:
     """
     Generate and print multiple verbalized versions of a learner's prediction using an LLM verbalizer.
 
@@ -87,5 +87,5 @@ def verbalize_learner_prediction(prediction: Union[str, object] = None) -> None:
     assert prediction is not None, "Learner prediction cannot be None"
 
     verbalizer = LLMVerbalizer()  # Insert your access credentials if needed
-    predictions = [verbalizer(text=prediction) for _ in range(3)]
+    predictions = [verbalizer(text=prediction) for _ in range(num_predictions)]
     print(predictions)
