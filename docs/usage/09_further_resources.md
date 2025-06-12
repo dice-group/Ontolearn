@@ -139,7 +139,7 @@ You can also reach us privately in any of the emails below:
 
 ## Code Coverage
 
-The coverage report is generated using [coverage.py](https://coverage.readthedocs.io/en) for Ontolearn v0.9.1.
+The coverage report is generated using [coverage.py](https://coverage.readthedocs.io/en) for Ontolearn v0.9.2.
 
 
 ```
@@ -167,7 +167,7 @@ ontolearn/learners/__init__.py                    5      0   100%
 ontolearn/learners/celoe.py                     167     25    85%   158, 183, 237, 241, 314-318, 332, 335-360
 ontolearn/learners/drill.py                      31      0   100%
 ontolearn/learners/ocel.py                       21      0   100%
-ontolearn/learners/tree_learner.py              193     28    85%   160, 243-273, 361, 368, 370-374, 390, 393, 414, 423
+ontolearn/learners/tree_learner.py              193     27    86%   160, 243-273, 361, 368, 370-374, 390, 393, 414
 ontolearn/learning_problem.py                    55      9    84%   98, 119, 129, 135-140
 ontolearn/learning_problem_generator.py          16      0   100%
 ontolearn/lp_generator/__init__.py                2      0   100%
@@ -177,16 +177,17 @@ ontolearn/metrics.py                             50      0   100%
 ontolearn/nces_architectures.py                  73      0   100%
 ontolearn/nces_modules.py                       143     29    80%   44-45, 68-69, 72, 200-203, 213-242, 245-246
 ontolearn/nces_trainer.py                       196     12    94%   72, 76, 85, 89, 174, 181-183, 204, 219-221
-ontolearn/nces_utils.py                          99     62    37%   58-59, 64-82, 89-141, 147, 156
+ontolearn/nces_utils.py                          99     60    39%   64-82, 89-141, 147, 156
 ontolearn/owl_neural_reasoner.py                178     22    88%   72-94, 101, 121, 127, 133, 137, 165-173, 196, 240, 251, 256, 271, 399-402
 ontolearn/quality_funcs.py                       39     27    31%   32-56, 60-69
-ontolearn/refinement_operators.py               519     26    95%   165-166, 296, 397-398, 444, 538, 562, 596-598, 743, 779, 885, 913, 932, 958-960, 967, 988-990, 992, 994, 1062, 1084
+ontolearn/refinement_operators.py               519     25    95%   165-166, 296, 397-398, 444, 538, 562, 596-598, 743, 779, 885, 913, 958-960, 967, 988-990, 992, 994, 1062, 1084
 ontolearn/search.py                             293     43    85%   69, 132, 163-170, 195, 215, 264, 302, 306, 309, 338, 391, 411, 428, 432, 440, 451-452, 455-463, 466, 481, 483, 508, 510, 575-576, 665-666, 761, 765, 769
+ontolearn/triple_store.py                       501    237    53%   102-103, 121-122, 134-135, 151, 154-160, 167, 215-218, 225-230, 233-235, 242, 248-254, 284-286, 289, 304, 307-311, 323-327, 330-334, 339-341, 350-353, 364-368, 371-373, 376-385, 388-390, 397-398, 402-411, 454-456, 484-495, 503-515, 518-522, 525-529, 532-533, 536-537, 541-549, 553-561, 567, 571, 586-590, 594, 642, 646, 652, 663-667, 712, 738, 751, 795, 798, 809-811, 814, 818-830, 833, 836, 839, 842-844, 856-860, 889-890, 893, 896-897, 900-901, 904-905, 909, 912-913, 917, 921, 924, 928-933, 937-951, 959-965, 974-981, 985-991, 994, 997, 1000, 1003, 1006, 1009, 1012, 1015, 1020-1025, 1030-1035, 1041-1046, 1052-1057, 1060, 1068, 1072-1073, 1076-1077, 1082, 1087
 ontolearn/utils/__init__.py                      33      2    94%   58, 98
 ontolearn/utils/log_config.py                    19      0   100%
 ontolearn/utils/oplogging.py                      8      0   100%
 ontolearn/utils/static_funcs.py                 111     26    77%   53, 64, 138, 170-175, 216-217, 232-249
 ontolearn/value_splitter.py                     159      6    96%   111-113, 118, 127, 130
 ---------------------------------------------------------------------------
-TOTAL                                          5005    775    85%
+TOTAL                                          5506   1008    82%
 ```

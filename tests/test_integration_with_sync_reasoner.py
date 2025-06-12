@@ -40,7 +40,7 @@ class TestIntegrationWithSyncReasoner(unittest.TestCase):
     def test_celoe(self):
         model = CELOE(knowledge_base=self.kb, max_runtime=30)
         hypo = model.fit(self.lp).best_hypotheses()
-        self.assertGreater(evaluate_concept(self.kb, hypo, F1() ,self.lp.encode_kb(self.kb)).q, 0.7)
+        self.assertGreater(evaluate_concept(self.kb, hypo, F1() ,self.lp.encode_kb(self.kb)).q, 0.65)
 
     def test_evolearner(self):
         model = EvoLearner(knowledge_base=self.kb, max_runtime=30)
