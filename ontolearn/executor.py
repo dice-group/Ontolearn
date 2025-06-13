@@ -31,6 +31,10 @@ import re
 import time
 from typing import TypeVar, List, Optional, Union
 
+import pandas as pd
+
+from ontolearn.learners.tree_learner import TDL
+from ontolearn.utils.static_funcs import compute_f1_score, get_file_base_name, prepare_output_path
 from owlapy.class_expression import OWLClassExpression
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLAxiom
@@ -66,7 +70,8 @@ metrics = {'f1': F1,
 models = {'celoe': CELOE,
           'ocel': OCEL,
           'evolearner': EvoLearner,
-          'nces': NCES}
+          'nces': NCES,
+          'tdl': TDL}
 
 heuristics = {'celoe': CELOEHeuristic,
               'ocel': OCELHeuristic}
@@ -199,6 +204,7 @@ class Trainer:  # pragma: no cover
 
 
 def execute(args): # pragma: no cover
+    args.knowledge_base_path = os.path.abspath(args.knowledge_base_path)
 
     args.knowledge_base_path = os.path.abspath(args.knowledge_base_path)
     args_d = args.__dict__
@@ -211,7 +217,7 @@ def execute(args): # pragma: no cover
 
     with open(args.path_learning_problem) as json_file:
         settings = json.load(json_file)
-        
+
     if "problems" in settings:
         problems = settings['problems'].items()
         positives_key = "positive_examples"
@@ -224,7 +230,8 @@ def execute(args): # pragma: no cover
     data = dict()
     for str_target_concept, examples in problems:
         print('Target concept: ', str_target_concept)
-        
+        data.setdefault("LP", []).append(str_target_concept)
+
         pos = set(map(OWLNamedIndividual, map(IRI.create, set(examples[positives_key]))))
         neg = set(map(OWLNamedIndividual, map(IRI.create, set(examples[negatives_key]))))
         lp = PosNegLPStandard(pos=pos, neg=neg)
@@ -257,7 +264,8 @@ def execute(args): # pragma: no cover
         # elif args.model == "drill":
         #     optargs = {"knowledge_base": kb,
         #                "quality_func": metrics[args.quality_metric]()}
-        if args.model not in ["nces"]:
+
+        if args.model not in ["nces", "tdl"]:
             model = learner_type(**_get_matching_opts(learner_type, optargs, args_d))
 
         if args.model in ["celoe", "evolearner", "ocel"]:
@@ -268,7 +276,6 @@ def execute(args): # pragma: no cover
                 trainer.save_best_hypothesis()
 
         elif args.model in ["nces"]:
-            data.setdefault("LP", []).append(str_target_concept)
             model = NCES(knowledge_base_path=args.knowledge_base_path,
                     quality_func=F1(),
                     load_pretrained=True,
@@ -286,13 +293,34 @@ def execute(args): # pragma: no cover
             f1_tdl = compute_f1_score(individuals=frozenset({i for i in kb.individuals(hypothesis)}),
                                             pos=lp.pos,
                                             neg=lp.neg)
-            data.setdefault("F1-TDL", []).append(f1_tdl)
-            data.setdefault("RT-TDL", []).append(rt_tdl)
-
+            data.setdefault("F1-NCES", []).append(f1_tdl)
+            data.setdefault("RT-NCES", []).append(rt_tdl)
             # @TODO:CD: model.fit() should return a train model itself, not predictions
             # report = f"Quality: {compute_quality(kb, hypothesis, pos, neg, args.quality_metric)} \nIndividuals: " + \
             #         f"{kb.individuals_count(hypothesis)}"
             # print(report)
-    # df = pd.DataFrame.from_dict(data)
-    # df.to_csv('mutagenesis_tdl_nces_report.csv', index=False)
+        elif args.model in ['tdl']:
+            model = TDL(knowledge_base=kb,
+                  plot_tree=False,
+                  plot_feature_importance=False,
+                  grid_search_apply=False,
+                  verbalize=True,
+                  kwargs_classifier={"random_state": 123, 'criterion': 'entropy'})
+            
+            print("TDL starts..", end="\t")
+            start_time = time.time()
+            hypothesis = model.fit(lp).best_hypotheses(n=1)
+            print("TDL ends..", end="\t")
+            rt_tdl = time.time() - start_time
+            f1_tdl = compute_f1_score(individuals=frozenset({i for i in kb.individuals(hypothesis)}),
+                                            pos=lp.pos,
+                                            neg=lp.neg)
 
+            data.setdefault("F1-TDL", []).append(f1_tdl)
+            data.setdefault("RT-TDL", []).append(rt_tdl)
+            print(f"TDL Quality: {f1_tdl:.3f}", end="\t")
+            print(f"TDL Runtime: {rt_tdl:.3f}")
+    print()
+    df = pd.DataFrame.from_dict(data)
+    file_base_name = f'{get_file_base_name(args.knowledge_base_path)}_{args.model}'
+    df.to_csv(prepare_output_path(base_name=file_base_name), index=False)
