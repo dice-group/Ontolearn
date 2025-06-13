@@ -274,7 +274,6 @@ def dl_concept_learning(args):
                 print(f"NCES Runtime: {rt_nces:.3f}")
 
             if not args.learner_types or 'nces2' in args.learner_types:
-                continue
                 start_time = time.time()
                 # () Fit model on training dataset
                 pred_nces2 = nces2.fit(train_lp).best_hypotheses(n=1)
@@ -299,7 +298,6 @@ def dl_concept_learning(args):
                 ##
 
             if not args.learner_types or 'roces' in args.learner_types:
-                continue
                 start_time = time.time()
                 # () Fit model on training dataset
                 pred_roces = roces.fit(train_lp).best_hypotheses(n=1)
