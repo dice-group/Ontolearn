@@ -72,7 +72,7 @@ class KB2Data:
     def __init__(self, path, storage_path=None, max_num_lps=1000, beyond_alc=False, depth=3,
                  max_child_length=20, refinement_expressivity=0.2,
                  downsample_refinements=True, sample_fillers_count=10, num_sub_roots=50,
-                 min_num_pos_examples=1):
+                 min_num_pos_examples=1,knowledge_base=None):
         """
         Args
         - kb_path: path to the owl file representing the knowledge base/ontology
@@ -91,7 +91,11 @@ class KB2Data:
         self.max_num_lps = max_num_lps
         self.beyond_alc = beyond_alc
         self.dl_syntax_renderer = DLSyntaxObjectRenderer()
-        self.kb = KnowledgeBase(path=path)
+        self.knowledge_base = knowledge_base
+        if self.knowledge_base is None:
+            self.kb = KnowledgeBase(path=path)
+        else:
+            self.kb = self.knowledge_base
         self.num_examples = self.find_optimal_number_of_examples()
         self.min_num_pos_examples = min_num_pos_examples
         atomic_concepts = frozenset(self.kb.ontology.classes_in_signature())
@@ -125,7 +129,8 @@ class KB2Data:
     def generate_descriptions(self):
         print()
         print("#" * 60)
-        print("Started generating data on the " + self.path.split("/")[-1].split(".")[
+        if self.path:
+            print("Started generating data on the " + self.path.split("/")[-1].split(".")[
             0] + " knowledge base")
         print("#" * 60)
         print()

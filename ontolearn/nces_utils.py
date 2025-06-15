@@ -141,11 +141,11 @@ def try_get_embs(pos, neg, embeddings, num_examples):
     return pos, neg
 
 
-def generate_training_data(kb_path, max_num_lps=1000, refinement_expressivity=0.2, refs_sample_size=50,
+def generate_training_data(kb_path,kb, max_num_lps=1000, refinement_expressivity=0.2, refs_sample_size=50,
                            beyond_alc=True, storage_path=None):
     if storage_path is None:
         storage_path = "./Training_Data"
-    lp_gen = LPGen(kb_path=kb_path, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity,
+    lp_gen = LPGen(kb_path=kb_path, kb=kb, max_num_lps=max_num_lps, refinement_expressivity=refinement_expressivity,
                    num_sub_roots=refs_sample_size,
                    beyond_alc=beyond_alc, storage_path=storage_path)
     lp_gen.generate()
