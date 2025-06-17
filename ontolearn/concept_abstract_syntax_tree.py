@@ -370,7 +370,6 @@ class ConceptAbstractSyntaxTreeBuilder:
         if enforce_validity:
             self.tokens = self._fix_mid_tokens_errors(self._enforce(replace_with_negation=replace_with_negation))
             self.tokens = self.balance_flatten_parentheses(self._postprocess_tail_fix(self.tokens.copy(), self.max_length))
-            print(self.tokens)
 
         self.index = 0
         self.length = len(self.tokens)
@@ -997,7 +996,8 @@ def generate_class_expression(kb_path:str, leaners_prediction = None, save_as_js
         # token_sequence = ['Person', '⊓', '(', 'Grandmother', '⊔', '(', '∃', 'married', '.', 'Grandfather', ')', ')', ')', ')', ')']
         # token_sequence = ['Grandparent', '⊔', '(', '∃', 'married', '.', '(', ')', ')']
         # token_sequence = ['(', '⊓', '(', '∀', 'married', '.', '(', '(', ')', ')', '(', '¬', ')', '(', ')', ')', ')']
-        token_sequence = ['∀', 'married', '.', '(', 'Brother', '⊔', 'Sister']
+        token_sequence = ['Person', '⊓', '(', '(', '⊔', '(', '∀', 'hasChild', '.', 'Grandfather', ')', ')', '⊓', '(', ')', ')', ')', ')']
+        #['∀', 'married', '.', '(', 'Brother', '⊔', 'Sister']
 
     try:
         builder = ConceptAbstractSyntaxTreeBuilder(knowledge_base_path=kb_path)

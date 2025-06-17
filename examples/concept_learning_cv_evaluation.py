@@ -62,7 +62,8 @@ def dl_concept_learning(args):
                     path_of_trained_models=args.path_of_nces_trained_models,
                     learner_names=["LSTM", "GRU", "SetTransformer"],
                     num_predictions=200,
-                    verbose=0)
+                    verbose=0,
+                    decoding_strategy=args.decoding_strategy)
         
     if not args.learner_types or 'nces2' in args.learner_types:
         nces2 = NCES2(knowledge_base_path=args.kb,

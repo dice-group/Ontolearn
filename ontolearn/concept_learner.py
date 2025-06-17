@@ -62,7 +62,7 @@ from ontolearn.nces_modules import ConEx
 from ontolearn.refinement_operators import ExpressRefinement
 from ontolearn.utils import read_csv
 
-from ontolearn.utils.static_funcs import concept_len
+from ontolearn.utils.static_funcs import concept_len, prepare_output_path
 from ontolearn.quality_funcs import evaluate_concept
 from ontolearn.search import EvoLearnerNode, NCESNode, OENode, TreeNode, QualityOrderedNode
 from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn
@@ -1078,18 +1078,20 @@ class NCES(BaseNCES):
                     concept_parser_failer.append(prediction)
                     pass
         print(counter)
+        filename = f'results/{self.decoding_strategy}_'
+        prepare_output_path(base_name=f'{filename}cases', extension='txt')
         if fail_parser_tokens:
-            with open(f'{self.decoding_strategy}_cases.txt', 'w') as f:
+            with open(prepare_output_path(base_name=f'{filename}cases', extension='txt'), 'w') as f:
                 for line in fail_parser_tokens:
                     f.write(f"{line}\n")
 
         if valid_concept_dl_parse_failed:
-            with open(f'{self.decoding_strategy}_valid_concept_dl_parse_failed_cases.txt', 'w') as f:
+            with open(prepare_output_path(base_name=f'{filename}valid_concept_dl_parse_failed_cases', extension='txt'), 'w') as f:
                 for line in valid_concept_dl_parse_failed:
                     f.write(f"{line}\n")
 
         if concept_parser_failer:
-            with open(f'{self.decoding_strategy}_concept_parser_failer_cases.txt', 'w') as f:
+            with open(prepare_output_path(base_name=f'{filename}_concept_parser_failer_cases', extension='txt'), 'w') as f:
                 for line in concept_parser_failer:
                     f.write(f"{line}\n")
         return predictions
