@@ -784,6 +784,7 @@ class CLIP(CELOE):
                                     shuffle_examples=shuffle_examples, example_sizes=example_sizes)
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, num_workers=self.num_workers,
                                       collate_fn=self.collate_batch, shuffle=True)
+        #TODO: remove dependency on knowledge_base_path
         if storage_path is None:
             storage_path = self.knowledge_base_path[:self.knowledge_base_path.rfind("/")]
         elif not os.path.exists(storage_path) and (record_runtime or save_model):
@@ -835,8 +836,6 @@ class NCES(BaseNCES):
         if self.path_of_embeddings is None or (os.path.isdir(self.path_of_embeddings) and not glob.glob(
                 self.path_of_embeddings + '*_entity_embeddings.csv')) or not os.path.exists(
                 self.path_of_embeddings) or not self.path_of_embeddings.endswith('.csv'):
-            """if not os.path.exists(self.knowledge_base_path):
-                raise ValueError(f"{self.knowledge_base_path} not found")"""
             try:
                 import dicee
                 print('\nĆheck packages... OK: dicee is installed.')
@@ -934,13 +933,13 @@ class NCES(BaseNCES):
                 raise FileNotFoundError(f"{self.path_of_trained_models} does not contain at least one of `vocab.json, "
                                         f"inv_vocab.npy or embedding_config.json`")
 
-        m1 = SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length,
+        m1 = SetTransformer(self.vocab, self.inv_vocab, self.max_length,
                                    self.input_size, self.proj_dim, self.num_heads, self.num_seeds, self.m,
                                    self.ln)
-        m2 = GRU(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size,
+        m2 = GRU(self.vocab, self.inv_vocab, self.max_length, self.input_size,
                         self.proj_dim, self.rnn_n_layers, self.drop_prob)
 
-        m3 = LSTM(self.knowledge_base_path, self.vocab, self.inv_vocab, self.max_length, self.input_size,
+        m3 = LSTM(self.vocab, self.inv_vocab, self.max_length, self.input_size,
                          self.proj_dim, self.rnn_n_layers, self.drop_prob)
         Models = {"SetTransformer": {"emb_model": None, "model": m1},
                      "GRU": {"emb_model": None, "model": m2},
@@ -1191,22 +1190,21 @@ class NCES2(BaseNCES):
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32,
                  learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4,
                  max_length=48, load_pretrained=True, verbose: int = 0, data=[]):
+        self.knowledge_base = knowledge_base
         super().__init__(knowledge_base, nces2_or_roces, quality_func, num_predictions, auto_train, proj_dim,
                          drop_prob, num_heads, num_seeds, m, ln, learning_rate, tmax, eta_min, clip_value, batch_size,
                          num_workers, max_length, load_pretrained, verbose)
 
         path_temp_triples = os.path.join(os.path.dirname(__file__),
-                                         "temp_embeddings4learners/abox.ttl")
+                                         "temp_embeddings4learners/abox.nt")
         if os.path.exists(os.path.dirname(path_temp_triples)):
             os.remove(path_temp_triples)
-        else:
-            with open(path_temp_triples, "a") as f:
-                for s, p, o in self.knowledge_base.abox():
-                    f.write(f"{s} {p} {o}\n")
+        with open(path_temp_triples, "a") as f:
+            for s, p, o in self.knowledge_base.abox():
+                f.write(f"<{s.str}> <{p.str}> <{o.str}> .\n")
 
         self.knowledge_base_path = path_temp_triples
-        with open(self.knowledge_base_path, "r") as f:
-            self.triples_data = [line.strip() for line in f if line.strip()]
+        self.triples_data = TriplesData(self.knowledge_base_path)
         self.num_entities = len(self.triples_data.entity2idx)
         self.num_relations = len(self.triples_data.relation2idx)
         self.path_of_trained_models = path_of_trained_models
@@ -1216,25 +1214,26 @@ class NCES2(BaseNCES):
         self.feature_map_dropout = feature_map_dropout
         self.kernel_size = kernel_size
         self.num_of_output_channels = num_of_output_channels
+        self.num_workers = num_workers
         self._set_prerequisites()
 
     def _set_prerequisites(self):
         if isinstance(self.m, int):
             self.m = [self.m]
 
-        Models = {str(m): {"emb_model": ConEx(self.embedding_dim, self.num_entities, self.num_relations,
+        """Models = {str(m): {"emb_model": ConEx(self.embedding_dim, self.num_entities, self.num_relations,
                                               self.input_dropout, self.feature_map_dropout, self.kernel_size,
                                               self.num_of_output_channels),
-                           "model": SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab,
+                           "model": SetTransformer(self.vocab, self.inv_vocab,
                                                    self.max_length, self.embedding_dim, self.proj_dim, self.num_heads,
                                                    self.num_seeds, m, self.ln)} for m in self.m}
-
+        """
         if self.load_pretrained and self.path_of_trained_models is None and self.auto_train:
             print(f"\n\x1b[0;30;43mPath to pretrained models is None and load_pretrained is True "
                   f"and auto_train is True. Will quickly train neural synthesizers. "
                   f"However, it is advisable that you properly train {self.name} using the "
                   f"example script in `examples/train_nces.py`.\x1b[0m\n")
-            self.train(epochs=5)
+            self.train(epochs=5, num_workers = self.num_workers)
             self.refresh(self.path_of_trained_models)
         else:
             self.model = self.get_synthesizer(self.path_of_trained_models)
@@ -1288,7 +1287,7 @@ class NCES2(BaseNCES):
         Models = {str(m): {"emb_model": ConEx(self.embedding_dim, self.num_entities, self.num_relations,
                                               self.input_dropout, self.feature_map_dropout, self.kernel_size,
                                               self.num_of_output_channels),
-                           "model": SetTransformer(self.knowledge_base_path, self.vocab, self.inv_vocab,
+                           "model": SetTransformer(self.vocab, self.inv_vocab,
                                                    self.max_length, self.embedding_dim, self.proj_dim, self.num_heads,
                                                    self.num_seeds, m, self.ln)} for m in self.m}
 
@@ -1527,7 +1526,7 @@ class NCES2(BaseNCES):
         if batch_size is None:
             batch_size = self.batch_size
         if data is None:
-            data = generate_training_data(self.knowledge_base_path, max_num_lps=max_num_lps,
+            data = generate_training_data(kb_path=None,kb=self.knowledge_base, max_num_lps=max_num_lps,
                                           refinement_expressivity=refinement_expressivity, beyond_alc=True,
                                           refs_sample_size=refs_sample_size, storage_path=storage_path)
         vocab_size_before = len(self.vocab)
@@ -1535,6 +1534,7 @@ class NCES2(BaseNCES):
         self.path_of_trained_models = storage_path+"/trained_models"
         if len(self.vocab) > vocab_size_before:
             self.model = self.get_synthesizer(verbose=False)
+        print(num_workers)
         trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, tmax=tmax,
                               eta_min=eta_min, clip_value=clip_value, num_workers=num_workers,
                               storage_path=storage_path)

@@ -150,9 +150,16 @@ def generate_training_data(kb_path,kb, max_num_lps=1000, refinement_expressivity
                    beyond_alc=beyond_alc, storage_path=storage_path)
     lp_gen.generate()
     print("Loading generated data...")
-    with open(f"{storage_path}/LPs.json") as file:
-        lps = json.load(file)
-        if isinstance(lps, dict):
-            lps = list(lps.items())
-        print("Number of learning problems:", len(lps))
+    try:
+        with open(f"{storage_path}/LPs.json") as file:
+            lps = json.load(file)
+            if isinstance(lps, dict):
+                lps = list(lps.items())
+            print("Number of learning problems:", len(lps))
+    except UnicodeDecodeError:
+        with open(f"{storage_path}/LPs.json", encoding='utf-8') as file:
+            lps = json.load(file)
+            if isinstance(lps, dict):
+                lps = list(lps.items())
+            print("Number of learning problems:", len(lps))
     return lps
