@@ -1221,13 +1221,6 @@ class NCES2(BaseNCES):
         if isinstance(self.m, int):
             self.m = [self.m]
 
-        """Models = {str(m): {"emb_model": ConEx(self.embedding_dim, self.num_entities, self.num_relations,
-                                              self.input_dropout, self.feature_map_dropout, self.kernel_size,
-                                              self.num_of_output_channels),
-                           "model": SetTransformer(self.vocab, self.inv_vocab,
-                                                   self.max_length, self.embedding_dim, self.proj_dim, self.num_heads,
-                                                   self.num_seeds, m, self.ln)} for m in self.m}
-        """
         if self.load_pretrained and self.path_of_trained_models is None and self.auto_train:
             print(f"\n\x1b[0;30;43mPath to pretrained models is None and load_pretrained is True "
                   f"and auto_train is True. Will quickly train neural synthesizers. "
