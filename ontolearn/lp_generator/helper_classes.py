@@ -69,7 +69,7 @@ class KB2Data:
     a json file.
     """
 
-    def __init__(self, path, storage_path=None, max_num_lps=1000, beyond_alc=False, depth=3,
+    def __init__(self, path=None, storage_path=None, max_num_lps=1000, beyond_alc=False, depth=3,
                  max_child_length=20, refinement_expressivity=0.2,
                  downsample_refinements=True, sample_fillers_count=10, num_sub_roots=50,
                  min_num_pos_examples=1,knowledge_base=None):
