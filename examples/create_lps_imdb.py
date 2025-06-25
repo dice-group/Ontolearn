@@ -5,9 +5,9 @@ from SPARQLWrapper import SPARQLWrapper, JSON
 
 
 # CONFIGURATION
-endpoint_url = "http://localhost:3030/imdb/sparql"
-rating_property = "https://www.imdb.com/averageRating"
-sample_size = 5
+endpoint_url = "http://localhost:3040/imdb_small/sparql"      #"http://localhost:3030/imdb/sparql"
+rating_property = "http://example.org/imdb/hasRatingValue"     #"https://www.imdb.com/averageRating"
+sample_size = 100 # Number of postive and negative examples to be sampled 
 
 # Set up SPARQL endpoint
 sparql = SPARQLWrapper(endpoint_url)
@@ -28,7 +28,7 @@ def run_query(query):
         print("Raw response (first 500 chars):\n", raw[:500])
         return []
 
-for i in range(20, 11, -1):  # From 10.0 to 0.1
+for i in range(20, 11, -1):  # Average rating From 2.0 to 1.1
     t = i / 10.0
     print(f"Generating learning problem for threshold t = {t:.1f}")
 
