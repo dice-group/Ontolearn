@@ -786,7 +786,8 @@ class CLIP(CELOE):
                                       collate_fn=self.collate_batch, shuffle=True)
         #TODO: remove dependency on knowledge_base_path
         if storage_path is None:
-            storage_path = self.knowledge_base_path[:self.knowledge_base_path.rfind("/")]
+            currentDateAndTime = datetime.now()
+            storage_path = f'CLIP-Experiment-{currentDateAndTime.strftime("%H-%M-%S")}'
         elif not os.path.exists(storage_path) and (record_runtime or save_model):
             os.mkdir(storage_path)
         trainer = CLIPTrainer(self, epochs=epochs, learning_rate=learning_rate, decay_rate=decay_rate,
@@ -871,7 +872,7 @@ class NCES(BaseNCES):
                                f"--model {self.dicee_model} "
                                f"--embedding_dim {self.dicee_emb_dim} "
                                f"--eval_mode test",
-                               shell=True)#, executable="/bin/bash")
+                               shell=True, executable="/bin/bash")
                 assert os.path.exists(f"{path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv"), \
                     (f"It seems that embeddings were not stored at the expected directory "
                      f"({path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv)")
