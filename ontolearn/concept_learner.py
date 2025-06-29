@@ -852,8 +852,12 @@ class NCES(BaseNCES):
                        "See the example script in `examples/train_nces.py` for this. "
                        "Use `examples/train_nces.py -h` to view options.\x1b[0m"+"\n")
             try:
+                path_temp_embeddings = self.path_temp_embeddings if self.path_temp_embeddings and isinstance(
+                    self.path_temp_embeddings, str) else "temp_embeddings"
+                if not os.path.exists(path_temp_embeddings):
+                    os.makedirs(path_temp_embeddings)
                 path_temp_triples = os.path.join(os.path.dirname(__file__),
-                                                 "temp_embeddings4learners/abox.nt")
+                                                 "temp_embeddings/abox.nt")
                 if os.path.exists(path_temp_triples):
                     os.remove(path_temp_triples)
 
@@ -862,8 +866,7 @@ class NCES(BaseNCES):
                         f.write(f"<{s.str}> <{p.str}> <{o.str}> .\n")
 
                 self.knowledge_base_path = path_temp_triples
-                path_temp_embeddings = self.path_temp_embeddings if self.path_temp_embeddings and isinstance(
-                    self.path_temp_embeddings, str) else "temp_embeddings"
+
                 subprocess.run(f"dicee --path_single_kg {self.knowledge_base_path} "
                                f"--path_to_store_single_run {path_temp_embeddings} "
                                f"--backend rdflib --save_embeddings_as_csv "
@@ -877,9 +880,9 @@ class NCES(BaseNCES):
                     (f"It seems that embeddings were not stored at the expected directory "
                      f"({path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv)")
             except Exception as e:
-                print(e)
-                raise ValueError("\nPlease try providing the absolute path to the knowledge base, "
-                                 "e.g., /home/ndah/Dev/Ontolean/KGs/Family/family-benchmark_rich_background.owl\n")
+                print(f"Error while training embeddings: {e}")
+                #raise ValueError("\nPlease try providing the absolute path to the knowledge base, "
+                #                 "e.g., /home/ndah/Dev/Ontolean/KGs/Family/family-benchmark_rich_background.owl\n")
             self.path_of_embeddings = f"{path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv"
             if self.auto_train:
                 print("\n"+"\x1b[0;30;43m"+f"Will also train {self.name} for 5 epochs"+"\x1b[0m"+"\n")
