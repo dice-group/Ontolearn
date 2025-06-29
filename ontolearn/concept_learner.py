@@ -872,11 +872,12 @@ class NCES(BaseNCES):
                                f"--model {self.dicee_model} "
                                f"--embedding_dim {self.dicee_emb_dim} "
                                f"--eval_mode test",
-                               shell=True, executable="/bin/bash")
+                               shell=True)#, executable="/bin/bash")
                 assert os.path.exists(f"{path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv"), \
                     (f"It seems that embeddings were not stored at the expected directory "
                      f"({path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv)")
-            except Exception:
+            except Exception as e:
+                print(e)
                 raise ValueError("\nPlease try providing the absolute path to the knowledge base, "
                                  "e.g., /home/ndah/Dev/Ontolean/KGs/Family/family-benchmark_rich_background.owl\n")
             self.path_of_embeddings = f"{path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv"
