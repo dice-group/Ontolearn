@@ -853,11 +853,12 @@ class NCES(BaseNCES):
                        "Use `examples/train_nces.py -h` to view options.\x1b[0m"+"\n")
             try:
                 path_temp_embeddings = self.path_temp_embeddings if self.path_temp_embeddings and isinstance(
-                    self.path_temp_embeddings, str) else "temp_embeddings"
+                    self.path_temp_embeddings, str) else "/temp_embeddings"
                 if not os.path.exists(path_temp_embeddings):
                     os.makedirs(path_temp_embeddings)
-                path_temp_triples = os.path.join(os.path.dirname(__file__),
-                                                 "temp_embeddings/abox.nt")
+                #path_temp_triples = os.path.join(os.path.dirname(__file__),
+                #                                 "/temp_embeddings/abox.nt")
+                path_temp_triples = "/temp_embeddings/abox.nt"
                 if os.path.exists(path_temp_triples):
                     os.remove(path_temp_triples)
 
@@ -1200,9 +1201,11 @@ class NCES2(BaseNCES):
                          drop_prob, num_heads, num_seeds, m, ln, learning_rate, tmax, eta_min, clip_value, batch_size,
                          num_workers, max_length, load_pretrained, verbose)
 
-        path_temp_triples = os.path.join(os.path.dirname(__file__),
-                                         "temp_embeddings4learners/abox.nt")
-        if os.path.exists(os.path.dirname(path_temp_triples)):
+        temp_triples_dir = "temp_embeddings"
+        if not os.path.exists(temp_triples_dir):
+            os.makedirs(temp_triples_dir)
+        path_temp_triples =  "temp_embeddings/abox.nt"
+        if os.path.exists(path_temp_triples):
             os.remove(path_temp_triples)
         with open(path_temp_triples, "a") as f:
             for s, p, o in self.knowledge_base.abox():
