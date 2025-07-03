@@ -117,8 +117,10 @@ class KnowledgeBase(AbstractKnowledgeBase):
         elif reasoner_factory is not None:
             self.reasoner = reasoner_factory(self.ontology)
         else:
-            # default to native Reasoner of owlapy. To use SyncReasoner, pass the reasoner explicitly as an argument.
-            self.reasoner = StructuralReasoner(ontology=self.ontology)
+            if isinstance(self.ontology, Ontology):
+                self.reasoner = StructuralReasoner(ontology=self.ontology)
+            else:
+                self.reasoner = SyncReasoner(ontology=self.ontology, reasoner="Pellet")
 
         if load_class_hierarchy:
             self.class_hierarchy: ClassHierarchy
