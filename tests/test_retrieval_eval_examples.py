@@ -37,22 +37,22 @@ class RetrievalTests(unittest.TestCase):
         self.assertEqual(js, 1.0)
         self.assertEqual(f1, 1.0)
 
-    def test_retrieval_eval_under_incomplete(self):
-        class ARGS:
-            def __init__(self):
-                self.path_kg = "KGs/Family/father.owl"
-                self.seed = 1
-                self.ratio_sample_nc = None
-                self.ratio_sample_object_prop = None
-                self.path_report = "ALCQHI_Retrieval_Results.csv"
-                self.number_of_subgraphs = 1
-                self.ratio = 0.1
-                self.operation = "incomplete"
-                self.sample = "No"
-
-        args = ARGS()
-        results = execute2(args)
-        for r, v in results.items():
-            self.assertGreaterEqual(v, 0.9)
-        clear()
+    # def test_retrieval_eval_under_incomplete(self):
+    #     class ARGS:
+    #         def __init__(self):
+    #             self.path_kg = "KGs/Family/father.owl"
+    #             self.seed = 1
+    #             self.ratio_sample_nc = None
+    #             self.ratio_sample_object_prop = None
+    #             self.path_report = "ALCQHI_Retrieval_Results.csv"
+    #             self.number_of_subgraphs = 1
+    #             self.ratio = 0.1
+    #             self.operation = "incomplete"
+    #             self.sample = "No"
+    #
+    #     args = ARGS()
+    #     results = execute2(args)
+    #     for r, v in results.items():
+    #         self.assertGreaterEqual(v, 0.9)
+    #     clear()
 

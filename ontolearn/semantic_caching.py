@@ -23,6 +23,8 @@
 # -----------------------------------------------------------------------------
 
 """python examples/retrieval_eval.py"""
+from owlapy.owl_literal import OWLBottomObjectProperty, OWLTopObjectProperty
+
 from ontolearn.owl_neural_reasoner import TripleStoreNeuralReasoner
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.utils import jaccard_similarity, concept_reducer, concept_reducer_properties
@@ -344,6 +346,8 @@ def semantic_caching_size(func, cache_size, eviction_strategy, random_seed, cach
             
             if len(All_individuals)<1000: # The loop beomes unscalable when there are too many individuals 
                 object_property = owl_expression.get_property()
+                if object_property == OWLBottomObjectProperty or object_property == OWLTopObjectProperty:
+                    return set()
                 filler_expression = owl_expression.get_filler()
                 instances = retrieve_from_cache(owl_expression_to_dl(filler_expression))
                 if instances is not None:
@@ -554,7 +558,7 @@ def retrieve_other_reasoner(expression, path_kg, name_reasoner='HermiT'):
         print("The knowledge base is not consistent") 
          
 
-def run_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, eviction:str, random_seed:int, cache_type:str, shuffle_concepts:str):
+def run_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, eviction:str, random_seed:int, cache_type:str, shuffle_concepts:bool):
     '''Return cache performnace with semantics'''
 
     symbolic_kb = KnowledgeBase(path=path_kg)
@@ -634,7 +638,7 @@ def run_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:
 
 
 
-def run_non_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, shuffle_concepts:str):
+def run_non_semantic_cache(path_kg:str, path_kge:str, cache_size:int, name_reasoner:str, shuffle_concepts:bool):
     '''Return cache performnace without any semantics'''
 
     symbolic_kb = KnowledgeBase(path=path_kg)

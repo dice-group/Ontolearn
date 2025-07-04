@@ -25,6 +25,7 @@
 from typing import Dict, Set, Tuple, List, Union, Callable
 import numpy as np
 import pandas as pd
+from ontolearn.verbalizer import verbalize_learner_prediction
 from owlapy.class_expression import (
     OWLObjectIntersectionOf,
     OWLClassExpression,
@@ -148,7 +149,8 @@ class TDL:
                  plot_tree: bool = False,
                  plot_embeddings: bool = False,
                  plot_feature_importance: bool = False,
-                 verbose: int = 10):
+                 verbose: int = 10,
+                 verbalize: bool = False):
 
         assert use_inverse is False, "use_inverse not implemented"
         assert use_data_properties is False, "use_data_properties not implemented"
@@ -191,6 +193,7 @@ class TDL:
         self.cbd_mapping: Dict[str, Set[Tuple[str, str]]]
         self.types_of_individuals = dict()
         self.verbose = verbose
+        self.verbalize = verbalize
         self.data_property_cast = dict()
         self.__classification_report = None
         self.X = None
@@ -406,6 +409,9 @@ class TDL:
         if self.verbose >0:
             print("Computing disjunction_of_conjunctive_concepts...")
         self.disjunction_of_conjunctive_concepts = concepts_reducer(concepts=self.conjunctive_concepts,  reduced_cls=OWLObjectUnionOf)
+
+        if self.verbalize:
+            verbalize_learner_prediction(self.disjunction_of_conjunctive_concepts)
 
         return self
 

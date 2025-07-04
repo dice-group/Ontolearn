@@ -47,7 +47,7 @@ _deps = [
     "tqdm>=4.64.0",
     "transformers>=4.38.1",
     "pytest>=7.2.2",
-    "owlapy==1.3.3",
+    "owlapy==1.5.1",
     "dicee==0.1.4",
     "ontosample>=0.2.2",
     "sphinx>=7.2.6",
@@ -59,7 +59,8 @@ _deps = [
     "myst-parser>=2.0.0",
     "flake8>=6.0.0",
     "fastapi>=0.110.1",
-    "uvicorn>=0.29.0"]
+    "uvicorn>=0.29.0",
+    "openai>=1.86.0"]
 
 deps = {b: a for a, b in (re.findall(r"^(([^!=<>~ ]+)(?:[!=<>~ ].*)?$)", x)[0] for x in _deps)}
 
@@ -81,7 +82,8 @@ extras["min"] = deps_list(
     "dicee",  # Drill
     "deap",  # Evolearner
     "fastapi",
-    "uvicorn")
+    "uvicorn",
+    "openai")
 
 extras["doc"] = (deps_list("sphinx",
                            "sphinx-autoapi",
@@ -95,7 +97,7 @@ extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "ontosample", "ru
 setup(
     name="ontolearn",
     description="Ontolearn is an open-source software library for structured machine learning in Python. Ontolearn includes modules for processing knowledge bases, inductive logic programming and ontology engineering.",
-    version="0.9.0",
+    version="0.9.2",
     packages=find_packages(),
     install_requires=extras["min"],
     extras_require=extras,

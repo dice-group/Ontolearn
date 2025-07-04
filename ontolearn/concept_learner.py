@@ -36,7 +36,7 @@ from torch.utils.data import DataLoader
 from torch.functional import F
 from torch.nn.utils.rnn import pad_sequence
 from deap import gp, tools, base, creator
-from owlapy.class_expression import OWLClassExpression
+from owlapy.class_expression import OWLClassExpression, OWLThing
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_property import OWLDataProperty
@@ -326,6 +326,8 @@ class EvoLearner(BaseConceptLearner):
                 #                  name=OperatorVocabulary.CARD_EXACT + name)
 
         for class_ in self.kb.get_concepts():
+            if class_ == OWLThing:
+                continue
             pset.addTerminal(class_, OWLClassExpression, name=escape(class_.iri.get_remainder()))
 
         pset.addTerminal(self.generator.thing, OWLClassExpression,

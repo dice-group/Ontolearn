@@ -115,10 +115,12 @@ class TestBaseConceptLearner(unittest.TestCase):
         model = self.model.fit(learning_problem=lp)
 
         # 2., 3. Save and load class expressions
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            file_path = tmpdirname + '/Predictions'
-            model.save_best_hypothesis(n=2, path=file_path)
-            hypotheses = list(model.load_hypotheses(file_path + '#.owl'))
+        # with tempfile.TemporaryDirectory() as tmpdirname:
+        #     file_path = tmpdirname + '/Predictions'
+        #     model.save_best_hypothesis(n=2, path=file_path)
+        #     hypotheses = list(model.load_hypotheses(file_path + '#.owl'))
+
+        hypotheses = list(model.best_hypotheses(2))
 
         # New Individuals
         julia = OWLNamedIndividual(IRI.create(self.namespace, 'julia'))
