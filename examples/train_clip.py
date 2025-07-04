@@ -47,7 +47,7 @@ def start(args):
     # use clip here
     knowledge_base_path = args.kb
     path_of_embeddings = args.path_of_embeddings
-    if os.path.exists(knowledge_base_path) and os.path.exists(path_of_embeddings):
+    if os.path.exists(knowledge_base_path):
         KB = KnowledgeBase(path=knowledge_base_path)
         op = ExpressRefinement(knowledge_base=KB, use_inverse=False,
                                use_numeric_datatypes=False)
@@ -89,5 +89,5 @@ if __name__ == '__main__':
     # make training data
     # data_generator = LPGen(kb_path= args.kb, storage_path=args.storage_path)
     # data_generator.generate()
-    args.tmax = min(args.max_runtime, args.epochs)
+    args.tmax = args.epochs
     start(args)

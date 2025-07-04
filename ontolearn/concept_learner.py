@@ -850,15 +850,15 @@ class NCES(BaseNCES):
                        "\nFor maximum performance, use pretrained models or train embeddings for many epochs, "
                        "and the neural synthesizer on massive amounts of data and for many epochs. "
                        "See the example script in `examples/train_nces.py` for this. "
-                       "Use `examples/train_nces.py -h` to view options.\x1b[0m"+"\n")
+                       "Use `python examples/train_nces.py -h` to view options.\x1b[0m"+"\n")
             try:
                 path_temp_embeddings = self.path_temp_embeddings if self.path_temp_embeddings and isinstance(
-                    self.path_temp_embeddings, str) else "/temp_embeddings"
+                    self.path_temp_embeddings, str) else "temp_embeddings"
                 if not os.path.exists(path_temp_embeddings):
                     os.makedirs(path_temp_embeddings)
                 #path_temp_triples = os.path.join(os.path.dirname(__file__),
                 #                                 "/temp_embeddings/abox.nt")
-                path_temp_triples = "/temp_embeddings/abox.nt"
+                path_temp_triples = "temp_embeddings/abox.nt"
                 if os.path.exists(path_temp_triples):
                     os.remove(path_temp_triples)
 
