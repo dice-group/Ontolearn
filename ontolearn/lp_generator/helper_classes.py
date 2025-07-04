@@ -38,7 +38,8 @@ class ConceptDescriptionGenerator:
     Learning problem generator.
     """
 
-    def __init__(self, knowledge_base, refinement_operator, depth=2, max_length=10, num_sub_roots=150):
+    def __init__(self, knowledge_base, refinement_operator, depth=2, max_length=10,
+                 num_sub_roots=150):
         self.kb = knowledge_base
         self.rho = refinement_operator
         self.depth = depth
@@ -68,8 +69,10 @@ class KB2Data:
     a json file.
     """
 
-    def __init__(self, path, storage_path=None, max_num_lps=1000, beyond_alc=False, depth=3, max_child_length=20, refinement_expressivity=0.2,
-                 downsample_refinements=True, sample_fillers_count=10, num_sub_roots=50, min_num_pos_examples=1):
+    def __init__(self, path=None, storage_path=None, max_num_lps=1000, beyond_alc=False, depth=3,
+                 max_child_length=20, refinement_expressivity=0.2,
+                 downsample_refinements=True, sample_fillers_count=10, num_sub_roots=50,
+                 min_num_pos_examples=1,knowledge_base=None):
         """
         Args
         - kb_path: path to the owl file representing the knowledge base/ontology
@@ -88,41 +91,56 @@ class KB2Data:
         self.max_num_lps = max_num_lps
         self.beyond_alc = beyond_alc
         self.dl_syntax_renderer = DLSyntaxObjectRenderer()
-        self.kb = KnowledgeBase(path=path)
+        self.knowledge_base = knowledge_base
+        if self.knowledge_base is None:
+            self.kb = KnowledgeBase(path=path)
+        else:
+            self.kb = self.knowledge_base
         self.num_examples = self.find_optimal_number_of_examples()
         self.min_num_pos_examples = min_num_pos_examples
         atomic_concepts = frozenset(self.kb.ontology.classes_in_signature())
-        self.atomic_concept_names = frozenset([self.dl_syntax_renderer.render(a) for a in atomic_concepts])
+        self.atomic_concept_names = frozenset(
+            [self.dl_syntax_renderer.render(a) for a in atomic_concepts])
         if self.beyond_alc:
-            rho = ExpressRefinement(knowledge_base=self.kb, max_child_length=max_child_length, sample_fillers_count=sample_fillers_count,
-                                downsample=downsample_refinements, use_inverse=True, use_card_restrictions=True,
-                                use_numeric_datatypes=True, use_time_datatypes=True, use_boolean_datatype=True,
-                                expressivity=refinement_expressivity)
-        else:
-            rho = ExpressRefinement(knowledge_base=self.kb, max_child_length=max_child_length, sample_fillers_count=sample_fillers_count,
-                                    downsample=downsample_refinements, use_inverse=False, use_card_restrictions=False,
-                                    use_numeric_datatypes=False, use_time_datatypes=False, use_boolean_datatype=False,
+            rho = ExpressRefinement(knowledge_base=self.kb, max_child_length=max_child_length,
+                                    sample_fillers_count=sample_fillers_count,
+                                    downsample=downsample_refinements, use_inverse=True,
+                                    use_card_restrictions=True,
+                                    use_numeric_datatypes=True, use_time_datatypes=True,
+                                    use_boolean_datatype=True,
                                     expressivity=refinement_expressivity)
-        self.lp_gen = ConceptDescriptionGenerator(knowledge_base=self.kb, refinement_operator=rho, depth=depth,
+        else:
+            rho = ExpressRefinement(knowledge_base=self.kb, max_child_length=max_child_length,
+                                    sample_fillers_count=sample_fillers_count,
+                                    downsample=downsample_refinements, use_inverse=False,
+                                    use_card_restrictions=False,
+                                    use_numeric_datatypes=False, use_time_datatypes=False,
+                                    use_boolean_datatype=False,
+                                    expressivity=refinement_expressivity)
+        self.lp_gen = ConceptDescriptionGenerator(knowledge_base=self.kb, refinement_operator=rho,
+                                                  depth=depth,
                                                   num_sub_roots=num_sub_roots)
 
     def find_optimal_number_of_examples(self):
         if self.kb.individuals_count() >= 600:
-            return min(self.kb.individuals_count()//2, 1000)
+            return min(self.kb.individuals_count() // 2, 1000)
         return self.kb.individuals_count()
 
     def generate_descriptions(self):
         print()
-        print("#"*60)
-        print("Started generating data on the "+self.path.split("/")[-1].split(".")[0]+" knowledge base")
-        print("#"*60)
+        print("#" * 60)
+        if self.path:
+            print("Started generating data on the " + self.path.split("/")[-1].split(".")[
+            0] + " knowledge base")
+        print("#" * 60)
         print()
         All_individuals = set(self.kb.individuals())
         print("Number of individuals in the knowledge base: {} \n".format(len(All_individuals)))
         Concepts = self.lp_gen.generate()
         non_redundancy_hash_map = dict()
         show_some_length = True
-        for concept in tqdm(sorted(Concepts, key=lambda c: concept_len(c)), desc="Filtering process..."):
+        for concept in tqdm(sorted(Concepts, key=lambda c: concept_len(c)),
+                            desc="Filtering process..."):
             if not self.kb.individuals_set(concept) in non_redundancy_hash_map and \
                     self.min_num_pos_examples <= self.kb.individuals_count(concept):
                 non_redundancy_hash_map[self.kb.individuals_set(concept)] = concept
@@ -140,19 +158,19 @@ class KB2Data:
         return self
 
     def sample_examples(self, pos, neg):
-        if min(len(pos), len(neg)) >= self.num_examples//2:
+        if min(len(pos), len(neg)) >= self.num_examples // 2:
             if len(pos) > len(neg):
-                num_neg_ex = self.num_examples//2
-                num_pos_ex = self.num_examples-num_neg_ex
+                num_neg_ex = self.num_examples // 2
+                num_pos_ex = self.num_examples - num_neg_ex
             else:
-                num_pos_ex = self.num_examples//2
-                num_neg_ex = self.num_examples-num_pos_ex
+                num_pos_ex = self.num_examples // 2
+                num_neg_ex = self.num_examples - num_pos_ex
         elif len(pos) > len(neg):
             num_neg_ex = len(neg)
-            num_pos_ex = self.num_examples-num_neg_ex
+            num_pos_ex = self.num_examples - num_neg_ex
         elif len(pos) < len(neg):
             num_pos_ex = len(pos)
-            num_neg_ex = self.num_examples-num_pos_ex
+            num_neg_ex = self.num_examples - num_pos_ex
         positive = random.sample(pos, min(num_pos_ex, len(pos)))
         negative = random.sample(neg, min(num_neg_ex, len(neg)))
         return positive, negative
@@ -161,16 +179,17 @@ class KB2Data:
         data = dict()
         for concept in tqdm(self.train_concepts, desc="Sample examples and save data..."):
             pos = set(self.kb.individuals(concept))
-            neg = set(self.kb.individuals())-pos
+            neg = set(self.kb.individuals()) - pos
             if len(neg) == 0:
                 continue
             pos = [ind.str.split("/")[-1] for ind in pos]
             neg = [ind.str.split("/")[-1] for ind in neg]
             positive, negative = self.sample_examples(pos, neg)
             concept_name = self.dl_syntax_renderer.render(concept.get_nnf())
-            data[concept_name] = {'positive examples': positive, 'negative examples': negative}
+            data[concept_name] = {'positive examples': positive, 'negative examples': negative,
+                                  'length': concept_len(concept.get_nnf())}
         data = list(data.items())
         os.makedirs(self.storage_path, exist_ok=True)
-        with open(f'{self.storage_path}/LPs.json', 'w') as file_train:
+        with open(f'{self.storage_path}/LPs.json', 'w', encoding="utf-8") as file_train:
             json.dump(data, file_train, indent=3, ensure_ascii=False)
         print(f'Data saved at {self.storage_path}')
