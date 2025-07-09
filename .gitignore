@@ -166,3 +166,5 @@ LPs.zip
 /results/
 reports.csv
 report.csv
+**/concepts_learners/
+data/
