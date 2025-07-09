@@ -41,6 +41,7 @@ from ontolearn.metrics import F1
 from ontolearn.verbalizer import LLMVerbalizer
 from owlapy import owl_expression_to_dl
 import os
+import shutil
 
 app = FastAPI()
 args = None
@@ -79,9 +80,13 @@ def get_drill(data: dict):
                   use_nominals=data.get("use_nominals", True),
                   verbose=1)
     # (2) Either load the weights of DRILL or train it.
-    if data.get("path_to_pretrained_drill", None) and os.path.isdir(data["path_to_pretrained_drill"]):
+    if (data.get("path_to_pretrained_drill", None) and os.path.isdir(data["path_to_pretrained_drill"]) and
+            os.path.isfile("path_to_pretrained_drill/drill.pth")):
         drill.load(directory=data["path_to_pretrained_drill"])
     else:
+        # remove the pretrained directory if already exist but does not have the drill.pth file and retrain
+        if data.get("path_to_pretrained_drill", None) and os.path.isdir(data["path_to_pretrained_drill"]):
+            shutil.rmtree('path_to_pretrained_drill')
         # Train & Save
         drill.train(num_of_target_concepts=data.get("num_of_target_concepts", 1),
                     num_learning_problems=data.get("num_of_training_learning_problems", 1))
