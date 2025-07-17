@@ -448,6 +448,11 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                     named_individual = OWLClass(IRI('http://www.w3.org/2002/07/owl#', 'NamedIndividual'))
                     if named_individual in tp:
                         c = named_individual
+                    assert c == named_individual, ("Individuals in your dataset do not explicitly have the type"
+                                                   "owl:Thing or owl:NamedIndividual and this will eventually "
+                                                   "throw an error or provide misleading results because these "
+                                                   "individuals are not recognized as such. SPARQL queries used by "
+                                                   "TripleStore cannot infer this information.")
 
             sparql_query = owl_expression_to_sparql_with_confusion_matrix(expression=c, positive_examples=self.pos,
                                                                           negative_examples=self.neg)

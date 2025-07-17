@@ -163,4 +163,8 @@ KGs.zip
 **/CLIPData*
 **/LPs*
 LPs.zip
-/results/*
+/results/
+reports.csv
+report.csv
+**/concepts_learners/
+data//results/*

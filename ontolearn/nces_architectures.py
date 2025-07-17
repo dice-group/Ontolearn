@@ -28,7 +28,7 @@ from ontolearn.nces_modules import *
 
 class LSTM(nn.Module):
     """LSTM module."""
-    def __init__(self, knowledge_base_path, vocab, inv_vocab, max_length, input_size, proj_dim, rnn_n_layers,
+    def __init__(self, vocab, inv_vocab, max_length, input_size, proj_dim, rnn_n_layers,
                  drop_prob):
         super().__init__()
         self.name = 'LSTM'
@@ -60,7 +60,7 @@ class LSTM(nn.Module):
 
 class GRU(nn.Module):
     """GRU module."""
-    def __init__(self, knowledge_base_path, vocab, inv_vocab, max_length, input_size, proj_dim, rnn_n_layers,
+    def __init__(self, vocab, inv_vocab, max_length, input_size, proj_dim, rnn_n_layers,
                  drop_prob):
         super().__init__()
         self.name = 'GRU'
@@ -92,7 +92,7 @@ class GRU(nn.Module):
 
 class SetTransformer(nn.Module):
     """SetTransformer module."""
-    def __init__(self, knowledge_base_path, vocab, inv_vocab, max_length, input_size, proj_dim, num_heads, num_seeds,
+    def __init__(self, vocab, inv_vocab, max_length, input_size, proj_dim, num_heads, num_seeds,
                  m, ln):
         super(SetTransformer, self).__init__()
         self.name = 'SetTransformer'

@@ -38,10 +38,10 @@ from ontolearn.metrics import F1
 
 class BaseNCES:
 
-    def __init__(self, knowledge_base_path, nces2_or_roces, quality_func, num_predictions, auto_train=True, proj_dim=128, drop_prob=0.1, num_heads=4, num_seeds=1, m=32, ln=False, learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0,
+    def __init__(self, knowledge_base, nces2_or_roces, quality_func, num_predictions, auto_train=True, proj_dim=128, drop_prob=0.1, num_heads=4, num_seeds=1, m=32, ln=False, learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0,
                  batch_size=256, num_workers=4, max_length=48, load_pretrained=True, verbose: int = 0):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        kb = KnowledgeBase(path=knowledge_base_path)
+        kb = knowledge_base#KnowledgeBase(path=knowledge_base_path)
         self.kb_namespace = list(kb.ontology.classes_in_signature())[0].iri.get_namespace()
         self.dl_parser = DLSyntaxParser(self.kb_namespace)
         self.renderer = DLSyntaxObjectRenderer()
@@ -55,7 +55,7 @@ class BaseNCES:
             vocab.extend(concrete_role_names)
             vocab.extend(['⁻', '≤', '≥', 'True', 'False', 'true', 'false', '{', '}', ':', '[', ']', 'double', 'integer', 'date', 'xsd'])
         vocab = sorted(set(vocab)) + ['PAD']
-        self.knowledge_base_path = knowledge_base_path
+        #self.knowledge_base_path = knowledge_base_path
         self.kb = kb
         self.all_individuals = set([ind.str.split("/")[-1] for ind in kb.individuals()])
         self.inv_vocab = np.array(vocab, dtype='object')

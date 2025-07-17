@@ -29,6 +29,8 @@ the positive and negative examples for the concept of 'Father'. Our positive exa
 ```python
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 
+NS = "http://example.com/father#"
+
 positive_examples = {OWLNamedIndividual(IRI.create(NS, 'stefan')),
                      OWLNamedIndividual(IRI.create(NS, 'markus')),
                      OWLNamedIndividual(IRI.create(NS, 'martin'))}
@@ -94,8 +96,9 @@ You can now evaluate the class expression you just created:
 <!--pytest-codeblocks:cont-->
 ```python
 from ontolearn.quality_funcs import evaluate_concept
+from ontolearn.metrics import F1
 
-evaluated_concept = evaluate_concept(concept_to_test, F1(), encoded_lp)
+evaluated_concept = evaluate_concept(kg, concept_to_test, F1(), encoded_lp)
 ```
 In this example we use F1-score to evaluate the concept, but there are more [metrics](ontolearn.metrics) 
 which you can use including Accuracy, Precision and Recall. 

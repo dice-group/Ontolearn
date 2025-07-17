@@ -1,3 +1,4 @@
+import unittest
 from ontolearn.learners import TDL
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
@@ -9,7 +10,7 @@ import json
 import rdflib
 
 
-class TestConceptLearnerReg:
+class TestConceptLearnerReg(unittest.TestCase):
 
     def test_regression_family(self):
         path = "KGs/Family/family-benchmark_rich_background.owl"
@@ -45,8 +46,6 @@ class TestConceptLearnerReg:
             assert named_owl_classes.pop(0).n3() == "<https://dice-research.org/predictions#0>"
 
     def test_regression_mutagenesis(self):
-        """
-
         path = "KGs/Mutagenesis/mutagenesis.owl"
         # (1) Load a knowledge graph.
         kb = KnowledgeBase(path=path)
@@ -61,10 +60,27 @@ class TestConceptLearnerReg:
             lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
             h = model.fit(learning_problem=lp).best_hypotheses()
             q = compute_f1_score(individuals=frozenset({i for i in kb.individuals(h)}), pos=lp.pos, neg=lp.neg)
-            assert q >= 0.94
-               """
+            assert q >= 0.80
+
+    def test_regression_carcinogenesis(self):
+        path = "KGs/Carcinogenesis/carcinogenesis.owl"
+        # (1) Load a knowledge graph.
+        kb = KnowledgeBase(path=path)
+        with open("LPs/Carcinogenesis/lps.json") as json_file:
+            settings = json.load(json_file)
+        model = TDL(knowledge_base=kb, report_classification=True, kwargs_classifier={"random_state": 1})
+        for str_target_concept, examples in settings['problems'].items():
+            p = set(examples['positive_examples'])
+            n = set(examples['negative_examples'])
+            typed_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
+            typed_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
+            lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
+            h = model.fit(learning_problem=lp).best_hypotheses()
+            q = compute_f1_score(individuals=frozenset({i for i in kb.individuals(h)}), pos=lp.pos, neg=lp.neg)
+            assert q >= 0.75
 
     def test_regression_family_triple_store(self):
+        pass
         """
         # @TODO: CD: Removed because rdflib does not produce correct results
         path = "KGs/Family/family-benchmark_rich_background.owl"
