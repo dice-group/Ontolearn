@@ -1094,7 +1094,7 @@ class NCES(BaseNCES):
                     concept_parser_failer.append(prediction)
                     pass
         print(counter)
-        filename = f'results/{self.decoding_strategy}_'
+        filename = f'{self.decoding_strategy}_'
         prepare_output_path(base_name=f'{filename}cases', extension='txt')
         if fail_parser_tokens:
             with open(prepare_output_path(base_name=f'{filename}cases', extension='txt'), 'w') as f:
