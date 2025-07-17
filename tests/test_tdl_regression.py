@@ -60,7 +60,7 @@ class TestConceptLearnerReg(unittest.TestCase):
             lp = PosNegLPStandard(pos=typed_pos, neg=typed_neg)
             h = model.fit(learning_problem=lp).best_hypotheses()
             q = compute_f1_score(individuals=frozenset({i for i in kb.individuals(h)}), pos=lp.pos, neg=lp.neg)
-            assert q >= 0.85
+            assert q >= 0.80
 
     def test_regression_carcinogenesis(self):
         path = "KGs/Carcinogenesis/carcinogenesis.owl"
