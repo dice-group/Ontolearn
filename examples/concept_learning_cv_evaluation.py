@@ -55,7 +55,7 @@ def dl_concept_learning(args):
                 verbose=0)
         
     if not args.learner_types or 'nces' in args.learner_types:
-        nces = NCES(knowledge_base_path=args.kb,
+        nces = NCES(knowledge_base=kb,
                     quality_func=F1(),
                     load_pretrained=True,
                     path_of_embeddings=args.path_of_nces_embeddings,
@@ -66,7 +66,7 @@ def dl_concept_learning(args):
                     decoding_strategy=args.decoding_strategy)
         
     if not args.learner_types or 'nces2' in args.learner_types:
-        nces2 = NCES2(knowledge_base_path=args.kb,
+        nces2 = NCES2(knowledge_base=kb,
                     quality_func=F1(),
                     load_pretrained=True,
                     path_of_trained_models=args.path_of_nces2_trained_models,
@@ -74,7 +74,7 @@ def dl_concept_learning(args):
                     verbose=0)
         
     if not args.learner_types or 'roces' in args.learner_types:
-        roces = ROCES(knowledge_base_path=args.kb,
+        roces = ROCES(knowledge_base=kb,
                     k=50,
                     quality_func=F1(),
                     load_pretrained=True,
