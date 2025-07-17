@@ -38,7 +38,7 @@ from typing import Set, List, Tuple, Optional, Generator, SupportsFloat, Iterabl
 from ontolearn.learning_problem import PosNegLPStandard
 import torch
 from ontolearn.data_struct import Experience
-from ontolearn.search import DRILLSearchTreePriorityQueue
+from ontolearn.search import DRILLSearchTreePriorityQueue, PreferenceSearchTreePriorityQueue
 from ontolearn.utils import create_experiment_folder
 from collections import Counter, deque
 from itertools import chain
@@ -56,124 +56,26 @@ from owlapy.converter import owl_expression_to_sparql_with_confusion_matrix
 from ontolearn.triple_store import TripleStore
 from ontolearn.utils.static_funcs import make_iterable_verbose
 from owlapy.utils import get_expression_length
+from .drill import Drill
+from owlapy import owl_expression_to_sparql
+import requests
 
 
-class Drill(RefinementBasedConceptLearner):  # pragma: no cover
-    """ Neuro-Symbolic Class Expression Learning (https://www.ijcai.org/proceedings/2023/0403.pdf)"""
+from ontolearn.search import DRILLSearchTreePriorityQueue, PreferenceSearchTreePriorityQueue
 
-    def __init__(self, knowledge_base: AbstractKnowledgeBase,
-                 path_embeddings: str = None,
-                 refinement_operator: LengthBasedRefinement = None,
-                 use_inverse: bool = True,
-                 use_data_properties: bool = True,
-                 use_card_restrictions: bool = True,
-                 use_nominals: bool = True,
-                 min_cardinality_restriction: int = 2,
-                 max_cardinality_restriction: int = 5,
-                 positive_type_bias: int = 1,
-                 quality_func: Callable = None,
-                 reward_func: object = None,
-                 batch_size=None, num_workers: int = 1,
-                 iter_bound=None, max_num_of_concepts_tested=None,
-                 verbose: int = 0,
-                 terminate_on_goal=None,
-                 max_len_replay_memory=256,
-                 epsilon_decay: float = 0.01, epsilon_min: float = 0.0,
-                 num_epochs_per_replay: int = 2,
-                 num_episodes_per_replay: int = 2,
-                 learning_rate: float = 0.001,
-                 max_runtime=None,
-                 num_of_sequential_actions=3,
-                 stop_at_goal=True,
-                 num_episode: int = 10):
 
-        self.name = "DRILL"
-        self.verbose = verbose
-        self.learning_problem = None
-        # (1) Initialize KGE.
-        if path_embeddings and os.path.isfile(path_embeddings): #
-            if self.verbose > 0:
-                print("Reading Embeddings...", end="\t")
-            self.df_embeddings = pd.read_csv(path_embeddings, index_col=0).astype('float32')
-            self.num_entities, self.embedding_dim = self.df_embeddings.shape
-            if self.verbose > 0:
-                print(self.df_embeddings.shape)
-        else:
-            if self.verbose > 0:
-                print("No pre-trained model...")
-            self.df_embeddings = None
-            self.num_entities, self.embedding_dim = None, 1
-
-        # (2) Initialize Refinement operator.
-        if refinement_operator is None:
-            refinement_operator = LengthBasedRefinement(knowledge_base=knowledge_base,
-                                                        use_inverse=use_inverse,
-                                                        use_data_properties=use_data_properties,
-                                                        use_card_restrictions=use_card_restrictions,
-                                                        use_nominals=use_nominals,
-                                                        min_cardinality_restriction=min_cardinality_restriction,
-                                                        max_cardinality_restriction=max_cardinality_restriction)
-        else:
-            refinement_operator = refinement_operator
-
-        # (3) Initialize reward function for the training.
-        if reward_func is None:
-            self.reward_func = CeloeBasedReward()
-        else:
-            self.reward_func = reward_func
-
-        # (4) Params.
-        self.num_workers = num_workers
-        self.learning_rate = learning_rate
-        self.num_episode = num_episode
-        self.num_of_sequential_actions = num_of_sequential_actions
-        self.num_epochs_per_replay = num_epochs_per_replay
-        self.max_len_replay_memory = max_len_replay_memory
-        self.epsilon_decay = epsilon_decay
-        self.epsilon_min = epsilon_min
-        self.batch_size = batch_size
-        self.num_episodes_per_replay = num_episodes_per_replay
-        self.seen_examples = dict()
-        self.emb_pos, self.emb_neg = None, None
-        self.pos: FrozenSet[OWLNamedIndividual] = None
-        self.neg: FrozenSet[OWLNamedIndividual] = None
-        self.positive_type_bias = positive_type_bias
-
-        self.start_time = None
-        self.goal_found = False
-        self.storage_path, _ = create_experiment_folder()
-        # Move to here
-        self.search_tree = DRILLSearchTreePriorityQueue(verbose=verbose)
-        self.stop_at_goal = stop_at_goal
-        self.epsilon = 1
-
-        if self.df_embeddings is not None:
-            self.heuristic_func = DrillHeuristic(mode="averaging",
-                                                 model_args={'input_shape': (4, self.embedding_dim),
-                                                             'first_out_channels': 32,
-                                                             'second_out_channels': 16, 'third_out_channels': 8,
-                                                             'kernel_size': 3})
-            self.experiences = Experience(maxlen=self.max_len_replay_memory)
-            if self.learning_rate:
-                self.optimizer = torch.optim.Adam(self.heuristic_func.net.parameters(), lr=self.learning_rate)
-        else:
-            self.heuristic_func = CeloeBasedReward()
-
-        # @CD: RefinementBasedConceptLearner redefines few attributes this should be avoided.
-        RefinementBasedConceptLearner.__init__(self, knowledge_base=knowledge_base,
-                                               refinement_operator=refinement_operator,
-                                               quality_func=quality_func,
-                                               heuristic_func=self.heuristic_func,
-                                               terminate_on_goal=terminate_on_goal,
-                                               iter_bound=iter_bound,
-                                               max_num_of_concepts_tested=max_num_of_concepts_tested,
-                                               max_runtime=max_runtime)
-        # CD: This setting the valiable will be removed later.
-
-        if isinstance(self.kb, TripleStore):
-            self.quality_func = compute_f1_score_from_confusion_matrix
-        else:
-            self.quality_func = compute_f1_score
+class DRILL_PREF(Drill):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pareto_front = []
+        self.final_pareto_front = []
+        self.url = "http://localhost:3030/imdb_1000/sparql"
+        self.search_tree = PreferenceSearchTreePriorityQueue(
+            quality_func=self.quality_func,
+            heuristic_func=self.heuristic_func,
+            preference_func=self.preference_score_utility_based
+        )
+        self.verbose = 0
 
     def initialize_training_class_expression_learning_problem(self,
                                                               pos: FrozenSet[OWLNamedIndividual],
@@ -308,6 +210,60 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         else:
             print(f"Directory:{directory}")
 
+    def preference_score_utility_based(self, concept: OWLClassExpression) -> float:
+        """
+        Compute preference score as the average imdb:hasRatingValue of individuals
+        in the extension of the OWL class expression `concept`.
+        """
+        # Step 1: Translate OWL concept to SPARQL filter block (this function should exist already)
+        subquery = owl_expression_to_sparql(concept)  # full SPARQL query: SELECT DISTINCT ?x WHERE { ... }
+
+        query = f"""
+               PREFIX imdb: <http://example.org/imdb/>
+
+               SELECT ?x ?rating
+               WHERE {{
+                   {{
+                       {subquery}
+                   }}
+                   ?x imdb:hasRatingValue ?rating .
+               }} 
+               """
+
+        try:
+            response = requests.Session().post(self.url, data={"query": query})
+            response.raise_for_status()
+            bindings = response.json()["results"]["bindings"]
+        except Exception as e:
+            print(f"[ERROR] SPARQL query failed: {e}")
+            print("Query was:\n", query)
+            exit(0)
+            return 0.0
+
+        # Step 3: Extract ratings
+        ratings = []
+        for row in bindings:
+            try:
+                rating_str = row["rating"]["value"]
+                rating = float(rating_str)
+                ratings.append(rating)
+            except (KeyError, ValueError):
+                continue
+
+        # Step 4: Aggregate
+        if ratings:
+            return sum(ratings) / len(ratings)
+        else:
+            return 0.0
+
+    def is_dominated(self, node, others):
+        for other in others:
+            if (other.quality >= node.quality and
+                    other.preference >= node.preference and
+                    (other.quality > node.quality or other.preference > node.preference)):
+                return True
+        return False
+
     def fit(self, learning_problem: PosNegLPStandard, max_runtime=None):
         if max_runtime:
             assert isinstance(max_runtime, float) or isinstance(max_runtime, int)
@@ -326,6 +282,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.neg))])
         # (3) Favor some OWLClass over others
         type_bias = pos_type_counts - neg_type_counts
+
         # (4) Initialize learning problem
         root_state = self.initialize_training_class_expression_learning_problem(pos=learning_problem.pos,
                                                                                 neg=learning_problem.neg)
@@ -335,16 +292,20 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         root_state.heuristic = root_state.quality
         self.search_tree.add(root_state)
         best_found_quality = 0
-        print(list(type_bias.items()))
+        self.pareto_front = [root_state]
         # (6) Inject Type Bias/Favor
+
         for ith_bias, x in enumerate((self.create_rl_state(i, parent_node=root_state) for i in type_bias)):
             self.compute_quality_of_class_expression(x)
             x.heuristic = x.quality
+            x.preference = self.preference_score_utility_based(x.concept)
             if x.quality > best_found_quality:
                 best_found_quality = x.quality
                 self.search_tree.add(x)
+
             if ith_bias == self.positive_type_bias:
                 break
+
 
         for _ in make_iterable_verbose(range(0, self.iter_bound),
                                        verbose=self.verbose,
@@ -369,6 +330,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                 self.compute_quality_of_class_expression(ref)
                 if ref.quality == 0:
                     continue
+                ref.preference = self.preference_score_utility_based(ref.concept)
                 if self.verbose > 0:
                     tqdm_bar.set_description_str(
                         f"Step {_} | Refining {owl_expression_to_dl(most_promising.concept)} | {owl_expression_to_dl(ref.concept)} | Quality:{ref.quality:.4f}")
@@ -378,6 +340,11 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                     best_found_quality = ref.quality
                 # (6.3.3) Consider qualifying RL states as next possible states to transition.
                 next_possible_states.append(ref)
+
+                if not self.is_dominated(ref, self.pareto_front):
+                    self.pareto_front = [n for n in self.pareto_front if not self.is_dominated(n, [ref])]
+                    self.pareto_front.append(ref)
+
                 # (6.3.4) Checking the goal termination criterion.
                 if self.stop_at_goal:
                     if ref.quality == 1.0:
@@ -396,6 +363,11 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                 if self.terminate_on_goal:
                     return self.terminate()
         return self.terminate()
+
+
+
+
+
 
     def init_embeddings_of_examples(self, pos_uri: FrozenSet[OWLNamedIndividual],
                                     neg_uri: FrozenSet[OWLNamedIndividual]):
@@ -731,7 +703,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                 if len(individuals_j) < size_of_examples:
                     continue
 
-                # Generate Learning problems from a single target
+                # Generate Learning problems from a single targetRILL
                 for _ in range(num_of_target_concepts):
                     sampled_positives = set(random.sample(individuals_i, size_of_examples))
                     sampled_negatives = set(random.sample(individuals_j, size_of_examples))
@@ -829,8 +801,11 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
 
         self._number_of_tested_concepts = 0
 
-    def next_node_to_expand(self) -> RL_State:
-        """ Return a node that maximizes the heuristic function at time t. """
+    # def next_node_to_expand(self) -> RL_State:
+    #     """ Return a node that maximizes the heuristic function at time t. """
+    #     return self.search_tree.get_most_promising()
+
+    def next_node_to_expand(self):
         return self.search_tree.get_most_promising()
 
     def downward_refinement(self, *args, **kwargs):

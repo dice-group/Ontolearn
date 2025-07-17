@@ -26,4 +26,8 @@ from .drill import Drill
 from .tree_learner import TDL
 from .celoe import CELOE
 from .ocel import OCEL
-__all__ = [ 'Drill', 'TDL', 'CELOE', 'OCEL']
+from .celoe_pref import CELOE_PREF
+from .ocel_pref import OCEL_PREF
+from .driil_pref import DRILL_PREF
+from .clip_pref import CLIP_PREF
+__all__ = [ 'Drill', 'TDL', 'CELOE', 'OCEL', 'CELOE_PREF', 'OCEL_PREF', 'DRILL_PREF', 'CLIP_PREF']

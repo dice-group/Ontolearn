@@ -44,3 +44,17 @@ class LinearPressureFitness(AbstractFitness):
         quality = individual.quality.values[0]
         fitness = self.gain*quality - self.penalty*len(individual)
         individual.fitness.values = (round(fitness, 5),)
+
+
+class PreferenceBasedFitness(AbstractFitness):
+    def __init__(self, gain=2048.0, penalty=1.0, preference_weight=0.3, preference_func=None):
+        self.gain = gain
+        self.penalty = penalty
+        self.preference_weight = preference_weight
+        self.preference_func = preference_func  # Must be callable
+
+    def apply(self, individual: Tree):
+        quality = individual.quality.values[0]
+        preference = individual.preference
+        fitness = (self.gain * quality) + (self.preference_weight * preference) - (self.penalty * len(individual))
+        individual.fitness.values = (round(fitness, 5), preference)

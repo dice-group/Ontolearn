@@ -223,7 +223,7 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
              _NodeParentRef['OENode'], AbstractNode, AbstractConceptNode, AbstractOEHeuristicNode):
     """OENode search tree node."""
     __slots__ = '_concept', '_len', '_individuals_count', '_quality', '_heuristic', \
-        '_parent_ref', '_horizontal_expansion', \
+        '_parent_ref', '_horizontal_expansion', 'preference', \
         '_refinement_count', '__weakref__'
 
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
@@ -347,7 +347,7 @@ class NCESNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, Abst
 class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodeParentRef['RL_State']):
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
     """RL_State node."""
-    __slots__ = '_concept', 'embeddings', '_quality', '_heuristic', 'length', 'parent_node', 'is_root', '_parent_ref', '__weakref__'
+    __slots__ = '_concept', 'embeddings', '_quality', '_heuristic', 'length', 'parent_node', 'is_root', '_parent_ref', '__weakref__', 'preference'
 
     def __init__(self, concept: OWLClassExpression, parent_node: Optional['RL_State'] = None,
                  embeddings=None, is_root: bool = False, length=None):
@@ -360,6 +360,7 @@ class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodePa
         self.is_root = is_root
         self.length = length
         self.embeddings = embeddings
+        self.preference = None
         self.__sanity_checking()
 
     def __sanity_checking(self):
@@ -689,6 +690,16 @@ class SearchTreePriorityQueue(LBLSearchTree[LBLNode]):
 _TN = TypeVar('_TN', bound='TreeNode')  #:
 
 
+
+
+
+
+
+
+
+
+
+
 class TreeNode(Generic[_N]):
     """ Simple search tree node."""
     __slots__ = 'children', 'node'
@@ -788,7 +799,7 @@ class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
         return node
 
     def get_top_n(self, n: int, key='quality') -> List[Node]:  # pragma: no cover
-        """
+        """T
         Gets the top n nodes determined by key from the search tree.
 
         Returns
@@ -812,6 +823,195 @@ class DRILLSearchTreePriorityQueue(DRILLAbstractTree):
     def clean(self):
         self.items_in_queue = PriorityQueue()
         self._nodes.clear()
+
+
+
+
+class PreferenceSearchTreePriorityQueue(SearchTreePriorityQueue):
+    def __init__(self, quality_func, heuristic_func, preference_func, verbose=1.0):
+        SearchTreePriorityQueue.__init__(self, quality_func, heuristic_func)
+        self.preference_func = preference_func
+        self.verbose = verbose
+
+    def __len__(self):
+        return len(self.nodes)
+
+    def add(self, n: LBLNode):
+        """Override to include preference."""
+        n.preference = self.preference_func(n.concept)
+        super().add(n)
+
+    def add_root(self, node, kb_learning_problem):
+        """Add root node with preference score."""
+        assert node.is_root
+        assert not self.nodes
+        self.quality_func.apply(node, node.individuals, kb_learning_problem)
+        self.heuristic_func.apply(node, node.individuals, kb_learning_problem)
+        node.preference = self.preference_func(node)
+        self.items_in_queue.put((-node.heuristic, HeuristicOrderedNode(node)))
+        self.nodes[node.concept] = node
+
+    def add_node(self, *, node: LBLNode, parent_node: LBLNode, kb_learning_problem: EncodedLearningProblem) -> Optional[bool]:
+        if node.concept in self.nodes and node.parent_node != parent_node:
+            old_heuristic = node.heuristic
+            self.heuristic_func.apply(node, node.individuals, kb_learning_problem)
+            new_heuristic = node.heuristic
+            if new_heuristic > old_heuristic:
+                node.parent_node.remove_child(node)
+                node.parent_node = parent_node
+                parent_node.add_child(node)
+                node.preference = self.preference_func(node)
+                self.items_in_queue.put((-node.heuristic, HeuristicOrderedNode(node)))
+                self.nodes[node.concept] = node
+        else:
+            self.quality_func.apply(node, node.individuals, kb_learning_problem)
+            if node.quality == 0:
+                return False
+            self.heuristic_func.apply(node, node.individuals, kb_learning_problem)
+            node.preference = self.preference_func(node)
+            self.items_in_queue.put((-node.heuristic, HeuristicOrderedNode(node)))
+            self.nodes[node.concept] = node
+            parent_node.add_child(node)
+            if node.quality == 1:
+                return True
+
+    def get_most_promising(self) -> LBLNode:
+        """
+        Gets the current most promising node using a Pareto-based strategy
+        with fallback to the priority queue.
+
+        Returns:
+            node: A node object
+        """
+        if not self.nodes:
+            raise RuntimeError("Empty search tree")
+
+        # Step 1: Peek into top-k items in the queue to consider Pareto selection
+        top_k = min(10, len(self.items_in_queue.queue))  # You can increase K if needed
+        candidates = []
+
+        temp_items = []
+
+        for _ in range(top_k):
+            if self.items_in_queue.empty():
+                break
+            neg_heuristic, wrapped_node = self.items_in_queue.get()
+            node = self.nodes.get(wrapped_node.node.concept)
+            if node:
+                candidates.append(node)
+            temp_items.append((neg_heuristic, wrapped_node))  # Store to reinsert
+
+        # Step 2: Reinsert all items into queue to preserve state
+        for item in temp_items:
+            self.items_in_queue.put(item)
+
+        # Step 3: If nothing was found, fall back to basic queue get
+        if not candidates:
+            _, most_promising_str = self.items_in_queue.get()
+            node = self.nodes[most_promising_str.node.concept]
+            self.items_in_queue.put((-node.heuristic, HeuristicOrderedNode(node)))
+            return node
+
+        # Step 4: Select from candidates using Pareto-based preference
+        best_quality = max(n.quality for n in candidates)
+        top_quality_candidates = [n for n in candidates if n.quality == best_quality]
+        best_node = max(top_quality_candidates, key=lambda n: getattr(n, 'preference', 0.0))
+
+        return best_node
+
+    def show_current_search_tree(self, top_n=10):
+        """ Show the current top-n nodes in the search tree based on quality and preference (Pareto). """
+        try:
+            # Extract all nodes
+            all_nodes = list(self.nodes.values())
+
+            # Sort by (quality, preference) descending
+            sorted_nodes = sorted(
+                all_nodes,
+                key=lambda n: (n.quality, getattr(n, "preference", self.preference_func(n.concept))),
+                reverse=True
+            )[:top_n]
+
+            if self.verbose > 0:
+                print(
+                    f"\n######## Most Promising {top_n} Concepts out of {len(self.items_in_queue.queue)} ###########\n")
+
+            for i, node in enumerate(sorted_nodes):
+                concept_str = owl_expression_to_dl(node.concept)
+                preference_score = getattr(node, "preference", self.preference_func(node.concept))
+                print(
+                    f"{i + 1}-\t{concept_str} | Q:{node.quality:.3f} | H:{node.heuristic:.3f} | Pref.:{preference_score:.3f}"
+                )
+
+            if self.verbose:
+                print("\n")
+
+            return sorted_nodes
+
+        except Exception as e:
+            print("Error in show_current_search_tree:", e)
+            return []
+
+    def get_top_n(self, n: int, key='quality') -> List[Node]:
+        """
+        Gets the top-n nodes from the search tree based on the specified key.
+
+        Args:
+            n: Number of top nodes to return.
+            key: One of ['quality', 'heuristic', 'length', 'preference'].
+
+        Returns:
+            A list of top-n node objects.
+        """
+        try:
+            all_nodes = list(self.nodes.values())
+
+            if key == 'quality':
+                sorted_nodes = sorted(all_nodes, key=lambda node: node.quality, reverse=True)
+            elif key == 'heuristic':
+                sorted_nodes = sorted(all_nodes, key=lambda node: node.heuristic, reverse=True)
+            elif key == 'length':
+                sorted_nodes = sorted(all_nodes, key=lambda node: len(node), reverse=True)
+            elif key == 'preference':
+                sorted_nodes = sorted(all_nodes, key=lambda node: self.preference_func(node.concept), reverse=True)
+            else:
+                raise KeyError(
+                    f"Unsupported key: {key}. Must be one of 'quality', 'heuristic', 'length', or 'preference'.")
+
+            return sorted_nodes[:n]
+
+        except Exception as e:
+            print(f"[get_top_n] Error: {e}")
+            return []
+
+    def get_top_n_nodes(self, n: int, key='quality'):
+        """
+        Yield the top-n nodes using a preference-aware sorting strategy.
+
+        Args:
+            n (int): Number of nodes to yield.
+            key (str): Primary key for sorting ('quality', 'heuristic', 'length', or 'preference').
+
+        Yields:
+            Node objects
+        """
+
+        def sort_key(node):
+            if key == 'quality':
+                return (node.quality, getattr(node, 'preference', 0.0))
+            elif key == 'heuristic':
+                return (node.heuristic, getattr(node, 'preference', 0.0))
+            elif key == 'length':
+                return (-len(node), getattr(node, 'preference', 0.0))  # Shorter expressions first
+            elif key == 'preference':
+                return (getattr(node, 'preference', 0.0),)
+            else:
+                raise ValueError("Unsupported key: choose from 'quality', 'heuristic', 'length', or 'preference'")
+
+        sorted_nodes = sorted(self.nodes.values(), key=sort_key, reverse=True)
+
+        for i, node in enumerate(sorted_nodes[:n]):
+            yield node
 
 
 class EvaluatedConcept:

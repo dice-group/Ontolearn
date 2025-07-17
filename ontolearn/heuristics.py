@@ -176,3 +176,49 @@ class CeloeBasedReward: # pragma: no cover
         # Regret => Length penalization.
         reward -= next_rl_state.length * self.beta
         return max(reward, 0)
+
+
+#
+# class CeloeBasedReward:  # pragma: no cover
+#     """Reward function for DRILL with preference-aware bonus."""
+#     def __init__(self, reward_of_goal=5.0, beta=0.04, alpha=0.5, gamma=0.5):
+#         self.name = 'DRILL_Reward'
+#         self.lp = None
+#         self.reward_of_goal = reward_of_goal
+#         self.beta = beta  # penalty for long concepts
+#         self.alpha = alpha  # weight for improvement over parent
+#         self.gamma = gamma  # weight for preference bonus
+#
+#     @property
+#     def learning_problem(self):
+#         return self.lp
+#
+#     @learning_problem.setter
+#     def learning_problem(self, x):
+#         assert isinstance(x, EncodedLearningProblem)
+#         self.lp = x
+#
+#     def apply(self, rl_state: RL_State, next_rl_state: RL_State):
+#         assert next_rl_state.quality is not None
+#         assert rl_state.quality is not None
+#
+#         reward = next_rl_state.quality
+#         if next_rl_state.quality == 1.0:
+#             reward = self.reward_of_goal
+#         else:
+#             # Reward for quality improvement
+#             reward += (next_rl_state.quality - rl_state.quality) * self.alpha
+#
+#         # Bonus reward for user preference (default to 0 if missing)
+#         reward += getattr(next_rl_state, 'preference', 0.0) * self.gamma
+#
+#         # Penalty for longer concepts
+#         reward -= next_rl_state.length * self.beta
+#
+#         print(reward)
+#         exit(0)
+#
+#         return max(reward, 0)
+
+
+

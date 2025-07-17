@@ -1144,7 +1144,7 @@ class ExpressRefinement(ModifiedCELOERefinement):
         # algorithm by using **kwargs
         assert isinstance(ce, OWLClassExpression)
         if self.len(ce) == 1:
-            yield from self.refine_atomic_concept(ce)
+           yield from self.refine_atomic_concept(ce)
         elif isinstance(ce, OWLObjectComplementOf):
             yield from self.refine_complement_of(ce)
         elif isinstance(ce, OWLObjectSomeValuesFrom):
