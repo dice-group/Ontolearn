@@ -120,10 +120,10 @@ class Cardinality(Expr):
         }
 
 class ConceptAbstractSyntaxTreeBuilder:
-    def __init__(self, knowledge_base_path: str, max_length: Optional[int] = None): 
-        assert isinstance(knowledge_base_path, str) and knowledge_base_path.strip(), "Knowledge base path is required"
+    def __init__(self, knowledge_base:KnowledgeBase, max_length: Optional[int] = None): 
+        assert isinstance(knowledge_base, KnowledgeBase) and "A knowledge base instance is required"
         
-        self.knowledge_base = KnowledgeBase(path=knowledge_base_path)
+        self.knowledge_base = knowledge_base
         self.max_length = max_length
         
         ontology = self.knowledge_base.ontology
@@ -971,7 +971,7 @@ class ConceptAbstractSyntaxTreeBuilder:
             indx +=1
         return corrected_tokens
     
-def generate_class_expression(kb_path:str, leaners_prediction = None, save_as_json: bool=False, relax_parentheses=False):
+def generate_class_expression(kb:KnowledgeBase, leaners_prediction = None, save_as_json: bool=False, relax_parentheses=False):
     if not leaners_prediction:
         # token_sequence = ['¬', 'hasSibling', '.', '(', 'Thing', '⊓', '∃', 'hasChild', '.', 'Female', '⊓', 'Grandfather'] 
         # token_sequence =['¬', ' Brother ', ' ) ']
@@ -996,11 +996,11 @@ def generate_class_expression(kb_path:str, leaners_prediction = None, save_as_js
         # token_sequence = ['Person', '⊓', '(', 'Grandmother', '⊔', '(', '∃', 'married', '.', 'Grandfather', ')', ')', ')', ')', ')']
         # token_sequence = ['Grandparent', '⊔', '(', '∃', 'married', '.', '(', ')', ')']
         # token_sequence = ['(', '⊓', '(', '∀', 'married', '.', '(', '(', ')', ')', '(', '¬', ')', '(', ')', ')', ')']
-        token_sequence = ['Person', '⊓', '(', '(', '⊔', '(', '∀', 'hasChild', '.', 'Grandfather', ')', ')', '⊓', '(', ')', ')', ')', ')']
-        #['∀', 'married', '.', '(', 'Brother', '⊔', 'Sister']
+        # token_sequence = ['Person', '⊓', '(', '(', '⊔', '(', '∀', 'hasChild', '.', 'Grandfather', ')', ')', '⊓', '(', ')', ')', ')', ')']
+        token_sequence = ['∀', 'married', '.', '(', 'Brother', '⊔', 'Sister']
 
     try:
-        builder = ConceptAbstractSyntaxTreeBuilder(knowledge_base_path=kb_path)
+        builder = ConceptAbstractSyntaxTreeBuilder(knowledge_base=kb)
         concept, result = builder.parse(token_sequence=token_sequence, relax_parentheses=relax_parentheses, enforce_validity=True, replace_with_negation=False)
 
         if concept is not None:
@@ -1019,7 +1019,8 @@ def generate_class_expression(kb_path:str, leaners_prediction = None, save_as_js
 
 if __name__ == "__main__":
     knowledge_base_path = pathlib.Path(__file__).parent.parent.parent.resolve()._str + "/data/KGs/Family/family-benchmark_rich_background.owl"
-    generate_class_expression(knowledge_base_path)
+    kb = KnowledgeBase(path=knowledge_base_path)
+    generate_class_expression(kb)
     
 
     '''
