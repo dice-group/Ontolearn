@@ -1026,7 +1026,9 @@ class NCES(BaseNCES):
         return prediction
 
     def fit_one(self, pos: Union[List[OWLNamedIndividual], List[str]], neg: Union[List[OWLNamedIndividual], List[str]]):
-
+        def simple_strategy(strategy: SimpleSolution, prediction: List[str]):
+            return self.dl_parser.parse(strategy.predict(prediction))
+        
         if isinstance(pos[0], OWLNamedIndividual):
             pos_str = [ind.str.split("/")[-1] for ind in pos]
             neg_str = [ind.str.split("/")[-1] for ind in neg]
@@ -1049,41 +1051,33 @@ class NCES(BaseNCES):
         x_pos, x_neg = next(iter(dataloader))
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions_raw = self.get_prediction(x_pos, x_neg)
-        counter = 0
-        
+
+        if self.enforce_validity:
+            concept_ast_builder = ConceptAbstractSyntaxTreeBuilder(knowledge_base=self.knowledge_base)
+
         predictions = []
         for prediction in predictions_raw:
+            prediction_str = "".join(before_pad(prediction.squeeze()))
             try:
-                prediction_str = "".join(before_pad(prediction.squeeze()))
                 concept = self.dl_parser.parse(prediction_str)
-                counter +=1
             except:
-                prediction_str = simpleSolution.predict("".join(before_pad(prediction.squeeze())))
-                concept = self.dl_parser.parse(prediction_str)
-                if self.verbose>0:
-                    print("Prediction: ", prediction_str)
-            predictions.append(concept)
-        # else:
-        #     concept_abstract_syntax_tree_builder = ConceptAbstractSyntaxTreeBuilder(knowledge_base=self.knowledge_base)
-        #     # prediction_scores = self.get_prediction(x_pos, x_neg, return_normalize_scores=True)
-            
-        #     # decoder = DecodingStrategy(prediction_scores, self.inv_vocab, self.num_predictions, self.max_length)
-        #     # decoded_raw_predictions = decoder.decode(strategy_type=self.enforce_validity) #TODO Handle kwargs
-        #     unpad_raw_predictions = [[pred for pred in pred_seq if pred != 'PAD'] for pred_seq in predictions_raw]
-            
-        #     for prediction in unpad_raw_predictions:
-        #         try:
-        #             parse_concept_str, _ = concept_abstract_syntax_tree_builder.parse(token_sequence=prediction, enforce_validity=True)
+                if self.enforce_validity:
+                    try:
+                        raw_prediction = [pred for pred in prediction if pred != 'PAD']
+                        parse_concept_str, _ = concept_ast_builder.parse(token_sequence=raw_prediction, enforce_validity=True)
 
-        #             try: 
-        #                 concept = self.dl_parser.parse(parse_concept_str)
-        #                 counter += 1
-        #             except:
-        #                 pass
-        #                 predictions.append(concept)
-        #         except Exception as e:
-        #             pass
-        # print(f"{counter/self.num_predictions:.2f}") #average valid
+                        try:
+                            concept = self.dl_parser.parse(parse_concept_str)
+                        except:
+                            prediction_str = simpleSolution.predict(prediction_str)
+                            concept = self.dl_parser.parse(prediction_str)
+                    except:
+                        concept = simple_strategy(simpleSolution, prediction_str)
+                else:
+                    concept = simple_strategy(simpleSolution, prediction_str)
+                    if self.verbose>0:
+                        print("Prediction: ", prediction_str)
+            predictions.append(concept)
         return predictions
 
     def fit(self, learning_problem: PosNegLPStandard, **kwargs):
