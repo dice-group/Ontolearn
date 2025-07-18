@@ -19,9 +19,7 @@ from owlapy.owl_individual import OWLNamedIndividual, IRI
 import argparse
 from sklearn.model_selection import StratifiedKFold
 import numpy as np
-
-
-from ontolearn.utils.static_funcs import compute_f1_score
+from ontolearn.utils.static_funcs import compute_f1_score, parse_boolean_arg
 
 pd.set_option("display.precision", 5)
 
@@ -63,7 +61,7 @@ def dl_concept_learning(args):
                     learner_names=["LSTM", "GRU", "SetTransformer"],
                     num_predictions=200,
                     verbose=0,
-                    decoding_strategy=args.decoding_strategy)
+                    enforce_validity=args.enforce_validity)
         
     if not args.learner_types or 'nces2' in args.learner_types:
         nces2 = NCES2(knowledge_base=kb,
@@ -372,6 +370,6 @@ if __name__ == '__main__':
     parser.add_argument("--random_seed", type=int, default=1)
 
     # valid neural concept guarantee
-    parser.add_argument("--decoding_strategy", type=str, choices=["greedy", "beam", "sample"],
-                        help="Available decoding strategies for neural concept learners - NCES, NCES2, ROCES.")
+    parser.add_argument("--enforce_validity", type=parse_boolean_arg, default=None,
+                    help="Use true/false to enable enforcement. If passed without value, defaults to True.")
     dl_concept_learning(parser.parse_args())

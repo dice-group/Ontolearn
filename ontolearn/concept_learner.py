@@ -811,7 +811,7 @@ class NCES(BaseNCES):
                  num_seeds=1, m=32, ln=False, dicee_model="DeCaL", dicee_epochs=5, dicee_lr=0.01, dicee_emb_dim=128,
                  learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4,
                  max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0, 
-                 decoding_strategy=None):
+                 enforce_validity:Optional[bool]=None):
         self.knowledge_base = knowledge_base
         super().__init__(knowledge_base=knowledge_base, nces2_or_roces=nces2_or_roces,
                          quality_func=quality_func, num_predictions=num_predictions, auto_train=auto_train,
@@ -831,7 +831,7 @@ class NCES(BaseNCES):
         self.rnn_n_layers = rnn_n_layers
         self.sorted_examples = sorted_examples
         self.has_renamed_inds = False
-        self.decoding_strategy = decoding_strategy
+        self.enforce_validity = enforce_validity
         self._set_prerequisites()
 
     def _rename_individuals(self, individual_name):
@@ -1048,68 +1048,42 @@ class NCES(BaseNCES):
                                 collate_fn=self.collate_batch_inference, shuffle=False)
         x_pos, x_neg = next(iter(dataloader))
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
-
-        fail_parser_tokens, valid_concept_dl_parse_failed, concept_parser_failer = [], [], []
-        predictions = []
+        predictions_raw = self.get_prediction(x_pos, x_neg)
         counter = 0
-
-        if self.decoding_strategy is None:
-            predictions_raw = self.get_prediction(x_pos, x_neg)
-
-            for prediction in predictions_raw:
-                try:
-                    prediction_str = "".join(before_pad(prediction.squeeze()))
-                    concept = self.dl_parser.parse(prediction_str)
-                    counter +=1
-                except:
-                    prediction_str = simpleSolution.predict("".join(before_pad(prediction.squeeze())))
-                    concept = self.dl_parser.parse(prediction_str)
-                    fail_parser_tokens.append([pred for pred in prediction if pred != 'PAD']) # TODO: remove
-                    if self.verbose>0:
-                        print("Prediction: ", prediction_str)
-                predictions.append(concept)
-        else:
-            concept_abstract_syntax_tree_builder = ConceptAbstractSyntaxTreeBuilder(knowledge_base_path=self.knowledge_base_path)
-            prediction_scores = self.get_prediction(x_pos, x_neg, return_normalize_scores=True)
+        
+        predictions = []
+        for prediction in predictions_raw:
+            try:
+                prediction_str = "".join(before_pad(prediction.squeeze()))
+                concept = self.dl_parser.parse(prediction_str)
+                counter +=1
+            except:
+                prediction_str = simpleSolution.predict("".join(before_pad(prediction.squeeze())))
+                concept = self.dl_parser.parse(prediction_str)
+                if self.verbose>0:
+                    print("Prediction: ", prediction_str)
+            predictions.append(concept)
+        # else:
+        #     concept_abstract_syntax_tree_builder = ConceptAbstractSyntaxTreeBuilder(knowledge_base=self.knowledge_base)
+        #     # prediction_scores = self.get_prediction(x_pos, x_neg, return_normalize_scores=True)
             
-            decoder = DecodingStrategy(prediction_scores, self.inv_vocab, self.num_predictions, self.max_length)
-            decoded_raw_predictions = decoder.decode(strategy_type=self.decoding_strategy) #TODO Handle kwargs
-            unpad_raw_predictions = [[pred for pred in pred_seq if pred != 'PAD'] for pred_seq in decoded_raw_predictions]
+        #     # decoder = DecodingStrategy(prediction_scores, self.inv_vocab, self.num_predictions, self.max_length)
+        #     # decoded_raw_predictions = decoder.decode(strategy_type=self.enforce_validity) #TODO Handle kwargs
+        #     unpad_raw_predictions = [[pred for pred in pred_seq if pred != 'PAD'] for pred_seq in predictions_raw]
+            
+        #     for prediction in unpad_raw_predictions:
+        #         try:
+        #             parse_concept_str, _ = concept_abstract_syntax_tree_builder.parse(token_sequence=prediction, enforce_validity=True)
 
-            for prediction in unpad_raw_predictions:
-                try:
-                    parse_concept_str, _ = concept_abstract_syntax_tree_builder.parse(token_sequence=prediction, enforce_validity=True)
-                    
-                    if parse_concept_str is None:
-                        fail_parser_tokens.append(prediction)
-                    else:
-                        try: 
-                            concept = self.dl_parser.parse(parse_concept_str)
-                            counter += 1
-                        except:
-                            valid_concept_dl_parse_failed.append(parse_concept_str)
-                            pass
-                        predictions.append(concept)
-                except Exception as e:
-                    concept_parser_failer.append(prediction)
-                    pass
-        print(counter)
-        filename = f'{self.decoding_strategy}_'
-        prepare_output_path(base_name=f'{filename}cases', extension='txt')
-        if fail_parser_tokens:
-            with open(prepare_output_path(base_name=f'{filename}cases', extension='txt'), 'w') as f:
-                for line in fail_parser_tokens:
-                    f.write(f"{line}\n")
-
-        if valid_concept_dl_parse_failed:
-            with open(prepare_output_path(base_name=f'{filename}valid_concept_dl_parse_failed_cases', extension='txt'), 'w') as f:
-                for line in valid_concept_dl_parse_failed:
-                    f.write(f"{line}\n")
-
-        if concept_parser_failer:
-            with open(prepare_output_path(base_name=f'{filename}_concept_parser_failer_cases', extension='txt'), 'w') as f:
-                for line in concept_parser_failer:
-                    f.write(f"{line}\n")
+        #             try: 
+        #                 concept = self.dl_parser.parse(parse_concept_str)
+        #                 counter += 1
+        #             except:
+        #                 pass
+        #                 predictions.append(concept)
+        #         except Exception as e:
+        #             pass
+        # print(f"{counter/self.num_predictions:.2f}") #average valid
         return predictions
 
     def fit(self, learning_problem: PosNegLPStandard, **kwargs):
@@ -1254,7 +1228,7 @@ class NCES2(BaseNCES):
                  num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=128, sampling_strategy="nces2",
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32,
                  learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4,
-                 max_length=48, load_pretrained=True, verbose: int = 0, data=[], decoding_strategy=None, enforce_validity=None):
+                 max_length=48, load_pretrained=True, verbose: int = 0, data=[], enforce_validity:Optional[bool]=None):
         self.knowledge_base = knowledge_base
         super().__init__(knowledge_base, nces2_or_roces, quality_func, num_predictions, auto_train, proj_dim,
                          drop_prob, num_heads, num_seeds, m, ln, learning_rate, tmax, eta_min, clip_value, batch_size,
@@ -1282,7 +1256,6 @@ class NCES2(BaseNCES):
         self.kernel_size = kernel_size
         self.num_of_output_channels = num_of_output_channels
         self.num_workers = num_workers
-        self.decoding_strategy = decoding_strategy
         self.enforce_validity = enforce_validity
         self._set_prerequisites()
 
@@ -1458,7 +1431,7 @@ class NCES2(BaseNCES):
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions = []
         fail_parser_tokens, valid_concept_dl_parse_failed = [], []
-        if self.decoding_strategy is None:
+        if self.enforce_validity is None:
             predictions_raw = self.get_prediction(dataloaders)
 
             for prediction in predictions_raw:
@@ -1477,7 +1450,7 @@ class NCES2(BaseNCES):
             prediction_scores = self.get_prediction(dataloaders, return_normalize_scores=True)
             
             decoder = DecodingStrategy(prediction_scores, self.inv_vocab, self.num_predictions, self.max_length)
-            decoded_raw_predictions = decoder.decode(strategy_type=self.decoding_strategy, top_k=3) #TODO Handle kwargs
+            decoded_raw_predictions = decoder.decode(strategy_type=self.enforce_validity, top_k=3) #TODO Handle kwargs
             unpad_raw_predictions = [[pred for pred in pred_seq if pred != 'PAD'] for pred_seq in decoded_raw_predictions]
 
             for prediction in unpad_raw_predictions:
@@ -1501,12 +1474,12 @@ class NCES2(BaseNCES):
                 print()
 
         if fail_parser_tokens:
-            with open(f'{self.decoding_strategy}_cases_nces2.txt', 'w') as f:
+            with open(f'{self.enforce_validity}_cases_nces2.txt', 'w') as f:
                 for line in fail_parser_tokens:
                     f.write(f"{line}\n")
 
         if valid_concept_dl_parse_failed:
-            with open(f'{self.decoding_strategy}_valid_concept_dl_parse_failed_cases_nces2.txt', 'w') as f:
+            with open(f'{self.enforce_validity}_valid_concept_dl_parse_failed_cases_nces2.txt', 'w') as f:
                 for line in valid_concept_dl_parse_failed:
                     f.write(f"{line}\n")
         return predictions
