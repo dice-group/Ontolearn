@@ -10,10 +10,8 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-# base_path = pathlib.Path(__file__).parent.resolve()._str
-# knowledge_base_path = base_path[:base_path.rfind("/")+1] + "KGs/Family/family-benchmark_rich_background.owl"
-knowledge_base_path = pathlib.Path(__file__).parent.parent.parent.resolve()._str + "/data/KGs/Family/family-benchmark_rich_background.owl"
-
+base_path = pathlib.Path(__file__).parent.resolve()._str
+knowledge_base_path = base_path[:base_path.rfind("/")+1] + "KGs/Family/family-benchmark_rich_background.owl"
 
 
 def seed_everything():
