@@ -69,7 +69,8 @@ def dl_concept_learning(args):
                     load_pretrained=True,
                     path_of_trained_models=args.path_of_nces2_trained_models,
                     num_predictions=200,
-                    verbose=0)
+                    verbose=0,
+                    enforce_validity=args.enforce_validity)
         
     if not args.learner_types or 'roces' in args.learner_types:
         roces = ROCES(knowledge_base=kb,
@@ -78,7 +79,8 @@ def dl_concept_learning(args):
                     load_pretrained=True,
                     path_of_trained_models=args.path_of_roces_trained_models,
                     num_predictions=200,
-                    verbose=0)
+                    verbose=0,
+                    enforce_validity=args.enforce_validity)
         
     if not args.learner_types or 'clip' in args.learner_types:
         clip = CLIP(knowledge_base=kb,

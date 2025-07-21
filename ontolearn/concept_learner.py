@@ -41,7 +41,6 @@ from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_property import OWLDataProperty
 from owlapy.abstracts import AbstractOWLReasoner
-from ontolearn.concept_decoder import DecodingStrategy
 from ontolearn.concept_abstract_syntax_tree import ConceptAbstractSyntaxTreeBuilder
 from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.abstracts import AbstractKnowledgeBase
@@ -1005,7 +1004,7 @@ class NCES(BaseNCES):
             self.load_pretrained = True
         self.model = self.get_synthesizer(path)
 
-    def get_prediction(self, x_pos, x_neg, return_normalize_scores=False):
+    def get_prediction(self, x_pos, x_neg):
         models = [self.model[name]["model"] for name in self.model]
         for i, model in enumerate(models):
             model.eval()
@@ -1019,9 +1018,6 @@ class NCES(BaseNCES):
                 scores = scores + sc
 
         scores = scores / len(models)
-        if return_normalize_scores:
-            return scores
-        
         prediction = model.inv_vocab[scores.argmax(1).cpu()]
         return prediction
 
@@ -1051,6 +1047,7 @@ class NCES(BaseNCES):
         x_pos, x_neg = next(iter(dataloader))
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions_raw = self.get_prediction(x_pos, x_neg)
+        norm, abst, stra = 0, 0, 0
 
         if self.enforce_validity:
             concept_ast_builder = ConceptAbstractSyntaxTreeBuilder(knowledge_base=self.knowledge_base)
@@ -1069,8 +1066,7 @@ class NCES(BaseNCES):
                         try:
                             concept = self.dl_parser.parse(parse_concept_str)
                         except:
-                            prediction_str = simpleSolution.predict(prediction_str)
-                            concept = self.dl_parser.parse(prediction_str)
+                            concept = simple_strategy(simpleSolution, prediction_str)
                     except:
                         concept = simple_strategy(simpleSolution, prediction_str)
                 else:
@@ -1397,6 +1393,9 @@ class NCES2(BaseNCES):
         return prediction
 
     def fit_one(self, pos: Union[List[OWLNamedIndividual], List[str]], neg: Union[List[OWLNamedIndividual], List[str]]):
+        def simple_strategy(strategy: SimpleSolution, prediction: List[str]):
+            return self.dl_parser.parse(strategy.predict(prediction))
+        
         if isinstance(pos[0], OWLNamedIndividual):
             pos_str = [ind.str.split("/")[-1] for ind in pos]
             neg_str = [ind.str.split("/")[-1] for ind in neg]
@@ -1424,58 +1423,32 @@ class NCES2(BaseNCES):
         # Initialize a simple solution constructor
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions = []
-        fail_parser_tokens, valid_concept_dl_parse_failed = [], []
-        if self.enforce_validity is None:
-            predictions_raw = self.get_prediction(dataloaders)
+        predictions_raw = self.get_prediction(dataloaders)
 
-            for prediction in predictions_raw:
-                try:
-                    prediction_str = "".join(before_pad(prediction.squeeze()))
-                    concept = self.dl_parser.parse(prediction_str)
-                except:
-                    prediction_str = simpleSolution.predict("".join(before_pad(prediction.squeeze())))
-                    concept = self.dl_parser.parse(prediction_str)
-                    fail_parser_tokens.append([pred for pred in prediction if pred != 'PAD']) # TODO: remove
+        if self.enforce_validity:
+            concept_ast_builder = ConceptAbstractSyntaxTreeBuilder(knowledge_base=self.knowledge_base)
+
+        for prediction in predictions_raw:
+            prediction_str = "".join(before_pad(prediction.squeeze()))
+            try:
+                concept = self.dl_parser.parse(prediction_str)
+            except:
+                if self.enforce_validity:
+                    try:
+                        raw_prediction = [pred for pred in prediction if pred != 'PAD']
+                        parse_concept_str, _ = concept_ast_builder.parse(token_sequence=raw_prediction, enforce_validity=True)
+
+                        try:
+                            concept = self.dl_parser.parse(parse_concept_str)
+                        except:
+                            concept = simple_strategy(simpleSolution, prediction_str)
+                    except:
+                        concept = simple_strategy(simpleSolution, prediction_str)
+                else:
+                    concept = simple_strategy(simpleSolution, prediction_str)
                     if self.verbose>0:
                         print("Prediction: ", prediction_str)
-                predictions.append(concept)
-        else:
-            concept_abstract_syntax_tree_builder = ConceptAbstractSyntaxTreeBuilder(knowledge_base_path=self.knowledge_base_path)
-            prediction_scores = self.get_prediction(dataloaders, return_normalize_scores=True)
-            
-            decoder = DecodingStrategy(prediction_scores, self.inv_vocab, self.num_predictions, self.max_length)
-            decoded_raw_predictions = decoder.decode(strategy_type=self.enforce_validity, top_k=3) #TODO Handle kwargs
-            unpad_raw_predictions = [[pred for pred in pred_seq if pred != 'PAD'] for pred_seq in decoded_raw_predictions]
-
-            for prediction in unpad_raw_predictions:
-                try:
-                    parse_concept_str, _ = concept_abstract_syntax_tree_builder.parse(token_sequence=prediction, relax_parentheses=False,
-                                                                                      enforce_validity=True)
-                    
-                    if parse_concept_str is None:
-                        fail_parser_tokens.append(prediction)
-                    else:
-                        try: 
-                            concept = self.dl_parser.parse(parse_concept_str)
-                            print(prediction, parse_concept_str)
-                        except:
-                            valid_concept_dl_parse_failed.append(parse_concept_str)
-                            pass
-                        predictions.append(concept)
-                except Exception as e:
-                    print("####", ''.join(prediction))
-                    # print("Unexpected error constructing the concept abstract syntax tree:", e)
-                print()
-
-        if fail_parser_tokens:
-            with open(f'{self.enforce_validity}_cases_nces2.txt', 'w') as f:
-                for line in fail_parser_tokens:
-                    f.write(f"{line}\n")
-
-        if valid_concept_dl_parse_failed:
-            with open(f'{self.enforce_validity}_valid_concept_dl_parse_failed_cases_nces2.txt', 'w') as f:
-                for line in valid_concept_dl_parse_failed:
-                    f.write(f"{line}\n")
+            predictions.append(concept)
         return predictions
 
     def fit(self, learning_problem: PosNegLPStandard, **kwargs):
@@ -1622,12 +1595,11 @@ class ROCES(NCES2):
                  num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=128, sampling_strategy="p",
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32,
                  learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4,
-                 max_length=48, load_pretrained=True, verbose: int = 0, data=[]):
-
+                 max_length=48, load_pretrained=True, verbose: int = 0, data=[], enforce_validity:Optional[bool]=None):
         self.k = k
         super().__init__(knowledge_base, nces2_or_roces,
                          quality_func, num_predictions, path_of_trained_models, auto_train, proj_dim, drop_prob,
                          num_heads, num_seeds, m, ln, embedding_dim, sampling_strategy, input_dropout,
                          feature_map_dropout, kernel_size, num_of_output_channels, learning_rate, tmax, eta_min,
-                         clip_value, batch_size, num_workers, max_length, load_pretrained, verbose)
-
+                         clip_value, batch_size, num_workers, max_length, load_pretrained, verbose, enforce_validity)
+        self.enforce_validity = enforce_validity
