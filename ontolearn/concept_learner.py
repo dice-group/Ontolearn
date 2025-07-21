@@ -1047,7 +1047,6 @@ class NCES(BaseNCES):
         x_pos, x_neg = next(iter(dataloader))
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions_raw = self.get_prediction(x_pos, x_neg)
-        norm, abst, stra = 0, 0, 0
 
         if self.enforce_validity:
             concept_ast_builder = ConceptAbstractSyntaxTreeBuilder(knowledge_base=self.knowledge_base)

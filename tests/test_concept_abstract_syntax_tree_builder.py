@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import MagicMock
 from ontolearn.concept_abstract_syntax_tree import ConceptAbstractSyntaxTreeBuilder
 from ontolearn.knowledge_base import KnowledgeBase
-from owlapy.class_expression import  OWLClass, OWLObjectSomeValuesFrom,  OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf, OWLClassExpression
+from owlapy.class_expression import  OWLClass, OWLObjectSomeValuesFrom,  OWLObjectAllValuesFrom, OWLObjectUnionOf, OWLObjectIntersectionOf
 from owlapy.iri import IRI
 from owlapy.owl_property import OWLObjectProperty
 from owlapy.parser import DLSyntaxParser
