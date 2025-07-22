@@ -380,7 +380,7 @@ def dl_concept_learning(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Description Logic Concept Learning')
-    parser.add_argument("--max_runtime", type=int, default=60, help="Max runtime")
+    parser.add_argument("--max_runtime", type=int, default=10, help="Max runtime")
     parser.add_argument("--lps", type=str, required=True, help="Path to the learning problems")
     parser.add_argument("--folds", type=int, default=10, help="Number of folds of cross validation.")
     parser.add_argument("--kb", type=str, required=True,
