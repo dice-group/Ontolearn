@@ -1057,21 +1057,17 @@ class NCES(BaseNCES):
             try:
                 concept = self.dl_parser.parse(prediction_str)
             except:
+                concept = simple_strategy(simpleSolution, prediction_str)
                 if self.enforce_validity:
                     try:
                         raw_prediction = [pred for pred in prediction if pred != 'PAD']
                         parse_concept_str, _ = concept_ast_builder.parse(token_sequence=raw_prediction, enforce_validity=True)
 
-                        try:
-                            concept = self.dl_parser.parse(parse_concept_str)
-                        except:
-                            concept = simple_strategy(simpleSolution, prediction_str)
+                        concept = self.dl_parser.parse(parse_concept_str)
                     except:
-                        concept = simple_strategy(simpleSolution, prediction_str)
-                else:
-                    concept = simple_strategy(simpleSolution, prediction_str)
-                    if self.verbose>0:
-                        print("Prediction: ", prediction_str)
+                        pass
+                elif self.verbose>0:
+                    print("Prediction: ", prediction_str)
             predictions.append(concept)
         return predictions
 
@@ -1432,21 +1428,17 @@ class NCES2(BaseNCES):
             try:
                 concept = self.dl_parser.parse(prediction_str)
             except:
+                concept = simple_strategy(simpleSolution, prediction_str)
                 if self.enforce_validity:
                     try:
                         raw_prediction = [pred for pred in prediction if pred != 'PAD']
                         parse_concept_str, _ = concept_ast_builder.parse(token_sequence=raw_prediction, enforce_validity=True)
 
-                        try:
-                            concept = self.dl_parser.parse(parse_concept_str)
-                        except:
-                            concept = simple_strategy(simpleSolution, prediction_str)
+                        concept = self.dl_parser.parse(parse_concept_str)
                     except:
-                        concept = simple_strategy(simpleSolution, prediction_str)
-                else:
-                    concept = simple_strategy(simpleSolution, prediction_str)
-                    if self.verbose>0:
-                        print("Prediction: ", prediction_str)
+                        pass
+                elif self.verbose>0:
+                    print("Prediction: ", prediction_str)
             predictions.append(concept)
         return predictions
 

@@ -34,17 +34,15 @@ from typing import TypeVar, List, Optional, Union
 import pandas as pd
 
 from ontolearn.learners.tree_learner import TDL
-from ontolearn.utils.static_funcs import compute_f1_score, get_file_base_name, prepare_output_path
 from owlapy.class_expression import OWLClassExpression
 from owlapy.iri import IRI
 from owlapy.owl_axiom import OWLAxiom
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.abstracts import AbstractOWLReasoner
-import pandas as pd
 
 from ontolearn.abstracts import AbstractNode
 from ontolearn.base_concept_learner import BaseConceptLearner
-from ontolearn.utils.static_funcs import compute_f1_score
+from ontolearn.utils.static_funcs import compute_f1_score, get_file_base_name, prepare_output_path
 from .learners import CELOE, OCEL
 from ontolearn.concept_learner import EvoLearner, NCES
 from ontolearn.ea_algorithms import EASimple

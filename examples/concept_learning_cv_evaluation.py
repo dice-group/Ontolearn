@@ -20,7 +20,7 @@ from owlapy.owl_individual import OWLNamedIndividual, IRI
 import argparse
 from sklearn.model_selection import StratifiedKFold
 import numpy as np
-from ontolearn.utils.static_funcs import compute_f1_score, parse_boolean_arg
+from ontolearn.utils.static_funcs import compute_f1_score
 
 pd.set_option("display.precision", 5)
 
