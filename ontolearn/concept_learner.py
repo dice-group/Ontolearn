@@ -49,7 +49,7 @@ from ontolearn.base_concept_learner import BaseConceptLearner
 from owlapy.utils import EvaluatedDescriptionSet, ConceptOperandSorter
 from ontolearn.data_struct import (TriplesData, NCESDatasetInference, CLIPDataset, CLIPDatasetInference,
                                    ROCESDatasetInference)
-from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
+from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple, EASimple_pref
 from ontolearn.ea_initialization import AbstractEAInitialization, EARandomInitialization, EARandomWalkInitialization
 from ontolearn.ea_utils import PrimitiveFactory, OperatorVocabulary, ToolboxVocabulary, Tree, escape, ind_to_string, \
     owlliteral_to_primitive_string
@@ -62,7 +62,7 @@ from ontolearn.utils import read_csv
 
 from ontolearn.utils.static_funcs import concept_len
 from ontolearn.quality_funcs import evaluate_concept
-from ontolearn.search import EvoLearnerNode, NCESNode, OENode, TreeNode, QualityOrderedNode
+from ontolearn.search import EvoLearnerNode, NCESNode, OENode, TreeNode, QualityOrderedNode, EvoLearnerNodePref
 from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter, EntropyValueSplitter
 from ontolearn.base_nces import BaseNCES
@@ -202,7 +202,6 @@ class EvoLearner(BaseConceptLearner):
         if quality_func is None:
             quality_func = Accuracy()
 
-
         super().__init__(knowledge_base=knowledge_base,
                          reasoner=reasoner,
                          quality_func=quality_func,
@@ -225,9 +224,6 @@ class EvoLearner(BaseConceptLearner):
         self.total_fits = 0
         self.generator = ConceptGenerator()
         self.__setup()
-
-
-
 
     def __setup(self):
         self.clean(partial=True)
@@ -528,33 +524,15 @@ class EvoLearner(BaseConceptLearner):
             self.toolbox = self.__build_toolbox()
 
 
+
 class EvoLearner_pref(EvoLearner):
     def __init__(self, *args, preference_func=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.preference_func = preference_func
-        self.fitness_func = PreferenceBasedFitness(preference_func=self.preference_func)
+        self.fitness_func = PreferenceBasedFitness()
         self.verbose = 1
         self.toolbox = self.__build_toolbox()
-
-    def _fitness_func(self, individual: Tree):
-        ind_str = ind_to_string(individual)
-        # experimental
-        if ind_str in self._cache:
-            individual.quality.values = (self._cache[ind_str][0],)
-            individual.fitness.values = self._cache[ind_str][1]
-        else:
-            concept = gp.compile(individual, self.pset)
-            individual.preference = self.preference_func(concept)
-            e = evaluate_concept(self.kb, concept, self.quality_func, self._learning_problem)
-
-            quality = e.q
-            preference = self.preference_func(concept)
-
-            individual.quality.values = (quality,)
-            individual.fitness.values = (quality, preference)
-            self.fitness_func.apply(individual)
-            self._cache[ind_str] = (quality, individual.fitness.values)
-            self._number_of_tested_concepts += 1
+        self.algorithm = EASimple_pref()
 
 
     def is_dominated(self, node, others):
@@ -571,91 +549,89 @@ class EvoLearner_pref(EvoLearner):
                     return True
         return False
 
-
-    def fit(self, *args, **kwargs) -> 'EvoLearner_pref':
+    def fit(self, *args, **kwargs) -> 'EvoLearner':
         """
         Find hypotheses that explain pos and neg.
         """
         if self.total_fits > 0:
             self.clean()
         self.total_fits += 1
-
         learning_problem = self.construct_learning_problem(PosNegLPStandard, args, kwargs)
         self._learning_problem = learning_problem.encode_kb(self.kb)
 
         verbose = kwargs.pop("verbose", False)
 
         population = self._initialize(learning_problem.pos, learning_problem.neg)
+
         self.start_time = time.time()
-
-        self._goal_found, self._result_population = self.algorithm.evolve(
-            self.toolbox, population, self.num_generations, self.start_time, verbose=verbose
-        )
-
-        # --- Compute Pareto Front ---
-        all_individuals = self._result_population
-        dominated = []
-
-        pareto_front = []
-
-        scored = []
-        for ind in all_individuals:
-            concept = getattr(ind, "concept", gp.compile(ind, self.pset))
-            quality = ind.quality.values[0]
-            preference = self.preference_func(concept)
-            scored.append((concept, quality, preference))
-
-        for concept, quality, preference in scored:
-            candidate = type('NodeLike', (), {"quality": quality, "preference": preference})()
-
-            # Convert current pareto front into comparable NodeLikes
-            pareto_nodes = [
-                type('NodeLike', (), {"quality": q, "preference": p})()
-                for _, (q, p) in pareto_front
-            ]
-
-            if not self.is_dominated(candidate, pareto_nodes):
-                # Remove from Pareto front those dominated by the new candidate
-                pareto_front = [
-                    [c, (q, p)] for c, (q, p) in pareto_front
-                    if not self.is_dominated(
-                        type('NodeLike', (), {"quality": q, "preference": p})(),
-                        [candidate]
-                    )
-                ]
-                pareto_front.append([concept, (quality, preference)])
-            else:
-                dominated.append([concept, (quality, preference)])
-
-        self._pareto_front = pareto_front
-        self._dominated = dominated
-
-
-        # --- Optional: Plot the front ---
-        if verbose:
-            pf_x = [q for _, (q, p) in pareto_front]
-            pf_y = [p for _, (q, p) in pareto_front]
-            dom_x = [q for _, (q, p) in dominated]
-            dom_y = [p for _, (q, p) in dominated]
-
-            plt.figure(figsize=(7, 5))
-            plt.scatter(dom_x, dom_y, c='blue', label='Dominated', marker='o')
-            plt.scatter(pf_x, pf_y, c='red', label='Pareto Front', marker='x')
-            plt.xlabel("Quality")
-            plt.ylabel("Preference")
-            plt.title("Pareto Front vs. Dominated Individuals")
-            plt.legend()
-            plt.grid(True)
-            plt.tight_layout()
-            plt.show()
-
+        self._goal_found, self._result_population = self.algorithm.evolve(self.toolbox,
+                                                                          population,
+                                                                          self.num_generations,
+                                                                          self.start_time,
+                                                                          verbose=verbose)
         return self.terminate()
 
+    def _fitness_func(self, individual: Tree):
+        ind_str = ind_to_string(individual)
+        # experimental
+        if ind_str in self._cache:
+            individual.fitness.values = self._cache[ind_str]
+        else:
+            concept = gp.compile(individual, self.pset)
+            e = evaluate_concept(self.kb, concept, self.quality_func, self._learning_problem)
+
+            quality = e.q
+            preference = self.preference_func(concept)
+
+            individual.fitness.values = (quality, preference)
+            self.fitness_func.apply(individual)
+            self._cache[ind_str] = (quality, preference)
+            self._number_of_tested_concepts += 1
+
+    def best_hypotheses(self, n: int = 1, return_node: bool = False) -> Union[
+        OWLClassExpression, Iterable[OWLClassExpression]]:
+        assert self._result_population is not None
+        assert len(self._result_population) > 0
+
+        top_hyps = list(self._get_top_hypotheses(self._result_population, n))
+
+        if n > 1:
+            return top_hyps if return_node else [node.concept for node in top_hyps]
+        else:
+            return top_hyps[0] if return_node else top_hyps[0].concept
+
+    def _get_top_hypotheses(self, population: List[Tree], n: int = 5) -> Iterable[EvoLearnerNodePref]:
+        # Sort by F1 (index 0), then preference (index 1) — both descending
+        sorted_pop = sorted(
+            population,
+            key=lambda ind: (ind.fitness.values[0], ind.fitness.values[1]),  # F1, then preference
+            reverse=True
+        )
+
+        seen_concepts = set()
+        selected_inds = []
+
+        for ind in sorted_pop:
+            concept = gp.compile(ind, self.pset)
+            concept_str = str(concept)
+            if concept_str not in seen_concepts:
+                seen_concepts.add(concept_str)
+                selected_inds.append((concept, ind))
+            if len(selected_inds) == n:
+                break
+
+        for concept, ind in selected_inds:
+            individuals_count = len(self.kb.individuals_set(concept))
+            yield EvoLearnerNodePref(concept, concept_len(concept), individuals_count, ind.fitness.values[0],
+                                     ind.fitness.values[1],
+                                     len(ind), ind.height)
+
+
+
+
     def __build_toolbox(self) -> base.Toolbox:
-        creator.create("Fitness", base.Fitness, weights=(1.0,1.0))
-        # creator.create("Preference",base.Fitness, weights=(1.0,))
-        creator.create("Quality", base.Fitness, weights=(1.0,))
-        creator.create("Individual", gp.PrimitiveTree, fitness=creator.Fitness, quality=creator.Quality)
+        creator.create("MultiObjectiveFitness", base.Fitness, weights=(1.0, 1.0))
+        creator.create("Individual", gp.PrimitiveTree, fitness=creator.MultiObjectiveFitness)
 
         toolbox = base.Toolbox()
         toolbox.register(ToolboxVocabulary.INIT_POPULATION.value, self.init_method.get_population,

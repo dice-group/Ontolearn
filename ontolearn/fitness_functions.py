@@ -27,6 +27,7 @@
 from typing import Final
 from ontolearn.abstracts import AbstractFitness
 from ontolearn.ea_utils import Tree
+import torch
 
 
 class LinearPressureFitness(AbstractFitness):
@@ -47,14 +48,17 @@ class LinearPressureFitness(AbstractFitness):
 
 
 class PreferenceBasedFitness(AbstractFitness):
-    def __init__(self, gain=2048.0, penalty=1.0, preference_weight=0.3, preference_func=None):
+    def __init__(self, gain=2048.0, penalty=10.0, preference_weight=2048.0):
         self.gain = gain
         self.penalty = penalty
         self.preference_weight = preference_weight
-        self.preference_func = preference_func  # Must be callable
 
     def apply(self, individual: Tree):
-        quality = individual.quality.values[0]
-        preference = individual.preference
-        fitness = (self.gain * quality) + (self.preference_weight * preference) - (self.penalty * len(individual))
+        quality, preference = individual.fitness.values  # both are floats
+        preference = torch.sigmoid(torch.tensor(preference)).numpy()
+        fitness = (
+            (self.gain * quality)
+            + (self.preference_weight * preference)
+            - (self.penalty * len(individual))
+        )
         individual.fitness.values = (round(fitness, 5), preference)

@@ -44,6 +44,6 @@ def preference_score_utility_based(concept: OWLClassExpression, url:str="http://
 
     # Step 4: Aggregate
     if ratings:
-        return sum(ratings) / len(ratings)
+        return sum(ratings) / (len(ratings) + len(query)) #Penalize long concepts
     else:
         return 0.0

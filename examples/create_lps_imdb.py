@@ -3,7 +3,7 @@ import json
 
 endpoint_url = "http://localhost:3030/imdb_1000/sparql"
 rating_property = "http://example.org/imdb/hasRatingValue"
-sample_size = 20  # Number of positive and negative examples
+sample_size = 1  # Number of positive and negative examples
 
 # Set up SPARQL endpoint
 sparql = SPARQLWrapper(endpoint_url)
@@ -25,7 +25,7 @@ def run_query(query):
         return []
 
 # Iterate over thresholds from 9.0 to 8.6
-for i in range(90, 65, -1):
+for i in range(30, 15, -1):
     t = i / 10.0
     print(f"Generating learning problem for threshold t = {t:.1f}")
 
@@ -50,7 +50,7 @@ for i in range(90, 65, -1):
     negatives = run_query(query_neg)
 
     # Only accept if both lists are full and balanced
-    if len(positives) == sample_size and len(negatives) == sample_size:
+    if len(positives) >= sample_size and len(negatives) >= sample_size:
         learning_problems.append({
             "threshold": round(t, 1),
             "positives": positives,

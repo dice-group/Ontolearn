@@ -104,6 +104,7 @@ class BaseEvolutionaryAlgorithm(AbstractEvolutionaryAlgorithm):
         pass
 
 
+
 class EASimple(BaseEvolutionaryAlgorithm):
     __slots__ = 'crossover_pr', 'mutation_pr', 'elitism', 'elite_size'
 
@@ -147,6 +148,43 @@ class EASimple(BaseEvolutionaryAlgorithm):
 
         population[:] = offspring + elite
         return goal_found, population
+
+
+
+class EASimple_pref(EASimple):
+
+    name: Final = 'EASimple_pref'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def generation(self, toolbox: Toolbox, population: List[Tree], num_selections: int = 0) -> Tuple[bool, List[Tree]]:
+        elite = []
+        goal_found = False
+
+        num_selections = num_selections if num_selections > 0 else len(population)
+
+        if self.elitism:  # pragma: no cover
+            num_elite = int(self.elite_size * num_selections)
+            num_selections = num_selections - num_elite
+            elite = nlargest(num_elite, population, key=lambda ind: ind.fitness.values[0])
+
+        offspring = toolbox.select(population, k=num_selections)
+        offspring = varAnd(offspring, toolbox, self.crossover_pr, self.mutation_pr)
+
+        best_quality_pref = -float('inf')
+
+        for off in offspring:
+            if not off.fitness.valid:
+                toolbox.apply_fitness(off)
+            quality, preference = off.fitness.values
+
+            if quality == 1.0 and preference > best_quality_pref:
+                best_quality_pref = preference
+                goal_found = True
+        population[:] = offspring + elite
+        return goal_found, population
+
 
 
 class RegularizedEvolution(BaseEvolutionaryAlgorithm):

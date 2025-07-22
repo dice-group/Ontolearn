@@ -317,6 +317,60 @@ class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality
         ))
 
 
+class EvoLearnerNodePref(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality,
+                     AbstractNode, AbstractConceptNode):
+    """
+    EvoLearner search tree node with preference-aware attributes.
+    """
+    __slots__ = '_concept', '_len', '_individuals_count', '_quality', '_preference', '_tree_length', '_tree_depth'
+
+    _tree_length: int
+    _tree_depth: int
+    _preference: float
+
+    def __init__(self,
+                 concept: OWLClassExpression,
+                 length: int,
+                 individuals_count: int,
+                 quality: float,
+                 preference: float,
+                 tree_length: int,
+                 tree_depth: int):
+        _NodeConcept.__init__(self, concept)
+        _NodeLen.__init__(self, length)
+        _NodeIndividualsCount.__init__(self, individuals_count)
+        _NodeQuality.__init__(self, quality)
+        AbstractNode.__init__(self)
+        self._preference = preference
+        self._tree_length = tree_length
+        self._tree_depth = tree_depth
+
+    @property
+    def tree_length(self):
+        return self._tree_length
+
+    @property
+    def tree_depth(self):
+        return self._tree_depth
+
+    @property
+    def preference(self):
+        return self._preference
+
+    def __str__(self):
+        return "\t".join((
+            AbstractNode.__str__(self),
+            _NodeConcept.__str__(self),
+            _NodeQuality.__str__(self),
+            f'Preference:{self._preference:.2f}',
+            f'Length:{self._len}',
+            f'Tree Length:{self._tree_length}',
+            f'Tree Depth:{self._tree_depth}',
+            _NodeIndividualsCount.__str__(self),
+        ))
+
+
+
 class NCESNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, AbstractNode, AbstractConceptNode):
     """
     EvoLearner search tree node.
