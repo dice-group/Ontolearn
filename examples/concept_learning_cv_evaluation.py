@@ -8,6 +8,7 @@ python examples/concept_learning_cv_evaluation.py --lps LPs/Mutagenesis/lps.json
 import json
 import time
 import os
+from typing import Union
 import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE, EvoLearner, NCES, NCES2, ROCES, CLIP
@@ -22,6 +23,31 @@ import numpy as np
 from ontolearn.utils.static_funcs import compute_f1_score, parse_boolean_arg
 
 pd.set_option("display.precision", 5)
+
+def parse_boolean_arg(arg_value: Union[str, bool]) -> bool:
+    """
+    Convert a string or boolean input into a proper boolean value.
+
+    Args:
+        arg_value (Union[str, bool]): The input value.
+            Acceptable string values (case-insensitive) for True: "yes", "true", "1"
+            Acceptable string values (case-insensitive) for False: "no", "false", "0"
+
+    Returns:
+        bool: The parsed boolean value.
+
+    Raises:
+        ValueError: If the input cannot be interpreted as a boolean.
+    """
+    if isinstance(arg_value, bool):
+        return arg_value
+    if isinstance(arg_value, str):
+        lowered = arg_value.lower()
+        if lowered in ('yes', 'true', '1'):
+            return True
+        elif lowered in ('no', 'false', '0'):
+            return False
+    raise ValueError('Boolean value expected (true/false).')
 
 def dl_concept_learning(args):
     args.kb = os.path.abspath(args.kb)

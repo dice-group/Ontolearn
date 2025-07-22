@@ -21,7 +21,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # -----------------------------------------------------------------------------
-import argparse
 import os
 import pandas
 import matplotlib.pyplot as plt
@@ -469,26 +468,3 @@ def assert_class_expression_type(class_expr: Any) -> bool:
         OWLDataAllValuesFrom, OWLDataSomeValuesFrom, OWLDataHasValue, OWLObjectHasValue,
     )
     return isinstance(class_expr, expression_types)
-
-def parse_boolean_arg(arg_value: Union[str, bool]) -> bool:
-    """
-    Convert a string or boolean input into a proper boolean value for argparse.
-
-    Args:
-        arg_value (Union[str, bool]): The input value provided via command-line arguments.
-            Acceptable string values (case-insensitive) for True: "yes", "true", "1"
-            Acceptable string values (case-insensitive) for False: "no", "false", "0"
-
-    Returns:
-        bool: The parsed boolean value.
-
-    Raises:
-        argparse.ArgumentTypeError: If the input cannot be interpreted as a boolean.
-    """
-    if isinstance(arg_value, bool):
-        return arg_value
-    if arg_value.lower() in ('yes', 'true', '1'):
-        return True
-    elif arg_value.lower() in ('no', 'false', '0'):
-        return False
-    raise argparse.ArgumentTypeError('Boolean value expected (true/false).')
