@@ -204,7 +204,6 @@ class Trainer:  # pragma: no cover
 def execute(args): # pragma: no cover
     args.knowledge_base_path = os.path.abspath(args.knowledge_base_path)
 
-    args.knowledge_base_path = os.path.abspath(args.knowledge_base_path)
     args_d = args.__dict__
     learner_type = models[args.model]
     optargs = {}

@@ -61,7 +61,7 @@ from ontolearn.nces_modules import ConEx
 from ontolearn.refinement_operators import ExpressRefinement
 from ontolearn.utils import read_csv
 
-from ontolearn.utils.static_funcs import concept_len, prepare_output_path
+from ontolearn.utils.static_funcs import concept_len
 from ontolearn.quality_funcs import evaluate_concept
 from ontolearn.search import EvoLearnerNode, NCESNode, OENode, TreeNode, QualityOrderedNode
 from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn
