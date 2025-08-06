@@ -8,6 +8,7 @@ python examples/concept_learning_cv_evaluation.py --lps LPs/Mutagenesis/lps.json
 import json
 import time
 import os
+from typing import Union
 import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE, EvoLearner, NCES, NCES2, ROCES, CLIP
@@ -19,10 +20,34 @@ from owlapy.owl_individual import OWLNamedIndividual, IRI
 import argparse
 from sklearn.model_selection import StratifiedKFold
 import numpy as np
-
 from ontolearn.utils.static_funcs import compute_f1_score
 
 pd.set_option("display.precision", 5)
+
+def parse_boolean_arg(arg_value: Union[str, bool]) -> bool:
+    """
+    Convert a string or boolean input into a proper boolean value.
+
+    Args:
+        arg_value (Union[str, bool]): The input value.
+            Acceptable string values (case-insensitive) for True: "yes", "true", "1"
+            Acceptable string values (case-insensitive) for False: "no", "false", "0"
+
+    Returns:
+        bool: The parsed boolean value.
+
+    Raises:
+        ValueError: If the input cannot be interpreted as a boolean.
+    """
+    if isinstance(arg_value, bool):
+        return arg_value
+    if isinstance(arg_value, str):
+        lowered = arg_value.lower()
+        if lowered in ('yes', 'true', '1'):
+            return True
+        elif lowered in ('no', 'false', '0'):
+            return False
+    raise ValueError('Boolean value expected (true/false).')
 
 def dl_concept_learning(args):
     args.kb = os.path.abspath(args.kb)
@@ -54,31 +79,34 @@ def dl_concept_learning(args):
                 verbose=0)
         
     if not args.learner_types or 'nces' in args.learner_types:
-        nces = NCES(knowledge_base_path=args.kb,
+        nces = NCES(knowledge_base=kb,
                     quality_func=F1(),
                     load_pretrained=True,
                     path_of_embeddings=args.path_of_nces_embeddings,
                     path_of_trained_models=args.path_of_nces_trained_models,
                     learner_names=["LSTM", "GRU", "SetTransformer"],
                     num_predictions=200,
-                    verbose=0)
+                    verbose=0,
+                    enforce_validity=args.enforce_validity)
         
     if not args.learner_types or 'nces2' in args.learner_types:
-        nces2 = NCES2(knowledge_base_path=args.kb,
+        nces2 = NCES2(knowledge_base=kb,
                     quality_func=F1(),
                     load_pretrained=True,
                     path_of_trained_models=args.path_of_nces2_trained_models,
                     num_predictions=200,
-                    verbose=0)
+                    verbose=0,
+                    enforce_validity=args.enforce_validity)
         
     if not args.learner_types or 'roces' in args.learner_types:
-        roces = ROCES(knowledge_base_path=args.kb,
+        roces = ROCES(knowledge_base=kb,
                     k=50,
                     quality_func=F1(),
                     load_pretrained=True,
                     path_of_trained_models=args.path_of_roces_trained_models,
                     num_predictions=200,
-                    verbose=0)
+                    verbose=0,
+                    enforce_validity=args.enforce_validity)
         
     if not args.learner_types or 'clip' in args.learner_types:
         clip = CLIP(knowledge_base=kb,
@@ -98,6 +126,7 @@ def dl_concept_learning(args):
         problems = settings.items()
         positives_key = "positive examples"
         negatives_key = "negative examples"
+
     for str_target_concept, examples in problems:
         print('Target concept: ', str_target_concept)
         p = examples[positives_key]
@@ -126,6 +155,7 @@ def dl_concept_learning(args):
             # Sanity checking for individuals used for testing.
             assert test_pos.issubset(examples[positives_key])
             assert test_neg.issubset(examples[negatives_key])
+
             train_lp = PosNegLPStandard(pos={OWLNamedIndividual(i) for i in train_pos},
                                         neg={OWLNamedIndividual(i) for i in train_neg})
 
@@ -366,4 +396,8 @@ if __name__ == '__main__':
     parser.add_argument("--path_of_clip_embeddings", type=str, default=None)
     parser.add_argument("--report", type=str, default="report.csv")
     parser.add_argument("--random_seed", type=int, default=1)
+
+    # valid neural concept guarantee
+    parser.add_argument("--enforce_validity", type=parse_boolean_arg, default=None,
+                    help="Use true/false to enable enforcement. If passed without value, defaults to True.")
     dl_concept_learning(parser.parse_args())

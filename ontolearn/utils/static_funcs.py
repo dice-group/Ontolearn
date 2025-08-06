@@ -425,7 +425,7 @@ def get_file_base_name(file_path: str) -> str:
     return os.path.splitext(os.path.basename(file_path))[0]
 
 
-def prepare_output_path(base_name: str, output_dir: str = "results", extension: str = ".csv") -> str:
+def prepare_output_path(base_name: str, output_dir: str = "results", extension: str = "csv") -> str:
     """
     Create the output directory if it doesn't exist and return the full path for an output file.
 
@@ -442,7 +442,7 @@ def prepare_output_path(base_name: str, output_dir: str = "results", extension: 
         'results/summary.csv'
     """
     os.makedirs(output_dir, exist_ok=True)
-    return os.path.join(output_dir, f"{base_name}{extension}")
+    return os.path.join(output_dir, f"{base_name}.{extension}")
 
 def assert_class_expression_type(class_expr: Any) -> bool:
     """

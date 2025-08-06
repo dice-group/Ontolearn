@@ -41,6 +41,7 @@ from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_property import OWLDataProperty
 from owlapy.abstracts import AbstractOWLReasoner
+from ontolearn.concept_abstract_syntax_tree import ConceptAbstractSyntaxTreeBuilder
 from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.abstracts import AbstractKnowledgeBase
 from ontolearn.abstracts import AbstractFitness, AbstractScorer, BaseRefinement, \
@@ -808,7 +809,8 @@ class NCES(BaseNCES):
                  path_of_trained_models=None, auto_train=True, proj_dim=128, rnn_n_layers=2, drop_prob=0.1, num_heads=4,
                  num_seeds=1, m=32, ln=False, dicee_model="DeCaL", dicee_epochs=5, dicee_lr=0.01, dicee_emb_dim=128,
                  learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4,
-                 max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0):
+                 max_length=48, load_pretrained=True, sorted_examples=False, verbose: int = 0, 
+                 enforce_validity:Optional[bool]=None):
         self.knowledge_base = knowledge_base
         super().__init__(knowledge_base=knowledge_base, nces2_or_roces=nces2_or_roces,
                          quality_func=quality_func, num_predictions=num_predictions, auto_train=auto_train,
@@ -828,6 +830,7 @@ class NCES(BaseNCES):
         self.rnn_n_layers = rnn_n_layers
         self.sorted_examples = sorted_examples
         self.has_renamed_inds = False
+        self.enforce_validity = enforce_validity
         self._set_prerequisites()
 
     def _rename_individuals(self, individual_name):
@@ -1013,12 +1016,15 @@ class NCES(BaseNCES):
             else:
                 _, sc = model(x_pos, x_neg)
                 scores = scores + sc
+
         scores = scores / len(models)
         prediction = model.inv_vocab[scores.argmax(1).cpu()]
         return prediction
 
     def fit_one(self, pos: Union[List[OWLNamedIndividual], List[str]], neg: Union[List[OWLNamedIndividual], List[str]]):
-
+        def simple_strategy(strategy: SimpleSolution, prediction: List[str]):
+            return self.dl_parser.parse(strategy.predict(prediction))
+        
         if isinstance(pos[0], OWLNamedIndividual):
             pos_str = [ind.str.split("/")[-1] for ind in pos]
             neg_str = [ind.str.split("/")[-1] for ind in neg]
@@ -1042,15 +1048,25 @@ class NCES(BaseNCES):
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
         predictions_raw = self.get_prediction(x_pos, x_neg)
 
+        if self.enforce_validity:
+            concept_ast_builder = ConceptAbstractSyntaxTreeBuilder(knowledge_base=self.knowledge_base)
+
         predictions = []
         for prediction in predictions_raw:
+            prediction_str = "".join(before_pad(prediction.squeeze()))
             try:
-                prediction_str = "".join(before_pad(prediction.squeeze()))
                 concept = self.dl_parser.parse(prediction_str)
             except:
-                prediction_str = simpleSolution.predict("".join(before_pad(prediction.squeeze())))
-                concept = self.dl_parser.parse(prediction_str)
-                if self.verbose>0:
+                concept = simple_strategy(simpleSolution, prediction_str)
+                if self.enforce_validity:
+                    try:
+                        raw_prediction = [pred for pred in prediction if pred != 'PAD']
+                        parse_concept_str, _ = concept_ast_builder.parse(token_sequence=raw_prediction, enforce_validity=True)
+
+                        concept = self.dl_parser.parse(parse_concept_str)
+                    except:
+                        pass
+                elif self.verbose>0:
                     print("Prediction: ", prediction_str)
             predictions.append(concept)
         return predictions
@@ -1197,7 +1213,7 @@ class NCES2(BaseNCES):
                  num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=128, sampling_strategy="nces2",
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32,
                  learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4,
-                 max_length=48, load_pretrained=True, verbose: int = 0, data=[]):
+                 max_length=48, load_pretrained=True, verbose: int = 0, data=[], enforce_validity:Optional[bool]=None):
         self.knowledge_base = knowledge_base
         super().__init__(knowledge_base, nces2_or_roces, quality_func, num_predictions, auto_train, proj_dim,
                          drop_prob, num_heads, num_seeds, m, ln, learning_rate, tmax, eta_min, clip_value, batch_size,
@@ -1225,6 +1241,7 @@ class NCES2(BaseNCES):
         self.kernel_size = kernel_size
         self.num_of_output_channels = num_of_output_channels
         self.num_workers = num_workers
+        self.enforce_validity = enforce_validity
         self._set_prerequisites()
 
     def _set_prerequisites(self):
@@ -1354,7 +1371,7 @@ class NCES2(BaseNCES):
             self.load_pretrained = True
         self.model = self.get_synthesizer(path)
 
-    def get_prediction(self, dataloaders):
+    def get_prediction(self, dataloaders, return_normalize_scores=False):
         for i, (num_ind_points, dataloader) in enumerate(zip(self.m, dataloaders)):
             x_pos, x_neg = next(iter(dataloader))
             x_pos = x_pos.squeeze().to(self.device)
@@ -1365,10 +1382,15 @@ class NCES2(BaseNCES):
                 _, sc = self.model[str(num_ind_points)]["model"](x_pos, x_neg)
                 scores = scores + sc
         scores = scores / len(self.m)
+        if return_normalize_scores:
+            return scores
         prediction = self.inv_vocab[scores.argmax(1).cpu()]
         return prediction
 
     def fit_one(self, pos: Union[List[OWLNamedIndividual], List[str]], neg: Union[List[OWLNamedIndividual], List[str]]):
+        def simple_strategy(strategy: SimpleSolution, prediction: List[str]):
+            return self.dl_parser.parse(strategy.predict(prediction))
+        
         if isinstance(pos[0], OWLNamedIndividual):
             pos_str = [ind.str.split("/")[-1] for ind in pos]
             neg_str = [ind.str.split("/")[-1] for ind in neg]
@@ -1395,17 +1417,27 @@ class NCES2(BaseNCES):
 
         # Initialize a simple solution constructor
         simpleSolution = SimpleSolution(list(self.vocab), self.atomic_concept_names)
+        predictions = []
         predictions_raw = self.get_prediction(dataloaders)
 
-        predictions = []
+        if self.enforce_validity:
+            concept_ast_builder = ConceptAbstractSyntaxTreeBuilder(knowledge_base=self.knowledge_base)
+
         for prediction in predictions_raw:
+            prediction_str = "".join(before_pad(prediction.squeeze()))
             try:
-                prediction_str = "".join(before_pad(prediction.squeeze()))
                 concept = self.dl_parser.parse(prediction_str)
             except:
-                prediction_str = simpleSolution.predict("".join(before_pad(prediction.squeeze())))
-                concept = self.dl_parser.parse(prediction_str)
-                if self.verbose>0:
+                concept = simple_strategy(simpleSolution, prediction_str)
+                if self.enforce_validity:
+                    try:
+                        raw_prediction = [pred for pred in prediction if pred != 'PAD']
+                        parse_concept_str, _ = concept_ast_builder.parse(token_sequence=raw_prediction, enforce_validity=True)
+
+                        concept = self.dl_parser.parse(parse_concept_str)
+                    except:
+                        pass
+                elif self.verbose>0:
                     print("Prediction: ", prediction_str)
             predictions.append(concept)
         return predictions
@@ -1554,12 +1586,11 @@ class ROCES(NCES2):
                  num_heads=4, num_seeds=1, m=[32, 64, 128], ln=False, embedding_dim=128, sampling_strategy="p",
                  input_dropout=0.0, feature_map_dropout=0.1, kernel_size=4, num_of_output_channels=32,
                  learning_rate=1e-4, tmax=20, eta_min=1e-5, clip_value=5.0, batch_size=256, num_workers=4,
-                 max_length=48, load_pretrained=True, verbose: int = 0, data=[]):
-
+                 max_length=48, load_pretrained=True, verbose: int = 0, data=[], enforce_validity:Optional[bool]=None):
         self.k = k
         super().__init__(knowledge_base, nces2_or_roces,
                          quality_func, num_predictions, path_of_trained_models, auto_train, proj_dim, drop_prob,
                          num_heads, num_seeds, m, ln, embedding_dim, sampling_strategy, input_dropout,
                          feature_map_dropout, kernel_size, num_of_output_channels, learning_rate, tmax, eta_min,
-                         clip_value, batch_size, num_workers, max_length, load_pretrained, verbose)
-
+                         clip_value, batch_size, num_workers, max_length, load_pretrained, verbose, enforce_validity)
+        self.enforce_validity = enforce_validity
