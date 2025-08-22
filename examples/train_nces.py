@@ -1,9 +1,9 @@
 """
-1. For NCES, run: `python examples/train_nces.py --kb /data/upb/users/n/nkouagou/profiles/unix/cs/Ontolearn/KGs/Family/family-benchmark_rich_background.owl --synthesizer NCES --path_train_data ./NCESData/family/training_data/Data.json --storage_path ./NCESData/family/ --path_temp_embeddings ./NCESData/family/embeddings`
+1. For NCES, run: `python examples__/train_nces.py --kb /data/upb/users/n/nkouagou/profiles/unix/cs/Ontolearn/KGs/Family/family-benchmark_rich_background.owl --synthesizer NCES --path_train_data ./NCESData/family/training_data/Data.json --storage_path ./NCESData/family/ --path_temp_embeddings ./NCESData/family/embeddings`
 
-2. For NCES2, run: `python examples/train_nces.py --kb /data/upb/users/n/nkouagou/profiles/unix/cs/Ontolearn/KGs/Family/family-benchmark_rich_background.owl --synthesizer NCES2 --path_train_data ./NCES2Data/family/training_data/Data.json --storage_path ./NCES2Data/family/`
+2. For NCES2, run: `python examples__/train_nces.py --kb /data/upb/users/n/nkouagou/profiles/unix/cs/Ontolearn/KGs/Family/family-benchmark_rich_background.owl --synthesizer NCES2 --path_train_data ./NCES2Data/family/training_data/Data.json --storage_path ./NCES2Data/family/`
 
-3. For ROCES, run: `python examples/train_nces.py --kb /data/upb/users/n/nkouagou/profiles/unix/cs/Ontolearn/KGs/Family/family-benchmark_rich_background.owl --synthesizer ROCES --path_train_data ./ROCESData/family/training_data/Data.json --storage_path ./ROCESData/family/`
+3. For ROCES, run: `python examples__/train_nces.py --kb /data/upb/users/n/nkouagou/profiles/unix/cs/Ontolearn/KGs/Family/family-benchmark_rich_background.owl --synthesizer ROCES --path_train_data ./ROCESData/family/training_data/Data.json --storage_path ./ROCESData/family/`
 
 Note: One can leave the option `--path_train_data` and new training data will be generated on the fly. However, this would take some time.
 """
@@ -36,14 +36,14 @@ def start(args):
                     if isinstance(training_data, dict):
                         training_data = list(training_data.items())
                     else:
-                        assert isinstance(training_data, list), "The training data must either be stored as a dictionary ({'expr': {'positive examples': [], 'negative examples': []}, ...,}) or a list of items"
+                        assert isinstance(training_data, list), "The training data must either be stored as a dictionary ({'expr': {'positive examples__': [], 'negative examples__': []}, ...,}) or a list of items"
             else:
                 with open(args.path_train_data) as file:
                     training_data = json.load(file)
                 if isinstance(training_data, dict):
                     training_data = list(training_data.items())
                 else:
-                    assert isinstance(training_data, list), "The training data must either be stored as a dictionary ({'expr': {'positive examples': [], 'negative examples': []}, ...,}) or a list of items"
+                    assert isinstance(training_data, list), "The training data must either be stored as a dictionary ({'expr': {'positive examples__': [], 'negative examples__': []}, ...,}) or a list of items"
         except FileNotFoundError:
             print("Couldn't find training data in the specified path. Defaulting to generating training data.")
     if args.synthesizer == "NCES":

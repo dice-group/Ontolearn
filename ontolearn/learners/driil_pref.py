@@ -65,11 +65,11 @@ from ontolearn.search import DRILLSearchTreePriorityQueue, PreferenceSearchTreeP
 
 
 class DRILL_PREF(Drill):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, url, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.pareto_front = []
         self.final_pareto_front = []
-        self.url = "http://localhost:3030/imdb_1000/sparql"
+        self.url = url
         self.search_tree = PreferenceSearchTreePriorityQueue(
             quality_func=self.quality_func,
             heuristic_func=self.heuristic_func,

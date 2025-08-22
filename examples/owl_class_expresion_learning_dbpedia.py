@@ -1,4 +1,4 @@
-"""$ python examples/owl_class_expresion_learning_dbpedia.py --endpoint_triple_store "https://dbpedia.data.dice-research.org/sparql" --model "TDL"
+"""$ python examples__/owl_class_expresion_learning_dbpedia.py --endpoint_triple_store "https://dbpedia.data.dice-research.org/sparql" --model "TDL"
 Computing conjunctive_concepts...
 
 Constructing Description Logic Concepts:   0%|                                  Constructing Description Logic Concepts: 100%|██████████████████████████████████████████████████████████████████████████████████| 100/100 [00:00<00:00, 870187.55it/s]
@@ -108,21 +108,21 @@ def execute(args):
     # Iterate over all problems and solve
     for item in (tqdm_bar := tqdm(lps, position=0, leave=True)):
         # Create a learning problem object
-        lp = PosNegLPStandard(pos=set(list(map(OWLNamedIndividual,map(IRI.create, item["examples"]["positive examples"])))),
-                      neg=set(list(map(OWLNamedIndividual,map(IRI.create, item["examples"]["negative examples"])))))
+        lp = PosNegLPStandard(pos=set(list(map(OWLNamedIndividual,map(IRI.create, item["examples__"]["positive examples__"])))),
+                      neg=set(list(map(OWLNamedIndividual,map(IRI.create, item["examples__"]["negative examples__"])))))
         # Learn description logic concepts best fitting
         t0 = time.time()
         h = model.fit(learning_problem=lp).best_hypotheses()
         t1 = time.time()
         print("\nStarting query after solution is computed!\n")
         # Convert the learned expression into a sparql query
-        concept_to_sparql_query = owl_expression_to_sparql(h) + "\nLIMIT 100" # Due to the size of DBpedia learning problems contain at most 100 pos and 100 neg examples
+        concept_to_sparql_query = owl_expression_to_sparql(h) + "\nLIMIT 100" # Due to the size of DBpedia learning problems contain at most 100 pos and 100 neg examples__
         # Load actual instances of the target expression
-        actual_instances = set(item["examples"]["positive examples"])
+        actual_instances = set(item["examples__"]["positive examples__"])
         # Compute instances of the learned expression
         retrieved_instances = set(query_func(concept_to_sparql_query))
         # Compute the quality of the learned expression
-        f1 = compute_f1_score(retrieved_instances, set(item["examples"]["positive examples"]), set(item["examples"]["negative examples"]))
+        f1 = compute_f1_score(retrieved_instances, set(item["examples__"]["positive examples__"]), set(item["examples__"]["negative examples__"]))
         print(f"Computed solution: {h}")
         # Write results in a dictionary and create a dataframe
         df_row = pd.DataFrame(

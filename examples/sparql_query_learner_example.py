@@ -13,13 +13,13 @@ from owlapy.owl_individual import OWLNamedIndividual, IRI
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 
 try:
-    os.chdir("examples")
+    os.chdir("examples__")
 except FileNotFoundError:
     pass
 
 if not os.path.exists("PremierLeague"):
     print("Please prepare the data required by this example")
-    print("1. Download and extract the data (in the examples directory): `wget https://files.dice-research.org/projects/Ontolearn/PremierLeague.zip && unzip PremierLeague.zip`")
+    print("1. Download and extract the data (in the examples__ directory): `wget https://files.dice-research.org/projects/Ontolearn/PremierLeague.zip && unzip PremierLeague.zip`")
     print("2. Load the knowledge graph found at `PremierLeague/premierleague-hermit-inf.nt` to the triplestore")
     exit(1)
 
@@ -47,9 +47,9 @@ with open(lps_file, "r") as lp:
         print("######################################")
         print("Learning Problem: {} (Target Concept: {})".format(lp_count, target_concept))
         print("######################################")
-        # prepare the positive and negative examples
-        p = set(lp_json['positive examples'])
-        n = set(lp_json['negative examples'])
+        # prepare the positive and negative examples__
+        p = set(lp_json['positive examples__'])
+        n = set(lp_json['negative examples__'])
         typed_pos = set()
         typed_neg = set()
         for i in p:

@@ -11,7 +11,7 @@ from ontolearn.utils import setup_logging
 setup_logging()
 
 try:
-    os.chdir("examples")
+    os.chdir("examples__")
 except FileNotFoundError:
     pass
 

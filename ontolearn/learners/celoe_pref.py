@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # -----------------------------------------------------------------------------
+from fontTools.unicodedata import block
 
 from ..base_concept_learner import RefinementBasedConceptLearner
 
@@ -43,36 +44,29 @@ from itertools import islice
 from owlapy.render import DLSyntaxObjectRenderer
 from owlapy import owl_expression_to_sparql, owl_expression_to_dl
 import requests
+from functools import lru_cache
 import matplotlib.pyplot as plt
 
 from ..utils.static_funcs import concept_len
 from ontolearn.learners import CELOE, OCEL
 _concept_operand_sorter = ConceptOperandSorter()
+import random
 
 
 class CELOE_PREF(CELOE):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, knowledge_base, url, *args, **kwargs):
+        super().__init__(knowledge_base, *args, **kwargs)
         self.pareto_front = []
         self.final_pareto_front = []
-        self.url = "http://localhost:3030/imdb_1000/sparql"
+        self.url = url
+        # self.max_num_of_concepts_tested = 500
 
-
-    # def next_node_to_expand(self, step: int) -> OENode:  # pragma: no cover
-    #     if not self.best_only:
-    #         for node in reversed(self.heuristic_queue):
-    #             if node.quality < 1.0:
-    #                 return node
-    #         else:
-    #             raise ValueError("No Node with lesser accuracy found")
-    #     else:
-    #         # from reimplementation, pick without quality criterion
-    #         return self.heuristic_queue[-1]
 
     def next_node_to_expand(self, step: int) -> OENode:
         # Return node with highest (quality, preference) lexicographically
-        candidates = [node for node in self.heuristic_queue if node.quality == 1.0]
+        candidates = [node for node in self.heuristic_queue if node.quality == 1.]
         if not candidates:
+            # print("Not perfect candidate found")
             # Fallback: just return the least recently added node
             return self.heuristic_queue[-1]
 
@@ -134,9 +128,7 @@ class CELOE_PREF(CELOE):
         Compute preference score as the average imdb:hasRatingValue of individuals
         in the extension of the OWL class expression `concept`.
         """
-        # Step 1: Translate OWL concept to SPARQL filter block (this function should exist already)
-        subquery = owl_expression_to_sparql(concept)  # full SPARQL query: SELECT DISTINCT ?x WHERE { ... }
-
+        subquery = owl_expression_to_sparql(concept)
         query = f"""
             PREFIX imdb: <http://example.org/imdb/>
 
@@ -183,59 +175,86 @@ class CELOE_PREF(CELOE):
                 return True
         return False
 
+
+
     def plot_pareto_front(self, title="Pareto Front after CELOE-PREF", top_k_labels=25):
         """
         Plot all concepts evaluated during search (quality vs preference),
         and highlight Pareto front in red. Annotate top-k concepts with shortened names.
+        Avoid overlapping annotations for identical coordinates.
         """
         import matplotlib.pyplot as plt
+        import time
 
         if not hasattr(self, "search_tree") or not self.search_tree:
             print("[WARNING] No search tree available for plotting.")
             return
-
-        all_nodes = [tn.node for tn in self.search_tree.values()]
-        all_qualities = []
-        all_preferences = []
-        labels = []
-
-        for node in all_nodes:
-            if node.quality is not None and hasattr(node, "preference") and node.preference is not None:
-                all_qualities.append(node.quality)
-                all_preferences.append(node.preference)
-                labels.append(node)
-
-        if not all_qualities:
-            print("[WARNING] No concepts with both quality and preference for plotting.")
-            return
-
-        pareto_nodes = getattr(self, "final_pareto_front", [])
-        pareto_qualities = [n.quality for n in pareto_nodes]
-        pareto_preferences = [n.preference for n in pareto_nodes]
-
-        plt.figure(figsize=(10, 7))
-        plt.scatter(all_qualities, all_preferences, c="gray", alpha=0.5, label="All concepts")
-        if pareto_qualities and pareto_preferences:
-            plt.scatter(pareto_qualities, pareto_preferences, c="red", label="Pareto front", s=80)
-
-        rdr = DLSyntaxObjectRenderer()
-
-        # Annotate top-K most informative points (by diversity)
-        top_nodes = sorted(labels, key=lambda n: (n.quality or 0) + (n.preference or 0), reverse=True)[:top_k_labels]
-
-        for node in top_nodes:
-            label = rdr.render(node.concept)
-            print(label)
-            short_label = label.replace("http://example.org/imdb/", "").replace("xsd:double", "").replace("hasRatingValue", "Rating").replace("∃ ", "")[:30]
-            plt.annotate(short_label, (node.quality, node.preference), fontsize=7, alpha=0.8)
-
-        plt.xlabel("F1-score (Quality)")
-        plt.ylabel("Preference Score")
-        plt.title(title)
-        plt.legend()
-        plt.grid(True)
-        plt.tight_layout()
-        plt.show()
+        #
+        # all_nodes = [tn.node for tn in self.search_tree.values()]
+        # all_qualities = []
+        # all_preferences = []
+        # labels = []
+        #
+        # for node in all_nodes:
+        #     if node.quality is not None and hasattr(node, "preference") and node.preference is not None and node.preference != 0.:
+        #         all_qualities.append(node.quality)
+        #         all_preferences.append(node.preference)
+        #         labels.append(node)
+        #
+        # if not all_qualities:
+        #     print("[WARNING] No concepts with both quality and preference for plotting.")
+        #     return
+        #
+        # pareto_nodes = getattr(self, "final_pareto_front", [])
+        # pareto_qualities = [n.quality for n in pareto_nodes]
+        # pareto_preferences = [n.preference for n in pareto_nodes]
+        #
+        # # Use a larger figure and font size for paper quality
+        # plt.figure(figsize=(7, 9))
+        # plt.rcParams.update({'font.size': 14})  # Global font size
+        #
+        # plt.scatter(
+        #     all_qualities, all_preferences,
+        #     c="gray", alpha=0.6,
+        #     label="Concepts", s=60, edgecolors='k'
+        # )
+        # if pareto_qualities and pareto_preferences:
+        #     plt.scatter(
+        #         pareto_qualities, pareto_preferences,
+        #         c="red", label="Pareto front", s=120,
+        #         edgecolors='black', linewidths=1.2
+        #     )
+        #
+        # rdr = DLSyntaxObjectRenderer()
+        #
+        # # Annotate top-K most informative points (by combined score)
+        # top_nodes = sorted(labels, key=lambda n: (n.quality or 0) + (n.preference or 0), reverse=True)[:top_k_labels]
+        # seen_coords = set()
+        # for node in top_nodes:
+        #     coord = (round(node.quality, 4), round(node.preference, 4))
+        #     if coord in seen_coords:
+        #         continue
+        #     seen_coords.add(coord)
+        #     label = rdr.render(node.concept)
+        #     short_label = (
+        #         label.replace("http://example.org/imdb/", "")
+        #         .replace("xsd:double", "")
+        #         .replace("hasRatingValue", "Rating")
+        #         .replace("∃ ", "")[:30]
+        #     )
+        #     plt.annotate(short_label, (node.quality, node.preference),
+        #                  fontsize=10, alpha=0.85, weight='bold')
+        #
+        # plt.xlabel("F1-score (Quality)", fontsize=16)
+        # plt.ylabel("Preference Score", fontsize=16)
+        # plt.title(title, fontsize=18, weight='bold')
+        # plt.legend(fontsize=14)
+        # plt.grid(True, linestyle='--', alpha=0.6)
+        # plt.tight_layout()
+        #
+        # # Show non-blocking for script continuation
+        # plt.show(block=True)
+        # time.sleep(1)
 
     def _finalize_and_terminate(self):
         self.final_pareto_front = self.pareto_front
@@ -267,7 +286,7 @@ class CELOE_PREF(CELOE):
             for ref in self.downward_refinement(most_promising):
                 # we ignore all refinements with lower length
                 # (this also avoids duplicate node children)
-                if ref.len < minimum_length:
+                if ref.len < minimum_length:# and ref.preference <= most_promising.preference:
                     continue
                 # note: tree_parent has to be equal to node_tree_parent(ref.parent_node)!
                 added = self._add_node(ref, tree_parent)
@@ -276,11 +295,11 @@ class CELOE_PREF(CELOE):
                         # Keep only non-dominated concepts
                         self.pareto_front = [n for n in self.pareto_front if not self.is_dominated(n, [ref])]
                         self.pareto_front.append(ref)
+                    #     # print(f"length of the pareto front is now {len(self.pareto_front)}")
                     goal_found = ref.quality == 1.0
                     if goal_found and self.terminate_on_goal:
-                        print(f"[INFO] Found perfect concept {owl_expression_to_dl(ref.concept)} but continuing due to PREF.")
+                        print(f"[INFO] Found good concept {owl_expression_to_dl(ref.concept)} but continuing due to PREF.")
                         continue
-                        # return self._finalize_and_terminate()
             if self.calculate_min_max:
                 # This is purely a statistical function, it does not influence CELOE
                 self.update_min_max_horiz_exp(most_promising)
@@ -307,13 +326,7 @@ class CELOE_PREF(CELOE):
         return self.search_tree[node.concept]
 
     def _add_node(self, ref: OENode, tree_parent: Optional[TreeNode[OENode]]):
-        # TODO:CD: Why have this constraint ?
-        #  We should not ignore a concept due to this constraint.
-        #  It might be the case that new path to ref.concept is a better path. Hence, we should update its parent
-        #  depending on the new heuristic value.
-        #  Solution: If concept exists we should compare its first heuristic value  with the new one
         if ref.concept in self.search_tree:
-            # ignoring refinement, it has been refined from another parent
             return False
 
         norm_concept = OperandSetTransform().simplify(ref.concept)
@@ -326,22 +339,29 @@ class CELOE_PREF(CELOE):
         self.search_tree[ref.concept] = TreeNode(ref, tree_parent, is_root=ref.is_root)
         e = evaluate_concept(self.kb, ref.concept, self.quality_func, self._learning_problem)
 
-        ref.quality = e.q
+        #compute quality
+        ref.quality =  e.q
+
         self._number_of_tested_concepts += 1
-        if ref.quality == 0:  # > too weak
+        if self._number_of_tested_concepts % 10 == 0.0:
+            print(f"number of tested concepts {self._number_of_tested_concepts}")
+        #
+        # if self._number_of_tested_concepts >= 500:
+        #     return self._finalize_and_terminate()
+
+        if ref.quality == 0:
             return False
         assert 0 <= ref.quality <= 1.0
 
-        ref.preference = self.preference_score_utility_based(ref.concept)
 
-        # TODO: expression rewriting
+
+        # Heuristic scoring
         self.heuristic_func.apply(ref, e.inds, self._learning_problem)
+
         if not norm_seen and self.best_descriptions.maybe_add(ref):
-            #if logger.isEnabledFor(logging.DEBUG):
-            # print("Better description found: %s", ref)
-            pass
+            pass  # could log here
+
         self.heuristic_queue.add(ref)
-        # TODO: implement noise
         return True
 
     def _add_node_evald(self, ref: OENode, eval_: EvaluatedConcept, tree_parent: Optional[TreeNode[OENode]]):  # pragma: no cover
@@ -415,16 +435,16 @@ class CELOE_PREF(CELOE):
                     heur_idx = ""
 
                 print(
-                    "[%3s] [%4s] %s %s \t HE:%s Q:%f Pref:%s %s Heur:%s |RC|:%s" % (
+                    "[%3s] [%4s] %s %s \t HE:%s Q:%f Heur:%s |RC|:%s" % (
                         best_idx,
                         heur_idx,
                         depths,
                         render_str,
                         node.h_exp,
                         round(node.quality, 4) if node.quality is not None else "None",
-                        round(node.preference, 4) if hasattr(node,
-                                                             "preference") and node.preference is not None else "None",
-                        "(PARETO)" if is_pareto else "",
+                        # round(node.preference, 4) if hasattr(node,
+                        #                                      "preference") and node.preference is not None else "None",
+                        # "(PARETO)" if is_pareto else "",
                         node.heuristic,
                         node.refinement_count
                     )
@@ -434,26 +454,19 @@ class CELOE_PREF(CELOE):
                 print_partial_tree_recursive(c, depth + 1)
 
         # Start printing from the root
-        root_node = self.search_tree[self.start_class]
-        print_partial_tree_recursive(root_node)
+        # root_node = self.search_tree[self.start_class]
+        # print_partial_tree_recursive(root_node)
 
         print('######## ', heading_step, 'step Best Hypotheses ###########')
 
         predictions = list(self.best_hypotheses(top_n, return_node=True))
         for ith, node in enumerate(predictions):
-            print(
-                '{0}-\t{1}\t{2}:{3}\tPref:{4} Heuristic:{5}'.format(
-                    ith + 1,
-                    rdr.render(node.concept),
-                    type(self.quality_func).name,
-                    round(node.quality, 4) if node.quality is not None else "None",
-                    round(node.preference, 4) if hasattr(node,
-                                                         "preference") and node.preference is not None else "None",
-                    node.heuristic
-                )
-            )
-
+            print('{0}-\t{1}\t{2}:{3}\tPref.:{4}:\tHeuristic:{5}:'.format(
+                ith + 1, DLSyntaxObjectRenderer().render(node.concept),
+                type(self.quality_func).name, node.quality, node.preference,
+                node.heuristic))
         print('######## Search Tree ###########\n')
+
 
     def update_min_max_horiz_exp(self, node: OENode):
         he = node.h_exp

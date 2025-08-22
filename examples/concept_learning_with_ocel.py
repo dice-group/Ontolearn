@@ -10,7 +10,7 @@ from owlapy.class_expression import OWLClass
 setup_logging()
 
 try:
-    os.chdir("examples")
+    os.chdir("examples__")
 except FileNotFoundError:
     pass
 

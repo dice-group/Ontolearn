@@ -1,4 +1,4 @@
-"""$ python examples/retrieval_eval.py --path_kg KGs/Family/father.owl
+"""$ python examples__/retrieval_eval.py --path_kg KGs/Family/father.owl
 
 ##################################################
 Description of generated Concepts

@@ -3,7 +3,7 @@
 dicee --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --path_to_store_single_run KeciFamilyRun --backend rdflib
 
 
-python examples/concept_learning_neural_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --kge KeciFamilyRun --max_runtime 3 --report family.csv
+python examples__/concept_learning_neural_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --kge KeciFamilyRun --max_runtime 3 --report family.csv
 
 
 """
@@ -54,8 +54,8 @@ def dl_concept_learning(args):
         negatives_key = "negative_examples"
     else:
         problems = settings.items()
-        positives_key = "positive examples"
-        negatives_key = "negative examples"
+        positives_key = "positive examples__"
+        negatives_key = "negative examples__"
 
     for str_target_concept, examples in problems:
         print("Target concept: ", str_target_concept)
@@ -70,7 +70,7 @@ def dl_concept_learning(args):
             #
             data.setdefault("LP", []).append(str_target_concept)
             data.setdefault("Fold", []).append(ith)
-            # () Extract positive and negative examples from train fold
+            # () Extract positive and negative examples__ from train fold
             train_pos = {pos_individual for pos_individual in X[train_index][y[train_index] == 1]}
             train_neg = {neg_individual for neg_individual in X[train_index][y[train_index] == 0]}
 
@@ -78,7 +78,7 @@ def dl_concept_learning(args):
             assert train_pos.issubset(examples[positives_key])
             assert train_neg.issubset(examples[negatives_key])
 
-            # () Extract positive and negative examples from test fold
+            # () Extract positive and negative examples__ from test fold
             test_pos = {pos_individual for pos_individual in X[test_index][y[test_index] == 1]}
             test_neg = {neg_individual for neg_individual in X[test_index][y[test_index] == 0]}
 
@@ -154,7 +154,7 @@ def dl_concept_learning(args):
 
 
 if __name__ == "__main__":
-    # python examples/concept_learning_neural_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --kge KeciFamilyRun --max_runtime 3 --report family.csv
+    # python examples__/concept_learning_neural_evaluation.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --kge KeciFamilyRun --max_runtime 3 --report family.csv
     parser = argparse.ArgumentParser(description="OWL Class Expression Learning with Neural Reasoner")
     parser.add_argument("--lps", type=str, default="/home/cdemir/Desktop/Softwares/Ontolearn/LPs/Family/lps.json",
                         help="Path to the learning problems")

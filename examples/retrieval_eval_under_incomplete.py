@@ -6,7 +6,7 @@
    the retrieval results of each reasoner and the expected goal, as well as their runtime. 
    The result is then save as a csv file for further investigation.
    
-   To run the script: python examples/retrieval_eval_under_incomplete.py"""
+   To run the script: python examples__/retrieval_eval_under_incomplete.py"""
 
 
 
@@ -108,9 +108,9 @@ def execute(args):
         data = []
 
         if args.sample == "Yes":
-            subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path, "--ratio_sample_nc","0.1", "--ratio_sample_object_prop", "0.2", "--path_report", path_report])
+            subprocess.run(['python', 'examples__/retrieval_eval.py', "--path_kg", path, "--ratio_sample_nc","0.1", "--ratio_sample_object_prop", "0.2", "--path_report", path_report])
         else:
-            subprocess.run(['python', 'examples/retrieval_eval.py', "--path_kg", path, "--path_report", path_report])
+            subprocess.run(['python', 'examples__/retrieval_eval.py', "--path_kg", path, "--path_report", path_report])
         
 
         df = pd.read_csv(f"{directory}/ALCQHI_Retrieval_Results.csv")

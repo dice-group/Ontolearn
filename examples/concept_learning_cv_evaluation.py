@@ -1,9 +1,9 @@
 """ StratifiedKFold Cross Validating DL Concept Learning Algorithms
-python examples/concept_learning_cv_evaluation.py --lps LPs/Family/lps_difficult.json --kb KGs/Family/family.owl --max_runtime 60 --report family.csv --path_of_nces_embeddings ./NCESData/family/embeddings/DeCaL_entity_embeddings.csv --path_of_nces_trained_models ./NCESData/family/trained_models/ --path_of_nces2_trained_models ./NCES2Data/family/trained_models/ --path_of_roces_trained_models ./ROCESData/family/trained_models/ --path_of_clip_embeddings ./CLIPData/family/embeddings/ConEx_entity_embeddings.csv
+python examples__/concept_learning_cv_evaluation.py --lps LPs/Family/lps_difficult.json --kb KGs/Family/family.owl --max_runtime 60 --report family.csv --path_of_nces_embeddings ./NCESData/family/embeddings/DeCaL_entity_embeddings.csv --path_of_nces_trained_models ./NCESData/family/trained_models/ --path_of_nces2_trained_models ./NCES2Data/family/trained_models/ --path_of_roces_trained_models ./ROCESData/family/trained_models/ --path_of_clip_embeddings ./CLIPData/family/embeddings/ConEx_entity_embeddings.csv
 
-python examples/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 60 --report carcinogenesis.csv --path_of_nces_embeddings ./NCESData/carcinogenesis/embeddings/DeCaL_entity_embeddings.csv --path_of_nces_trained_models ./NCESData/carcinogenesis/trained_models/ --path_of_nces2_trained_models ./NCES2Data/carcinogenesis/trained_models/ --path_of_roces_trained_models ./ROCESData/carcinogenesis/trained_models/ --path_of_clip_embeddings ./CLIPData/carcinogenesis/embeddings/ConEx_entity_embeddings.csv
+python examples__/concept_learning_cv_evaluation.py --lps LPs/Carcinogenesis/lps.json --kb KGs/Carcinogenesis/carcinogenesis.owl --max_runtime 60 --report carcinogenesis.csv --path_of_nces_embeddings ./NCESData/carcinogenesis/embeddings/DeCaL_entity_embeddings.csv --path_of_nces_trained_models ./NCESData/carcinogenesis/trained_models/ --path_of_nces2_trained_models ./NCES2Data/carcinogenesis/trained_models/ --path_of_roces_trained_models ./ROCESData/carcinogenesis/trained_models/ --path_of_clip_embeddings ./CLIPData/carcinogenesis/embeddings/ConEx_entity_embeddings.csv
 
-python examples/concept_learning_cv_evaluation.py --lps LPs/Mutagenesis/lps.json --kb KGs/Mutagenesis/mutagenesis.owl --max_runtime 60 --report mutagenesis.csv --path_of_nces_embeddings ./NCESData/mutagenesis/embeddings/DeCaL_entity_embeddings.csv --path_of_nces_trained_models ./NCESData/mutagenesis/trained_models/ --path_of_nces2_trained_models ./NCES2Data/mutagenesis/trained_models/ --path_of_roces_trained_models ./ROCESData/mutagenesis/trained_models/ --path_of_clip_embeddings ./CLIPData/mutagenesis/embeddings/ConEx_entity_embeddings.csv
+python examples__/concept_learning_cv_evaluation.py --lps LPs/Mutagenesis/lps.json --kb KGs/Mutagenesis/mutagenesis.owl --max_runtime 60 --report mutagenesis.csv --path_of_nces_embeddings ./NCESData/mutagenesis/embeddings/DeCaL_entity_embeddings.csv --path_of_nces_trained_models ./NCESData/mutagenesis/trained_models/ --path_of_nces2_trained_models ./NCES2Data/mutagenesis/trained_models/ --path_of_roces_trained_models ./ROCESData/mutagenesis/trained_models/ --path_of_clip_embeddings ./CLIPData/mutagenesis/embeddings/ConEx_entity_embeddings.csv
 """
 import json
 import time
@@ -96,8 +96,8 @@ def dl_concept_learning(args):
         negatives_key = "negative_examples"
     else:
         problems = settings.items()
-        positives_key = "positive examples"
-        negatives_key = "negative examples"
+        positives_key = "positive examples__"
+        negatives_key = "negative examples__"
     for str_target_concept, examples in problems:
         print('Target concept: ', str_target_concept)
         p = examples[positives_key]
@@ -111,7 +111,7 @@ def dl_concept_learning(args):
             #
             data.setdefault("LP", []).append(str_target_concept)
             data.setdefault("Fold", []).append(ith)
-            # () Extract positive and negative examples from train fold
+            # () Extract positive and negative examples__ from train fold
             train_pos = {pos_individual for pos_individual in X[train_index][y[train_index] == 1]}
             train_neg = {neg_individual for neg_individual in X[train_index][y[train_index] == 0]}
 
@@ -119,7 +119,7 @@ def dl_concept_learning(args):
             assert train_pos.issubset(examples[positives_key])
             assert train_neg.issubset(examples[negatives_key])
 
-            # () Extract positive and negative examples from test fold
+            # () Extract positive and negative examples__ from test fold
             test_pos = {pos_individual for pos_individual in X[test_index][y[test_index] == 1]}
             test_neg = {neg_individual for neg_individual in X[test_index][y[test_index] == 0]}
 

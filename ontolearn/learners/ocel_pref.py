@@ -65,6 +65,7 @@ class OCEL_PREF(CELOE_PREF):
 
     def __init__(self,
                  knowledge_base: AbstractKnowledgeBase,
+                 url: None,
                  reasoner: Optional[owlapy.abstracts.AbstractOWLReasoner] = None,
                  refinement_operator: Optional[BaseRefinement[OENode]] = None,
                  quality_func: Optional[AbstractScorer] = None,
@@ -103,6 +104,7 @@ class OCEL_PREF(CELOE_PREF):
             heuristic_func = OCELHeuristic()
 
         super().__init__(knowledge_base=knowledge_base,
+                         url=url,
                          reasoner=reasoner,
                          refinement_operator=refinement_operator,
                          quality_func=quality_func,

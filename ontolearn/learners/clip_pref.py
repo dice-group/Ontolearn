@@ -31,7 +31,9 @@ from ontolearn.clip_architectures import LengthLearner_LSTM, LengthLearner_GRU, 
 from ontolearn.clip_trainer import CLIPTrainer
 from sortedcontainers import SortedSet
 import os
-from ontolearn.learners import CELOE_PREF
+from ontolearn.learners import CELOE_PREF, CELOE
+from ontolearn.concept_learner import CLIP
+
 from itertools import islice
 from owlapy import owl_expression_to_dl
 
@@ -94,11 +96,13 @@ class CLIP_PREF(CELOE_PREF):
                  predictor_name=None,
                  pretrained_predictor_name=["SetTransformer", "LSTM", "GRU", "CNN"],
                  load_pretrained=False,
+                 url=None,
                  num_workers=4,
                  num_examples=1000,
                  output_size=15
                  ):
         super().__init__(knowledge_base,
+                         url,
                          reasoner,
                          refinement_operator,
                          quality_func,

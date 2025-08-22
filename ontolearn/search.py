@@ -36,6 +36,7 @@ from owlapy.utils import as_index, OrderedOWLObject
 from .abstracts import AbstractNode, AbstractHeuristic, AbstractScorer, AbstractOEHeuristicNode, LBLSearchTree, \
     AbstractConceptNode, EncodedLearningProblem, DRILLAbstractTree
 from owlapy import owl_expression_to_dl
+from .preference_functions import preference_score_utility_based, preference_score_cached
 
 _N = TypeVar('_N')  #:
 
@@ -223,7 +224,7 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
              _NodeParentRef['OENode'], AbstractNode, AbstractConceptNode, AbstractOEHeuristicNode):
     """OENode search tree node."""
     __slots__ = '_concept', '_len', '_individuals_count', '_quality', '_heuristic', \
-        '_parent_ref', '_horizontal_expansion', 'preference', \
+        '_parent_ref', '_horizontal_expansion', '_preference', \
         '_refinement_count', '__weakref__'
 
     renderer: ClassVar[OWLObjectRenderer] = DLSyntaxObjectRenderer()
@@ -242,6 +243,13 @@ class OENode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeH
         self._horizontal_expansion = length
         self._refinement_count = 0
         AbstractNode.__init__(self)
+        self._preference = None
+
+    @property
+    def preference(self):
+        if self._preference is None:
+            self._preference = preference_score_cached(self.concept)
+        return self._preference
 
     @property
     def h_exp(self) -> int:

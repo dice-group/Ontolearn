@@ -11,7 +11,7 @@ from owlapy.class_expression import OWLClass
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 
 try:
-    os.chdir("examples")
+    os.chdir("examples__")
 except FileNotFoundError:
     pass
 

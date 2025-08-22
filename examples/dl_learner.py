@@ -10,7 +10,7 @@ Moreover, the user does not need to write a config file for each learning proble
 # Download DL-Learner
 wget --no-check-certificate --content-disposition https://github.com/SmartDataAnalytics/DL-Learner/releases/download/1.5.0/dllearner-1.5.0.zip && unzip dllearner-1.5.0.zip
 # Test the DL-learner framework
-dllearner-1.5.0/bin/cli dllearner-1.5.0/examples/father.conf
+dllearner-1.5.0/bin/cli dllearner-1.5.0/examples__/father.conf
 
 
 A log file is on the fly generated and detailed results along with the hyperparameters are stored.

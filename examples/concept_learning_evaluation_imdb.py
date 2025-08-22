@@ -31,127 +31,150 @@ from ontolearn.utils.static_funcs import compute_f1_score
 
 pd.set_option("display.precision", 5)
 
+def run_algorithm(name, learner, lp, kb, data, url=None, with_pref=False):
+    """Run a learner safely with timing, error handling, and logging."""
+    try:
+        print(f"{name} starts..", end="\t")
+        start_time = time.time()
+        pred = learner.fit(lp).best_hypotheses(n=1)
+        runtime = time.time() - start_time
+        print(f"{name} ends..", end="\t")
+
+        f1 = compute_f1_score(
+            individuals=frozenset(kb.individuals(pred)),
+            pos=lp.pos,
+            neg=lp.neg
+        )
+
+        pref = None
+        if with_pref and url is not None:
+            pref = preference_score_utility_based(pred, url)
+
+        # Save results
+        data.setdefault(f"F1-{name}", []).append(f1)
+        data.setdefault(f"RT-{name}", []).append(runtime)
+        data.setdefault(f"Solution-{name}", []).append(owl_expression_to_dl(pred))
+        if pref is not None:
+            data.setdefault(f"Pref-{name}", []).append(pref)
+
+        # Logs
+        print(f"{name} Quality: {f1:.3f}", end="\t")
+        print(f"{name} Runtime: {runtime:.3f}")
+        if pref is not None:
+            print(f"{name} Preference: {pref:.3f}")
+
+    except Exception as e:
+        print(f"{name} failed: {e}")
+        data.setdefault(f"F1-{name}", []).append(None)
+        data.setdefault(f"RT-{name}", []).append(None)
+        data.setdefault(f"Solution-{name}", []).append(None)
+        if with_pref:
+            data.setdefault(f"Pref-{name}", []).append(None)
+
 
 def dl_concept_learning(args):
     kb = KnowledgeBase(path=args.kb)
-    op = ExpressRefinement(knowledge_base=kb, use_inverse=True,
+    op = ModifiedCELOERefinement(knowledge_base=kb, use_inverse=True,
                            use_numeric_datatypes=True)
 
-    op_drill = LengthBasedRefinement(knowledge_base=kb, use_data_properties=True)
+    # Instantiate learners
+    celoe_pref  = CELOE_PREF(kb, quality_func=F1(), max_runtime=args.max_runtime, refinement_operator=op, url=args.url)
+    celoe       = CELOE(kb, quality_func=F1(), max_runtime=args.max_runtime, refinement_operator=op)
+    ocel_pref   = OCEL_PREF(kb, quality_func=F1(), max_runtime=args.max_runtime, url=args.url)
+    ocel        = OCEL(kb, quality_func=F1(), max_runtime=args.max_runtime)
+    clip_pref   = CLIP_PREF(kb, path_of_embeddings=None, refinement_operator=op, load_pretrained=False,
+                            max_runtime=args.max_runtime, url=args.url)
+    clip        = CLIP(kb, path_of_embeddings=None, refinement_operator=op, load_pretrained=False,
+                       max_runtime=args.max_runtime)
 
-    drill = DRILL_PREF(knowledge_base=KnowledgeBase(path=args.kb),
-                  quality_func=F1(),
-                  max_runtime=args.max_runtime, refinement_operator=op_drill)
-    celoe  = CELOE_PREF(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime, refinement_operator=op)
-    # ocel = OCEL_PREF(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
-    # tdl = TDL(knowledge_base=KnowledgeBase(path=args.kb),
-    #           kwargs_classifier={"random_state": 0},
-    #           max_runtime=args.max_runtime)
-    clip = CLIP_PREF(knowledge_base=kb, path_of_embeddings=None,
-                refinement_operator=op, load_pretrained=False, max_runtime=args.max_runtime)
-    data = dict()
 
-    def run_query(sparql_query: str):
-        return requests.Session().post(args.url, data={"query": sparql_query})
+    data = {}
 
-    def individuals_imdb(min_rate: float, max_rate: float):
-        imdb_prefix = "PREFIX imdb: <http://example.org/imdb/>"  # <https://www.imdb.com/>" (this for the 26GB dataset)
-        xsd_prefix = "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>"
-
-        query = f"""
-            {imdb_prefix}
-            {xsd_prefix}
-            SELECT DISTINCT ?x WHERE {{
-                ?x imdb:hasRatingValue ?rating .
-                FILTER(?rating >= {min_rate} && ?rating <= {max_rate})
-            }} LIMIT 250 
-            """
-
-        for binding in run_query(query).json()["results"]["bindings"]:
-            yield OWLNamedIndividual(IRI.create(binding["x"]["value"]))
-
-    with open('LPs/IMDB/learning_problems.json', 'r') as f:
+    # Load learning problems
+    with open(args.lps, 'r') as f:
         problems_data = json.load(f)
 
-    # Extract and iterate over the learning problems
-    for idx, problem in enumerate(problems_data["problems"]):
-        print(f"\nSolving LP {idx + 1} with threshold {problem['threshold']}")
+    for idx, problem in enumerate(problems_data):
+        try:
+            # Handle different JSON formats
+            if isinstance(problem, dict) and "positives" in problem:
+                positives_uris = problem["positives"]
+                negatives_uris = problem["negatives"]
+                lp_name = f"LP-{idx+1}-Persona"
+                print(f"\n solving learning problem {lp_name}")
+            elif isinstance(problem, list) and len(problem) >= 2:
+                positives_uris = problem[1].get("positive examples", [])
+                negatives_uris = problem[1].get("negative examples", [])
+                lp_name = f"LP-{idx+1}-{problem[0]}"
+                print(f"\n solving learning problem {lp_name}")
 
-        data.setdefault("LPs", []).append(f"LP-{idx + 1}_thr-{problem['threshold']}")
+            else:
+                print(f"Skipping malformed LP at index {idx}")
+                continue
+        except Exception as e:
+            print(f"Error parsing problem {idx}: {e}")
+            continue
 
-        positives_uris = problem["positives"]
-        negatives_uris = problem["negatives"]
+        data.setdefault("LPs", []).append(lp_name)
 
         positives = {OWLNamedIndividual(IRI.create(uri)) for uri in positives_uris}
         negatives = {OWLNamedIndividual(IRI.create(uri)) for uri in negatives_uris}
-        # all_instances=individuals_imdb(1.1, 2.0)
-
-        # Create learning problem
         lp = PosNegLPStandard(pos=positives, neg=negatives, all_instances=None)
 
-        # () Fit the learning problem to the model
-        #
-        # print("OCEL starts..", end="\t")
-        # start_time = time.time()
-        # pred_ocel = ocel.fit(lp).best_hypotheses(n=1)
-        # print("OCEL ends..", end="\t")
-        # rt_ocel = time.time() - start_time
-        # f1_ocel = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_ocel)}), pos=lp.pos,
-        #                            neg=lp.neg)
-        # data.setdefault("F1-OCEL", []).append(f1_ocel)
-        # data.setdefault("RT-OCEL", []).append(rt_ocel)
-        # data.setdefault("Solution-OCEL", []).append(owl_expression_to_dl(pred_ocel))
-        #
-        # print(f"OCEL Quality: {f1_ocel:.3f}", end="\t")
-        # print(f"OCEL Runtime: {rt_ocel:.3f}")
-        # print("CELOE starts..", end="\t")
-        # start_time = time.time()
-        # pred_celoe = celoe.fit(lp).best_hypotheses(n=1)
-        # print("CELOE Ends..", end="\t")
-        # rt_celoe = time.time() - start_time
-        # f1_celoe = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_celoe)}), pos=lp.pos,
-        #                             neg=lp.neg)
-        # data.setdefault("F1-CELOE", []).append(f1_celoe)
-        # data.setdefault("RT-CELOE", []).append(rt_celoe)
-        # data.setdefault("Solution-CELOE", []).append(owl_expression_to_dl(pred_celoe))
-        #
-        # print(f"CELOE Quality: {f1_celoe:.3f}", end="\t")
-        # print(f"CELOE Runtime: {rt_celoe:.3f}")
+        # Run all algorithms with safety
+        # run_algorithm("OCEL", ocel, lp, kb, data)
+        # run_algorithm("OCEL_Pref", ocel_pref, lp, kb, data, args.url, with_pref=True)
+        # run_algorithm("CELOE", celoe, lp, kb, data, args.url, with_pref=True)
+        run_algorithm("CELOE_Pref", celoe_pref, lp, kb, data, args.url, with_pref=True)
+        # run_algorithm("CLIP", clip, lp, kb, data)
+        # run_algorithm("CLIP_Pref", clip_pref, lp, kb, data)
 
-        # print("CLIP starts..", end="\t")
+    # Save results
+    df = pd.DataFrame.from_dict(data)
+    df.to_csv(args.report, index=False)
+    print(df)
+    print(df.select_dtypes(include="number").mean())
+    print(df.select_dtypes(include="number").mean().values.tolist())
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Description Logic Concept Learning')
+    parser.add_argument("--max_runtime", type=int, default=100)
+    parser.add_argument("--lps", type=str, default="LPs/IMDB/LPs.json")
+    parser.add_argument("--kb", type=str, default="/home/dice/Downloads/IMDB/imdb_10000.owl")
+    parser.add_argument("--path_pretrained_kge", type=str, default=None)
+    parser.add_argument("--report", type=str, default="report.csv")
+    parser.add_argument('--url', default="http://localhost:3030/imdb_10000/sparql",
+                        type=str, help='The triplestore endpoint.')
+    dl_concept_learning(parser.parse_args())
+
+
+
+#   tdl = TDL(knowledge_base=KnowledgeBase(path=args.kb),
+#               kwargs_classifier={"random_state": 0},
+#               max_runtime=args.max_runtime)
+
+
+ # print("Evo starts..", end="\t")
         # start_time = time.time()
-        # pred_clip = clip.fit(lp).best_hypotheses(n=1)
-        # print("CLIP Ends..", end="\t")
-        # rt_clip = time.time() - start_time
-        # f1_clip = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_clip)}), pos=lp.pos,
-        #                             neg=lp.neg)
-        # data.setdefault("F1-CLIP", []).append(f1_clip)
-        # data.setdefault("RT-CLIP", []).append(rt_clip)
-        # data.setdefault("Solution-CLIP", []).append(owl_expression_to_dl(pred_clip))
+        # # Evolearner has a bug and KB needs to be reloaded
+        # evo = EvoLearner_pref(knowledge_base=KnowledgeBase(path=args.kb), quality_func=F1(), max_runtime=args.max_runtime,
+        #                  use_data_properties=True, use_card_restrictions=True, population_size=50, num_generations=25, preference_func=preference_score_utility_based)
+        # # evo = EvoLearner(knowledge_base=KnowledgeBase(path=args.kb), quality_func=F1(),
+        # #                       max_runtime=args.max_runtime,
+        # #                       use_data_properties=True, use_card_restrictions=True, population_size=50,
+        # #                       num_generations=25)
+        # pred_evo = evo.fit(lp).best_hypotheses(n=1)
+        # print("Evo ends..", end="\t")
         #
-        # print(f"CLIP Quality: {f1_clip:.3f}", end="\t")
-        # print(f"CLIP Runtime: {rt_clip:.3f}")
-
-        print("Evo starts..", end="\t")
-        start_time = time.time()
-        # Evolearner has a bug and KB needs to be reloaded
-        evo = EvoLearner_pref(knowledge_base=KnowledgeBase(path=args.kb), quality_func=F1(), max_runtime=args.max_runtime,
-                         use_data_properties=True, use_card_restrictions=True, population_size=50, num_generations=25, preference_func=preference_score_utility_based)
-        # evo = EvoLearner(knowledge_base=KnowledgeBase(path=args.kb), quality_func=F1(),
-        #                       max_runtime=args.max_runtime,
-        #                       use_data_properties=True, use_card_restrictions=True, population_size=50,
-        #                       num_generations=25)
-        pred_evo = evo.fit(lp).best_hypotheses(n=1)
-        print("Evo ends..", end="\t")
-
-        rt_evo = time.time() - start_time
-        f1_evo = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_evo)}), pos=lp.pos, neg=lp.neg)
-        data.setdefault("F1-Evo", []).append(f1_evo)
-        data.setdefault("RT-Evo", []).append(rt_evo)
-        data.setdefault("Solution-Evo", []).append(owl_expression_to_dl(pred_evo))
-        print(f"Evo Quality: {f1_evo:.3f}", end="\t")
-        print(f"Evo Runtime: {rt_evo:.3f}")
-        print("Best solution found", owl_expression_to_dl(pred_evo))
+        # rt_evo = time.time() - start_time
+        # f1_evo = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_evo)}), pos=lp.pos, neg=lp.neg)
+        # data.setdefault("F1-Evo", []).append(f1_evo)
+        # data.setdefault("RT-Evo", []).append(rt_evo)
+        # data.setdefault("Solution-Evo", []).append(owl_expression_to_dl(pred_evo))
+        # print(f"Evo Quality: {f1_evo:.3f}", end="\t")
+        # print(f"Evo Runtime: {rt_evo:.3f}")
+        # print("Best solution found", owl_expression_to_dl(pred_evo))
         # exit(0)
         #
         # print("DRILL starts..", end="\t")
@@ -181,39 +204,6 @@ def dl_concept_learning(args):
         # data.setdefault("RT-DRILL", []).append(rt_drill)
         # data.setdefault("Solution-DRILL", []).append(solution_drill)
         #
-        # print("TDL starts..", end="\t")
-        # start_time = time.time()
-        # # () Fit model training dataset
-        # pred_tdl = tdl.fit(lp).best_hypotheses(n=1)
-        # print("TDL ends..", end="\t")
-        # rt_tdl = time.time() - start_time
-        # print(owl_expression_to_dl(pred_tdl))
-        #
-        # # () Quality on the training data
-        # f1_tdl = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_tdl)}),
-        #                           pos=lp.pos,
-        #                           neg=lp.neg)
-        #
-        # data.setdefault("F1-TDL", []).append(f1_tdl)
-        # data.setdefault("RT-TDL", []).append(rt_tdl)
-        # data.setdefault("Solution-TDL", []).append(owl_expression_to_dl(pred_tdl))
-        # print(f"TDL Quality: {f1_tdl:.3f}", end="\t")
-        # print(f"TDL Runtime: {rt_tdl:.3f}")
-    df = pd.DataFrame.from_dict(data)
-    df.to_csv(args.report, index=False)
-    print(df)
-    print(df.select_dtypes(include="number").mean())
-
-    print(df.select_dtypes(include="number").mean().values.tolist())
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Description Logic Concept Learning')
-    parser.add_argument("--max_runtime", type=int, default=10)
-    parser.add_argument("--lps", type=str, default="LPs/IMDB/learning_problems.json")  # , required=True)
-    parser.add_argument("--kb", type=str, default="/home/dice/Downloads/IMDB/imdb_1000.owl")  # ,required=True)
-    parser.add_argument("--path_pretrained_kge", type=str, default=None)
-    parser.add_argument("--report", type=str, default="report.csv")
-    parser.add_argument('--url', default="http://localhost:3030/imdb_1000/sparql",
-                        type=str, help='The triplestore endpoint.')  # http://localhost:3030/imdb/sparql
-    dl_concept_learning(parser.parse_args())
+
