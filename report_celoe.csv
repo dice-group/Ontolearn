@@ -1,0 +1,41 @@
+LPs,F1-CELOE,RT-CELOE,Solution-CELOE,Pref-CELOE,F1-CELOE_Pref,RT-CELOE_Pref,Solution-CELOE_Pref,Pref-CELOE_Pref
+Genre,,,,,,,,
+Person,,,,,,,,
+∃ hasPrincipal.Person,0.8928571428571428,100.73027396202087,∃ hasRatingValue.xsd:double[≥ 2.65],6.221817445861154,0.8928571428571428,103.09200263023376,∃ hasRatingValue.xsd:double[≥ 2.65],6.221817445861154
+∃ hasRatingValue.xsd:double[≥ 1.85],1.0,1.1153740882873535,∃ hasRatingValue.xsd:double[≥ 1.85],6.184206834352132,1.0,5.616573333740234,∃ hasRatingValue.xsd:double[≥ 4.25],6.451377258704287
+∀ hasPrincipal.Person,0.8750000000000001,102.37922310829163,∀ hasWriter.Person,6.174229999999988,0.8750000000000001,1163.6675732135773,∀ hasWriter.(∃ hasWriter⁻.(∀ hasWriter.(∀ hasPrincipal⁻.⊤))),6.659540034071555
+∀ hasWriter.Person,1.0,2.048898458480835,∀ hasWriter.Person,6.174229999999988,1.0,6.859599828720093,∀ hasWriter.(¬Person),6.657800511508956
+∃ hasDirector⁻.Movie,,,,,,,,
+∃ hasPrincipal⁻.Movie,,,,,,,,
+≤ 9 hasWriter.Person,1.0,9.8276948928833,≤ 9 hasWriter.Person,6.1753129694541675,1.0,272.84181213378906,≤ 9 hasWriter.((∃ hasWriter⁻.(¬Episode)) ⊔ (∀ hasPrincipal⁻.⊤)),6.6649789029535915
+∃ hasWriter⁻.⊤,,,,,,,,
+≤ 2 hasGenre.Genre,1.0,15.570061445236206,≤ 2 hasGenre.Genre,6.193767258382613,1.0,222.78915643692017,≤ 2 hasGenre.Genre,6.193767258382613
+Movie ⊓ (∃ hasDirector.Person),0.7076923076923077,100.09285020828247,∃ hasRatingValue.xsd:double[≤ 7.45],5.780216346153886,0.7076923076923077,102.63961601257324,∃ hasRatingValue.xsd:double[≤ 7.45],5.780216346153886
+Person ⊔ (∃ hasRatingValue.xsd:double[≤ 9.05]),0.9583333333333334,101.18967700004578,Person,0.0,0.9583333333333334,101.86036086082458,Person,0.0
+Genre ⊔ (∃ hasRatingValue.xsd:double[≥ 1.85]),1.0,1.3480708599090576,∃ hasRatingValue.xsd:double[≥ 1.85],6.184206834352132,1.0,5.631861925125122,∃ hasRatingValue.xsd:double[≥ 2.65],6.221817445861154
+Genre ⊔ (∃ hasDirector.Person),0.684931506849315,101.20171856880188,∃ hasRatingValue.xsd:double[≤ 8.25],6.020694768057589,0.684931506849315,102.05555081367493,∃ hasRatingValue.xsd:double[≤ 8.25],6.020694768057589
+Person ⊔ (∃ hasRatingValue.xsd:double[≥ 1.85]),0.9583333333333334,102.38710355758667,Person,0.0,0.9583333333333334,635.1770997047424,Person,0.0
+Movie ⊓ (∃ hasRatingValue.xsd:double[≤ 9.05]),1.0,1.1300888061523438,∃ hasRatingValue.xsd:double[≤ 9.05],6.130596107055959,1.0,5.880785703659058,∃ hasRatingValue.xsd:double[≤ 9.05],6.130596107055959
+Person ⊔ (∃ hasDirector.Person),0.9795918367346939,101.72081065177917,Person,0.0,0.9795918367346939,102.44223117828369,Person,0.0
+Genre ⊔ (∃ hasRatingValue.xsd:double[≤ 9.05]),1.0,1.0960159301757812,∃ hasRatingValue.xsd:double[≤ 9.05],6.130596107055959,1.0,5.858917236328125,∃ hasRatingValue.xsd:double[≤ 9.05],6.130596107055959
+∀ hasWriter.(∀ hasDirector⁻.⊥),1.0,71.10507607460022,∀ hasWriter.(∃ hasDirector⁻.⊤),6.657800511508956,0.704225352112676,103.11577820777893,≤ 1 hasDirector.(¬Person),6.174229999999988
+∀ hasWriter.(∀ hasPrincipal⁻.⊥),1.0,2.0474605560302734,∀ hasWriter.Person,6.174229999999988,1.0,6.765527725219727,∀ hasWriter.(¬Person),6.657800511508956
+∀ hasPrincipal.(∃ hasDirector⁻.⊤),1.0,2.1016831398010254,∀ hasWriter.Person,6.174229999999988,1.0,6.809263467788696,∀ hasWriter.(¬Person),6.657800511508956
+∃ hasPrincipal.(∃ hasWriter⁻.⊤),0.6666666666666666,100.53795623779297,⊤,0.0,0.6666666666666666,102.89006185531616,≤ 7 hasPrincipal.(¬Episode),6.92506666666667
+∀ hasPrincipal.(∀ hasWriter⁻.⊥),0.9803921568627451,100.19100594520569,∀ hasWriter.Person,6.174229999999988,0.9803921568627451,238.85907006263733,∀ hasWriter.(¬Person),6.657800511508956
+Person ⊔ (∃ hasGenre⁻.Movie),,,,,,,,
+∃ hasPrincipal.(∀ hasDirector⁻.⊥),0.6666666666666666,100.96291780471802,⊤,0.0,0.6666666666666666,102.75476360321045,≤ 7 hasPrincipal.(¬Episode),6.92506666666667
+Genre ⊔ (≤ 9 hasWriter.Person),1.0,12.17072081565857,≤ 9 hasWriter.Person,6.1753129694541675,1.0,332.1869773864746,≤ 9 hasWriter.((∃ hasWriter⁻.(¬Episode)) ⊔ (∀ hasPrincipal⁻.⊤)),6.6649789029535915
+Person ⊔ (≤ 2 hasGenre.Genre),,,,,,,,
+≤ 9 hasWriter.(∀ hasPrincipal⁻.⊥),1.0,9.993027687072754,≤ 9 hasWriter.Person,6.1753129694541675,1.0,210.01244831085205,≤ 9 hasWriter.((∃ hasPrincipal⁻.(¬Episode)) ⊔ (∀ hasPrincipal⁻.⊤)),6.665485232067515
+≤ 9 hasWriter.(∃ hasDirector⁻.⊤),1.0,16.78450036048889,≤ 9 hasDirector.Person,6.175598277761075,1.0,120.34412336349487,≤ 9 hasDirector.Person,6.175598277761075
+Rating ⊔ (∃ hasDirector.(∀ hasPrincipal⁻.⊥)),0.6944444444444444,100.12369585037231,∃ hasRatingValue.xsd:double[≤ 8.25],6.020694768057589,0.6944444444444444,100.04675650596619,∃ hasRatingValue.xsd:double[≤ 8.25],6.020694768057589
+Genre ⊔ (∃ hasDirector.(∀ hasPrincipal⁻.⊥)),0.704225352112676,100.76611852645874,∃ hasRatingValue.xsd:double[≤ 8.25],6.020694768057589,0.704225352112676,100.10912299156189,∃ hasRatingValue.xsd:double[≤ 8.25],6.020694768057589
+Episode ⊔ (∃ hasDirector.(∃ hasWriter⁻.⊤)),0.684931506849315,100.20046806335449,∃ hasRatingValue.xsd:double[≤ 8.25],6.020694768057589,0.684931506849315,102.73997235298157,∃ hasRatingValue.xsd:double[≤ 8.25],6.020694768057589
+Person ⊔ (∃ hasDirector.(∃ hasPrincipal⁻.⊤)),0.9361702127659575,101.66641330718994,Person,0.0,0.9361702127659575,115.80286264419556,Person,0.0
+Genre ⊔ (∃ hasDirector.(∃ hasWriter⁻.⊤)),0.71875,100.24702334403992,≤ 2 hasGenre.Genre,6.193767258382613,0.71875,100.08333802223206,≤ 2 hasGenre.Genre,6.193767258382613
+Person ⊔ (∃ hasDirector.(∀ hasWriter⁻.⊥)),0.9583333333333334,127.57922744750977,Person,0.0,0.9583333333333334,1934.1027641296387,Person,0.0
+Genre ⊔ (≤ 9 hasWriter.(∀ hasDirector⁻.⊥)),1.0,10.03554916381836,≤ 9 hasWriter.Person,6.1753129694541675,1.0,200.39757919311523,≤ 9 hasWriter.((∃ hasDirector⁻.⊤) ⊔ (∀ hasPrincipal⁻.⊤)),6.175312969454173
+Genre ⊔ (≤ 9 hasWriter.(∃ hasPrincipal⁻.⊤)),1.0,10.03056812286377,≤ 9 hasWriter.Person,6.1753129694541675,1.0,280.5162875652313,≤ 9 hasWriter.((∃ hasPrincipal⁻.(¬Episode)) ⊔ (∀ hasPrincipal⁻.⊤)),6.665485232067515
+Person ⊓ (∃ hasPrincipal⁻.⊤) ⊓ (∀ hasWriter⁻.⊥),,,,,,,,
+(Person ⊓ (∀ hasWriter⁻.⊥)) ⊔ (∃ hasGenre⁻.⊤),,,,,,,,

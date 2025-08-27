@@ -94,7 +94,7 @@ def dl_concept_learning(args):
     with open(args.lps, 'r') as f:
         problems_data = json.load(f)
 
-    for idx, problem in enumerate(problems_data):
+    for idx, problem in enumerate(problems_data.get("problems", [])) if not isinstance(problems_data, list) else enumerate(problems_data):
         try:
             # Handle different JSON formats
             if isinstance(problem, dict) and "positives" in problem:
@@ -105,7 +105,7 @@ def dl_concept_learning(args):
             elif isinstance(problem, list) and len(problem) >= 2:
                 positives_uris = problem[1].get("positive examples", [])
                 negatives_uris = problem[1].get("negative examples", [])
-                lp_name = f"LP-{idx+1}-{problem[0]}"
+                lp_name = f"{problem[0]}"
                 print(f"\n solving learning problem {lp_name}")
 
             else:
@@ -122,12 +122,12 @@ def dl_concept_learning(args):
         lp = PosNegLPStandard(pos=positives, neg=negatives, all_instances=None)
 
         # Run all algorithms with safety
-        # run_algorithm("OCEL", ocel, lp, kb, data)
+        # run_algorithm("OCEL", ocel, lp, kb, data, args.url, with_pref=True)
         # run_algorithm("OCEL_Pref", ocel_pref, lp, kb, data, args.url, with_pref=True)
         # run_algorithm("CELOE", celoe, lp, kb, data, args.url, with_pref=True)
         run_algorithm("CELOE_Pref", celoe_pref, lp, kb, data, args.url, with_pref=True)
-        # run_algorithm("CLIP", clip, lp, kb, data)
-        # run_algorithm("CLIP_Pref", clip_pref, lp, kb, data)
+        # run_algorithm("CLIP", clip, lp, kb, data, args.url, with_pref=True)
+        # run_algorithm("CLIP_Pref", clip_pref, lp, kb, data, args.url, with_pref=True)
 
     # Save results
     df = pd.DataFrame.from_dict(data)
@@ -139,8 +139,8 @@ def dl_concept_learning(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Description Logic Concept Learning')
-    parser.add_argument("--max_runtime", type=int, default=100)
-    parser.add_argument("--lps", type=str, default="LPs/IMDB/LPs.json")
+    parser.add_argument("--max_runtime", type=int, default=30)
+    parser.add_argument("--lps", type=str, default="LPs/IMDB/lps_personas.json")
     parser.add_argument("--kb", type=str, default="/home/dice/Downloads/IMDB/imdb_10000.owl")
     parser.add_argument("--path_pretrained_kge", type=str, default=None)
     parser.add_argument("--report", type=str, default="report.csv")
