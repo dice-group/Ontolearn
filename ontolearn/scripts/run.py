@@ -86,7 +86,7 @@ def get_drill(data: dict):
     else:
         # remove the pretrained directory if already exist but does not have the drill.pth file and retrain
         if data.get("path_to_pretrained_drill", None) and os.path.isdir(data["path_to_pretrained_drill"]):
-            shutil.rmtree('path_to_pretrained_drill')
+            shutil.rmtree(data['path_to_pretrained_drill'])
         # Train & Save
         drill.train(num_of_target_concepts=data.get("num_of_target_concepts", 1),
                     num_learning_problems=data.get("num_of_training_learning_problems", 1))
