@@ -136,9 +136,12 @@ Load an RDF knowledge graph
 ```shell
 ontolearn-webservice --path_knowledge_base KGs/Mutagenesis/mutagenesis.owl
 ```
-or launch a Tentris instance https://github.com/dice-group/tentris over Mutagenesis.
+or launch a triplestore server and load Mutagenesis there.
+Some leads to launch the triplestore server:
+- https://docs.tentris.io/binary/load.html
+- https://ontolearn-docs-dice-group.netlify.app/usage/04_knowledge_base#loading-and-launching-a-triplestore
 ```shell
-ontolearn-webservice --endpoint_triple_store http://0.0.0.0:9080/sparql
+ontolearn-webservice --endpoint_triple_store <your_triples_store_sparql_endpoint>
 ```
 The below code trains DRILL with 6 randomly generated learning problems
 provided that **path_to_pretrained_drill** does not lead to a directory containing pretrained DRILL.
