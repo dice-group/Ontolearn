@@ -217,8 +217,6 @@ class TripleStoreOntology(AbstractOWLOntology):
                                     WHERE {
                                       ?x ?p ?o .
                                       FILTER NOT EXISTS { ?x a owl:Class }
-                                      FILTER NOT EXISTS { ?x a rdfs:Class }
-                                      FILTER NOT EXISTS { ?x a rdf:Property }
                                       FILTER NOT EXISTS { ?x a owl:ObjectProperty }
                                       FILTER NOT EXISTS { ?x a owl:DatatypeProperty }
                                       FILTER NOT EXISTS { ?x a owl:AnnotationProperty }
