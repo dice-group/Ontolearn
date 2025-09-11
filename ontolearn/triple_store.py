@@ -858,7 +858,7 @@ class TripleStore(AbstractKnowledgeBase):
         """Given an OWL class expression, retrieve all individuals belonging to it.
         Args:
             concept: Class expression of which to list individuals.
-            implicit_individuals: flag for returning individuals (infared implicitely).
+            implicit_individuals: flag for returning individuals (inferred implicitly).
         Returns:
             Generator of individuals belonging to the given class.
         """
