@@ -132,11 +132,13 @@ def send_http_request_to_ts_and_fetch_results(triplestore_address: str, query: s
         # return [return_type(IRI.create(i['x']['value'])) for i in
         #         response.json()['results']['bindings']]
     except JSONDecodeError as e:
-        raise JSONDecodeError(
-            f"Something went wrong with decoding JSON from the response. Check for typos in "
-            f"the `triplestore_address` = '{triplestore_address}' otherwise the error is likely "
-            f"caused by an internal issue. \n  -->Error: {e}"
-        )
+        raise RuntimeError(
+            f"Something went wrong with decoding JSON from the response. "
+            f"Check for typos in the `triplestore_address` = '{triplestore_address}' "
+            f"otherwise the error is likely caused by an internal issue."
+            f"\n  -->Error: {e}"
+            f"\n Response text: {response.text}"
+        ) from e
 
 
 def unwrap(result: Response):
@@ -215,8 +217,6 @@ class TripleStoreOntology(AbstractOWLOntology):
                                     WHERE {
                                       ?x ?p ?o .
                                       FILTER NOT EXISTS { ?x a owl:Class }
-                                      FILTER NOT EXISTS { ?x a rdfs:Class }
-                                      FILTER NOT EXISTS { ?x a rdf:Property }
                                       FILTER NOT EXISTS { ?x a owl:ObjectProperty }
                                       FILTER NOT EXISTS { ?x a owl:DatatypeProperty }
                                       FILTER NOT EXISTS { ?x a owl:AnnotationProperty }
