@@ -207,10 +207,24 @@ class TripleStoreOntology(AbstractOWLOntology):
     #     for binding in self.query(query).json()["results"]["bindings"]:
     #         yield OWLNamedIndividual(binding["x"]["value"])
 
-    def individuals_in_signature(self) -> Iterable[OWLNamedIndividual]:
+    def individuals_in_signature(self, implicit_individuals:bool = True) -> Iterable[OWLNamedIndividual]:
         # TODO AB: Maybe extend this method to check for implicit individuals (idea: check for ?x a owl:Thing and
         #          exclude everything that is not a class, property, etc.)
-        query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:NamedIndividual.}"
+        if not implicit_individuals:
+            query = owl_prefix + "SELECT DISTINCT ?x\n " + "WHERE {?x a owl:NamedIndividual.}"
+        else:
+            query = owl_prefix + """SELECT DISTINCT ?x
+                                    WHERE {
+                                      ?x ?p ?o .
+                                      FILTER NOT EXISTS { ?x a owl:Class }
+                                      FILTER NOT EXISTS { ?x a rdfs:Class }
+                                      FILTER NOT EXISTS { ?x a rdf:Property }
+                                      FILTER NOT EXISTS { ?x a owl:ObjectProperty }
+                                      FILTER NOT EXISTS { ?x a owl:DatatypeProperty }
+                                      FILTER NOT EXISTS { ?x a owl:AnnotationProperty }
+                                      FILTER NOT EXISTS { ?x a owl:Ontology }
+                                      FILTER (!isBlank(?x))
+                                    }"""
         yield from send_http_request_to_ts_and_fetch_results(self.url, query, OWLNamedIndividual)
 
     def equivalent_classes_axioms(self, c: OWLClass) -> Iterable[OWLEquivalentClassesAxiom]:
@@ -572,10 +586,6 @@ class TripleStoreReasoner(AbstractOWLReasoner):
     def get_root_ontology(self) -> AbstractOWLOntology:
         return self.ontology
 
-    def is_isolated(self):
-        # not needed here
-        pass
-
 
 class TripleStore(AbstractKnowledgeBase):
 
@@ -643,11 +653,11 @@ class TripleStore(AbstractKnowledgeBase):
                     elif data_type == "http://www.w3.org/2001/XMLSchema#integer":
                         yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=int(o["value"]))
                     elif data_type == "http://www.w3.org/2001/XMLSchema#nonNegativeInteger":
-                        # TODO AB: set type to NonNegativeInteger for OWLLiteral below
-                        #       after integrating the new owlapy release (> 1.3.3)
-                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=int(o["value"]))
+                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=int(o["value"]),
+                                                                                type_=NonNegativeIntegerOWLDatatype)
                     elif data_type == "http://www.w3.org/2001/XMLSchema#double":
-                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=float(o["value"]))
+                        yield subject_, OWLDataProperty(p["value"]), OWLLiteral(value=float(o["value"]),
+                                                                                type_=DoubleOWLDatatype)
                     else:
                         # TODO: Unclear for the time being.
                         # print(f"Currently this type of literal is not supported:{o} but can done easily let us know :)")
@@ -845,18 +855,18 @@ class TripleStore(AbstractKnowledgeBase):
         for binding in self.query(query).json()["results"]["bindings"]:
             yield OWLLiteral(value=float(binding["x"]["value"]))
 
-    def individuals(self, concept: Optional[OWLClassExpression] = None, named_individuals: bool = False) \
+    def individuals(self, concept: Optional[OWLClassExpression] = None, implicit_individuals: bool = True) \
             -> Iterable[OWLNamedIndividual]:
         """Given an OWL class expression, retrieve all individuals belonging to it.
         Args:
             concept: Class expression of which to list individuals.
-            named_individuals: flag for returning only owl named individuals in the SPARQL mapping
+            implicit_individuals: flag for returning individuals (infared implicitely).
         Returns:
             Generator of individuals belonging to the given class.
         """
 
         if concept is None or concept.is_owl_thing():
-            yield from self.ontology.individuals_in_signature()
+            yield from self.ontology.individuals_in_signature(implicit_individuals)
         else:
             # yield from self.reasoner.instances(concept, named_individuals=named_individuals)
             yield from self.reasoner.instances(concept)

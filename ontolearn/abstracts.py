@@ -325,7 +325,7 @@ class AbstractKnowledgeBase(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def individuals(self, concept: Optional[OWLClassExpression] = None, named_individuals: bool = False) -> Iterable[OWLNamedIndividual]:
+    def individuals(self, concept: Optional[OWLClassExpression] = None, implicit_individuals: bool = True) -> Iterable[OWLNamedIndividual]:
         pass
 
     @abstractmethod

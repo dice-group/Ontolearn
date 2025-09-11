@@ -189,7 +189,7 @@ class LengthBasedRefinement(BaseRefinement):
         yield from (OWLObjectSomeValuesFrom(property=owl_obj_property,
                                             filler=C) for C in self.refine(class_expression.get_filler()))
         if self.use_nominals:
-            for owl_named_individual in self.kb.individuals(class_expression, named_individuals=True):
+            for owl_named_individual in self.kb.individuals(class_expression):
                 assert isinstance(owl_named_individual, OWLIndividual)
                 yield OWLObjectUnionOf(
 
@@ -204,7 +204,7 @@ class LengthBasedRefinement(BaseRefinement):
         yield from (OWLObjectAllValuesFrom(property=owl_obj_property, filler=C) for C in
                     self.refine(class_expression.get_filler()))
         if self.use_nominals:
-            for owl_named_individual in self.kb.individuals(class_expression, named_individuals=True):
+            for owl_named_individual in self.kb.individuals(class_expression):
                 assert isinstance(owl_named_individual, OWLIndividual)
                 yield OWLObjectUnionOf(
 

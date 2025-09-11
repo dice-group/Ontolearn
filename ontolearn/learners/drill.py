@@ -25,8 +25,7 @@ from abc import abstractmethod
 
 import pandas as pd
 import json
-from owlapy.class_expression import OWLClassExpression, OWLThing, OWLClass
-from owlapy.iri import IRI
+from owlapy.class_expression import OWLClassExpression, OWLThing
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy import owl_expression_to_dl
 
@@ -440,21 +439,8 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         # (3) Increment the number of tested concepts attribute.
 
         """
-        if isinstance(self.kb, TripleStore):
-            c = state.concept
-            if c is OWLThing:
-                tp = list(self.kb.reasoner.types(list(self.pos)[0], True))  # get types of a lp example
-                if OWLThing not in tp:  # if owl:Thing not explicitly specified check for owl:NamedIndividual
-                    named_individual = OWLClass(IRI('http://www.w3.org/2002/07/owl#', 'NamedIndividual'))
-                    if named_individual in tp:
-                        c = named_individual
-                    assert c == named_individual, ("Individuals in your dataset do not explicitly have the type"
-                                                   "owl:Thing or owl:NamedIndividual and this will eventually "
-                                                   "throw an error or provide misleading results because these "
-                                                   "individuals are not recognized as such. SPARQL queries used by "
-                                                   "TripleStore cannot infer this information.")
-
-            sparql_query = owl_expression_to_sparql_with_confusion_matrix(expression=c, positive_examples=self.pos,
+        if isinstance(self.kb, TripleStore) and state.concept is not OWLThing:
+            sparql_query = owl_expression_to_sparql_with_confusion_matrix(expression=state.concept, positive_examples=self.pos,
                                                                           negative_examples=self.neg)
             bindings = self.kb.query(sparql_query).json()["results"]["bindings"]
             assert len(bindings) == 1
@@ -463,7 +449,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             quality = self.quality_func(confusion_matrix=confusion_matrix)
 
         else:
-            individuals = frozenset([i for i in self.kb.individuals(state.concept)])
+            individuals = frozenset([i for i in self.kb.individuals(state.concept,True)])
             quality = self.quality_func(individuals=individuals, pos=self.pos, neg=self.neg)
         state.quality = quality
         self._number_of_tested_concepts += 1
@@ -619,7 +605,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         return emb
 
     def get_individuals(self, rl_state: RL_State) -> List[str]:
-        return [owl_individual.str.strip() for owl_individual in self.kb.individuals(rl_state.concept)]
+        return [owl_individual.str.strip() for owl_individual in self.kb.individuals(rl_state.concept, True)]
 
     def assign_embeddings(self, rl_state: RL_State) -> None:
         """
@@ -724,14 +710,14 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         # C: Iterate over all named OWL concepts
         for i in self.kb.get_concepts():
             # Retrieve(C)
-            individuals_i = set(self.kb.individuals(i))
+            individuals_i = set(self.kb.individuals(i, True))
             if len(individuals_i) < size_of_examples:
                 continue
             for j in self.kb.get_concepts():
                 if i == j:
                     continue
                 str_dl_concept_i = owl_expression_to_dl(i)
-                individuals_j = set(self.kb.individuals(j))
+                individuals_j = set(self.kb.individuals(j, True))
                 if len(individuals_j) < size_of_examples:
                     continue
 
