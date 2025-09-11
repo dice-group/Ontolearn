@@ -205,7 +205,7 @@ class TripleStoreOntology(AbstractOWLOntology):
     #     for binding in self.query(query).json()["results"]["bindings"]:
     #         yield OWLNamedIndividual(binding["x"]["value"])
 
-    def individuals_in_signature(self, implicit_individuals:bool = False) -> Iterable[OWLNamedIndividual]:
+    def individuals_in_signature(self, implicit_individuals:bool = True) -> Iterable[OWLNamedIndividual]:
         # TODO AB: Maybe extend this method to check for implicit individuals (idea: check for ?x a owl:Thing and
         #          exclude everything that is not a class, property, etc.)
         if not implicit_individuals:
@@ -853,7 +853,7 @@ class TripleStore(AbstractKnowledgeBase):
         for binding in self.query(query).json()["results"]["bindings"]:
             yield OWLLiteral(value=float(binding["x"]["value"]))
 
-    def individuals(self, concept: Optional[OWLClassExpression] = None, implicit_individuals: bool = False) \
+    def individuals(self, concept: Optional[OWLClassExpression] = None, implicit_individuals: bool = True) \
             -> Iterable[OWLNamedIndividual]:
         """Given an OWL class expression, retrieve all individuals belonging to it.
         Args:
