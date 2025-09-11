@@ -346,7 +346,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
 
         for _ in make_iterable_verbose(range(0, self.iter_bound),
                                        verbose=self.verbose,
-                                       desc=f"Learning OWL Class Expression at most {self.iter_bound} iteration"):
+                                       desc=f"Learning OWL Class Expression with at most {self.iter_bound} iterations"):
             assert len(self.search_tree) > 0, "Search Tree cannot be empty!"
             self.search_tree.show_current_search_tree()
             # (6.1) Get the most fitting RL-state.
@@ -450,7 +450,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
 
         else:
             individuals = frozenset([i for i in self.kb.individuals(state.concept,True)])
-            quality = self.quality_func(individuals=individuals, pos=self.pos, neg=self.neg)
+            quality = compute_f1_score(individuals=individuals, pos=self.pos, neg=self.neg)
         state.quality = quality
         self._number_of_tested_concepts += 1
 
@@ -787,7 +787,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
 
     def best_hypotheses(self, n=1, return_node: bool = False) -> Union[OWLClassExpression, List[OWLClassExpression]]:
         assert self.search_tree is not None, "Search tree is not initialized"
-        assert len(self.search_tree) > 1, "Search tree is empty"
+        assert len(self.search_tree) >= 1, "Search tree is empty"
 
         result = []
         for i, rl_state in enumerate(self.search_tree.get_top_n_nodes(n)):
