@@ -146,7 +146,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         self.generator = ConceptGenerator()
         self.describe()
 
-    def individuals(self, concept: Optional[OWLClassExpression] = None, named_individuals: bool = False) -> Iterable[OWLNamedIndividual]:
+    def individuals(self, concept: Optional[OWLClassExpression] = None, implicit_individuals: bool = False) -> Iterable[OWLNamedIndividual]:
         """Given an OWL class expression, retrieve all individuals belonging to it.
 
         Args:
