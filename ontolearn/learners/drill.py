@@ -25,8 +25,7 @@ from abc import abstractmethod
 
 import pandas as pd
 import json
-from owlapy.class_expression import OWLClassExpression, OWLThing, OWLClass
-from owlapy.iri import IRI
+from owlapy.class_expression import OWLClassExpression, OWLThing
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy import owl_expression_to_dl
 
@@ -443,7 +442,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         if isinstance(self.kb, TripleStore) and state.concept is not OWLThing:
             sparql_query = owl_expression_to_sparql_with_confusion_matrix(expression=state.concept, positive_examples=self.pos,
                                                                           negative_examples=self.neg)
-            bindings = self.kb.query(updated_query).json()["results"]["bindings"]
+            bindings = self.kb.query(sparql_query).json()["results"]["bindings"]
             assert len(bindings) == 1
             bindings = bindings.pop()
             confusion_matrix = {k: v["value"]for k, v in bindings.items()}
