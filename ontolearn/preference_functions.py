@@ -43,7 +43,7 @@ def preference_score_cached(concept):
 
 
 
-def preference_score_utility_based(concept: OWLClassExpression, url:str="http://localhost:3030/imdb_10000/sparql") -> float:
+def preference_score_utility_based(concept: OWLClassExpression, url:str="http://localhost:3030/music_10000/sparql") -> float:
     """
     Compute preference score as the average imdb:hasRatingValue of individuals
     in the extension of the OWL class expression `concept`.
@@ -51,17 +51,29 @@ def preference_score_utility_based(concept: OWLClassExpression, url:str="http://
     # Step 1: Translate OWL concept to SPARQL filter block (this function should exist already)
     subquery = owl_expression_to_sparql(concept)  # full SPARQL query: SELECT DISTINCT ?x WHERE { ... }
 
-    query = f"""
-        PREFIX imdb: <http://example.org/imdb/>
+    # query = f"""
+    #     PREFIX imdb: <http://example.org/imdb/>
+    #
+    #     SELECT ?x ?rating
+    #     WHERE {{
+    #         {{
+    #             {subquery}
+    #         }}
+    #         ?x imdb:hasRatingValue ?rating .
+    #     }}
+    #     """
 
-        SELECT ?x ?rating
-        WHERE {{
-            {{
-                {subquery}
+    query = f"""
+            PREFIX music: <http://example.org/music/>
+
+            SELECT ?x ?rating
+            WHERE {{
+                {{
+                    {subquery}
+                }}
+                ?x music:hasPopularity ?rating .
             }}
-            ?x imdb:hasRatingValue ?rating .
-        }}
-        """
+            """
 
     try:
         response = requests.Session().post(url, data={"query": query})
