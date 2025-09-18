@@ -20,14 +20,14 @@ One of OntoLearn’s key contributions is its exclusive concept learning algorit
 Logics (DL). The library currently includes nine fully functional algorithms capable of learning complex concepts in DL. 
 For further details and references, relevant research papers can be found [here](09_further_resources.md).
 
-At the core of OntoLearn lies [Owlapy]((https://github.com/dice-group/owlapy)), a Python package inspired by the OWL API (its Java counterpart) and developed by 
+At the core of OntoLearn lies [Owlapy](https://github.com/dice-group/owlapy), a Python package inspired by the OWL API (its Java counterpart) and developed by 
 the OntoLearn team. To enhance modularity, readability, and maintainability, we have separated Owlapy from Ontolearn into an 
 independent repository. This modular approach allows Owlapy to serve not only as a framework for representing OWL 2 
 entities, but also as a tool for ontology manipulation and reasoning.
 
 ---------------------------------------
 
-**Ontolearn (including owlapy and ontosample) can do the following:**
+**Ontolearn (including [owlapy](https://github.com/dice-group/owlapy) and [ontosample](https://github.com/alkidbaci/OntoSample)) can do the following:**
 
 - **Use concept learning algorithms to generate hypotheses for classifying positive examples in a learning problem**.
 - **Use local datasets or datasets that are hosted on a triplestore server, for the learning task.**
