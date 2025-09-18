@@ -23,7 +23,6 @@
 # -----------------------------------------------------------------------------
 from abc import abstractmethod
 
-import pandas as pd
 import json
 from owlapy.class_expression import OWLClassExpression, OWLThing
 from owlapy.owl_individual import OWLNamedIndividual
