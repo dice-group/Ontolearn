@@ -93,7 +93,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         if path_embeddings and os.path.isfile(path_embeddings): #
             if self.verbose > 0:
                 print("Reading Embeddings...", end="\t")
-            self.df_embeddings = pd.read_csv(path_embeddings, index_col=0).astype('float32')
+            self.df_embeddings = read_csv(path_embeddings).astype('float32')
             self.num_entities, self.embedding_dim = self.df_embeddings.shape
             if self.verbose > 0:
                 print(self.df_embeddings.shape)
@@ -402,7 +402,6 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             # @TODO: CD: Why not use self.get_embeddings_individuals(pos_uri)
             self.pos = pos_uri
             self.neg = neg_uri
-
             self.emb_pos = torch.from_numpy(self.df_embeddings.loc[
                                                 [owl_individual.str.strip() for owl_individual in
                                                  pos_uri]].values)

@@ -156,6 +156,7 @@ def read_csv(path)->Union[None,pd.DataFrame]:  # pragma: no cover
     if assertion_path_isfile(path):
         df = pd.read_csv(path, index_col=0)
         assert (df.all()).all()  # all columns and all rows are not none.
+        df.index = df.index.map(lambda x: x.replace("<", "").replace(">", ""))
         return df
     else:
         return None
