@@ -88,6 +88,9 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         self.name = "DRILL"
         self.verbose = verbose
         self.learning_problem = None
+
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         # (1) Initialize KGE.
         if path_embeddings and os.path.isfile(path_embeddings): #
             if self.verbose > 0:
@@ -150,7 +153,8 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                                                  model_args={'input_shape': (4, self.embedding_dim),
                                                              'first_out_channels': 32,
                                                              'second_out_channels': 16, 'third_out_channels': 8,
-                                                             'kernel_size': 3})
+                                                             'kernel_size': 3},
+                                                 device=self.device)
             self.experiences = Experience(maxlen=self.max_len_replay_memory)
             if self.learning_rate:
                 self.optimizer = torch.optim.Adam(self.heuristic_func.net.parameters(), lr=self.learning_rate)
@@ -187,8 +191,8 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         self.pos = pos
         self.neg = neg
 
-        self.emb_pos = self.get_embeddings_individuals(individuals=[i.str for i in self.pos])
-        self.emb_neg = self.get_embeddings_individuals(individuals=[i.str for i in self.neg])
+        self.emb_pos = self.get_embeddings_individuals(individuals=[i.str for i in self.pos]).to(self.device)
+        self.emb_neg = self.get_embeddings_individuals(individuals=[i.str for i in self.neg]).to(self.device)
 
         # (3) Initialize the root state of the quasi-ordered RL env.
         # print("Initializing Root RL state...", end=" ")
@@ -299,7 +303,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                     print("No loading because embeddings not provided")
                 else:
                     print("Loading pretrained DQL Agent...", end="")
-                    self.heuristic_func.net.load_state_dict(torch.load(directory + "/drill.pth", torch.device('cpu')))
+                    self.heuristic_func.net.load_state_dict(torch.load(directory + "/drill.pth", self.device))
                     print(self.heuristic_func.net)
             else:
                 print(f"{directory} is not found...")
@@ -518,10 +522,10 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         next_state_batch: List[torch.FloatTensor]
         current_state_batch, next_state_batch, y = self.experiences.retrieve()
         # N, 1, dim
-        current_state_batch = torch.cat(current_state_batch, dim=0)
+        current_state_batch = torch.cat(current_state_batch, dim=0).to(self.device)
         # N, 1, dim
-        next_state_batch = torch.cat(next_state_batch, dim=0)
-        y = torch.Tensor(y)
+        next_state_batch = torch.cat(next_state_batch, dim=0).to(self.device)
+        y = torch.Tensor(y, device=self.device)
 
         try:
             assert current_state_batch.shape[1] == next_state_batch.shape[1] == self.emb_pos.shape[1] == \
@@ -546,7 +550,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             current_state_batch,
             next_state_batch,
             self.emb_pos.repeat((num_next_states, 1, 1)),
-            self.emb_neg.repeat((num_next_states, 1, 1))], 1)
+            self.emb_neg.repeat((num_next_states, 1, 1))], 1).to(self.device)
 
         self.heuristic_func.net.train()
         total_loss = 0
@@ -592,14 +596,14 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
     def get_embeddings_individuals(self, individuals: List[str]) -> torch.FloatTensor:
         assert isinstance(individuals, list)
         if len(individuals) == 0:
-            emb = torch.zeros(1, 1, self.embedding_dim)
+            emb = torch.zeros(1, 1, self.embedding_dim, device=self.device)
         else:
             if self.df_embeddings is not None:
                 assert isinstance(individuals[0], str)
-                emb = torch.mean(torch.from_numpy(self.df_embeddings.loc[individuals].values, ), dim=0)
+                emb = torch.mean(torch.from_numpy(self.df_embeddings.loc[individuals].values), dim=0).to(self.device)
                 emb = emb.view(1, 1, self.embedding_dim)
             else:
-                emb = torch.zeros(1, 1, self.embedding_dim)
+                emb = torch.zeros(1, 1, self.embedding_dim, device=self.device)
         return emb
 
     def get_individuals(self, rl_state: RL_State) -> List[str]:
@@ -656,8 +660,8 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         (4) Return next state.
         """
         # predictions: torch.Size([len(next_states)])
-        predictions: torch.FloatTensor = self.predict_values(current_state, next_states)
-        argmax_id = int(torch.argmax(predictions))
+        predictions: torch.FloatTensor = self.predict_values(current_state, next_states).to(self.device)
+        argmax_id = int(torch.argmax(predictions).to(self.device))
         next_state = next_states[argmax_id]
         return next_state
 
@@ -676,7 +680,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             next_state_batch = []
             for _ in next_states:
                 next_state_batch.append(self.get_embeddings_individuals(self.get_individuals(_)))
-            next_state_batch = torch.cat(next_state_batch, dim=0)
+            next_state_batch = torch.cat(next_state_batch, dim=0).to(self.device)
             x = PrepareBatchOfPrediction(self.get_embeddings_individuals(self.get_individuals(current_state)),
                                          next_state_batch,
                                          self.emb_pos,
@@ -843,21 +847,22 @@ class DrillHeuristic:  # pragma: no cover
     Heuristic implements a convolutional neural network.
     """
 
-    def __init__(self, pos=None, neg=None, model=None, mode=None, model_args=None):
+    def __init__(self, pos=None, neg=None, model=None, mode=None, model_args=None, device=None):
         if model:
             self.net = model
         elif mode in ['averaging', 'sampling']:
-            self.net = DrillNet(model_args)
+            self.net = DrillNet(model_args, device)
             self.mode = mode
             self.name = 'DrillHeuristic_' + self.mode
         else:
             raise ValueError
         self.net.eval()
+        self.device = device
 
     def score(self, node, parent_node=None):
         """ Compute heuristic value of root node only"""
         if parent_node is None and node.is_root:
-            return torch.FloatTensor([.0001]).squeeze()
+            return torch.FloatTensor([.0001], device=self.device).squeeze()
         raise ValueError
 
     def apply(self, node, parent_node=None):
@@ -883,35 +888,35 @@ class DrillNet(torch.nn.Module):  # pragma: no cover
 
     """
 
-    def __init__(self, args):
+    def __init__(self, args, device):
         super(DrillNet, self).__init__()
         self.in_channels, self.embedding_dim = args['input_shape']
         assert self.embedding_dim
-
-        self.loss = torch.nn.MSELoss()
+        self.device = device
+        self.loss = torch.nn.MSELoss().to(self.device)
         # Conv1D seems to be faster than Conv2d
         self.conv1 = torch.nn.Conv1d(in_channels=4,
                                      out_channels=args['first_out_channels'],
                                      kernel_size=args['kernel_size'],
-                                     padding=1, stride=1, bias=True)
+                                     padding=1, stride=1, bias=True, device=self.device)
 
         # Fully connected layers.
         self.size_of_fc1 = int(args['first_out_channels'] * self.embedding_dim)
-        self.fc1 = torch.nn.Linear(in_features=self.size_of_fc1, out_features=self.size_of_fc1 // 2)
-        self.fc2 = torch.nn.Linear(in_features=self.size_of_fc1 // 2, out_features=1)
+        self.fc1 = torch.nn.Linear(in_features=self.size_of_fc1, out_features=self.size_of_fc1 // 2, device=self.device)
+        self.fc2 = torch.nn.Linear(in_features=self.size_of_fc1 // 2, out_features=1, device=self.device)
 
         self.init()
 
     def init(self):
-        torch.nn.init.xavier_normal_(self.fc1.weight.data)
-        torch.nn.init.xavier_normal_(self.conv1.weight.data)
+        torch.nn.init.xavier_normal_(self.fc1.weight.data).to(self.device)
+        torch.nn.init.xavier_normal_(self.conv1.weight.data).to(self.device)
 
     def forward(self, X: torch.FloatTensor):
         """
         X  n by 4 by d float tensor
         """
         # N x 32 x D
-        X = torch.nn.functional.relu(self.conv1(X))
+        X = torch.nn.functional.relu(self.conv1(X)).to(self.device)
         X = X.flatten(start_dim=1)
         # N x (32D/2)
         X = torch.nn.functional.relu(self.fc1(X))
