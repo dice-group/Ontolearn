@@ -525,7 +525,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         current_state_batch = torch.cat(current_state_batch, dim=0).to(self.device)
         # N, 1, dim
         next_state_batch = torch.cat(next_state_batch, dim=0).to(self.device)
-        y = torch.Tensor(y, device=self.device)
+        y = torch.Tensor(y).to(self.device)
 
         try:
             assert current_state_batch.shape[1] == next_state_batch.shape[1] == self.emb_pos.shape[1] == \
