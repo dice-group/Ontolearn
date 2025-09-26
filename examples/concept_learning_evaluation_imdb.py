@@ -122,16 +122,23 @@ def dl_concept_learning(args):
         lp = PosNegLPStandard(pos=positives, neg=negatives, all_instances=None)
 
         # Run all algorithms with safety
-        # run_algorithm("OCEL", ocel, lp, kb, data, args.url, with_pref=True)
-        # run_algorithm("OCEL_Pref", ocel_pref, lp, kb, data, args.url, with_pref=True)
-        # run_algorithm("CELOE", celoe, lp, kb, data, args.url, with_pref=True)
-        run_algorithm("CELOE_Pref", celoe_pref, lp, kb, data, args.url, with_pref=True)
-        # run_algorithm("CLIP", clip, lp, kb, data, args.url, with_pref=True)
-        # run_algorithm("CLIP_Pref", clip_pref, lp, kb, data, args.url, with_pref=True)
+        if args.algorithm == "OCEL":
+            run_algorithm("OCEL", ocel, lp, kb, data, args.url, with_pref=True)
+        elif args.algorithm == "OCEL_Pref":
+            run_algorithm("OCEL_Pref", ocel_pref, lp, kb, data, args.url, with_pref=True)
+        elif args.algorithm == "CELOE":
+            run_algorithm("CELOE", celoe, lp, kb, data, args.url, with_pref=True)
+        elif args.algorithm == "CELOE_Pref":
+            run_algorithm("CELOE_Pref", celoe_pref, lp, kb, data, args.url, with_pref=True)
+        elif args.algorithm == "CLIP":
+            run_algorithm("CLIP", clip, lp, kb, data, args.url, with_pref=True)
+        else:
+            run_algorithm("CLIP_Pref", clip_pref, lp, kb, data, args.url, with_pref=True)
+
 
     # Save results
     df = pd.DataFrame.from_dict(data)
-    df.to_csv(args.report, index=False)
+    df.to_csv(f"{args.report}_{args.algorithm}.csv", index=False)
     print(df)
     print(df.select_dtypes(include="number").mean())
     print(df.select_dtypes(include="number").mean().values.tolist())
@@ -139,71 +146,18 @@ def dl_concept_learning(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Description Logic Concept Learning')
-    parser.add_argument("--max_runtime", type=int, default=30)
-    parser.add_argument("--lps", type=str, default="LPs/IMDB/lps_personas.json")
-    parser.add_argument("--kb", type=str, default="/home/dice/Downloads/IMDB/imdb_10000.owl")
+    parser.add_argument("--max_runtime", type=int, default=400)
+    parser.add_argument("--lps", type=str, default="LPs/Music/lps_personas.json")
+    parser.add_argument("--kb", type=str, default="KGs/Music/music_10000.owl")
     parser.add_argument("--path_pretrained_kge", type=str, default=None)
-    parser.add_argument("--report", type=str, default="report.csv")
-    parser.add_argument('--url', default="http://localhost:3030/imdb_10000/sparql",
+    parser.add_argument("--report", type=str, default="report_spotify_personas")
+    parser.add_argument("--algorithm", type=str, default="CELOE", choices=["OCEL", "OCEL_Pref", "CELOE", "CELOE_Pref", "CLIP", "CLIP_Pref"])
+    parser.add_argument('--url', default="http://localhost:3030/music_10000/sparql",
                         type=str, help='The triplestore endpoint.')
     dl_concept_learning(parser.parse_args())
 
 
 
-#   tdl = TDL(knowledge_base=KnowledgeBase(path=args.kb),
-#               kwargs_classifier={"random_state": 0},
-#               max_runtime=args.max_runtime)
-
-
- # print("Evo starts..", end="\t")
-        # start_time = time.time()
-        # # Evolearner has a bug and KB needs to be reloaded
-        # evo = EvoLearner_pref(knowledge_base=KnowledgeBase(path=args.kb), quality_func=F1(), max_runtime=args.max_runtime,
-        #                  use_data_properties=True, use_card_restrictions=True, population_size=50, num_generations=25, preference_func=preference_score_utility_based)
-        # # evo = EvoLearner(knowledge_base=KnowledgeBase(path=args.kb), quality_func=F1(),
-        # #                       max_runtime=args.max_runtime,
-        # #                       use_data_properties=True, use_card_restrictions=True, population_size=50,
-        # #                       num_generations=25)
-        # pred_evo = evo.fit(lp).best_hypotheses(n=1)
-        # print("Evo ends..", end="\t")
-        #
-        # rt_evo = time.time() - start_time
-        # f1_evo = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_evo)}), pos=lp.pos, neg=lp.neg)
-        # data.setdefault("F1-Evo", []).append(f1_evo)
-        # data.setdefault("RT-Evo", []).append(rt_evo)
-        # data.setdefault("Solution-Evo", []).append(owl_expression_to_dl(pred_evo))
-        # print(f"Evo Quality: {f1_evo:.3f}", end="\t")
-        # print(f"Evo Runtime: {rt_evo:.3f}")
-        # print("Best solution found", owl_expression_to_dl(pred_evo))
-        # exit(0)
-        #
-        # print("DRILL starts..", end="\t")
-        # start_time = time.time()
-        # # try:
-        # pred_drill = drill.fit(lp).best_hypotheses(n=1)
-        # print("DRILL ends..", end="\t")
-        # rt_drill = time.time() - start_time
-        # f1_drill = compute_f1_score(
-        #     individuals=frozenset({i for i in kb.individuals(pred_drill)}),
-        #     pos=lp.pos,
-        #     neg=lp.neg
-        # )
-        # print(f"DRILL Quality: {f1_drill:.3f}", end="\t")
-        # print(f"DRILL Runtime: {rt_drill:.3f}")
-        # print(owl_expression_to_dl(pred_drill))
-        # solution_drill = owl_expression_to_dl(pred_drill)
-        # # except Exception as e:
-        # #     print(f"DRILL failed: {str(e)}", end="\t")
-        # #     pred_drill = None
-        # #     f1_drill = 0.0
-        # #     rt_drill = -1
-        # #     solution_drill = "FAIL"
-        # #
-        # # Make sure you always append to all keys
-        # data.setdefault("F1-DRILL", []).append(f1_drill)
-        # data.setdefault("RT-DRILL", []).append(rt_drill)
-        # data.setdefault("Solution-DRILL", []).append(solution_drill)
-        #
 
 
 

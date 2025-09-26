@@ -205,15 +205,51 @@ def filter_songs_by_persona_loaded(song_texts, song_embeddings, persona_desc, so
 #
 #     return filtered
 
-def create_persona_problem(persona_name, persona_description, song_texts, song_uris, song_embeddings, top_n=10):
+def create_persona_problem(persona_name, persona_description, song_texts, song_uris, song_embeddings, top_n=10,  save_file="persona_results_spotify.json"):
     filtered_results = filter_songs_by_persona_loaded(song_texts, song_embeddings, persona_description, song_uris, threshold=-1.0)
 
     print(f"=== {persona_name} ===")
     for text, uri, score in filtered_results[:5]:
         print(f"{score:.2f} — {text}")
 
-    positives = [uri for _, uri, _ in filtered_results[:top_n]]
-    negatives = [uri for _, uri, _ in filtered_results[-top_n:]]
+    top_results = filtered_results[:top_n]
+    bottom_results = filtered_results[-top_n:]
+
+    # Merge (top + bottom)
+    selected_results = top_results + bottom_results
+
+    detailed_results = [
+        {
+            "score": round(float(score), 2),
+            "text": text,
+            "uri": uri
+        }
+        for text, uri, score in selected_results
+    ]
+
+    positives = [uri for _, uri, _ in top_results]
+    negatives = [uri for _, uri, _ in bottom_results]
+
+    # Build persona block
+    persona_data = {
+        persona_name: {
+            "description": persona_description.strip(),
+            "results": detailed_results
+        }
+    }
+
+    # Save (append mode)
+    save_path = Path(save_file)
+    if save_path.exists():
+        with open(save_file, "r") as f:
+            existing_data = json.load(f)
+    else:
+        existing_data = {"personas": []}
+
+    existing_data["personas"].append(persona_data)
+
+    with open(save_file, "w") as f:
+        json.dump(existing_data, f, indent=2)
 
     return {
         persona_name: [persona_description.strip()],
@@ -234,12 +270,29 @@ def build_lps_for_personas(personas, song_texts, song_uris, song_embeddings, top
 # ----------------------
 # 4. Fetch personas
 # ----------------------
+#
+# def get_persona_list(n=50):
+#     resp = requests.get(f"{BASE_URL}/personas_random?limit={n}")
+#     resp.raise_for_status()
+#     data = resp.json()
+#     return [(f"Persona_{i}", p["description"]) for i, p in enumerate(data, start=1)]
 
-def get_persona_list(n=50):
-    resp = requests.get(f"{BASE_URL}/personas_random?limit={n}")
-    resp.raise_for_status()
-    data = resp.json()
-    return [(f"Persona_{i}", p["description"]) for i, p in enumerate(data, start=1)]
+def get_persona_list(json_file, n=None):
+    with open(json_file, "r") as f:
+        data = json.load(f)["problems"]
+
+    persona_list = []
+    for problem in data:
+        for persona, desc in problem.items():
+            if persona.startswith("Persona_"):
+                description = desc[0] if isinstance(desc, list) else desc
+                persona_list.append((persona, description))
+
+    # If you want to limit to n personas
+    if n is not None:
+        persona_list = persona_list[:n]
+
+    return persona_list
 
 
 # ----------------------
@@ -258,7 +311,7 @@ if __name__ == "__main__":
         compute_and_save_embeddings(songs, emb_path, texts_path, uris_path)
         all_texts, all_uris, all_embeddings = load_embeddings(emb_path, texts_path, uris_path)
 
-    personas = get_persona_list(50)  # e.g. 5 personas
+    personas = get_persona_list(json_file="LPs/Music/lps_personas.json", n=20)  # e.g. 5 personas
     # personas = [
     #     ("Persona_1", """
     #    A Russian economist who specializes in macroeconomics, particularly the analysis of the Russian economy and its response to economic sanctions and oil price fluctuations. """),
@@ -273,10 +326,10 @@ if __name__ == "__main__":
     # ]
     lps = build_lps_for_personas(personas, all_texts, all_uris, all_embeddings, top_n=10)
 
-    with open("LPs/Music/lps_personas.json", "w", encoding="utf-8") as f:
-        json.dump(lps, f, indent=2, ensure_ascii=False)
+    # with open("LPs/Music/lps_personas.json", "w", encoding="utf-8") as f:
+    #     json.dump(lps, f, indent=2, ensure_ascii=False)
 
-    print("✅ Saved all personas to lps_personas.json")
+    # print("✅ Saved all personas to lps_personas.json")
 
     print(f"Generated {len(lps)} LPs:")
     # print(lps)
