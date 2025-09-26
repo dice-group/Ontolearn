@@ -9,7 +9,7 @@ on the open source Framework Ontolearn.
 ## Installation
 
 ```shell
-git clone https://github.com/dice-group/Ontolearn.git && cd Ontolearn && unzip data.zip
+git clone (please add the link to this repo) && cd Ontolearn && unzip data.zip
 # To create a virtual python env with conda 
 conda create -n venv python=3.10.14 --no-default-packages && conda activate venv && pip install -e .
 ```
