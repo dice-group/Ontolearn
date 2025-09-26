@@ -9,10 +9,11 @@ on the open source Framework Ontolearn.
 ## Installation
 
 ```shell
-git clone https://github.com/dice-group/Ontolearn.git && cd Ontolearn
+git clone https://github.com/dice-group/Ontolearn.git && cd Ontolearn && unzip data.zip
 # To create a virtual python env with conda 
 conda create -n venv python=3.10.14 --no-default-packages && conda activate venv && pip install -e .
 ```
+ 
 
 ## Create a SPARQL endpoint to host the data
 
@@ -49,5 +50,5 @@ Here,
 - `--algorithm` control the algorithm to be run, to choose among `[CLIP, OCEL, CELOE, CLIP_Pref, CELOE_Pref, OCEL_Pref]` for a different algorithm
 - `--lps` is the path to the learning problems. Per dataset, two types of learning problems are available (Personas, and generated), check the [LPs](LPs) directory to choose.
 - `--url` is the sparql endpoint of the data of interest. Replace with yours
-- `--kb` is the path to the dataset knowledge base, check the [KGs](KGs) directory to choose either the SPotify or IMDB dataset.
+- `--kb` is the path to the dataset knowledge base, check the [KGs](KGs) directory to choose either the Spotify or IMDB dataset.
 - `--report` is the file name to be saved. e.g. for the code above the results will be save in this current directory with name spotify_personas_CELOE.csv
