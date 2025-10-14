@@ -4,7 +4,7 @@ Fitting OWL Class Expression Learners:
 Given positive examples (E^+)  and negative examples (E^-),
 Evaluate the performances of OWL Class Expression Learners  w.r.t. the quality of learned/found OWL Class Expression, considering preference.
 
-Datasets:
+Datasets available:
 --IMDB (Movie dataset)
 --Spotify
 Example to run the script
