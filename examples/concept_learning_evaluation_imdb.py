@@ -7,9 +7,10 @@ Evaluate the performances of OWL Class Expression Learners  w.r.t. the quality o
 Datasets available:
 --IMDB (Movie dataset)
 --Spotify (Song dataset)
+
 Example to run the script
 To run a simple model, do
-python examples/concept_learning_evaluation_imdb.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 3 --report family.csv
+python examples/concept_learning_evaluation_imdb.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 3 --algorithm CELOE
 
 """
 import json
