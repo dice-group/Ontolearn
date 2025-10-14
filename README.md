@@ -19,7 +19,7 @@ $E^+$ and $E^-$, learning [OWL Class expression](https://www.w3.org/TR/owl2-synt
 $$\forall p \in E^+\ \mathcal{K} \models H(p) \wedge \forall n \in E^-\ \mathcal{K} \not \models H(n).$$
 
 To tackle this supervised learning problem, ontolearn offers many symbolic, neuro-symbolic and deep learning based Learning algorithms: 
-- **TDL** &rarr; Tree-based OWL Class Expression Learner for Large Graphs
+- **TDL** &rarr; [Tree-based OWL Class Expression Learner for Large Graphs](https://rdcu.be/eJDlY)
 - **Drill** &rarr; [Neuro-Symbolic Class Expression Learning](https://www.ijcai.org/proceedings/2023/0403.pdf)
 - **EvoLearner** &rarr; [EvoLearner: Learning Description Logics with Evolutionary Algorithms](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
 - **NCES2** &rarr; [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
@@ -355,6 +355,19 @@ pytest -p no:warnings -x # Running 76 tests takes ~ 17 mins
 Currently, we are working on our manuscript describing our framework. 
 If you find our work useful in your research, please consider citing the respective paper:
 ```
+# TDL
+@InProceedings{10.1007/978-3-032-06066-2_29,
+author={Demir, Caglar and Yekini, Moshood and R{\"o}der, Michael and Mahmood, Yasir and Ngonga Ngomo, Axel-Cyrille},
+editor={Ribeiro, Rita P. and Pfahringer, Bernhard and Japkowicz, Nathalie and Larra{\~{n}}aga, Pedro and Jorge, Al{\'i}pio M. and Soares, Carlos and Abreu, Pedro H. and Gama, Jo{\~a}o},
+title={Tree-Based OWL Class Expression Learner over Large Graphs},
+booktitle={Machine Learning and Knowledge Discovery in Databases. Research Track},
+year={2026},
+publisher={Springer Nature Switzerland},
+address={Cham},
+pages={495--511},
+isbn={978-3-032-06066-2}
+}
+
 # Ontolearn
 @article{demir2025ontolearn,
   title={Ontolearn---A Framework for Large-scale OWL Class Expression Learning in Python},
