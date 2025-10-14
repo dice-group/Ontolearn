@@ -5,7 +5,7 @@ Given positive examples (E^+)  and negative examples (E^-),
 Evaluate the performances of OWL Class Expression Learners  w.r.t. the quality of learned/found OWL Class Expression, considering preference.
 
 Datasets:
---IMDB ()
+--IMDB (Movie dataset)
 Example to run the script
 To run a simple model, do
 python examples/concept_learning_evaluation_imdb.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 3 --report family.csv
