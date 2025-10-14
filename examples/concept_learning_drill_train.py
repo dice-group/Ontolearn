@@ -45,10 +45,18 @@ def start(args):
                     num_learning_problems=args.num_of_training_learning_problems)
         drill.save(directory="pretrained_drill")
 
-    with open(args.path_learning_problem) as json_file:
-        examples = json.load(json_file)
-    p = examples['positive_examples']
-    n = examples['negative_examples']
+    with open(args.path_learning_problem, "r", encoding="utf-8") as json_file:
+        data = json.load(json_file)
+
+    # The structure is: data["problems"]["(Brother ⊓ Grandfather)"]["positive_examples"]
+    problems = data.get("problems", {})
+
+    # Get the first (or a specific) learning problem
+    # If you know the key, replace 'list(problems.keys())[0]' with it.
+    first_problem = next(iter(problems.values()))
+
+    p = first_problem.get("positive_examples", [])
+    n = first_problem.get("negative_examples", [])
 
     kf = StratifiedKFold(n_splits=args.folds, shuffle=True, random_state=args.random_seed)
     X = np.array(p + n)
@@ -81,9 +89,9 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     # General
     parser.add_argument("--path_knowledge_base", type=str,
-                        default='../KGs/Family/family-benchmark_rich_background.owl')
+                        default='KGs/Family/family-benchmark_rich_background.owl')
     parser.add_argument("--path_embeddings", type=str,
-                        default='../embeddings/Keci_entity_embeddings.csv')
+                        default='Experiments/embeddings/Keci_entity_embeddings.csv')
     parser.add_argument("--num_of_target_concepts",
                         type=int,
                         default=1)
@@ -92,7 +100,7 @@ if __name__ == '__main__':
                         default=1)
     parser.add_argument("--path_pretrained_dir", type=str, default=None)
 
-    parser.add_argument("--path_learning_problem", type=str, default='uncle_lp2.json',
+    parser.add_argument("--path_learning_problem", type=str, default='LPs/Family/lps_generated_drill.json',
                         help="Path to a .json file that contains 2 properties 'positive_examples' and "
                              "'negative_examples'. Each of this properties should contain the IRIs of the respective"
                              "instances. e.g. 'some/path/lp.json'")
