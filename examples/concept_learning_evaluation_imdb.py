@@ -10,7 +10,7 @@ Datasets available:
 
 Example to run the script
 To run a model, do
-    python examples/concept_learning_evaluation_imdb.py --lps LPs/Family/lps.json --kb KGs/Family/family-benchmark_rich_background.owl --max_runtime 3 --algorithm CELOE
+    python examples/concept_learning_evaluation_imdb.py --lps LPs/IMDB/imdb.json --kb KGs/IMDB/imdb.owl --max_runtime 3 --algorithm CELOE
 To run the preference-aware version, add _pref to the algorithm name
 
 """
