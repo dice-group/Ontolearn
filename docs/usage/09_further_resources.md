@@ -24,11 +24,33 @@ Also check Owlapy's documentation [here](https://dice-group.github.io/owlapy/usa
 
 
 ## Citing
-
-Currently, we are working on our manuscript describing our framework. 
 If you find our work useful in your research, please consider citing the respective paper:
 
 ```
+# Ontolearn
+@article{demir2025ontolearn,
+  title={Ontolearn---A Framework for Large-scale OWL Class Expression Learning in Python},
+  author={Demir, Caglar and Baci, Alkid and Kouagou, N'Dah Jean and Sieger, Leonie Nora and Heindorf, Stefan and Bin, Simon and Bl{\"u}baum, Lukas and Bigerl, Alexander and Ngomo, Axel-Cyrille Ngonga},
+  journal={Journal of Machine Learning Research},
+  volume={26},
+  number={63},
+  pages={1--6},
+  year={2025}
+}
+
+# TDL
+@InProceedings{10.1007/978-3-032-06066-2_29,
+author={Demir, Caglar and Yekini, Moshood and R{\"o}der, Michael and Mahmood, Yasir and Ngonga Ngomo, Axel-Cyrille},
+editor={Ribeiro, Rita P. and Pfahringer, Bernhard and Japkowicz, Nathalie and Larra{\~{n}}aga, Pedro and Jorge, Al{\'i}pio M. and Soares, Carlos and Abreu, Pedro H. and Gama, Jo{\~a}o},
+title={Tree-Based OWL Class Expression Learner over Large Graphs},
+booktitle={Machine Learning and Knowledge Discovery in Databases. Research Track},
+year={2026},
+publisher={Springer Nature Switzerland},
+address={Cham},
+pages={495--511},
+isbn={978-3-032-06066-2}
+}
+
 # DRILL
 @inproceedings{demir2023drill,
   author = {Demir, Caglar and Ngomo, Axel-Cyrille Ngonga},
@@ -123,10 +145,10 @@ the project better. Find them in the folders
 
 ## Contribution
 
-We try to keep documentation up to day to the latest changes, but sometimes we may
+We try to keep documentation up to date with the latest changes, but sometimes we may
 overlook some details or make mistakes. If you notice any of such things please let us know :).
 As for coding part, feel free to create a pull request and our developers will take a look 
-on it. We appreciate your commitment. 
+at it. We appreciate your commitment. 
 
 ## Questions
 

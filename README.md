@@ -349,11 +349,9 @@ pytest -p no:warnings -x # Running 76 tests takes ~ 17 mins
 ```
 
 
-
 </details>
 
 ## References
-Currently, we are working on our manuscript describing our framework. 
 If you find our work useful in your research, please consider citing the respective paper:
 ```
 # Ontolearn
@@ -447,4 +445,4 @@ address="Cham"
 }
 ```
 
-In case you have any question, please contact: ```caglar.demir@upb.de``` or ```caglardemir8@gmail.com```
+In case you have any question or feedback, please contact us: ```caglar.demir@upb.de``` or ```alkid.baci@upb.de```.
