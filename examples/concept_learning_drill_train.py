@@ -145,7 +145,7 @@ def start(args):
 
             # DrillV
             drillv_result = run_and_time_prediction(drillv, train_lp, test_lp, kb)
-            drillv_times.append(drill_result['prediction_time'])
+            drillv_times.append(drillv_result['prediction_time'])
 
 
             print(f"Fold {ith + 1}:")
