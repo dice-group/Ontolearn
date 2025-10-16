@@ -22,8 +22,8 @@
 # SOFTWARE.
 # -----------------------------------------------------------------------------
 
-from .drill import Drill
+from .drill import Drill, DrillV
 from .tree_learner import TDL
 from .celoe import CELOE
 from .ocel import OCEL
-__all__ = [ 'Drill', 'TDL', 'CELOE', 'OCEL']
+__all__ = ['Drill', 'TDL', 'CELOE', 'OCEL', 'DrillV']

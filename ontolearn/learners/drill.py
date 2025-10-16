@@ -267,6 +267,9 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         else:
             training_data = self.generate_learning_problems(num_of_target_concepts,
                                                             num_learning_problems)
+        # print(training_data)
+        # exit(0)
+
         if isinstance(training_data,Iterable) is False:
             print(f"We couldn't generate training data on this given knowledge base ({self.kb})")
             return self.terminate_training()
@@ -1009,3 +1012,280 @@ class DepthAbstractDrill:   # pragma: no cover
         """
         Save weights and training data after training phase.
         """
+
+
+class DrillV(Drill):
+    """Deep V-Learning for Class Expression Learning."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = "DRILLV"
+        if self.df_embeddings is not None:
+            self.heuristic_func = DrillVHeuristic(mode="averaging", model_args={'input_shape': (1, self.embedding_dim)}, device=self.device)
+            self.experiences = Experience(maxlen=self.max_len_replay_memory)
+            if self.learning_rate:
+                self.optimizer = torch.optim.Adam(self.heuristic_func.net.parameters(), lr=self.learning_rate)
+        else:
+            self.heuristic_func = CeloeBasedReward()
+
+    def save(self, directory: str = None) -> None:
+        """ save weights of the deep Q-network"""
+        # (1) Create a folder
+        if directory:
+            os.makedirs(directory, exist_ok=True)
+            # (2) Save the weights
+            self.save_weights(path=directory + "/drillv.pth")
+            # (3) Save seen examples
+            with open(f"{directory}/seen_examples.json", 'w', encoding='utf-8') as f:
+                json.dump(self.seen_examples, f, ensure_ascii=False, indent=4)
+
+
+    def load(self, directory: str = None) -> None:
+        """ load weights of the deep V-network"""
+        if directory:
+            if os.path.isdir(directory):
+                if isinstance(self.heuristic_func, CeloeBasedReward):
+                    print("No loading because embeddings not provided")
+                else:
+                    print("Loading pretrained DVL Agent...", end="")
+                    self.heuristic_func.net.load_state_dict(torch.load(directory + "/drillv.pth", self.device))
+                    print(self.heuristic_func.net)
+            else:
+                print(f"{directory} is not found...")
+        else:
+            print(f"Directory:{directory}")
+
+    def form_experiences(self, state_pairs: List, rewards: List) -> None:
+        """
+        Store (state, reward, next_state) for V-learning.
+        """
+        for th, consecutive_states in enumerate(state_pairs):
+            e, e_next = consecutive_states
+            self.experiences.append((e, e_next, rewards[th]))
+
+    def learn_from_replay_memory(self, gamma=1.0) -> None:
+        """
+        V-learning update: target = reward + gamma * V(next_state)
+        """
+        if isinstance(self.heuristic_func, CeloeBasedReward):
+            return None
+
+        current_state_batch, next_state_batch, reward_batch = self.experiences.retrieve()
+        current_state_batch = torch.cat(current_state_batch, dim=0).to(self.device)
+        
+        next_state_batch = torch.cat(next_state_batch, dim=0).to(self.device)
+        reward_batch = torch.Tensor(reward_batch).to(self.device)
+
+        # Prepare input for V-network: only state embeddings
+        self.heuristic_func.net.train()
+        total_loss = 0
+        for m in range(self.num_epochs_per_replay):
+            self.optimizer.zero_grad()
+            # Predict V(s) and V(s')
+            v_current = self.heuristic_func.net.forward(current_state_batch)
+            with torch.no_grad():
+                v_next = self.heuristic_func.net.forward(next_state_batch)
+            target = reward_batch + gamma * v_next
+            loss = self.heuristic_func.net.loss(v_current, target)
+            total_loss += loss.item()
+            loss.backward()
+            self.optimizer.step()
+        # if self.verbose > 0:
+        print(f'Avg V-loss: {total_loss / self.num_epochs_per_replay:0.5f}')
+        self.heuristic_func.net.eval()
+
+    def exploitation(self, current_state: AbstractNode, next_states: List[AbstractNode]) -> RL_State:
+        """
+        Select next state with highest predicted V-value.
+        """
+        next_state_batch = torch.cat(
+            [self.get_embeddings_individuals(self.get_individuals(s)) for s in next_states], dim=0
+        ).to(self.device)
+        with torch.no_grad():
+            v_values = self.heuristic_func.net.forward(next_state_batch)
+        argmax_id = int(torch.argmax(v_values).to(self.device))
+        return next_states[argmax_id]
+
+    def predict_value(self, state: RL_State) -> torch.Tensor:
+        """
+        Predict V-value for a single state.
+        """
+        emb = self.get_embeddings_individuals(self.get_individuals(state)).to(self.device)
+        with torch.no_grad():
+            v = self.heuristic_func.net.forward(emb)
+        return v
+    
+    def fit(self, learning_problem: PosNegLPStandard, max_runtime=None):
+        if max_runtime:
+            assert isinstance(max_runtime, float) or isinstance(max_runtime, int)
+            self.max_runtime = max_runtime
+        self.clean()
+        self.start_time = time.time()
+        pos_type_counts = Counter(
+            [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.pos))])
+        neg_type_counts = Counter(
+            [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.neg))])
+        type_bias = pos_type_counts - neg_type_counts
+        root_state = self.initialize_training_class_expression_learning_problem(pos=learning_problem.pos,
+                                                                               neg=learning_problem.neg)
+        self.operator.set_input_examples(pos=learning_problem.pos, neg=learning_problem.neg)
+        assert root_state.quality > 0, f"Root state {root_state} must have the quality >0"
+        root_state.heuristic = root_state.quality
+        self.search_tree.add(root_state)
+        best_found_quality = 0
+        for ith_bias, x in enumerate((self.create_rl_state(i, parent_node=root_state) for i in type_bias)):
+            self.compute_quality_of_class_expression(x)
+            x.heuristic = x.quality
+            if x.quality > best_found_quality:
+                best_found_quality = x.quality
+                self.search_tree.add(x)
+            if ith_bias == self.positive_type_bias:
+                break
+
+        for _ in make_iterable_verbose(range(0, self.iter_bound),
+                                      verbose=self.verbose,
+                                      desc=f"Learning OWL Class Expression with at most {self.iter_bound} iterations"):
+            assert len(self.search_tree) > 0, "Search Tree cannot be empty!"
+            self.search_tree.show_current_search_tree()
+            most_promising = self.next_node_to_expand()
+            next_possible_states = []
+            if time.time() - self.start_time > self.max_runtime:
+                return self.terminate()
+            for ref in (tqdm_bar := make_iterable_verbose(self.apply_refinement(most_promising),
+                                                          verbose=self.verbose,
+                                                          position=0, leave=True)):
+                if time.time() - self.start_time > self.max_runtime:
+                    break
+                self.compute_quality_of_class_expression(ref)
+                if ref.quality == 0:
+                    continue
+                if self.verbose > 0:
+                    tqdm_bar.set_description_str(
+                        f"Step {_} | Refining {owl_expression_to_dl(most_promising.concept)} | {owl_expression_to_dl(ref.concept)} | Quality:{ref.quality:.4f}")
+                if ref.quality > best_found_quality:
+                    if self.verbose > 0:
+                        print("\nBest Found:", ref)
+                    best_found_quality = ref.quality
+                next_possible_states.append(ref)
+                if self.stop_at_goal:
+                    if ref.quality == 1.0:
+                        break
+            if not next_possible_states:
+                continue
+            # (6.4) Predict V-values for next states
+            if self.df_embeddings is not None:
+                for state in next_possible_states:
+                    self.assign_embeddings(state)
+                next_state_batch = torch.cat([s.embeddings for s in next_possible_states], dim=0).to(self.device)
+                with torch.no_grad():
+                    v_values = self.heuristic_func.net.forward(next_state_batch)
+                preds = v_values.cpu().numpy().tolist()
+            else:
+                preds = None
+            # (6.5) Add next possible states into search tree based on predicted V values
+            self.goal_found = self.update_search(next_possible_states, preds)
+            if self.goal_found and self.stop_at_goal:
+                if self.terminate_on_goal:
+                    return self.terminate()
+        return self.terminate()
+
+class DrillVNet(torch.nn.Module):  # pragma: no cover
+    """
+    Neural network for Deep V-Learning.
+    Input: state embedding (batch_size, 1, embedding_dim)
+    Output: V-value for each state (batch_size,)
+    """
+
+    def __init__(self, embedding_dim, device):
+        super(DrillVNet, self).__init__()
+        self.embedding_dim = embedding_dim
+        self.device = device
+        self.loss = torch.nn.MSELoss().to(self.device)
+
+        # Simple feedforward layers
+        self.fc1 = torch.nn.Linear(self.embedding_dim, self.embedding_dim // 2, device=self.device)
+        self.fc2 = torch.nn.Linear(self.embedding_dim // 2, 1, device=self.device)
+
+        self.init()
+
+    def init(self):
+        torch.nn.init.xavier_normal_(self.fc1.weight.data).to(self.device)
+        torch.nn.init.xavier_normal_(self.fc2.weight.data).to(self.device)
+
+    def forward(self, X: torch.FloatTensor):
+        """
+        X: (batch_size, 1, embedding_dim)
+        """
+        X = X.view(X.shape[0], self.embedding_dim)
+        X = torch.nn.functional.relu(self.fc1(X))
+        scores = self.fc2(X).flatten()
+        return scores
+    
+    # def train(self, dataset: Optional[Iterable[Tuple[str, Set, Set]]] = None,
+    #       num_of_target_concepts: int = 1,
+    #       num_learning_problems: int = 1):
+    #     """ Training RL agent for V-learning. """
+    #     if isinstance(self.heuristic_func, CeloeBasedReward):
+    #         print("No training...")
+    #         return self.terminate_training()
+
+    #     if self.verbose > 0:
+    #         training_data = tqdm(self.generate_learning_problems(num_of_target_concepts,
+    #                                                             num_learning_problems),
+    #                             desc="Training over learning problems")
+    #     else:
+    #         training_data = self.generate_learning_problems(num_of_target_concepts,
+    #                                                         num_learning_problems)
+
+    #     if not isinstance(training_data, Iterable):
+    #         print(f"We couldn't generate training data on this given knowledge base ({self.kb})")
+    #         return self.terminate_training()
+
+    #     for (target_owl_ce, positives, negatives) in training_data:
+    #         print(f"\nGoal Concept:\t {target_owl_ce}\tE^+:[{len(positives)}]\t E^-:[{len(negatives)}]")
+    #         sum_of_rewards_per_actions = self.rl_learning_loop(pos_uri=frozenset(positives),
+    #                                                         neg_uri=frozenset(negatives))
+    #         if self.verbose > 0:
+    #             print("Sum of rewards for each trial", sum_of_rewards_per_actions)
+
+    #         self.seen_examples.setdefault(len(self.seen_examples), dict()).update(
+    #             {'Concept': target_owl_ce,
+    #             'Positives': [i.str for i in positives],
+    #             'Negatives': [i.str for i in negatives]})
+    #     return self.terminate_training()
+    
+
+
+class DrillVHeuristic:  # pragma: no cover
+    """
+    Heuristic for Deep V-Learning.
+    Uses DrillVNet to predict V-values for states.
+    """
+
+    def __init__(self, model=None, mode=None, model_args=None, device=None):
+        if model:
+            self.net = model
+        elif mode in ['averaging', 'sampling']:
+            # Only need embedding_dim for DrillVNet
+            embedding_dim = model_args['input_shape'][1]
+            self.net = DrillVNet(embedding_dim, device)
+            self.mode = mode
+            self.name = 'DrillVHeuristic_' + self.mode
+        else:
+            raise ValueError
+        self.net.eval()
+        self.device = device
+
+    def score(self, node, parent_node=None):
+        """Compute V-value for a node (state)."""
+        emb = node.embeddings if hasattr(node, 'embeddings') else None
+        if emb is None:
+            raise ValueError("Node must have embeddings assigned.")
+        with torch.no_grad():
+            v = self.net.forward(emb.to(self.device))
+        return v.squeeze()
+
+    def apply(self, node, parent_node=None):
+        """Assign predicted V-value to node object."""
+        predicted_v_val = self.score(node, parent_node)
+        node.heuristic = predicted_v_val

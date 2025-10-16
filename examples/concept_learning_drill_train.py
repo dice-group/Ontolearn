@@ -10,80 +10,163 @@ dicee --path_single_kg KGs/Family/family-benchmark_rich_background.owl --path_to
 """
 import json
 from argparse import ArgumentParser
-
+import time
 import numpy as np
 from sklearn.model_selection import StratifiedKFold
 from ontolearn.utils.static_funcs import compute_f1_score
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.refinement_operators import LengthBasedRefinement
-from ontolearn.learners import Drill
+from ontolearn.learners import Drill, DrillV
 from ontolearn.metrics import F1
 from ontolearn.heuristics import CeloeBasedReward
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 from owlapy.render import DLSyntaxObjectRenderer
 
 
+def run_and_time_training(learner, train_args, directory):
+    start_time = time.time()
+    learner.train(**train_args)
+    learner.save(directory=directory)
+    end_time = time.time()
+    return end_time - start_time
+
+def run_and_time_prediction(learner, train_lp, test_lp, kb):
+    dl_render = DLSyntaxObjectRenderer()
+    start_time = time.time()
+    pred = learner.fit(train_lp).best_hypotheses()
+    pred_time = time.time() - start_time
+    train_f1 = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred)}),
+                                pos=train_lp.pos, neg=train_lp.neg)
+    test_f1 = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred)}),
+                               pos=test_lp.pos, neg=test_lp.neg)
+    return {
+        "prediction": dl_render.render(pred),
+        "train_f1": train_f1,
+        "test_f1": test_f1,
+        "prediction_time": pred_time
+    }
+
 def start(args):
     kb = KnowledgeBase(path=args.path_knowledge_base)
-    drill = Drill(knowledge_base=kb,
-                  path_embeddings=args.path_embeddings,
-                  refinement_operator=LengthBasedRefinement(knowledge_base=kb),
-                  quality_func=F1(),
-                  reward_func=CeloeBasedReward(),
-                  epsilon_decay=args.epsilon_decay,
-                  learning_rate=args.learning_rate,
-                  num_of_sequential_actions=args.num_of_sequential_actions,
-                  num_episode=args.num_episode,
-                  iter_bound=args.iter_bound,
-                  max_runtime=args.max_runtime)
+    train_args = dict(
+        num_of_target_concepts=args.num_of_target_concepts,
+        num_learning_problems=args.num_of_training_learning_problems
+    )
 
+    # Initialize both learners
+    drill = Drill(
+        knowledge_base=kb,
+        path_embeddings=args.path_embeddings,
+        refinement_operator=LengthBasedRefinement(knowledge_base=kb),
+        quality_func=F1(),
+        reward_func=CeloeBasedReward(),
+        epsilon_decay=args.epsilon_decay,
+        learning_rate=args.learning_rate,
+        verbose=0,
+        num_of_sequential_actions=args.num_of_sequential_actions,
+        num_episode=args.num_episode,
+        iter_bound=args.iter_bound,
+        max_runtime=args.max_runtime
+    )
+
+    drillv = DrillV(
+        knowledge_base=kb,
+        path_embeddings=args.path_embeddings,
+        refinement_operator=LengthBasedRefinement(knowledge_base=kb),
+        quality_func=F1(),
+        reward_func=CeloeBasedReward(),
+        epsilon_decay=args.epsilon_decay,
+        learning_rate=args.learning_rate,
+        verbose=0,
+        num_of_sequential_actions=args.num_of_sequential_actions,
+        num_episode=args.num_episode,
+        iter_bound=args.iter_bound,
+        max_runtime=args.max_runtime
+    )
+
+    # # Train and time both models
+    # print("Training Drill (DQN)...")
+    # drill_train_time = run_and_time_training(drill, train_args, directory="pretrained_drill")
+    # print(f"Drill training time: {drill_train_time:.2f} seconds\n")
+
+    # print("Training DrillV (V-learning)...")
+    # drillv_train_time = run_and_time_training(drillv, train_args)
+    # print(f"DrillV training time: {drillv_train_time:.2f} seconds\n")
+
+
+     # Train and time both models
     if args.path_pretrained_dir:
+        print("Loading pretrained Drill agent...")
         drill.load(directory=args.path_pretrained_dir)
+        print("Loading pretrained DrillV agent...")
+        drillv.load(directory=args.path_pretrained_dir)
     else:
-        drill.train(num_of_target_concepts=args.num_of_target_concepts,
-                    num_learning_problems=args.num_of_training_learning_problems)
-        drill.save(directory="pretrained_drill")
+        print("Training Drill agent...")
+        drill_train_time = run_and_time_training(drill, train_args, directory="pretrained_drill")
+        print(f"Drill training time: {drill_train_time:.2f} seconds\n")
+        print("Training DrillV agent...")
+        drillv_train_time = run_and_time_training(drillv, train_args, directory="pretrained_drillv")
+        print(f"DrillV training time: {drillv_train_time:.2f} seconds\n")
 
+    # Load learning problems
     with open(args.path_learning_problem, "r", encoding="utf-8") as json_file:
         data = json.load(json_file)
 
-    # The structure is: data["problems"]["(Brother ⊓ Grandfather)"]["positive_examples"]
     problems = data.get("problems", {})
 
-    # Get the first (or a specific) learning problem
-    # If you know the key, replace 'list(problems.keys())[0]' with it.
-    first_problem = next(iter(problems.values()))
 
-    p = first_problem.get("positive_examples", [])
-    n = first_problem.get("negative_examples", [])
+    # Collect prediction times
+    drill_times = []
+    drillv_times = []
+    print("\nComparing models on each class expression:\n")
+    for str_target_concept, examples in problems.items():
+        p = examples['positive_examples']
+        n = examples['negative_examples']
+        print(f"\nTarget concept: {str_target_concept}")
 
-    kf = StratifiedKFold(n_splits=args.folds, shuffle=True, random_state=args.random_seed)
-    X = np.array(p + n)
-    Y = np.array([1.0 for _ in p] + [0.0 for _ in n])
-    dl_render = DLSyntaxObjectRenderer()
-    for (ith, (train_index, test_index)) in enumerate(kf.split(X, Y)):
-        train_pos = {pos_individual for pos_individual in X[train_index][Y[train_index] == 1]}
-        train_neg = {neg_individual for neg_individual in X[train_index][Y[train_index] == 0]}
-        test_pos = {pos_individual for pos_individual in X[test_index][Y[test_index] == 1]}
-        test_neg = {neg_individual for neg_individual in X[test_index][Y[test_index] == 0]}
-        train_lp = PosNegLPStandard(pos=set(map(OWLNamedIndividual, map(IRI.create, train_pos))),
-                                    neg=set(map(OWLNamedIndividual, map(IRI.create, train_neg))))
+        kf = StratifiedKFold(n_splits=args.folds, shuffle=True, random_state=args.random_seed)
+        X = np.array(p + n)
+        Y = np.array([1.0 for _ in p] + [0.0 for _ in n])
 
-        test_lp = PosNegLPStandard(pos=set(map(OWLNamedIndividual, map(IRI.create, test_pos))),
-                                   neg=set(map(OWLNamedIndividual, map(IRI.create, test_neg))))
+        for (ith, (train_index, test_index)) in enumerate(kf.split(X, Y)):
+            train_pos = {pos_individual for pos_individual in X[train_index][Y[train_index] == 1]}
+            train_neg = {neg_individual for neg_individual in X[train_index][Y[train_index] == 0]}
+            test_pos = {pos_individual for pos_individual in X[test_index][Y[test_index] == 1]}
+            test_neg = {neg_individual for neg_individual in X[test_index][Y[test_index] == 0]}
+            train_lp = PosNegLPStandard(pos=set(map(OWLNamedIndividual, map(IRI.create, train_pos))),
+                                        neg=set(map(OWLNamedIndividual, map(IRI.create, train_neg))))
+            test_lp = PosNegLPStandard(pos=set(map(OWLNamedIndividual, map(IRI.create, test_pos))),
+                                       neg=set(map(OWLNamedIndividual, map(IRI.create, test_neg))))
 
-        pred_drill = drill.fit(train_lp).best_hypotheses()
-        train_f1_drill = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_drill)}),
-                                          pos=train_lp.pos,
-                                          neg=train_lp.neg)
-        # () Quality on test data
-        test_f1_drill = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_drill)}),
-                                         pos=test_lp.pos,
-                                         neg=test_lp.neg)
-        print(
-            f"Prediction: {dl_render.render(pred_drill)} | Train Quality: {train_f1_drill:.3f} | Test Quality: {test_f1_drill:.3f} \n")
+            # Drill
+            drill_result = run_and_time_prediction(drill, train_lp, test_lp, kb)
+            drill_times.append(drill_result['prediction_time'])
 
+            # DrillV
+            drillv_result = run_and_time_prediction(drillv, train_lp, test_lp, kb)
+            drillv_times.append(drill_result['prediction_time'])
+
+
+            print(f"Fold {ith + 1}:")
+            print(f"  Drill (DQN):")
+            print(f"    Prediction: {drill_result['prediction']}")
+            print(f"    Train F1: {drill_result['train_f1']:.3f} | Test F1: {drill_result['test_f1']:.3f}")
+            print(f"    Prediction time: {drill_result['prediction_time']:.2f} seconds")
+            print(f"  DrillV (V-learning):")
+            print(f"    Prediction: {drillv_result['prediction']}")
+            print(f"    Train F1: {drillv_result['train_f1']:.3f} | Test F1: {drillv_result['test_f1']:.3f}")
+            print(f"    Prediction time: {drillv_result['prediction_time']:.2f} seconds")
+
+
+    # Print average prediction times
+    avg_drill_time = np.mean(drill_times) if drill_times else 0
+    avg_drillv_time = np.mean(drillv_times) if drillv_times else 0
+    print("\nSummary:")
+    print(f"Drill training time: {drill_train_time:.2f} seconds")
+    print(f"DrillV training time: {drillv_train_time:.2f} seconds")
+    print(f"Average Drill prediction time: {avg_drill_time:.2f} seconds")
+    print(f"Average DrillV prediction time: {avg_drillv_time:.2f} seconds")
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -97,15 +180,15 @@ if __name__ == '__main__':
                         default=1)
     parser.add_argument("--num_of_training_learning_problems",
                         type=int,
-                        default=1)
+                        default=2)
     parser.add_argument("--path_pretrained_dir", type=str, default=None)
 
-    parser.add_argument("--path_learning_problem", type=str, default='LPs/Family/lps_generated_drill.json',
+    parser.add_argument("--path_learning_problem", type=str, default='LPs/Family/lps.json',
                         help="Path to a .json file that contains 2 properties 'positive_examples' and "
                              "'negative_examples'. Each of this properties should contain the IRIs of the respective"
                              "instances. e.g. 'some/path/lp.json'")
     parser.add_argument("--max_runtime", type=int, default=10, help="Max runtime")
-    parser.add_argument("--folds", type=int, default=10, help="Number of folds of cross validation.")
+    parser.add_argument("--folds", type=int, default=2, help="Number of folds of cross validation.")
     parser.add_argument("--random_seed", type=int, default=1)
     parser.add_argument("--iter_bound", type=int, default=10_000, help='iter_bound during testing.')
     # DQL related
