@@ -581,6 +581,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         @param predicted_Q_values:
         @return:
         """
+      
         if predicted_Q_values is not None:
             for child_node, pred_Q in zip(concepts, predicted_Q_values):
                 child_node.heuristic = pred_Q
@@ -1174,9 +1175,9 @@ class DrillV(Drill):
                 continue
             # (6.4) Predict V-values for next states
             if self.df_embeddings is not None:
-                for state in next_possible_states:
-                    self.assign_embeddings(state)
-                next_state_batch = torch.cat([s.embeddings for s in next_possible_states], dim=0).to(self.device)
+                individuals_list = [self.get_individuals(s) for s in next_possible_states]
+                embeddings_list = [self.get_embeddings_individuals(individuals) for individuals in individuals_list]
+                next_state_batch = torch.cat(embeddings_list, dim=0).to(self.device)
                 with torch.no_grad():
                     v_values = self.heuristic_func.net.forward(next_state_batch)
                 preds = v_values.cpu().numpy().tolist()

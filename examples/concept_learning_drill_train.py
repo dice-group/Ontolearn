@@ -27,8 +27,8 @@ from owlapy.render import DLSyntaxObjectRenderer
 def run_and_time_training(learner, train_args, directory):
     start_time = time.time()
     learner.train(**train_args)
-    learner.save(directory=directory)
     end_time = time.time()
+    learner.save(directory=directory)
     return end_time - start_time
 
 def run_and_time_prediction(learner, train_lp, test_lp, kb):
@@ -109,6 +109,7 @@ def start(args):
         drillv_train_time = run_and_time_training(drillv, train_args, directory="pretrained_drillv")
         print(f"DrillV training time: {drillv_train_time:.2f} seconds\n")
 
+    # exit(0)
     # Load learning problems
     with open(args.path_learning_problem, "r", encoding="utf-8") as json_file:
         data = json.load(json_file)
@@ -139,7 +140,7 @@ def start(args):
             test_lp = PosNegLPStandard(pos=set(map(OWLNamedIndividual, map(IRI.create, test_pos))),
                                        neg=set(map(OWLNamedIndividual, map(IRI.create, test_neg))))
 
-            # Drill
+            # # Drill
             drill_result = run_and_time_prediction(drill, train_lp, test_lp, kb)
             drill_times.append(drill_result['prediction_time'])
 
@@ -147,7 +148,7 @@ def start(args):
             drillv_result = run_and_time_prediction(drillv, train_lp, test_lp, kb)
             drillv_times.append(drillv_result['prediction_time'])
 
-
+            # Print results
             print(f"Fold {ith + 1}:")
             print(f"  Drill (DQN):")
             print(f"    Prediction: {drill_result['prediction']}")
@@ -177,18 +178,18 @@ if __name__ == '__main__':
                         default='Experiments/embeddings/Keci_entity_embeddings.csv')
     parser.add_argument("--num_of_target_concepts",
                         type=int,
-                        default=1)
+                        default=10)
     parser.add_argument("--num_of_training_learning_problems",
                         type=int,
-                        default=2)
+                        default=10)
     parser.add_argument("--path_pretrained_dir", type=str, default=None)
 
     parser.add_argument("--path_learning_problem", type=str, default='LPs/Family/lps.json',
                         help="Path to a .json file that contains 2 properties 'positive_examples' and "
                              "'negative_examples'. Each of this properties should contain the IRIs of the respective"
                              "instances. e.g. 'some/path/lp.json'")
-    parser.add_argument("--max_runtime", type=int, default=10, help="Max runtime")
-    parser.add_argument("--folds", type=int, default=2, help="Number of folds of cross validation.")
+    parser.add_argument("--max_runtime", type=int, default=30, help="Max runtime")
+    parser.add_argument("--folds", type=int, default=5, help="Number of folds of cross validation.")
     parser.add_argument("--random_seed", type=int, default=1)
     parser.add_argument("--iter_bound", type=int, default=10_000, help='iter_bound during testing.')
     # DQL related
@@ -199,7 +200,7 @@ if __name__ == '__main__':
                         help='Maximum size of the experience replay')
     parser.add_argument("--num_epochs_per_replay", type=int, default=2,
                         help='Number of epochs on experience replay memory')
-    parser.add_argument('--num_of_sequential_actions', type=int, default=1, help='Length of the trajectory.')
+    parser.add_argument('--num_of_sequential_actions', type=int, default=3, help='Length of the trajectory.')
 
     # NN related
     parser.add_argument("--learning_rate", type=int, default=.01)
