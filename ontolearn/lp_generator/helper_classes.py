@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # -----------------------------------------------------------------------------
-
+from ontolearn.triple_store import TripleStore
 from tqdm import tqdm
 import random
 from ontolearn.knowledge_base import KnowledgeBase
@@ -72,7 +72,7 @@ class KB2Data:
     def __init__(self, path=None, storage_path=None, max_num_lps=1000, beyond_alc=False, depth=3,
                  max_child_length=20, refinement_expressivity=0.2,
                  downsample_refinements=True, sample_fillers_count=10, num_sub_roots=50,
-                 min_num_pos_examples=1,knowledge_base=None):
+                 min_num_pos_examples=1,knowledge_base=None, max_pos_neg_examples_per_lp=None):
         """
         Args
         - kb_path: path to the owl file representing the knowledge base/ontology
@@ -83,8 +83,19 @@ class KB2Data:
         - depth, refinement_expressivity, sample_fillers_count, num_sub_roots all refer to the size of the data (learning problems) to be generated
         - downsample_refinements: whether to downsample refinements in ExpressRefinement. If refinement_expressivity<1, this must be set to True
         """
-        self.path = path
+        if path and knowledge_base:
+            assert path == knowledge_base.path, "Path argument and knowledge base's path do not match"
+        if path:
+            self.path = path
+        elif isinstance(knowledge_base, KnowledgeBase):
+            self.path = knowledge_base.path
+        elif isinstance(knowledge_base, TripleStore):
+            self.path = None
+        else:
+            raise ValueError("No knowledge base provided or path provided. Please provide a value to 'path' or "
+                             "'knowledge_base' arguments")
         if storage_path is None:
+            assert self.path is not None, "Storage path must be provided. Please provide a value to 'storage_path'"
             self.storage_path = f'{self.path[:self.path.rfind("/")]}/LPs/'
         else:
             self.storage_path = storage_path
@@ -96,7 +107,14 @@ class KB2Data:
             self.kb = KnowledgeBase(path=path)
         else:
             self.kb = self.knowledge_base
-        self.num_examples = self.find_optimal_number_of_examples()
+        if max_pos_neg_examples_per_lp:
+            count = self.kb.individuals_count()
+            assert max_pos_neg_examples_per_lp <= count, \
+                ("The maximum number of examples per learning problem cannot be greater "
+                 "than the number of individuals in the knowledge base")
+            self.num_examples = max_pos_neg_examples_per_lp
+        else:
+            self.num_examples = self.find_optimal_number_of_examples()
         self.min_num_pos_examples = min_num_pos_examples
         atomic_concepts = frozenset(self.kb.ontology.classes_in_signature())
         self.atomic_concept_names = frozenset(

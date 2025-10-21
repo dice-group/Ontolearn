@@ -18,7 +18,8 @@ $E^+$ and $E^-$, learning [OWL Class expression](https://www.w3.org/TR/owl2-synt
 
 $$\forall p \in E^+\ \mathcal{K} \models H(p) \wedge \forall n \in E^-\ \mathcal{K} \not \models H(n).$$
 
-To tackle this supervised learning problem, ontolearn offers many symbolic, neuro-symbolic and deep learning based Learning algorithms: 
+To address this supervised learning problem, OntoLearn provides a diverse suite of learning algorithms, 
+including symbolic, neuro-symbolic, and deep learning-based approaches:
 - **TDL** &rarr; [Tree-based OWL Class Expression Learner for Large Graphs](https://rdcu.be/eJDlY)
 - **Drill** &rarr; [Neuro-Symbolic Class Expression Learning](https://www.ijcai.org/proceedings/2023/0403.pdf)
 - **EvoLearner** &rarr; [EvoLearner: Learning Description Logics with Evolutionary Algorithms](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
@@ -348,13 +349,22 @@ pytest -p no:warnings -x # Running 76 tests takes ~ 17 mins
 ```
 
 
-
 </details>
 
 ## References
-Currently, we are working on our manuscript describing our framework. 
 If you find our work useful in your research, please consider citing the respective paper:
 ```
+# Ontolearn
+@article{demir2025ontolearn,
+  title={Ontolearn---A Framework for Large-scale OWL Class Expression Learning in Python},
+  author={Demir, Caglar and Baci, Alkid and Kouagou, N'Dah Jean and Sieger, Leonie Nora and Heindorf, Stefan and Bin, Simon and Bl{\"u}baum, Lukas and Bigerl, Alexander and Ngomo, Axel-Cyrille Ngonga},
+  journal={Journal of Machine Learning Research},
+  volume={26},
+  number={63},
+  pages={1--6},
+  year={2025}
+}
+
 # TDL
 @InProceedings{10.1007/978-3-032-06066-2_29,
 author={Demir, Caglar and Yekini, Moshood and R{\"o}der, Michael and Mahmood, Yasir and Ngonga Ngomo, Axel-Cyrille},
@@ -366,17 +376,6 @@ publisher={Springer Nature Switzerland},
 address={Cham},
 pages={495--511},
 isbn={978-3-032-06066-2}
-}
-
-# Ontolearn
-@article{demir2025ontolearn,
-  title={Ontolearn---A Framework for Large-scale OWL Class Expression Learning in Python},
-  author={Demir, Caglar and Baci, Alkid and Kouagou, N'Dah Jean and Sieger, Leonie Nora and Heindorf, Stefan and Bin, Simon and Bl{\"u}baum, Lukas and Bigerl, Alexander and Ngomo, Axel-Cyrille Ngonga},
-  journal={Journal of Machine Learning Research},
-  volume={26},
-  number={63},
-  pages={1--6},
-  year={2025}
 }
 
 # ROCES
@@ -446,4 +445,4 @@ address="Cham"
 }
 ```
 
-In case you have any question, please contact: ```caglar.demir@upb.de``` or ```caglardemir8@gmail.com```
+In case you have any question or feedback, please contact us: ```caglar.demir@upb.de``` or ```alkid.baci@upb.de```.
