@@ -327,21 +327,39 @@ class NCESNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, Abst
                  concept: OWLClassExpression,
                  length: int,
                  individuals_count: int,
-                 quality: float):
+                 quality: float,
+                 heuristic: Optional[float] = None):
         _NodeConcept.__init__(self, concept)
         _NodeLen.__init__(self, length)
         _NodeIndividualsCount.__init__(self, individuals_count)
         _NodeQuality.__init__(self, quality)
+
+        if heuristic is not None:
+            _NodeHeuristic.__init__(self, heuristic)
+
         AbstractNode.__init__(self)
 
     def __str__(self):
-        return "\t".join((
+        parts = [
             AbstractNode.__str__(self),
             _NodeConcept.__str__(self),
             _NodeQuality.__str__(self),
             f'Length:{self._len}',
             _NodeIndividualsCount.__str__(self),
-        ))
+        ]
+
+        if isinstance(self, _NodeHeuristic):
+            parts.append(_NodeHeuristic.__str__(self))
+
+        return "\t".join(parts)
+    
+        # return "\t".join((
+        #     AbstractNode.__str__(self),
+        #     _NodeConcept.__str__(self),
+        #     _NodeQuality.__str__(self),
+        #     f'Length:{self._len}',
+        #     _NodeIndividualsCount.__str__(self),
+        # ))
 
 
 class RL_State(_NodeConcept, _NodeQuality, _NodeHeuristic, AbstractNode, _NodeParentRef['RL_State']):
