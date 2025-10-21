@@ -145,7 +145,7 @@ class TDL:
                  max_runtime: int = 1,
                  grid_search_over: dict = None,
                  grid_search_apply: bool = False,
-                 report_classification: bool = True,
+                 report_classification: bool = False,
                  plot_tree: bool = False,
                  plot_embeddings: bool = False,
                  plot_feature_importance: bool = False,
