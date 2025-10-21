@@ -273,7 +273,7 @@ def execute(args): # pragma: no cover
                 trainer.save_best_hypothesis()
 
         elif args.model in ["nces"]:
-            model = NCES(knowledge_base_path=args.knowledge_base_path,
+            model = NCES(knowledge_base=kb,
                     quality_func=F1(),
                     load_pretrained=True,
                     path_of_embeddings=args.path_of_nces_embeddings,
@@ -301,7 +301,7 @@ def execute(args): # pragma: no cover
                   plot_tree=False,
                   plot_feature_importance=False,
                   grid_search_apply=False,
-                  verbalize=True,
+                  verbalize=False,
                   kwargs_classifier={"random_state": 123, 'criterion': 'entropy'})
             
             print("TDL starts..", end="\t")
