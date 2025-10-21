@@ -24,12 +24,16 @@
 
 """Heuristic functions."""
 
-from typing import Final
+from typing import Final, Union
 
 import numpy as np
+from owlapy import dl_to_owl_expression
+from owlapy.class_expression import OWLClassExpression
+
+from ontolearn.knowledge_base import KnowledgeBase
 
 from .abstracts import AbstractHeuristic, AbstractOEHeuristicNode, EncodedLearningProblem
-from .learning_problem import EncodedPosNegUndLP, EncodedPosNegLPStandard
+from .learning_problem import EncodedPosNegUndLP, EncodedPosNegLPStandard, PosNegLPStandard
 from .metrics import Accuracy
 from .search import LBLNode, RL_State
 
@@ -176,3 +180,58 @@ class CeloeBasedReward: # pragma: no cover
         # Regret => Length penalization.
         reward -= next_rl_state.length * self.beta
         return max(reward, 0)
+    
+
+class ConSynHeuristic(AbstractHeuristic):
+    """CONSYS Heuristic for evaluating objects with 'individuals' and 'length' or OWLClassExpressions."""
+
+    __slots__ = ('knowledge_base', 'accuracy_method', 'gainBonusFactor', 'expansionPenaltyFactor')
+    name: Final = 'ConSynHeuristic'
+
+    def __init__(self, knowledge_base: KnowledgeBase, gainBonusFactor: float = 0.5, expansionPenaltyFactor: float = 0.02):
+        super().__init__()
+        self.knowledge_base = knowledge_base
+        self.accuracy_method = Accuracy()
+        self.gainBonusFactor = gainBonusFactor
+        self.expansionPenaltyFactor = expansionPenaltyFactor
+
+    def _get_top_concept_individuals(self):
+        try:
+            ontology = self.knowledge_base.ontology
+            namespace = list(ontology.classes_in_signature())[0].iri.get_namespace()
+            top = dl_to_owl_expression("⊤", namespace)
+            return self.knowledge_base.individuals(top)
+        except IndexError:
+            raise RuntimeError("Ontology is empty — cannot determine ⊤ namespace.")
+
+    def apply(self, node_or_concept: Union[object, OWLClassExpression], learning_problem: PosNegLPStandard, instances=None, length: float = None) -> float:
+        if hasattr(node_or_concept, 'individuals') and hasattr(node_or_concept, 'length'):
+            if instances is None:
+                instances = node_or_concept.individuals
+            concept_length = node_or_concept.length if length is None else length
+
+            parent = getattr(node_or_concept, 'parent_node', None)
+            if parent is not None and hasattr(parent, 'individuals'):
+                parent_individuals = parent.individuals
+            else:
+                parent_individuals = self._get_top_concept_individuals()
+
+        elif isinstance(node_or_concept, OWLClassExpression):
+            if instances is None:
+                instances = self.knowledge_base.individuals(node_or_concept)
+            concept_length = init_length_metric().length(node_or_concept) if length is None else length
+            parent_individuals = self._get_top_concept_individuals()
+        else:
+            raise TypeError("apply expects an object with 'individuals' and 'length', or an OWLClassExpression")
+
+        _, accuracy = self.accuracy_method.score_elp(instances, learning_problem)
+        _, parent_accuracy = self.accuracy_method.score_elp(parent_individuals, learning_problem)
+
+        accuracy_gain = accuracy - parent_accuracy
+        heuristic_val = accuracy + self.gainBonusFactor * accuracy_gain - concept_length * self.expansionPenaltyFactor
+        rounded_heuristic_val = round(heuristic_val, 4)
+
+        if hasattr(node_or_concept, 'heuristic'):
+            node_or_concept.heuristic = rounded_heuristic_val
+
+        return rounded_heuristic_val
