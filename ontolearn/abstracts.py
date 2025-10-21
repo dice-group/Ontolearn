@@ -78,13 +78,20 @@ class AbstractScorer(Generic[_N], metaclass=ABCMeta):
         if len(instances) == 0:
             return False, 0
         # @TODO: It must be moved to the top of the abstracts.py
-        from ontolearn.learning_problem import EncodedPosNegLPStandard
-        if isinstance(learning_problem, EncodedPosNegLPStandard):
-            tp = len(learning_problem.kb_pos.intersection(instances))
-            tn = len(learning_problem.kb_neg.difference(instances))
+        from ontolearn.learning_problem import EncodedPosNegLPStandard, PosNegLPStandard
+        if isinstance(learning_problem, (EncodedPosNegLPStandard, PosNegLPStandard)):
+            if isinstance(learning_problem, EncodedPosNegLPStandard):
+                pos = learning_problem.kb_pos
+                neg = learning_problem.kb_neg
+            else:
+                pos = learning_problem.pos
+                neg = learning_problem.neg
 
-            fp = len(learning_problem.kb_neg.intersection(instances))
-            fn = len(learning_problem.kb_pos.difference(instances))
+            tp = len(pos.intersection(instances))
+            tn = len(neg.difference(instances))
+            fp = len(neg.intersection(instances))
+            fn = len(pos.difference(instances))
+            
             return self.score2(tp=tp, tn=tn, fp=fp, fn=fn)
         else:
             raise NotImplementedError(learning_problem)
