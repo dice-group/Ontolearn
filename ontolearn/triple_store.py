@@ -43,7 +43,8 @@ from owlapy.owl_axiom import (
 )
 from owlapy.owl_datatype import OWLDatatype
 from owlapy.owl_individual import OWLNamedIndividual
-from owlapy.owl_literal import OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES
+from owlapy.owl_literal import OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, \
+    NonNegativeIntegerOWLDatatype
 from owlapy.owl_ontology import OWLOntologyID
 from owlapy.abstracts import AbstractOWLOntology, AbstractOWLReasoner
 from owlapy.owl_property import (

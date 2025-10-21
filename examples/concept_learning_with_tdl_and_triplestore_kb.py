@@ -6,7 +6,7 @@ from ontolearn.triple_store import TripleStore
 from ontolearn.utils.static_funcs import save_owl_class_expressions
 from owlapy.render import DLSyntaxObjectRenderer
 # (1) Initialize Triplestore- Make sure that UPB VPN is on
-kb = TripleStore(url="http://dice-dbpedia.cs.upb.de:9080/sparql")
+kb = TripleStore(url="https://dbpedia.data.dice-research.org/sparql")
 # (2) Initialize a DL renderer.
 render = DLSyntaxObjectRenderer()
 # (3) Initialize a learner.
