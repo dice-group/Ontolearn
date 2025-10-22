@@ -154,7 +154,7 @@ class TDL:
     def __init__(self, knowledge_base,
                  use_inverse: bool = False,
                  use_data_properties: bool = False,
-                 use_nominals: bool = False,
+                 use_nominals: bool = True,
                  use_card_restrictions: bool = False,
                  kwargs_classifier: dict = None,
                  max_runtime: int = 1,
