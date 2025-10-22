@@ -166,6 +166,8 @@ class TDL:
                 "min_samples_leaf": [1, 2, 3, 4, 5, 10],
                 "max_depth": [1, 2, 3, 4, 5, 10, None],
             }
+        elif grid_search_apply and grid_search_over is not None:
+            pass
         else:
             grid_search_over = dict()
         assert (
