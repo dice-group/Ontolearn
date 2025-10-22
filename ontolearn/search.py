@@ -317,11 +317,11 @@ class EvoLearnerNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality
         ))
 
 
-class NCESNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, AbstractNode, AbstractConceptNode):
+class NCESNode(_NodeConcept, _NodeLen, _NodeIndividualsCount, _NodeQuality, _NodeHeuristic, AbstractNode, AbstractConceptNode):
     """
     EvoLearner search tree node.
     """
-    __slots__ = '_concept', '_len', '_individuals_count', '_quality'
+    __slots__ = '_concept', '_len', '_individuals_count', '_quality', '_heuristic'
 
     def __init__(self,
                  concept: OWLClassExpression,

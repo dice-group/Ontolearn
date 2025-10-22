@@ -23,8 +23,10 @@
 # -----------------------------------------------------------------------------
 
 """NCES utils."""
+from collections import defaultdict
 import os
 import random
+from typing import Dict, List, Optional, TypeAlias, Union
 import numpy as np
 import json
 
@@ -33,7 +35,14 @@ from tokenizers.models import BPE
 from tokenizers.trainers import BpeTrainer
 from tokenizers.pre_tokenizers import WhitespaceSplit
 from transformers import PreTrainedTokenizerFast
+from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.lp_generator import LPGen
+
+from owlapy import owl_expression_to_dl
+from owlapy.class_expression import OWLClassExpression
+from owlapy.owl_individual import OWLNamedIndividual
+
+from ontolearn.search import NCESNode
 
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
