@@ -157,6 +157,7 @@ class TDL:
                  max_runtime: int = 1,
                  grid_search_over: dict = None,
                  grid_search_apply: bool = False,
+                 kwargs_grid_search: dict = None,
                  report_classification: bool = True,
                  plot_tree: bool = False,
                  plot_embeddings: bool = False,
@@ -182,6 +183,9 @@ class TDL:
             pass
         else:
             grid_search_over = dict()
+
+        kwargs_grid_search.setdefault("cv", 10)
+        
         assert (
                 isinstance(knowledge_base, KnowledgeBase)
                 or isinstance(knowledge_base, ontolearn.triple_store.TripleStore)
@@ -189,6 +193,7 @@ class TDL:
         ), "knowledge_base must be a KnowledgeBase instance"
         print(f"Knowledge Base: {knowledge_base}")
         self.grid_search_over = grid_search_over
+        self.kwargs_grid_search = kwargs_grid_search
         self.knowledge_base = knowledge_base
         self.report_classification = report_classification
         self.plot_tree = plot_tree
@@ -387,7 +392,7 @@ class TDL:
         if self.grid_search_over:
             grid_search = sklearn.model_selection.GridSearchCV(
                 tree.DecisionTreeClassifier(**self.kwargs_classifier),
-                param_grid=self.grid_search_over, cv=10, ).fit(X.values, y.values)
+                param_grid=self.grid_search_over, **self.kwargs_grid_search).fit(X.values, y.values)
             print(grid_search.best_params_)
             self.kwargs_classifier.update(grid_search.best_params_)
         # Training
