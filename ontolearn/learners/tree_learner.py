@@ -30,7 +30,10 @@ from owlapy.class_expression import (
     OWLObjectIntersectionOf,
     OWLClassExpression,
     OWLObjectUnionOf,
+    OWLObjectOneOf,
+    OWLDataOneOf
 )
+from owlapy.utils import HasFiller, HasOperands
 from owlapy.owl_individual import OWLNamedIndividual
 import ontolearn.triple_store
 from ontolearn.knowledge_base import KnowledgeBase
@@ -133,7 +136,7 @@ def concepts_reducer(
     return dl_concept_path
 
 def contains_nominal(expr: OWLClassExpression) -> bool:
-    """Return True if the OWL expression (anywhere in its tree) contains a nominal (OWLObjectOneOf, OWLDataOneOf)."""
+    """Returns True if the OWL expression contains a nominal (OWLObjectOneOf, OWLDataOneOf)."""
     if isinstance(expr, (OWLObjectOneOf, OWLDataOneOf)):
         return True
 
@@ -157,7 +160,7 @@ class TDL:
                  max_runtime: int = 1,
                  grid_search_over: dict = None,
                  grid_search_apply: bool = False,
-                 kwargs_grid_search: dict = None,
+                 kwargs_grid_search: dict = {},
                  report_classification: bool = True,
                  plot_tree: bool = False,
                  plot_embeddings: bool = False,
