@@ -132,6 +132,18 @@ def concepts_reducer(
             dl_concept_path = reduced_cls((dl_concept_path, c))
     return dl_concept_path
 
+def contains_nominal(expr: OWLClassExpression) -> bool:
+    """Return True if the OWL expression (anywhere in its tree) contains a nominal (OWLObjectOneOf, OWLDataOneOf)."""
+    if isinstance(expr, (OWLObjectOneOf, OWLDataOneOf)):
+        return True
+
+    if isinstance(expr, HasFiller):
+        return contains_nominal(expr.get_filler())
+
+    if isinstance(expr, HasOperands):
+        return any(contains_nominal(op) for op in expr.get_operands())
+
+    return False
 
 class TDL:
     """Tree-based Description Logic Concept Learner"""
@@ -211,11 +223,12 @@ class TDL:
                                        verbose=self.verbose,
                                        desc="Extracting information about examples"):
             for owl_class_expression in self.knowledge_base.abox(individual=owl_named_individual, mode="expression"):
-                str_dl_concept=owl_expression_to_dl(owl_class_expression)
-                individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
-                if str_dl_concept not in features:
-                    # A mapping from str dl representation to owl object.
-                    features[str_dl_concept] = owl_class_expression
+                if self.use_nominals or not contains_nominal(owl_class_expression):
+                    str_dl_concept=owl_expression_to_dl(owl_class_expression)
+                    individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
+                    if str_dl_concept not in features:
+                        # A mapping from str dl representation to owl object.
+                        features[str_dl_concept] = owl_class_expression
 
         assert len(features) > 0, "First hop features cannot be extracted. Ensure that there are axioms about the examples."
         if self.verbose > 0:
