@@ -36,7 +36,7 @@ with open('README.md', 'r') as fh:
 _deps = [
     "matplotlib>=3.3.4",
     "scikit-learn>=1.4.1",
-    "torch==2.2.0",
+    "torch>=2.2.0",
     "rdflib>=6.0.2",
     "ruff>=0.7.2",
     "pandas>=1.5.0",
