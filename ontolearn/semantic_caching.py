@@ -25,7 +25,8 @@
 """python examples/retrieval_eval.py"""
 from owlapy.owl_literal import OWLBottomObjectProperty, OWLTopObjectProperty
 
-from ontolearn.owl_neural_reasoner import TripleStoreNeuralReasoner
+from owlapy.owl_reasoner import EBR
+from owlapy.owl_ontology import NeuralOntology
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.utils import jaccard_similarity, concept_reducer, concept_reducer_properties
 from owlapy.class_expression import (
@@ -536,13 +537,9 @@ def retrieve(expression:str, path_kg:str, path_kge_model:str) -> Tuple[Set[str],
     'take a concept c and returns it set of retrieved individual'
 
     if path_kge_model:
-        neural_owl_reasoner = TripleStoreNeuralReasoner(
-            path_neural_embedding=path_kge_model, gamma=0.9
-        )
+        neural_owl_reasoner = EBR(NeuralOntology(path_neural_embedding=path_kge_model, gamma=0.9))
     else:
-        neural_owl_reasoner = TripleStoreNeuralReasoner(
-            path_of_kb=path_kg, gamma=0.9
-        )
+        neural_owl_reasoner = EBR(NeuralOntology(path_of_kb=path_kg, gamma=0.9))
     retrievals = concept_retrieval(neural_owl_reasoner, expression) # Retrieving with our reasoner
     return retrievals
 

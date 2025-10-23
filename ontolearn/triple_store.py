@@ -831,7 +831,7 @@ class TripleStore(AbstractKnowledgeBase):
         else:
             def get_properties_from_xsd_range(r: OWLDatatype):
                 query = (f"{rdf_prefix}\n{rdfs_prefix}\n{xsd_prefix}SELECT DISTINCT ?x " +
-                         f"WHERE {{?x rdfs:range xsd:{r.iri.reminder}}}")
+                         f"WHERE {{?x rdfs:range xsd:{r.iri.remainder}}}")
                 for binding in self.query(query).json()["results"]["bindings"]:
                     yield OWLDataProperty(binding["x"]["value"])
             if isinstance(ranges, OWLDatatype):
