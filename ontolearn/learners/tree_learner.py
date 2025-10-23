@@ -31,7 +31,7 @@ from owlapy.class_expression import (
     OWLClassExpression,
     OWLObjectUnionOf,
     OWLObjectOneOf,
-    OWLDataOneOf
+    OWLObjectHasValue
 )
 from owlapy.utils import HasFiller, HasOperands
 from owlapy.owl_individual import OWLNamedIndividual
@@ -137,7 +137,7 @@ def concepts_reducer(
 
 def contains_nominal(expr: OWLClassExpression) -> bool:
     """Returns True if the OWL expression contains a nominal (OWLObjectOneOf, OWLDataOneOf)."""
-    if isinstance(expr, (OWLObjectOneOf, OWLDataOneOf)):
+    if isinstance(expr, (OWLObjectOneOf, OWLObjectHasValue)):
         return True
 
     if isinstance(expr, HasFiller):
