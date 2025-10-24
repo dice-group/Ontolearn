@@ -104,12 +104,12 @@ def start(args):
     else:
         print("Training Drill agent...")
         drill_train_time = run_and_time_training(drill, train_args, directory="pretrained_drill")
-        print(f"Drill training time: {drill_train_time:.2f} seconds\n")
         print("Training DrillV agent...")
         drillv_train_time = run_and_time_training(drillv, train_args, directory="pretrained_drillv")
         print(f"DrillV training time: {drillv_train_time:.2f} seconds\n")
+        print(f"Drill training time: {drill_train_time:.2f} seconds\n")
 
-    # exit(0)
+    time.sleep(10)  # Just to have a small break between training and testing
     # Load learning problems
     with open(args.path_learning_problem, "r", encoding="utf-8") as json_file:
         data = json.load(json_file)
@@ -178,10 +178,10 @@ if __name__ == '__main__':
                         default='Experiments/embeddings/Keci_entity_embeddings.csv')
     parser.add_argument("--num_of_target_concepts",
                         type=int,
-                        default=10)
+                        default=1)
     parser.add_argument("--num_of_training_learning_problems",
                         type=int,
-                        default=10)
+                        default=1)
     parser.add_argument("--path_pretrained_dir", type=str, default=None)
 
     parser.add_argument("--path_learning_problem", type=str, default='LPs/Family/lps.json',
@@ -189,7 +189,7 @@ if __name__ == '__main__':
                              "'negative_examples'. Each of this properties should contain the IRIs of the respective"
                              "instances. e.g. 'some/path/lp.json'")
     parser.add_argument("--max_runtime", type=int, default=30, help="Max runtime")
-    parser.add_argument("--folds", type=int, default=5, help="Number of folds of cross validation.")
+    parser.add_argument("--folds", type=int, default=2, help="Number of folds of cross validation.")
     parser.add_argument("--random_seed", type=int, default=1)
     parser.add_argument("--iter_bound", type=int, default=10_000, help='iter_bound during testing.')
     # DQL related
@@ -198,9 +198,9 @@ if __name__ == '__main__':
     parser.add_argument("--epsilon_decay", type=float, default=.01, help='Epsilon greedy trade off per epoch')
     parser.add_argument("--max_len_replay_memory", type=int, default=1024,
                         help='Maximum size of the experience replay')
-    parser.add_argument("--num_epochs_per_replay", type=int, default=2,
+    parser.add_argument("--num_epochs_per_replay", type=int, default=1,
                         help='Number of epochs on experience replay memory')
-    parser.add_argument('--num_of_sequential_actions', type=int, default=3, help='Length of the trajectory.')
+    parser.add_argument('--num_of_sequential_actions', type=int, default=1, help='Length of the trajectory.')
 
     # NN related
     parser.add_argument("--learning_rate", type=int, default=.01)
