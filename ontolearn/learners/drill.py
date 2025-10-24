@@ -738,29 +738,28 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
 
                 if counter == num_learning_problems:
                     break
+        return examples
+        """
+        # if |Retrieve(C|>3
+        if len(individuals_i) > size_of_examples:
+            str_dl_concept_i = owl_expression_to_dl(i)
+            for j in self.kb.get_concepts():
+                if i == j:
+                    continue
+                individuals_j = set(self.kb.individuals(j))
+                if len(individuals_j) > size_of_examples:
+                    for _ in range(num_learning_problems):
+                        lp = (str_dl_concept_i,
+                                set(random.sample(individuals_i, size_of_examples)),
+                                set(random.sample(individuals_j, size_of_examples)))
+                        yield lp
 
-            return examples
-            """
-            # if |Retrieve(C|>3
-            if len(individuals_i) > size_of_examples:
-                str_dl_concept_i = owl_expression_to_dl(i)
-                for j in self.kb.get_concepts():
-                    if i == j:
-                        continue
-                    individuals_j = set(self.kb.individuals(j))
-                    if len(individuals_j) > size_of_examples:
-                        for _ in range(num_learning_problems):
-                            lp = (str_dl_concept_i,
-                                  set(random.sample(individuals_i, size_of_examples)),
-                                  set(random.sample(individuals_j, size_of_examples)))
-                            yield lp
-
-                    counter += 1
-                    if counter == num_of_target_concepts:
-                        break
+                counter += 1
                 if counter == num_of_target_concepts:
                     break
-            """
+            if counter == num_of_target_concepts:
+                break
+        """
 
     def learn_from_illustration(self, sequence_of_goal_path: List[RL_State]):
         """
