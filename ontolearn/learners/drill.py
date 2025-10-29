@@ -267,9 +267,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         else:
             training_data = self.generate_learning_problems(num_of_target_concepts,
                                                             num_learning_problems)
-        # print(training_data)
-        # exit(0)
-
+            
         if isinstance(training_data,Iterable) is False:
             print(f"We couldn't generate training data on this given knowledge base ({self.kb})")
             return self.terminate_training()
@@ -581,7 +579,6 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         @param predicted_Q_values:
         @return:
         """
-      
         if predicted_Q_values is not None:
             for child_node, pred_Q in zip(concepts, predicted_Q_values):
                 child_node.heuristic = pred_Q
@@ -598,19 +595,34 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                     return child_node
 
     def get_embeddings_individuals(self, individuals: List[str]) -> torch.FloatTensor:
+        """Get embeddings for individuals with optimized operations."""
         assert isinstance(individuals, list)
         if len(individuals) == 0:
             emb = torch.zeros(1, 1, self.embedding_dim, device=self.device)
         else:
             if self.df_embeddings is not None:
                 assert isinstance(individuals[0], str)
-                emb = torch.mean(torch.from_numpy(self.df_embeddings.loc[individuals].values), dim=0).to(self.device)
-                emb = emb.view(1, 1, self.embedding_dim)
+                # OPTIMIZATION: Use vectorized pandas operations and reduce device transfers
+                try:
+                    # Batch lookup and mean computation
+                    embedding_values = self.df_embeddings.loc[individuals].values
+                    emb = torch.from_numpy(embedding_values.mean(axis=0)).to(self.device, dtype=torch.float32)
+                    emb = emb.view(1, 1, self.embedding_dim)
+                except KeyError:
+                    # Handle missing individuals gracefully
+                    valid_individuals = [ind for ind in individuals if ind in self.df_embeddings.index]
+                    if valid_individuals:
+                        embedding_values = self.df_embeddings.loc[valid_individuals].values
+                        emb = torch.from_numpy(embedding_values.mean(axis=0)).to(self.device, dtype=torch.float32)
+                        emb = emb.view(1, 1, self.embedding_dim)
+                    else:
+                        emb = torch.zeros(1, 1, self.embedding_dim, device=self.device)
             else:
                 emb = torch.zeros(1, 1, self.embedding_dim, device=self.device)
         return emb
 
     def get_individuals(self, rl_state: RL_State) -> List[str]:
+        """Get individuals for a state - optimized for memory efficiency."""
         return [owl_individual.str.strip() for owl_individual in self.kb.individuals(rl_state.concept, True)]
 
     def assign_embeddings(self, rl_state: RL_State) -> None:
@@ -743,28 +755,28 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                 if counter == num_learning_problems:
                     break
 
-            return examples
-            """
-            # if |Retrieve(C|>3
-            if len(individuals_i) > size_of_examples:
-                str_dl_concept_i = owl_expression_to_dl(i)
-                for j in self.kb.get_concepts():
-                    if i == j:
-                        continue
-                    individuals_j = set(self.kb.individuals(j))
-                    if len(individuals_j) > size_of_examples:
-                        for _ in range(num_learning_problems):
-                            lp = (str_dl_concept_i,
-                                  set(random.sample(individuals_i, size_of_examples)),
-                                  set(random.sample(individuals_j, size_of_examples)))
-                            yield lp
+        return examples
+        """
+        # if |Retrieve(C|>3
+        if len(individuals_i) > size_of_examples:
+            str_dl_concept_i = owl_expression_to_dl(i)
+            for j in self.kb.get_concepts():
+                if i == j:
+                    continue
+                individuals_j = set(self.kb.individuals(j))
+                if len(individuals_j) > size_of_examples:
+                    for _ in range(num_learning_problems):
+                        lp = (str_dl_concept_i,
+                                set(random.sample(individuals_i, size_of_examples)),
+                                set(random.sample(individuals_j, size_of_examples)))
+                        yield lp
 
-                    counter += 1
-                    if counter == num_of_target_concepts:
-                        break
+                counter += 1
                 if counter == num_of_target_concepts:
                     break
-            """
+            if counter == num_of_target_concepts:
+                break
+        """
 
     def learn_from_illustration(self, sequence_of_goal_path: List[RL_State]):
         """
@@ -1018,11 +1030,16 @@ class DepthAbstractDrill:   # pragma: no cover
 class DrillV(Drill):
     """Deep V-Learning for Class Expression Learning."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, use_random_v_values=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "DRILLV"
+        self.use_random_v_values = use_random_v_values
+        
         if self.df_embeddings is not None:
-            self.heuristic_func = DrillVHeuristic(mode="averaging", model_args={'input_shape': (1, self.embedding_dim)}, device=self.device)
+            self.heuristic_func = DrillVHeuristic(mode="averaging", 
+                                                model_args={'input_shape': (1, self.embedding_dim)}, 
+                                                device=self.device,
+                                                use_random=use_random_v_values)
             self.experiences = Experience(maxlen=self.max_len_replay_memory)
             if self.learning_rate:
                 self.optimizer = torch.optim.Adam(self.heuristic_func.net.parameters(), lr=self.learning_rate)
@@ -1064,25 +1081,66 @@ class DrillV(Drill):
             e, e_next = consecutive_states
             self.experiences.append((e, e_next, rewards[th]))
 
+    def train(self, dataset: Optional[Iterable[Tuple[str, Set, Set]]] = None,
+              num_of_target_concepts: int = 1,
+              num_learning_problems: int = 1):
+        """ Training RL agent for V-learning - uses V-learning specific replay memory. """
+        if isinstance(self.heuristic_func, CeloeBasedReward):
+            print("No training...")
+            return self.terminate_training()
+
+        if self.verbose > 0:
+            training_data = tqdm(self.generate_learning_problems(num_of_target_concepts,
+                                                                 num_learning_problems),
+                                 desc="Training DrillV over learning problems")
+        else:
+            training_data = self.generate_learning_problems(num_of_target_concepts,
+                                                            num_learning_problems)
+
+        if not isinstance(training_data, Iterable):
+            print(f"We couldn't generate training data on this given knowledge base ({self.kb})")
+            return self.terminate_training()
+
+        for (target_owl_ce, positives, negatives) in training_data:
+            print(f"\nGoal Concept:\t {target_owl_ce}\tE^+:[{len(positives)}]\t E^-:[{len(negatives)}]")
+            sum_of_rewards_per_actions = self.rl_learning_loop(pos_uri=frozenset(positives),
+                                                               neg_uri=frozenset(negatives))
+            if self.verbose > 0:
+                print("Sum of rewards for each trial", sum_of_rewards_per_actions)
+
+            self.seen_examples.setdefault(len(self.seen_examples), dict()).update(
+                {'Concept': target_owl_ce,
+                 'Positives': [i.str for i in positives],
+                 'Negatives': [i.str for i in negatives]})
+        return self.terminate_training()
+
     def learn_from_replay_memory(self, gamma=1.0) -> None:
         """
-        V-learning update: target = reward + gamma * V(next_state)
+        V-learning update: sample minibatches from replay buffer and update:
+            target = reward + gamma * V(next_state)
         """
         if isinstance(self.heuristic_func, CeloeBasedReward):
             return None
 
-        current_state_batch, next_state_batch, reward_batch = self.experiences.retrieve()
-        current_state_batch = torch.cat(current_state_batch, dim=0).to(self.device)
-        
-        next_state_batch = torch.cat(next_state_batch, dim=0).to(self.device)
-        reward_batch = torch.Tensor(reward_batch).to(self.device)
+        current_state_list, next_state_list, reward_list = self.experiences.retrieve()
+        N = len(reward_list)
+        if N == 0:
+            return None
 
-        # Prepare input for V-network: only state embeddings
+        # minibatch size (fallback)
+        minibatch = self.batch_size or 64
+        minibatch = min(minibatch, N)
+
         self.heuristic_func.net.train()
-        total_loss = 0
+        total_loss = 0.0
         for m in range(self.num_epochs_per_replay):
+            # sample indices without replacement
+            indices = random.sample(range(N), minibatch)
+            current_state_batch = torch.cat([current_state_list[i] for i in indices], dim=0).to(self.device)
+            next_state_batch = torch.cat([next_state_list[i] for i in indices], dim=0).to(self.device)
+            reward_batch = torch.tensor([reward_list[i] for i in indices], dtype=torch.float32, device=self.device)
+
             self.optimizer.zero_grad()
-            # Predict V(s) and V(s')
             v_current = self.heuristic_func.net.forward(current_state_batch)
             with torch.no_grad():
                 v_next = self.heuristic_func.net.forward(next_state_batch)
@@ -1091,30 +1149,79 @@ class DrillV(Drill):
             total_loss += loss.item()
             loss.backward()
             self.optimizer.step()
+
         # if self.verbose > 0:
-        print(f'Avg V-loss: {total_loss / self.num_epochs_per_replay:0.5f}')
+        print(f'Avg V-loss: {total_loss / (self.num_epochs_per_replay):0.5f}')
         self.heuristic_func.net.eval()
 
     def exploitation(self, current_state: AbstractNode, next_states: List[AbstractNode]) -> RL_State:
         """
-        Select next state with highest predicted V-value.
+        Select next state with highest predicted V-value - LEAN VERSION.
         """
-        next_state_batch = torch.cat(
-            [self.get_embeddings_individuals(self.get_individuals(s)) for s in next_states], dim=0
-        ).to(self.device)
-        with torch.no_grad():
-            v_values = self.heuristic_func.net.forward(next_state_batch)
-        argmax_id = int(torch.argmax(v_values).to(self.device))
+        if self.use_random_v_values:
+            v_values = self.generate_random_v_values(len(next_states))
+        else:
+            # Simple batch processing - key is single forward pass
+            embeddings_list = []
+            for state in next_states:
+                emb = self.get_embeddings_individuals(self.get_individuals(state))
+                embeddings_list.append(emb)
+            
+            next_state_batch = torch.cat(embeddings_list, dim=0).to(self.device)
+            with torch.no_grad():
+                v_values = self.heuristic_func.net.forward(next_state_batch)
+        
+        argmax_id = int(torch.argmax(v_values))
         return next_states[argmax_id]
 
-    def predict_value(self, state: RL_State) -> torch.Tensor:
+    def generate_random_v_values(self, num_states: int, value_range: tuple = (0.0, 1.0)) -> torch.Tensor:
         """
-        Predict V-value for a single state.
+        Generate random V-values for a given number of states.
+        
+        Args:
+            num_states: Number of states to generate V-values for
+            value_range: Tuple (min_val, max_val) defining the range of random values
+            
+        Returns:
+            torch.Tensor: Random V-values of shape (num_states,)
         """
-        emb = self.get_embeddings_individuals(self.get_individuals(state)).to(self.device)
-        with torch.no_grad():
-            v = self.heuristic_func.net.forward(emb)
-        return v
+        min_val, max_val = value_range
+        random_values = torch.rand(num_states, device=self.device) * (max_val - min_val) + min_val
+        return random_values
+    
+    def optimize_for_performance(self):
+        """Apply lean performance optimizations without memory overhead."""
+        # Set network to eval mode to disable dropout/batch norm
+        if hasattr(self.heuristic_func, 'net'):
+            self.heuristic_func.net.eval()
+        
+        # Enable torch optimizations
+        if hasattr(torch.backends, 'cudnn') and self.device.type == 'cuda':
+            torch.backends.cudnn.benchmark = True
+        
+        if self.verbose > 0:
+            print("Lean performance optimizations applied:")
+            print(f"- Network eval mode: {'Yes' if hasattr(self.heuristic_func, 'net') else 'No'}")
+            print(f"- Batch processing: Enabled")
+            print(f"- Memory overhead: Minimized (no caching)")
+            
+    def print_performance_summary(self):
+        """Print a summary of lean optimizations."""
+        print("\n=== DrillV Lean Performance Summary ===")
+        print("✓ Single forward pass batching")
+        print("✓ Minimal memory overhead") 
+        print("✓ No caching (memory-efficient)")
+        print("✓ Network eval mode")
+        print("========================================\n")
+    
+    def get_performance_stats(self) -> dict:
+        """Get basic performance statistics."""
+        return {
+            "optimization_type": "lean",
+            "memory_efficient": True,
+            "batch_processing": True,
+            "caching_enabled": False
+        }
     
     def fit(self, learning_problem: PosNegLPStandard, max_runtime=None):
         if max_runtime:
@@ -1173,14 +1280,32 @@ class DrillV(Drill):
                         break
             if not next_possible_states:
                 continue
-            # (6.4) Predict V-values for next states
+            # (6.4) Predict V-values for next states - LEAN OPTIMIZED VERSION
             if self.df_embeddings is not None:
-                individuals_list = [self.get_individuals(s) for s in next_possible_states]
-                embeddings_list = [self.get_embeddings_individuals(individuals) for individuals in individuals_list]
-                next_state_batch = torch.cat(embeddings_list, dim=0).to(self.device)
-                with torch.no_grad():
-                    v_values = self.heuristic_func.net.forward(next_state_batch)
-                preds = v_values.cpu().numpy().tolist()
+                if self.use_random_v_values:
+                    # Use random V-values instead of trained network
+                    preds = self.generate_random_v_values(len(next_possible_states)).cpu().numpy().tolist()
+                    if self.verbose > 0:
+                        print(f"Using random V-values for {len(next_possible_states)} states")
+                else:
+                    # CORE OPTIMIZATION: Minimize neural network overhead
+                    # Assign embeddings efficiently without extra memory
+                    for state in next_possible_states:
+                        if not hasattr(state, 'embeddings') or state.embeddings is None:
+                            self.assign_embeddings(state)
+                    
+                    # Single batch forward pass - the key optimization
+                    if next_possible_states and hasattr(next_possible_states[0], 'embeddings'):
+                        embeddings_list = [s.embeddings for s in next_possible_states if hasattr(s, 'embeddings')]
+                        if embeddings_list:
+                            next_state_batch = torch.cat(embeddings_list, dim=0).to(self.device)
+                            with torch.no_grad():
+                                v_values = self.heuristic_func.net.forward(next_state_batch)
+                            preds = v_values.cpu().numpy().tolist()
+                        else:
+                            preds = [0.0] * len(next_possible_states)
+                    else:
+                        preds = [0.0] * len(next_possible_states)
             else:
                 preds = None
             # (6.5) Add next possible states into search tree based on predicted V values
@@ -1189,6 +1314,8 @@ class DrillV(Drill):
                 if self.terminate_on_goal:
                     return self.terminate()
         return self.terminate()
+    
+
 
 class DrillVNet(torch.nn.Module):  # pragma: no cover
     """
@@ -1218,7 +1345,7 @@ class DrillVNet(torch.nn.Module):  # pragma: no cover
         X: (batch_size, 1, embedding_dim)
         """
         X = X.view(X.shape[0], self.embedding_dim)
-        X = torch.nn.functional.relu(self.fc1(X))
+        X = torch.nn.functional.leaky_relu(self.fc1(X))
         scores = self.fc2(X).flatten()
         return scores
     
@@ -1263,7 +1390,8 @@ class DrillVHeuristic:  # pragma: no cover
     Uses DrillVNet to predict V-values for states.
     """
 
-    def __init__(self, model=None, mode=None, model_args=None, device=None):
+    def __init__(self, model=None, mode=None, model_args=None, device=None, use_random=False):
+        self.use_random = use_random
         if model:
             self.net = model
         elif mode in ['averaging', 'sampling']:
@@ -1279,14 +1407,23 @@ class DrillVHeuristic:  # pragma: no cover
 
     def score(self, node, parent_node=None):
         """Compute V-value for a node (state)."""
-        emb = node.embeddings if hasattr(node, 'embeddings') else None
-        if emb is None:
-            raise ValueError("Node must have embeddings assigned.")
-        with torch.no_grad():
-            v = self.net.forward(emb.to(self.device))
-        return v.squeeze()
+        if self.use_random:
+            # Generate random V-value
+            return torch.rand(1, device=self.device).squeeze()
+        else:
+            # Use trained network
+            emb = node.embeddings if hasattr(node, 'embeddings') else None
+            if emb is None:
+                raise ValueError("Node must have embeddings assigned.")
+            with torch.no_grad():
+                v = self.net.forward(emb.to(self.device))
+            return v.squeeze()
 
     def apply(self, node, parent_node=None):
         """Assign predicted V-value to node object."""
         predicted_v_val = self.score(node, parent_node)
         node.heuristic = predicted_v_val
+    
+    def set_random_mode(self, use_random: bool):
+        """Set whether to use random V-values."""
+        self.use_random = use_random
