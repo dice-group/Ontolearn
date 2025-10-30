@@ -33,6 +33,11 @@ from typing import TypeVar, List, Optional, Union
 
 import pandas as pd
 
+from ontolearn.consyn.configs import CONFIG
+from ontolearn.consyn.executor import ConSynExecutor
+from ontolearn.consyn.intializer import Initializer
+from ontolearn.consyn.model.model import ConSynGeneratorModel
+from ontolearn.consyn.trainer import ConSynTrainer
 from ontolearn.learners.tree_learner import TDL
 from owlapy.class_expression import OWLClassExpression
 from owlapy.iri import IRI
@@ -56,6 +61,8 @@ from ontolearn.metrics import Accuracy, F1, Recall, Precision, WeightedAccuracy
 from ontolearn.triple_store import TripleStore
 from ontolearn.value_splitter import BinningValueSplitter, EntropyValueSplitter
 
+from torch.optim import AdamW
+
 logger = logging.getLogger(__name__)
 
 metrics = {'f1': F1,
@@ -69,7 +76,8 @@ models = {'celoe': CELOE,
           'ocel': OCEL,
           'evolearner': EvoLearner,
           'nces': NCES,
-          'tdl': TDL}
+          'tdl': TDL,
+          'consyn': ConSynGeneratorModel}
 
 heuristics = {'celoe': CELOEHeuristic,
               'ocel': OCELHeuristic}
@@ -212,6 +220,12 @@ def execute(args): # pragma: no cover
     else:
         kb = KnowledgeBase(path=args.knowledge_base_path)
 
+    if args.model == "consyn":
+        consyn_executor = ConSynExecutor(
+            verbose=getattr(args, "verbose", False),
+            num_k_predictions=getattr(args, "num_k_predictions", 30)
+        )
+
     with open(args.path_learning_problem) as json_file:
         settings = json.load(json_file)
 
@@ -262,7 +276,7 @@ def execute(args): # pragma: no cover
         #     optargs = {"knowledge_base": kb,
         #                "quality_func": metrics[args.quality_metric]()}
 
-        if args.model not in ["nces", "tdl"]:
+        if args.model not in ["nces", "tdl", "consyn"]:
             model = learner_type(**_get_matching_opts(learner_type, optargs, args_d))
 
         if args.model in ["celoe", "evolearner", "ocel"]:
@@ -317,6 +331,33 @@ def execute(args): # pragma: no cover
             data.setdefault("RT-TDL", []).append(rt_tdl)
             print(f"TDL Quality: {f1_tdl:.3f}", end="\t")
             print(f"TDL Runtime: {rt_tdl:.3f}")
+        
+        elif args.model in ["consyn"]:
+            print("ConSyn starts..", end="\t")
+            start_time = time.time()
+
+            consyn_trainer = consyn_executor.trainer
+            hypothesis = consyn_trainer.fit(
+                knowledge_base=kb,
+                target_concept=str_target_concept,
+                target_concept_lp=lp,
+                path=consyn_executor.config['FIT_PATH'],
+                num_predictions=consyn_trainer.num_k_predictions
+            ).best_hypotheses(n=1)
+            avg_rt_consyn = (time.time() - start_time) / consyn_trainer.num_k_predictions
+            print("ConSyn ends..", end="\t")
+            consyn_trainer.cshs.clear(paradigm='fit')
+
+            f1_tdl = compute_f1_score(
+                individuals=frozenset({i for i in kb.individuals(hypothesis)}),
+                pos=lp.pos, neg=lp.neg
+            )
+
+            data.setdefault("F1-ConSyn", []).append(f1_tdl)
+            data.setdefault("RT-ConSyn", []).append(avg_rt_consyn)
+            print(f"ConSyn Quality: {f1_tdl:.3f}", end="\t")
+            print(f"ConSyn Runtime: {avg_rt_consyn:.3f}")
+            print()
     print()
     df = pd.DataFrame.from_dict(data)
     file_base_name = f'{get_file_base_name(args.knowledge_base_path)}_{args.model}'

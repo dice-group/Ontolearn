@@ -29,7 +29,7 @@ from argparse import ArgumentParser
 def get_default_arguments(description=None):
     parser = ArgumentParser()
 
-    parser.add_argument("--model", type=str, default="celoe", choices=["celoe", "ocel", "evolearner", "nces", "tdl"],
+    parser.add_argument("--model", type=str, default="celoe", choices=["celoe", "ocel", "evolearner", "nces", "tdl", "consyn"],
                         help="Available concept learning models.")
 
     # Knowledge graph related arguments

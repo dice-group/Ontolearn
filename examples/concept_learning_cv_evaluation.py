@@ -10,6 +10,7 @@ import time
 import os
 from typing import Union
 import pandas as pd
+from ontolearn.consyn.executor import ConSynExecutor
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE, EvoLearner, NCES, NCES2, ROCES, CLIP
 from ontolearn.refinement_operators import ExpressRefinement, ModifiedCELOERefinement
@@ -115,6 +116,14 @@ def dl_concept_learning(args):
                     max_num_of_concepts_tested=int(1e9), max_runtime=args.max_runtime,
                     path_of_embeddings=args.path_of_clip_embeddings,
                     pretrained_predictor_name=["LSTM", "GRU", "SetTransformer"], load_pretrained=True)
+        
+    if not args.learner_types or 'consyn' in args.learner_types:
+        consyn_executor = ConSynExecutor(
+            verbose=getattr(args, "verbose", False),
+            num_k_predictions=getattr(args, "num_k_predictions", 50)
+        )
+
+        consyn = consyn_executor.trainer
 
     # dictionary to store the data
     data = dict()
@@ -372,6 +381,34 @@ def dl_concept_learning(args):
                 print(f"CLIP Test Quality: {test_f1_clip:.3f}", end="\t")
                 print(f"CLIP Runtime: {rt_clip:.3f}")
 
+            if not args.learner_types or 'consyn' in args.learner_types:
+                print("ConSyn starts..", end="\t")
+                start_time = time.time()
+                # set use_sample_ratio to None for full use of the train_lp
+                pred_consyn = consyn.fit(knowledge_base=kb, target_concept=str_target_concept, 
+                                         target_concept_lp=train_lp, path=consyn_executor.config['FIT_PATH'],
+                                         num_predictions=consyn.num_k_predictions).best_hypotheses()
+                rt_consyn = time.time() - start_time
+                consyn.cshs.clear(paradigm='fit')
+                print("ConSyn ends..", end="\t")
+                # () Quality on the training data
+                train_f1_consyn = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_consyn)}),
+                                                pos=train_lp.pos,
+                                                neg=train_lp.neg)
+                # () Quality on test data
+                test_f1_consyn = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_consyn)}),
+                                                pos=test_lp.pos,
+                                                neg=test_lp.neg)
+                
+                data.setdefault("Train-F1-ConSyn", []).append(train_f1_consyn)
+                data.setdefault("Test-F1-ConSyn", []).append(test_f1_consyn)
+                data.setdefault("RT-ConSyn", []).append(rt_consyn)
+                print(f"ConSyn Train Quality: {train_f1_consyn:.3f}", end="\t")
+                print(f"ConSyn Test Quality: {test_f1_consyn:.3f}", end="\t")
+                print(f"ConSyn Runtime: {rt_consyn:.3f}")
+            print()
+        print()
+
     df = pd.DataFrame.from_dict(data)
     df.to_csv(args.report, index=False)
     print(df)
@@ -386,7 +423,7 @@ if __name__ == '__main__':
     parser.add_argument("--kb", type=str, required=True,
                         help="Knowledge base")
     parser.add_argument("--learner_types", type=str, nargs='*', default=None, 
-                        choices=["celoe", "ocel", "evolearner", "drill", "nces", "tdl", "nces2", "roces", "clip"],
+                        choices=["celoe", "ocel", "evolearner", "drill", "nces", "tdl", "nces2", "roces", "clip", "consyn"],
                         help="List of available concept learning models")
     parser.add_argument("--path_drill_embeddings", type=str, default=None)
     parser.add_argument("--path_of_nces_embeddings", type=str, default=None)
