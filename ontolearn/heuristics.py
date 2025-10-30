@@ -31,12 +31,12 @@ from owlapy import dl_to_owl_expression
 from owlapy.class_expression import OWLClassExpression
 
 from ontolearn.knowledge_base import KnowledgeBase
+from ontolearn.utils.static_funcs import init_length_metric
 
 from .abstracts import AbstractHeuristic, AbstractOEHeuristicNode, EncodedLearningProblem
 from .learning_problem import EncodedPosNegUndLP, EncodedPosNegLPStandard, PosNegLPStandard
 from .metrics import Accuracy
 from .search import LBLNode, RL_State
-
 
 class CELOEHeuristic(AbstractHeuristic[AbstractOEHeuristicNode]):
     """Heuristic like the CELOE Heuristic in DL-Learner."""
