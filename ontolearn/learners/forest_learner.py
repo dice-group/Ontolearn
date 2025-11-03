@@ -4,6 +4,8 @@ import ontolearn.triple_store
 from ontolearn.verbalizer import verbalize_learner_prediction
 import numpy as np
 import pandas as pd
+from .tree_learner import explain_inference, concepts_reducer
+
 
 from typing import Dict, Set, Tuple, List, Union, Callable
 
@@ -49,60 +51,9 @@ class FTDL(TDL):
                  plot_embeddings: bool = False,
                  plot_feature_importance: bool = False,
                  verbose: int = 10,
-                 verbalize: bool = False):
-
-        assert use_inverse is False, "use_inverse not implemented"
-        assert use_data_properties is False, "use_data_properties not implemented"
-        assert use_card_restrictions is False, "use_card_restrictions not implemented"
-        self.use_nominals = use_nominals
-        self.use_card_restrictions = use_card_restrictions
-
-        if grid_search_over is None and grid_search_apply:
-            grid_search_over = {
-                "criterion": ["entropy", "gini", "log_loss"],
-                "splitter": ["random", "best"],
-                "max_features": [None, "sqrt", "log2"],
-                "min_samples_leaf": [1, 2, 3, 4, 5, 10],
-                "max_depth": [1, 2, 3, 4, 5, 10, None],
-            }
-        elif grid_search_apply and grid_search_over is not None:
-            pass
-        else:
-            grid_search_over = dict()
-
-        kwargs_grid_search.setdefault("cv", 10)
-        
-        assert (
-                isinstance(knowledge_base, KnowledgeBase)
-                or isinstance(knowledge_base, ontolearn.triple_store.TripleStore)
-                or isinstance(knowledge_base)
-        ), "knowledge_base must be a KnowledgeBase instance"
-        print(f"Knowledge Base: {knowledge_base}")
-        self.grid_search_over = grid_search_over
-        self.kwargs_grid_search = kwargs_grid_search
-        self.knowledge_base = knowledge_base
-        self.report_classification = report_classification
-        self.plot_tree = plot_tree
-        self.plot_embeddings = plot_embeddings
-        self.plot_feature_importance = plot_feature_importance
-        # Keyword arguments for sklearn Decision tree.
-        # Initialize classifier
-        self.clf = None
-        self.kwargs_classifier = kwargs_classifier if kwargs_classifier else dict()
-        self.max_runtime = max_runtime
-        self.features = None
-        # best pred
-        self.disjunction_of_conjunctive_concepts = None
-        self.conjunctive_concepts = None
-        self.owl_class_expressions = set()
-        self.cbd_mapping: Dict[str, Set[Tuple[str, str]]]
-        self.types_of_individuals = dict()
-        self.verbose = verbose
-        self.verbalize = verbalize
-        self.data_property_cast = dict()
-        self.__classification_report = None
-        self.X = None
-        self.y = None
+                 verbalize: bool = False, *args, **kwargs):
+        super().__init__(knowledge_base, use_inverse, use_data_properties,use_nominals, use_card_restrictions, kwargs_classifier, max_runtime, grid_search_over, grid_search_apply, kwargs_grid_search, report_classification,plot_tree, plot_embeddings, plot_feature_importance, verbose, verbalize)
+        self.n_estimators = n_estimators
 
 
     def construct_owl_expression_from_tree(self,c: any, X: pd.DataFrame, y: pd.DataFrame) -> List[OWLObjectIntersectionOf]:
@@ -115,9 +66,9 @@ class FTDL(TDL):
         # () Iterate over reasoning steps of predicting a positive example
         pos: OWLNamedIndividual
 
-        for sequence_of_reasoning_steps, pos in zip(make_iterable_verbose(super().explain_inference(c.clf,
+        for sequence_of_reasoning_steps, pos in zip(make_iterable_verbose(explain_inference(c,
                                             X=vector_representation_of_positive_examples),
-                                            verbose=c.clf.verbose,
+                                            verbose=self.verbose,
                                             desc="Constructing Description Logic Concepts"), positive_examples):
             concepts_per_reasoning_step = []
             for i in sequence_of_reasoning_steps:
@@ -137,7 +88,7 @@ class FTDL(TDL):
                 else:
                     raise RuntimeError("Incorrect retrival")
                 """
-            pred = super().concepts_reducer(concepts=concepts_per_reasoning_step, reduced_cls=OWLObjectIntersectionOf)
+            pred = concepts_reducer(concepts=concepts_per_reasoning_step, reduced_cls=OWLObjectIntersectionOf)
             prediction_per_example.append((pred, pos))
 
         # From list to set to remove identical paths from the root to leafs.
@@ -187,43 +138,59 @@ class FTDL(TDL):
             # Training
             if self.verbose>0:
                 print("Training starts!")
-            self.clf = RandomForestClassifier(**self.kwargs_classifier).fit(X=X.values, y=y.values).estimators_
+            self.clf = RandomForestClassifier(self.n_estimators, **self.kwargs_classifier, ).fit(X=X.values, y=y.values)
 
             print("self clf" + str(type(self.clf[0])))
 
-            if self.report_classification:
+            #if self.report_classification:
 
-                if self.verbose > 0:
-                    self.__classification_report = "Classification Report: Negatives: -1 and Positives 1 \n"
-                    self.__classification_report += sklearn.metrics.classification_report(y.values,
-                                                                                        self.clf.predict(X.values),
-                                                                                        target_names=["Negative",
-                                                                                                        "Positive"])
-                    print(self.__classification_report)
-            if self.plot_tree:
-                plot_decision_tree_of_expressions(feature_names=[owl_expression_to_dl(f) for f in self.features],
-                                                cart_tree=self.clf)
-            if self.plot_feature_importance:
-                plot_topk_feature_importance(feature_names=[owl_expression_to_dl(f) for f in self.features],
-                                            cart_tree=self.clf)
+                #if self.verbose > 0:
+                #    self.__classification_report = "Classification Report: Negatives: -1 and Positives 1 \n"
+                #    self.__classification_report += sklearn.metrics.classification_report(y.values,
+                #                                                                        self.clf.predict(X.values),
+                #                                                                        target_names=["Negative",
+                #                                                                                        "Positive"])
+                #    print(self.__classification_report)
+            #if self.plot_tree:
+              #  plot_decision_tree_of_expressions(feature_names=[owl_expression_to_dl(f) for f in self.features],
+               #                                 cart_tree=self.clf)
+            #if self.plot_feature_importance:
+             #   plot_topk_feature_importance(feature_names=[owl_expression_to_dl(f) for f in self.features],
+                #                            cart_tree=self.clf)
 
             self.owl_class_expressions.clear()
             # Each item can be considered is a path of OWL Class Expressions
             # starting from the root node in the decision tree and
             # ending in a leaf node.
-            self.conjunctive_concepts: List[OWLObjectIntersectionOf]
+            self.conjunctive_concepts: List[List[OWLObjectIntersectionOf]]
+            self.conjunctive_concepts = []
+
             if self.verbose >0:
                 print("Computing conjunctive_concepts...")
-            self.conjunctive_concepts = self.construct_owl_expression_from_tree(X, y)
-            for i in self.conjunctive_concepts:
-                self.owl_class_expressions.add(i)
-            if self.verbose >0:
-                print("Computing disjunction_of_conjunctive_concepts...")
-            self.disjunction_of_conjunctive_concepts = super().concepts_reducer(concepts=self.conjunctive_concepts,  reduced_cls=OWLObjectUnionOf)
-
-            if self.verbalize:
-                verbalize_learner_prediction(self.disjunction_of_conjunctive_concepts)
-
+              
+                
+            
+            for c in self.clf.estimators_:
+                self.conjunctive_concepts.append(self.construct_owl_expression_from_tree(c, X, y))
+            #print(self.conjunctive_concepts)
+            
+            self.tree_disjunctive_concepts = []
+            for tree_conjunctive_concepts in self.conjunctive_concepts:
+                for i in tree_conjunctive_concepts:
+                    self.owl_class_expressions.add(i)
+                if self.verbose >0:
+                    print("Computing disjunction_of_conjunctive_concepts...")
+                self.disjunction_of_conjunctive_concepts = concepts_reducer(concepts=tree_conjunctive_concepts,  reduced_cls=OWLObjectUnionOf)
+                self.tree_disjunctive_concepts.append(self.disjunction_of_conjunctive_concepts)
+            print(len(self.tree_disjunctive_concepts))
+            for tdc in self.tree_disjunctive_concepts:
+                if self.verbalize:
+                    verbalize_learner_prediction(tdc)
+                   
             return self
-    def best_hypotheses(self, n=1):
-        return super().best_hypotheses(n)
+    def best_hypotheses(
+            self
+    ) -> Tuple[OWLClassExpression, List[OWLClassExpression]]:
+        """Return the prediction"""
+        return self.tree_disjunctive_concepts
+        
