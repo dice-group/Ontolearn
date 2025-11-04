@@ -5,6 +5,7 @@ from ontolearn.verbalizer import verbalize_learner_prediction
 import numpy as np
 import pandas as pd
 from .tree_learner import explain_inference, concepts_reducer
+from ontolearn.metrics import F1
 
 
 from typing import Dict, Set, Tuple, List, Union, Callable
@@ -13,7 +14,8 @@ from ontolearn.knowledge_base import KnowledgeBase
 import sklearn
 from sklearn import tree
 from sklearn.ensemble import RandomForestClassifier
-
+from ontolearn.utils.static_funcs import compute_f1_score
+from ..quality_funcs import evaluate_concept
 from ..utils.static_funcs import plot_umap_reduced_embeddings, plot_decision_tree_of_expressions, \
     plot_topk_feature_importance
 
@@ -37,6 +39,7 @@ class FTDL(TDL):
 
     def __init__(self, knowledge_base,
                  n_estimators: int = 10,
+                 quality_func: Callable = F1(),
                  use_inverse: bool = False,
                  use_data_properties: bool = False,
                  use_nominals: bool = True,
@@ -54,6 +57,7 @@ class FTDL(TDL):
                  verbalize: bool = False, *args, **kwargs):
         super().__init__(knowledge_base, use_inverse, use_data_properties,use_nominals, use_card_restrictions, kwargs_classifier, max_runtime, grid_search_over, grid_search_apply, kwargs_grid_search, report_classification,plot_tree, plot_embeddings, plot_feature_importance, verbose, verbalize)
         self.n_estimators = n_estimators
+        self.quality_func = quality_func
 
 
     def construct_owl_expression_from_tree(self,c: any, X: pd.DataFrame, y: pd.DataFrame) -> List[OWLObjectIntersectionOf]:
@@ -125,6 +129,7 @@ class FTDL(TDL):
             X: pd.DataFrame
             y: Union[pd.DataFrame, pd.Series]
             X, y = self.create_training_data(learning_problem=learning_problem)
+            self._learning_problem = learning_problem
             # CD: Remember so that if user wants to use them
             self.X, self.y = X, y
             if self.plot_embeddings:
@@ -182,15 +187,41 @@ class FTDL(TDL):
                     print("Computing disjunction_of_conjunctive_concepts...")
                 self.disjunction_of_conjunctive_concepts = concepts_reducer(concepts=tree_conjunctive_concepts,  reduced_cls=OWLObjectUnionOf)
                 self.tree_disjunctive_concepts.append(self.disjunction_of_conjunctive_concepts)
-            print(len(self.tree_disjunctive_concepts))
+            #print(len(self.tree_disjunctive_concepts))
             for tdc in self.tree_disjunctive_concepts:
                 if self.verbalize:
                     verbalize_learner_prediction(tdc)
                    
             return self
+    
+    #add type annotations
+    def encoded_learning_problem(self):
+        """Fetch the most recently used learning problem from the fit method."""
+        return self._learning_problem
+
+
     def best_hypotheses(
-            self
+            self,n 
     ) -> Tuple[OWLClassExpression, List[OWLClassExpression]]:
         """Return the prediction"""
-        return self.tree_disjunctive_concepts
+
+        if(n == 1):
+            # self.tree_disjunctive_concepts
+            scores = []
+            for tdc in self.tree_disjunctive_concepts:
+                print("Computing score")
+                #scores.append(evaluate_concept(self.knowledge_base, tdc, self.quality_func, self.encoded_learning_problem() ))
+                scores.append((compute_f1_score(individuals=frozenset({i for i in self.knowledge_base.individuals(tdc)}), pos=self._learning_problem.pos, neg=self._learning_problem.neg), tdc))
+            for i in scores:
+                print("score:")
+                print(i[0])
+            max_tuple = max(scores, key=lambda x: x[0])
+            
+            print("best score" + str(max_tuple[0]))
+            return max_tuple[1]
+
+            
+            
+        else:          
+            return self.tree_disjunctive_concepts
         

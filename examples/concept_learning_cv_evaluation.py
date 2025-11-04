@@ -13,7 +13,7 @@ import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.concept_learner import CELOE, EvoLearner, NCES, NCES2, ROCES, CLIP
 from ontolearn.refinement_operators import ExpressRefinement, ModifiedCELOERefinement
-from ontolearn.learners import Drill, TDL, OCEL
+from ontolearn.learners import Drill, TDL, OCEL, FTDL
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1
 from owlapy.owl_individual import OWLNamedIndividual, IRI
@@ -74,6 +74,13 @@ def dl_concept_learning(args):
         
     if not args.learner_types or 'tdl' in args.learner_types:
         tdl = TDL(knowledge_base=kb,
+                kwargs_classifier={"random_state": 1},
+                max_runtime=args.max_runtime,
+                verbose=0)
+        
+    if not args.learner_types or 'ftdl' in args.learner_types:
+        ftdl = FTDL(knowledge_base=kb,
+                n_estimators=10,  
                 kwargs_classifier={"random_state": 1},
                 max_runtime=args.max_runtime,
                 verbose=0)
@@ -280,6 +287,31 @@ def dl_concept_learning(args):
                 print(f"TDL Test Quality: {test_f1_tdl:.3f}", end="\t")
                 print(f"TDL Runtime: {rt_tdl:.3f}")
 
+            if not args.learner_types or 'ftdl' in args.learner_types:
+                print("FTDL starts ...")
+                start_time = time.time()
+                # Fit model on training dataset
+                pred_ftdl = ftdl.fit(train_lp).best_hypotheses(n=1)
+                print("FTDL ends..", end="\t")
+                rt_tdl = time.time() - start_time
+
+                # () Quality on the training data
+                train_f1_ftdl = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_ftdl)}),
+                                                pos=train_lp.pos,
+                                                neg=train_lp.neg)
+                # () Quality on test data
+                test_f1_ftdl = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_ftdl)}),
+                                            pos=test_lp.pos,
+                                            neg=test_lp.neg)
+
+                data.setdefault("Train-F1-TDL", []).append(train_f1_tdl)
+                data.setdefault("Test-F1-TDL", []).append(test_f1_tdl)
+                data.setdefault("RT-TDL", []).append(rt_tdl)
+                print(f"FTDL Train Quality: {train_f1_tdl:.3f}", end="\t")
+                print(f"FTDL Test Quality: {test_f1_tdl:.3f}", end="\t")
+                print(f"FTDL Runtime: {rt_tdl:.3f}")
+
+
             if not args.learner_types or 'nces' in args.learner_types:
                 start_time = time.time()
                 # () Fit model on training dataset
@@ -386,7 +418,7 @@ if __name__ == '__main__':
     parser.add_argument("--kb", type=str, required=True,
                         help="Knowledge base")
     parser.add_argument("--learner_types", type=str, nargs='*', default=None, 
-                        choices=["celoe", "ocel", "evolearner", "drill", "nces", "tdl", "nces2", "roces", "clip"],
+                        choices=["celoe", "ocel", "evolearner", "drill", "nces", "tdl", "nces2", "roces", "clip", "ftdl"],
                         help="List of available concept learning models")
     parser.add_argument("--path_drill_embeddings", type=str, default=None)
     parser.add_argument("--path_of_nces_embeddings", type=str, default=None)

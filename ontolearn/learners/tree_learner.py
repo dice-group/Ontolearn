@@ -313,7 +313,7 @@ class TDL:
         # For the sake of convenience. sort features in ascending order of string lengths of DL representations.
         X, features = self.extract_expressions_from_owl_individuals(examples)
         # (4) Creating a tabular data for the binary classification problem.
-        # X = self.construct_sparse_binary_representations(features, examples, examples_to_features)
+        # X = self.sparse_binary_representations(features, examples, examples_to_features)
         self.features = features
         X = pd.DataFrame(data=X, index=examples, columns=self.features)
         y = pd.DataFrame(data=y, index=examples, columns=["label"])
