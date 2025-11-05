@@ -81,6 +81,7 @@ def dl_concept_learning(args):
     if not args.learner_types or 'ftdl' in args.learner_types:
         ftdl = FTDL(knowledge_base=kb,
                 n_estimators=10,  
+                quality_func = F1(),
                 kwargs_classifier={"random_state": 1},
                 max_runtime=args.max_runtime,
                 verbose=0)
@@ -293,7 +294,7 @@ def dl_concept_learning(args):
                 # Fit model on training dataset
                 pred_ftdl = ftdl.fit(train_lp).best_hypotheses(n=1)
                 print("FTDL ends..", end="\t")
-                rt_tdl = time.time() - start_time
+                rt_ftdl = time.time() - start_time
 
                 # () Quality on the training data
                 train_f1_ftdl = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_ftdl)}),
@@ -304,12 +305,12 @@ def dl_concept_learning(args):
                                             pos=test_lp.pos,
                                             neg=test_lp.neg)
 
-                data.setdefault("Train-F1-TDL", []).append(train_f1_tdl)
-                data.setdefault("Test-F1-TDL", []).append(test_f1_tdl)
-                data.setdefault("RT-TDL", []).append(rt_tdl)
-                print(f"FTDL Train Quality: {train_f1_tdl:.3f}", end="\t")
-                print(f"FTDL Test Quality: {test_f1_tdl:.3f}", end="\t")
-                print(f"FTDL Runtime: {rt_tdl:.3f}")
+                data.setdefault("Train-F1-FTDL", []).append(train_f1_ftdl)
+                data.setdefault("Test-F1-FTDL", []).append(test_f1_ftdl)
+                data.setdefault("RT-FTDL", []).append(rt_ftdl)
+                print(f"FTDL Train Quality: {train_f1_ftdl:.3f}", end="\t")
+                print(f"FTDL Test Quality: {test_f1_ftdl:.3f}", end="\t")
+                print(f"FTDL Runtime: {rt_ftdl:.3f}")
 
 
             if not args.learner_types or 'nces' in args.learner_types:

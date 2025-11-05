@@ -136,7 +136,7 @@ class FTDL(TDL):
                 plot_umap_reduced_embeddings(X, y.label.to_list(), "umap_visualization.pdf")
             if self.grid_search_over:
                 grid_search = sklearn.model_selection.GridSearchCV(
-                    tree.DecisionTreeClassifier(**self.kwargs_classifier),
+                    RandomForestClassifier(**self.kwargs_classifier),
                     param_grid=self.grid_search_over, **self.kwargs_grid_search).fit(X.values, y.values)
                 print(grid_search.best_params_)
                 self.kwargs_classifier.update(grid_search.best_params_)
@@ -193,12 +193,6 @@ class FTDL(TDL):
                     verbalize_learner_prediction(tdc)
                    
             return self
-    
-    #add type annotations
-    def encoded_learning_problem(self):
-        """Fetch the most recently used learning problem from the fit method."""
-        return self._learning_problem
-
 
     def best_hypotheses(
             self,n 
@@ -212,6 +206,7 @@ class FTDL(TDL):
                 print("Computing score")
                 #scores.append(evaluate_concept(self.knowledge_base, tdc, self.quality_func, self.encoded_learning_problem() ))
                 scores.append((compute_f1_score(individuals=frozenset({i for i in self.knowledge_base.individuals(tdc)}), pos=self._learning_problem.pos, neg=self._learning_problem.neg), tdc))
+                #scores.append((compute_f1_score(individuals=frozenset({i for i in self.knowledge_base.individuals(tdc)}), pos=self._learning_problem.pos, neg=self._learning_problem.neg), tdc))
             for i in scores:
                 print("score:")
                 print(i[0])
