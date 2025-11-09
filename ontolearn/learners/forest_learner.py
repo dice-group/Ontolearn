@@ -5,7 +5,7 @@ from ontolearn.verbalizer import verbalize_learner_prediction
 import numpy as np
 import pandas as pd
 from .tree_learner import explain_inference, concepts_reducer
-from ontolearn.metrics import F1
+from ontolearn.metrics import F1, Precision
 
 
 from typing import Dict, Set, Tuple, List, Union, Callable
@@ -39,7 +39,7 @@ class FTDL(TDL):
 
     def __init__(self, knowledge_base,
                  n_estimators: int = 10,
-                 quality_func: Callable = F1(),
+                 quality_func: Callable = Precision(),
                  use_inverse: bool = False,
                  use_data_properties: bool = False,
                  use_nominals: bool = True,
@@ -129,7 +129,7 @@ class FTDL(TDL):
             X: pd.DataFrame
             y: Union[pd.DataFrame, pd.Series]
             X, y = self.create_training_data(learning_problem=learning_problem)
-            self._learning_problem = learning_problem
+            self._learning_problem = learning_problem.encode_kb(self.knowledge_base)
             # CD: Remember so that if user wants to use them
             self.X, self.y = X, y
             if self.plot_embeddings:
@@ -145,17 +145,15 @@ class FTDL(TDL):
                 print("Training starts!")
             self.clf = RandomForestClassifier(self.n_estimators, **self.kwargs_classifier, ).fit(X=X.values, y=y.values)
 
-            print("self clf" + str(type(self.clf[0])))
+            if self.report_classification:
 
-            #if self.report_classification:
-
-                #if self.verbose > 0:
-                #    self.__classification_report = "Classification Report: Negatives: -1 and Positives 1 \n"
-                #    self.__classification_report += sklearn.metrics.classification_report(y.values,
-                #                                                                        self.clf.predict(X.values),
-                #                                                                        target_names=["Negative",
-                #                                                                                        "Positive"])
-                #    print(self.__classification_report)
+                if self.verbose > 0:
+                    self.__classification_report = "Classification Report: Negatives: -1 and Positives 1 \n"
+                    self.__classification_report += sklearn.metrics.classification_report(y.values,
+                                                                                        self.clf.predict(X.values),
+                                                                                        target_names=["Negative",
+                                                                                                        "Positive"])
+                    print(self.__classification_report)
             #if self.plot_tree:
               #  plot_decision_tree_of_expressions(feature_names=[owl_expression_to_dl(f) for f in self.features],
                #                                 cart_tree=self.clf)
@@ -187,26 +185,32 @@ class FTDL(TDL):
                     print("Computing disjunction_of_conjunctive_concepts...")
                 self.disjunction_of_conjunctive_concepts = concepts_reducer(concepts=tree_conjunctive_concepts,  reduced_cls=OWLObjectUnionOf)
                 self.tree_disjunctive_concepts.append(self.disjunction_of_conjunctive_concepts)
+            
             #print(len(self.tree_disjunctive_concepts))
             for tdc in self.tree_disjunctive_concepts:
                 if self.verbalize:
                     verbalize_learner_prediction(tdc)
                    
             return self
-
+    
+ 
     def best_hypotheses(
-            self,n 
+            self,n,reduce:bool = False 
     ) -> Tuple[OWLClassExpression, List[OWLClassExpression]]:
         """Return the prediction"""
 
         if(n == 1):
             # self.tree_disjunctive_concepts
             scores = []
+            if(reduce):
+                return concepts_reducer(self.tree_disjunctive_concepts, reduced_cls=OWLObjectUnionOf)
             for tdc in self.tree_disjunctive_concepts:
                 print("Computing score")
                 #scores.append(evaluate_concept(self.knowledge_base, tdc, self.quality_func, self.encoded_learning_problem() ))
-                scores.append((compute_f1_score(individuals=frozenset({i for i in self.knowledge_base.individuals(tdc)}), pos=self._learning_problem.pos, neg=self._learning_problem.neg), tdc))
                 #scores.append((compute_f1_score(individuals=frozenset({i for i in self.knowledge_base.individuals(tdc)}), pos=self._learning_problem.pos, neg=self._learning_problem.neg), tdc))
+                #scores.append((compute_f1_score(individuals=frozenset({i for i in self.knowledge_base.individuals(tdc)}), pos=self._learning_problem.pos, neg=self._learning_problem.neg), tdc))
+                scores.append((evaluate_concept(self.knowledge_base,tdc,self.quality_func, self._learning_problem).q, tdc))
+                
             for i in scores:
                 print("score:")
                 print(i[0])

@@ -15,7 +15,7 @@ from ontolearn.concept_learner import CELOE, EvoLearner, NCES, NCES2, ROCES, CLI
 from ontolearn.refinement_operators import ExpressRefinement, ModifiedCELOERefinement
 from ontolearn.learners import Drill, TDL, OCEL, FTDL
 from ontolearn.learning_problem import PosNegLPStandard
-from ontolearn.metrics import F1
+from ontolearn.metrics import F1, Accuracy, Precision
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 import argparse
 from sklearn.model_selection import StratifiedKFold
@@ -81,7 +81,7 @@ def dl_concept_learning(args):
     if not args.learner_types or 'ftdl' in args.learner_types:
         ftdl = FTDL(knowledge_base=kb,
                 n_estimators=10,  
-                quality_func = F1(),
+                quality_func = Precision(),
                 kwargs_classifier={"random_state": 1},
                 max_runtime=args.max_runtime,
                 verbose=0)
