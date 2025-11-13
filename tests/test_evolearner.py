@@ -6,13 +6,13 @@ from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.iri import IRI
 
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import EvoLearner
+from ontolearn.learners import EvoLearner
 from ontolearn.utils import setup_logging
 
 import json
 import os
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import EvoLearner
+from ontolearn.learners import EvoLearner
 from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 from owlapy.class_expression import OWLClass

@@ -55,6 +55,7 @@ Example:
 
 from .base import BaseConceptLearner, RefinementBasedConceptLearner
 from .celoe import CELOE
+from .concept_learner import EvoLearner, CLIP, NCES, NCES2, ROCES
 from .drill import Drill
 from .nero import NERO
 from .ocel import OCEL
@@ -65,9 +66,14 @@ __all__ = [
     'BaseConceptLearner',
     'RefinementBasedConceptLearner',
     'CELOE',
-    'Drill', 
+    'CLIP',
+    'Drill',
+    'EvoLearner',
+    'NCES',
+    'NCES2',
     'NERO',
     'OCEL',
+    'ROCES',
     'SPARQLQueryLearner',
     'TDL',
 ]

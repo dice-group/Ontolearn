@@ -1,6 +1,6 @@
 import argparse
 import json, os
-from ontolearn.concept_learner import NCES, NCES2, ROCES, CLIP
+from ontolearn.learners import NCES, NCES2, ROCES, CLIP
 from transformers import set_seed
 import time
 from ontolearn.knowledge_base import KnowledgeBase

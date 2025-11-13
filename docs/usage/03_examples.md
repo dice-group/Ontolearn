@@ -14,7 +14,7 @@ following target concepts: "_Aunt_", "_Brother_", "_Cousin_", "_Granddaughter_",
 ```python
 import json
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import EvoLearner
+from ontolearn.learners import EvoLearner
 from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 from owlapy.class_expression import OWLClass
