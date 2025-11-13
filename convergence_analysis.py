@@ -262,8 +262,8 @@ def create_convergence_plots(trackers, save_dir="convergence_plots"):
     plt.grid(True, alpha=0.3)
     
     plt.tight_layout()
-    plt.savefig(f'{save_dir}/concepts_vs_time.png', dpi=300, bbox_inches='tight')
-    plt.savefig(f'{save_dir}/concepts_vs_time.pdf', bbox_inches='tight')
+    # plt.savefig(f'{save_dir}/concepts_vs_time.png', dpi=300, bbox_inches='tight')
+    # plt.savefig(f'{save_dir}/concepts_vs_time.pdf', bbox_inches='tight')
     print(f"Saved: {save_dir}/concepts_vs_time.png")
     
     # Plot 3: Convergence Rate Comparison
@@ -319,55 +319,26 @@ def create_convergence_plots(trackers, save_dir="convergence_plots"):
         ax2.text(i - width/2, qual + 0.02, f'{qual:.3f}', ha='center', va='bottom', fontweight='bold')
         ax2_twin.text(i + width/2, eff + 0.0001, f'{eff:.4f}', ha='center', va='bottom', fontweight='bold')
     
-    plt.tight_layout()
-    plt.savefig(f'{save_dir}/convergence_comparison.png', dpi=300, bbox_inches='tight')
-    plt.savefig(f'{save_dir}/convergence_comparison.pdf', bbox_inches='tight')
-    print(f"Saved: {save_dir}/convergence_comparison.png")
+    # plt.tight_layout()
+    # plt.savefig(f'{save_dir}/convergence_comparison.png', dpi=300, bbox_inches='tight')
+    # plt.savefig(f'{save_dir}/convergence_comparison.pdf', bbox_inches='tight')
+    # print(f"Saved: {save_dir}/convergence_comparison.png")
     
-    # Plot 4: Combined Dashboard with Quality vs Runtime
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
+    # Simplified Dashboard: Only the 2 most insightful plots
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
     
-    # A) Current Best Quality over Time (Cumulative Best)
-    for tracker in trackers:
-        if tracker.time_timeline and tracker.quality_timeline:
-            ax1.plot(tracker.time_timeline, tracker.quality_timeline, 
-                    linewidth=2, marker='o', markersize=3, alpha=0.8, label=tracker.learner_name)
-    ax1.set_xlabel('Time (s)')
-    ax1.set_ylabel('Best Quality Found So Far')
-    ax1.set_title('A) Cumulative Best Quality Over Time')
-    ax1.legend()
-    ax1.grid(True, alpha=0.3)
-    ax1.axhline(y=0.8, color='orange', linestyle='--', alpha=0.5, label='Good Solution')
-    ax1.axhline(y=1.0, color='red', linestyle='--', alpha=0.5, label='Optimal Solution')
-    ax1.set_ylim(0, 1.05)
-    
-    # B) Quality over Time (F1-Score progression)
-    for tracker in trackers:
-        if tracker.time_timeline and tracker.quality_timeline:
-            # Create a simple quality progression plot
-            ax2.plot(tracker.time_timeline, tracker.quality_timeline,
-                    linewidth=2, marker='o', markersize=3, alpha=0.8, label=tracker.learner_name)
-    ax2.set_xlabel('Time (s)')
-    ax2.set_ylabel('F1-Score Quality')
-    ax2.set_title('B) F1-Score Quality Over Runtime')
-    ax2.legend()
-    ax2.grid(True, alpha=0.3)
-    ax2.axhline(y=0.8, color='orange', linestyle='--', alpha=0.5)
-    ax2.axhline(y=1.0, color='red', linestyle='--', alpha=0.5)
-    ax2.set_ylim(0, 1.05)
-    
-    # C) Search Progress (concepts tested)
+    # A) Search Progress Over Time
     for tracker in trackers:
         if tracker.time_timeline and tracker.concepts_tested_timeline:
-            ax3.plot(tracker.time_timeline, tracker.concepts_tested_timeline,
-                    linewidth=2, marker='s', markersize=3, alpha=0.8, label=tracker.learner_name)
-    ax3.set_xlabel('Time (s)')
-    ax3.set_ylabel('Concepts Tested')
-    ax3.set_title('C) Search Progress')
-    ax3.legend()
-    ax3.grid(True, alpha=0.3)
+            ax1.plot(tracker.time_timeline, tracker.concepts_tested_timeline,
+                    linewidth=2.5, marker='s', markersize=4, alpha=0.8, label=tracker.learner_name)
+    ax1.set_xlabel('Runtime (seconds)', fontsize=12, fontweight='bold')
+    ax1.set_ylabel('Number of Concepts Tested', fontsize=12, fontweight='bold')
+    ax1.set_title('A) Search Progress Over Time', fontsize=14, fontweight='bold')
+    ax1.legend(fontsize=11, loc='best')
+    ax1.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
     
-    # D) Final Performance Summary
+    # B) Final Performance Summary
     final_qualities = [tracker.final_quality for tracker in trackers]
     concepts_tested = [tracker.total_concepts_tested for tracker in trackers]
     learner_names = [tracker.learner_name for tracker in trackers]
@@ -380,27 +351,27 @@ def create_convergence_plots(trackers, save_dir="convergence_plots"):
     max_concepts = max(concepts_tested) if concepts_tested else 1
     normalized_concepts = [c/max_concepts for c in concepts_tested]
     
-    bars1 = ax4.bar(x - width/2, final_qualities, width, label='Final Quality', alpha=0.8, color='green')
-    bars2 = ax4.bar(x + width/2, normalized_concepts, width, label='Search Effort (normalized)', alpha=0.8, color='orange')
+    bars1 = ax2.bar(x - width/2, final_qualities, width, label='Final Quality (F1-Score)', alpha=0.85, color='#2ecc71')
+    bars2 = ax2.bar(x + width/2, normalized_concepts, width, label='Search Effort (normalized)', alpha=0.85, color='#e74c3c')
     
-    ax4.set_xlabel('Learning Method')
-    ax4.set_ylabel('Score')
-    ax4.set_title('D) Final Performance vs Search Effort')
-    ax4.set_xticks(x)
-    ax4.set_xticklabels([name.replace(' ', '\n') for name in learner_names], fontsize=9)
-    ax4.legend()
-    ax4.grid(True, alpha=0.3)
+    ax2.set_xlabel('Learning Method', fontsize=12, fontweight='bold')
+    ax2.set_ylabel('Score', fontsize=12, fontweight='bold')
+    ax2.set_title('B) Final Performance vs Search Effort', fontsize=14, fontweight='bold')
+    ax2.set_xticks(x)
+    ax2.set_xticklabels([name.replace(' ', '\n') for name in learner_names], fontsize=10)
+    ax2.legend(fontsize=11, loc='best')
+    ax2.grid(True, alpha=0.3, axis='y', linestyle='-', linewidth=0.5)
+    ax2.set_ylim(0, 1.1)
     
     # Add value labels
     for i, (qual, concepts) in enumerate(zip(final_qualities, concepts_tested)):
-        ax4.text(i - width/2, qual + 0.02, f'{qual:.3f}', ha='center', va='bottom', fontweight='bold', fontsize=9)
-        ax4.text(i + width/2, normalized_concepts[i] + 0.02, f'{concepts}', ha='center', va='bottom', fontweight='bold', fontsize=9)
+        ax2.text(i - width/2, qual + 0.03, f'{qual:.3f}', ha='center', va='bottom', fontweight='bold', fontsize=10)
+        ax2.text(i + width/2, normalized_concepts[i] + 0.03, f'{concepts}', ha='center', va='bottom', fontweight='bold', fontsize=9)
     
-    plt.suptitle('Convergence Analysis Dashboard: V-Learning vs Q-Learning vs Random V-Values\nFamily Dataset (30s runtime)', 
-                 fontsize=16, fontweight='bold', y=0.98)
+    plt.suptitle('Convergence Analysis: V-Learning vs Q-Learning vs Random V-Values\nFamily Dataset (30s runtime)', 
+                 fontsize=16, fontweight='bold', y=1.02)
     plt.tight_layout()
-    plt.subplots_adjust(top=0.93)
-    plt.savefig(f'{save_dir}/convergence_dashboard.png', dpi=300, bbox_inches='tight')
+    # plt.savefig(f'{save_dir}/convergence_dashboard.png', dpi=300, bbox_inches='tight')
     plt.savefig(f'{save_dir}/convergence_dashboard.pdf', bbox_inches='tight')
     print(f"Saved: {save_dir}/convergence_dashboard.png")
     
