@@ -41,7 +41,7 @@ from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.abstracts import AbstractOWLReasoner
 
 from ontolearn.abstracts import AbstractNode
-from ontolearn.base_concept_learner import BaseConceptLearner
+from ontolearn.learners.base import BaseConceptLearner
 from ontolearn.utils.static_funcs import compute_f1_score, get_file_base_name, prepare_output_path
 from .learners import CELOE, OCEL
 from ontolearn.concept_learner import EvoLearner, NCES

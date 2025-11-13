@@ -53,6 +53,7 @@ Example:
     >>> model.fit(pos_examples, neg_examples)
 """
 
+from .base import BaseConceptLearner, RefinementBasedConceptLearner
 from .celoe import CELOE
 from .drill import Drill
 from .nero import NERO
@@ -61,6 +62,8 @@ from .sparql_query_learner import SPARQLQueryLearner
 from .tree_learner import TDL
 
 __all__ = [
+    'BaseConceptLearner',
+    'RefinementBasedConceptLearner',
     'CELOE',
     'Drill', 
     'NERO',

@@ -44,7 +44,7 @@ from ontolearn.metrics import F1
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from owlapy.owl_ontology import Ontology, SyncOntology
 from owlapy.render import DLSyntaxObjectRenderer
-from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
+from ontolearn.abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
     AbstractConceptNode, AbstractLearningProblem, AbstractKnowledgeBase
 
 _N = TypeVar('_N', bound=AbstractConceptNode)  #:

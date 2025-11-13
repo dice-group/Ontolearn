@@ -28,7 +28,7 @@ from owlapy.class_expression import OWLClassExpression, OWLThing
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy import owl_expression_to_dl
 
-from ontolearn.base_concept_learner import RefinementBasedConceptLearner
+from .base import RefinementBasedConceptLearner
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.abstracts import AbstractNode, AbstractKnowledgeBase
 from ontolearn.search import RL_State

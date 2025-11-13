@@ -46,7 +46,7 @@ from ontolearn.concept_generator import ConceptGenerator
 from ontolearn.abstracts import AbstractKnowledgeBase
 from ontolearn.abstracts import AbstractFitness, AbstractScorer, BaseRefinement, \
     AbstractHeuristic, AbstractNode
-from ontolearn.base_concept_learner import BaseConceptLearner
+from ontolearn.learners.base import BaseConceptLearner
 from owlapy.utils import EvaluatedDescriptionSet, ConceptOperandSorter
 from ontolearn.data_struct import (TriplesData, NCESDatasetInference, CLIPDataset, CLIPDatasetInference,
                                    ROCESDatasetInference)
