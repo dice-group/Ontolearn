@@ -47,7 +47,7 @@ from ontolearn.abstracts import AbstractKnowledgeBase
 from ontolearn.abstracts import AbstractFitness, AbstractScorer, BaseRefinement, \
     AbstractHeuristic, AbstractNode
 from ontolearn.learners.base import BaseConceptLearner
-from owlapy.utils import EvaluatedDescriptionSet, ConceptOperandSorter
+from owlapy.utils import ConceptOperandSorter
 from ontolearn.data_struct import (TriplesData, NCESDatasetInference, CLIPDataset, CLIPDatasetInference,
                                    ROCESDatasetInference)
 from ontolearn.ea_algorithms import AbstractEvolutionaryAlgorithm, EASimple
@@ -63,7 +63,7 @@ from ontolearn.utils import read_csv
 
 from ontolearn.utils.static_funcs import concept_len
 from ontolearn.quality_funcs import evaluate_concept
-from ontolearn.search import EvoLearnerNode, NCESNode, OENode, TreeNode, QualityOrderedNode
+from ontolearn.search import EvoLearnerNode, NCESNode, OENode
 from ontolearn.utils.static_funcs import init_length_metric, compute_tp_fn_fp_tn
 from ontolearn.value_splitter import AbstractValueSplitter, BinningValueSplitter, EntropyValueSplitter
 from ontolearn.base_nces import BaseNCES
@@ -73,7 +73,6 @@ from ontolearn.clip_architectures import LengthLearner_LSTM, LengthLearner_GRU, 
 from ontolearn.nces_trainer import NCESTrainer, before_pad
 from ontolearn.clip_trainer import CLIPTrainer
 from ontolearn.nces_utils import SimpleSolution, generate_training_data
-from sortedcontainers import SortedSet
 import os
 import json
 import glob
@@ -964,8 +963,8 @@ class NCES(BaseNCES):
             del Models[name]
 
         if self.load_pretrained and path is None:
-            print(f"\x1b[0;30;43mThe path to pretrained models is None and load_pretrained is True. "
-                  f"Will return models with random weights.\x1b[0m")
+            print("\x1b[0;30;43mThe path to pretrained models is None and load_pretrained is True. "
+                  "Will return models with random weights.\x1b[0m")
             return Models
         elif self.load_pretrained and path and glob.glob(path+"/*.pt"):
             num_loaded_models = 0
@@ -1194,7 +1193,7 @@ class NCES(BaseNCES):
                                           refinement_expressivity=refinement_expressivity, beyond_alc=False,
                                           refs_sample_size=refs_sample_size, storage_path=storage_path)
         example_ind = data[0][-1]["positive examples"][0]
-        if not "/" in example_ind and not self.has_renamed_inds:
+        if "/" not in example_ind and not self.has_renamed_inds:
             self.instance_embeddings.index = self.instance_embeddings.index.map(self._rename_individuals)
             self.has_renamed_inds = True
         trainer = NCESTrainer(self, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate, tmax=tmax,
@@ -1312,8 +1311,8 @@ class NCES2(BaseNCES):
                                                    self.num_seeds, m, self.ln)} for m in self.m}
 
         if self.load_pretrained and path is None:
-            print(f"\n\x1b[0;30;43mPath to pretrained models is None and load_pretrained is True. "
-                  f"Will return models with random weights.\x1b[0m\n")
+            print("\n\x1b[0;30;43mPath to pretrained models is None and load_pretrained is True. "
+                  "Will return models with random weights.\x1b[0m\n")
             return Models
 
         elif self.load_pretrained and path and len(glob.glob(path + "/*.pt")) == 0:
@@ -1330,7 +1329,7 @@ class NCES2(BaseNCES):
             for file_name in possible_checkpoints:
                 for m in self.m:
                     if str(m) in file_name:
-                        if not "emb" in file_name:
+                        if "emb" not in file_name:
                             weights = torch.load(file_name, map_location=self.device, weights_only=True)
                             model = Models[str(m)]["model"]
                             model.load_state_dict(weights)

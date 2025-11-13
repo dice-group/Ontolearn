@@ -27,7 +27,7 @@
 import logging
 import time
 from abc import ABCMeta, abstractmethod
-from typing import List, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, Union, cast, Callable, Type
+from typing import List, Tuple, Dict, Optional, Iterable, TypeVar, ClassVar, Final, Union, cast, Callable, Type
 import numpy as np
 import pandas as pd
 

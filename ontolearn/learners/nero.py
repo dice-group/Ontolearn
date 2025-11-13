@@ -33,7 +33,6 @@ and reinforcement learning for OWL class expression learning.
     fully implemented. The API may change in future versions.
 """
 
-from typing import Optional
 
 
 class NERO:
