@@ -22,12 +22,71 @@
 # SOFTWARE.
 # -----------------------------------------------------------------------------
 
+"""
+NERO - Neural Evolutionary Reinforcement Ontology Learner.
+
+This is an experimental learner combining neural networks, evolutionary algorithms,
+and reinforcement learning for OWL class expression learning.
+
+.. warning::
+    This learner is currently in experimental/development stage and is not yet
+    fully implemented. The API may change in future versions.
+"""
+
+from typing import Optional
+
+
 class NERO:
-    def __init__(self):
+    """
+    
+    NERO is an experimental concept learner that aims to combine:
+    - Neural networks for representation learning
+    - Evolutionary algorithms for concept space exploration
+    - Reinforcement learning for optimization
+    
+    .. warning::
+        This is a placeholder implementation. Full functionality will be added in future releases.
+    
+    Attributes:
+        name (str): Name of the learner = 'NERO'
+    
+    Notes:
+        This learner is under active development and not recommended for production use.
+    """
+    
+    __slots__ = ()
+    
+    name = 'NERO'
+    
+    def __init__(self) -> None:
+        """
+        Initialize NERO learner.
+        
+        .. warning::
+            This is a placeholder implementation.
+        """
         pass
-
-    def train(self):
-        pass
-
-    def fit(self):
-        pass
+    
+    def train(self) -> None:
+        """
+        Train the NERO model.
+        
+        .. warning::
+            Not yet implemented.
+        
+        Raises:
+            NotImplementedError: This method is not yet implemented.
+        """
+        raise NotImplementedError("NERO.train() is not yet implemented")
+    
+    def fit(self) -> None:
+        """
+        Fit the NERO model to learning problem.
+        
+        .. warning::
+            Not yet implemented.
+        
+        Raises:
+            NotImplementedError: This method is not yet implemented.
+        """
+        raise NotImplementedError("NERO.fit() is not yet implemented")
