@@ -38,7 +38,7 @@ from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.abstracts import AbstractOWLReasoner
 from owlapy.utils import ConceptOperandSorter
 
-from ontolearn.abstracts import AbstractKnowledgeBase, AbstractScorer, BaseRefinement, AbstractHeuristic, AbstractNode
+from ontolearn.abstracts import AbstractKnowledgeBase, AbstractScorer, BaseRefinement, AbstractHeuristic
 from ontolearn.data_struct import CLIPDataset, CLIPDatasetInference
 from ontolearn.refinement_operators import ExpressRefinement
 from ontolearn.learning_problem import PosNegLPStandard
