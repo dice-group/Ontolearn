@@ -1055,7 +1055,7 @@ class NCES(BaseNCES):
             prediction_str = "".join(before_pad(prediction.squeeze()))
             try:
                 concept = self.dl_parser.parse(prediction_str)
-            except:
+            except Exception:
                 concept = simple_strategy(simpleSolution, prediction_str)
                 if self.enforce_validity:
                     try:
@@ -1063,7 +1063,7 @@ class NCES(BaseNCES):
                         parse_concept_str, _ = concept_ast_builder.parse(token_sequence=raw_prediction, enforce_validity=True)
 
                         concept = self.dl_parser.parse(parse_concept_str)
-                    except:
+                    except Exception:
                         pass
                 elif self.verbose>0:
                     print("Prediction: ", prediction_str)
@@ -1164,7 +1164,7 @@ class NCES(BaseNCES):
                     prediction_str = "".join(before_pad(prediction))
                     ce = self.dl_parser.parse(prediction_str)
                     predictions_str.append(prediction_str)
-                except:
+                except Exception:
                     prediction_str = simpleSolution.predict("".join(before_pad(prediction)))
                     predictions_str.append(prediction_str)
                     ce = self.dl_parser.parse(prediction_str)
@@ -1426,7 +1426,7 @@ class NCES2(BaseNCES):
             prediction_str = "".join(before_pad(prediction.squeeze()))
             try:
                 concept = self.dl_parser.parse(prediction_str)
-            except:
+            except Exception:
                 concept = simple_strategy(simpleSolution, prediction_str)
                 if self.enforce_validity:
                     try:
@@ -1434,7 +1434,7 @@ class NCES2(BaseNCES):
                         parse_concept_str, _ = concept_ast_builder.parse(token_sequence=raw_prediction, enforce_validity=True)
 
                         concept = self.dl_parser.parse(parse_concept_str)
-                    except:
+                    except Exception:
                         pass
                 elif self.verbose>0:
                     print("Prediction: ", prediction_str)
@@ -1536,7 +1536,7 @@ class NCES2(BaseNCES):
                     prediction_str = "".join(before_pad(prediction))
                     ce = self.dl_parser.parse(prediction_str)
                     predictions_str.append(prediction_str)
-                except:
+                except Exception:
                     prediction_str = simpleSolution.predict("".join(before_pad(prediction)))
                     predictions_str.append(prediction_str)
                     ce = self.dl_parser.parse(prediction_str)

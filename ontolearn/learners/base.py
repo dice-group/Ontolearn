@@ -338,7 +338,6 @@ class BaseConceptLearner(metaclass=ABCMeta):
             path: Filename base (extension will be added automatically).
             rdf_format: Serialisation format. currently supported: "rdfxml".
         """
-        SNS: Final = 'https://dice-research.org/predictions-schema/'
         NS: Final = 'https://dice-research.org/predictions/' + str(time.time()) + '#'
 
         if rdf_format != 'rdfxml':
