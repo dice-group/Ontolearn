@@ -23,7 +23,7 @@
 # -----------------------------------------------------------------------------
 
 """
-NERO - Neural Evolutionary Reinforcement Ontology Learner.
+NERO.
 
 This is an experimental learner combining neural networks, evolutionary algorithms,
 and reinforcement learning for OWL class expression learning.
@@ -39,9 +39,6 @@ class NERO:
     """
     
     NERO is an experimental concept learner that aims to combine:
-    - Neural networks for representation learning
-    - Evolutionary algorithms for concept space exploration
-    - Reinforcement learning for optimization
     
     .. warning::
         This is a placeholder implementation. Full functionality will be added in future releases.
