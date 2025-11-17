@@ -848,7 +848,7 @@ class NCES(BaseNCES):
                 del dicee
             except Exception:
                 print('\x1b[0;30;43m dicee is not installed, will first install it...\x1b[0m\n')
-                subprocess.run('pip install dicee==0.1.4')
+                subprocess.run('pip install dicee==0.2.0')
             if self.auto_train:
                 print("\n"+"\x1b[0;30;43m"+"Embeddings not found. Will quickly train embeddings beforehand. "
                       +"Poor performance is expected as we will also train the synthesizer for a few epochs."
@@ -859,17 +859,23 @@ class NCES(BaseNCES):
             try:
                 path_temp_embeddings = self.path_temp_embeddings if self.path_temp_embeddings and isinstance(
                     self.path_temp_embeddings, str) else "temp_embeddings"
+                path_temp_embeddings = os.path.abspath(path_temp_embeddings)
                 if not os.path.exists(path_temp_embeddings):
                     os.makedirs(path_temp_embeddings)
-                #path_temp_triples = os.path.join(os.path.dirname(__file__),
-                #                                 "/temp_embeddings/abox.nt")
-                path_temp_triples = "temp_embeddings/abox.nt"
-                if os.path.exists(path_temp_triples):
-                    os.remove(path_temp_triples)
+                # Use a separate directory for triples to avoid deletion by dicee
+                temp_triples_dir = os.path.abspath("temp_triples")
+                if not os.path.exists(temp_triples_dir):
+                    os.makedirs(temp_triples_dir)
+                path_temp_triples = os.path.join(temp_triples_dir, "abox.nt")
 
-                with open(path_temp_triples, "a") as f:
+                with open(path_temp_triples, "w") as f:
+                    count = 0
                     for s, p, o in self.knowledge_base.abox():
                         f.write(f"<{s.str}> <{p.str}> <{o.str}> .\n")
+                        count += 1
+                    print(f"Number of triples in abox: {count}")
+
+                assert os.path.exists(path_temp_triples), "Triples file not found"
 
                 self.knowledge_base_path = path_temp_triples
 
@@ -881,7 +887,7 @@ class NCES(BaseNCES):
                                f"--model {self.dicee_model} "
                                f"--embedding_dim {self.dicee_emb_dim} "
                                f"--eval_mode test",
-                               shell=True)#, executable="/bin/bash")
+                               shell=True)
                 assert os.path.exists(f"{path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv"), \
                     (f"It seems that embeddings were not stored at the expected directory "
                      f"({path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv)")
@@ -1219,13 +1225,12 @@ class NCES2(BaseNCES):
                          drop_prob, num_heads, num_seeds, m, ln, learning_rate, tmax, eta_min, clip_value, batch_size,
                          num_workers, max_length, load_pretrained, verbose)
 
-        temp_triples_dir = "temp_embeddings"
+        # Use a separate directory for triples to avoid deletion
+        temp_triples_dir = os.path.abspath("temp_triples")
         if not os.path.exists(temp_triples_dir):
             os.makedirs(temp_triples_dir)
-        path_temp_triples =  "temp_embeddings/abox.nt"
-        if os.path.exists(path_temp_triples):
-            os.remove(path_temp_triples)
-        with open(path_temp_triples, "a") as f:
+        path_temp_triples = os.path.join(temp_triples_dir, "abox.nt")
+        with open(path_temp_triples, "w") as f:
             for s, p, o in self.knowledge_base.abox():
                 f.write(f"<{s.str}> <{p.str}> <{o.str}> .\n")
 
