@@ -30,7 +30,10 @@ from owlapy.class_expression import (
     OWLObjectIntersectionOf,
     OWLClassExpression,
     OWLObjectUnionOf,
+    OWLObjectOneOf,
+    OWLObjectHasValue
 )
+from owlapy.utils import HasFiller, HasOperands
 from owlapy.owl_individual import OWLNamedIndividual
 import ontolearn.triple_store
 from ontolearn.knowledge_base import KnowledgeBase
@@ -132,6 +135,18 @@ def concepts_reducer(
             dl_concept_path = reduced_cls((dl_concept_path, c))
     return dl_concept_path
 
+def contains_nominal(expr: OWLClassExpression) -> bool:
+    """Returns True if the OWL expression contains a nominal (OWLObjectOneOf, OWLDataOneOf)."""
+    if isinstance(expr, (OWLObjectOneOf, OWLObjectHasValue)):
+        return True
+
+    if isinstance(expr, HasFiller):
+        return contains_nominal(expr.get_filler())
+
+    if isinstance(expr, HasOperands):
+        return any(contains_nominal(op) for op in expr.get_operands())
+
+    return False
 
 class TDL:
     """Tree-based Description Logic Concept Learner"""
@@ -139,12 +154,13 @@ class TDL:
     def __init__(self, knowledge_base,
                  use_inverse: bool = False,
                  use_data_properties: bool = False,
-                 use_nominals: bool = False,
+                 use_nominals: bool = True,
                  use_card_restrictions: bool = False,
                  kwargs_classifier: dict = None,
                  max_runtime: int = 1,
                  grid_search_over: dict = None,
                  grid_search_apply: bool = False,
+                 kwargs_grid_search: dict = {},
                  report_classification: bool = True,
                  plot_tree: bool = False,
                  plot_embeddings: bool = False,
@@ -166,8 +182,13 @@ class TDL:
                 "min_samples_leaf": [1, 2, 3, 4, 5, 10],
                 "max_depth": [1, 2, 3, 4, 5, 10, None],
             }
+        elif grid_search_apply and grid_search_over is not None:
+            pass
         else:
             grid_search_over = dict()
+
+        kwargs_grid_search.setdefault("cv", 10)
+        
         assert (
                 isinstance(knowledge_base, KnowledgeBase)
                 or isinstance(knowledge_base, ontolearn.triple_store.TripleStore)
@@ -175,6 +196,7 @@ class TDL:
         ), "knowledge_base must be a KnowledgeBase instance"
         print(f"Knowledge Base: {knowledge_base}")
         self.grid_search_over = grid_search_over
+        self.kwargs_grid_search = kwargs_grid_search
         self.knowledge_base = knowledge_base
         self.report_classification = report_classification
         self.plot_tree = plot_tree
@@ -209,11 +231,12 @@ class TDL:
                                        verbose=self.verbose,
                                        desc="Extracting information about examples"):
             for owl_class_expression in self.knowledge_base.abox(individual=owl_named_individual, mode="expression"):
-                str_dl_concept=owl_expression_to_dl(owl_class_expression)
-                individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
-                if str_dl_concept not in features:
-                    # A mapping from str dl representation to owl object.
-                    features[str_dl_concept] = owl_class_expression
+                if self.use_nominals or not contains_nominal(owl_class_expression):
+                    str_dl_concept=owl_expression_to_dl(owl_class_expression)
+                    individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
+                    if str_dl_concept not in features:
+                        # A mapping from str dl representation to owl object.
+                        features[str_dl_concept] = owl_class_expression
 
         assert len(features) > 0, "First hop features cannot be extracted. Ensure that there are axioms about the examples."
         if self.verbose > 0:
@@ -372,7 +395,7 @@ class TDL:
         if self.grid_search_over:
             grid_search = sklearn.model_selection.GridSearchCV(
                 tree.DecisionTreeClassifier(**self.kwargs_classifier),
-                param_grid=self.grid_search_over, cv=10, ).fit(X.values, y.values)
+                param_grid=self.grid_search_over, **self.kwargs_grid_search).fit(X.values, y.values)
             print(grid_search.best_params_)
             self.kwargs_classifier.update(grid_search.best_params_)
         # Training
