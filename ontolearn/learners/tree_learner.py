@@ -31,7 +31,9 @@ from owlapy.class_expression import (
     OWLClassExpression,
     OWLObjectUnionOf,
     OWLObjectOneOf,
-    OWLObjectHasValue
+    OWLObjectHasValue,
+    OWLDataOneOf,
+    OWLDataHasValue
 )
 from owlapy.utils import HasFiller, HasOperands
 from owlapy.owl_individual import OWLNamedIndividual
@@ -135,9 +137,23 @@ def concepts_reducer(
             dl_concept_path = reduced_cls((dl_concept_path, c))
     return dl_concept_path
 
+def contains_data_properties(expr: OWLClassExpression) -> bool:
+    if isinstance(expr, (OWLObjectOneOf, OWLDataHasValue)):
+        return False
+        
+    """Returns True if the OWL expression contains a literal (OwlDataOneOf)"""
+    if isinstance(expr, (OWLDataOneOf, OWLDataHasValue)):
+        return True
+    if isinstance(expr, HasFiller):
+        return contains_data_properties(expr.get_filler())
+    #if isinstance(expr, HasOperands):
+    #    return any(contains_data_properties(op) for op in expr.get_operands())
+
 def contains_nominal(expr: OWLClassExpression) -> bool:
+    if(contains_data_properties(expr)):
+        return False
     """Returns True if the OWL expression contains a nominal (OWLObjectOneOf, OWLDataOneOf)."""
-    if isinstance(expr, (OWLObjectOneOf, OWLObjectHasValue)):
+    if isinstance(expr, (OWLObjectOneOf, OWLDataHasValue)):
         return True
 
     if isinstance(expr, HasFiller):
@@ -153,7 +169,7 @@ class TDL:
 
     def __init__(self, knowledge_base,
                  use_inverse: bool = False,
-                 use_data_properties: bool = False,
+                 use_data_properties: bool = True,
                  use_nominals: bool = True,
                  use_card_restrictions: bool = False,
                  kwargs_classifier: dict = None,
@@ -169,9 +185,11 @@ class TDL:
                  verbalize: bool = False):
 
         assert use_inverse is False, "use_inverse not implemented"
-        assert use_data_properties is False, "use_data_properties not implemented"
+        #assert use_data_properties is False, "use_data_properties not implemented"
+        
         assert use_card_restrictions is False, "use_card_restrictions not implemented"
         self.use_nominals = use_nominals
+        self.use_data_properties = use_data_properties
         self.use_card_restrictions = use_card_restrictions
 
         if grid_search_over is None and grid_search_apply:
@@ -231,7 +249,13 @@ class TDL:
                                        verbose=self.verbose,
                                        desc="Extracting information about examples"):
             for owl_class_expression in self.knowledge_base.abox(individual=owl_named_individual, mode="expression"):
-                if self.use_nominals or not contains_nominal(owl_class_expression):
+                if self.use_data_properties or not contains_data_properties(owl_class_expression):
+                    str_dl_concept=owl_expression_to_dl(owl_class_expression)
+                    individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
+                    if str_dl_concept not in features:
+                        features[str_dl_concept] = owl_class_expression
+
+                if self.use_nominals or not  contains_nominal(owl_class_expression):
                     str_dl_concept=owl_expression_to_dl(owl_class_expression)
                     individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
                     if str_dl_concept not in features:
@@ -311,7 +335,9 @@ class TDL:
         # (3) Iterate over examples to extract unique features.
         examples = positive_examples + negative_examples
         # For the sake of convenience. sort features in ascending order of string lengths of DL representations.
+
         X, features = self.extract_expressions_from_owl_individuals(examples)
+        
         # (4) Creating a tabular data for the binary classification problem.
         # X = self.sparse_binary_representations(features, examples, examples_to_features)
         self.features = features
