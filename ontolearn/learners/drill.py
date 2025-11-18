@@ -749,13 +749,18 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                     examples.append(lp)
                     counter += 1
                     
-                    # Check if we've generated enough learning problems
+                    # Break innermost loop: Stop sampling from this concept pair
                     if counter == num_learning_problems:
                         break
 
-                # Early termination if we've reached the desired number of learning problems
+                # Break middle loop: Stop iterating through concept j for this concept i
                 if counter == num_learning_problems:
                     break
+                    
+            # Break outermost loop: Stop iterating through all concepts i
+            if counter == num_learning_problems:
+                    break
+                
         # Return the generated learning problems
         return examples
         """
