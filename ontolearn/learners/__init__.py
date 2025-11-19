@@ -39,6 +39,12 @@ Available Learners:
       of refinements or simplified search heuristics to trade expressivity for
       speed and lower computational cost.
 
+    SAT-Based Learners:
+    - ALCSAT: A SAT-based learner that encodes the ALC concept learning problem
+      as a SAT problem. It uses incremental SAT solving to find concepts of
+      increasing size that maximize accuracy on positive/negative examples.
+      Particularly effective for finding compact, exact solutions.
+
     Neural / Hybrid Learners:
     - Drill: A neuro-symbolic learner that combines neural scoring or guidance
       with symbolic refinement/search. Typically, uses learned models to rank
@@ -82,6 +88,7 @@ Example:
 """
 
 from .base import BaseConceptLearner, RefinementBasedConceptLearner
+from .alcsat import ALCSAT
 from .celoe import CELOE
 from .clip import CLIP
 from .drill import Drill
@@ -97,6 +104,7 @@ from .tree_learner import TDL
 __all__ = [
     'BaseConceptLearner',
     'RefinementBasedConceptLearner',
+    'ALCSAT',
     'CELOE',
     'CLIP',
     'Drill',
