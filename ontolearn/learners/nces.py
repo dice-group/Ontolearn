@@ -121,11 +121,8 @@ class NCES(BaseNCES):
                 path_temp_triples = os.path.join(temp_triples_dir, "abox.nt")
 
                 with open(path_temp_triples, "w") as f:
-                    count = 0
                     for s, p, o in self.knowledge_base.abox():
                         f.write(f"<{s.str}> <{p.str}> <{o.str}> .\n")
-                        count += 1
-                    print(f"Number of triples in abox: {count}")
 
                 assert os.path.exists(path_temp_triples), "Triples file not found"
 
@@ -145,8 +142,6 @@ class NCES(BaseNCES):
                      f"({path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv)")
             except Exception as e:
                 print(f"Error while training embeddings: {e}")
-                #raise ValueError("\nPlease try providing the absolute path to the knowledge base, "
-                #                 "e.g., /home/ndah/Dev/Ontolean/KGs/Family/family-benchmark_rich_background.owl\n")
             self.path_of_embeddings = f"{path_temp_embeddings}/{self.dicee_model}_entity_embeddings.csv"
             if self.auto_train:
                 print("\n"+"\x1b[0;30;43m"+f"Will also train {self.name} for 5 epochs"+"\x1b[0m"+"\n")
