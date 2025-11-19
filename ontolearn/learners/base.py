@@ -27,7 +27,7 @@
 import logging
 import time
 from abc import ABCMeta, abstractmethod
-from typing import List, Tuple, Dict, Optional, Iterable, Generic, TypeVar, ClassVar, Final, Union, cast, Callable, Type
+from typing import List, Tuple, Dict, Optional, Iterable, TypeVar, ClassVar, Final, Union, cast, Callable, Type
 import numpy as np
 import pandas as pd
 
@@ -44,7 +44,7 @@ from ontolearn.metrics import F1
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from owlapy.owl_ontology import Ontology, SyncOntology
 from owlapy.render import DLSyntaxObjectRenderer
-from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
+from ontolearn.abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
     AbstractConceptNode, AbstractLearningProblem, AbstractKnowledgeBase
 
 _N = TypeVar('_N', bound=AbstractConceptNode)  #:
@@ -338,7 +338,6 @@ class BaseConceptLearner(metaclass=ABCMeta):
             path: Filename base (extension will be added automatically).
             rdf_format: Serialisation format. currently supported: "rdfxml".
         """
-        SNS: Final = 'https://dice-research.org/predictions-schema/'
         NS: Final = 'https://dice-research.org/predictions/' + str(time.time()) + '#'
 
         if rdf_format != 'rdfxml':

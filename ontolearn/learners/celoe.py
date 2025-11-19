@@ -22,7 +22,7 @@
 # SOFTWARE.
 # -----------------------------------------------------------------------------
 
-from ..base_concept_learner import RefinementBasedConceptLearner
+from .base import RefinementBasedConceptLearner
 
 from ..abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic, EncodedPosNegLPStandardKind, \
     AbstractKnowledgeBase
