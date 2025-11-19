@@ -46,7 +46,7 @@ from owlapy.owl_ontology import Ontology, SyncOntology
 from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
     AbstractConceptNode, AbstractLearningProblem, AbstractKnowledgeBase
-from .triple_store import TripleStoreOntology
+from ontolearn.triple_store import TripleStoreOntology
 
 _N = TypeVar('_N', bound=AbstractConceptNode)  #:
 _X = TypeVar('_X', bound=AbstractLearningProblem)  #:
