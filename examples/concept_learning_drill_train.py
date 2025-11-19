@@ -23,6 +23,11 @@ from ontolearn.heuristics import CeloeBasedReward
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 from owlapy.render import DLSyntaxObjectRenderer
 
+# Import DrillV variants
+import sys
+sys.path.insert(0, '.')
+from drillv_variants import DrillV_Minimal, DrillV_Standard, DrillV_Enhanced, DrillV_Complex
+
 
 def run_and_time_training(learner, train_args, directory):
     start_time = time.time()
@@ -40,11 +45,16 @@ def run_and_time_prediction(learner, train_lp, test_lp, kb):
                                 pos=train_lp.pos, neg=train_lp.neg)
     test_f1 = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred)}),
                                pos=test_lp.pos, neg=test_lp.neg)
+    
+    # Get concepts tested if available
+    concepts_tested = getattr(learner, '_number_of_tested_concepts', 0)
+    
     return {
         "prediction": dl_render.render(pred),
         "train_f1": train_f1,
         "test_f1": test_f1,
-        "prediction_time": pred_time
+        "prediction_time": pred_time,
+        "concepts_tested": concepts_tested
     }
 
 def start(args):
@@ -70,7 +80,32 @@ def start(args):
         max_runtime=args.max_runtime
     )
 
-    drillv = DrillV(
+    # Select DrillV variant based on user choice
+    variant_map = {
+        'default': DrillV,
+        'minimal': DrillV_Minimal,
+        'standard': DrillV_Standard,
+        'enhanced': DrillV_Enhanced,
+        'complex': DrillV_Complex
+    }
+    
+    DrillVClass = variant_map.get(args.drill_variant, DrillV)
+    variant_name = args.drill_variant if args.drill_variant in variant_map else 'default'
+    
+    print(f"\nUsing DrillV variant: {variant_name.upper()}")
+    if variant_name == 'minimal':
+        print("  → Simplest NN (2 layers, high LR, 1 epoch)")
+    elif variant_name == 'standard':
+        print("  → Balanced approach (3 layers, LayerNorm, dropout, multi-epoch)")
+    elif variant_name == 'enhanced':
+        print("  → Standard + curriculum learning + curiosity bonus")
+    elif variant_name == 'complex':
+        print("  → 4 layers with residuals, target network, LR scheduling")
+    elif variant_name == 'default':
+        print("  → Original DrillV with all advanced RL features")
+    print()
+
+    drillv = DrillVClass(
         knowledge_base=kb,
         path_embeddings=args.path_embeddings,
         refinement_operator=LengthBasedRefinement(knowledge_base=kb),
@@ -85,17 +120,20 @@ def start(args):
         max_runtime=args.max_runtime
     )
     
-    # Apply lean performance optimizations to DrillV
-    if args.enable_drillv_optimizations:
+    # Apply lean performance optimizations to DrillV (only if method exists)
+    if args.enable_drillv_optimizations and hasattr(drillv, 'optimize_for_performance'):
         print("Applying lean performance optimizations to DrillV...")
         drillv.optimize_for_performance()
+    elif args.enable_drillv_optimizations:
+        print("Note: optimize_for_performance not available for this variant.")
     else:
         print("DrillV optimizations disabled by user.")
 
     # Initialize DrillV with random V-values for comparison (if requested)
     drillv_random = None
     if args.compare_random_v:
-        drillv_random = DrillV(
+        # Use the same variant for fair comparison, but with random V-values
+        drillv_random = DrillVClass(
             knowledge_base=kb,
             path_embeddings=args.path_embeddings,
             refinement_operator=LengthBasedRefinement(knowledge_base=kb),
@@ -108,11 +146,12 @@ def start(args):
             num_episode=args.num_episode,
             iter_bound=args.iter_bound,
             max_runtime=args.max_runtime,
-            use_random_v_values=True  # Enable random V-values
+            use_random_v_values=True  # Enable random V-values (only works for default DrillV)
         )
-        # Apply lean optimizations to random V-value DrillV as well
-        print("Applying lean performance optimizations to DrillV (random V-values)...")
-        drillv_random.optimize_for_performance()
+        # Apply lean optimizations to random V-value DrillV as well (if method exists)
+        if hasattr(drillv_random, 'optimize_for_performance'):
+            print("Applying lean performance optimizations to DrillV (random V-values)...")
+            drillv_random.optimize_for_performance()
 
     # # Train and time both models
     # print("Training Drill (DQN)...")
@@ -125,23 +164,24 @@ def start(args):
 
 
      # Train and time both models
-    # if args.path_pretrained_dir:
-    print("Loading pretrained Drill agent...")
-    drill.load(directory="pretrained_drill")
-    print("Loading pretrained DrillV agent...")
-    drillv.load(directory="pretrained_drillv")
-    # else:
-    #     print("Training Drill agent...")
-    #     drill_train_time = run_and_time_training(drill, train_args, directory="pretrained_drill")
-    #     print("Training DrillV agent...")
-    #     drillv_train_time = run_and_time_training(drillv, train_args, directory="pretrained_drillv")
-    #     print(f"DrillV training time: {drillv_train_time:.2f} seconds\n")
-    #     print(f"Drill training time: {drill_train_time:.2f} seconds\n")
-    #     # Note: drillv_random doesn't need training as it uses random V-values
-    #     if args.compare_random_v:
-    #         print("DrillV with random V-values doesn't require training.\n")
+    if args.path_pretrained_dir:
+        print("Loading pretrained Drill agent...")
+        drill.load(directory="pretrained_drill")
+        print("Loading pretrained DrillV agent...")
+        drillv.load(directory="pretrained_drillv")
+    else:
+        print("Training Drill agent...")
+        drill_train_time = run_and_time_training(drill, train_args, directory="pretrained_drill")
+        print("Training DrillV agent...")
+        drillv_train_time = run_and_time_training(drillv, train_args, directory="pretrained_drillv")
+        print(f"DrillV training time: {drillv_train_time:.2f} seconds\n")
+        print(f"Drill training time: {drill_train_time:.2f} seconds\n")
+        # Note: drillv_random doesn't need training as it uses random V-values
+        if args.compare_random_v:
+            print("DrillV with random V-values doesn't require training.\n")
 
     time.sleep(10)  # Just to have a small break between training and testing
+    # exit(0)
     # Load learning problems
     with open(args.path_learning_problem, "r", encoding="utf-8") as json_file:
         data = json.load(json_file)
@@ -153,8 +193,28 @@ def start(args):
     drill_times = []
     drillv_times = []
     drillv_random_times = []
+    # Collect concepts tested counts
+    drill_concepts = []
+    drillv_concepts = []
+    drillv_random_concepts = []
+    # Collect F1 scores
+    drill_train_f1s = []
+    drill_test_f1s = []
+    drillv_train_f1s = []
+    drillv_test_f1s = []
+    drillv_random_train_f1s = []
+    drillv_random_test_f1s = []
     print("\nComparing models on each class expression:\n")
-    for str_target_concept, examples in problems.items():
+    
+    # Limit the number of problems if specified
+    problem_items = list(problems.items())
+    if args.num_problems > 0:
+        problem_items = problem_items[:args.num_problems]
+        print(f"Evaluating on {len(problem_items)} problems (limited by --num_problems)\n")
+    else:
+        print(f"Evaluating on all {len(problem_items)} problems\n")
+    
+    for str_target_concept, examples in problem_items:
         p = examples['positive_examples']
         n = examples['negative_examples']
         print(f"\nTarget concept: {str_target_concept}")
@@ -176,13 +236,19 @@ def start(args):
             # # Drill
             drill_result = run_and_time_prediction(drill, train_lp, test_lp, kb)
             drill_times.append(drill_result['prediction_time'])
+            drill_concepts.append(drill_result.get('concepts_tested', 0))
+            drill_train_f1s.append(drill_result['train_f1'])
+            drill_test_f1s.append(drill_result['test_f1'])
 
             # DrillV with trained V-values
             drillv_result = run_and_time_prediction(drillv, train_lp, test_lp, kb)
             drillv_times.append(drillv_result['prediction_time'])
+            drillv_concepts.append(drillv_result.get('concepts_tested', 0))
+            drillv_train_f1s.append(drillv_result['train_f1'])
+            drillv_test_f1s.append(drillv_result['test_f1'])
             
-            # Get performance statistics after this prediction
-            perf_stats = drillv.get_performance_stats()
+            # Get performance statistics after this prediction (if method exists)
+            perf_stats = drillv.get_performance_stats() if hasattr(drillv, 'get_performance_stats') else None
 
             # DrillV with random V-values (if comparison is enabled)
             drillv_random_result = None
@@ -190,23 +256,30 @@ def start(args):
             if args.compare_random_v:
                 drillv_random_result = run_and_time_prediction(drillv_random, train_lp, test_lp, kb)
                 drillv_random_times.append(drillv_random_result['prediction_time'])
-                perf_stats_random = drillv_random.get_performance_stats()
+                drillv_random_concepts.append(drillv_random_result.get('concepts_tested', 0))
+                drillv_random_train_f1s.append(drillv_random_result['train_f1'])
+                drillv_random_test_f1s.append(drillv_random_result['test_f1'])
+                perf_stats_random = drillv_random.get_performance_stats() if hasattr(drillv_random, 'get_performance_stats') else None
 
             # Print results
             print(f"Fold {ith + 1}:")
             print(f"  Drill (DQN):")
             print(f"    Prediction: {drill_result['prediction']}")
             print(f"    Train F1: {drill_result['train_f1']:.3f} | Test F1: {drill_result['test_f1']:.3f}")
+            print(f"    Concepts tested: {drill_result['concepts_tested']}")
             print(f"    Prediction time: {drill_result['prediction_time']:.2f} seconds")
-            print(f"  DrillV (V-learning with trained values):")
+            print(f"  DrillV ({variant_name}):")
             print(f"    Prediction: {drillv_result['prediction']}")
             print(f"    Train F1: {drillv_result['train_f1']:.3f} | Test F1: {drillv_result['test_f1']:.3f}")
+            print(f"    Concepts tested: {drillv_result['concepts_tested']}")
             print(f"    Prediction time: {drillv_result['prediction_time']:.2f} seconds")
-            print(f"    Optimization: {perf_stats['optimization_type']} (memory efficient: {perf_stats['memory_efficient']})")
+            if perf_stats:
+                print(f"    Optimization: {perf_stats['optimization_type']} (memory efficient: {perf_stats['memory_efficient']})")
             if args.compare_random_v and drillv_random_result:
-                print(f"  DrillV (V-learning with random values):")
+                print(f"  DrillV ({variant_name} with random values):")
                 print(f"    Prediction: {drillv_random_result['prediction']}")
                 print(f"    Train F1: {drillv_random_result['train_f1']:.3f} | Test F1: {drillv_random_result['test_f1']:.3f}")
+                print(f"    Concepts tested: {drillv_random_result['concepts_tested']}")
                 print(f"    Prediction time: {drillv_random_result['prediction_time']:.2f} seconds")
                 if perf_stats_random:
                     print(f"    Optimization: {perf_stats_random['optimization_type']} (memory efficient: {perf_stats_random['memory_efficient']})")
@@ -225,14 +298,16 @@ def start(args):
     print(f"Average Drill (DQN) prediction time: {avg_drill_time:.2f} seconds")
     print(f"Average DrillV (trained V-values) prediction time: {avg_drillv_time:.2f} seconds")
     
-    # Show DrillV performance optimizations statistics
-    print("\nDrillV Lean Performance Optimizations:")
-    drillv.print_performance_summary()
+    # Show DrillV performance optimizations statistics (if method exists)
+    if hasattr(drillv, 'print_performance_summary'):
+        print("\nDrillV Lean Performance Optimizations:")
+        drillv.print_performance_summary()
     
     if args.compare_random_v:
         print(f"Average DrillV (random V-values) prediction time: {avg_drillv_random_time:.2f} seconds")
-        print("\nDrillV (Random V-values) Lean Performance Optimizations:")
-        drillv_random.print_performance_summary()
+        if hasattr(drillv_random, 'print_performance_summary'):
+            print("\nDrillV (Random V-values) Lean Performance Optimizations:")
+            drillv_random.print_performance_summary()
         
         print("\nV-Values Importance Analysis:")
         if avg_drillv_time > 0 and avg_drillv_random_time > 0:
@@ -258,6 +333,42 @@ def start(args):
             print("→ Similar performance")
     print("="*60)
 
+    # === Concepts tested comparison ===
+    def safe_mean(lst):
+        return float(np.mean(lst)) if lst else 0.0
+
+    avg_drill_concepts = safe_mean(drill_concepts)
+    avg_drillv_concepts = safe_mean(drillv_concepts)
+    avg_drillv_random_concepts = safe_mean(drillv_random_concepts)
+
+    print("\nConcepts tested (averages):")
+    print(f"  Drill (DQN):           {avg_drill_concepts:.1f}")
+    print(f"  DrillV (trained):      {avg_drillv_concepts:.1f}")
+    if args.compare_random_v:
+        print(f"  DrillV (random):       {avg_drillv_random_concepts:.1f}")
+
+    # Relative improvement
+    if avg_drillv_concepts > 0:
+        reduction = (avg_drill_concepts - avg_drillv_concepts) / avg_drill_concepts * 100 if avg_drill_concepts > 0 else 0.0
+        print(f"\nDrillV vs Drill: average concepts tested reduced by: {reduction:+.1f}%")
+    if args.compare_random_v and avg_drillv_random_concepts > 0:
+        rel = (avg_drillv_random_concepts - avg_drillv_concepts) / avg_drillv_random_concepts * 100 if avg_drillv_random_concepts > 0 else 0.0
+        print(f"DrillV (trained) vs DrillV (random): trained reduces concepts by: {rel:+.1f}%")
+
+    # === F1 Score comparison ===
+    avg_drill_train_f1 = safe_mean(drill_train_f1s)
+    avg_drill_test_f1 = safe_mean(drill_test_f1s)
+    avg_drillv_train_f1 = safe_mean(drillv_train_f1s)
+    avg_drillv_test_f1 = safe_mean(drillv_test_f1s)
+    avg_drillv_random_train_f1 = safe_mean(drillv_random_train_f1s)
+    avg_drillv_random_test_f1 = safe_mean(drillv_random_test_f1s)
+
+    print("\nF1 Scores (averages):")
+    print(f"  Drill (DQN):           Train F1={avg_drill_train_f1:.3f}, Test F1={avg_drill_test_f1:.3f}")
+    print(f"  DrillV (trained):      Train F1={avg_drillv_train_f1:.3f}, Test F1={avg_drillv_test_f1:.3f}")
+    if args.compare_random_v:
+        print(f"  DrillV (random):       Train F1={avg_drillv_random_train_f1:.3f}, Test F1={avg_drillv_random_test_f1:.3f}")
+
 if __name__ == '__main__':
     parser = ArgumentParser()
     # General
@@ -270,21 +381,29 @@ if __name__ == '__main__':
                         default=1)
     parser.add_argument("--num_of_training_learning_problems",
                         type=int,
-                        default=1)
+                        default=5)
     parser.add_argument("--path_pretrained_dir", type=str, default=None)
 
     parser.add_argument("--path_learning_problem", type=str, default='LPs/Family/lps.json',
                         help="Path to a .json file that contains 2 properties 'positive_examples' and "
                              "'negative_examples'. Each of this properties should contain the IRIs of the respective"
                              "instances. e.g. 'some/path/lp.json'")
+    parser.add_argument("--num_problems", type=int, default=10,
+                        help="Number of problems to evaluate from the learning problem file. 0 means all problems.")
     parser.add_argument("--max_runtime", type=int, default=10, help="Max runtime")
     parser.add_argument("--folds", type=int, default=2, help="Number of folds of cross validation.")
     parser.add_argument("--random_seed", type=int, default=1)
     parser.add_argument("--iter_bound", type=int, default=10_000, help='iter_bound during testing.')
     parser.add_argument("--compare_random_v", action='store_true', 
                         help='Include comparison with random V-values to study V-values importance')
-    parser.add_argument("--enable_drillv_optimizations", action='store_true', default=True,
+    parser.add_argument("--enable_drillv_optimizations", action='store_true', default=False,
                         help='Enable DrillV performance optimizations (caching, batch processing)')
+    parser.add_argument("--drill_variant", type=str, default='default',
+                        choices=['default', 'minimal', 'standard', 'enhanced', 'complex'],
+                        help='DrillV variant to use: default (original with all RL features), '
+                             'minimal (simplest 2-layer NN), standard (balanced 3-layer), '
+                             'enhanced (standard + curriculum + curiosity), '
+                             'complex (4-layer residual with target network)')
     # DQL related
     parser.add_argument("--num_episode", type=int, default=1, help='Number of trajectories created for a given lp.')
 
