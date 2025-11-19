@@ -65,13 +65,12 @@ class NCES2(BaseNCES):
                          drop_prob, num_heads, num_seeds, m, ln, learning_rate, tmax, eta_min, clip_value, batch_size,
                          num_workers, max_length, load_pretrained, verbose)
 
-        temp_triples_dir = "temp_embeddings"
+        # Use a separate directory for triples to avoid deletion
+        temp_triples_dir = os.path.abspath("temp_triples")
         if not os.path.exists(temp_triples_dir):
             os.makedirs(temp_triples_dir)
-        path_temp_triples =  "temp_embeddings/abox.nt"
-        if os.path.exists(path_temp_triples):
-            os.remove(path_temp_triples)
-        with open(path_temp_triples, "a") as f:
+        path_temp_triples = os.path.join(temp_triples_dir, "abox.nt")
+        with open(path_temp_triples, "w") as f:
             for s, p, o in self.knowledge_base.abox():
                 f.write(f"<{s.str}> <{p.str}> <{o.str}> .\n")
 

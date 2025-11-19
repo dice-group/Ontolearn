@@ -133,17 +133,34 @@ Fore more please refer to the [examples](https://github.com/dice-group/Ontolearn
 
 <details><summary> Click me! </summary>
 
-Load an RDF knowledge graph 
+The webservice exposes a lightweight HTTP/JSON API for running Ontolearn learners remotely. 
+Start it with a local knowledge base or a remote triplestore. 
+Submit learning problems as JSON to the `/cel` endpoint 
+(e.g., `POST http://<host>:8000/cel` with `pos`, `neg`, `model` 
+and optional parameters for the particular model like `path_embeddings`, `max_runtime`, etc.).
+The service returns learned OWL class expressions (DL and SPARQL/OWL serializations) 
+and performance metrics in the JSON response.
+
+### Local Dataset
+
 ```shell
 ontolearn-webservice --path_knowledge_base KGs/Mutagenesis/mutagenesis.owl
 ```
-or launch a triplestore server and load Mutagenesis there.
-Some leads to launch the triplestore server:
-- https://docs.tentris.io/binary/load.html
-- https://ontolearn-docs-dice-group.netlify.app/usage/04_knowledge_base#loading-and-launching-a-triplestore
+
+### Remote Dataset
+
 ```shell
 ontolearn-webservice --endpoint_triple_store <your_triples_store_sparql_endpoint>
 ```
+
+Some leads to hosting your own triplestore endpoint:
+- https://docs.tentris.io/binary/load.html
+- https://ontolearn-docs-dice-group.netlify.app/usage/04_knowledge_base#loading-and-launching-a-triplestore
+
+### Using the Webservice
+
+#### DRILL
+
 The below code trains DRILL with 6 randomly generated learning problems
 provided that **path_to_pretrained_drill** does not lead to a directory containing pretrained DRILL.
 Thereafter, trained DRILL is saved in the directory **path_to_pretrained_drill**.
@@ -169,6 +186,9 @@ for str_target_concept, examples in learning_problems.items():
                                   })
     print(response.json())  # {'Prediction': '∀ hasAtom.(¬Nitrogen-34)', 'F1': 0.7283582089552239, 'saved_prediction': 'Predictions.owl'}
 ```
+
+#### TDL
+
 TDL (a more scalable learner) can also be used as follows
 ```python
 import json
@@ -180,6 +200,9 @@ response = requests.get('http://0.0.0.0:8000/cel',
                               "model": "TDL"})
 print(response.json())
 ```
+
+#### NCES
+
 NCES (another scalable learner). The following will first train NCES if the provided path `path_to_pretrained_nces` does not exist
 ```python
 import json
@@ -250,15 +273,8 @@ To compute the test performance, we compute F1-score of H w.r.t. test positive a
 python examples/concept_learning_cv_evaluation.py --kb ./KGs/Family/family-benchmark_rich_background.owl --lps ./LPs/Family/lps_difficult.json --path_of_nces_embeddings ./NCESData/family/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings ./CLIPData/family/embeddings/ConEx_entity_embeddings.csv --max_runtime 60 --report family_results.csv 
 ```
 
-```shell
-# To download learning problems and benchmark with selected learners on the Family benchmark dataset with benchmark learning problems.
-python examples/concept_learning_cv_evaluation.py --kb ./KGs/Family/family-benchmark_rich_background.owl --lps ./LPs/Family/lps_difficult.json --learner_types ocel drill tdl nces --path_of_nces_embeddings ./NCESData/family/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings ./CLIPData/family/embeddings/ConEx_entity_embeddings.csv --max_runtime 60 --report family_results.csv 
-```
+You can also select specific learners by using the flag `--learner_types` followed by the learner short names separated by space. E.g., `--learner_types ocel drill tdl nces`
 
-```shell
-# To download learning problems and benchmark with a single learner on the Family benchmark dataset with benchmark learning problems.
-python examples/concept_learning_cv_evaluation.py --kb ./KGs/Family/family-benchmark_rich_background.owl --lps ./LPs/Family/lps_difficult.json --learner_types nces --path_of_nces_embeddings ./NCESData/family/embeddings/ConEx_entity_embeddings.csv --path_of_clip_embeddings ./CLIPData/family/embeddings/ConEx_entity_embeddings.csv --max_runtime 60 --report family_results.csv 
-```
 In the following python script, the results are summarized and the markdown displayed below generated.
 ```python
 import pandas as pd

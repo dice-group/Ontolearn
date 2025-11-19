@@ -29,25 +29,53 @@ Concept Learning Algorithms Module
 This module provides various concept learning algorithms for ontology engineering and OWL class expression learning.
 
 Available Learners:
-    
+
     Refinement-Based Learners:
-    - CELOE: Class Expression Learning for Ontology Engineering
-    - OCEL: A limited version of CELOE
-    
-    Neural/Hybrid Learners:
-    - Drill: Neuro-Symbolic Class Expression Learning
-    - TDL: Tree-based Description Logic Learner
-    
+    - CELOE: A refinement-operator based learner (originating from DL-Learner).
+      It performs heuristic-guided search over class expression refinements to
+      find compact OWL class expressions that fit positive/negative examples.
+      Suitable when symbolic search with ontological reasoning is required.
+    - OCEL: A lightweight / constrained variant of CELOE. It uses a smaller set
+      of refinements or simplified search heuristics to trade expressivity for
+      speed and lower computational cost.
+
+    Neural / Hybrid Learners:
+    - Drill: A neuro-symbolic learner that combines neural scoring or guidance
+      with symbolic refinement/search. Typically, uses learned models to rank
+      candidates while keeping final outputs in an interpretable DL form.
+    - CLIP: A hybrid approach that leverages pretrained embeddings to assist
+      candidate generation or scoring (e.g., using semantic similarity signals).
+      Useful when distributional signals complement logical reasoning.
+    - NCES, NCES2: Neural concept-expression search variants. These rely on
+      neural encoders or learned scorers to propose and rank candidate
+      class expressions; NCES2 represents an improved/iterated version.
+    - NERO: A neural embedding model that learns permutation-invariant
+      embeddings for sets of examples tailored towards predicting F1
+      scores of pre-selected description logic concepts.
+    - ROCES: A hybrid/refinement-based approach that combines ranking,
+      coverage estimation, and refinement operators to discover candidate
+      expressions efficiently. Extension of NCES2.
+
+    -Evolutionary:
+    - EvoLearner: Evolutionary search-based learner that evolves candidate
+      descriptions (e.g., via genetic operators) using fitness functions
+      derived from coverage and other objectives.
+
     Query-Based Learners:
-    - SPARQLQueryLearner: Learning SPARQL queries from DL concepts
-    
-    Experimental:
-    - NERO: Neural Evolutionary Reinforcement Ontology learner (experimental)
+    - SPARQLQueryLearner: Learns query patterns expressed as SPARQL queries
+      that capture the target concept. Useful when working directly with
+      SPARQL endpoints or large RDF datasets where query-based retrieval is
+      preferable to reasoning-heavy symbolic search.
+
+    Tree / Rule-Based Learners:
+    - TDL: Tree-based Description Logic Learner. Adapts decision-tree style
+      induction to construct DL class expressions from attribute-like splits
+      or tests, producing interpretable, rule-like descriptions.
 
 Example:
     >>> from ontolearn.learners import CELOE, Drill
     >>> from ontolearn.knowledge_base import KnowledgeBase
-    >>> 
+    >>>
     >>> kb = KnowledgeBase(path="example.owl")
     >>> model = CELOE(knowledge_base=kb)
     >>> model.fit(pos_examples, neg_examples)

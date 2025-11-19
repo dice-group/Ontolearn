@@ -100,7 +100,7 @@ class NCES(BaseNCES):
                 del dicee
             except Exception:
                 print('\x1b[0;30;43m dicee is not installed, will first install it...\x1b[0m\n')
-                subprocess.run('pip install dicee==0.1.4')
+                subprocess.run('pip install dicee==0.2.0')
             if self.auto_train:
                 print("\n"+"\x1b[0;30;43m"+"Embeddings not found. Will quickly train embeddings beforehand. "
                       +"Poor performance is expected as we will also train the synthesizer for a few epochs."
@@ -111,15 +111,20 @@ class NCES(BaseNCES):
             try:
                 path_temp_embeddings = self.path_temp_embeddings if self.path_temp_embeddings and isinstance(
                     self.path_temp_embeddings, str) else "temp_embeddings"
+                path_temp_embeddings = os.path.abspath(path_temp_embeddings)
                 if not os.path.exists(path_temp_embeddings):
                     os.makedirs(path_temp_embeddings)
-                path_temp_triples = "temp_embeddings/abox.nt"
-                if os.path.exists(path_temp_triples):
-                    os.remove(path_temp_triples)
+                # Use a separate directory for triples to avoid deletion by dicee
+                temp_triples_dir = os.path.abspath("temp_triples")
+                if not os.path.exists(temp_triples_dir):
+                    os.makedirs(temp_triples_dir)
+                path_temp_triples = os.path.join(temp_triples_dir, "abox.nt")
 
-                with open(path_temp_triples, "a") as f:
+                with open(path_temp_triples, "w") as f:
                     for s, p, o in self.knowledge_base.abox():
                         f.write(f"<{s.str}> <{p.str}> <{o.str}> .\n")
+
+                assert os.path.exists(path_temp_triples), "Triples file not found"
 
                 self.knowledge_base_path = path_temp_triples
 

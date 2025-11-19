@@ -1,5 +1,4 @@
 import unittest
-import tempfile
 import pandas as pd
 from owlapy.class_expression import OWLClass, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLThing
 from owlapy.iri import IRI
