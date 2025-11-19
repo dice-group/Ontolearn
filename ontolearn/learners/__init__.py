@@ -55,10 +55,14 @@ Example:
 
 from .base import BaseConceptLearner, RefinementBasedConceptLearner
 from .celoe import CELOE
-from .concept_learner import EvoLearner, CLIP, NCES, NCES2, ROCES
+from .clip import CLIP
 from .drill import Drill
+from .evolearner import EvoLearner
+from .nces import NCES
+from .nces2 import NCES2
 from .nero import NERO
 from .ocel import OCEL
+from .roces import ROCES
 from .sparql_query_learner import SPARQLQueryLearner
 from .tree_learner import TDL
 
