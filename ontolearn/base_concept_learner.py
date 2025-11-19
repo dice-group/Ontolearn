@@ -46,6 +46,7 @@ from owlapy.owl_ontology import Ontology, SyncOntology
 from owlapy.render import DLSyntaxObjectRenderer
 from .abstracts import BaseRefinement, AbstractScorer, AbstractHeuristic, \
     AbstractConceptNode, AbstractLearningProblem, AbstractKnowledgeBase
+from .triple_store import TripleStoreOntology
 
 _N = TypeVar('_N', bound=AbstractConceptNode)  #:
 _X = TypeVar('_X', bound=AbstractLearningProblem)  #:
@@ -344,9 +345,9 @@ class BaseConceptLearner(metaclass=ABCMeta):
         if rdf_format != 'rdfxml':
             raise NotImplementedError(f'Format {rdf_format} not implemented.')
 
-        assert isinstance(self.kb, KnowledgeBase)
+        assert isinstance(self.kb,  AbstractKnowledgeBase)
 
-        if isinstance(self.kb.ontology, Ontology):
+        if isinstance(self.kb.ontology, Ontology) or isinstance(self.kb.ontology, TripleStoreOntology):
             ontology = Ontology(IRI.create(NS), load=False)
         elif isinstance(self.kb.ontology, SyncOntology):
             ontology = SyncOntology(IRI.create(NS), load=False)
