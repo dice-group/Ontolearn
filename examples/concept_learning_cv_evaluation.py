@@ -11,7 +11,7 @@ import os
 from typing import Union
 import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import CELOE, EvoLearner, NCES, NCES2, ROCES, CLIP
+from ontolearn.learners import CELOE, EvoLearner, NCES, NCES2, ROCES, CLIP
 from ontolearn.refinement_operators import ExpressRefinement, ModifiedCELOERefinement
 from ontolearn.learners import Drill, TDL, OCEL
 from ontolearn.learning_problem import PosNegLPStandard

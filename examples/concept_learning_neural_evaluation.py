@@ -16,7 +16,7 @@ import platform
 import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learners import CELOE, OCEL, Drill, TDL
-from ontolearn.concept_learner import EvoLearner, NCES, CLIP
+from ontolearn.learners import EvoLearner, NCES, CLIP
 from ontolearn.refinement_operators import ExpressRefinement
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1

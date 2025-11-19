@@ -4,8 +4,8 @@ This is a guide to show how to use a concept learner to generate hypotheses for 
 concept in an ontology.
 In this guide we will show how to use the following concept learners
 of Ontolearn library:
-- [TDL](ontolearn.learners.learners.tree_learner.TDL)
-- [EvoLearner](ontolearn.concept_learner.EvoLearner)
+- [TDL](ontolearn.learners.tree_learner.TDL)
+- [EvoLearner](ontolearn.learners.concept_learner.EvoLearner)
 - [CELOE](ontolearn.learners.celoe.CELOE)
 - [OCEL](ontolearn.learners.ocel.OCEL)
 - [Drill](ontolearn.learners.drill.Drill)
@@ -178,7 +178,7 @@ from ontolearn.metrics import Accuracy
 pred_acc = Accuracy()
 ```
 
-In the following example we have built a model of [OCEL](ontolearn.concept_learner.OCEL) and 
+In the following example we have built a model of [OCEL](ontolearn.learners.ocel.OCEL) and 
 we have specified some of the parameters which can be set for OCEL.
 
 *(Optional)* If you are using `KnowledeBase` and you want the learning model to ignore a target concepts see 
@@ -188,7 +188,7 @@ we have specified some of the parameters which can be set for OCEL.
 
 <!--pytest-codeblocks:cont-->
 ```python
-from ontolearn.concept_learner import OCEL
+from ontolearn.learners import OCEL
 
 model = OCEL(knowledge_base=kb, 
               quality_func = pred_acc,
