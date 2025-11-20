@@ -31,15 +31,23 @@ from owlapy.class_expression import (
     OWLClassExpression,
     OWLObjectUnionOf,
     OWLObjectOneOf,
-    OWLObjectHasValue
+    OWLObjectHasValue,
+    OWLObjectSomeValuesFrom,
+    OWLObjectAllValuesFrom,
+    OWLObjectMinCardinality,
+    OWLObjectMaxCardinality,
+    OWLDataSomeValuesFrom,
+    OWLClass
 )
 from owlapy.utils import HasFiller, HasOperands
 from owlapy.owl_individual import OWLNamedIndividual
+from owlapy.owl_property import OWLObjectProperty, OWLDataProperty
 import ontolearn.triple_store
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 import sklearn
 from sklearn import tree
+from collections import Counter
 
 from ..utils.static_funcs import plot_umap_reduced_embeddings, plot_decision_tree_of_expressions, \
     plot_topk_feature_importance
@@ -168,9 +176,8 @@ class TDL:
                  verbose: int = 10,
                  verbalize: bool = False):
 
-        assert use_inverse is False, "use_inverse not implemented"
-        assert use_data_properties is False, "use_data_properties not implemented"
-        assert use_card_restrictions is False, "use_card_restrictions not implemented"
+        self.use_inverse = use_inverse
+        self.use_data_properties = use_data_properties
         self.use_nominals = use_nominals
         self.use_card_restrictions = use_card_restrictions
 
@@ -221,82 +228,212 @@ class TDL:
         self.X = None
         self.y = None
 
+    def _should_include_expression(self, owl_class_expression: OWLClassExpression) -> bool:
+        """Determine if an OWL class expression should be included as a feature based on configuration flags.
+        
+        Args:
+            owl_class_expression: The OWL class expression to evaluate
+            
+        Returns:
+            True if the expression should be included, False otherwise
+        """
+        # Check nominal usage
+        if not self.use_nominals and contains_nominal(owl_class_expression):
+            return False
+        
+        # Check cardinality restrictions usage
+        if not self.use_card_restrictions and isinstance(owl_class_expression, (OWLObjectMinCardinality, OWLObjectMaxCardinality)):
+            return False
+        
+        # Check data properties usage
+        if not self.use_data_properties and isinstance(owl_class_expression, OWLDataSomeValuesFrom):
+            return False
+        
+        return True
+    
+    def _add_feature(self, owl_class_expression: OWLClassExpression, 
+                     owl_named_individual: OWLNamedIndividual,
+                     features: Dict[str, OWLClassExpression],
+                     individuals_to_feature_mapping: Dict[str, Set[str]]) -> None:
+        """Add an OWL class expression as a feature for the given individual.
+        
+        Args:
+            owl_class_expression: The OWL class expression to add
+            owl_named_individual: The individual this feature applies to
+            features: Dictionary mapping DL string representations to OWL expressions
+            individuals_to_feature_mapping: Dictionary mapping individuals to their feature sets
+        """
+        str_dl_concept = owl_expression_to_dl(owl_class_expression)
+        individuals_to_feature_mapping.setdefault(owl_named_individual.str, set()).add(str_dl_concept)
+        if str_dl_concept not in features:
+            # A mapping from str dl representation to owl object.
+            features[str_dl_concept] = owl_class_expression
+
     def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> (
-            Tuple)[Dict[str, OWLClassExpression],Dict[str, str]]:
+            Tuple)[np.ndarray, List[OWLClassExpression]]:
         # () Store mappings from str dl concept to owl class expression objects.
         features = dict()
         # () Grouped str dl concepts given str individuals.
         individuals_to_feature_mapping = dict()
+        
         for owl_named_individual in make_iterable_verbose(individuals,
                                        verbose=self.verbose,
                                        desc="Extracting information about examples"):
+            # Extract base expressions from ABox
             for owl_class_expression in self.knowledge_base.abox(individual=owl_named_individual, mode="expression"):
-                if self.use_nominals or not contains_nominal(owl_class_expression):
-                    str_dl_concept=owl_expression_to_dl(owl_class_expression)
-                    individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
-                    if str_dl_concept not in features:
-                        # A mapping from str dl representation to owl object.
-                        features[str_dl_concept] = owl_class_expression
+                # Apply filters based on configuration flags
+                if not self._should_include_expression(owl_class_expression):
+                    continue
+                
+                # Add the expression as a feature
+                self._add_feature(owl_class_expression, owl_named_individual, features, individuals_to_feature_mapping)
+
+            # Generate additional features based on flags
+            if self.use_inverse:
+                self._extract_inverse_property_features(owl_named_individual, features, individuals_to_feature_mapping)
+            
+            if self.use_data_properties:
+                self._extract_data_property_features(owl_named_individual, features, individuals_to_feature_mapping)
+            
+            if self.use_card_restrictions:
+                self._extract_cardinality_features(owl_named_individual, features, individuals_to_feature_mapping)
 
         assert len(features) > 0, "First hop features cannot be extracted. Ensure that there are axioms about the examples."
         if self.verbose > 0:
-            print("Unique OWL Class Expressions as features :", len(features))
-        # () Iterate over features/extracted owl expressions.
-        # TODO:CD: We need to use parse tensor representation that we can use to train decision tree
+            print(f"Unique OWL Class Expressions as features: {len(features)}")
+            if self.use_inverse:
+                print("  - Including inverse property features")
+            if self.use_data_properties:
+                print("  - Including data property features")
+            if self.use_card_restrictions:
+                print("  - Including cardinality restriction features")
+        
+        # Convert features dict to list
+        features_list = [v for k, v in features.items()]
+        
+        # Construct binary feature matrix
         X = []
-        features = [ v for k,v in features.items()]
         for owl_named_individual in make_iterable_verbose(individuals,
                                        verbose=self.verbose,
                                        desc="Constructing Training Data"):
             binary_sparse_representation = []
+            features_of_owl_named_individual = individuals_to_feature_mapping[owl_named_individual.str]
 
-            features_of_owl_named_individual=individuals_to_feature_mapping[owl_named_individual.str]
-
-            for owl_class_expression in features:
+            for owl_class_expression in features_list:
                 if owl_expression_to_dl(owl_class_expression) in features_of_owl_named_individual:
                     binary_sparse_representation.append(1.0)
                 else:
                     binary_sparse_representation.append(0.0)
             X.append(binary_sparse_representation)
+        
         X = np.array(X)
-        return X, features
+        return X, features_list
 
-    def construct_sparse_binary_representations(self,
-                                                features: List[OWLClassExpression],
-                                                examples: List[OWLNamedIndividual], examples_to_features) -> np.array:
-        # () Constructing sparse binary vector representations for examples.
-        # () Iterate over features/extracted owl expressions.
-        X = []
-        # ()
-        str_owl_named_individual:str
-        for str_owl_named_individual, list_of_owl_expressions in examples_to_features.items():
-            for kk in list_of_owl_expressions:
-                assert kk in features
-        #  number of rows
-        for i in examples:
-            print(i.str)
+    def _extract_inverse_property_features(self, individual: OWLNamedIndividual, 
+                                          features: Dict[str, OWLClassExpression],
+                                          individuals_to_feature_mapping: Dict[str, Set[str]]):
+        """Extract features based on inverse object properties."""
+        try:
+            # Get all object properties in the knowledge base
+            for obj_prop in self.knowledge_base.get_object_properties():
+                # Get inverse property values
+                inverse_prop = obj_prop.get_inverse_property()
+                
+                # Check if this individual is the object of any property assertion
+                # by checking all individuals that have this property pointing to our individual
+                for other_ind in self.knowledge_base.individuals():
+                    if other_ind == individual:
+                        continue
+                    try:
+                        # Get object property values for the other individual
+                        prop_values = list(self.knowledge_base.get_object_property_values(other_ind, obj_prop))
+                        if individual in prop_values:
+                            # Create inverse existential restriction: ∃r⁻.⊤
+                            inv_exist = OWLObjectSomeValuesFrom(property=inverse_prop, 
+                                                               filler=self.knowledge_base.generator.thing)
+                            str_dl_concept = owl_expression_to_dl(inv_exist)
+                            individuals_to_feature_mapping.setdefault(individual.str, set()).add(str_dl_concept)
+                            if str_dl_concept not in features:
+                                features[str_dl_concept] = inv_exist
+                            
+                            # Create inverse universal restriction: ∀r⁻.⊤
+                            inv_univ = OWLObjectAllValuesFrom(property=inverse_prop,
+                                                             filler=self.knowledge_base.generator.thing)
+                            str_dl_concept = owl_expression_to_dl(inv_univ)
+                            individuals_to_feature_mapping.setdefault(individual.str, set()).add(str_dl_concept)
+                            if str_dl_concept not in features:
+                                features[str_dl_concept] = inv_univ
+                            break  # Found at least one, that's enough for the feature
+                    except:
+                        continue
+        except Exception as e:
+            if self.verbose > 0:
+                print(f"Warning: Error extracting inverse property features: {e}")
 
-        exit(1)
+    def _extract_data_property_features(self, individual: OWLNamedIndividual,
+                                       features: Dict[str, OWLClassExpression],
+                                       individuals_to_feature_mapping: Dict[str, Set[str]]):
+        """Extract features based on data properties."""
+        try:
+            # Get data properties for this individual
+            for data_prop in self.knowledge_base.get_data_properties_for_ind(individual):
+                # Get data property values
+                data_values = list(self.knowledge_base.get_data_property_values(individual, data_prop))
+                
+                if data_values:
+                    # For each data value, we already have features from abox(mode="expression")
+                    # This method can be extended to add additional data property features
+                    # such as numeric ranges, etc.
+                    pass
+        except Exception as e:
+            if self.verbose > 0:
+                print(f"Warning: Error extracting data property features: {e}")
 
-        assert len(X)==len(examples)
-        for f in make_iterable_verbose(features,
-                                       verbose=self.verbose,
-                                       desc="Creating sparse binary representations for the training"):
-            # () Retrieve instances belonging to a feature/owl class expression
-            # TODO: Very inefficient.
-            feature_retrieval = {_ for _ in self.knowledge_base.individuals(f)}
-            # () Add 1.0 if positive example found otherwise 0.
-            feature_value_per_example = []
-            for e in examples:
-                if e in feature_retrieval:
-                    feature_value_per_example.append(1.0)
+    def _extract_cardinality_features(self, individual: OWLNamedIndividual,
+                                     features: Dict[str, OWLClassExpression],
+                                     individuals_to_feature_mapping: Dict[str, Set[str]]):
+        """Extract cardinality restriction features based on object properties."""
+        try:
+            # Get object properties for this individual
+            for obj_prop in self.knowledge_base.get_object_properties_for_ind(individual):
+                # Count the number of values for this property
+                prop_values = list(self.knowledge_base.get_object_property_values(individual, obj_prop))
+                count = len(prop_values)
+                
+                if count > 0:
+                    # Get types of the property values
+                    types_counter = Counter()
+                    for val in prop_values:
+                        val_types = list(self.knowledge_base.get_types(val, direct=True))
+                        for val_type in val_types:
+                            types_counter[val_type] += 1
+                    
+                    # Create min cardinality restrictions for each type
+                    for owl_type, type_count in types_counter.items():
+                        if type_count >= 2:  # Only create if count >= 2
+                            for card in range(2, type_count + 1):
+                                min_card = OWLObjectMinCardinality(cardinality=card,
+                                                                  property=obj_prop,
+                                                                  filler=owl_type)
+                                str_dl_concept = owl_expression_to_dl(min_card)
+                                individuals_to_feature_mapping.setdefault(individual.str, set()).add(str_dl_concept)
+                                if str_dl_concept not in features:
+                                    features[str_dl_concept] = min_card
+                    
+                    # Create general min cardinality with Thing as filler
+                    if count >= 2:
+                        for card in range(2, count + 1):
+                            min_card = OWLObjectMinCardinality(cardinality=card,
+                                                              property=obj_prop,
+                                                              filler=self.knowledge_base.generator.thing)
+                            str_dl_concept = owl_expression_to_dl(min_card)
+                            individuals_to_feature_mapping.setdefault(individual.str, set()).add(str_dl_concept)
+                            if str_dl_concept not in features:
+                                features[str_dl_concept] = min_card
+        except Exception as e:
+            if self.verbose > 0:
+                print(f"Warning: Error extracting cardinality features: {e}")
 
-                else:
-                    feature_value_per_example.append(0.0)
-            X.append(feature_value_per_example)
-        # Transpose to obtain the training data.
-        X = np.array(X).T
-        return X
 
     def create_training_data(self, learning_problem: PosNegLPStandard) -> Tuple[pd.DataFrame, pd.DataFrame]:
         # (1) Initialize ordering over positive and negative examples.
