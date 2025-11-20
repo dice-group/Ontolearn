@@ -144,10 +144,10 @@ class TestTDLFilterLogic(unittest.TestCase):
         # For this test, we'll create a mock expression
         # In a real scenario, this would be extracted from the KB
         from owlapy.owl_datatype import OWLDatatype
-        from owlapy.iri import IRI as OWL_IRI
+        
         
         data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
-        data_range = OWLDatatype(OWL_IRI("http://www.w3.org/2001/XMLSchema#", "integer"))
+        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "integer"))
         data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
         
         # Should be included when use_data_properties=True
