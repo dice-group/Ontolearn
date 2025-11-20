@@ -44,6 +44,9 @@ Available Learners:
       as a SAT problem. It uses incremental SAT solving to find concepts of
       increasing size that maximize accuracy on positive/negative examples.
       Particularly effective for finding compact, exact solutions.
+    - SPELL: A SAT-based learner using the general SPELL fitting framework.
+      Supports different search modes (exact, neg_approx, full_approx) and can
+      find separating queries of bounded size using SAT encoding.
 
     Neural / Hybrid Learners:
     - Drill: A neuro-symbolic learner that combines neural scoring or guidance
@@ -99,6 +102,7 @@ from .nero import NERO
 from .ocel import OCEL
 from .roces import ROCES
 from .sparql_query_learner import SPARQLQueryLearner
+from .spell import SPELL
 from .tree_learner import TDL
 
 __all__ = [
@@ -115,5 +119,6 @@ __all__ = [
     'OCEL',
     'ROCES',
     'SPARQLQueryLearner',
+    'SPELL',
     'TDL',
 ]
