@@ -38,7 +38,8 @@ from owlapy.class_expression import (
     OWLObjectMaxCardinality,
     OWLObjectExactCardinality,
     OWLDataSomeValuesFrom,
-    OWLDataAllValuesFrom
+    OWLDataAllValuesFrom,
+    OWLClass
 )
 from owlapy.utils import HasFiller, HasOperands
 from owlapy.owl_individual import OWLNamedIndividual
@@ -150,18 +151,18 @@ def contains_nominal(expr: OWLClassExpression) -> bool:
 
     if isinstance(expr, HasFiller):
         return contains_nominal(expr.get_filler())
-
-    if isinstance(expr, HasOperands):
-        return any(contains_nominal(op) for op in expr.get_operands())
-
+    # CD: Ensure about this
+    # if isinstance(expr, HasOperands):
+    #    return any(contains_nominal(op) for op in expr.get_operands())
     return False
 
 def contains_cardinality(expr: OWLClassExpression) -> bool:
     """Returns True if the OWL expression contains a cardinality restriction."""
     if isinstance(expr, (OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality)):
         return True
-
     # Check operands first (for expressions like OWLObjectOneOf, unions, intersections)
+    # CD: Ensure about this
+    """
     if isinstance(expr, HasOperands):
         try:
             return any(contains_cardinality(op) for op in expr.operands())
@@ -174,6 +175,8 @@ def contains_cardinality(expr: OWLClassExpression) -> bool:
             return contains_cardinality(expr.get_filler())
         except (AttributeError, TypeError):
             pass
+    """
+    
 
     return False
 
@@ -181,7 +184,8 @@ def contains_data_property(expr: OWLClassExpression) -> bool:
     """Returns True if the OWL expression contains a data property."""
     if isinstance(expr, (OWLDataSomeValuesFrom, OWLDataAllValuesFrom)):
         return True
-
+    # CD: Ensure about this
+    """
     # Check operands first (for expressions like OWLObjectOneOf, unions, intersections)
     if isinstance(expr, HasOperands):
         try:
@@ -195,17 +199,18 @@ def contains_data_property(expr: OWLClassExpression) -> bool:
             return contains_data_property(expr.get_filler())
         except (AttributeError, TypeError):
             pass
-
+    """
+    
     return False
 
 class TDL:
     """Tree-based Description Logic Concept Learner"""
 
     def __init__(self, knowledge_base,
-                 use_inverse: bool = False,
-                 use_data_properties: bool = False,
+                 use_inverse: bool = True,
+                 use_data_properties: bool = True,
                  use_nominals: bool = True,
-                 use_card_restrictions: bool = False,
+                 use_card_restrictions: bool = True,
                  kwargs_classifier: dict = None,
                  max_runtime: int = 1,
                  grid_search_over: dict = None,
@@ -279,16 +284,20 @@ class TDL:
         Returns:
             True if the expression should be included, False otherwise
         """
-        # Check nominal usage
-        if not self.use_nominals and contains_nominal(owl_class_expression):
+        # Should always include atomic classes
+        if isinstance(owl_class_expression, OWLClass):
+            return True
+
+        # Exclude nominals if flag is disabled
+        if contains_nominal(owl_class_expression) and not self.use_nominals:
             return False
         
-        # Check cardinality restrictions usage
-        if not self.use_card_restrictions and isinstance(owl_class_expression, (OWLObjectMinCardinality, OWLObjectMaxCardinality)):
+        # Exclude cardinality restrictions if flag is disabled
+        if isinstance(owl_class_expression, (OWLObjectMinCardinality, OWLObjectMaxCardinality)) and not self.use_card_restrictions:
             return False
         
-        # Check data properties usage
-        if not self.use_data_properties and isinstance(owl_class_expression, OWLDataSomeValuesFrom):
+        # Exclude data properties if flag is disabled
+        if isinstance(owl_class_expression, OWLDataSomeValuesFrom) and not self.use_data_properties:
             return False
         
         return True
@@ -436,11 +445,12 @@ class TDL:
             for data_prop in self.knowledge_base.get_data_properties_for_ind(individual):
                 # Get data property values
                 data_values = list(self.knowledge_base.get_data_property_values(individual, data_prop))
-                
                 if data_values:
                     # For each data value, we already have features from abox(mode="expression")
                     # This method can be extended to add additional data property features
                     # such as numeric ranges, etc.
+                    # TODO: Create new OWL CLassExpressions based on data property values
+                    print(f"Data property values for {data_prop}: {data_values}")
                     pass
         except Exception as e:
             if self.verbose > 0:
