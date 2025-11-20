@@ -41,7 +41,7 @@ from owlapy.class_expression import (
     OWLDataAllValuesFrom,
     OWLClass
 )
-from owlapy.utils import HasFiller, HasOperands
+from owlapy.utils import HasFiller
 from owlapy.owl_individual import OWLNamedIndividual
 import ontolearn.triple_store
 from ontolearn.knowledge_base import KnowledgeBase
