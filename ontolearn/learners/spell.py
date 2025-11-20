@@ -24,17 +24,13 @@
 
 """SPELL Learner - SAT-based concept learning using SPELL fitting."""
 
+import time
 from typing import Optional
-
-from owlapy.class_expression import OWLClassExpression
 from owlapy.abstracts import AbstractOWLReasoner
-
 from ontolearn.abstracts import AbstractKnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.learners.sat_base import SATBaseLearner
-
 from ontolearn.learners.spell_kit import fitting
-from ontolearn.learners.spell_kit.structures import Structure
 
 
 class SPELL(SATBaseLearner):
@@ -111,7 +107,7 @@ class SPELL(SATBaseLearner):
         Returns:
             self
         """
-        import time
+
 
         self.clean()
         self.start_time = time.time()

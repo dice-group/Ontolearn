@@ -24,17 +24,21 @@
 
 """ALCSAT Learner - SAT-based ALC concept learning."""
 
+import time
 from typing import Optional, Set
-
 from owlapy.class_expression import OWLClassExpression, OWLThing
 from owlapy.abstracts import AbstractOWLReasoner
-
+from owlapy.class_expression import (
+            OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf,
+            OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, OWLClass, OWLNothing
+        )
+from owlapy.owl_property import OWLObjectProperty
+from owlapy.iri import IRI
 from ontolearn.abstracts import AbstractKnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.learners.sat_base import SATBaseLearner
 
 from ontolearn.learners.spell_kit.fitting_alc import FittingALC, STreeNode, NEG, AND, OR, EX, ALL
-from ontolearn.learners.spell_kit.structures import Structure
 
 
 class ALCSAT(SATBaseLearner):
@@ -106,12 +110,6 @@ class ALCSAT(SATBaseLearner):
         Returns:
             OWL class expression.
         """
-        from owlapy.class_expression import (
-            OWLObjectUnionOf, OWLObjectIntersectionOf, OWLObjectComplementOf,
-            OWLObjectSomeValuesFrom, OWLObjectAllValuesFrom, OWLClass, OWLThing, OWLNothing
-        )
-        from owlapy.owl_property import OWLObjectProperty
-        from owlapy.iri import IRI
         
         node_label = tree.node[1]
         
@@ -181,7 +179,6 @@ class ALCSAT(SATBaseLearner):
         Returns:
             self
         """
-        import time
         
         self.clean()
         self.start_time = time.time()
