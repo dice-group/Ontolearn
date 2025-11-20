@@ -31,7 +31,12 @@ from owlapy.class_expression import (
     OWLClassExpression,
     OWLObjectUnionOf,
     OWLObjectOneOf,
-    OWLObjectHasValue
+    OWLObjectHasValue,
+    OWLObjectMinCardinality,
+    OWLObjectMaxCardinality,
+    OWLObjectExactCardinality,
+    OWLDataSomeValuesFrom,
+    OWLDataAllValuesFrom
 )
 from owlapy.utils import HasFiller, HasOperands
 from owlapy.owl_individual import OWLNamedIndividual
@@ -148,6 +153,48 @@ def contains_nominal(expr: OWLClassExpression) -> bool:
 
     return False
 
+def contains_cardinality(expr: OWLClassExpression) -> bool:
+    """Returns True if the OWL expression contains a cardinality restriction."""
+    if isinstance(expr, (OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality)):
+        return True
+
+    # Check operands first (for expressions like OWLObjectOneOf, unions, intersections)
+    if isinstance(expr, HasOperands):
+        try:
+            return any(contains_cardinality(op) for op in expr.operands())
+        except (AttributeError, TypeError):
+            pass
+
+    # Then check filler (for expressions with restrictions)
+    if isinstance(expr, HasFiller):
+        try:
+            return contains_cardinality(expr.get_filler())
+        except (AttributeError, TypeError):
+            pass
+
+    return False
+
+def contains_data_property(expr: OWLClassExpression) -> bool:
+    """Returns True if the OWL expression contains a data property."""
+    if isinstance(expr, (OWLDataSomeValuesFrom, OWLDataAllValuesFrom)):
+        return True
+
+    # Check operands first (for expressions like OWLObjectOneOf, unions, intersections)
+    if isinstance(expr, HasOperands):
+        try:
+            return any(contains_data_property(op) for op in expr.operands())
+        except (AttributeError, TypeError):
+            pass
+
+    # Then check filler (for expressions with restrictions)
+    if isinstance(expr, HasFiller):
+        try:
+            return contains_data_property(expr.get_filler())
+        except (AttributeError, TypeError):
+            pass
+
+    return False
+
 class TDL:
     """Tree-based Description Logic Concept Learner"""
 
@@ -168,11 +215,11 @@ class TDL:
                  verbose: int = 10,
                  verbalize: bool = False):
 
-        assert use_inverse is False, "use_inverse not implemented"
-        assert use_data_properties is False, "use_data_properties not implemented"
-        assert use_card_restrictions is False, "use_card_restrictions not implemented"
+        self.use_inverse = use_inverse
+        self.use_data_properties = use_data_properties
         self.use_nominals = use_nominals
         self.use_card_restrictions = use_card_restrictions
+        self.verbose = verbose
 
         if grid_search_over is None and grid_search_apply:
             grid_search_over = {
@@ -214,12 +261,54 @@ class TDL:
         self.owl_class_expressions = set()
         self.cbd_mapping: Dict[str, Set[Tuple[str, str]]]
         self.types_of_individuals = dict()
-        self.verbose = verbose
         self.verbalize = verbalize
         self.data_property_cast = dict()
         self.__classification_report = None
         self.X = None
         self.y = None
+
+    def _should_include_expression(self, expr: OWLClassExpression) -> bool:
+        """
+        Determine whether an OWL expression should be included based on configuration flags.
+        
+        Args:
+            expr: The OWL class expression to evaluate
+            
+        Returns:
+            True if the expression should be included, False otherwise
+        """
+        # Check if nominals should be excluded
+        if not self.use_nominals and contains_nominal(expr):
+            return False
+        
+        # Check if cardinality restrictions should be excluded
+        if not self.use_card_restrictions and contains_cardinality(expr):
+            return False
+        
+        # Check if data properties should be excluded
+        if not self.use_data_properties and contains_data_property(expr):
+            return False
+        
+        return True
+
+    def _add_feature(self, owl_class_expression: OWLClassExpression, 
+                    owl_named_individual: OWLNamedIndividual,
+                    features: Dict[str, OWLClassExpression],
+                    individuals_to_feature_mapping: Dict[str, Set[str]]) -> None:
+        """
+        Add a feature (OWL class expression) to the feature set if it should be included.
+        
+        Args:
+            owl_class_expression: The OWL expression to add as a feature
+            owl_named_individual: The individual associated with this feature
+            features: Dictionary mapping string representations to OWL expressions
+            individuals_to_feature_mapping: Dictionary mapping individual strings to their feature strings
+        """
+        if self._should_include_expression(owl_class_expression):
+            str_dl_concept = owl_expression_to_dl(owl_class_expression)
+            individuals_to_feature_mapping.setdefault(owl_named_individual.str, set()).add(str_dl_concept)
+            if str_dl_concept not in features:
+                features[str_dl_concept] = owl_class_expression
 
     def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> (
             Tuple)[Dict[str, OWLClassExpression],Dict[str, str]]:
@@ -231,12 +320,8 @@ class TDL:
                                        verbose=self.verbose,
                                        desc="Extracting information about examples"):
             for owl_class_expression in self.knowledge_base.abox(individual=owl_named_individual, mode="expression"):
-                if self.use_nominals or not contains_nominal(owl_class_expression):
-                    str_dl_concept=owl_expression_to_dl(owl_class_expression)
-                    individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
-                    if str_dl_concept not in features:
-                        # A mapping from str dl representation to owl object.
-                        features[str_dl_concept] = owl_class_expression
+                # Use the helper method to add features based on configuration
+                self._add_feature(owl_class_expression, owl_named_individual, features, individuals_to_feature_mapping)
 
         assert len(features) > 0, "First hop features cannot be extracted. Ensure that there are axioms about the examples."
         if self.verbose > 0:
@@ -404,13 +489,12 @@ class TDL:
         self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=X.values, y=y.values)
 
         if self.report_classification:
-
+            self.__classification_report = "Classification Report: Negatives: -1 and Positives 1 \n"
+            self.__classification_report += sklearn.metrics.classification_report(y.values,
+                                                                                  self.clf.predict(X.values),
+                                                                                  target_names=["Negative",
+                                                                                                "Positive"])
             if self.verbose > 0:
-                self.__classification_report = "Classification Report: Negatives: -1 and Positives 1 \n"
-                self.__classification_report += sklearn.metrics.classification_report(y.values,
-                                                                                      self.clf.predict(X.values),
-                                                                                      target_names=["Negative",
-                                                                                                    "Positive"])
                 print(self.__classification_report)
         if self.plot_tree:
             plot_decision_tree_of_expressions(feature_names=[owl_expression_to_dl(f) for f in self.features],
