@@ -36,15 +36,12 @@ from owlapy.class_expression import (
     OWLObjectAllValuesFrom,
     OWLObjectMinCardinality,
     OWLObjectMaxCardinality,
-    OWLDataSomeValuesFrom,
-    OWLClass
     OWLObjectExactCardinality,
     OWLDataSomeValuesFrom,
     OWLDataAllValuesFrom
 )
 from owlapy.utils import HasFiller, HasOperands
 from owlapy.owl_individual import OWLNamedIndividual
-from owlapy.owl_property import OWLObjectProperty, OWLDataProperty
 import ontolearn.triple_store
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
@@ -409,7 +406,7 @@ class TDL:
                             if str_dl_concept not in features:
                                 features[str_dl_concept] = inv_univ
                             break  # Found at least one, that's enough for the feature
-                    except:
+                    except Exception:
                         continue
         except Exception as e:
             if self.verbose > 0:
