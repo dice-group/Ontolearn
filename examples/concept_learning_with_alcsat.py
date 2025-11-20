@@ -15,66 +15,73 @@ from owlapy.render import DLSyntaxObjectRenderer
 
 def alcsat_example():
     """
-    Run a simple example using the ALCSAT learner on the family ontology.
+    Run ALCSAT learner example on the family ontology.
     """
-    
-    # () Load knowledge base
+    print("=" * 60)
+    print("ALCSAT Learner Example")
+    print("=" * 60)
+
+    # Load knowledge base
     kb = KnowledgeBase(path="../KGs/Family/family-benchmark_rich_background.owl")
 
-
-    # () Get positive and negative examples
-    namespace = "http://www.benchmark.org/family#"
+    # Get positive and negative examples from JSON
     with open('../LPs/Family/lps.json') as json_file:
         settings = json.load(json_file)
 
-    # () Create learning problem
-    p = set(settings['problems']['Uncle']['positive_examples'])
-    n = set(settings['problems']['Uncle']['negative_examples'])
+    # Create learning problem
+    p = set(settings['problems']['Aunt']['positive_examples'])
+    n = set(settings['problems']['Aunt']['negative_examples'])
     pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
     neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
     lp = PosNegLPStandard(pos=pos, neg=neg)
-    
-    # () Initialize ALCSAT learner
-    print("Initializing ALCSAT learner...")
+
+    # Initialize ALCSAT learner
+    print("\nInitializing ALCSAT learner...")
     model = ALCSAT(
         knowledge_base=kb,
         max_concept_size=10,      # Maximum concept tree depth
         start_concept_size=1,     # Start with small concepts
-        max_runtime=60,               # 60 second timeout
+        max_runtime=60,           # 60 second timeout
     )
-    
-    # () Run the learner
+
+    # Run the learner
     print("Running ALCSAT to find concept expressions...")
     print(f"Positive examples: {len(pos)}")
     print(f"Negative examples: {len(neg)}")
     print("-" * 60)
-    
+
     model.fit(lp)
-    
-    # () Get and display results
+
+    # Get and display results
     print("\nResults:")
     print("=" * 60)
-    
+
     renderer = DLSyntaxObjectRenderer()
     hypothesis = model.best_hypothesis()
-    
+
     if hypothesis:
         print(f"\nLearned concept:")
         print(f"   {renderer.render(hypothesis)}")
 
         quality_results = model.best_hypothesis_accuracy()
-        print(f"   Accuracy: {quality_results:.3f}")
+        if quality_results is not None:
+            print(f"   Accuracy: {quality_results:.3f}")
     else:
         print("No hypothesis found.")
-    
+
     print("\n" + "=" * 60)
-    print(f"Total runtime: {model.start_time and __import__('time').time() - model.start_time:.2f} seconds")
-    
+    if model.start_time:
+        import time
+        print(f"Total runtime: {time.time() - model.start_time:.2f} seconds")
+
     return model
 
 
 if __name__ == "__main__":
-    print("ALCSAT Learner Example")
-    print("=" * 60)
-    print()
-    alcsat_example()
+    try:
+        alcsat_example()
+    except Exception as e:
+        print(f"\nALCSAT example failed: {e}")
+        import traceback
+        traceback.print_exc()
+
