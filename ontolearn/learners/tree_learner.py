@@ -340,7 +340,22 @@ class TDL:
             if self.use_card_restrictions:
                 self._extract_cardinality_features(owl_named_individual, features, individuals_to_feature_mapping)
 
-        assert len(features) > 0, "First hop features cannot be extracted. Ensure that there are axioms about the examples."
+        if len(features) == 0:
+            num_individuals = len(list(make_iterable_verbose(individuals)))
+            error_msg = (
+                "First hop features cannot be extracted.\n"
+                f"  - Number of individuals processed: {num_individuals}\n"
+                "  - Number of features extracted: 0\n"
+                f"  - use_inverse: {self.use_inverse}\n"
+                f"  - use_data_properties: {self.use_data_properties}\n"
+                f"  - use_card_restrictions: {self.use_card_restrictions}\n"
+                "Possible causes:\n"
+                "  - The knowledge base is empty or contains no relevant axioms about the individuals.\n"
+                "  - All features were filtered out by configuration flags.\n"
+                "  - The individuals provided do not exist in the knowledge base.\n"
+                "Please check your configuration and input data."
+            )
+            raise AssertionError(error_msg)
         if self.verbose > 0:
             print(f"Unique OWL Class Expressions as features: {len(features)}")
             if self.use_inverse:
