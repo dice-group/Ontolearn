@@ -5,7 +5,7 @@ from typing import NamedTuple, Union
 from pysat.card import CardEnc, EncType
 from pysat.solvers import Glucose4, pysolvers
 
-from ontolearn.learners.spell.structures import (
+from ontolearn.learners.spell_kit.structures import (
     Signature,
     Structure,
     conceptname_ext,
@@ -501,10 +501,11 @@ def solve_incr(
     N: list[int],
     m: mode,
     timeout: float = -1,
+    starting_size: int = 1,
     max_size: int = 19,
 ) -> tuple[int, Structure]:
     time_start = time.process_time()
-    i = 1
+    i = starting_size
     best_coverage = len(P)
     best_q = Structure(max_ind=1, cn_ext={}, rn_ext={0: set()}, indmap={}, nsmap={})
     dt = time.process_time() - time_start

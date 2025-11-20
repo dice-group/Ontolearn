@@ -4,8 +4,8 @@ from typing import Any
 
 from lxml import etree
 
-from ontolearn.learners.spell import o2p_ontology, o2p_owl_parser
-from ontolearn.learners.spell.o2p_ontology import (
+from ontolearn.learners.spell_kit import o2p_ontology, o2p_owl_parser
+from ontolearn.learners.spell_kit.o2p_ontology import (
     ClassIdentifier,
     Intersection,
     NameFactory,

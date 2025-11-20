@@ -9,13 +9,13 @@ from pysat.card import CardEnc, EncType, ITotalizer
 from pysat.solvers import Glucose4
 
 
-from ontolearn.learners.spell.structures import (
+from ontolearn.learners.spell_kit.structures import (
     Signature,
     Structure,
     restrict_to_neighborhood,
 )
 
-from ontolearn.learners.spell.fitting import (
+from ontolearn.learners.spell_kit.fitting import (
     determine_relevant_symbols,
 )
 
