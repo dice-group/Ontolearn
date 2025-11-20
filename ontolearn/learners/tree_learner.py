@@ -38,6 +38,9 @@ from owlapy.class_expression import (
     OWLObjectMaxCardinality,
     OWLDataSomeValuesFrom,
     OWLClass
+    OWLObjectExactCardinality,
+    OWLDataSomeValuesFrom,
+    OWLDataAllValuesFrom
 )
 from owlapy.utils import HasFiller, HasOperands
 from owlapy.owl_individual import OWLNamedIndividual
@@ -156,6 +159,48 @@ def contains_nominal(expr: OWLClassExpression) -> bool:
 
     return False
 
+def contains_cardinality(expr: OWLClassExpression) -> bool:
+    """Returns True if the OWL expression contains a cardinality restriction."""
+    if isinstance(expr, (OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality)):
+        return True
+
+    # Check operands first (for expressions like OWLObjectOneOf, unions, intersections)
+    if isinstance(expr, HasOperands):
+        try:
+            return any(contains_cardinality(op) for op in expr.operands())
+        except (AttributeError, TypeError):
+            pass
+
+    # Then check filler (for expressions with restrictions)
+    if isinstance(expr, HasFiller):
+        try:
+            return contains_cardinality(expr.get_filler())
+        except (AttributeError, TypeError):
+            pass
+
+    return False
+
+def contains_data_property(expr: OWLClassExpression) -> bool:
+    """Returns True if the OWL expression contains a data property."""
+    if isinstance(expr, (OWLDataSomeValuesFrom, OWLDataAllValuesFrom)):
+        return True
+
+    # Check operands first (for expressions like OWLObjectOneOf, unions, intersections)
+    if isinstance(expr, HasOperands):
+        try:
+            return any(contains_data_property(op) for op in expr.operands())
+        except (AttributeError, TypeError):
+            pass
+
+    # Then check filler (for expressions with restrictions)
+    if isinstance(expr, HasFiller):
+        try:
+            return contains_data_property(expr.get_filler())
+        except (AttributeError, TypeError):
+            pass
+
+    return False
+
 class TDL:
     """Tree-based Description Logic Concept Learner"""
 
@@ -180,6 +225,7 @@ class TDL:
         self.use_data_properties = use_data_properties
         self.use_nominals = use_nominals
         self.use_card_restrictions = use_card_restrictions
+        self.verbose = verbose
 
         if grid_search_over is None and grid_search_apply:
             grid_search_over = {
@@ -221,7 +267,6 @@ class TDL:
         self.owl_class_expressions = set()
         self.cbd_mapping: Dict[str, Set[Tuple[str, str]]]
         self.types_of_individuals = dict()
-        self.verbose = verbose
         self.verbalize = verbalize
         self.data_property_cast = dict()
         self.__classification_report = None
@@ -541,13 +586,12 @@ class TDL:
         self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(X=X.values, y=y.values)
 
         if self.report_classification:
-
+            self.__classification_report = "Classification Report: Negatives: -1 and Positives 1 \n"
+            self.__classification_report += sklearn.metrics.classification_report(y.values,
+                                                                                  self.clf.predict(X.values),
+                                                                                  target_names=["Negative",
+                                                                                                "Positive"])
             if self.verbose > 0:
-                self.__classification_report = "Classification Report: Negatives: -1 and Positives 1 \n"
-                self.__classification_report += sklearn.metrics.classification_report(y.values,
-                                                                                      self.clf.predict(X.values),
-                                                                                      target_names=["Negative",
-                                                                                                    "Positive"])
                 print(self.__classification_report)
         if self.plot_tree:
             plot_decision_tree_of_expressions(feature_names=[owl_expression_to_dl(f) for f in self.features],
