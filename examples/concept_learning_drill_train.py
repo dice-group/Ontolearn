@@ -180,7 +180,7 @@ def start(args):
         if args.compare_random_v:
             print("DrillV with random V-values doesn't require training.\n")
 
-    time.sleep(10)  # Just to have a small break between training and testing
+    # time.sleep(10)  # Just to have a small break between training and testing
     # exit(0)
     # Load learning problems
     with open(args.path_learning_problem, "r", encoding="utf-8") as json_file:
@@ -217,11 +217,20 @@ def start(args):
     for str_target_concept, examples in problem_items:
         p = examples['positive_examples']
         n = examples['negative_examples']
-        print(f"\nTarget concept: {str_target_concept}")
+        print(f"\n{'='*80}")
+        print(f"Target concept: {str_target_concept}")
+        print(f"{'='*80}")
+        
+        # Reset V-learning agent for new LP (deletes old memory file)
+        if hasattr(drillv, 'reset_for_new_lp'):
+            drillv.reset_for_new_lp()
 
         kf = StratifiedKFold(n_splits=args.folds, shuffle=True, random_state=args.random_seed)
         X = np.array(p + n)
         Y = np.array([1.0 for _ in p] + [0.0 for _ in n])
+        
+        # Track concepts per fold for analysis
+        fold_drillv_concepts = []
 
         for (ith, (train_index, test_index)) in enumerate(kf.split(X, Y)):
             train_pos = {pos_individual for pos_individual in X[train_index][Y[train_index] == 1]}
@@ -246,9 +255,15 @@ def start(args):
             drillv_concepts.append(drillv_result.get('concepts_tested', 0))
             drillv_train_f1s.append(drillv_result['train_f1'])
             drillv_test_f1s.append(drillv_result['test_f1'])
+            fold_drillv_concepts.append(drillv_result.get('concepts_tested', 0))
             
             # Get performance statistics after this prediction (if method exists)
             perf_stats = drillv.get_performance_stats() if hasattr(drillv, 'get_performance_stats') else None
+            
+            # Get V-learning stats if using DrillV_Complex with termination agent
+            v_learning_stats = None
+            if hasattr(drillv, 'termination_agent') and drillv.termination_agent:
+                v_learning_stats = drillv.termination_agent.get_statistics()
 
             # DrillV with random V-values (if comparison is enabled)
             drillv_random_result = None
@@ -275,6 +290,10 @@ def start(args):
             print(f"    Prediction time: {drillv_result['prediction_time']:.2f} seconds")
             if perf_stats:
                 print(f"    Optimization: {perf_stats['optimization_type']} (memory efficient: {perf_stats['memory_efficient']})")
+            if v_learning_stats:
+                print(f"    🤖 V-Learning: Total runs={v_learning_stats['total_runs']}, "
+                      f"Best ever={v_learning_stats['best_ever_quality']:.3f}, "
+                      f"Termination={v_learning_stats['termination_reason']}")
             if args.compare_random_v and drillv_random_result:
                 print(f"  DrillV ({variant_name} with random values):")
                 print(f"    Prediction: {drillv_random_result['prediction']}")
@@ -283,6 +302,22 @@ def start(args):
                 print(f"    Prediction time: {drillv_random_result['prediction_time']:.2f} seconds")
                 if perf_stats_random:
                     print(f"    Optimization: {perf_stats_random['optimization_type']} (memory efficient: {perf_stats_random['memory_efficient']})")
+        
+        # Print V-learning trend for this problem (if agent is learning)
+        if len(fold_drillv_concepts) > 1 and hasattr(drillv, 'termination_agent') and drillv.termination_agent:
+            print(f"\nV-Learning Analysis for '{str_target_concept}':")
+            print(f"   Concepts per fold: {fold_drillv_concepts}")
+            first_fold = fold_drillv_concepts[0]
+            last_fold = fold_drillv_concepts[-1]
+            if first_fold > 0:
+                improvement = ((first_fold - last_fold) / first_fold) * 100
+                print(f"   Learning trend: {first_fold} → {last_fold} ({improvement:+.1f}% efficiency)")
+                if improvement > 5:
+                    print(f"   Agent is learning! Concepts decreased across folds")
+                elif improvement < -5:
+                    print(f"   Concepts increased (agent exploring more)")
+                else:
+                    print(f"   Stable performance across folds")
 
 
     # Print average prediction times
@@ -388,10 +423,10 @@ if __name__ == '__main__':
                         help="Path to a .json file that contains 2 properties 'positive_examples' and "
                              "'negative_examples'. Each of this properties should contain the IRIs of the respective"
                              "instances. e.g. 'some/path/lp.json'")
-    parser.add_argument("--num_problems", type=int, default=10,
+    parser.add_argument("--num_problems", type=int, default=1,
                         help="Number of problems to evaluate from the learning problem file. 0 means all problems.")
-    parser.add_argument("--max_runtime", type=int, default=10, help="Max runtime")
-    parser.add_argument("--folds", type=int, default=2, help="Number of folds of cross validation.")
+    parser.add_argument("--max_runtime", type=int, default=30, help="Max runtime")
+    parser.add_argument("--folds", type=int, default=5, help="Number of folds of cross validation.")
     parser.add_argument("--random_seed", type=int, default=1)
     parser.add_argument("--iter_bound", type=int, default=10_000, help='iter_bound during testing.')
     parser.add_argument("--compare_random_v", action='store_true', 

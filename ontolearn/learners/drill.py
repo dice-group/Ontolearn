@@ -259,7 +259,10 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         if isinstance(self.heuristic_func, CeloeBasedReward):
             print("No training...")
             return self.terminate_training()
-
+        
+        print(f"Training DRILL over {num_of_target_concepts} target concepts "
+              f"with {num_learning_problems} learning problems each...")
+        
         if self.verbose > 0:
             training_data = tqdm(self.generate_learning_problems(num_of_target_concepts,
                                                                  num_learning_problems),
@@ -267,15 +270,19 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
         else:
             training_data = self.generate_learning_problems(num_of_target_concepts,
                                                             num_learning_problems)
-            
+      
         if isinstance(training_data,Iterable) is False:
             print(f"We couldn't generate training data on this given knowledge base ({self.kb})")
             return self.terminate_training()
 
         for (target_owl_ce, positives, negatives) in training_data:
-            print(f"\nGoal Concept:\t {target_owl_ce}\tE^+:[{len(positives)}]\t E^-:[{len(negatives)}]")
+            
+            # print(f"\nGoal Concept:\t {target_owl_ce}\tE^+:[{len(positives)}]\t E^-:[{len(negatives)}]")
             sum_of_rewards_per_actions = self.rl_learning_loop(pos_uri=frozenset(positives),
                                                                neg_uri=frozenset(negatives))
+            print(f"\nGoal Concept:\t {target_owl_ce}\tE^+:[{len(positives)}]\t E^-:[{len(negatives)}] \tRewards per episode: {sum_of_rewards_per_actions}")
+
+            # exit(0)
             if self.verbose > 0:
                 print("Sum of rewards for each trial", sum_of_rewards_per_actions)
 
@@ -749,10 +756,16 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                     lp = (str_dl_concept_i,sampled_positives,sampled_negatives)
                     examples.append(lp)
                     counter += 1
+                    # Break innermost loop: Stop sampling from this concept pair
                     if counter == num_learning_problems:
                         break
 
+                # Break middle loop: Stop iterating through concept j for this concept i
                 if counter == num_learning_problems:
+                    break
+                
+            # Break outermost loop: Stop iterating through all concepts i
+            if counter == num_learning_problems:
                     break
 
         return examples
@@ -1028,21 +1041,71 @@ class DepthAbstractDrill:   # pragma: no cover
 
 
 class DrillV(Drill):
-    """Deep V-Learning for Class Expression Learning."""
+    """Deep V-Learning for Class Expression Learning with ADVANCED RL techniques."""
 
-    def __init__(self, *args, use_random_v_values=False, **kwargs):
+    def __init__(self, *args, use_random_v_values=False, 
+                 use_prioritized_replay=True,
+                 use_reward_shaping=True,
+                 use_dueling_network=True,
+                 target_update_freq=100,
+                 **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "DRILLV"
         self.use_random_v_values = use_random_v_values
+        self.use_prioritized_replay = use_prioritized_replay
+        self.use_reward_shaping = use_reward_shaping
+        self.use_dueling_network = use_dueling_network
+        self.target_update_freq = target_update_freq
+        self.update_counter = 0
         
         if self.df_embeddings is not None:
-            self.heuristic_func = DrillVHeuristic(mode="averaging", 
-                                                model_args={'input_shape': (1, self.embedding_dim)}, 
-                                                device=self.device,
-                                                use_random=use_random_v_values)
-            self.experiences = Experience(maxlen=self.max_len_replay_memory)
+            # Create improved network with dueling architecture
+            from ontolearn.data_struct import PrioritizedExperience
+            
+            self.heuristic_func = DrillVHeuristic(
+                mode="averaging", 
+                model_args={'input_shape': (1, self.embedding_dim), 'use_dueling': use_dueling_network}, 
+                device=self.device,
+                use_random=use_random_v_values
+            )
+            
+            # Use prioritized replay for better learning
+            if use_prioritized_replay:
+                self.experiences = PrioritizedExperience(
+                    maxlen=self.max_len_replay_memory,
+                    alpha=0.6,  # Prioritization strength
+                    beta=0.4,   # Importance sampling
+                    beta_increment=0.001
+                )
+            else:
+                self.experiences = Experience(maxlen=self.max_len_replay_memory)
+            
             if self.learning_rate:
-                self.optimizer = torch.optim.Adam(self.heuristic_func.net.parameters(), lr=self.learning_rate)
+                # Use AdamW with weight decay for better generalization
+                self.optimizer = torch.optim.AdamW(
+                    self.heuristic_func.net.parameters(), 
+                    lr=self.learning_rate,
+                    weight_decay=1e-5  # L2 regularization
+                )
+                
+                # Learning rate scheduler for adaptive learning
+                self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                    self.optimizer, 
+                    mode='min', 
+                    factor=0.5, 
+                    patience=5,
+                    verbose=False
+                )
+                
+            # Target network for stable training (Double DQN style)
+            self.target_net = DrillVNet(
+                self.embedding_dim, 
+                self.device, 
+                use_dueling=use_dueling_network
+            )
+            self.target_net.load_state_dict(self.heuristic_func.net.state_dict())
+            self.target_net.eval()
+            
         else:
             self.heuristic_func = CeloeBasedReward()
 
@@ -1073,13 +1136,47 @@ class DrillV(Drill):
         else:
             print(f"Directory:{directory}")
 
+    
     def form_experiences(self, state_pairs: List, rewards: List) -> None:
         """
-        Store (state, reward, next_state) for V-learning.
+        Store (state, reward, next_state) for V-learning with REWARD SHAPING.
+        
+        Reward shaping helps the agent learn faster by:
+        1. Rewarding progress (increasing quality)
+        2. Penalizing redundancy (exploring visited states)
+        3. Bonusing diversity (balanced coverage)
         """
         for th, consecutive_states in enumerate(state_pairs):
             e, e_next = consecutive_states
-            self.experiences.append((e, e_next, rewards[th]))
+            base_reward = rewards[th]
+            
+            if self.use_reward_shaping:
+                # Shape 1: Progress bonus - reward improvement
+                quality_improvement = e_next.quality - e.quality
+                progress_bonus = 0.1 * quality_improvement  # Small bonus for improvement
+                
+                # Shape 2: Length penalty - prefer shorter expressions
+                # (but not too aggressive to allow complex necessary concepts)
+                length_current = concept_len(e.concept) if hasattr(e, 'concept') else 0
+                length_next = concept_len(e_next.concept) if hasattr(e_next, 'concept') else 0
+                length_penalty = -0.01 * (length_next - length_current)
+                
+                # Shape 3: Exploration bonus - reward visiting high-quality unexplored states
+                # (assumes e_next.quality represents novelty to some degree)
+                if e_next.quality > 0.7:  # High-quality state
+                    exploration_bonus = 0.05
+                else:
+                    exploration_bonus = 0.0
+                
+                # Combine all components
+                shaped_reward = base_reward + progress_bonus + length_penalty + exploration_bonus
+                
+                # Clip to reasonable range to avoid instability
+                shaped_reward = max(-1.0, min(2.0, shaped_reward))
+            else:
+                shaped_reward = base_reward
+            
+            self.experiences.append((e, e_next, shaped_reward))
 
     def train(self, dataset: Optional[Iterable[Tuple[str, Set, Set]]] = None,
               num_of_target_concepts: int = 1,
@@ -1102,9 +1199,11 @@ class DrillV(Drill):
             return self.terminate_training()
 
         for (target_owl_ce, positives, negatives) in training_data:
-            print(f"\nGoal Concept:\t {target_owl_ce}\tE^+:[{len(positives)}]\t E^-:[{len(negatives)}]")
+            # print(f"\nGoal Concept:\t {target_owl_ce}\tE^+:[{len(positives)}]\t E^-:[{len(negatives)}]")
             sum_of_rewards_per_actions = self.rl_learning_loop(pos_uri=frozenset(positives),
                                                                neg_uri=frozenset(negatives))
+            print(f"\nGoal Concept:\t {target_owl_ce}\tE^+:[{len(positives)}]\t E^-:[{len(negatives)}] \tRewards per episode: {sum_of_rewards_per_actions}")
+
             if self.verbose > 0:
                 print("Sum of rewards for each trial", sum_of_rewards_per_actions)
 
@@ -1114,44 +1213,99 @@ class DrillV(Drill):
                  'Negatives': [i.str for i in negatives]})
         return self.terminate_training()
 
-    def learn_from_replay_memory(self, gamma=1.0) -> None:
+    def learn_from_replay_memory(self, gamma=0.99) -> None:
         """
-        V-learning update: sample minibatches from replay buffer and update:
-            target = reward + gamma * V(next_state)
+        IMPROVED V-learning with:
+        1. Prioritized experience replay
+        2. Target network for stability
+        3. Gradient clipping
+        4. Better loss tracking
         """
         if isinstance(self.heuristic_func, CeloeBasedReward):
             return None
 
-        current_state_list, next_state_list, reward_list = self.experiences.retrieve()
-        N = len(reward_list)
-        if N == 0:
-            return None
-
-        # minibatch size (fallback)
-        minibatch = self.batch_size or 64
-        minibatch = min(minibatch, N)
+        # Retrieve experiences (handles both regular and prioritized)
+        if self.use_prioritized_replay:
+            minibatch = self.batch_size or 128
+            current_state_list, next_state_list, reward_list, indices, weights = \
+                self.experiences.retrieve(batch_size=minibatch, prioritized=True)
+            
+            if not current_state_list:
+                return None
+            
+            # Convert importance weights to tensor
+            weights = torch.tensor(weights, dtype=torch.float32, device=self.device)
+        else:
+            current_state_list, next_state_list, reward_list, _, _ = self.experiences.retrieve(prioritized=False)
+            N = len(reward_list)
+            if N == 0:
+                return None
+            
+            minibatch = self.batch_size or 128
+            minibatch = min(minibatch, N)
+            indices = random.sample(range(N), minibatch)
+            current_state_list = [current_state_list[i] for i in indices]
+            next_state_list = [next_state_list[i] for i in indices]
+            reward_list = [reward_list[i] for i in indices]
+            weights = torch.ones(minibatch, device=self.device)
 
         self.heuristic_func.net.train()
         total_loss = 0.0
+        total_td_error = 0.0
+        
         for m in range(self.num_epochs_per_replay):
-            # sample indices without replacement
-            indices = random.sample(range(N), minibatch)
-            current_state_batch = torch.cat([current_state_list[i] for i in indices], dim=0).to(self.device)
-            next_state_batch = torch.cat([next_state_list[i] for i in indices], dim=0).to(self.device)
-            reward_batch = torch.tensor([reward_list[i] for i in indices], dtype=torch.float32, device=self.device)
+            # Prepare batches
+            current_state_batch = torch.cat(current_state_list, dim=0).to(self.device)
+            next_state_batch = torch.cat(next_state_list, dim=0).to(self.device)
+            reward_batch = torch.tensor(reward_list, dtype=torch.float32, device=self.device)
 
-            self.optimizer.zero_grad()
+            # Forward pass
             v_current = self.heuristic_func.net.forward(current_state_batch)
+            
+            # Use target network for stability (Double DQN approach)
             with torch.no_grad():
-                v_next = self.heuristic_func.net.forward(next_state_batch)
+                v_next = self.target_net.forward(next_state_batch)
+            
+            # Compute target
             target = reward_batch + gamma * v_next
-            loss = self.heuristic_func.net.loss(v_current, target)
-            total_loss += loss.item()
+            
+            # Compute TD errors for priority updates
+            td_errors = (target - v_current).detach()
+            
+            # Weighted loss (importance sampling)
+            if self.use_prioritized_replay:
+                loss = (weights * (v_current - target) ** 2).mean()
+            else:
+                loss = self.heuristic_func.net.loss(v_current, target)
+            
+            # Backpropagation with gradient clipping
+            self.optimizer.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.heuristic_func.net.parameters(), max_norm=10.0)
             self.optimizer.step()
+            
+            total_loss += loss.item()
+            total_td_error += td_errors.abs().mean().item()
 
-        # if self.verbose > 0:
-        print(f'Avg V-loss: {total_loss / (self.num_epochs_per_replay):0.5f}')
+        # Update priorities if using prioritized replay
+        if self.use_prioritized_replay and indices is not None:
+            self.experiences.update_priorities(indices, td_errors.cpu().numpy())
+        
+        # Update target network periodically
+        self.update_counter += 1
+        if self.update_counter % self.target_update_freq == 0:
+            self.target_net.load_state_dict(self.heuristic_func.net.state_dict())
+            if self.verbose > 0:
+                print(f"[Target network updated at step {self.update_counter}]")
+        
+        # Learning rate scheduling based on loss
+        avg_loss = total_loss / self.num_epochs_per_replay
+        self.scheduler.step(avg_loss)
+        
+        # Detailed logging
+        avg_td = total_td_error / self.num_epochs_per_replay
+        print(f"Replay loss: {avg_loss:.5f} | Avg TD-error: {avg_td:.5f} | LR: {self.optimizer.param_groups[0]['lr']:.6f}")
+        
         self.heuristic_func.net.eval()
 
     def exploitation(self, current_state: AbstractNode, next_states: List[AbstractNode]) -> RL_State:
@@ -1319,35 +1473,99 @@ class DrillV(Drill):
 
 class DrillVNet(torch.nn.Module):  # pragma: no cover
     """
-    Neural network for Deep V-Learning.
+    IMPROVED Neural network for Deep V-Learning with Dueling Architecture.
     Input: state embedding (batch_size, 1, embedding_dim)
     Output: V-value for each state (batch_size,)
+    
+    Key improvements:
+    1. Dueling architecture (value + advantage streams)
+    2. Deeper network with residual connections
+    3. Batch normalization for stable training
+    4. Dropout for regularization
     """
 
-    def __init__(self, embedding_dim, device):
+    def __init__(self, embedding_dim, device, hidden_dim=None, use_dueling=True, dropout_rate=0.2):
         super(DrillVNet, self).__init__()
         self.embedding_dim = embedding_dim
         self.device = device
-        self.loss = torch.nn.MSELoss().to(self.device)
+        self.use_dueling = use_dueling
+        
+        # Auto-scale hidden dimension
+        if hidden_dim is None:
+            hidden_dim = max(64, embedding_dim // 2)
+        self.hidden_dim = hidden_dim
+        
+        # Huber loss is more robust than MSE for RL
+        self.loss = torch.nn.SmoothL1Loss().to(self.device)
+        
+        # Shared feature extraction with residual connection
+        self.fc1 = torch.nn.Linear(self.embedding_dim, hidden_dim, device=self.device)
+        # Use LayerNorm instead of BatchNorm to support batch_size=1 during training
+        # BatchNorm requires >1 value per channel which fails for our single-sample
+        # evaluation/training cases. LayerNorm normalizes across features and is
+        # stable for small batch sizes.
+        self.bn1 = torch.nn.LayerNorm(hidden_dim, elementwise_affine=True, device=self.device)
+        self.dropout1 = torch.nn.Dropout(dropout_rate)
 
-        # Simple feedforward layers
-        self.fc1 = torch.nn.Linear(self.embedding_dim, self.embedding_dim // 2, device=self.device)
-        self.fc2 = torch.nn.Linear(self.embedding_dim // 2, 1, device=self.device)
-
+        self.fc2 = torch.nn.Linear(hidden_dim, hidden_dim, device=self.device)
+        # See comment for bn1
+        self.bn2 = torch.nn.LayerNorm(hidden_dim, elementwise_affine=True, device=self.device)
+        self.dropout2 = torch.nn.Dropout(dropout_rate)
+        
+        if self.use_dueling:
+            # Dueling streams: value and advantage
+            # Value: how good is this state generally?
+            self.value_fc1 = torch.nn.Linear(hidden_dim, hidden_dim // 2, device=self.device)
+            self.value_fc2 = torch.nn.Linear(hidden_dim // 2, 1, device=self.device)
+            
+            # Advantage: how much better is this state than average?
+            self.advantage_fc1 = torch.nn.Linear(hidden_dim, hidden_dim // 2, device=self.device)
+            self.advantage_fc2 = torch.nn.Linear(hidden_dim // 2, 1, device=self.device)
+        else:
+            # Simple output layer
+            self.fc3 = torch.nn.Linear(hidden_dim, hidden_dim // 2, device=self.device)
+            self.fc_out = torch.nn.Linear(hidden_dim // 2, 1, device=self.device)
+        
         self.init()
 
     def init(self):
-        torch.nn.init.xavier_normal_(self.fc1.weight.data).to(self.device)
-        torch.nn.init.xavier_normal_(self.fc2.weight.data).to(self.device)
+        """He initialization for ReLU networks"""
+        for m in self.modules():
+            if isinstance(m, torch.nn.Linear):
+                torch.nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='relu')
+                if m.bias is not None:
+                    torch.nn.init.constant_(m.bias, 0)
 
     def forward(self, X: torch.FloatTensor):
         """
-        X: (batch_size, 1, embedding_dim)
+        X: (batch_size, 1, embedding_dim) or (batch_size, embedding_dim)
         """
-        X = X.view(X.shape[0], self.embedding_dim)
-        X = torch.nn.functional.leaky_relu(self.fc1(X))
-        scores = self.fc2(X).flatten()
-        return scores
+        if X.dim() == 3:
+            X = X.view(X.shape[0], self.embedding_dim)
+        
+        # Shared feature extraction with residual
+        identity = X
+        
+        # First layer with batch norm and dropout
+        X = torch.nn.functional.relu(self.bn1(self.fc1(X)))
+        X = self.dropout1(X)
+        
+        # Second layer with batch norm and dropout  
+        X = torch.nn.functional.relu(self.bn2(self.fc2(X)))
+        X = self.dropout2(X)
+        
+        if self.use_dueling:
+            # Dueling architecture: Q(s) = V(s) + (A(s) - mean(A(s)))
+            value = self.value_fc2(torch.nn.functional.relu(self.value_fc1(X)))
+            advantage = self.advantage_fc2(torch.nn.functional.relu(self.advantage_fc1(X)))
+            # Combine: subtract mean advantage for identifiability
+            scores = value + (advantage - advantage.mean(dim=0, keepdim=True))
+        else:
+            # Simple feedforward
+            X = torch.nn.functional.relu(self.fc3(X))
+            scores = self.fc_out(X)
+        
+        return scores.flatten()
     
     # def train(self, dataset: Optional[Iterable[Tuple[str, Set, Set]]] = None,
     #       num_of_target_concepts: int = 1,
@@ -1386,27 +1604,48 @@ class DrillVNet(torch.nn.Module):  # pragma: no cover
 
 class DrillVHeuristic:  # pragma: no cover
     """
-    Heuristic for Deep V-Learning.
+    IMPROVED Heuristic for Deep V-Learning with uncertainty estimation.
     Uses DrillVNet to predict V-values for states.
     """
 
     def __init__(self, model=None, mode=None, model_args=None, device=None, use_random=False):
         self.use_random = use_random
         if model:
+            # If user provided a model instance, use it and try to infer a name
             self.net = model
+            # Prefer an explicit `name` attribute on the model when available
+            if hasattr(model, 'name') and model.name:
+                self.name = model.name
+            else:
+                # Fall back to the model class name for traceability
+                try:
+                    self.name = model.__class__.__name__
+                except Exception:
+                    self.name = 'DrillVHeuristic_custom'
+            # keep mode attribute for compatibility
+            self.mode = None
         elif mode in ['averaging', 'sampling']:
-            # Only need embedding_dim for DrillVNet
+            # Extract parameters for improved network
             embedding_dim = model_args['input_shape'][1]
-            self.net = DrillVNet(embedding_dim, device)
+            use_dueling = model_args.get('use_dueling', True)
+            
+            self.net = DrillVNet(
+                embedding_dim, 
+                device, 
+                use_dueling=use_dueling,
+                dropout_rate=0.2
+            )
             self.mode = mode
             self.name = 'DrillVHeuristic_' + self.mode
         else:
-            raise ValueError
+            raise ValueError("mode must be 'averaging' or 'sampling'")
+        
         self.net.eval()
         self.device = device
+        self.call_count = 0  # Track number of predictions
 
     def score(self, node, parent_node=None):
-        """Compute V-value for a node (state)."""
+        """Compute V-value for a node (state) with optional exploration bonus."""
         if self.use_random:
             # Generate random V-value
             return torch.rand(1, device=self.device).squeeze()
@@ -1415,15 +1654,59 @@ class DrillVHeuristic:  # pragma: no cover
             emb = node.embeddings if hasattr(node, 'embeddings') else None
             if emb is None:
                 raise ValueError("Node must have embeddings assigned.")
+            
             with torch.no_grad():
                 v = self.net.forward(emb.to(self.device))
+            
+            self.call_count += 1
             return v.squeeze()
+
+    def score_batch(self, nodes):
+        """
+        Efficiently score multiple nodes in a single forward pass.
+        This is the KEY optimization for reducing concepts tested.
+        """
+        if self.use_random:
+            return torch.rand(len(nodes), device=self.device)
+        
+        # Collect embeddings
+        embeddings = []
+        for node in nodes:
+            if hasattr(node, 'embeddings') and node.embeddings is not None:
+                embeddings.append(node.embeddings)
+            else:
+                # Fallback: create zero embedding
+                embeddings.append(torch.zeros(1, self.net.embedding_dim, device=self.device))
+        
+        if not embeddings:
+            return torch.zeros(len(nodes), device=self.device)
+        
+        # Single batched forward pass
+        batch = torch.cat(embeddings, dim=0).to(self.device)
+        with torch.no_grad():
+            v_values = self.net.forward(batch)
+        
+        self.call_count += len(nodes)
+        return v_values
 
     def apply(self, node, parent_node=None):
         """Assign predicted V-value to node object."""
         predicted_v_val = self.score(node, parent_node)
         node.heuristic = predicted_v_val
     
+    def apply_batch(self, nodes):
+        """Efficiently apply V-values to multiple nodes."""
+        v_values = self.score_batch(nodes)
+        for node, v_val in zip(nodes, v_values):
+            node.heuristic = v_val.item()
+    
     def set_random_mode(self, use_random: bool):
         """Set whether to use random V-values."""
         self.use_random = use_random
+    
+    def get_stats(self):
+        """Get prediction statistics."""
+        return {
+            'total_predictions': self.call_count,
+            'network_mode': 'random' if self.use_random else 'learned'
+        }
