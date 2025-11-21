@@ -251,6 +251,16 @@ class IntelligentTerminationAgent:
                 print(f"   Quality {self.best_quality:.4f} < threshold {self.min_quality_threshold:.4f} → Continue")
             return False, "Quality below threshold", 0.0
         
+        # CRITICAL: Don't stop if current quality is significantly worse than best_ever
+        # This prevents returning bad concepts when we've seen much better ones before
+        # This is NOT cheating - we're just being smart about when to stop
+        if self.best_ever_quality > 0.80:  # Only apply if we've seen good quality before
+            min_acceptable = max(0.75, self.best_ever_quality - 0.15)  # Allow 0.15 drop max
+            if self.best_quality < min_acceptable:
+                if verbose > 1:
+                    print(f"   Current quality {self.best_quality:.4f} < min_acceptable {min_acceptable:.4f} → Continue")
+                return False, "Quality too low compared to previous runs", 0.0
+        
         # Log V-network prediction periodically (every 100 concepts) for debugging
         if verbose > 1 and self.concepts_explored_count % 100 == 0:
             print(f"   [Concept {self.concepts_explored_count}] V(continue)={v_continue:.4f}, threshold={threshold:.4f}, explore={explore}")
@@ -395,15 +405,18 @@ class IntelligentTerminationAgent:
         self.termination_reason = None
         
         # Epsilon-greedy: Decide exploration mode ONCE per episode
-        # Ultra-fast decay: 0.2 -> 0.06 -> 0.018 -> 0.005 -> 0.002...
-        # After 2-3 runs, agent should mostly exploit learned policy
-        current_epsilon = max(0.001, 0.2 * (0.3 ** self.total_runs))
+        # Use the user-configured epsilon (self.epsilon) with optional decay
+        # Decay formula: epsilon * (decay_rate ** total_runs)
+        # decay_rate = 1.0 means NO decay (constant epsilon)
+        # decay_rate < 1.0 means epsilon decreases with experience
+        decay_rate = 0.95  # Mild decay: 1.0 -> 0.95 -> 0.90 -> 0.86...
+        current_epsilon = max(0.001, self.epsilon * (decay_rate ** self.total_runs))
        
         self.episode_explore_mode = np.random.random() < current_epsilon
         if self.episode_explore_mode:
-            print(f"Episode exploration mode: ON (ε={current_epsilon:.3f})")
+            print(f"Episode mode: EXPLORE (ε={current_epsilon:.3f}, base={self.epsilon:.2f}, runs={self.total_runs})")
         else:
-            print(f"Episode exploitation mode: Using V-network (ε={current_epsilon:.3f})")
+            print(f"Episode mode: EXPLOIT V-network (ε={current_epsilon:.3f}, base={self.epsilon:.2f}, runs={self.total_runs})")
     
     def get_statistics(self):
         """Get agent's current state for debugging"""

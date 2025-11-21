@@ -415,7 +415,7 @@ class DrillV_Complex(DrillV_Enhanced):
     - All smart features from Enhanced
     - **NEW: Intelligent RL-based termination (agent decides when to stop)**
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, termination_epsilon=0.3, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "DrillV_Complex"
         
@@ -424,12 +424,15 @@ class DrillV_Complex(DrillV_Enhanced):
         self.termination_agent = IntelligentTerminationAgent(
             learning_rate=0.001,            # V-network learning rate
             gamma=0.95,                     # Discount for future improvements
-            epsilon=0.3,                    # Exploration rate
+            epsilon=termination_epsilon,    # Exploration rate (user configurable!)
             min_quality_threshold=0.75,     # Minimum acceptable quality
             min_concepts_explored=100,      # Safety minimum
             max_concepts_explored=15000,     # Safety maximum
             memory_path='termination_agent_memory.pkl'  # Persistent memory file
         )
+        
+        print(f"Termination epsilon: {termination_epsilon} "
+              f"(0=always exploit, 1=always explore)")
         
         if self.df_embeddings is not None:
             from ontolearn.learners.drill import DrillVHeuristic

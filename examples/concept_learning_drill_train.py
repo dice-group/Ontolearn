@@ -291,7 +291,7 @@ def start(args):
             if perf_stats:
                 print(f"    Optimization: {perf_stats['optimization_type']} (memory efficient: {perf_stats['memory_efficient']})")
             if v_learning_stats:
-                print(f"    🤖 V-Learning: Total runs={v_learning_stats['total_runs']}, "
+                print(f"    V-Learning: Total runs={v_learning_stats['total_runs']}, "
                       f"Best ever={v_learning_stats['best_ever_quality']:.3f}, "
                       f"Termination={v_learning_stats['termination_reason']}")
             if args.compare_random_v and drillv_random_result:
@@ -419,7 +419,7 @@ if __name__ == '__main__':
                         default=5)
     parser.add_argument("--path_pretrained_dir", type=str, default=None)
 
-    parser.add_argument("--path_learning_problem", type=str, default='LPs/Family/lps.json',
+    parser.add_argument("--path_learning_problem", type=str, default='LPs/Family/lps_difficult.json',
                         help="Path to a .json file that contains 2 properties 'positive_examples' and "
                              "'negative_examples'. Each of this properties should contain the IRIs of the respective"
                              "instances. e.g. 'some/path/lp.json'")
@@ -433,6 +433,7 @@ if __name__ == '__main__':
                         help='Include comparison with random V-values to study V-values importance')
     parser.add_argument("--enable_drillv_optimizations", action='store_true', default=False,
                         help='Enable DrillV performance optimizations (caching, batch processing)')
+    
     parser.add_argument("--drill_variant", type=str, default='default',
                         choices=['default', 'minimal', 'standard', 'enhanced', 'complex'],
                         help='DrillV variant to use: default (original with all RL features), '
@@ -442,7 +443,7 @@ if __name__ == '__main__':
     # DQL related
     parser.add_argument("--num_episode", type=int, default=1, help='Number of trajectories created for a given lp.')
 
-    parser.add_argument("--epsilon_decay", type=float, default=.01, help='Epsilon greedy trade off per epoch')
+    parser.add_argument("--epsilon_decay", type=float, default=0.00, help='Epsilon greedy trade off per epoch') # Choose 0.0 for pure exploitation
     parser.add_argument("--max_len_replay_memory", type=int, default=1024,
                         help='Maximum size of the experience replay')
     parser.add_argument("--num_epochs_per_replay", type=int, default=1,
