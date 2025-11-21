@@ -11,8 +11,8 @@ import os
 from typing import Union
 import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.learners import CELOE, EvoLearner, NCES, NCES2, ROCES, CLIP
-from ontolearn.refinement_operators import ExpressRefinement, ModifiedCELOERefinement
+from ontolearn.learners import CELOE, EvoLearner, NCES, NCES2, ROCES, CLIP, ALCSAT, SPELL
+from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.learners import Drill, TDL, OCEL
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1
@@ -115,6 +115,17 @@ def dl_concept_learning(args):
                     max_num_of_concepts_tested=int(1e9), max_runtime=args.max_runtime,
                     path_of_embeddings=args.path_of_clip_embeddings,
                     pretrained_predictor_name=["LSTM", "GRU", "SetTransformer"], load_pretrained=True)
+
+    if not args.learner_types or 'alcsat' in args.learner_types:
+        alcsat = ALCSAT(knowledge_base=kb,
+                        max_runtime=args.max_runtime,
+                        max_concept_size=30)
+
+    if not args.learner_types or 'spell' in args.learner_types:
+        spell = SPELL(knowledge_base=kb,
+                      max_runtime=args.max_runtime,
+                      max_query_size=10,
+                      search_mode="full_approx")
 
     # dictionary to store the data
     data = dict()
@@ -372,6 +383,50 @@ def dl_concept_learning(args):
                 print(f"CLIP Test Quality: {test_f1_clip:.3f}", end="\t")
                 print(f"CLIP Runtime: {rt_clip:.3f}")
 
+            if not args.learner_types or 'alcsat' in args.learner_types:
+                print("ALCSAT starts..", end="\t")
+                start_time = time.time()
+                pred_alcsat = alcsat.fit(train_lp).best_hypothesis()
+                rt_alcsat = time.time() - start_time
+                print("ALCSAT ends..", end="\t")
+                # () Quality on the training data
+                train_f1_alcsat = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_alcsat)}),
+                                                   pos=train_lp.pos,
+                                                   neg=train_lp.neg)
+                # () Quality on test data
+                test_f1_alcsat = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_alcsat)}),
+                                                  pos=test_lp.pos,
+                                                  neg=test_lp.neg)
+
+                data.setdefault("Train-F1-ALCSAT", []).append(train_f1_alcsat)
+                data.setdefault("Test-F1-ALCSAT", []).append(test_f1_alcsat)
+                data.setdefault("RT-ALCSAT", []).append(rt_alcsat)
+                print(f"ALCSAT Train Quality: {train_f1_alcsat:.3f}", end="\t")
+                print(f"ALCSAT Test Quality: {test_f1_alcsat:.3f}", end="\t")
+                print(f"ALCSAT Runtime: {rt_alcsat:.3f}")
+
+            if not args.learner_types or 'spell' in args.learner_types:
+                print("SPELL starts..", end="\t")
+                start_time = time.time()
+                pred_spell = spell.fit(train_lp).best_hypothesis()
+                rt_spell = time.time() - start_time
+                print("SPELL ends..", end="\t")
+                # () Quality on the training data
+                train_f1_spell = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_spell)}),
+                                                  pos=train_lp.pos,
+                                                  neg=train_lp.neg)
+                # () Quality on test data
+                test_f1_spell = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_spell)}),
+                                                 pos=test_lp.pos,
+                                                 neg=test_lp.neg)
+
+                data.setdefault("Train-F1-SPELL", []).append(train_f1_spell)
+                data.setdefault("Test-F1-SPELL", []).append(test_f1_spell)
+                data.setdefault("RT-SPELL", []).append(rt_spell)
+                print(f"SPELL Train Quality: {train_f1_spell:.3f}", end="\t")
+                print(f"SPELL Test Quality: {test_f1_spell:.3f}", end="\t")
+                print(f"SPELL Runtime: {rt_spell:.3f}")
+
     df = pd.DataFrame.from_dict(data)
     df.to_csv(args.report, index=False)
     print(df)
@@ -386,7 +441,7 @@ if __name__ == '__main__':
     parser.add_argument("--kb", type=str, required=True,
                         help="Knowledge base")
     parser.add_argument("--learner_types", type=str, nargs='*', default=None, 
-                        choices=["celoe", "ocel", "evolearner", "drill", "nces", "tdl", "nces2", "roces", "clip"],
+                        choices=["celoe", "ocel", "evolearner", "drill", "nces", "tdl", "nces2", "roces", "clip", "alcsat", "spell"],
                         help="List of available concept learning models")
     parser.add_argument("--path_drill_embeddings", type=str, default=None)
     parser.add_argument("--path_of_nces_embeddings", type=str, default=None)

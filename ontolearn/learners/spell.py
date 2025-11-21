@@ -63,7 +63,7 @@ class SPELL(SATBaseLearner):
                  knowledge_base: AbstractKnowledgeBase,
                  reasoner: Optional[AbstractOWLReasoner] = None,
                  max_runtime: Optional[int] = 60,
-                 max_query_size: int = 19,
+                 max_query_size: int = 10,
                  starting_query_size: int = 1,
                  search_mode: str = 'full_approx'):
         """
