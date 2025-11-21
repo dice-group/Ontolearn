@@ -60,7 +60,10 @@ _deps = [
     "flake8>=6.0.0",
     "fastapi>=0.110.1",
     "uvicorn>=0.29.0",
-    "openai>=1.86.0"]
+    "openai>=1.86.0",
+    "lxml==5.3.0",
+    "python-sat==0.1.7.dev23",
+    "asciitree==0.3.3"]
 
 deps = {b: a for a, b in (re.findall(r"^(([^!=<>~ ]+)(?:[!=<>~ ].*)?$)", x)[0] for x in _deps)}
 
@@ -83,7 +86,10 @@ extras["min"] = deps_list(
     "deap",  # Evolearner
     "fastapi",
     "uvicorn",
-    "openai")
+    "openai",
+    "lxml",
+    "python-sat",
+    "asciitree",)
 
 extras["doc"] = (deps_list("sphinx",
                            "sphinx-autoapi",
