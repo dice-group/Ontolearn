@@ -145,61 +145,62 @@ def concepts_reducer(
     return dl_concept_path
 
 def contains_nominal(expr: OWLClassExpression) -> bool:
-    """Returns True if the OWL expression contains a nominal (OWLObjectOneOf, OWLDataOneOf)."""
+    """Returns True if the OWL expression contains a nominal (OWLObjectOneOf, OWLObjectHasValue)."""
     if isinstance(expr, (OWLObjectOneOf, OWLObjectHasValue)):
         return True
 
+    # Check operands (for unions, intersections, complements)
+    if hasattr(expr, 'operands'):
+        try:
+            return any(contains_nominal(op) for op in expr.operands())
+        except (AttributeError, TypeError):
+            pass
+    
+    # Check filler (for restrictions)
     if isinstance(expr, HasFiller):
         return contains_nominal(expr.get_filler())
-    # CD: Ensure about this
-    # if isinstance(expr, HasOperands):
-    #    return any(contains_nominal(op) for op in expr.get_operands())
+    
     return False
 
 def contains_cardinality(expr: OWLClassExpression) -> bool:
     """Returns True if the OWL expression contains a cardinality restriction."""
     if isinstance(expr, (OWLObjectMinCardinality, OWLObjectMaxCardinality, OWLObjectExactCardinality)):
         return True
-    # Check operands first (for expressions like OWLObjectOneOf, unions, intersections)
-    # CD: Ensure about this
-    """
-    if isinstance(expr, HasOperands):
+    
+    # Check operands (for unions, intersections, complements)
+    if hasattr(expr, 'operands'):
         try:
             return any(contains_cardinality(op) for op in expr.operands())
         except (AttributeError, TypeError):
             pass
-
-    # Then check filler (for expressions with restrictions)
+    
+    # Check filler (for restrictions)
     if isinstance(expr, HasFiller):
         try:
             return contains_cardinality(expr.get_filler())
         except (AttributeError, TypeError):
             pass
-    """
     
-
     return False
 
 def contains_data_property(expr: OWLClassExpression) -> bool:
     """Returns True if the OWL expression contains a data property."""
     if isinstance(expr, (OWLDataSomeValuesFrom, OWLDataAllValuesFrom)):
         return True
-    # CD: Ensure about this
-    """
-    # Check operands first (for expressions like OWLObjectOneOf, unions, intersections)
-    if isinstance(expr, HasOperands):
+    
+    # Check operands (for unions, intersections, complements)
+    if hasattr(expr, 'operands'):
         try:
             return any(contains_data_property(op) for op in expr.operands())
         except (AttributeError, TypeError):
             pass
-
-    # Then check filler (for expressions with restrictions)
+    
+    # Check filler (for restrictions)
     if isinstance(expr, HasFiller):
         try:
             return contains_data_property(expr.get_filler())
         except (AttributeError, TypeError):
             pass
-    """
     
     return False
 
@@ -288,16 +289,16 @@ class TDL:
         if isinstance(owl_class_expression, OWLClass):
             return True
 
-        # Exclude nominals if flag is disabled
-        if contains_nominal(owl_class_expression) and not self.use_nominals:
+        # Exclude expressions containing nominals if flag is disabled
+        if not self.use_nominals and contains_nominal(owl_class_expression):
             return False
         
-        # Exclude cardinality restrictions if flag is disabled
-        if isinstance(owl_class_expression, (OWLObjectMinCardinality, OWLObjectMaxCardinality)) and not self.use_card_restrictions:
+        # Exclude expressions containing cardinality restrictions if flag is disabled
+        if not self.use_card_restrictions and contains_cardinality(owl_class_expression):
             return False
         
-        # Exclude data properties if flag is disabled
-        if isinstance(owl_class_expression, OWLDataSomeValuesFrom) and not self.use_data_properties:
+        # Exclude expressions containing data properties if flag is disabled
+        if not self.use_data_properties and contains_data_property(owl_class_expression):
             return False
         
         return True
