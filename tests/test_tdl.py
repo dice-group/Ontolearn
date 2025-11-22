@@ -301,7 +301,6 @@ class TestTDLRecursiveChecking(unittest.TestCase):
         except FileNotFoundError:
             # Skip test if KB file is not available
             self.skipTest("Knowledge base file not available")
-            return
         
         model = TDL(knowledge_base=kb, use_nominals=False, verbose=0)
         
@@ -323,7 +322,6 @@ class TestTDLRecursiveChecking(unittest.TestCase):
         except FileNotFoundError:
             # Skip test if KB file is not available
             self.skipTest("Knowledge base file not available")
-            return
             
         model = TDL(knowledge_base=kb, use_card_restrictions=False, verbose=0)
         
