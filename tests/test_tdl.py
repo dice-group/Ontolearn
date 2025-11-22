@@ -170,17 +170,12 @@ class TestTDLRecursiveChecking(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up test fixtures."""
-        cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
         cls.NS = "http://www.benchmark.org/family#"
-        
-        # Import the helper functions
-        from ontolearn.learners.tree_learner import contains_nominal, contains_cardinality, contains_data_property
-        cls.contains_nominal = contains_nominal
-        cls.contains_cardinality = contains_cardinality
-        cls.contains_data_property = contains_data_property
 
     def test_contains_nominal_in_intersection(self):
         """Test that nominals are detected when nested in intersections."""
+        from ontolearn.learners.tree_learner import contains_nominal
+        
         ind = OWLNamedIndividual(IRI.create(self.NS + "markus"))
         nominal = OWLObjectOneOf([ind])
         cls = OWLClass(IRI.create(self.NS + "Person"))
@@ -188,10 +183,12 @@ class TestTDLRecursiveChecking(unittest.TestCase):
         # Create intersection containing nominal
         intersection = OWLObjectIntersectionOf([cls, nominal])
         
-        self.assertTrue(self.contains_nominal(intersection))
+        self.assertTrue(contains_nominal(intersection))
 
     def test_contains_nominal_in_union(self):
         """Test that nominals are detected when nested in unions."""
+        from ontolearn.learners.tree_learner import contains_nominal
+        
         ind = OWLNamedIndividual(IRI.create(self.NS + "markus"))
         nominal = OWLObjectOneOf([ind])
         cls = OWLClass(IRI.create(self.NS + "Person"))
@@ -199,10 +196,12 @@ class TestTDLRecursiveChecking(unittest.TestCase):
         # Create union containing nominal
         union = OWLObjectUnionOf([cls, nominal])
         
-        self.assertTrue(self.contains_nominal(union))
+        self.assertTrue(contains_nominal(union))
 
     def test_contains_nominal_in_existential_filler(self):
         """Test that nominals are detected in existential restriction fillers."""
+        from ontolearn.learners.tree_learner import contains_nominal
+        
         ind = OWLNamedIndividual(IRI.create(self.NS + "markus"))
         nominal = OWLObjectOneOf([ind])
         prop = OWLObjectProperty(IRI.create(self.NS + "hasParent"))
@@ -210,10 +209,12 @@ class TestTDLRecursiveChecking(unittest.TestCase):
         # Create existential restriction with nominal as filler
         exists = OWLObjectSomeValuesFrom(prop, nominal)
         
-        self.assertTrue(self.contains_nominal(exists))
+        self.assertTrue(contains_nominal(exists))
 
     def test_contains_cardinality_in_intersection(self):
         """Test that cardinality restrictions are detected when nested in intersections."""
+        from ontolearn.learners.tree_learner import contains_cardinality
+        
         prop = OWLObjectProperty(IRI.create(self.NS + "hasChild"))
         cls = OWLClass(IRI.create(self.NS + "Person"))
         filler = OWLClass(IRI.create(self.NS + "Person"))
@@ -224,10 +225,12 @@ class TestTDLRecursiveChecking(unittest.TestCase):
         # Create intersection containing cardinality
         intersection = OWLObjectIntersectionOf([cls, card])
         
-        self.assertTrue(self.contains_cardinality(intersection))
+        self.assertTrue(contains_cardinality(intersection))
 
     def test_contains_cardinality_in_union(self):
         """Test that cardinality restrictions are detected when nested in unions."""
+        from ontolearn.learners.tree_learner import contains_cardinality
+        
         prop = OWLObjectProperty(IRI.create(self.NS + "hasChild"))
         cls = OWLClass(IRI.create(self.NS + "Person"))
         filler = OWLClass(IRI.create(self.NS + "Person"))
@@ -238,10 +241,11 @@ class TestTDLRecursiveChecking(unittest.TestCase):
         # Create union containing cardinality
         union = OWLObjectUnionOf([cls, card])
         
-        self.assertTrue(self.contains_cardinality(union))
+        self.assertTrue(contains_cardinality(union))
 
     def test_contains_data_property_in_intersection(self):
         """Test that data properties are detected when nested in intersections."""
+        from ontolearn.learners.tree_learner import contains_data_property
         from owlapy.owl_datatype import OWLDatatype
         
         data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
@@ -254,10 +258,12 @@ class TestTDLRecursiveChecking(unittest.TestCase):
         # Create intersection containing data property
         intersection = OWLObjectIntersectionOf([cls, data_expr])
         
-        self.assertTrue(self.contains_data_property(intersection))
+        self.assertTrue(contains_data_property(intersection))
 
     def test_no_false_positives_for_clean_alc(self):
         """Test that clean ALC expressions don't trigger false positives."""
+        from ontolearn.learners.tree_learner import contains_nominal, contains_cardinality, contains_data_property
+        
         cls = OWLClass(IRI.create(self.NS + "Person"))
         prop = OWLObjectProperty(IRI.create(self.NS + "hasParent"))
         
@@ -266,12 +272,14 @@ class TestTDLRecursiveChecking(unittest.TestCase):
         intersection = OWLObjectIntersectionOf([cls, exists])
         
         # Should not contain any forbidden constructs
-        self.assertFalse(self.contains_nominal(intersection))
-        self.assertFalse(self.contains_cardinality(intersection))
-        self.assertFalse(self.contains_data_property(intersection))
+        self.assertFalse(contains_nominal(intersection))
+        self.assertFalse(contains_cardinality(intersection))
+        self.assertFalse(contains_data_property(intersection))
 
     def test_deeply_nested_nominal(self):
         """Test detection of deeply nested nominals."""
+        from ontolearn.learners.tree_learner import contains_nominal
+        
         ind = OWLNamedIndividual(IRI.create(self.NS + "markus"))
         nominal = OWLObjectOneOf([ind])
         cls = OWLClass(IRI.create(self.NS + "Person"))
@@ -283,11 +291,19 @@ class TestTDLRecursiveChecking(unittest.TestCase):
         union = OWLObjectUnionOf([exists, nominal])
         intersection = OWLObjectIntersectionOf([cls, union])
         
-        self.assertTrue(self.contains_nominal(intersection))
+        self.assertTrue(contains_nominal(intersection))
 
     def test_should_include_with_nested_nominal(self):
         """Test that _should_include_expression rejects expressions with nested nominals."""
-        model = TDL(knowledge_base=self.kb, use_nominals=False, verbose=0)
+        # Create a minimal mock KB for this test
+        try:
+            kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
+        except FileNotFoundError:
+            # Skip test if KB file is not available
+            self.skipTest("Knowledge base file not available")
+            return
+        
+        model = TDL(knowledge_base=kb, use_nominals=False, verbose=0)
         
         ind = OWLNamedIndividual(IRI.create(self.NS + "markus"))
         nominal = OWLObjectOneOf([ind])
@@ -301,7 +317,15 @@ class TestTDLRecursiveChecking(unittest.TestCase):
 
     def test_should_include_with_nested_cardinality(self):
         """Test that _should_include_expression rejects expressions with nested cardinality."""
-        model = TDL(knowledge_base=self.kb, use_card_restrictions=False, verbose=0)
+        # Create a minimal mock KB for this test
+        try:
+            kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
+        except FileNotFoundError:
+            # Skip test if KB file is not available
+            self.skipTest("Knowledge base file not available")
+            return
+            
+        model = TDL(knowledge_base=kb, use_card_restrictions=False, verbose=0)
         
         prop = OWLObjectProperty(IRI.create(self.NS + "hasChild"))
         cls = OWLClass(IRI.create(self.NS + "Person"))
