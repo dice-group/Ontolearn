@@ -30,6 +30,7 @@ from owlapy.class_expression import (
     OWLObjectIntersectionOf,
     OWLClassExpression,
     OWLObjectUnionOf,
+    OWLObjectComplementOf,
     OWLObjectOneOf,
     OWLObjectHasValue,
     OWLObjectSomeValuesFrom,
@@ -150,7 +151,7 @@ def contains_nominal(expr: OWLClassExpression) -> bool:
         return True
 
     # Check operands (for unions, intersections, complements)
-    if hasattr(expr, 'operands'):
+    if isinstance(expr, (OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectComplementOf)):
         try:
             return any(contains_nominal(op) for op in expr.operands())
         except (AttributeError, TypeError):
@@ -168,7 +169,7 @@ def contains_cardinality(expr: OWLClassExpression) -> bool:
         return True
     
     # Check operands (for unions, intersections, complements)
-    if hasattr(expr, 'operands'):
+    if isinstance(expr, (OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectComplementOf)):
         try:
             return any(contains_cardinality(op) for op in expr.operands())
         except (AttributeError, TypeError):
@@ -189,7 +190,7 @@ def contains_data_property(expr: OWLClassExpression) -> bool:
         return True
     
     # Check operands (for unions, intersections, complements)
-    if hasattr(expr, 'operands'):
+    if isinstance(expr, (OWLObjectIntersectionOf, OWLObjectUnionOf, OWLObjectComplementOf)):
         try:
             return any(contains_data_property(op) for op in expr.operands())
         except (AttributeError, TypeError):
