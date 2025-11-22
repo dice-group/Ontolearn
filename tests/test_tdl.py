@@ -164,6 +164,159 @@ class TestTDLFilterLogic(unittest.TestCase):
         self.assertTrue(model._should_include_expression(regular_class))
 
 
+class TestTDLRecursiveChecking(unittest.TestCase):
+    """Test recursive checking of forbidden constructs in nested expressions."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Set up test fixtures."""
+        cls.kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
+        cls.NS = "http://www.benchmark.org/family#"
+        
+        # Import the helper functions
+        from ontolearn.learners.tree_learner import contains_nominal, contains_cardinality, contains_data_property
+        cls.contains_nominal = contains_nominal
+        cls.contains_cardinality = contains_cardinality
+        cls.contains_data_property = contains_data_property
+
+    def test_contains_nominal_in_intersection(self):
+        """Test that nominals are detected when nested in intersections."""
+        ind = OWLNamedIndividual(IRI.create(self.NS + "markus"))
+        nominal = OWLObjectOneOf([ind])
+        cls = OWLClass(IRI.create(self.NS + "Person"))
+        
+        # Create intersection containing nominal
+        intersection = OWLObjectIntersectionOf([cls, nominal])
+        
+        self.assertTrue(self.contains_nominal(intersection))
+
+    def test_contains_nominal_in_union(self):
+        """Test that nominals are detected when nested in unions."""
+        ind = OWLNamedIndividual(IRI.create(self.NS + "markus"))
+        nominal = OWLObjectOneOf([ind])
+        cls = OWLClass(IRI.create(self.NS + "Person"))
+        
+        # Create union containing nominal
+        union = OWLObjectUnionOf([cls, nominal])
+        
+        self.assertTrue(self.contains_nominal(union))
+
+    def test_contains_nominal_in_existential_filler(self):
+        """Test that nominals are detected in existential restriction fillers."""
+        ind = OWLNamedIndividual(IRI.create(self.NS + "markus"))
+        nominal = OWLObjectOneOf([ind])
+        prop = OWLObjectProperty(IRI.create(self.NS + "hasParent"))
+        
+        # Create existential restriction with nominal as filler
+        exists = OWLObjectSomeValuesFrom(prop, nominal)
+        
+        self.assertTrue(self.contains_nominal(exists))
+
+    def test_contains_cardinality_in_intersection(self):
+        """Test that cardinality restrictions are detected when nested in intersections."""
+        prop = OWLObjectProperty(IRI.create(self.NS + "hasChild"))
+        cls = OWLClass(IRI.create(self.NS + "Person"))
+        filler = OWLClass(IRI.create(self.NS + "Person"))
+        
+        # Create cardinality restriction
+        card = OWLObjectMinCardinality(cardinality=2, property=prop, filler=filler)
+        
+        # Create intersection containing cardinality
+        intersection = OWLObjectIntersectionOf([cls, card])
+        
+        self.assertTrue(self.contains_cardinality(intersection))
+
+    def test_contains_cardinality_in_union(self):
+        """Test that cardinality restrictions are detected when nested in unions."""
+        prop = OWLObjectProperty(IRI.create(self.NS + "hasChild"))
+        cls = OWLClass(IRI.create(self.NS + "Person"))
+        filler = OWLClass(IRI.create(self.NS + "Person"))
+        
+        # Create cardinality restriction
+        card = OWLObjectMinCardinality(cardinality=2, property=prop, filler=filler)
+        
+        # Create union containing cardinality
+        union = OWLObjectUnionOf([cls, card])
+        
+        self.assertTrue(self.contains_cardinality(union))
+
+    def test_contains_data_property_in_intersection(self):
+        """Test that data properties are detected when nested in intersections."""
+        from owlapy.owl_datatype import OWLDatatype
+        
+        data_prop = OWLDataProperty(IRI.create(self.NS + "hasAge"))
+        data_range = OWLDatatype(IRI("http://www.w3.org/2001/XMLSchema#", "integer"))
+        cls = OWLClass(IRI.create(self.NS + "Person"))
+        
+        # Create data property expression
+        data_expr = OWLDataSomeValuesFrom(property=data_prop, filler=data_range)
+        
+        # Create intersection containing data property
+        intersection = OWLObjectIntersectionOf([cls, data_expr])
+        
+        self.assertTrue(self.contains_data_property(intersection))
+
+    def test_no_false_positives_for_clean_alc(self):
+        """Test that clean ALC expressions don't trigger false positives."""
+        cls = OWLClass(IRI.create(self.NS + "Person"))
+        prop = OWLObjectProperty(IRI.create(self.NS + "hasParent"))
+        
+        # Create clean ALC expression: Person ⊓ ∃hasParent.Person
+        exists = OWLObjectSomeValuesFrom(prop, cls)
+        intersection = OWLObjectIntersectionOf([cls, exists])
+        
+        # Should not contain any forbidden constructs
+        self.assertFalse(self.contains_nominal(intersection))
+        self.assertFalse(self.contains_cardinality(intersection))
+        self.assertFalse(self.contains_data_property(intersection))
+
+    def test_deeply_nested_nominal(self):
+        """Test detection of deeply nested nominals."""
+        ind = OWLNamedIndividual(IRI.create(self.NS + "markus"))
+        nominal = OWLObjectOneOf([ind])
+        cls = OWLClass(IRI.create(self.NS + "Person"))
+        prop = OWLObjectProperty(IRI.create(self.NS + "hasParent"))
+        
+        # Create deeply nested structure:
+        # Person ⊓ (∃hasParent.Person ⊔ {markus})
+        exists = OWLObjectSomeValuesFrom(prop, cls)
+        union = OWLObjectUnionOf([exists, nominal])
+        intersection = OWLObjectIntersectionOf([cls, union])
+        
+        self.assertTrue(self.contains_nominal(intersection))
+
+    def test_should_include_with_nested_nominal(self):
+        """Test that _should_include_expression rejects expressions with nested nominals."""
+        model = TDL(knowledge_base=self.kb, use_nominals=False, verbose=0)
+        
+        ind = OWLNamedIndividual(IRI.create(self.NS + "markus"))
+        nominal = OWLObjectOneOf([ind])
+        cls = OWLClass(IRI.create(self.NS + "Person"))
+        
+        # Create intersection with nested nominal
+        intersection = OWLObjectIntersectionOf([cls, nominal])
+        
+        # Should be excluded when use_nominals=False
+        self.assertFalse(model._should_include_expression(intersection))
+
+    def test_should_include_with_nested_cardinality(self):
+        """Test that _should_include_expression rejects expressions with nested cardinality."""
+        model = TDL(knowledge_base=self.kb, use_card_restrictions=False, verbose=0)
+        
+        prop = OWLObjectProperty(IRI.create(self.NS + "hasChild"))
+        cls = OWLClass(IRI.create(self.NS + "Person"))
+        filler = OWLClass(IRI.create(self.NS + "Person"))
+        
+        # Create cardinality restriction
+        card = OWLObjectMinCardinality(cardinality=2, property=prop, filler=filler)
+        
+        # Create intersection with nested cardinality
+        intersection = OWLObjectIntersectionOf([cls, card])
+        
+        # Should be excluded when use_card_restrictions=False
+        self.assertFalse(model._should_include_expression(intersection))
+
+
 class TestTDLFeatureExtraction(unittest.TestCase):
     """Test feature extraction methods."""
 
