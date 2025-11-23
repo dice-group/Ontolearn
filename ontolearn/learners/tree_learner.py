@@ -50,6 +50,15 @@ import itertools
 from owlapy import owl_expression_to_dl
 from ..utils.static_funcs import make_iterable_verbose
 
+from owlapy.class_expression.restriction import (OWLDataSomeValuesFrom,OWLFacetRestriction, OWLDatatypeRestriction )
+from owlapy.vocab import (OWLFacet, XSDVocabulary)
+from owlapy.owl_property import OWLDataProperty
+from owlapy.owl_literal import OWLLiteral
+from owlapy.owl_data_ranges import OWLDataRange
+from owlapy.owl_datatype import OWLDatatype
+from owlapy.iri import IRI
+
+
 
 def explain_inference(clf, X: pd.DataFrame):
     """
@@ -141,6 +150,7 @@ def contains_data_properties(expr: OWLClassExpression) -> bool:
     if isinstance(expr, (OWLObjectOneOf, OWLDataHasValue)):
         return False
         
+    
     """Returns True if the OWL expression contains a literal (OwlDataOneOf)"""
     if isinstance(expr, (OWLDataOneOf, OWLDataHasValue)):
         return True
@@ -170,7 +180,7 @@ class TDL:
     def __init__(self, knowledge_base,
                  use_inverse: bool = False,
                  use_data_properties: bool = True,
-                 use_nominals: bool = True,
+                 use_nominals: bool = False,
                  use_card_restrictions: bool = False,
                  kwargs_classifier: dict = None,
                  max_runtime: int = 1,
@@ -239,23 +249,83 @@ class TDL:
         self.X = None
         self.y = None
 
+    def get_data_property_range(self, values:set) -> tuple:
+        """Get the data property range of an OWL class expression"""
+        values = list(values)
+        min_value = min(values)
+        max_value = max(values)
+        return (min_value, max_value)
+    def pack_data_property_with_range_to_dl_concept(self, property:OWLDataProperty, literal_range:tuple) -> str:
+        """Repack the ranged data property into an DL Concept String"""
+        #print(type(literal_range[0]))
+        min_restr = OWLFacetRestriction(OWLFacet.MIN_INCLUSIVE, OWLLiteral(literal_range[0],OWLDatatype(XSDVocabulary.DOUBLE)))
+        if literal_range == None:
+            max_restr = OWLFacetRestriction(OWLFacet.MAX_INCLUSIVE, OWLLiteral(literal_range[0],OWLDatatype(XSDVocabulary.DOUBLE)))
+        else:
+            max_restr = OWLFacetRestriction(OWLFacet.MAX_INCLUSIVE, OWLLiteral(literal_range[1],OWLDatatype(XSDVocabulary.DOUBLE)))
+        
+        dt_range = OWLDatatypeRestriction(
+            #here some way to auto detect datatype is needed
+        type_=OWLDatatype(XSDVocabulary.DOUBLE),
+        facet_restrictions=[min_restr, max_restr]
+        )
+        
+        packed_owl_class_expression = OWLDataSomeValuesFrom(property,dt_range)
+        return packed_owl_class_expression
+
     def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> (
             Tuple)[Dict[str, OWLClassExpression],Dict[str, str]]:
         # () Store mappings from str dl concept to owl class expression objects.
         features = dict()
         # () Grouped str dl concepts given str individuals.
         individuals_to_feature_mapping = dict()
+        data_properties_dict = dict()
         for owl_named_individual in make_iterable_verbose(individuals,
                                        verbose=self.verbose,
                                        desc="Extracting information about examples"):
             for owl_class_expression in self.knowledge_base.abox(individual=owl_named_individual, mode="expression"):
-                if self.use_data_properties or not contains_data_properties(owl_class_expression):
+                ##Check if data_properties are to be used and contained in OWL class expression
+                if self.use_data_properties and contains_data_properties(owl_class_expression):
                     str_dl_concept=owl_expression_to_dl(owl_class_expression)
-                    individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
-                    if str_dl_concept not in features:
-                        features[str_dl_concept] = owl_class_expression
+                    #individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
+                    #exctract filler and remainder from owl class expression
+                    data_property_remainder = owl_class_expression.get_property().get_IRI().get_remainder()
+                    data_property = owl_class_expression.get_property()
+                    filler = owl_class_expression.get_filler()
+                    #data_properties_dict = dict()
 
-                if self.use_nominals or not  contains_nominal(owl_class_expression):
+                    if(type(filler) == OWLDataOneOf):
+                        for i in filler.values():
+                            literal = i.get_literal()
+                            #check if literal is a numeric value
+                            if(i.is_decimal() or i.is_float() or i.is_integer() or i.is_double()):
+                                #check if data property already exists in dict
+                                if data_property_remainder not in data_properties_dict.keys():
+                                    data_properties_dict[data_property_remainder] = set()
+                                #add to data_properties_dict
+                                data_properties_dict[data_property_remainder].add(literal)
+                    #get ranges for data property
+                    #for i in data_properties_dict:
+                    #   print(owl_expression_to_dl(self.pack_data_property_with_range_to_dl_concept(data_property,self.get_data_property_range(data_properties_dict[i]))))
+                   
+                    for i in filler.values():
+                            literal = i.get_literal()
+                            #check if literal is a numeric value
+                            if(i.is_decimal() or i.is_float() or i.is_integer() or i.is_double()):
+                                new_class_expression = self.pack_data_property_with_range_to_dl_concept(data_property,self.get_data_property_range(data_properties_dict[ data_property_remainder]))
+                                str_dl_concept_dt_property = owl_expression_to_dl(new_class_expression)
+                               # owl_class_expression = new_class_expression
+                                individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept_dt_property)
+                                print(new_class_expression)
+                                if str_dl_concept_dt_property not in features:
+                                    features[str_dl_concept_dt_property] = new_class_expression
+                            elif str_dl_concept not in features :
+                                features[str_dl_concept] = owl_class_expression
+                        
+                        #print(features[str_dl_concept])
+                        #print(type(owl_class_expression))
+
+                if self.use_nominals and contains_nominal(owl_class_expression):
                     str_dl_concept=owl_expression_to_dl(owl_class_expression)
                     individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
                     if str_dl_concept not in features:
