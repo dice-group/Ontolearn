@@ -105,8 +105,8 @@ class ConSynRewardFunction(nn.Module):
                 current_reward = 0.0
                 if not concept_tokens:
                     current_reward -= (
-                        self.grammar_penalty_weight + int(has_eos) 
-                        + self.brevity_penalty_weight
+                        self.retrival_bonus_weight + self.grammar_penalty_weight 
+                        + self.brevity_penalty_weight + int(has_eos)
                         )
                 else:
                     if not is_invalid:
@@ -143,7 +143,7 @@ class ConSynRewardFunction(nn.Module):
                     if not has_eos:
                         current_reward -= self.missing_eos_penalty_weight
 
-                all_lengths_for_batch[i].append(len(concept_tokens)) # change to init_length_metric
+                all_lengths_for_batch[i].append(len(concept_tokens))
 
                 rewards_batched.append(current_reward)
                 concept_type, type_bonus =  self._get_concept_type_with_bonus(concept_tokens)

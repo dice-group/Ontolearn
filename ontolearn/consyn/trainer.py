@@ -28,7 +28,7 @@ class ConSynTrainer:
         reward_function: ConSynRewardFunction, heuristic_function: ConSynHeuristic, device: torch.device, optimizer: optim.Optimizer, lr: float = 0.001, lr_scheduler: Any = None, 
         max_gen_length: int = 50, gradient_clip_norm: float = 1.0, eval_interval: int = 0, patience: int = 10, expr_save_path: str = 'expriments',
         initial_baseline: float = 0.0, baseline_alpha: float = 0.99, num_k_predictions: int = 1, decoding_strategy: str = "multinomial", temperature: float = 1.0,
-        top_k: int = 0, top_p: float = 0.0, triplet_loss_weight: float = 0.3, diversity_loss_weight: float = 0.3, length_diversity_loss_weight: float = 0.3, hypothesis_threshold_score: float = 0.50, verbose: bool = False):
+        top_k: int = 0, top_p: float = 0.0, triplet_loss_weight: float = 0.3, diversity_loss_weight: float = 0.3, length_diversity_loss_weight: float = 0.3, hypothesis_threshold_score: float = 0.70, verbose: bool = False):
 
         self.model = model
         self.tokenizer = tokenizer
@@ -72,7 +72,7 @@ class ConSynTrainer:
         }
 
         self.hypothesis_threshold_score = hypothesis_threshold_score
-        self.cshs =  ConSynHypothesisSpace(max_size=10)
+        self.cshs =  ConSynHypothesisSpace(max_size=50)
         self.device_val_test = torch.device('cpu')
 
         self._checkpoint_loaded = False
@@ -91,11 +91,11 @@ class ConSynTrainer:
             variance = ((lengths - mean_length) ** 2).mean()
             batch_length_diversity_loss += variance
         
-        return batch_length_diversity_loss / batch_size
+        return -(batch_length_diversity_loss / batch_size)
 
     def _compute_diversity_loss(self, generated_ids_flat: torch.Tensor, batch_size: int) -> torch.Tensor:
         if self.num_k_predictions <= 1: # new
-         return torch.tensor(0.0, device=self.device)
+            return torch.tensor(0.0, device=self.device)
         
         batch_diversity_loss = 0.0
         for i in range(batch_size):
@@ -131,10 +131,8 @@ class ConSynTrainer:
 
         if rewards.dim() == 1 and rewards.size(0) == (log_prob_tensor.size(0) // self.num_k_predictions):
             rewards = rewards.repeat_interleave(self.num_k_predictions)
-       
-
-        advantage = (rewards - self.reward_baseline).detach()
-            
+    
+        advantage = (rewards - self.reward_baseline).detach()      
         policy_loss = -(log_prob_tensor * advantage).mean()
 
         return policy_loss
@@ -287,7 +285,7 @@ class ConSynTrainer:
                         print(f"Batch {batch_idx + 1}/{len(train_dataloader)} | Total Loss: {(total_train_loss / num_train_batches):.4f} Reward Loss: {(total_rl_loss / num_train_batches):.4f}, Triplet Loss: {(total_triplet_loss / num_train_batches):.4f}, Diversity Loss: {total_diversity_loss / num_train_batches:.4f}, Length Diversity Loss: {total_length_diversity_loss / num_train_batches:.4f} | Train Reward: {(total_train_rewards / num_train_batches):.4f} | Baseline: {self.reward_baseline:.4f}")
                         print()
 
-                    # ✅ Optional cleanup
+                    # Optional cleanup
                     # del input_ids, segment_ids, enc_mask
                     # del generated_ids_flat, per_token_log_probs_flat, is_grammatically_invalid_flat
                     # del semantic_tokens_flat, has_explicit_eos_flat
