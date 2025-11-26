@@ -21,7 +21,7 @@ def test_nero_basic():
     try:
         # Load knowledge base
         print("\n1. Loading knowledge base...")
-        kb = KnowledgeBase(path="../KGs/Family/family-benchmark_rich_background.owl")
+        kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
         print(f"   ✓ Knowledge base loaded successfully")
         print(f"   - Number of individuals: {kb.individuals_count()}")
         
@@ -29,13 +29,13 @@ def test_nero_basic():
         print("\n2. Defining learning problem...")
         namespace = "http://www.benchmark.org/family#"
         
-        pos = {OWLNamedIndividual(IRI.create(namespace, "F2F13")),
-               OWLNamedIndividual(IRI.create(namespace, "F2M7")),
-               OWLNamedIndividual(IRI.create(namespace, "F2M8"))}
+        pos = {OWLNamedIndividual(IRI.create(namespace, "F2M23")),
+               OWLNamedIndividual(IRI.create(namespace, "F2M16")),
+               OWLNamedIndividual(IRI.create(namespace, "F4M57"))}
         
-        neg = {OWLNamedIndividual(IRI.create(namespace, "F1M1")),
-               OWLNamedIndividual(IRI.create(namespace, "F1F2")),
-               OWLNamedIndividual(IRI.create(namespace, "F2M5"))}
+        neg = {OWLNamedIndividual(IRI.create(namespace, "F9F160")),
+               OWLNamedIndividual(IRI.create(namespace, "F9F148")),
+               OWLNamedIndividual(IRI.create(namespace, "F10F192"))}
         
         lp = PosNegLPStandard(pos=pos, neg=neg)
         print(f"   ✓ Learning problem created")
