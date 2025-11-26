@@ -29,23 +29,18 @@ This module implements NERO, a neural-symbolic concept learner that combines
 neural networks with symbolic reasoning for OWL class expression learning.
 """
 
-from typing import Dict, List, Set, Tuple, Optional, Iterable
+from typing import Dict, List, Set, Tuple, Optional
 import time
 import torch
 from torch import nn
 import math
 import torch.nn.functional as F
-import pandas as pd
-import numpy as np
-from abc import ABC, abstractmethod
+from abc import ABC
 from queue import PriorityQueue
-from collections import deque
-from multiprocessing import Pool
 
-from owlapy.class_expression import OWLClassExpression, OWLThing
+from owlapy.class_expression import OWLThing
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.render import DLSyntaxObjectRenderer
-from ontolearn.abstracts import AbstractKnowledgeBase, BaseRefinement
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.utils.static_funcs import compute_f1_score
@@ -72,12 +67,12 @@ class TargetClassExpression:
     """Represents a target class expression for neural training."""
     def __init__(self, *, label_id, name: str, idx_individuals: Set = None,
                  expression_chain: List = None, length: int = None,
-                 str_individuals: Set = None, type=None):
+                 str_individuals: Set = None, _type=None):
         self.label_id = label_id
         self.name = name
         self.idx_individuals = idx_individuals
         self.str_individuals = str_individuals
-        self.type = type
+        self.type = _type
         self.expression_chain = expression_chain
         self.num_individuals = len(self.str_individuals) if self.str_individuals else 0
         self.length = length
@@ -111,6 +106,7 @@ class ClassExpression(ABC):
         self.quality = quality if quality is not None else -1.0
         self.owl_class = owl_class
         self.length = length if length is not None else len(self.name.split())
+        self.type = 'class_expression'  # Default type, overridden by subclasses
 
     def __str__(self):
         return f'{self.type} | {self.name} | Indv:{self.num_individuals} | Quality:{self.quality:.3f}'
@@ -352,10 +348,10 @@ class DeepSet(torch.nn.Module):
 
         self.embeddings = torch.nn.Embedding(self.num_instances, self.num_embedding_dim)
         self.fc0 = nn.Sequential(
-            nn.BatchNorm1d(self.num_embedding_dim),
+            nn.LayerNorm(self.num_embedding_dim),
             nn.Linear(in_features=self.num_embedding_dim, out_features=self.num_outputs))
         self.fc1 = nn.Sequential(
-            nn.BatchNorm1d(self.num_embedding_dim),
+            nn.LayerNorm(self.num_embedding_dim),
             nn.Linear(in_features=self.num_embedding_dim, out_features=self.num_outputs))
 
     def forward(self, xpos, xneg):
@@ -498,7 +494,7 @@ class NERO:
                 idx_individuals=idx_individuals,
                 expression_chain=[renderer.render(OWLThing)],
                 length=1,
-                type='atomic_expression'
+                _type='atomic_expression'
             )
             target_expressions.append(target_exp)
 
@@ -632,11 +628,58 @@ class NERO:
         pos_examples = [ind.str for ind in learning_problem.pos]
         neg_examples = [ind.str for ind in learning_problem.neg]
 
+        # Store learning problem for later use
+        self._learning_problem = learning_problem
+        self._best_predictions = None
+
         # Train on this single learning problem
         self.train([(pos_examples, neg_examples)])
 
+        # Get predictions and store them
+        result = self.predict(pos=learning_problem.pos, neg=learning_problem.neg, top_k=10)
+        self._best_predictions = result
+
         # Return self for chaining
         return self
+
+    def best_hypotheses(self, n: int = 1) -> List:
+        """
+        Return the best n hypotheses (Ontolearn-compatible interface).
+
+        Args:
+            n: Number of hypotheses to return
+
+        Returns:
+            List of best hypothesis (currently only returns top 1)
+        """
+        if not self._is_trained or self._best_predictions is None:
+            return []
+
+        # For now, we return just the best prediction
+        # In a full implementation, we would store multiple candidates
+        return [self._best_predictions] if n >= 1 else []
+
+    def best_hypothesis(self) -> Optional[str]:
+        """
+        Return the best hypothesis (Ontolearn-compatible interface).
+
+        Returns:
+            The best predicted class expression as a string
+        """
+        if not self._is_trained or self._best_predictions is None:
+            return None
+        return self._best_predictions['Prediction']
+
+    def best_hypothesis_quality(self) -> float:
+        """
+        Return the quality of the best hypothesis.
+
+        Returns:
+            The F-measure/quality of the best prediction
+        """
+        if not self._is_trained or self._best_predictions is None:
+            return 0.0
+        return self._best_predictions['Quality']
 
     def predict(self, pos: Set[OWLNamedIndividual], neg: Set[OWLNamedIndividual], top_k: int = 10) -> Dict:
         """
@@ -674,14 +717,15 @@ class NERO:
         # Find best prediction
         best_quality = -1.0
         best_prediction = None
-        set_pos, set_neg = set(pos), set(neg)
+        set_pos_uris = set(pos_uris)  # Convert to set of strings
+        set_neg_uris = set(neg_uris)  # Convert to set of strings
 
         for idx in top_indices.cpu().numpy():
             target_exp = self.target_class_expressions[idx]
             quality = self.quality_func(
                 individuals=target_exp.str_individuals,
-                pos=set_pos,
-                neg=set_neg
+                pos=set_pos_uris,
+                neg=set_neg_uris
             )
 
             if quality > best_quality:

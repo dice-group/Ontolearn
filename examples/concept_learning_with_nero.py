@@ -5,29 +5,31 @@ This example demonstrates how to use NERO (Neural Class Expression Learning)
 for learning OWL class expressions from positive and negative examples.
 """
 import json
+import os
 
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.learners.nero import NERO
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 
+with open(os.path.join(os.path.dirname(__file__), '..', 'LPs', 'Family', 'lps.json')) as json_file:
+    settings = json.load(json_file)
+
+# Create learning problem
+p = set(settings['problems']['Aunt']['positive_examples'])
+n = set(settings['problems']['Aunt']['negative_examples'])
+pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
+neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
+lp = PosNegLPStandard(pos=pos, neg=neg)
+
 
 def example_nero_family():
     """Example using NERO on the Family benchmark."""
     
     # Load knowledge base
-    kb = KnowledgeBase(path="../KGs/Family/family-benchmark_rich_background.owl")
+    kb = KnowledgeBase(path=os.path.join(os.path.dirname(__file__), '..', 'KGs', 'Family', 'family-benchmark_rich_background.owl'))
 
     # Get positive and negative examples from JSON
-    with open('../LPs/Family/lps.json') as json_file:
-        settings = json.load(json_file)
-
-    # Create learning problem
-    p = set(settings['problems']['Aunt']['positive_examples'])
-    n = set(settings['problems']['Aunt']['negative_examples'])
-    pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
-    neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
-    lp = PosNegLPStandard(pos=pos, neg=neg)
     
     print("=" * 80)
     print("NERO - Neural Class Expression Learning")
@@ -71,20 +73,7 @@ def example_nero_set_transformer():
     """Example using NERO with SetTransformer architecture."""
     
     # Load knowledge base
-    kb = KnowledgeBase(path="KGs/Family/family-benchmark_rich_background.owl")
-    
-    # Define learning problem
-    namespace = "http://www.benchmark.org/family#"
-    
-    pos = {OWLNamedIndividual(IRI.create(namespace, "F2F13")),
-           OWLNamedIndividual(IRI.create(namespace, "F2M7")),
-           OWLNamedIndividual(IRI.create(namespace, "F2M8"))}
-    
-    neg = {OWLNamedIndividual(IRI.create(namespace, "F1M1")),
-           OWLNamedIndividual(IRI.create(namespace, "F1F2")),
-           OWLNamedIndividual(IRI.create(namespace, "F2M5"))}
-    
-    lp = PosNegLPStandard(pos=pos, neg=neg)
+    kb = KnowledgeBase(path=os.path.join(os.path.dirname(__file__), '..', 'KGs', 'Family', 'family-benchmark_rich_background.owl'))
     
     print("\n" + "=" * 80)
     print("NERO - Neural Class Expression Learning (SetTransformer)")
@@ -122,5 +111,4 @@ if __name__ == '__main__':
     example_nero_family()
     
     # Run SetTransformer example
-    # example_nero_set_transformer()
-
+    example_nero_set_transformer()
