@@ -153,7 +153,7 @@ class ObjectProperty(Property):
         self.inverse_of = inverse_of
 
     def __str__(self):
-        if self.identifier == None and self.inverse_of != None:
+        if self.identifier is None and self.inverse_of is not None:
             return "{}-".format(self.inverse_of)
         return self.identifier
 
