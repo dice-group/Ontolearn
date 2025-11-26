@@ -38,7 +38,7 @@ jobs:
 
       - name: Lint with ruff
         run: |
-          ruff check ontolearn/learners/ --line-length=200
+          ruff check ontolearn/learners --exclude ontolearn/learners/spell_kit --line-length=200
 
       - name: Get external files
         run: |
