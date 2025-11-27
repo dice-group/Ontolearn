@@ -292,7 +292,6 @@ class NERO:
 
         start_time = time.time()
         self.search_tree = SearchTree()
-        set_pos, set_neg = set(pos), set(neg)
 
         # Initialize with neural predictions OR top refinements
         if self._is_trained and len(self.target_class_expressions) > 0:
@@ -368,7 +367,7 @@ class NERO:
 
             try:
                 current_concept = self.search_tree.get()
-            except:
+            except Exception:
                 break
 
             if current_concept.length > max_child_length:
@@ -448,7 +447,6 @@ class NERO:
             return self.search(pos, neg, top_k=top_k)
 
         start_time = time.time()
-        set_pos, set_neg = set(pos), set(neg)
 
         # Get neural predictions
         idx_pos = torch.LongTensor([[self.instance_idx_mapping[i] for i in pos]])
