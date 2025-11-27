@@ -180,7 +180,7 @@ class TDL:
     def __init__(self, knowledge_base,
                  use_inverse: bool = False,
                  use_data_properties: bool = True,
-                 use_nominals: bool = False,
+                 use_nominals: bool = True,
                  use_card_restrictions: bool = False,
                  kwargs_classifier: dict = None,
                  max_runtime: int = 1,
@@ -288,7 +288,7 @@ class TDL:
                 if self.use_data_properties and contains_data_properties(owl_class_expression):
                     str_dl_concept=owl_expression_to_dl(owl_class_expression)
                     #individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
-                    #exctract filler and remainder from owl class expression
+                    #exctract filler and remainder from owl class expression, where did I implement get_IRI
                     data_property_remainder = owl_class_expression.get_property().get_IRI().get_remainder()
                     data_property = owl_class_expression.get_property()
                     filler = owl_class_expression.get_filler()
@@ -314,24 +314,33 @@ class TDL:
                             if(i.is_decimal() or i.is_float() or i.is_integer() or i.is_double()):
                                 new_class_expression = self.pack_data_property_with_range_to_dl_concept(data_property,self.get_data_property_range(data_properties_dict[ data_property_remainder]))
                                 str_dl_concept_dt_property = owl_expression_to_dl(new_class_expression)
-                               # owl_class_expression = new_class_expression
                                 individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept_dt_property)
-                                print(new_class_expression)
+                               
                                 if str_dl_concept_dt_property not in features:
                                     features[str_dl_concept_dt_property] = new_class_expression
+                                    #features.setdefault(str_dl_concept_dt_property,set()).add(new_class_expression)
                             elif str_dl_concept not in features :
+                                individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
                                 features[str_dl_concept] = owl_class_expression
-                        
+                                #features.setdefault(str_dl_concept,set()).add(owl_class_expression)
                         #print(features[str_dl_concept])
                         #print(type(owl_class_expression))
-
-                if self.use_nominals and contains_nominal(owl_class_expression):
+                #check if nominals are to be used
+                elif self.use_nominals and contains_nominal(owl_class_expression):
                     str_dl_concept=owl_expression_to_dl(owl_class_expression)
                     individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
                     if str_dl_concept not in features:
                         # A mapping from str dl representation to owl object.
                         features[str_dl_concept] = owl_class_expression
-
+                        #features.setdefault(str_dl_concept,set()).add(owl_class_expression)
+                #this if neither nominals or data properties are to be used
+                elif not contains_nominal(owl_class_expression) and not contains_data_properties(owl_class_expression):
+                    str_dl_concept=owl_expression_to_dl(owl_class_expression)
+                    individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
+                    if str_dl_concept not in features:
+                        # A mapping from str dl representation to owl object.
+                        features[str_dl_concept] = owl_class_expression
+        
         assert len(features) > 0, "First hop features cannot be extracted. Ensure that there are axioms about the examples."
         if self.verbose > 0:
             print("Unique OWL Class Expressions as features :", len(features))
@@ -346,7 +355,7 @@ class TDL:
 
             features_of_owl_named_individual=individuals_to_feature_mapping[owl_named_individual.str]
 
-            for owl_class_expression in features:
+            for owl_class_expression in features: 
                 if owl_expression_to_dl(owl_class_expression) in features_of_owl_named_individual:
                     binary_sparse_representation.append(1.0)
                 else:

@@ -81,7 +81,7 @@ def dl_concept_learning(args):
     if not args.learner_types or 'ftdl' in args.learner_types:
         ftdl = FTDL(knowledge_base=kb,
                 n_estimators=10,  
-                quality_func = Precision(),
+                quality_func = F1(),
                 kwargs_classifier={"random_state": 1},
                 max_runtime=args.max_runtime,
                 verbose=0)

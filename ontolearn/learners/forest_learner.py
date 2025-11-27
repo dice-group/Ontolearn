@@ -1,36 +1,25 @@
 from ontolearn.learners import TDL
 from ontolearn.learning_problem import PosNegLPStandard
-import ontolearn.triple_store
 from ontolearn.verbalizer import verbalize_learner_prediction
-import numpy as np
 import pandas as pd
 from .tree_learner import explain_inference, concepts_reducer
-from ontolearn.metrics import F1, Precision
+from ontolearn.metrics import F1
 
 
-from typing import Dict, Set, Tuple, List, Union, Callable
+from typing import Tuple, List, Union, Callable
 
-from ontolearn.knowledge_base import KnowledgeBase
 import sklearn
-from sklearn import tree
-from sklearn.ensemble import RandomForestClassifier
-from ontolearn.utils.static_funcs import compute_f1_score
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
 from ..quality_funcs import evaluate_concept
-from ..utils.static_funcs import plot_umap_reduced_embeddings, plot_decision_tree_of_expressions, \
-    plot_topk_feature_importance
+from ..utils.static_funcs import plot_umap_reduced_embeddings
 
-import itertools
-from owlapy.utils import HasFiller, HasOperands
 from owlapy.owl_individual import OWLNamedIndividual
-from owlapy import owl_expression_to_dl
 from ..utils.static_funcs import make_iterable_verbose
 
 from owlapy.class_expression import (
     OWLObjectIntersectionOf,
     OWLClassExpression,
-    OWLObjectUnionOf,
-    OWLObjectOneOf,
-    OWLObjectHasValue
+    OWLObjectUnionOf
 )
 
 
@@ -39,7 +28,8 @@ class FTDL(TDL):
 
     def __init__(self, knowledge_base,
                  n_estimators: int = 10,
-                 quality_func: Callable = Precision(),
+                 quality_func: Callable = F1(),
+                 reduce:bool  = False,
                  use_inverse: bool = False,
                  use_data_properties: bool = False,
                  use_nominals: bool = True,
@@ -58,6 +48,7 @@ class FTDL(TDL):
         super().__init__(knowledge_base, use_inverse, use_data_properties,use_nominals, use_card_restrictions, kwargs_classifier, max_runtime, grid_search_over, grid_search_apply, kwargs_grid_search, report_classification,plot_tree, plot_embeddings, plot_feature_importance, verbose, verbalize)
         self.n_estimators = n_estimators
         self.quality_func = quality_func
+        self.reduce = reduce
 
 
     def construct_owl_expression_from_tree(self,c: any, X: pd.DataFrame, y: pd.DataFrame) -> List[OWLObjectIntersectionOf]:
@@ -143,7 +134,7 @@ class FTDL(TDL):
             # Training
             if self.verbose>0:
                 print("Training starts!")
-            self.clf = RandomForestClassifier(self.n_estimators, **self.kwargs_classifier, ).fit(X=X.values, y=y.values)
+            self.clf = ExtraTreesClassifier(self.n_estimators, **self.kwargs_classifier, ).fit(X=X.values, y=y.values)
 
             if self.report_classification:
 
