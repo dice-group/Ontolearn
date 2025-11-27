@@ -32,362 +32,16 @@ neural networks with symbolic reasoning for OWL class expression learning.
 from typing import Dict, List, Set, Tuple, Optional
 import time
 import torch
-from torch import nn
-import math
-import torch.nn.functional as F
-from abc import ABC
-from queue import PriorityQueue
 
 from owlapy.class_expression import OWLThing
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.render import DLSyntaxObjectRenderer
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
+from ontolearn.nero_architectures import DeepSet, SetTransformerNet
+from ontolearn.nero_utils import SearchTree, TargetClassExpression
+from ontolearn.refinement_operators import NERORefinement
 from ontolearn.utils.static_funcs import compute_f1_score
-
-
-# =============================================================================
-# Expression Classes
-# =============================================================================
-
-class Role:
-    """Represents an OWL object property/role."""
-    def __init__(self, *, name: str):
-        assert isinstance(name, str)
-        self.name = name
-
-    def __str__(self):
-        return f'Role at {hex(id(self))} | {self.name}'
-
-    def __repr__(self):
-        return self.__str__()
-
-
-class TargetClassExpression:
-    """Represents a target class expression for neural training."""
-    def __init__(self, *, label_id, name: str, idx_individuals: Set = None,
-                 expression_chain: List = None, length: int = None,
-                 str_individuals: Set = None, _type=None):
-        self.label_id = label_id
-        self.name = name
-        self.idx_individuals = idx_individuals
-        self.str_individuals = str_individuals
-        self.type = _type
-        self.expression_chain = expression_chain
-        self.num_individuals = len(self.str_individuals) if self.str_individuals else 0
-        self.length = length
-        self.quality = None
-
-    @property
-    def size(self):
-        return self.num_individuals
-
-    def __lt__(self, other):
-        return self.quality < other.quality
-
-    def __str__(self):
-        return f'TargetClassExpression | {self.name} | Indv:{self.num_individuals} | Quality:{self.quality}'
-
-    def __repr__(self):
-        return self.__str__()
-
-
-class ClassExpression(ABC):
-    """Base class for class expressions."""
-    def __init__(self, *, name: str, str_individuals: Set, expression_chain: List,
-                 owl_class=None, quality=None, length=None):
-        assert isinstance(name, str)
-        assert isinstance(str_individuals, set)
-        assert isinstance(expression_chain, (list, tuple))
-        self.name = name
-        self.str_individuals = str_individuals
-        self.expression_chain = expression_chain
-        self.num_individuals = len(self.str_individuals)
-        self.quality = quality if quality is not None else -1.0
-        self.owl_class = owl_class
-        self.length = length if length is not None else len(self.name.split())
-        self.type = 'class_expression'  # Default type, overridden by subclasses
-
-    def __str__(self):
-        return f'{self.type} | {self.name} | Indv:{self.num_individuals} | Quality:{self.quality:.3f}'
-
-    def __repr__(self):
-        return self.__str__()
-
-    @property
-    def size(self):
-        return self.num_individuals
-
-    def __lt__(self, other):
-        return self.quality < other.quality
-
-
-class AtomicExpression(ClassExpression):
-    """Represents an atomic class expression."""
-    def __init__(self, *, name: str, str_individuals: Set, expression_chain: List,
-                 owl_class=None, quality=None, label_id=None, idx_individuals=None):
-        super().__init__(name=name, str_individuals=str_individuals,
-                         expression_chain=expression_chain, quality=quality, owl_class=owl_class)
-        self.length = 1
-        self.type = 'atomic_expression'
-        self.idx_individuals = idx_individuals
-        self.label_id = label_id
-
-
-class ComplementOfAtomicExpression(ClassExpression):
-    """Represents a negated atomic class expression."""
-    def __init__(self, *, name: str, atomic_expression, str_individuals: Set,
-                 expression_chain: List, quality=None, owl_class=None,
-                 label_id=None, idx_individuals=None):
-        super().__init__(name=name, str_individuals=str_individuals,
-                         expression_chain=expression_chain, quality=quality, owl_class=owl_class)
-        self.atomic_expression = atomic_expression
-        self.length = 2
-        self.type = 'negated_expression'
-        self.label_id = label_id
-        self.idx_individuals = idx_individuals
-
-
-class UniversalQuantifierExpression(ClassExpression):
-    """Represents a universal quantifier expression (∀)."""
-    def __init__(self, *, name: str, role=None, filler=None, label_id=None,
-                 idx_individuals=None, str_individuals: Set, expression_chain: List, quality=None):
-        assert isinstance(name, str)
-        assert isinstance(str_individuals, set)
-        assert isinstance(expression_chain, (list, tuple))
-        super().__init__(name=name, str_individuals=str_individuals,
-                         expression_chain=expression_chain, quality=quality)
-        self.role = role
-        self.filler = filler
-        self.type = "universal_quantifier_expression"
-        self.label_id = label_id
-        self.idx_individuals = idx_individuals
-        self.length = 3
-
-
-class ExistentialQuantifierExpression(ClassExpression):
-    """Represents an existential quantifier expression (∃)."""
-    def __init__(self, *, name: str, role=None, filler=None, str_individuals: Set,
-                 expression_chain: List, quality=None, label_id=None, idx_individuals=None):
-        assert isinstance(name, str)
-        assert isinstance(str_individuals, set)
-        assert isinstance(expression_chain, (list, tuple))
-        super().__init__(name=name, str_individuals=str_individuals,
-                         expression_chain=expression_chain, quality=quality)
-        self.role = role
-        self.filler = filler
-        self.type = "existantial_quantifier_expression"
-        self.label_id = label_id
-        self.idx_individuals = idx_individuals
-        self.length = 3
-
-
-class IntersectionClassExpression(ClassExpression):
-    """Represents an intersection of class expressions."""
-    def __init__(self, *, name: str, length: int, str_individuals: Set,
-                 expression_chain: List, owl_class=None, quality=None,
-                 label_id=None, concepts=None, idx_individuals=None):
-        super().__init__(name=name, str_individuals=str_individuals,
-                         expression_chain=expression_chain, quality=quality, owl_class=owl_class)
-        assert length >= 3
-        self.length = length
-        self.type = 'intersection_expression'
-        self.label_id = label_id
-        self.idx_individuals = idx_individuals
-        self.concepts = concepts
-
-
-class UnionClassExpression(ClassExpression):
-    """Represents a union of class expressions."""
-    def __init__(self, *, name: str, length: int, str_individuals: Set,
-                 expression_chain: List, owl_class=None, concepts=None,
-                 quality=None, label_id=None, idx_individuals=None):
-        super().__init__(name=name, str_individuals=str_individuals,
-                         expression_chain=expression_chain, quality=quality, owl_class=owl_class)
-        assert length >= 3
-        self.length = length
-        self.type = 'union_expression'
-        self.label_id = label_id
-        self.idx_individuals = idx_individuals
-        self.concepts = concepts
-
-
-# =============================================================================
-# Data Structures
-# =============================================================================
-
-class SearchTree:
-    """Priority queue for managing search states."""
-    def __init__(self, maxsize=0):
-        self.items_in_queue = PriorityQueue(maxsize)
-        self.gate = dict()
-
-    def __contains__(self, key):
-        return key in self.gate
-
-    def put(self, expression, key=None, condition=None):
-        if condition is None:
-            if expression.name not in self.gate:
-                if key is None:
-                    key = -expression.quality
-                self.items_in_queue.put((key, expression))
-                self.gate[expression.name] = expression
-        else:
-            raise ValueError('Define the condition')
-
-    def get(self):
-        _, expression = self.items_in_queue.get(timeout=1)
-        del self.gate[expression.name]
-        return expression
-
-    def get_all(self):
-        return list(self.gate.values())
-
-    def __len__(self):
-        return len(self.gate)
-
-    def __iter__(self):
-        return (exp for q, exp in self.items_in_queue.queue)
-
-
-# =============================================================================
-# Neural Architectures
-# =============================================================================
-
-class MAB(nn.Module):
-    """Multi-head Attention Block."""
-    def __init__(self, dim_Q, dim_K, dim_V, num_heads, ln=False):
-        super(MAB, self).__init__()
-        self.dim_V = dim_V
-        self.num_heads = num_heads
-        self.fc_q = nn.Linear(dim_Q, dim_V)
-        self.fc_k = nn.Linear(dim_K, dim_V)
-        self.fc_v = nn.Linear(dim_K, dim_V)
-        if ln:
-            self.ln0 = nn.LayerNorm(dim_V)
-            self.ln1 = nn.LayerNorm(dim_V)
-        self.fc_o = nn.Linear(dim_V, dim_V)
-
-    def forward(self, Q, K):
-        Q = self.fc_q(Q)
-        K, V = self.fc_k(K), self.fc_v(K)
-        dim_split = self.dim_V // self.num_heads
-        Q_ = torch.cat(Q.split(dim_split, 2), 0)
-        K_ = torch.cat(K.split(dim_split, 2), 0)
-        V_ = torch.cat(V.split(dim_split, 2), 0)
-        A = torch.softmax(Q_.bmm(K_.transpose(1, 2)) / math.sqrt(self.dim_V), 2)
-        O_ = torch.cat((Q_ + A.bmm(V_)).split(Q.size(0), 0), 2)
-        O_ = O_ if getattr(self, 'ln0', None) is None else self.ln0(O_)
-        O_ = O_ + F.relu(self.fc_o(O_))
-        O_ = O_ if getattr(self, 'ln1', None) is None else self.ln1(O_)
-        return O_
-
-
-class SAB(nn.Module):
-    """Self-Attention Block."""
-    def __init__(self, dim_in, dim_out, num_heads, ln=False):
-        super(SAB, self).__init__()
-        self.mab = MAB(dim_in, dim_in, dim_out, num_heads, ln=ln)
-
-    def forward(self, X):
-        return self.mab(X, X)
-
-
-class ISAB(nn.Module):
-    """Induced Self-Attention Block."""
-    def __init__(self, dim_in, dim_out, num_heads, num_inds, ln=False):
-        super(ISAB, self).__init__()
-        self.I = nn.Parameter(torch.Tensor(1, num_inds, dim_out))
-        nn.init.xavier_uniform_(self.I)
-        self.mab0 = MAB(dim_out, dim_in, dim_out, num_heads, ln=ln)
-        self.mab1 = MAB(dim_in, dim_out, dim_out, num_heads, ln=ln)
-
-    def forward(self, X):
-        H = self.mab0(self.I.repeat(X.size(0), 1, 1), X)
-        return self.mab1(X, H)
-
-
-class PMA(nn.Module):
-    """Pooling by Multihead Attention."""
-    def __init__(self, dim, num_heads, num_seeds, ln=False):
-        super(PMA, self).__init__()
-        self.S = nn.Parameter(torch.Tensor(1, num_seeds, dim))
-        nn.init.xavier_uniform_(self.S)
-        self.mab = MAB(dim, dim, dim, num_heads, ln=ln)
-
-    def forward(self, X):
-        return self.mab(self.S.repeat(X.size(0), 1, 1), X)
-
-
-class SetTransformer(nn.Module):
-    """Set Transformer architecture."""
-    def __init__(self, dim_input, num_outputs, dim_output, num_inds=32,
-                 dim_hidden=128, num_heads=4, ln=False):
-        super(SetTransformer, self).__init__()
-        self.enc = nn.Sequential(
-            ISAB(dim_input, dim_hidden, num_heads, num_inds, ln=ln),
-            ISAB(dim_hidden, dim_hidden, num_heads, num_inds, ln=ln))
-        self.dec = nn.Sequential(
-            PMA(dim_hidden, num_heads, num_outputs, ln=ln),
-            SAB(dim_hidden, dim_hidden, num_heads, ln=ln),
-            SAB(dim_hidden, dim_hidden, num_heads, ln=ln),
-            nn.Linear(dim_hidden, dim_output))
-
-    def forward(self, X):
-        return self.dec(self.enc(X))
-
-
-class DeepSet(torch.nn.Module):
-    """DeepSet neural architecture for set-based learning."""
-    def __init__(self, num_instances: int, num_embedding_dim: int, num_outputs: int):
-        super(DeepSet, self).__init__()
-        self.name = 'DeepSet'
-        self.num_instances = num_instances
-        self.num_embedding_dim = num_embedding_dim
-        self.num_outputs = num_outputs
-
-        self.embeddings = torch.nn.Embedding(self.num_instances, self.num_embedding_dim)
-        self.fc0 = nn.Sequential(
-            nn.LayerNorm(self.num_embedding_dim),
-            nn.Linear(in_features=self.num_embedding_dim, out_features=self.num_outputs))
-        self.fc1 = nn.Sequential(
-            nn.LayerNorm(self.num_embedding_dim),
-            nn.Linear(in_features=self.num_embedding_dim, out_features=self.num_outputs))
-
-    def forward(self, xpos, xneg):
-        xpos_score = self.fc0(torch.sum(self.embeddings(xpos), 1))
-        xneg_score = self.fc1(torch.sum(self.embeddings(xneg), 1))
-        return torch.sigmoid(xpos_score - xneg_score)
-
-    def positive_expression_embeddings(self, tensor_idx_individuals: torch.LongTensor):
-        return self.fc0(torch.sum(self.embeddings(tensor_idx_individuals), 1))
-
-    def negative_expression_embeddings(self, tensor_idx_individuals: torch.LongTensor):
-        return self.fc1(torch.sum(self.embeddings(tensor_idx_individuals), 1))
-
-
-class SetTransformerNet(torch.nn.Module):
-    """Set Transformer based architecture."""
-    def __init__(self, num_instances: int, num_embedding_dim: int, num_outputs: int):
-        super(SetTransformerNet, self).__init__()
-        self.name = 'ST'
-        self.num_instances = num_instances
-        self.num_embedding_dim = num_embedding_dim
-        self.num_outputs = num_outputs
-
-        self.embeddings = torch.nn.Embedding(self.num_instances, self.num_embedding_dim)
-        self.set_transformer_negative = SetTransformer(
-            dim_input=self.num_embedding_dim, num_outputs=self.num_outputs,
-            dim_output=1, num_inds=4, dim_hidden=4, num_heads=4, ln=False)
-        self.set_transformer_positive = SetTransformer(
-            dim_input=self.num_embedding_dim, num_outputs=self.num_outputs,
-            dim_output=1, num_inds=4, dim_hidden=4, num_heads=4, ln=False)
-
-    def forward(self, xpos, xneg):
-        xpos_score = torch.squeeze(self.set_transformer_positive(self.embeddings(xpos)), dim=2)
-        xneg_score = torch.squeeze(self.set_transformer_negative(self.embeddings(xneg)), dim=2)
-        return torch.sigmoid(xpos_score - xneg_score)
-
 
 # =============================================================================
 # NERO Main Class
@@ -415,7 +69,7 @@ class NERO:
     """
 
     name = 'NERO'
-    
+
     def __init__(self,
                  knowledge_base: KnowledgeBase,
                  num_embedding_dim: int = 50,
@@ -425,7 +79,7 @@ class NERO:
                  batch_size: int = 32,
                  num_workers: int = 4,
                  quality_func=None,
-                 max_runtime: Optional[int] = None,
+                 max_runtime: Optional[int] = 10,
                  verbose: int = 0):
 
         self.kb = knowledge_base
@@ -437,6 +91,8 @@ class NERO:
         self.num_workers = num_workers
         self.max_runtime = max_runtime
         self.verbose = verbose
+        self.search_tree = SearchTree()
+        self.refinement_op = None
 
         # Quality function
         if quality_func is None:
@@ -453,6 +109,7 @@ class NERO:
         self.idx_to_instance_mapping = None
         self.target_class_expressions = None
         self.expression = {}
+        self._best_predictions = None
 
         # Training state
         self._is_trained = False
@@ -470,6 +127,14 @@ class NERO:
         self.idx_to_instance_mapping = {
             v: k for k, v in self.instance_idx_mapping.items()
         }
+
+    def _initialize_refinement_operator(self):
+        """Initialize the refinement operator."""
+        if self.refinement_op is None:
+            if self.verbose > 0:
+                print("Initializing refinement operator...")
+            self.refinement_op = NERORefinement(self.kb)
+            self.expression.update(self.refinement_op.expressions)
 
     def _extract_target_expressions(self) -> List[TargetClassExpression]:
         """Extract target class expressions from the knowledge base."""
@@ -574,8 +239,8 @@ class NERO:
             Y_list.append(labels)
 
         # Pad sequences to same length
-        max_pos_len = max(len(x) for x in X_pos_list)
-        max_neg_len = max(len(x) for x in X_neg_list)
+        max_pos_len = max(len(x) for x in X_pos_list) if X_pos_list else 0
+        max_neg_len = max(len(x) for x in X_neg_list) if X_neg_list else 0
 
         X_pos_padded = torch.zeros(len(X_pos_list), max_pos_len, dtype=torch.long)
         X_neg_padded = torch.zeros(len(X_neg_list), max_neg_len, dtype=torch.long)
@@ -617,29 +282,251 @@ class NERO:
             training_time = time.time() - start_time
             print(f"Training completed in {training_time:.2f} seconds")
 
+    def search(self, pos: Set[str], neg: Set[str], top_k: int = 10, max_child_length: int = 10, max_queue_size: int = 10000) -> Dict:
+        """
+        Perform reinforcement learning-based search for complex class expressions.
+        Uses neural predictions to initialize and guide the search.
+        """
+        if self.verbose > 0:
+            print("Starting reinforcement learning search...")
+
+        start_time = time.time()
+        self.search_tree = SearchTree()
+        set_pos, set_neg = set(pos), set(neg)
+
+        # Initialize with neural predictions OR top refinements
+        if self._is_trained and len(self.target_class_expressions) > 0:
+            idx_pos = torch.LongTensor([[self.instance_idx_mapping[i] for i in pos]])
+            idx_neg = torch.LongTensor([[self.instance_idx_mapping[i] for i in neg]])
+
+            with torch.no_grad():
+                sort_scores, sort_idxs = torch.topk(
+                    self.model(idx_pos, idx_neg).flatten(),
+                    min(top_k, len(self.target_class_expressions)),
+                    largest=True
+                )
+
+            # Initialize queue with top neural predictions
+            for idx_target in sort_idxs.detach().numpy():
+                target_ce = self.target_class_expressions[idx_target]
+                try:
+                    target_ce.quality = self.quality_func(
+                        individuals=target_ce.str_individuals, pos=pos, neg=neg
+                    )
+                    self.search_tree.put(target_ce)
+                except (AttributeError, KeyError):
+                    continue
+
+        # Always add top refinements to initial queue for diversity
+        # This ensures we explore complex expressions, not just atomic ones
+        if self.refinement_op and self.refinement_op.top_refinements:
+            for length, refinement_set in self.refinement_op.top_refinements.items():
+                for concept in refinement_set:
+                    if concept.name not in self.search_tree.gate:
+                        try:
+                            concept.quality = self.quality_func(
+                                individuals=concept.str_individuals, pos=pos, neg=neg
+                            )
+                            self.search_tree.put(concept)
+                        except (AttributeError, KeyError):
+                            continue
+
+        if len(self.search_tree.gate) == 0:
+            raise ValueError("Failed to initialize search tree with any concepts")
+
+        best_hypothesis = None
+        best_quality = -1.0
+
+        # Find initial best
+        for name, expr in list(self.search_tree.gate.items()):
+            if expr.quality > best_quality:
+                best_quality = expr.quality
+                best_hypothesis = expr
+
+        if self.verbose > 0:
+            print(f"Initial best hypothesis: {best_hypothesis.name} (Quality: {best_quality:.3f})")
+            print(f"Initial queue size: {len(self.search_tree.gate)}")
+
+        # Iterative refinement-based search
+        iteration = 0
+        max_iterations = 100000
+        num_explored = len(self.search_tree.gate)
+        # More generous exploration: explore up to 50% more concepts, not just 10%
+        exploration_limit = num_explored + max(num_explored // 2, 100)
+
+        while (not self.search_tree.items_in_queue.empty() and
+               (time.time() - start_time) < self.max_runtime and
+               iteration < max_iterations and
+               num_explored < exploration_limit):
+            iteration += 1
+
+            queue_size = self.search_tree.items_in_queue.qsize()
+            if queue_size > max_queue_size:
+                if self.verbose > 0:
+                    print(f"WARNING: Queue size ({queue_size}) exceeded max. Stopping search.")
+                break
+
+            try:
+                current_concept = self.search_tree.get()
+            except:
+                break
+
+            if current_concept.length > max_child_length:
+                continue
+
+            # Generate refinements
+            refined_concepts = self.refinement_op.refine(current_concept)
+
+            if not refined_concepts:
+                continue
+
+            # Limit refinements
+            if len(refined_concepts) > 100:
+                refined_concepts = refined_concepts[:100]
+
+            # Evaluate refinements
+            for next_concept in refined_concepts:
+                if next_concept.name not in self.search_tree.gate:
+                    try:
+                        quality = self.quality_func(
+                            individuals=next_concept.str_individuals, pos=pos, neg=neg
+                        )
+                        next_concept.quality = quality
+
+                        if next_concept.length <= max_child_length and queue_size < max_queue_size:
+                            self.search_tree.put(next_concept)
+                            num_explored += 1
+
+                        if quality > best_quality:
+                            best_quality = quality
+                            best_hypothesis = next_concept
+                            if self.verbose > 1:
+                                print(f"New best at iter {iteration}: {best_hypothesis.name} (Quality: {best_quality:.3f})")
+
+                        # Early stopping if perfect solution found
+                        if quality >= 1.0:
+                            if self.verbose > 0:
+                                print(f"Perfect solution found at iteration {iteration}")
+                            runtime = time.time() - start_time
+                            return {
+                                'Prediction': best_hypothesis.name,
+                                'F-measure': best_quality,
+                                'Runtime': runtime,
+                                'Quality': best_quality
+                            }
+                    except (AttributeError, KeyError, Exception) as e:
+                        # Skip concepts that cause errors during evaluation
+                        if self.verbose > 1:
+                            print(f"Skipping concept due to error: {e}")
+                        continue
+
+            if iteration % 10 == 0:
+                time.sleep(0.001)
+
+            if self.verbose > 0 and iteration % 1000 == 0:
+                elapsed = time.time() - start_time
+                print(f"Iter {iteration}, Queue: {queue_size}, Best: {best_quality:.3f}, Time: {elapsed:.1f}s")
+
+        runtime = time.time() - start_time
+        if self.verbose > 0:
+            print(f"Search finished in {runtime:.2f}s after {iteration} iterations.")
+            print(f"Best: {best_hypothesis.name} (Quality: {best_quality:.3f})")
+
+        return {
+            'Prediction': best_hypothesis.name,
+            'F-measure': best_quality,
+            'Runtime': runtime,
+            'Quality': best_quality
+        }
+
+    def search_with_smart_init(self, pos: Set[str], neg: Set[str], top_k: int = 10) -> Dict:
+        """
+        Search with smart initialization from neural predictions (model.py compatible).
+        This uses neural model predictions to guide the symbolic refinement search.
+        """
+        if not self._is_trained:
+            return self.search(pos, neg, top_k=top_k)
+
+        start_time = time.time()
+        set_pos, set_neg = set(pos), set(neg)
+
+        # Get neural predictions
+        idx_pos = torch.LongTensor([[self.instance_idx_mapping[i] for i in pos]])
+        idx_neg = torch.LongTensor([[self.instance_idx_mapping[i] for i in neg]])
+
+        with torch.no_grad():
+            sort_scores, sort_idxs = torch.topk(
+                self.model(idx_pos, idx_neg).flatten(),
+                min(top_k, len(self.target_class_expressions)),
+                largest=True
+            )
+
+        # Initialize priority queue with top predictions
+        top_predictions = SearchTree()
+
+        for idx_target in sort_idxs.detach().numpy():
+            target_ce = self.target_class_expressions[idx_target]
+            target_ce.quality = self.quality_func(
+                individuals=target_ce.str_individuals, pos=pos, neg=neg
+            )
+            top_predictions.put(target_ce)
+
+        # Refine top predictions
+        n = len(top_predictions)
+        exploration_budget = n  # Explore same amount as initial predictions
+        refinements_explored = SearchTree()
+
+        while len(top_predictions) > (n * 0.99) and exploration_budget > 0:
+            current = top_predictions.get()
+
+            for refined in self.refinement_op.refine(current):
+                if refined.name in refinements_explored.gate or refined.name in top_predictions.gate:
+                    continue
+
+                refined.quality = self.quality_func(
+                    individuals=refined.str_individuals, pos=pos, neg=neg
+                )
+
+                exploration_budget -= 1
+                refinements_explored.put(refined)
+                top_predictions.put(refined)
+
+                if exploration_budget <= 0:
+                    break
+
+            if exploration_budget <= 0:
+                break
+
+        best_pred = top_predictions.get()
+        runtime = time.time() - start_time
+
+        return {
+            'Prediction': best_pred.name,
+            'F-measure': best_pred.quality,
+            'Runtime': runtime,
+            'Quality': best_pred.quality
+        }
+
     def fit(self, learning_problem: PosNegLPStandard, max_runtime: Optional[int] = None):
         """
         Fit the model to a learning problem (Ontolearn-compatible interface).
-
-        Args:
-            learning_problem: A PosNegLPStandard learning problem
-            max_runtime: Maximum runtime in seconds
+        This now includes training the neural model and performing the search.
         """
+        if max_runtime:
+            self.max_runtime = max_runtime
+
+        # 1. Initialize components
+        self._initialize_instance_mapping()
+        self._initialize_refinement_operator()
+
+        # 2. Train the neural model (as a policy guide, though not fully used in this search impl)
         pos_examples = [ind.str for ind in learning_problem.pos]
         neg_examples = [ind.str for ind in learning_problem.neg]
-
-        # Store learning problem for later use
-        self._learning_problem = learning_problem
-        self._best_predictions = None
-
-        # Train on this single learning problem
         self.train([(pos_examples, neg_examples)])
 
-        # Get predictions and store them
-        result = self.predict(pos=learning_problem.pos, neg=learning_problem.neg, top_k=10)
-        self._best_predictions = result
+        # 3. Perform the search to find the best complex expression
+        self._best_predictions = self.search(pos=set(pos_examples), neg=set(neg_examples))
 
-        # Return self for chaining
         return self
 
     def best_hypotheses(self, n: int = 1) -> List:
@@ -681,65 +568,247 @@ class NERO:
             return 0.0
         return self._best_predictions['Quality']
 
-    def predict(self, pos: Set[OWLNamedIndividual], neg: Set[OWLNamedIndividual], top_k: int = 10) -> Dict:
+    def forward(self, xpos: torch.Tensor, xneg: torch.Tensor) -> torch.Tensor:
         """
-        Predict class expressions for given positive and negative examples.
+        Forward pass through the neural model.
 
         Args:
-            pos: List of positive example IRIs
-            neg: List of negative example IRIs
-            top_k: Number of top predictions to return
+            xpos: Tensor of positive example indices
+            xneg: Tensor of negative example indices
+
+        Returns:
+            Predictions for target class expressions
+        """
+        return self.model(xpos, xneg)
+
+    def positive_expression_embeddings(self, individuals: List[str]) -> torch.Tensor:
+        """
+        Get embeddings for positive individuals.
+
+        Args:
+            individuals: List of individual URIs
+
+        Returns:
+            Tensor of embeddings
+        """
+        indices = torch.LongTensor([[self.instance_idx_mapping[i] for i in individuals]])
+        return self.model.positive_expression_embeddings(indices)
+
+    def negative_expression_embeddings(self, individuals: List[str]) -> torch.Tensor:
+        """
+        Get embeddings for negative individuals.
+
+        Args:
+            individuals: List of individual URIs
+
+        Returns:
+            Tensor of embeddings
+        """
+        indices = torch.LongTensor([[self.instance_idx_mapping[i] for i in individuals]])
+        return self.model.negative_expression_embeddings(indices)
+
+    def downward_refine(self, expression, max_length: Optional[int] = None) -> Set:
+        """
+        Top-down/downward refinement operator from original NERO.
+
+        This implements the refinement logic from model.py:
+        ∀s ∈ StateSpace : ρ(s) ⊆ {s^i ∈ StateSpace | s^i ⊑ s}
+
+        Args:
+            expression: Expression to refine
+            max_length: Maximum length constraint for refinements
+
+        Returns:
+            Set of refined expressions
+        """
+        if isinstance(expression, str):
+            if expression == '⊤':
+                return set()  # Can return top_refinements if needed
+            return set()
+
+        refinements = set()
+
+        # Get expression from refinement operator's expressions dict
+        if hasattr(expression, 'name') and expression.name in self.refinement_op.expressions:
+            expression = self.refinement_op.expressions[expression.name]
+
+        # Get all refinements from the refinement operator
+        refined_list = self.refinement_op.refine(expression)
+
+        for ref in refined_list:
+            if max_length is None or ref.length <= max_length:
+                refinements.add(ref)
+
+        return refinements
+
+    def upward_refine(self, expression) -> Set:
+        """
+        Bottom-up/upward refinement operator from original NERO.
+
+        This implements the generalization logic:
+        ∀s ∈ StateSpace : ρ(s) ⊆ {s^i ∈ StateSpace | s ⊑ s^i}
+
+        Args:
+            expression: Expression to generalize
+
+        Returns:
+            Set of generalized expressions
+        """
+        # Note: Upward refinement is less commonly used in NERO's main search
+        # It's included for completeness but the main search uses downward refinement
+        refinements = set()
+
+        # This would require implementing upward refinement in the refinement operator
+        # For now, return empty set as it's not critical for the main search functionality
+        return refinements
+
+    def search_with_init(self, top_prediction_queue: SearchTree, set_pos: Set[str], set_neg: Set[str]) -> SearchTree:
+        """
+        Standard search with smart initialization (from original model.py).
+
+        This is the key search method that combines neural predictions with symbolic refinement.
+
+        Args:
+            top_prediction_queue: Priority queue initialized with neural predictions
+            set_pos: Set of positive examples
+            set_neg: Set of negative examples
+
+        Returns:
+            SearchTree with explored and refined expressions
+        """
+        # Initialize final predictions
+        top_predictions = SearchTree()
+        top_predictions.extend_queue(top_prediction_queue)
+        refinements_of_top_predictions = SearchTree()
+
+        n = len(top_prediction_queue)
+        exploration_counter = n
+
+        # Iterate over advantageous states
+        while len(top_prediction_queue) > (n * 0.99):  # explore only 1 percent
+            # Get top ranked Description Logic Expression
+            c = top_prediction_queue.get()
+
+            # Refine with length constraint
+            for a in self.downward_refine(c, max_length=c.length + 3):
+                if a.name in refinements_of_top_predictions.gate or a.name in top_predictions.gate:
+                    # Already seen
+                    continue
+                else:
+                    a.quality = self.quality_func(
+                        individuals=a.str_individuals,
+                        pos=set_pos,
+                        neg=set_neg
+                    )
+                    # Add refinements
+                    exploration_counter -= 1
+                    refinements_of_top_predictions.put(a, key=-a.quality)
+                    top_predictions.put(a, key=-a.quality)
+
+                    if exploration_counter == 0:
+                        break
+
+            if exploration_counter == 0:
+                break
+
+        return top_predictions
+
+    def fit_from_iterable(self, pos: List[str], neg: List[str], top_k: int = 10, use_search: str = 'SmartInit') -> Dict:
+        """
+        Fit method compatible with original NERO's model.py interface.
+
+        This implements the complete prediction pipeline from the original NERO:
+        1. Neural prediction to get top-k candidates
+        2. Quality evaluation
+        3. Optional symbolic search for refinement
+
+        Args:
+            pos: List of positive example URIs
+            neg: List of negative example URIs
+            top_k: Number of top neural predictions to consider
+            use_search: Search strategy ('SmartInit', 'None', or None)
 
         Returns:
             Dictionary with prediction results
         """
         if not self._is_trained:
-            raise RuntimeError("Model must be trained before prediction")
+            raise ValueError("Model must be trained before calling fit_from_iterable")
 
         start_time = time.time()
+        set_pos, set_neg = set(pos), set(neg)
 
-        pos_uris = [ind.str for ind in pos]
-        neg_uris = [ind.str for ind in neg]
+        # Get neural predictions
+        idx_pos = torch.LongTensor([[self.instance_idx_mapping[i] for i in pos]])
+        idx_neg = torch.LongTensor([[self.instance_idx_mapping[i] for i in neg]])
 
-        # Convert to indices
-        pos_idx = torch.LongTensor([[self.instance_idx_mapping[uri] for uri in pos_uris]])
-        neg_idx = torch.LongTensor([[self.instance_idx_mapping[uri] for uri in neg_uris]])
+        goal_found = False
+        top_prediction_queue = SearchTree()
 
-        # Get predictions
+        # Get top-k predictions from neural model
         with torch.no_grad():
-            pos_idx = pos_idx.to(self.device)
-            neg_idx = neg_idx.to(self.device)
-            scores = self.model(pos_idx, neg_idx).flatten()
-
-        # Get top k predictions
-        top_scores, top_indices = torch.topk(scores, min(top_k, len(scores)), largest=True)
-
-        # Find best prediction
-        best_quality = -1.0
-        best_prediction = None
-        set_pos_uris = set(pos_uris)  # Convert to set of strings
-        set_neg_uris = set(neg_uris)  # Convert to set of strings
-
-        for idx in top_indices.cpu().numpy():
-            target_exp = self.target_class_expressions[idx]
-            quality = self.quality_func(
-                individuals=target_exp.str_individuals,
-                pos=set_pos_uris,
-                neg=set_neg_uris
+            sort_scores, sort_idxs = torch.topk(
+                self.forward(xpos=idx_pos, xneg=idx_neg).flatten(),
+                min(top_k, len(self.target_class_expressions)),
+                largest=True
             )
 
-            if quality > best_quality:
-                best_quality = quality
-                best_prediction = target_exp
+        # Evaluate predictions
+        for idx_target in sort_idxs.detach().numpy():
+            target_ce = self.target_class_expressions[idx_target]
+            target_ce.quality = self.quality_func(
+                individuals=target_ce.str_individuals,
+                pos=set_pos,
+                neg=set_neg
+            )
+            top_prediction_queue.put(target_ce, key=-target_ce.quality)
+
+            if target_ce.quality == 1.0:
+                goal_found = True
+                break
+
+        assert len(top_prediction_queue) > 0
+
+        # If goal not found, perform search
+        if not goal_found:
+            if use_search == 'SmartInit':
+                best_pred = top_prediction_queue.get()
+                top_prediction_queue.put(best_pred, key=-best_pred.quality)
+                top_prediction_queue = self.search_with_init(
+                    top_prediction_queue, set_pos, set_neg
+                )
+                best_constructed_expression = top_prediction_queue.get()
+
+                if best_constructed_expression.quality > best_pred.quality:
+                    best_pred = best_constructed_expression
+            elif use_search == 'None' or use_search is None:
+                best_pred = top_prediction_queue.get()
+            else:
+                raise ValueError(f"Unknown search strategy: {use_search}")
+        else:
+            best_pred = top_prediction_queue.get()
 
         runtime = time.time() - start_time
 
-        return {
-            'Prediction': best_prediction.name if best_prediction else "⊤",
-            'F-measure': best_quality,
-            'Runtime': runtime,
-            'Quality': best_quality
+        report = {
+            'Prediction': best_pred.name,
+            'Instances': best_pred.str_individuals,
+            'F-measure': round(best_pred.quality, 3),
+            'Runtime': round(runtime, 3),
+            'Quality': best_pred.quality
         }
+
+        return report
+
+    def predict(self, pos: Set[OWLNamedIndividual], neg: Set[OWLNamedIndividual], top_k: int = 10) -> Dict:
+        """
+        Predict class expressions for given positive and negative examples.
+        This now uses the search mechanism.
+        """
+        if not self._is_trained:
+            self.fit(PosNegLPStandard(pos=pos, neg=neg))
+
+        return self._best_predictions
+
 
     def __str__(self):
         return f"NERO(architecture={self.neural_architecture}, embedding_dim={self.num_embedding_dim})"
