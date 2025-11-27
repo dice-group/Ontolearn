@@ -1,4 +1,4 @@
-from ontolearn.concept_learner import NCES2
+from ontolearn.learners import NCES2
 from ontolearn.knowledge_base import KnowledgeBase
 from owlapy.parser import DLSyntaxParser
 from ontolearn.learning_problem import PosNegLPStandard

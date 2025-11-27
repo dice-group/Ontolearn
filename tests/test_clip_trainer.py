@@ -1,4 +1,4 @@
-from ontolearn.concept_learner import CLIP
+from ontolearn.learners import CLIP
 from ontolearn.refinement_operators import ExpressRefinement
 from ontolearn.knowledge_base import KnowledgeBase
 import time

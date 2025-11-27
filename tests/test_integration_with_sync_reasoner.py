@@ -8,7 +8,7 @@ from owlapy.owl_reasoner import SyncReasoner
 from sklearn.model_selection import StratifiedKFold
 
 from ontolearn.heuristics import CeloeBasedReward
-from ontolearn.concept_learner import CELOE, EvoLearner
+from ontolearn.learners import CELOE, EvoLearner
 from ontolearn.metrics import F1
 from ontolearn.quality_funcs import evaluate_concept
 from ontolearn.refinement_operators import LengthBasedRefinement

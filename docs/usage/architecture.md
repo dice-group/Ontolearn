@@ -45,10 +45,10 @@ and caching instance queries and encoding instances.
 \begin{wrapfigure}{r}{.55\linewidth}\vspace{-50pt}\raggedleft%
 :::
 :::{uml}
-package ontolearn.base_concept_learner {
+package ontolearn.learners.base {
 abstract BaseConceptLearner
 }
-package ontolearn.concept_learner {
+package ontolearn.learners {
 class CELOE
 }
 
