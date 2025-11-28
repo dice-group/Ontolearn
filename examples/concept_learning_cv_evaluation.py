@@ -11,7 +11,7 @@ import os
 from typing import Union
 import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.learners import CELOE, EvoLearner, NCES, NCES2, ROCES, CLIP, ALCSAT, SPELL
+from ontolearn.learners import CELOE, EvoLearner, NCES, NCES2, ROCES, CLIP, ALCSAT, SPELL, NERO
 from ontolearn.refinement_operators import ModifiedCELOERefinement
 from ontolearn.learners import Drill, TDL, OCEL
 from ontolearn.learning_problem import PosNegLPStandard
@@ -126,6 +126,15 @@ def dl_concept_learning(args):
                       max_runtime=args.max_runtime,
                       max_query_size=10,
                       search_mode="full_approx")
+
+    if not args.learner_types or 'nero' in args.learner_types:
+        nero = NERO(knowledge_base=kb,
+                    num_embedding_dim=128,
+                    neural_architecture='DeepSet',
+                    learning_rate=0.001,
+                    num_epochs=50,
+                    batch_size=32
+                )
 
     # dictionary to store the data
     data = dict()
@@ -427,6 +436,30 @@ def dl_concept_learning(args):
                 print(f"SPELL Test Quality: {test_f1_spell:.3f}", end="\t")
                 print(f"SPELL Runtime: {rt_spell:.3f}")
 
+            if not args.learner_types or 'nero' in args.learner_types:
+                a_prop = list(kb.ontology.object_properties_in_signature())[:1].pop()
+                ns = a_prop.iri.get_namespace()
+                nero.ns = ns
+                print("NERO starts..", end="\t")
+                start_time = time.time()
+                pred_nero = nero.fit(train_lp).best_hypothesis()
+                rt_nero = time.time() - start_time
+                print("NERO ends..", end="\t")
+                # () Quality on the training data
+                train_f1_nero = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_nero)}),
+                                                 pos=train_lp.pos,
+                                                 neg=train_lp.neg)
+                # () Quality on test data
+                test_f1_nero = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred_nero)}),
+                                                pos=test_lp.pos,
+                                                neg=test_lp.neg)
+
+                data.setdefault("Train-F1-NERO", []).append(train_f1_nero)
+                data.setdefault("Test-F1-NERO", []).append(test_f1_nero)
+                data.setdefault("RT-NERO", []).append(rt_nero)
+                print(f"NERO Train Quality: {train_f1_nero:.3f}", end="\t")
+                print(f"NERO Test Quality: {test_f1_nero:.3f}", end="\t")
+                print(f"NERO Runtime: {rt_nero:.3f}")
     df = pd.DataFrame.from_dict(data)
     df.to_csv(args.report, index=False)
     print(df)
@@ -441,7 +474,7 @@ if __name__ == '__main__':
     parser.add_argument("--kb", type=str, required=True,
                         help="Knowledge base")
     parser.add_argument("--learner_types", type=str, nargs='*', default=None, 
-                        choices=["celoe", "ocel", "evolearner", "drill", "nces", "tdl", "nces2", "roces", "clip", "alcsat", "spell"],
+                        choices=["celoe", "ocel", "evolearner", "drill", "nces", "tdl", "nces2", "roces", "clip", "alcsat", "spell", "nero"],
                         help="List of available concept learning models")
     parser.add_argument("--path_drill_embeddings", type=str, default=None)
     parser.add_argument("--path_of_nces_embeddings", type=str, default=None)
