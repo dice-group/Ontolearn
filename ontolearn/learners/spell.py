@@ -73,7 +73,7 @@ class SPELL(SATBaseLearner):
             knowledge_base: The knowledge base to use for learning.
             reasoner: Optional reasoner (if None, uses the KB's reasoner).
             max_runtime: Maximum allowed runtime in seconds.
-            max_query_size: Maximum query size to search. Defaults to 19.
+            max_query_size: Maximum query size to search. Defaults to 10.
             starting_query_size: Starting query size for incremental search. Defaults to 1.
             search_mode: Search mode - 'exact', 'neg_approx', or 'full_approx'. Defaults to 'full_approx'.
                   - exact: Search for queries that cover all positive examples

@@ -5,6 +5,7 @@ This example shows how to use the ALCSAT SAT-based learner to find
 ALC concept expressions that fit positive and negative examples.
 """
 import json
+import os
 
 from ontolearn.learners import ALCSAT
 from ontolearn.knowledge_base import KnowledgeBase
@@ -22,10 +23,10 @@ def alcsat_example():
     print("=" * 60)
 
     # Load knowledge base
-    kb = KnowledgeBase(path="../KGs/Family/family-benchmark_rich_background.owl")
+    kb = KnowledgeBase(path=os.path.join(os.path.dirname(__file__), '..', 'KGs', 'Family', 'family-benchmark_rich_background.owl'))
 
     # Get positive and negative examples from JSON
-    with open('../LPs/Family/lps.json') as json_file:
+    with open(os.path.join(os.path.dirname(__file__), '..', 'LPs', 'Family', 'lps.json')) as json_file:
         settings = json.load(json_file)
 
     # Create learning problem
@@ -84,4 +85,3 @@ if __name__ == "__main__":
         print(f"\nALCSAT example failed: {e}")
         import traceback
         traceback.print_exc()
-

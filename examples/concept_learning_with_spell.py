@@ -5,8 +5,9 @@ This example shows how to use both SAT-based learners to find
 concept expressions that fit positive and negative examples.
 """
 import json
+import os
 
-from ontolearn.learners import ALCSAT, SPELL
+from ontolearn.learners import SPELL
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.owl_individual import OWLNamedIndividual, IRI
@@ -22,10 +23,10 @@ def spell_example():
     print("=" * 89)
 
     # Load knowledge base
-    kb = KnowledgeBase(path="../KGs/Family/family-benchmark_rich_background.owl")
+    kb = KnowledgeBase(path=os.path.join(os.path.dirname(__file__), '..', 'KGs', 'Family', 'family-benchmark_rich_background.owl'))
 
     # Get positive and negative examples from JSON
-    with open('../LPs/Family/lps.json') as json_file:
+    with open(os.path.join(os.path.dirname(__file__), '..', 'LPs', 'Family', 'lps.json')) as json_file:
         settings = json.load(json_file)
 
     # Create learning problem

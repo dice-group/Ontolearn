@@ -2,7 +2,11 @@ import sys
 
 from lxml.etree import ElementTree
 
-from .o2p_ontology import *
+from ontolearn.learners.spell_kit.o2p_ontology import (Ontology, ClassIdentifier, DisjointWith, SubClassOf,
+                                                       EquivalentClass, Thing, Restriction, Intersection, Complement,
+                                                       Union, OneOf, ObjectProperty, PropertyReference, SomeValues,
+                                                       AllValues, Cardinality, MinCardinality, MaxCardinality, HasValue,
+                                                       HasSelf)
 
 #  - TODO don't skip useful tags (see 'skipping')
 #  - TODO parse DataRange
