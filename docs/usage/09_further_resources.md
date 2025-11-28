@@ -4,18 +4,19 @@ You can find more details in the related papers for each algorithm:
 
 Concept Learning:
 
-- **TDL** &rarr; Tree-based OWL Class Expression Learner for Large Graphs (manuscript will be added soon)
+- **TDL** &rarr; [Tree-based OWL Class Expression Learner for Large Graphs](https://dl.acm.org/doi/10.1007/978-3-032-06066-2_29)
 - **Drill** &rarr; [Neuro-Symbolic Class Expression Learning](https://www.ijcai.org/proceedings/2023/0403.pdf)
 - **EvoLearner** &rarr; [EvoLearner: Learning Description Logics with Evolutionary Algorithms](https://dl.acm.org/doi/abs/10.1145/3485447.3511925)
 - **NCES2** &rarr; [Neural Class Expression Synthesis in ALCHIQ(D)](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
 - **ROCES** &rarr; [Robust Class Expression Synthesis in Description Logics via Iterative Sampling](https://www.ijcai.org/proceedings/2024/0479.pdf)
 - **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13) 
-- **NERO*** &rarr; (soon) [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://link.springer.com/chapter/10.1007/978-3-031-30047-9_9)
+- **NERO** &rarr; [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://link.springer.com/chapter/10.1007/978-3-031-30047-9_9)
 - **CLIP** &rarr; [Learning Concept Lengths Accelerates Concept Learning in ALC](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
 - **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
 - **OCEL** &rarr; A limited version of CELOE
+- **SPELL** &rarr; [SAT-Based PAC Learning of Description Logic Concepts](https://www.ijcai.org/proceedings/2023/0373.pdf)
+- **ALCSAT** &rarr; [SAT-Based Bounded Fitting for the Description Logic $\mathcal{ALC}$](https://arxiv.org/pdf/2507.21752)
 
-&ast;  _Not implemented in our library yet._
 
 Sampling:
 - **OntoSample** &rarr; [Accelerating Concept Learning via Sampling](https://dl.acm.org/doi/10.1145/3583780.3615158)
@@ -114,6 +115,34 @@ address="Cham"
   pages={236--252},
   year={2022},
   publisher={Springer Nature Switzerland}
+}
+
+# NERO
+@InProceedings{10.1007/978-3-031-30047-9_9,
+author="Demir, Caglar
+and Ngonga Ngomo, Axel-Cyrille",
+editor="Cr{\'e}milleux, Bruno
+and Hess, Sibylle
+and Nijssen, Siegfried",
+title="Learning Permutation-Invariant Embeddings for Description Logic Concepts",
+booktitle="Advances in Intelligent Data Analysis XXI",
+year="2023",
+publisher="Springer Nature Switzerland",
+address="Cham",
+pages="103--115",
+abstract="Concept learning deals with learning description logic concepts from a background knowledge and input examples. The goal is to learn a concept that covers all positive examples, while not covering any negative examples. This non-trivial task is often formulated as a search problem within an infinite quasi-ordered concept space. Although state-of-the-art models have been successfully applied to tackle this problem, their large-scale applications have been severely hindered due to their excessive exploration incurring impractical runtimes. Here, we propose a remedy for this limitation. We reformulate the learning problem as a multi-label classification problem and propose a neural embedding model (NERO) that learns permutation-invariant embeddings for sets of examples tailored towards predicting {\$}{\$}F{\_}1{\$}{\$}F1scores of pre-selected description logic concepts. By ranking such concepts in descending order of predicted scores, a possible goal concept can be detected within few retrieval operations, i.e., no excessive exploration. Importantly, top-ranked concepts can be used to start the search procedure of state-of-the-art symbolic models in multiple advantageous regions of a concept space, rather than starting it in the most general concept {\$}{\$}{\backslash}top {\$}{\$}⊤. Our experiments on 5 benchmark datasets with 770 learning problems firmly suggest that NERO significantly (p-value {\$}{\$}<1{\backslash}{\%}{\$}{\$}<1{\%}) outperforms the state-of-the-art models in terms of {\$}{\$}F{\_}1{\$}{\$}F1score, the number of explored concepts, and the total runtime. We provide an open-source implementation of our approach (https://github.com/dice-group/Nero).",
+isbn="978-3-031-30047-9"
+}
+
+# OWLAPY
+@misc{baci2025owlapypythonicframeworkowl,
+      title={OWLAPY: A Pythonic Framework for OWL Ontology Engineering}, 
+      author={Alkid Baci and Luke Friedrichs and Caglar Demir and Axel-Cyrille Ngonga Ngomo},
+      year={2025},
+      eprint={2511.08232},
+      archivePrefix={arXiv},
+      primaryClass={cs.SE},
+      url={https://arxiv.org/abs/2511.08232}, 
 }
 
 # OntoSample

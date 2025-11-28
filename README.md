@@ -461,6 +461,23 @@ address="Cham"
   year={2022},
   publisher={Springer Nature Switzerland}
 }
+
+# NERO
+@InProceedings{10.1007/978-3-031-30047-9_9,
+author="Demir, Caglar
+and Ngonga Ngomo, Axel-Cyrille",
+editor="Cr{\'e}milleux, Bruno
+and Hess, Sibylle
+and Nijssen, Siegfried",
+title="Learning Permutation-Invariant Embeddings for Description Logic Concepts",
+booktitle="Advances in Intelligent Data Analysis XXI",
+year="2023",
+publisher="Springer Nature Switzerland",
+address="Cham",
+pages="103--115",
+isbn="978-3-031-30047-9"
+}
+
 ```
 
 In case you have any question or feedback, please contact us: ```caglar.demir@upb.de``` or ```alkid.baci@upb.de```.
