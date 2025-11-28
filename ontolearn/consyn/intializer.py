@@ -1,6 +1,6 @@
 import os
 import random
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Tuple, Union
 import numpy as np
 from owlapy import dl_to_owl_expression
 from owlapy.owl_reasoner import StructuralReasoner
@@ -29,7 +29,7 @@ class DLOWLConverter:
 
 
 class Initializer:
-    def __init__(self, config: Dict[str, Any], mode: Optional[str] = None, verbose: bool = False):
+    def __init__(self, config: Dict[str, Any], mode: Literal["train", "fit"] = "train", verbose: bool = False):
         self.config = config
         self.mode = mode
         self.verbose = verbose
@@ -86,7 +86,7 @@ class Initializer:
 
             data_generator.load_task_label_mappings()  
 
-        if self.mode is None:
+        if self.mode == 'train':
             splitter = DataSplitter(raw_data_original)
             self.datasets = splitter.run(save=True, prefix=self.config['EXPERIMENT_DIR'])
         elif self.mode == "fit":

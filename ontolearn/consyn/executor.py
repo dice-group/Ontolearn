@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 from torch.optim import AdamW
 
 from ontolearn.consyn.configs import CONFIG
@@ -10,9 +11,15 @@ logger = logging.getLogger(__name__)
 
 
 class ConSynExecutor:
-    def __init__(self, verbose: bool = False, num_k_predictions: int = 30):
-        self.verbose = verbose
+    def __init__(self, kb_path, lps_path, num_k_predictions: int = 30, device: Optional[str] = None, verbose: bool = False):
+        CONFIG['KNOWLEDGE_BASE_PATH'] = kb_path
+        CONFIG['LEARNING_PROBLEM_PATH'] = lps_path
+
+        if device is not None:
+            CONFIG['device'] = device
+
         self.num_k_predictions = num_k_predictions
+        self.verbose = verbose
 
         self.config = CONFIG
         self.device = CONFIG['device']
@@ -21,7 +28,7 @@ class ConSynExecutor:
             print(f"Using device: {self.device}\n")
 
         # Initialize core components
-        initializer = Initializer(self.config)
+        initializer = Initializer(config=self.config, mode="fit", verbose=self.verbose)
         components = initializer.get_components()
 
         self.tokenizer = components['tokenizer']

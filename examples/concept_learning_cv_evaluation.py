@@ -119,7 +119,9 @@ def dl_concept_learning(args):
         
     if not args.learner_types or 'consyn' in args.learner_types:
         consyn_executor = ConSynExecutor(
+            kb_path=args.kb, lps_path=args.lps,
             verbose=getattr(args, "verbose", False),
+            device='cpu',
             num_k_predictions=getattr(args, "num_k_predictions", 50)
         )
 
