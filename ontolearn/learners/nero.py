@@ -32,6 +32,7 @@ neural networks with symbolic reasoning for OWL class expression learning.
 from typing import Dict, List, Set, Tuple, Optional
 import time
 import torch
+from owlapy import dl_to_owl_expression
 
 from owlapy.class_expression import OWLThing
 from owlapy.owl_individual import OWLNamedIndividual
@@ -72,6 +73,7 @@ class NERO:
 
     def __init__(self,
                  knowledge_base: KnowledgeBase,
+                 namespace = None,
                  num_embedding_dim: int = 50,
                  neural_architecture: str = 'DeepSet',
                  learning_rate: float = 0.001,
@@ -83,6 +85,7 @@ class NERO:
                  verbose: int = 0):
 
         self.kb = knowledge_base
+        self.ns = namespace
         self.num_embedding_dim = num_embedding_dim
         self.neural_architecture = neural_architecture
         self.learning_rate = learning_rate
@@ -527,23 +530,6 @@ class NERO:
 
         return self
 
-    def best_hypotheses(self, n: int = 1) -> List:
-        """
-        Return the best n hypotheses (Ontolearn-compatible interface).
-
-        Args:
-            n: Number of hypotheses to return
-
-        Returns:
-            List of best hypothesis (currently only returns top 1)
-        """
-        if not self._is_trained or self._best_predictions is None:
-            return []
-
-        # For now, we return just the best prediction
-        # In a full implementation, we would store multiple candidates
-        return [self._best_predictions] if n >= 1 else []
-
     def best_hypothesis(self) -> Optional[str]:
         """
         Return the best hypothesis (Ontolearn-compatible interface).
@@ -553,7 +539,9 @@ class NERO:
         """
         if not self._is_trained or self._best_predictions is None:
             return None
-        return self._best_predictions['Prediction']
+        assert self.ns is not None, "Namespace must be set for OWL expression conversion"
+
+        return dl_to_owl_expression(self._best_predictions['Prediction'], self.ns)
 
     def best_hypothesis_quality(self) -> float:
         """
