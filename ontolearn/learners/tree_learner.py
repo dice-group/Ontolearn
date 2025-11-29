@@ -487,19 +487,26 @@ class TDL:
 
     def _extract_data_property_features(self, individual: OWLNamedIndividual,
                                        features: Dict[str, OWLClassExpression],
-                                       individuals_to_feature_mapping: Dict[str, Set[str]]):
+                                       individuals_to_feature_mapping: Dict[str, Set[str]],
+                                       numeric_ranges:bool=True):
         """Extract features based on data properties."""
         try:
             # Get data properties for this individual
+            self._data_property_dict = dict()
             for data_prop in self.knowledge_base.get_data_properties_for_ind(individual):
                 # Get data property values
                 data_values = list(self.knowledge_base.get_data_property_values(individual, data_prop))
+                
                 if data_values:
                     # For each data value, we already have features from abox(mode="expression")
                     # This method can be extended to add additional data property features
                     # such as numeric ranges, etc.
                     # TODO: Create new OWL CLassExpressions based on data property values
-                    print(f"Data property values for {data_prop}: {data_values}")
+                    if(numeric_ranges):
+                        data_property_remainder = data_prop.iri
+                        #print(data_property_remainder)
+                    #print(f"Data property values for {data_prop}: {data_values}")
+                    
                     pass
         except Exception as e:
             if self.verbose > 0:
