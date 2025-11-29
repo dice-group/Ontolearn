@@ -407,6 +407,7 @@ class TDL:
                             if interval[0] <= v <= interval[1]:
                                 print(interval)
                                 individuals_to_feature_mapping[ind.str].add(str_dl_concept)
+                                break
                                # print(individuals_to_feature_mapping[ind.str])
 
     def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> (
