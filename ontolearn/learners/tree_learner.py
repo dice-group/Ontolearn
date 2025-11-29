@@ -301,13 +301,13 @@ class TDL:
         self.X = None
         self.y = None
 
-    def get_data_property_range(self, values:set) -> tuple:
+    def _get_data_property_range(self, values:set) -> tuple:
         """Get the data property range of an OWL class expression"""
         values = list(values)
         min_value = min(values)
         max_value = max(values)
-        return (min_value, max_value)
-    def pack_data_property_with_range_to_dl_concept(self, property:OWLDataProperty, literal_range:tuple) -> str:
+        return [(min_value, max_value)]
+    def _pack_data_property_with_range_to_dl_concept(self, property:OWLDataProperty, literal_range:tuple) -> str:
         """Repack the ranged data property into an DL Concept String"""
         #print(type(literal_range[0]))
         min_restr = OWLFacetRestriction(OWLFacet.MIN_INCLUSIVE, OWLLiteral(literal_range[0],OWLDatatype(XSDVocabulary.DOUBLE)))
@@ -370,11 +370,51 @@ class TDL:
             # A mapping from str dl representation to owl object.
             features[str_dl_concept] = owl_class_expression
 
+    def _compute_dt_gaussian_confidence_intervals(self, values:set) -> List[tuple]:
+        mean = np.mean(values)
+        std = np.std(values)
+        confidence_intervals = [
+            (mean - std, mean + std),
+            (mean - 1.5*std, mean + 1,5*std),
+            (mean - 2*std, mean + 2*std),
+            (mean - 2.5*std, mean + 2.5*std)
+        ]
+        return confidence_intervals
+    def _extract_ranges_from_data_properties(self,individuals, features,individuals_to_feature_mapping,data_properties_dict,per_individual_data_properties):
+        if len(data_properties_dict) == 0:
+            return
+        mode ="gauss"
+        ranges_dict = dict()
+        for prop in data_properties_dict:
+            if(mode == "minmax"):
+                ranges_dict.setdefault(prop,self._get_data_property_range(data_properties_dict[prop]))
+            if(mode == "gauss"):
+                ranges_dict.setdefault(prop,self._compute_dt_gaussian_confidence_intervals(data_properties_dict[prop]))
+        for r in ranges_dict:
+            for interval in range(len(ranges_dict[r])):
+                new_class_expression = self._pack_data_property_with_range_to_dl_concept(r,ranges_dict[r][interval])
+                str_dl_concept = owl_expression_to_dl(new_class_expression)
+
+                #add concept to features
+                if str_dl_concept not in features:
+                    features[str_dl_concept] = new_class_expression
+            #assign concept per individual, if satisfied
+            for ind in individuals:
+                if prop in per_individual_data_properties.get(ind,{}):
+                    for v in per_individual_data_properties[ind][prop]:
+                        for interval in ranges_dict[prop]:
+                           
+                            if interval[0] <= v <= interval[1]:
+                                individuals_to_feature_mapping[ind.str].add(str_dl_concept)
+                               # print(individuals_to_feature_mapping[ind.str])
+
     def extract_expressions_from_owl_individuals(self, individuals: List[OWLNamedIndividual]) -> (
             Tuple)[np.ndarray, List[OWLClassExpression]]:
         # () Store mappings from str dl concept to owl class expression objects.
         features = dict()
         # () Grouped str dl concepts given str individuals.
+        data_properties_dict = dict()
+        per_individual_data_properties = dict()
         individuals_to_feature_mapping = dict()
         for owl_named_individual in make_iterable_verbose(individuals,
                                        verbose=self.verbose,
@@ -393,10 +433,13 @@ class TDL:
                 self._extract_inverse_property_features(owl_named_individual, features, individuals_to_feature_mapping)
             
             if self.use_data_properties:
-                self._extract_data_property_features(owl_named_individual, features, individuals_to_feature_mapping)
+                self._extract_data_property_features(owl_named_individual, features, individuals_to_feature_mapping,data_properties_dict, per_individual_data_properties)
             
             if self.use_card_restrictions:
                 self._extract_cardinality_features(owl_named_individual, features, individuals_to_feature_mapping)
+        #TODO map individuals to ranges
+        if self.use_data_properties:
+            self._extract_ranges_from_data_properties(individuals, features,individuals_to_feature_mapping,data_properties_dict,per_individual_data_properties)
 
         if len(features) == 0:
             num_individuals = len(list(make_iterable_verbose(individuals)))
@@ -488,11 +531,13 @@ class TDL:
     def _extract_data_property_features(self, individual: OWLNamedIndividual,
                                        features: Dict[str, OWLClassExpression],
                                        individuals_to_feature_mapping: Dict[str, Set[str]],
+                                       data_properties_dict,
+                                       per_individual_data_properties,
                                        numeric_ranges:bool=True):
         """Extract features based on data properties."""
         try:
             # Get data properties for this individual
-            self._data_property_dict = dict()
+           
             for data_prop in self.knowledge_base.get_data_properties_for_ind(individual):
                 # Get data property values
                 data_values = list(self.knowledge_base.get_data_property_values(individual, data_prop))
@@ -503,11 +548,28 @@ class TDL:
                     # such as numeric ranges, etc.
                     # TODO: Create new OWL CLassExpressions based on data property values
                     if(numeric_ranges):
-                        data_property_remainder = data_prop.iri
-                        #print(data_property_remainder)
+                        for v in data_values:
+                            #check if literal is a numeric
+                            if(v.is_decimal() or v.is_float() or v.is_integer() or v.is_double()):
+                                data_prop_remainder = data_prop.iri.get_remainder()
+                                literal = float(v.get_literal())
+
+
+
+                                #save data_properties per individual
+                                if individual not in per_individual_data_properties:
+                                    per_individual_data_properties.setdefault(individual, {})
+                                if data_prop not in per_individual_data_properties[individual]:
+                                    per_individual_data_properties[individual].setdefault(data_prop,[])
+
+                                per_individual_data_properties[individual][data_prop].append(literal)
+                                #save global data property values per property
+                                if data_prop not in data_properties_dict:    
+                                    data_properties_dict[data_prop] = list()
+                                data_properties_dict[data_prop].append(literal)
                     #print(f"Data property values for {data_prop}: {data_values}")
                     
-                    pass
+       #     print("DEBUG")
         except Exception as e:
             if self.verbose > 0:
                 print(f"Warning: Error extracting data property features: {e}")
@@ -534,23 +596,7 @@ class TDL:
 #                    #for i in data_properties_dict:
 #                    #   print(owl_expression_to_dl(self.pack_data_property_with_range_to_dl_concept(data_property,self.get_data_property_range(data_properties_dict[i]))))
 #                   
-#                    for i in filler.values():
-#                            literal = i.get_literal()
-#                            #check if literal is a numeric value
-#                            if(i.is_decimal() or i.is_float() or i.is_integer() or i.is_double()):
-#                                new_class_expression = self.pack_data_property_with_range_to_dl_concept(data_property,self.get_data_property_range(data_properties_dict[ data_property_remainder]))
-#                                str_dl_concept_dt_property = owl_expression_to_dl(new_class_expression)
-#                                individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept_dt_property)
-#                               
-#                                if str_dl_concept_dt_property not in features:
-#                                    features[str_dl_concept_dt_property] = new_class_expression
-#                                    #features.setdefault(str_dl_concept_dt_property,set()).add(new_class_expression)
-#                            elif str_dl_concept not in features :
-#                                individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
-#                                features[str_dl_concept] = owl_class_expression
-#                                #features.setdefault(str_dl_concept,set()).add(owl_class_expression)
-#                        #print(features[str_dl_concept])
-#                        #print(type(owl_class_expression))
+#                   
 #                #check if nominals are to be used
 
 
