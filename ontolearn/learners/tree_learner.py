@@ -403,8 +403,9 @@ class TDL:
                 if prop in per_individual_data_properties.get(ind,{}):
                     for v in per_individual_data_properties[ind][prop]:
                         for interval in ranges_dict[prop]:
-                           
+                            
                             if interval[0] <= v <= interval[1]:
+                                print(interval)
                                 individuals_to_feature_mapping[ind.str].add(str_dl_concept)
                                # print(individuals_to_feature_mapping[ind.str])
 
@@ -437,7 +438,7 @@ class TDL:
             
             if self.use_card_restrictions:
                 self._extract_cardinality_features(owl_named_individual, features, individuals_to_feature_mapping)
-        #TODO map individuals to ranges
+        #map individuals to additional data property features
         if self.use_data_properties:
             self._extract_ranges_from_data_properties(individuals, features,individuals_to_feature_mapping,data_properties_dict,per_individual_data_properties)
 
@@ -573,36 +574,6 @@ class TDL:
         except Exception as e:
             if self.verbose > 0:
                 print(f"Warning: Error extracting data property features: {e}")
-#data_properties_dict = dict()
-#            str_dl_concept=owl_expression_to_dl(owl_class_expression)
-#                    #individuals_to_feature_mapping.setdefault(owl_named_individual.str,set()).add(str_dl_concept)
-#                    #exctract filler and remainder from owl class expression, where did I implement get_IRI
-#                    data_property_remainder = owl_class_expression.get_property().get_IRI().get_remainder()
-#                    data_property = owl_class_expression.get_property()
-#                    filler = owl_class_expression.get_filler()
-#                    #data_properties_dict = dict()
-#
-#                    if(type(filler) == OWLDataOneOf):
-#                        for i in filler.values():
-#                            literal = i.get_literal()
-#                            #check if literal is a numeric value
-#                            if(i.is_decimal() or i.is_float() or i.is_integer() or i.is_double()):
-#                                #check if data property already exists in dict
-#                                if data_property_remainder not in data_properties_dict.keys():
-#                                    data_properties_dict[data_property_remainder] = set()
-#                                #add to data_properties_dict
-#                                data_properties_dict[data_property_remainder].add(literal)
-#                    #get ranges for data property
-#                    #for i in data_properties_dict:
-#                    #   print(owl_expression_to_dl(self.pack_data_property_with_range_to_dl_concept(data_property,self.get_data_property_range(data_properties_dict[i]))))
-#                   
-#                   
-#                #check if nominals are to be used
-
-
-
-
-
 
     def _extract_cardinality_features(self, individual: OWLNamedIndividual,
                                      features: Dict[str, OWLClassExpression],
