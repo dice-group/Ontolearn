@@ -26,7 +26,7 @@ including symbolic, neuro-symbolic, and deep learning-based approaches:
 - **NCES2** &rarr; [Neural Class Expression Synthesis in $\mathcal{ALCHIQ^{(D)}}$](https://papers.dice-research.org/2023/ECML_NCES2/NCES2_public.pdf)
 - **ROCES** &rarr; [Robust Class Expression Synthesis in Description Logics via Iterative Sampling](https://www.ijcai.org/proceedings/2024/0479.pdf)
 - **NCES** &rarr; [Neural Class Expression Synthesis](https://link.springer.com/chapter/10.1007/978-3-031-33455-9_13) 
-- **NERO** &rarr; (soon) [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://link.springer.com/chapter/10.1007/978-3-031-30047-9_9)
+- **NERO** &rarr; [Learning Permutation-Invariant Embeddings for Description Logic Concepts](https://link.springer.com/chapter/10.1007/978-3-031-30047-9_9)
 - **CLIP** &rarr; [Learning Concept Lengths Accelerates Concept Learning in $\mathcal{ALC}$](https://link.springer.com/chapter/10.1007/978-3-031-06981-9_14)
 - **CELOE** &rarr; [Class Expression Learning for Ontology Engineering](https://www.sciencedirect.com/science/article/abs/pii/S1570826811000023)
 - **OCEL** &rarr; A limited version of CELOE
@@ -287,26 +287,26 @@ print(df[[col for col in df if col.startswith('Test-F1') or col.startswith('RT')
 
 Below, we report the average test F1 score and the average runtimes of learners.
 
-|         LP         | Test-F1-OCEL | RT-OCEL | Test-F1-CELOE | RT-CELOE | Test-F1-Evo | RT-Evo | Test-F1-DRILL | RT-DRILL | Test-F1-TDL | RT-TDL | Test-F1-NCES | RT-NCES | Test-F1-NCES2 | RT-NCES2 | Test-F1-ROCES | RT-ROCES | Test-F1-CLIP | RT-CLIP | Test-F1-ALCSAT | RT-ALCSAT | Test-F1-SPELL | RT-SPELL |
-|:------------------:|-------------:|--------:|--------------:|---------:|------------:|-------:|--------------:|---------:|------------:|-------:|-------------:|--------:|--------------:|---------:|--------------:|---------:|-------------:|--------:|----------------|-----------|---------------|----------|
-|        Aunt        |        0.614 |  13.697 |         0.855 |   13.697 |       0.978 |  5.278 |         0.811 |   60.351 |       0.956 |  0.118 |        0.805 |   0.632 |         0.812 |    1.136 |         0.812 |    1.119 |        0.855 |  14.059 | 1.000          | 0.618     | 0.690         | 4.121    |
-|       Cousin       |        0.712 |  10.846 |         0.789 |   10.846 |       0.993 |  3.311 |         0.701 |   60.485 |       0.820 |  0.176 |        0.608 |   0.628 |         0.680 |    1.177 |         0.695 |    1.086 |        0.779 |   9.050 | 1.000          | 0.749     | 0.715         | 5.346    |
-| Grandgranddaughter |        1.000 |   0.013 |         1.000 |    0.013 |       1.000 |  0.426 |         0.980 |   17.486 |       1.000 |  0.050 |        1.000 |   0.507 |         1.000 |    0.955 |         1.000 |    0.917 |        1.000 |   0.639 | 1.000          | 0.081     | 1.000         | > 0.001  |
-|  Grandgrandfather  |        1.000 |   0.897 |         1.000 |    0.897 |       1.000 |  0.404 |         0.947 |   55.728 |       0.947 |  0.059 |        0.927 |   0.505 |         0.947 |    0.944 |         0.927 |    0.924 |        1.000 |   0.746 | 1.000          | 0.144     | 1.000         | 0.002    |
-|  Grandgrandmother  |        1.000 |   4.173 |         1.000 |    4.173 |       1.000 |  0.442 |         0.893 |   50.329 |       0.947 |  0.060 |        0.947 |   0.633 |         0.933 |    1.323 |         0.947 |    1.306 |        1.000 |   0.817 | 0.980          | 0.141     | 0.980         | 0.003    |
-|   Grandgrandson    |        1.000 |   1.632 |         1.000 |    1.632 |       1.000 |  0.452 |         0.931 |   60.358 |       0.911 |  0.070 |        0.909 |   0.598 |         0.931 |    1.171 |         0.931 |    1.146 |        1.000 |   0.939 | 1.000          | 0.171     | 1.000         | 0.003    |
-|       Uncle        |        0.876 |  16.244 |         0.891 |   16.244 |       0.964 |  4.516 |         0.876 |   60.416 |       0.933 |  0.098 |        0.854 |   0.538 |         0.891 |    0.948 |         0.891 |    0.905 |        0.928 |  17.682 | 0.985          | 0.609     | 0.890         | 3.297    |
+|         LP         | Test-F1-OCEL | RT-OCEL | Test-F1-CELOE | RT-CELOE | Test-F1-Evo | RT-Evo | Test-F1-DRILL | RT-DRILL | Test-F1-TDL | RT-TDL | Test-F1-NCES | RT-NCES | Test-F1-NCES2 | RT-NCES2 | Test-F1-ROCES | RT-ROCES | Test-F1-CLIP | RT-CLIP | Test-F1-NERO | RT-NERO | Test-F1-ALCSAT | RT-ALCSAT | Test-F1-SPELL | RT-SPELL |
+|:------------------:|-------------:|--------:|--------------:|---------:|------------:|-------:|--------------:|---------:|------------:|-------:|-------------:|--------:|--------------:|---------:|--------------:|---------:|-------------:|--------:|--------------|---------|----------------|-----------|---------------|----------|
+|        Aunt        |        0.614 |  13.697 |         0.855 |   13.697 |       0.978 |  5.278 |         0.811 |   60.351 |       0.956 |  0.118 |        0.805 |   0.632 |         0.812 |    1.136 |         0.812 |    1.119 |        0.855 |  14.059 | 0.834        | 0.095   | 1.000          | 0.618     | 0.690         | 4.121    |
+|       Cousin       |        0.712 |  10.846 |         0.789 |   10.846 |       0.993 |  3.311 |         0.701 |   60.485 |       0.820 |  0.176 |        0.608 |   0.628 |         0.680 |    1.177 |         0.695 |    1.086 |        0.779 |   9.050 | 0.704        | 0.113   | 1.000          | 0.749     | 0.715         | 5.346    |
+| Grandgranddaughter |        1.000 |   0.013 |         1.000 |    0.013 |       1.000 |  0.426 |         0.980 |   17.486 |       1.000 |  0.050 |        1.000 |   0.507 |         1.000 |    0.955 |         1.000 |    0.917 |        1.000 |   0.639 | 1.000        | 0.092   | 1.000          | 0.081     | 1.000         | < 0.001  |
+|  Grandgrandfather  |        1.000 |   0.897 |         1.000 |    0.897 |       1.000 |  0.404 |         0.947 |   55.728 |       0.947 |  0.059 |        0.927 |   0.505 |         0.947 |    0.944 |         0.927 |    0.924 |        1.000 |   0.746 | 1.000        | 0.101   | 1.000          | 0.144     | 1.000         | 0.002    |
+|  Grandgrandmother  |        1.000 |   4.173 |         1.000 |    4.173 |       1.000 |  0.442 |         0.893 |   50.329 |       0.947 |  0.060 |        0.947 |   0.633 |         0.933 |    1.323 |         0.947 |    1.306 |        1.000 |   0.817 | 0.980        | 0.065   | 0.980          | 0.141     | 0.980         | 0.003    |
+|   Grandgrandson    |        1.000 |   1.632 |         1.000 |    1.632 |       1.000 |  0.452 |         0.931 |   60.358 |       0.911 |  0.070 |        0.909 |   0.598 |         0.931 |    1.171 |         0.931 |    1.146 |        1.000 |   0.939 | 0.980        | 0.095   | 1.000          | 0.171     | 1.000         | 0.003    |
+|       Uncle        |        0.876 |  16.244 |         0.891 |   16.244 |       0.964 |  4.516 |         0.876 |   60.416 |       0.933 |  0.098 |        0.854 |   0.538 |         0.891 |    0.948 |         0.891 |    0.905 |        0.928 |  17.682 | 0.881        | 0.098   | 0.985          | 0.609     | 0.890         | 3.297    |
 
 
-|         LP         | Train-F1-OCEL | Train-F1-CELOE | Train-F1-Evo | Train-F1-DRILL | Train-F1-TDL |   Train-F1-NCES |   Train-F1-NCES2 |   Train-F1-ROCES |   Train-F1-CLIP | Train-F1-ALCSAT | Train-F1-SPELL |
-|:------------------:|--------------:|---------------:|-------------:|---------------:|-------------:|----------------:|-----------------:|-----------------:|----------------:|-----------------|----------------|
-|        Aunt        |         0.835 |          0.918 |        0.995 |          0.837 |        1.000 |           0.759 |            0.804 |            0.804 |           0.918 | 1.000           | 0.756          |
-|       Cousin       |         0.746 |          0.796 |        1.000 |          0.732 |        1.000 |           0.680 |            0.696 |            0.728 |           0.798 | 1.000           | 0.720          |
-| Grandgranddaughter |         1.000 |          1.000 |        1.000 |          1.000 |        1.000 |           1.000 |            1.000 |            1.000 |           1.000 | 1.000           | 1.000          |
-|  Grandgrandfather  |         1.000 |          1.000 |        1.000 |          0.968 |        1.000 |           0.910 |            0.944 |            0.942 |           1.000 | 1.000           | 1.000          |
-|  Grandgrandmother  |         1.000 |          1.000 |        1.000 |          0.975 |        1.000 |           0.923 |            0.941 |            0.944 |           1.000 | 1.000           | 1.000          |
-|   Grandgrandson    |         1.000 |          1.000 |        1.000 |          0.962 |        1.000 |           0.911 |            0.923 |            0.923 |           1.000 | 1.000           | 1.000          |
-|       Uncle        |         0.904 |          0.907 |        0.996 |          0.908 |        1.000 |           0.823 |            0.886 |            0.884 |           0.940 | 1.000           | 0.883          |
+|         LP         | Train-F1-OCEL | Train-F1-CELOE | Train-F1-Evo | Train-F1-DRILL | Train-F1-TDL |   Train-F1-NCES |   Train-F1-NCES2 |   Train-F1-ROCES |   Train-F1-CLIP | Train-F1-NERO | Train-F1-ALCSAT | Train-F1-SPELL |
+|:------------------:|--------------:|---------------:|-------------:|---------------:|-------------:|----------------:|-----------------:|-----------------:|----------------:|---------------|-----------------|----------------|
+|        Aunt        |         0.835 |          0.918 |        0.995 |          0.837 |        1.000 |           0.759 |            0.804 |            0.804 |           0.918 | 0.828         | 1.000           | 0.756          |
+|       Cousin       |         0.746 |          0.796 |        1.000 |          0.732 |        1.000 |           0.680 |            0.696 |            0.728 |           0.798 | 0.702         | 1.000           | 0.720          |
+| Grandgranddaughter |         1.000 |          1.000 |        1.000 |          1.000 |        1.000 |           1.000 |            1.000 |            1.000 |           1.000 | 1.000         | 1.000           | 1.000          |
+|  Grandgrandfather  |         1.000 |          1.000 |        1.000 |          0.968 |        1.000 |           0.910 |            0.944 |            0.942 |           1.000 | 1.000         | 1.000           | 1.000          |
+|  Grandgrandmother  |         1.000 |          1.000 |        1.000 |          0.975 |        1.000 |           0.923 |            0.941 |            0.944 |           1.000 | 1.000         | 1.000           | 1.000          |
+|   Grandgrandson    |         1.000 |          1.000 |        1.000 |          0.962 |        1.000 |           0.911 |            0.923 |            0.923 |           1.000 | 0.979         | 1.000           | 1.000          |
+|       Uncle        |         0.904 |          0.907 |        0.996 |          0.908 |        1.000 |           0.823 |            0.886 |            0.884 |           0.940 | 0.884         | 1.000           | 0.883          |
 
 
 ### 10-Fold Cross Validation Mutagenesis Benchmark Results
@@ -461,6 +461,23 @@ address="Cham"
   year={2022},
   publisher={Springer Nature Switzerland}
 }
+
+# NERO
+@InProceedings{10.1007/978-3-031-30047-9_9,
+author="Demir, Caglar
+and Ngonga Ngomo, Axel-Cyrille",
+editor="Cr{\'e}milleux, Bruno
+and Hess, Sibylle
+and Nijssen, Siegfried",
+title="Learning Permutation-Invariant Embeddings for Description Logic Concepts",
+booktitle="Advances in Intelligent Data Analysis XXI",
+year="2023",
+publisher="Springer Nature Switzerland",
+address="Cham",
+pages="103--115",
+isbn="978-3-031-30047-9"
+}
+
 ```
 
 In case you have any question or feedback, please contact us: ```caglar.demir@upb.de``` or ```alkid.baci@upb.de```.
