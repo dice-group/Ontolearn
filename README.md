@@ -464,18 +464,13 @@ address="Cham"
 
 # NERO
 @InProceedings{10.1007/978-3-031-30047-9_9,
-author="Demir, Caglar
-and Ngonga Ngomo, Axel-Cyrille",
-editor="Cr{\'e}milleux, Bruno
-and Hess, Sibylle
-and Nijssen, Siegfried",
+author="Demir, Caglar and Ngonga Ngomo, Axel-Cyrille",
 title="Learning Permutation-Invariant Embeddings for Description Logic Concepts",
 booktitle="Advances in Intelligent Data Analysis XXI",
 year="2023",
 publisher="Springer Nature Switzerland",
 address="Cham",
-pages="103--115",
-isbn="978-3-031-30047-9"
+pages="103--115"
 }
 
 ```
