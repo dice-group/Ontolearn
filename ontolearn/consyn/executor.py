@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Optional
 from torch.optim import AdamW
 
@@ -11,9 +12,43 @@ logger = logging.getLogger(__name__)
 
 
 class ConSynExecutor:
-    def __init__(self, kb_path, lps_path, num_k_predictions: int = 30, device: Optional[str] = None, verbose: bool = False):
+    def __init__(self, kb_path, lps_path, pretrained_path: str, num_k_predictions: int = 30, device: Optional[str] = None, verbose: bool = False):
         CONFIG['KNOWLEDGE_BASE_PATH'] = kb_path
         CONFIG['LEARNING_PROBLEM_PATH'] = lps_path
+
+        pretrained_path = Path(pretrained_path)
+
+        if not pretrained_path.exists():
+            raise FileNotFoundError(f"path_of_consyn_trained_models does not exist: {pretrained_path}")
+        if not pretrained_path.is_dir():
+            raise NotADirectoryError(f"path_of_consyn_trained_models is not a directory: {pretrained_path}")
+
+        experiment_name = pretrained_path.name
+        CONFIG['EXPERIMENT_DIR'] = str(pretrained_path)
+
+        data_dir = pretrained_path / "data"
+
+        required_paths = {
+            "GENERATED_DATA_PATH": data_dir / "generated_raw_data.json",
+            "TASK_LABEL_MAPPING_PATH": data_dir / "task_label_mappings.json",
+            "FIT_GENERATED_DATA_PATH": data_dir / "fit" / "generated_raw_data.json",
+            "FIT_TASK_LABEL_MAPPING_PATH": data_dir / "fit" / "task_label_mappings.json",
+            "MODEL_DIR": pretrained_path / "model",
+            "TOKENIZER_JSON": pretrained_path / "tokenizer.json"
+        }
+
+        missing = [name for name, path in required_paths.items() if not path.exists()]
+        if missing:
+            raise FileNotFoundError(
+                f"Missing required files/directories for experiment '{experiment_name}': {missing}"
+            )
+
+        CONFIG['GENERATED_DATA_PATH'] = str(required_paths["GENERATED_DATA_PATH"])
+        CONFIG['TASK_LABEL_MAPPING_PATH'] = str(required_paths["TASK_LABEL_MAPPING_PATH"])
+        CONFIG['FIT_PATH'] = {
+            'GENERATED_DATA_PATH': str(required_paths["FIT_GENERATED_DATA_PATH"]),
+            'TASK_LABEL_MAPPING_PATH': str(required_paths["FIT_TASK_LABEL_MAPPING_PATH"]),
+        }
 
         if device is not None:
             CONFIG['device'] = device

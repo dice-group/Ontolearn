@@ -99,9 +99,9 @@ class Initializer:
                 knowledge_base_path=self.config['KNOWLEDGE_BASE_PATH'], 
                 mapping_file_path=self.config['TASK_LABEL_MAPPING_PATH']
             )
-            self.tokenizer.save(path=self.config['EXPERIMENT_DIR']+'/tokenizer.pkl')
+            self.tokenizer.save(path=self.config['EXPERIMENT_DIR']+'/tokenizer.json')
         elif self.mode == 'fit':
-            self.tokenizer = self._load_tokenizer(path=self.config['EXPERIMENT_DIR']+'/tokenizer.pkl', tokenizer_class=ConSynTokenizer)
+            self.tokenizer = self._load_tokenizer(path=self.config['EXPERIMENT_DIR']+'/tokenizer.json', tokenizer_class=ConSynTokenizer)
 
         self.grammar_parser = ConSynGrammarParser(self.tokenizer)
 

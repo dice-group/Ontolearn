@@ -223,9 +223,8 @@ def execute(args): # pragma: no cover
     if args.model == "consyn":
         consyn_executor = ConSynExecutor(
             kb_path=args.knowledge_base_path, lps_path=args.path_learning_problem,
-            verbose=getattr(args, "verbose", False),
-            device='cpu',
-            num_k_predictions=getattr(args, "num_k_predictions", 30)
+            pretrained_path=args.path_of_consyn_trained_model, verbose=getattr(args, "verbose", False),
+            device='cpu', num_k_predictions=getattr(args, "num_k_predictions", 30)
         )
 
     with open(args.path_learning_problem) as json_file:

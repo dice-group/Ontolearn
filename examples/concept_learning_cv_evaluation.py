@@ -120,6 +120,7 @@ def dl_concept_learning(args):
     if not args.learner_types or 'consyn' in args.learner_types:
         consyn_executor = ConSynExecutor(
             kb_path=args.kb, lps_path=args.lps,
+            pretrained_path=args.path_of_consyn_trained_model,
             verbose=getattr(args, "verbose", False),
             device='cpu',
             num_k_predictions=getattr(args, "num_k_predictions", 50)
@@ -433,6 +434,7 @@ if __name__ == '__main__':
     parser.add_argument("--path_of_nces2_trained_models", type=str, default=None)
     parser.add_argument("--path_of_roces_trained_models", type=str, default=None)
     parser.add_argument("--path_of_clip_embeddings", type=str, default=None)
+    parser.add_argument("--path_of_consyn_trained_model", type=str, default=None)
     parser.add_argument("--report", type=str, default="report.csv")
     parser.add_argument("--random_seed", type=int, default=1)
 

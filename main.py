@@ -126,6 +126,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--path_of_nces_trained_models", type=str, default=None)
 #    parser.add_argument("--pretrained_model_name", type=str, default="SetTransformer", help="Pretrained model name",
 #                        choices=["SetTransformer", "GRU", "LSTM"])
+    parser.add_argument("--path_of_consyn_trained_model", type=str, default=None)
 
     if description is None:
         return parser.parse_args()
