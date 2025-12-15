@@ -3,7 +3,7 @@ from typing import Optional
 from torch.optim import AdamW
 
 from ontolearn.consyn.configs import CONFIG
-from ontolearn.consyn.intializer import Initializer
+from ontolearn.consyn.initializer import Initializer
 from ontolearn.consyn.trainer import ConSynTrainer
 from ontolearn.consyn.model.model import ConSynGeneratorModel
 

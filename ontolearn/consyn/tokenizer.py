@@ -155,3 +155,40 @@ class ConSynTokenizer:
                     else:
                         final_tokens.append(t)
         return final_tokens
+    
+    def save(self, path: str):
+        required_attrs = [
+            "dl_core_tokens",
+            "special_tokens",
+            "vocab",
+            "id_to_token",
+            "vocab_size",
+            "token_types",
+            "token_to_type",
+        ]
+        for attr in required_attrs:
+            assert hasattr(self, attr), f"Tokenizer is missing attribute: {attr}"
+
+        assert isinstance(self.vocab, dict), "vocab must be a dict[str, int]"
+        assert isinstance(self.id_to_token, dict), "id_to_token must be a dict[int, str]"
+        assert isinstance(self.vocab_size, int), "vocab_size must be int"
+
+        assert len(self.vocab) == len(self.id_to_token), \
+            "vocab and id_to_token must have same length"
+
+        data = {
+            "dl_core_tokens": list(self.dl_core_tokens),           # sets → lists
+            "special_tokens": list(self.special_tokens),
+            "vocab": self.vocab,                                   # str → int OK
+            "id_to_token": {str(k): v for k, v in self.id_to_token.items()}, # int keys → str
+            "vocab_size": self.vocab_size,
+            "token_types": {k: list(v) for k, v in self.token_types.items()},
+            "token_to_type": self.token_to_type,
+        }
+
+        directory = os.path.dirname(path)
+        if directory:
+            os.makedirs(directory, exist_ok=True)
+
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)

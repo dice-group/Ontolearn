@@ -1,4 +1,5 @@
 import os
+import json
 import random
 from typing import Any, Dict, List, Literal, Tuple, Union
 import numpy as np
@@ -93,10 +94,14 @@ class Initializer:
             self.datasets = raw_data_original
     
     def _initialize_core_components(self):
-        self.tokenizer = ConSynTokenizer(
-            knowledge_base_path=self.config['KNOWLEDGE_BASE_PATH'], 
-            mapping_file_path=self.config['TASK_LABEL_MAPPING_PATH']
-        )
+        if self.mode == 'train':
+            self.tokenizer = ConSynTokenizer(
+                knowledge_base_path=self.config['KNOWLEDGE_BASE_PATH'], 
+                mapping_file_path=self.config['TASK_LABEL_MAPPING_PATH']
+            )
+            self.tokenizer.save(path=self.config['EXPERIMENT_DIR']+'/tokenizer.pkl')
+        elif self.mode == 'fit':
+            self.tokenizer = self._load_tokenizer(path=self.config['EXPERIMENT_DIR']+'/tokenizer.pkl', tokenizer_class=ConSynTokenizer)
 
         self.grammar_parser = ConSynGrammarParser(self.tokenizer)
 
@@ -124,6 +129,42 @@ class Initializer:
             torch.cuda.manual_seed_all(seed)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
+
+    def _load_tokenizer(self, path: str, tokenizer_class):
+        assert os.path.exists(path), f"Tokenizer file not found: {path}"
+
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        required_keys = [
+            "dl_core_tokens",
+            "special_tokens",
+            "vocab",
+            "id_to_token",
+            "vocab_size",
+            "token_types",
+            "token_to_type",
+        ]
+        for key in required_keys:
+            assert key in data, f"Missing key in tokenizer file: {key}"
+
+        tokenizer = tokenizer_class(knowledge_base_path=self.config['KNOWLEDGE_BASE_PATH'])
+
+        tokenizer.dl_core_tokens = set(data["dl_core_tokens"])
+        tokenizer.special_tokens = set(data["special_tokens"])
+        tokenizer.vocab = data["vocab"]
+        tokenizer.id_to_token = {int(k): v for k, v in data["id_to_token"].items()}
+        tokenizer.vocab_size = data["vocab_size"]
+        tokenizer.token_types = {k: set(v) for k, v in data["token_types"].items()}
+        tokenizer.token_to_type = data["token_to_type"]
+
+        assert len(tokenizer.vocab) == len(tokenizer.id_to_token), \
+            "vocab and id_to_token must have same length after loading"
+
+        assert tokenizer.vocab_size == len(tokenizer.vocab), \
+            "vocab_size must match number of tokens"
+
+        return tokenizer
 
     def get_components(self) -> Dict[str, Any]:
         return {

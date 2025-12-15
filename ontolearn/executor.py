@@ -35,7 +35,7 @@ import pandas as pd
 
 from ontolearn.consyn.configs import CONFIG
 from ontolearn.consyn.executor import ConSynExecutor
-from ontolearn.consyn.intializer import Initializer
+from ontolearn.consyn.initializer import Initializer
 from ontolearn.consyn.model.model import ConSynGeneratorModel
 from ontolearn.consyn.trainer import ConSynTrainer
 from ontolearn.learners.tree_learner import TDL

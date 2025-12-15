@@ -308,9 +308,9 @@ class DataSplitter:
         return train, val, test
 
 class ConceptLearningDataset(Dataset): # ConSynDataset
-    def __init__(self, raw_data: List[Dict], tokenizer: 'ConSynTokenizer', datatype:Optional[str] = None) -> None:
+    def __init__(self, raw_data: List[Dict], tokenizer: 'ConSynTokenizer', max_seq_len: Optional[int] = None) -> None:
         self.tokenizer = tokenizer
-        # self.datatype = datatype
+        self.max_seq_len = max_seq_len
         self.train_individuals = set()
         self.data_processed: List[Dict] = self._process_raw_data(raw_data)
 
@@ -342,6 +342,10 @@ class ConceptLearningDataset(Dataset): # ConSynDataset
             tokens_list, input_ids_list = self._prepare_single_input_sequence_unpadded(
                 p_examples_tokens, n_examples_tokens, task_label
             )
+
+            if self.max_seq_len is not None:
+                input_ids_list = input_ids_list[:self.max_seq_len]
+                tokens_list = tokens_list[:self.max_seq_len]
 
             is_augmented = any([entry.get('__is_negated_task_origin', False), entry.get('__has_new_augmented_individuals', False)])
 

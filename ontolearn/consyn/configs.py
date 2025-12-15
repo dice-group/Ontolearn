@@ -17,7 +17,7 @@ CONFIG = {
     'learning_rate': 1e-4,
     'num_epochs': 300,
     'batch_size': 1,
-    # 'max_global_seq_len': 1500,
+    'max_global_seq_len': 35000,
     'max_output_seq_len': 30,
     'log_interval': 5,
     'grad_norm_clip': 1.0,

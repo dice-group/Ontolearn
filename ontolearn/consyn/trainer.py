@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 
 from owlapy.class_expression import OWLClassExpression
 
+from ontolearn.consyn.configs import CONFIG
 from ontolearn.consyn.grammar import ConSynGrammarParser
 from ontolearn.consyn.inference import ConSynInference
 from ontolearn.consyn.model.model import ConSynGeneratorModel
@@ -393,6 +394,9 @@ class ConSynTrainer:
         self.cshs.save(self.expr_save_path)
 
     def prepare_for_fit(self, verbose:bool = False):
+        if verbose:
+            self.verbose = verbose
+            
         self.device = torch.device("cpu")
         self.model.to(self.device)
 
@@ -448,7 +452,7 @@ class ConSynTrainer:
             target_data_generator.save_task_label_mappings()
             self.fit_task_label_mapping.add(target_concept)
 
-        target_raw_dataset = ConceptLearningDataset(target_raw_data, self.tokenizer)
+        target_raw_dataset = ConceptLearningDataset(target_raw_data, self.tokenizer, CONFIG['max_global_seq_len'])
         collate_fn_fit = partial(custom_collate_fn_for_dataloader, tokenizer=self.tokenizer)
 
         target_dataloader = DataLoader(

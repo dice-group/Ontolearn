@@ -9,7 +9,7 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader
 
 from ontolearn.consyn.configs import CONFIG
-from ontolearn.consyn.intializer import Initializer
+from ontolearn.consyn.initializer import Initializer
 from ontolearn.consyn.model.model import ConSynGeneratorModel
 from ontolearn.consyn.trainer import ConSynTrainer
 from ontolearn.consyn.utils import ConceptLearningDataset, custom_collate_fn_for_dataloader
@@ -45,12 +45,12 @@ if __name__ == "__main__":
 
     train_dataset, val_dataset, test_dataset = None, None, None
     
-    train_dataset = ConceptLearningDataset(train_data, tokenizer)
+    train_dataset = ConceptLearningDataset(train_data, tokenizer, config['max_global_seq_len'])
     if val_data:
-        val_dataset = ConceptLearningDataset(val_data, tokenizer)
+        val_dataset = ConceptLearningDataset(val_data, tokenizer, config['max_global_seq_len'])
 
     if test_data:
-        test_dataset = ConceptLearningDataset(test_data, tokenizer)
+        test_dataset = ConceptLearningDataset(test_data, tokenizer, config['max_global_seq_len'])
 
     # import json
     # with open("output.json", "w", encoding="utf-8") as f:

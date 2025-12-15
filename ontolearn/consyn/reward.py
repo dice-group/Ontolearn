@@ -15,7 +15,7 @@ from ontolearn.utils.static_funcs import compute_f1_score, init_length_metric
 
 
 if TYPE_CHECKING:
-    from ontolearn.consyn.intializer import DLOWLConverter
+    from ontolearn.consyn.initializer import DLOWLConverter
 
 AcceptedType = Tuple[OWLClassExpression, float, float]
 
