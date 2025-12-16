@@ -12,6 +12,9 @@ import json
 from argparse import ArgumentParser
 import time
 import numpy as np
+import pandas as pd
+from pathlib import Path
+from datetime import datetime
 from sklearn.model_selection import StratifiedKFold
 from ontolearn.utils.static_funcs import compute_f1_score
 from ontolearn.knowledge_base import KnowledgeBase
@@ -27,6 +30,44 @@ from owlapy.render import DLSyntaxObjectRenderer
 import sys
 sys.path.insert(0, '.')
 from drillv_variants import DrillV_Minimal, DrillV_Standard, DrillV_Enhanced, DrillV_Complex
+
+
+class ExperimentTracker:
+    """Track and store experiment results for CSV export."""
+    
+    def __init__(self):
+        self.results = []
+        
+    def add_result(self, method, problem, fold, train_time, inference_time, 
+                   train_f1, test_f1, concepts_tested, prediction):
+        """Add a single experiment result."""
+        self.results.append({
+            'method': method,
+            'problem': problem,
+            'fold': fold,
+            'train_time': train_time,
+            'inference_time': inference_time,
+            'total_time': train_time + inference_time,
+            'train_f1': train_f1,
+            'test_f1': test_f1,
+            'concepts_tested': concepts_tested,
+            'prediction': prediction
+        })
+    
+    def to_dataframe(self):
+        """Convert results to pandas DataFrame."""
+        return pd.DataFrame(self.results)
+    
+    def save_to_csv(self, filename):
+        """Save results to CSV file."""
+        df = self.to_dataframe()
+        output_path = Path(filename)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        df.to_csv(output_path, index=False)
+        print(f"\n{'='*80}")
+        print(f"✓ Results saved to: {output_path}")
+        print(f"{'='*80}")
+        return df
 
 
 def run_and_time_training(learner, train_args, directory):
@@ -63,6 +104,9 @@ def start(args):
         num_of_target_concepts=args.num_of_target_concepts,
         num_learning_problems=args.num_of_training_learning_problems
     )
+    
+    # Initialize experiment tracker
+    tracker = ExperimentTracker() if args.save_results else None
 
     # Initialize both learners
     drill = Drill(
@@ -234,9 +278,16 @@ def start(args):
 
         for (ith, (train_index, test_index)) in enumerate(kf.split(X, Y)):
             train_pos = {pos_individual for pos_individual in X[train_index][Y[train_index] == 1]}
+            print(train_pos)
             train_neg = {neg_individual for neg_individual in X[train_index][Y[train_index] == 0]}
+            print("/"*50)
+            print(train_neg)
             test_pos = {pos_individual for pos_individual in X[test_index][Y[test_index] == 1]}
+            print("/"*50)
+            print(test_pos)
             test_neg = {neg_individual for neg_individual in X[test_index][Y[test_index] == 0]}
+            print("/"*50)
+            print(test_neg)
             train_lp = PosNegLPStandard(pos=set(map(OWLNamedIndividual, map(IRI.create, train_pos))),
                                         neg=set(map(OWLNamedIndividual, map(IRI.create, train_neg))))
             test_lp = PosNegLPStandard(pos=set(map(OWLNamedIndividual, map(IRI.create, test_pos))),
@@ -248,6 +299,20 @@ def start(args):
             drill_concepts.append(drill_result.get('concepts_tested', 0))
             drill_train_f1s.append(drill_result['train_f1'])
             drill_test_f1s.append(drill_result['test_f1'])
+            
+            # Track Drill results
+            if tracker:
+                tracker.add_result(
+                    method='Drill',
+                    problem=str_target_concept,
+                    fold=ith + 1,
+                    train_time=0.0,  # Training time per fold (0 for pretrained models)
+                    inference_time=drill_result['prediction_time'],
+                    train_f1=drill_result['train_f1'],
+                    test_f1=drill_result['test_f1'],
+                    concepts_tested=drill_result.get('concepts_tested', 0),
+                    prediction=drill_result['prediction']
+                )
 
             # DrillV with trained V-values
             drillv_result = run_and_time_prediction(drillv, train_lp, test_lp, kb)
@@ -256,6 +321,20 @@ def start(args):
             drillv_train_f1s.append(drillv_result['train_f1'])
             drillv_test_f1s.append(drillv_result['test_f1'])
             fold_drillv_concepts.append(drillv_result.get('concepts_tested', 0))
+            
+            # Track DrillV results
+            if tracker:
+                tracker.add_result(
+                    method=f'DrillV_{variant_name}',
+                    problem=str_target_concept,
+                    fold=ith + 1,
+                    train_time=0.0,
+                    inference_time=drillv_result['prediction_time'],
+                    train_f1=drillv_result['train_f1'],
+                    test_f1=drillv_result['test_f1'],
+                    concepts_tested=drillv_result.get('concepts_tested', 0),
+                    prediction=drillv_result['prediction']
+                )
             
             # Get performance statistics after this prediction (if method exists)
             perf_stats = drillv.get_performance_stats() if hasattr(drillv, 'get_performance_stats') else None
@@ -403,6 +482,14 @@ def start(args):
     print(f"  DrillV (trained):      Train F1={avg_drillv_train_f1:.3f}, Test F1={avg_drillv_test_f1:.3f}")
     if args.compare_random_v:
         print(f"  DrillV (random):       Train F1={avg_drillv_random_train_f1:.3f}, Test F1={avg_drillv_random_test_f1:.3f}")
+    
+    # Save results to CSV if requested
+    if tracker and args.save_results:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        csv_filename = f"results/drill_vs_drillv_{variant_name}_{timestamp}.csv"
+        df = tracker.save_to_csv(csv_filename)
+        print(f"\nTo visualize results, run:")
+        print(f"  python visualize_drill_drillv_evolution.py --input {csv_filename}")
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -423,9 +510,9 @@ if __name__ == '__main__':
                         help="Path to a .json file that contains 2 properties 'positive_examples' and "
                              "'negative_examples'. Each of this properties should contain the IRIs of the respective"
                              "instances. e.g. 'some/path/lp.json'")
-    parser.add_argument("--num_problems", type=int, default=1,
+    parser.add_argument("--num_problems", type=int, default=4,
                         help="Number of problems to evaluate from the learning problem file. 0 means all problems.")
-    parser.add_argument("--max_runtime", type=int, default=30, help="Max runtime")
+    parser.add_argument("--max_runtime", type=int, default=10, help="Max runtime")
     parser.add_argument("--folds", type=int, default=5, help="Number of folds of cross validation.")
     parser.add_argument("--random_seed", type=int, default=1)
     parser.add_argument("--iter_bound", type=int, default=10_000, help='iter_bound during testing.')
@@ -434,12 +521,14 @@ if __name__ == '__main__':
     parser.add_argument("--enable_drillv_optimizations", action='store_true', default=False,
                         help='Enable DrillV performance optimizations (caching, batch processing)')
     
-    parser.add_argument("--drill_variant", type=str, default='default',
+    parser.add_argument("--drill_variant", type=str, default='complex',
                         choices=['default', 'minimal', 'standard', 'enhanced', 'complex'],
                         help='DrillV variant to use: default (original with all RL features), '
                              'minimal (simplest 2-layer NN), standard (balanced 3-layer), '
                              'enhanced (standard + curriculum + curiosity), '
-                             'complex (4-layer residual with target network)')
+                             'complex (4-layer residual with target network) [default: complex]')
+    parser.add_argument("--save_results", action='store_true', default=False,
+                        help='Save experiment results to CSV file for visualization')
     # DQL related
     parser.add_argument("--num_episode", type=int, default=1, help='Number of trajectories created for a given lp.')
 
