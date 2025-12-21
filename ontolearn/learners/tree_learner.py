@@ -23,6 +23,11 @@
 # -----------------------------------------------------------------------------
 
 from typing import Dict, Set, Tuple, List, Union, Callable
+from fitter import Fitter, get_common_distributions
+import logging
+import scipy as sc
+from scipy.stats._distn_infrastructure import rv_frozen
+logging.getLogger("fitter").setLevel(logging.CRITICAL)
 import numpy as np
 import pandas as pd
 from ontolearn.verbalizer import verbalize_learner_prediction
@@ -415,9 +420,14 @@ class TDL:
             # A mapping from str dl representation to owl object.
             features[str_dl_concept] = owl_class_expression
 
-    def _compute_dt_gaussian_ranges(self, values: set) -> List[tuple]:
-        mean = np.mean(values)
-        std = np.std(values)
+    def _compute_dt_gaussian_ranges(self, values: set, best_dist:str) -> List[tuple]:
+        print(type(list(best_dist.keys())[0]))
+        dist_name = list(best_dist.keys())[0]
+        distribution = getattr(sc.stats, dist_name)
+        frozen_dist: rv_frozen
+        frozen_dist = distribution(**best_dist[dist_name])
+        mean = frozen_dist.stats(moments='m')
+        std = frozen_dist.std()
         ranges = [
             (mean - std, mean),
             (mean, mean + std),
@@ -443,10 +453,18 @@ class TDL:
                 ranges_dict.setdefault(
                     prop, self._get_data_property_range(data_properties_dict[prop])
                 )
+                
             if mode == "gauss":
+                f = Fitter(data_properties_dict[prop], distributions= get_common_distributions())
+                f.fit()
+                print("prop" + prop.__repr__())
+                best_dist = f.get_best(method="sumsquare_error")
+                print(best_dist)
                 ranges_dict.setdefault(
-                    prop, self._compute_dt_gaussian_ranges(data_properties_dict[prop])
+                    prop, self._compute_dt_gaussian_ranges(data_properties_dict[prop], best_dist)
                 )
+                
+                
         for r in ranges_dict:
             for interval in range(len(ranges_dict[r])):
                 new_class_expression = (
