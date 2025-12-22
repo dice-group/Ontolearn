@@ -426,7 +426,7 @@ class DrillV_Complex(DrillV_Enhanced):
             gamma=0.95,                     # Discount for future improvements
             epsilon=termination_epsilon,    # Exploration rate (user configurable!)
             min_quality_threshold=0.75,     # Minimum acceptable quality
-            min_concepts_explored=100,      # Safety minimum
+            min_concepts_explored=10,      # Safety minimum
             max_concepts_explored=15000,     # Safety maximum
             memory_path='termination_agent_memory.pkl'  # Persistent memory file
         )

@@ -20,7 +20,8 @@ from ontolearn.utils.static_funcs import compute_f1_score
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.refinement_operators import LengthBasedRefinement
-from ontolearn.learners import Drill, DrillV
+from ontolearn.learners import Drill, DrillV, OCEL, CELOE, TDL
+from ontolearn.concept_learner import EvoLearner
 from ontolearn.metrics import F1
 from ontolearn.heuristics import CeloeBasedReward
 from owlapy.owl_individual import OWLNamedIndividual, IRI
@@ -107,6 +108,18 @@ def start(args):
     
     # Initialize experiment tracker
     tracker = ExperimentTracker() if args.save_results else None
+
+    # Initialize traditional symbolic learners (OCEL, CELOE, ELTL)
+    print("\nInitializing symbolic learners...")
+    ocel = OCEL(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
+    celoe = CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
+    eltl = TDL(knowledge_base=kb, 
+               kwargs_classifier={"random_state": args.random_seed},
+               max_runtime=args.max_runtime)
+    
+    print("  ✓ OCEL initialized")
+    print("  ✓ CELOE initialized")
+    print("  ✓ ELTL (TDL) initialized")
 
     # Initialize both learners
     drill = Drill(
@@ -237,6 +250,9 @@ def start(args):
     drill_times = []
     drillv_times = []
     drillv_random_times = []
+    ocel_times = []
+    celoe_times = []
+    eltl_times = []
     # Collect concepts tested counts
     drill_concepts = []
     drillv_concepts = []
@@ -248,6 +264,12 @@ def start(args):
     drillv_test_f1s = []
     drillv_random_train_f1s = []
     drillv_random_test_f1s = []
+    ocel_train_f1s = []
+    ocel_test_f1s = []
+    celoe_train_f1s = []
+    celoe_test_f1s = []
+    eltl_train_f1s = []
+    eltl_test_f1s = []
     print("\nComparing models on each class expression:\n")
     
     # Limit the number of problems if specified
@@ -278,16 +300,9 @@ def start(args):
 
         for (ith, (train_index, test_index)) in enumerate(kf.split(X, Y)):
             train_pos = {pos_individual for pos_individual in X[train_index][Y[train_index] == 1]}
-            print(train_pos)
             train_neg = {neg_individual for neg_individual in X[train_index][Y[train_index] == 0]}
-            print("/"*50)
-            print(train_neg)
             test_pos = {pos_individual for pos_individual in X[test_index][Y[test_index] == 1]}
-            print("/"*50)
-            print(test_pos)
             test_neg = {neg_individual for neg_individual in X[test_index][Y[test_index] == 0]}
-            print("/"*50)
-            print(test_neg)
             train_lp = PosNegLPStandard(pos=set(map(OWLNamedIndividual, map(IRI.create, train_pos))),
                                         neg=set(map(OWLNamedIndividual, map(IRI.create, train_neg))))
             test_lp = PosNegLPStandard(pos=set(map(OWLNamedIndividual, map(IRI.create, test_pos))),
@@ -306,7 +321,7 @@ def start(args):
                     method='Drill',
                     problem=str_target_concept,
                     fold=ith + 1,
-                    train_time=0.0,  # Training time per fold (0 for pretrained models)
+                    train_time=drill_train_time,  
                     inference_time=drill_result['prediction_time'],
                     train_f1=drill_result['train_f1'],
                     test_f1=drill_result['test_f1'],
@@ -328,7 +343,7 @@ def start(args):
                     method=f'DrillV_{variant_name}',
                     problem=str_target_concept,
                     fold=ith + 1,
-                    train_time=0.0,
+                    train_time=drillv_train_time,
                     inference_time=drillv_result['prediction_time'],
                     train_f1=drillv_result['train_f1'],
                     test_f1=drillv_result['test_f1'],
@@ -373,6 +388,77 @@ def start(args):
                 print(f"    V-Learning: Total runs={v_learning_stats['total_runs']}, "
                       f"Best ever={v_learning_stats['best_ever_quality']:.3f}, "
                       f"Termination={v_learning_stats['termination_reason']}")
+            
+            # OCEL
+            ocel_result = run_and_time_prediction(ocel, train_lp, test_lp, kb)
+            ocel_times.append(ocel_result['prediction_time'])
+            ocel_train_f1s.append(ocel_result['train_f1'])
+            ocel_test_f1s.append(ocel_result['test_f1'])
+            
+            if tracker:
+                tracker.add_result(
+                    method='OCEL',
+                    problem=str_target_concept,
+                    fold=ith + 1,
+                    train_time=0,  # OCEL doesn't require pre-training
+                    inference_time=ocel_result['prediction_time'],
+                    train_f1=ocel_result['train_f1'],
+                    test_f1=ocel_result['test_f1'],
+                    concepts_tested=ocel_result.get('concepts_tested', 0),
+                    prediction=ocel_result['prediction']
+                )
+            
+            # CELOE
+            celoe_result = run_and_time_prediction(celoe, train_lp, test_lp, kb)
+            celoe_times.append(celoe_result['prediction_time'])
+            celoe_train_f1s.append(celoe_result['train_f1'])
+            celoe_test_f1s.append(celoe_result['test_f1'])
+            
+            if tracker:
+                tracker.add_result(
+                    method='CELOE',
+                    problem=str_target_concept,
+                    fold=ith + 1,
+                    train_time=0,  # CELOE doesn't require pre-training
+                    inference_time=celoe_result['prediction_time'],
+                    train_f1=celoe_result['train_f1'],
+                    test_f1=celoe_result['test_f1'],
+                    concepts_tested=celoe_result.get('concepts_tested', 0),
+                    prediction=celoe_result['prediction']
+                )
+            
+            # ELTL (TDL)
+            eltl_result = run_and_time_prediction(eltl, train_lp, test_lp, kb)
+            eltl_times.append(eltl_result['prediction_time'])
+            eltl_train_f1s.append(eltl_result['train_f1'])
+            eltl_test_f1s.append(eltl_result['test_f1'])
+            
+            if tracker:
+                tracker.add_result(
+                    method='ELTL',
+                    problem=str_target_concept,
+                    fold=ith + 1,
+                    train_time=0,  # ELTL doesn't require pre-training
+                    inference_time=eltl_result['prediction_time'],
+                    train_f1=eltl_result['train_f1'],
+                    test_f1=eltl_result['test_f1'],
+                    concepts_tested=eltl_result.get('concepts_tested', 0),
+                    prediction=eltl_result['prediction']
+                )
+            
+            print(f"  OCEL:")
+            print(f"    Prediction: {ocel_result['prediction']}")
+            print(f"    Train F1: {ocel_result['train_f1']:.3f} | Test F1: {ocel_result['test_f1']:.3f}")
+            print(f"    Prediction time: {ocel_result['prediction_time']:.2f} seconds")
+            print(f"  CELOE:")
+            print(f"    Prediction: {celoe_result['prediction']}")
+            print(f"    Train F1: {celoe_result['train_f1']:.3f} | Test F1: {celoe_result['test_f1']:.3f}")
+            print(f"    Prediction time: {celoe_result['prediction_time']:.2f} seconds")
+            print(f"  ELTL (TDL):")
+            print(f"    Prediction: {eltl_result['prediction']}")
+            print(f"    Train F1: {eltl_result['train_f1']:.3f} | Test F1: {eltl_result['test_f1']:.3f}")
+            print(f"    Prediction time: {eltl_result['prediction_time']:.2f} seconds")
+            
             if args.compare_random_v and drillv_random_result:
                 print(f"  DrillV ({variant_name} with random values):")
                 print(f"    Prediction: {drillv_random_result['prediction']}")
@@ -403,14 +489,38 @@ def start(args):
     avg_drill_time = np.mean(drill_times) if drill_times else 0
     avg_drillv_time = np.mean(drillv_times) if drillv_times else 0
     avg_drillv_random_time = np.mean(drillv_random_times) if drillv_random_times else 0
+    avg_ocel_time = np.mean(ocel_times) if ocel_times else 0
+    avg_celoe_time = np.mean(celoe_times) if celoe_times else 0
+    avg_eltl_time = np.mean(eltl_times) if eltl_times else 0
     
-    print("\n" + "="*60)
-    print("SUMMARY:")
-    print("="*60)
-    # print(f"Drill training time: {drill_train_time:.2f} seconds")
-    # print(f"DrillV training time: {drillv_train_time:.2f} seconds")
-    print(f"Average Drill (DQN) prediction time: {avg_drill_time:.2f} seconds")
-    print(f"Average DrillV (trained V-values) prediction time: {avg_drillv_time:.2f} seconds")
+    print("\n" + "="*80)
+    print("SUMMARY STATISTICS")
+    print("="*80)
+    print("\nAverage Prediction Times:")
+    print(f"  Drill (DQN):              {avg_drill_time:.3f} seconds")
+    print(f"  DrillV ({variant_name}):  {avg_drillv_time:.3f} seconds")
+    if args.compare_random_v:
+        print(f"  DrillV (random V):        {avg_drillv_random_time:.3f} seconds")
+    print(f"  OCEL:                     {avg_ocel_time:.3f} seconds")
+    print(f"  CELOE:                    {avg_celoe_time:.3f} seconds")
+    print(f"  ELTL (TDL):               {avg_eltl_time:.3f} seconds")
+    
+    print("\nAverage Test F1 Scores:")
+    print(f"  Drill (DQN):              {np.mean(drill_test_f1s):.3f}")
+    print(f"  DrillV ({variant_name}):  {np.mean(drillv_test_f1s):.3f}")
+    if args.compare_random_v:
+        print(f"  DrillV (random V):        {np.mean(drillv_random_test_f1s):.3f}")
+    print(f"  OCEL:                     {np.mean(ocel_test_f1s):.3f}")
+    print(f"  CELOE:                    {np.mean(celoe_test_f1s):.3f}")
+    print(f"  ELTL (TDL):               {np.mean(eltl_test_f1s):.3f}")
+    
+    print("\nAverage Concepts Tested:")
+    print(f"  Drill (DQN):              {np.mean(drill_concepts):.0f}")
+    print(f"  DrillV ({variant_name}):  {np.mean(drillv_concepts):.0f}")
+    if args.compare_random_v:
+        print(f"  DrillV (random V):        {np.mean(drillv_random_concepts):.0f}")
+    
+    print("\n" + "="*80)
     
     # Show DrillV performance optimizations statistics (if method exists)
     if hasattr(drillv, 'print_performance_summary'):
@@ -418,70 +528,38 @@ def start(args):
         drillv.print_performance_summary()
     
     if args.compare_random_v:
-        print(f"Average DrillV (random V-values) prediction time: {avg_drillv_random_time:.2f} seconds")
+        print(f"\nV-Values Importance Analysis:")
+        if avg_drillv_time > 0 and avg_drillv_random_time > 0:
+            time_diff_percent = ((avg_drillv_random_time - avg_drillv_time) / avg_drillv_time) * 100
+            print(f"  Random V-values vs Trained V-values time difference: {time_diff_percent:+.1f}%")
+            if abs(time_diff_percent) < 5:
+                print("  → V-values have minimal impact on prediction time")
+            elif time_diff_percent > 0:
+                print("  → Random V-values are slower (less efficient search)")
+            else:
+                print("  → Random V-values are faster (but potentially less accurate)")
         if hasattr(drillv_random, 'print_performance_summary'):
             print("\nDrillV (Random V-values) Lean Performance Optimizations:")
             drillv_random.print_performance_summary()
-        
-        print("\nV-Values Importance Analysis:")
-        if avg_drillv_time > 0 and avg_drillv_random_time > 0:
-            time_diff_percent = ((avg_drillv_random_time - avg_drillv_time) / avg_drillv_time) * 100
-            print(f"Random V-values vs Trained V-values time difference: {time_diff_percent:+.1f}%")
-            if abs(time_diff_percent) < 5:
-                print("→ V-values have minimal impact on prediction time")
-            elif time_diff_percent > 0:
-                print("→ Random V-values are slower (less efficient search)")
-            else:
-                print("→ Random V-values are faster (but potentially less accurate)")
                 
-    # Performance comparison
+    # Performance comparison: DrillV vs Drill
+    print(f"\nPerformance Comparison (DrillV vs Drill):")
     if avg_drill_time > 0 and avg_drillv_time > 0:
         speedup = avg_drill_time / avg_drillv_time
-        print(f"\nPerformance Comparison:")
-        print(f"DrillV vs Drill speedup: {speedup:.2f}x")
-        if speedup > 1.0:
-            print("→ DrillV is faster than Drill!")
-        elif speedup < 1.0:
-            print("→ Drill is faster than DrillV")
-        else:
-            print("→ Similar performance")
-    print("="*60)
-
-    # === Concepts tested comparison ===
-    def safe_mean(lst):
-        return float(np.mean(lst)) if lst else 0.0
-
-    avg_drill_concepts = safe_mean(drill_concepts)
-    avg_drillv_concepts = safe_mean(drillv_concepts)
-    avg_drillv_random_concepts = safe_mean(drillv_random_concepts)
-
-    print("\nConcepts tested (averages):")
-    print(f"  Drill (DQN):           {avg_drill_concepts:.1f}")
-    print(f"  DrillV (trained):      {avg_drillv_concepts:.1f}")
-    if args.compare_random_v:
-        print(f"  DrillV (random):       {avg_drillv_random_concepts:.1f}")
-
-    # Relative improvement
-    if avg_drillv_concepts > 0:
+        print(f"  Time: DrillV is {speedup:.2f}x {'faster' if speedup > 1.0 else 'slower'} than Drill")
+    
+    if drill_concepts and drillv_concepts:
+        avg_drill_concepts = np.mean(drill_concepts)
+        avg_drillv_concepts = np.mean(drillv_concepts)
         reduction = (avg_drill_concepts - avg_drillv_concepts) / avg_drill_concepts * 100 if avg_drill_concepts > 0 else 0.0
-        print(f"\nDrillV vs Drill: average concepts tested reduced by: {reduction:+.1f}%")
-    if args.compare_random_v and avg_drillv_random_concepts > 0:
-        rel = (avg_drillv_random_concepts - avg_drillv_concepts) / avg_drillv_random_concepts * 100 if avg_drillv_random_concepts > 0 else 0.0
-        print(f"DrillV (trained) vs DrillV (random): trained reduces concepts by: {rel:+.1f}%")
-
-    # === F1 Score comparison ===
-    avg_drill_train_f1 = safe_mean(drill_train_f1s)
-    avg_drill_test_f1 = safe_mean(drill_test_f1s)
-    avg_drillv_train_f1 = safe_mean(drillv_train_f1s)
-    avg_drillv_test_f1 = safe_mean(drillv_test_f1s)
-    avg_drillv_random_train_f1 = safe_mean(drillv_random_train_f1s)
-    avg_drillv_random_test_f1 = safe_mean(drillv_random_test_f1s)
-
-    print("\nF1 Scores (averages):")
-    print(f"  Drill (DQN):           Train F1={avg_drill_train_f1:.3f}, Test F1={avg_drill_test_f1:.3f}")
-    print(f"  DrillV (trained):      Train F1={avg_drillv_train_f1:.3f}, Test F1={avg_drillv_test_f1:.3f}")
-    if args.compare_random_v:
-        print(f"  DrillV (random):       Train F1={avg_drillv_random_train_f1:.3f}, Test F1={avg_drillv_random_test_f1:.3f}")
+        print(f"  Concepts: DrillV explores {reduction:+.1f}% {'fewer' if reduction > 0 else 'more'} concepts than Drill")
+    
+    avg_drill_test_f1 = np.mean(drill_test_f1s) if drill_test_f1s else 0
+    avg_drillv_test_f1 = np.mean(drillv_test_f1s) if drillv_test_f1s else 0
+    f1_diff = avg_drillv_test_f1 - avg_drill_test_f1
+    print(f"  Quality: DrillV test F1 is {f1_diff:+.3f} {'better' if f1_diff > 0 else 'worse'} than Drill")
+    
+    print("\n" + "="*80)
     
     # Save results to CSV if requested
     if tracker and args.save_results:
@@ -503,14 +581,14 @@ if __name__ == '__main__':
                         default=1)
     parser.add_argument("--num_of_training_learning_problems",
                         type=int,
-                        default=5)
+                        default=20)
     parser.add_argument("--path_pretrained_dir", type=str, default=None)
 
     parser.add_argument("--path_learning_problem", type=str, default='LPs/Family/lps_difficult.json',
                         help="Path to a .json file that contains 2 properties 'positive_examples' and "
                              "'negative_examples'. Each of this properties should contain the IRIs of the respective"
                              "instances. e.g. 'some/path/lp.json'")
-    parser.add_argument("--num_problems", type=int, default=4,
+    parser.add_argument("--num_problems", type=int, default=2,
                         help="Number of problems to evaluate from the learning problem file. 0 means all problems.")
     parser.add_argument("--max_runtime", type=int, default=10, help="Max runtime")
     parser.add_argument("--folds", type=int, default=5, help="Number of folds of cross validation.")
