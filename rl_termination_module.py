@@ -66,7 +66,7 @@ class IntelligentTerminationAgent:
                  gamma=0.95,                      # Discount factor for future improvements
                  epsilon=0.3,                     # Exploration rate (allow some risky decisions)
                  min_quality_threshold=0.75,      # Minimum acceptable quality
-                 min_concepts_explored=100,       # Safety minimum
+                 min_concepts_explored=10,       # Safety minimum
                  max_concepts_explored=5000,      # Safety maximum
                  memory_path='termination_agent_memory.pkl'):
         
@@ -95,6 +95,12 @@ class IntelligentTerminationAgent:
         self.memory_path = memory_path
         self.total_runs = 0  # How many times have we run on this LP?
         self.best_ever_quality = 0.0  # Best we've ever achieved on this LP
+        
+        # Training metrics tracking
+        self.training_losses = []  # Track V-network training loss
+        self.episode_qualities = []  # Track quality per episode
+        self.episode_concepts = []  # Track concepts explored per episode
+        self.v_predictions = []  # Track V-network predictions over time
         
         # Epsilon-greedy: Decide ONCE per episode, not per check!
         self.episode_explore_mode = False
@@ -337,6 +343,8 @@ class IntelligentTerminationAgent:
         
         # Train V-network on this experience
         self.v_net.train()
+        episode_losses = []  # Track losses for this episode
+        
         for t in range(0, len(self.quality_history) - 1, 10):  # Sample every 10 steps
             # Get state at time t
             old_history = self.quality_history[:t+1]
@@ -374,8 +382,20 @@ class IntelligentTerminationAgent:
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
+            
+            # Track loss
+            episode_losses.append(loss.item())
         
         self.v_net.eval()
+        
+        # Store metrics for this episode
+        if episode_losses:
+            avg_loss = np.mean(episode_losses)
+            self.training_losses.append(avg_loss)
+            print(f"   V-network training loss: {avg_loss:.6f}")
+        
+        self.episode_qualities.append(self.best_quality)
+        self.episode_concepts.append(self.concepts_explored_count)
         
         # Update memory BEFORE incrementing total_runs
         if self.best_quality > self.best_ever_quality:
@@ -429,3 +449,114 @@ class IntelligentTerminationAgent:
             'total_runs': self.total_runs,
             'best_ever_quality': self.best_ever_quality
         }
+    
+    def get_training_metrics(self):
+        """Get training metrics for visualization"""
+        return {
+            'training_losses': self.training_losses,
+            'episode_qualities': self.episode_qualities,
+            'episode_concepts': self.episode_concepts,
+            'v_predictions': self.v_predictions,
+            'total_runs': self.total_runs
+        }
+    
+    def save_training_metrics(self, filepath='training_metrics.json'):
+        """Save training metrics to file"""
+        import json
+        metrics = self.get_training_metrics()
+        with open(filepath, 'w') as f:
+            json.dump(metrics, f, indent=2)
+        print(f"Training metrics saved to: {filepath}")
+    
+    def plot_training_progress(self, save_path='training_progress.png'):
+        """
+        Visualize training progress of the V-network.
+        
+        Shows:
+        1. V-network training loss over episodes
+        2. Quality achieved per episode
+        3. Concepts explored per episode
+        4. Learning efficiency (quality/concepts)
+        """
+        try:
+            import matplotlib.pyplot as plt
+            
+            if not self.training_losses:
+                print("No training data to plot yet!")
+                return
+            
+            fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+            fig.suptitle('DrillV Agent Training Progress', fontsize=16, fontweight='bold')
+            
+            episodes = list(range(1, len(self.training_losses) + 1))
+            
+            # Plot 1: V-Network Training Loss
+            axes[0, 0].plot(episodes, self.training_losses, 'b-', linewidth=2, marker='o', markersize=4)
+            axes[0, 0].set_xlabel('Episode', fontsize=12)
+            axes[0, 0].set_ylabel('V-Network Loss (MSE)', fontsize=12)
+            axes[0, 0].set_title('V-Network Learning Curve', fontsize=13, fontweight='bold')
+            axes[0, 0].grid(True, alpha=0.3)
+            axes[0, 0].set_yscale('log')  # Log scale to see improvements better
+            
+            # Add trend line
+            if len(episodes) > 1:
+                z = np.polyfit(episodes, self.training_losses, 1)
+                p = np.poly1d(z)
+                axes[0, 0].plot(episodes, p(episodes), "r--", alpha=0.8, linewidth=1.5, label='Trend')
+                axes[0, 0].legend()
+            
+            # Plot 2: Quality Achieved per Episode
+            axes[0, 1].plot(episodes, self.episode_qualities, 'g-', linewidth=2, marker='s', markersize=4)
+            axes[0, 1].set_xlabel('Episode', fontsize=12)
+            axes[0, 1].set_ylabel('Best Quality (F1)', fontsize=12)
+            axes[0, 1].set_title('Quality per Episode', fontsize=13, fontweight='bold')
+            axes[0, 1].grid(True, alpha=0.3)
+            axes[0, 1].axhline(y=np.mean(self.episode_qualities), color='r', linestyle='--', 
+                              alpha=0.7, label=f'Mean: {np.mean(self.episode_qualities):.3f}')
+            axes[0, 1].legend()
+            axes[0, 1].set_ylim([0, 1.0])
+            
+            # Plot 3: Concepts Explored per Episode
+            axes[1, 0].plot(episodes, self.episode_concepts, 'orange', linewidth=2, marker='^', markersize=4)
+            axes[1, 0].set_xlabel('Episode', fontsize=12)
+            axes[1, 0].set_ylabel('Concepts Explored', fontsize=12)
+            axes[1, 0].set_title('Exploration Efficiency', fontsize=13, fontweight='bold')
+            axes[1, 0].grid(True, alpha=0.3)
+            axes[1, 0].axhline(y=np.mean(self.episode_concepts), color='r', linestyle='--',
+                              alpha=0.7, label=f'Mean: {np.mean(self.episode_concepts):.0f}')
+            axes[1, 0].legend()
+            
+            # Plot 4: Learning Efficiency (Quality per Concept)
+            if self.episode_concepts:
+                efficiency = [q / max(c, 1) for q, c in zip(self.episode_qualities, self.episode_concepts)]
+                axes[1, 1].plot(episodes, efficiency, 'purple', linewidth=2, marker='D', markersize=4)
+                axes[1, 1].set_xlabel('Episode', fontsize=12)
+                axes[1, 1].set_ylabel('Quality / Concepts', fontsize=12)
+                axes[1, 1].set_title('Learning Efficiency', fontsize=13, fontweight='bold')
+                axes[1, 1].grid(True, alpha=0.3)
+                
+                # Add trend line
+                if len(episodes) > 1:
+                    z = np.polyfit(episodes, efficiency, 1)
+                    p = np.poly1d(z)
+                    trend = p(episodes)
+                    axes[1, 1].plot(episodes, trend, "r--", alpha=0.8, linewidth=1.5, label='Trend')
+                    
+                    # Show if efficiency is improving
+                    if z[0] > 0:
+                        axes[1, 1].text(0.05, 0.95, '↗ Improving', transform=axes[1, 1].transAxes,
+                                       fontsize=11, verticalalignment='top', color='green', fontweight='bold')
+                    else:
+                        axes[1, 1].text(0.05, 0.95, '↘ Declining', transform=axes[1, 1].transAxes,
+                                       fontsize=11, verticalalignment='top', color='red', fontweight='bold')
+                    axes[1, 1].legend()
+            
+            plt.tight_layout()
+            plt.savefig(save_path, dpi=150, bbox_inches='tight')
+            print(f"\n✓ Training progress plot saved to: {save_path}")
+            
+            return fig
+        except ImportError:
+            print("Matplotlib not available. Install with: pip install matplotlib")
+        except Exception as e:
+            print(f"Error creating plot: {e}")
