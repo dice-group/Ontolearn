@@ -81,7 +81,15 @@ def run_and_time_training(learner, train_args, directory):
 def run_and_time_prediction(learner, train_lp, test_lp, kb):
     dl_render = DLSyntaxObjectRenderer()
     start_time = time.time()
-    pred = learner.fit(train_lp).best_hypotheses()
+    
+    # Different learners use different methods to get best hypothesis
+    # ALCSAT, SPELL, NERO use best_hypothesis() (singular)
+    # Drill, DrillV, OCEL, CELOE, TDL use best_hypotheses() (plural)
+    if hasattr(learner, 'best_hypothesis'):
+        pred = learner.fit(train_lp).best_hypothesis()
+    else:
+        pred = learner.fit(train_lp).best_hypotheses()
+    
     pred_time = time.time() - start_time
     train_f1 = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred)}),
                                 pos=train_lp.pos, neg=train_lp.neg)
@@ -114,6 +122,7 @@ def start(args):
     ocel = OCEL(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
     celoe = CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
     tdl = TDL(knowledge_base=kb, 
+              use_nominals= False,
                kwargs_classifier={"random_state": args.random_seed},
                max_runtime=args.max_runtime)
     
@@ -715,7 +724,7 @@ if __name__ == '__main__':
                              'minimal (simplest 2-layer NN), standard (balanced 3-layer), '
                              'enhanced (standard + curriculum + curiosity), '
                              'complex (4-layer residual with target network) [default: complex]')
-    parser.add_argument("--save_results", action='store_true', default=False,
+    parser.add_argument("--save_results", action='store_true', default=True,
                         help='Save experiment results to CSV file for visualization')
     # DQL related
     parser.add_argument("--num_episode", type=int, default=1, help='Number of trajectories created for a given lp.')

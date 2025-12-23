@@ -94,7 +94,7 @@ from .base import BaseConceptLearner, RefinementBasedConceptLearner
 from .alcsat import ALCSAT
 from .celoe import CELOE
 from .clip import CLIP
-from .drill import Drill
+from .drill import Drill, DrillV
 from .evolearner import EvoLearner
 from .nces import NCES
 from .nces2 import NCES2
@@ -112,6 +112,7 @@ __all__ = [
     'CELOE',
     'CLIP',
     'Drill',
+    'DrillV',
     'EvoLearner',
     'NCES',
     'NCES2',
