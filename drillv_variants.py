@@ -12,6 +12,95 @@ from ontolearn.heuristics import CeloeBasedReward
 from ontolearn.data_struct import Experience
 from ontolearn.abstracts import AbstractNode
 from ontolearn.search import RL_State
+from owlapy.class_expression import OWLClassExpression
+from owlapy.owl_individual import OWLNamedIndividual
+from owlapy import owl_expression_to_dl
+
+
+# ============================================================================
+# KB-Driven Optimization Mixin
+# ============================================================================
+class KBDrivenOptimizationMixin:
+    """
+    Mixin class providing KB-driven optimization methods.
+    These can be used by any DrillV variant.
+    """
+    
+    def extract_kb_driven_starting_concepts(self, pos_examples: Set[OWLNamedIndividual], 
+                                           neg_examples: Set[OWLNamedIndividual],
+                                           max_concepts: int = 10) -> List[OWLClassExpression]:
+        """
+        Extract relevant starting concepts from the KB based on positive and negative examples.
+        
+        Strategy:
+        1. Find classes that positive examples belong to
+        2. Filter out classes that negative examples also belong to
+        3. Prioritize classes with high positive coverage and low negative coverage
+        """
+        from collections import defaultdict
+        
+        class_pos_count = defaultdict(int)
+        class_neg_count = defaultdict(int)
+        
+        for ind in pos_examples:
+            for owl_class in self.kb.get_types(ind, direct=False):
+                class_pos_count[owl_class] += 1
+        
+        for ind in neg_examples:
+            for owl_class in self.kb.get_types(ind, direct=False):
+                class_neg_count[owl_class] += 1
+        
+        class_scores = []
+        for owl_class, pos_count in class_pos_count.items():
+            neg_count = class_neg_count.get(owl_class, 0)
+            
+            if neg_count >= pos_count:
+                continue
+                
+            pos_coverage = pos_count / len(pos_examples) if pos_examples else 0
+            neg_penalty = neg_count / len(neg_examples) if neg_examples else 0
+            score = pos_coverage - neg_penalty
+            
+            if score > 0:
+                class_scores.append((owl_class, score, pos_count, neg_count))
+        
+        class_scores.sort(key=lambda x: (x[1], x[2]), reverse=True)
+        
+        starting_concepts = [owl_class for owl_class, score, pos_count, neg_count 
+                           in class_scores[:max_concepts]]
+        
+        if hasattr(self, 'verbose') and self.verbose > 0 and starting_concepts:
+            print(f"\n🎯 KB-Driven: Found {len(starting_concepts)} relevant starting concepts:")
+            for i, (owl_class, score, pos_count, neg_count) in enumerate(class_scores[:min(5, max_concepts)]):
+                print(f"  {i+1}. {owl_expression_to_dl(owl_class)}: "
+                      f"Score={score:.3f}, Pos={pos_count}/{len(pos_examples)}, "
+                      f"Neg={neg_count}/{len(neg_examples)}")
+        
+        return starting_concepts
+    
+    def should_prune_refinement(self, concept: OWLClassExpression, 
+                               pos_examples: Set[OWLNamedIndividual],
+                               neg_examples: Set[OWLNamedIndividual],
+                               min_coverage_threshold: float = 0.1) -> bool:
+        """
+        Early pruning: Check if a concept is worth exploring based on KB coverage.
+        Avoids computing quality for concepts that clearly won't work.
+        """
+        try:
+            instances = set(self.kb.individuals(concept))
+            pos_covered = len(instances.intersection(pos_examples))
+            neg_covered = len(instances.intersection(neg_examples))
+            
+            if pos_covered < len(pos_examples) * min_coverage_threshold:
+                return True
+            
+            if neg_covered == len(neg_examples) and neg_covered > 0:
+                return True
+                
+            return False
+            
+        except Exception:
+            return False
 
 
 # ============================================================================
@@ -406,7 +495,7 @@ class DrillVNet_Complex(nn.Module):
         return self.fc_out(X).flatten()
 
 
-class DrillV_Complex(DrillV_Enhanced):
+class DrillV_Complex(KBDrivenOptimizationMixin, DrillV_Enhanced):
     """
     Complex: Everything including the kitchen sink.
     - Complex network (4 layers, residual, heavy dropout)
@@ -414,6 +503,7 @@ class DrillV_Complex(DrillV_Enhanced):
     - Learning rate scheduling
     - All smart features from Enhanced
     - **NEW: Intelligent RL-based termination (agent decides when to stop)**
+    - **NEW: KB-driven initialization and early pruning**
     """
     def __init__(self, *args, termination_epsilon=0.3, **kwargs):
         super().__init__(*args, **kwargs)
@@ -474,6 +564,45 @@ class DrillV_Complex(DrillV_Enhanced):
         self.termination_agent.total_runs = 0
         self.termination_agent.best_ever_quality = 0.0
     
+    def is_simple_named_concept(self, concept: OWLClassExpression) -> bool:
+        """
+        Check if a concept is just a simple named class (e.g., Female, Male)
+        vs a complex concept (e.g., Female ⊓ hasSibling(Parent)).
+        
+        Simple concepts should only be accepted if they have F1=1.0,
+        otherwise we should continue refining.
+        """
+        from owlapy.class_expression import OWLClass
+        return isinstance(concept, OWLClass)
+    
+    def should_accept_best_concept(self, best_quality: float) -> bool:
+        """
+        Decide if we should accept the current best concept or keep refining.
+        
+        Logic:
+        - If best is a simple named class (e.g., Female) and F1 < 1.0 → Keep refining
+        - If best is a complex concept (e.g., Female ⊓ ...) → Can accept if quality is good
+        - If any concept has F1 = 1.0 → Accept immediately
+        """
+        if best_quality >= 1.0:
+            return True  # Perfect solution, accept
+        
+        # Check if current best is a simple named concept
+        try:
+            best_node = self.best_hypotheses(n=1, return_node=True)
+            if best_node and self.is_simple_named_concept(best_node.concept):
+                # Simple concept with F1 < 1.0 → Don't accept, keep refining
+                if self.verbose > 1:
+                    print(f"   Best is simple concept '{owl_expression_to_dl(best_node.concept)}' "
+                          f"with F1={best_quality:.3f} < 1.0 → Continue refining")
+                return False
+        except:
+            # If we can't get best node, use normal termination logic
+            pass
+        
+        # Complex concept or couldn't determine → Use normal termination logic
+        return True
+    
     def compute_quality_of_class_expression(self, state):
         """Override to feed info to V-learning termination agent"""
         super().compute_quality_of_class_expression(state)
@@ -505,11 +634,19 @@ class DrillV_Complex(DrillV_Enhanced):
         self.clean()
         self.start_time = time.time()
         
-        pos_type_counts = Counter(
-            [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.pos))])
-        neg_type_counts = Counter(
-            [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.neg))])
-        type_bias = pos_type_counts - neg_type_counts
+        # OLD APPROACH: Limited type bias
+        # pos_type_counts = Counter(
+        #     [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.pos))])
+        # neg_type_counts = Counter(
+        #     [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.neg))])
+        # type_bias = pos_type_counts - neg_type_counts
+        
+        # NEW APPROACH: KB-driven starting concepts
+        kb_driven_concepts = self.extract_kb_driven_starting_concepts(
+            pos_examples=learning_problem.pos,
+            neg_examples=learning_problem.neg,
+            max_concepts=20
+        )
         
         root_state = self.initialize_training_class_expression_learning_problem(
             pos=learning_problem.pos, neg=learning_problem.neg)
@@ -520,15 +657,17 @@ class DrillV_Complex(DrillV_Enhanced):
         self.search_tree.add(root_state)
         best_found_quality = 0
         
-        # Type bias injection
-        for ith_bias, x in enumerate((self.create_rl_state(i, parent_node=root_state) for i in type_bias)):
+        # Add KB-driven concepts to search tree (replaces old type_bias approach)
+        for x in (self.create_rl_state(i, parent_node=root_state) for i in kb_driven_concepts):
             self.compute_quality_of_class_expression(x)
             x.heuristic = x.quality
             if x.quality > best_found_quality:
                 best_found_quality = x.quality
                 self.search_tree.add(x)
-            if ith_bias == self.positive_type_bias:
-                break
+        
+        if self.verbose > 0:
+            print(f"✓ Initialized with {len(kb_driven_concepts)} KB-driven concepts "
+                  f"(best quality: {best_found_quality:.3f})")
         
         # Main loop with intelligent agent-based termination
         for iteration in make_iterable_verbose(range(0, self.iter_bound),
@@ -543,16 +682,21 @@ class DrillV_Complex(DrillV_Enhanced):
                 # Force exploration - don't let agent stop yet
                 pass
             else:
-                should_stop, reason, confidence = self.termination_agent.should_stop_exploring(verbose=self.verbose)
-                if should_stop:
-                    if self.verbose > 0:
-                        print(f"\n🤖 Agent decided to stop: {reason} (confidence: {confidence:.2f})")
-                        stats = self.termination_agent.get_statistics()
-                        print(f"   Best quality found: {stats['best_quality']:.4f}")
-                        print(f"   Concepts explored: {self.number_of_tested_concepts}")
-                    # CRITICAL: Learn from episode before terminating!
-                    self.termination_agent.learn_from_episode()
-                    return self.terminate()
+                # NEW CHECK: Don't stop if best is a simple named concept with F1 < 1.0
+                if not self.should_accept_best_concept(best_found_quality):
+                    if self.verbose > 1:
+                        print("   Forcing continued refinement of simple concept...")
+                else:
+                    should_stop, reason, confidence = self.termination_agent.should_stop_exploring(verbose=self.verbose)
+                    if should_stop:
+                        if self.verbose > 0:
+                            print(f"\n🤖 Agent decided to stop: {reason} (confidence: {confidence:.2f})")
+                            stats = self.termination_agent.get_statistics()
+                            print(f"   Best quality found: {stats['best_quality']:.4f}")
+                            print(f"   Concepts explored: {self.number_of_tested_concepts}")
+                        # CRITICAL: Learn from episode before terminating!
+                        self.termination_agent.learn_from_episode()
+                        return self.terminate()
             
             # Standard time check (safety fallback)
             if time.time() - self.start_time > self.max_runtime:
@@ -572,13 +716,21 @@ class DrillV_Complex(DrillV_Enhanced):
                                             position=0, leave=True):
                 # Check agent decision during refinement (but respect minimum exploration)
                 if self.number_of_tested_concepts >= self.termination_agent.min_concepts_explored:
-                    should_stop, _, _ = self.termination_agent.should_stop_exploring(verbose=0)
-                    if should_stop:
-                        break
+                    # NEW: Only check termination if we should accept current best
+                    if self.should_accept_best_concept(best_found_quality):
+                        should_stop, _, _ = self.termination_agent.should_stop_exploring(verbose=0)
+                        if should_stop:
+                            break
                 
                 # Time check
                 if time.time() - self.start_time > self.max_runtime:
                     break
+                
+                # KB-DRIVEN OPTIMIZATION: Early pruning of clearly irrelevant concepts
+                if self.should_prune_refinement(ref.concept, learning_problem.pos, learning_problem.neg):
+                    if self.verbose > 1:
+                        print(f"Pruned: {owl_expression_to_dl(ref.concept)} (low KB coverage)")
+                    continue
                 
                 self.compute_quality_of_class_expression(ref)
                 if ref.quality == 0:

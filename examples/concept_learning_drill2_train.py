@@ -117,38 +117,49 @@ def start(args):
     # Initialize experiment tracker
     tracker = ExperimentTracker() if args.save_results else None
 
-    # Initialize traditional symbolic learners (OCEL, CELOE, TDL)
-    print("\nInitializing symbolic learners...")
+    # Determine which learners to include based on --learner_mode
+    include_search_based = args.learner_mode in ['search', 'all']
+    include_non_search = args.learner_mode == 'all'
+
+    # Initialize search-based learners (always included in 'search' and 'all' modes)
+    print("\nInitializing learners...")
+    print(f"Mode: {args.learner_mode} ({'search-based only' if args.learner_mode == 'search' else 'all learners'})")
+    
     ocel = OCEL(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
     celoe = CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
-    tdl = TDL(knowledge_base=kb, 
-              use_nominals= False,
-               kwargs_classifier={"random_state": args.random_seed},
-               max_runtime=args.max_runtime)
+    print("  ✓ OCEL initialized (search-based)")
+    print("  ✓ CELOE initialized (search-based)")
     
-    # Initialize SAT-based and neural learners
-    alcsat = ALCSAT(knowledge_base=kb,
-                    max_runtime=args.max_runtime,
-                    max_concept_size=30)
-    
-    spell = SPELL(knowledge_base=kb,
-                  max_runtime=args.max_runtime,
-                  max_query_size=10,
-                  search_mode="full_approx")
-    
-    nero = NERO(knowledge_base=kb,
-                num_embedding_dim=128,
-                neural_architecture='DeepSet',
-                learning_rate=0.001,
-                num_epochs=50,
-                batch_size=32)
-    
-    print("  ✓ OCEL initialized")
-    print("  ✓ CELOE initialized")
-    print("  ✓ TDL initialized")
-    print("  ✓ ALCSAT initialized")
-    print("  ✓ SPELL initialized")
-    print("  ✓ NERO initialized")
+    # Initialize non-search-based learners only if 'all' mode
+    if include_non_search:
+        tdl = TDL(knowledge_base=kb, 
+                  use_nominals=False,
+                  kwargs_classifier={"random_state": args.random_seed},
+                  max_runtime=args.max_runtime)
+        
+        alcsat = ALCSAT(knowledge_base=kb,
+                        max_runtime=args.max_runtime,
+                        max_concept_size=30)
+        
+        spell = SPELL(knowledge_base=kb,
+                      max_runtime=args.max_runtime,
+                      max_query_size=10,
+                      search_mode="full_approx")
+        
+        nero = NERO(knowledge_base=kb,
+                    num_embedding_dim=128,
+                    neural_architecture='DeepSet',
+                    learning_rate=0.001,
+                    num_epochs=50,
+                    batch_size=32)
+        
+        print("  ✓ TDL initialized (tree-based)")
+        print("  ✓ ALCSAT initialized (SAT-based)")
+        print("  ✓ SPELL initialized (SAT-based)")
+        print("  ✓ NERO initialized (neural)")
+    else:
+        tdl = alcsat = spell = nero = None
+        print("  ℹ Non-search-based learners excluded (use --learner_mode all to include)")
 
     # Initialize both learners
     drill = Drill(
@@ -465,84 +476,86 @@ def start(args):
                     prediction=celoe_result['prediction']
                 )
             
-            # TDL
-            tdl_result = run_and_time_prediction(tdl, train_lp, test_lp, kb)
-            tdl_times.append(tdl_result['prediction_time'])
-            tdl_train_f1s.append(tdl_result['train_f1'])
-            tdl_test_f1s.append(tdl_result['test_f1'])
-            
-            if tracker:
-                tracker.add_result(
-                    method='TDL',
-                    problem=str_target_concept,
-                    fold=ith + 1,
-                    train_time=0,  # TDL doesn't require pre-training
-                    inference_time=tdl_result['prediction_time'],
-                    train_f1=tdl_result['train_f1'],
-                    test_f1=tdl_result['test_f1'],
-                    concepts_tested=tdl_result.get('concepts_tested', 0),
-                    prediction=tdl_result['prediction']
-                )
-            
-            # ALCSAT
-            alcsat_result = run_and_time_prediction(alcsat, train_lp, test_lp, kb)
-            alcsat_times.append(alcsat_result['prediction_time'])
-            alcsat_train_f1s.append(alcsat_result['train_f1'])
-            alcsat_test_f1s.append(alcsat_result['test_f1'])
-            
-            if tracker:
-                tracker.add_result(
-                    method='ALCSAT',
-                    problem=str_target_concept,
-                    fold=ith + 1,
-                    train_time=0,
-                    inference_time=alcsat_result['prediction_time'],
-                    train_f1=alcsat_result['train_f1'],
-                    test_f1=alcsat_result['test_f1'],
-                    concepts_tested=alcsat_result.get('concepts_tested', 0),
-                    prediction=alcsat_result['prediction']
-                )
-            
-            # SPELL
-            spell_result = run_and_time_prediction(spell, train_lp, test_lp, kb)
-            spell_times.append(spell_result['prediction_time'])
-            spell_train_f1s.append(spell_result['train_f1'])
-            spell_test_f1s.append(spell_result['test_f1'])
-            
-            if tracker:
-                tracker.add_result(
-                    method='SPELL',
-                    problem=str_target_concept,
-                    fold=ith + 1,
-                    train_time=0,
-                    inference_time=spell_result['prediction_time'],
-                    train_f1=spell_result['train_f1'],
-                    test_f1=spell_result['test_f1'],
-                    concepts_tested=spell_result.get('concepts_tested', 0),
-                    prediction=spell_result['prediction']
-                )
-            
-            # NERO (requires namespace setup)
-            a_prop = list(kb.ontology.object_properties_in_signature())[:1].pop()
-            ns = a_prop.iri.get_namespace()
-            nero.ns = ns
-            nero_result = run_and_time_prediction(nero, train_lp, test_lp, kb)
-            nero_times.append(nero_result['prediction_time'])
-            nero_train_f1s.append(nero_result['train_f1'])
-            nero_test_f1s.append(nero_result['test_f1'])
-            
-            if tracker:
-                tracker.add_result(
-                    method='NERO',
-                    problem=str_target_concept,
-                    fold=ith + 1,
-                    train_time=0,
-                    inference_time=nero_result['prediction_time'],
-                    train_f1=nero_result['train_f1'],
-                    test_f1=nero_result['test_f1'],
-                    concepts_tested=nero_result.get('concepts_tested', 0),
-                    prediction=nero_result['prediction']
-                )
+            # Non-search-based learners (only if include_non_search is True)
+            if include_non_search:
+                # TDL
+                tdl_result = run_and_time_prediction(tdl, train_lp, test_lp, kb)
+                tdl_times.append(tdl_result['prediction_time'])
+                tdl_train_f1s.append(tdl_result['train_f1'])
+                tdl_test_f1s.append(tdl_result['test_f1'])
+                
+                if tracker:
+                    tracker.add_result(
+                        method='TDL',
+                        problem=str_target_concept,
+                        fold=ith + 1,
+                        train_time=0,
+                        inference_time=tdl_result['prediction_time'],
+                        train_f1=tdl_result['train_f1'],
+                        test_f1=tdl_result['test_f1'],
+                        concepts_tested=tdl_result.get('concepts_tested', 0),
+                        prediction=tdl_result['prediction']
+                    )
+                
+                # ALCSAT
+                alcsat_result = run_and_time_prediction(alcsat, train_lp, test_lp, kb)
+                alcsat_times.append(alcsat_result['prediction_time'])
+                alcsat_train_f1s.append(alcsat_result['train_f1'])
+                alcsat_test_f1s.append(alcsat_result['test_f1'])
+                
+                if tracker:
+                    tracker.add_result(
+                        method='ALCSAT',
+                        problem=str_target_concept,
+                        fold=ith + 1,
+                        train_time=0,
+                        inference_time=alcsat_result['prediction_time'],
+                        train_f1=alcsat_result['train_f1'],
+                        test_f1=alcsat_result['test_f1'],
+                        concepts_tested=alcsat_result.get('concepts_tested', 0),
+                        prediction=alcsat_result['prediction']
+                    )
+                
+                # SPELL
+                spell_result = run_and_time_prediction(spell, train_lp, test_lp, kb)
+                spell_times.append(spell_result['prediction_time'])
+                spell_train_f1s.append(spell_result['train_f1'])
+                spell_test_f1s.append(spell_result['test_f1'])
+                
+                if tracker:
+                    tracker.add_result(
+                        method='SPELL',
+                        problem=str_target_concept,
+                        fold=ith + 1,
+                        train_time=0,
+                        inference_time=spell_result['prediction_time'],
+                        train_f1=spell_result['train_f1'],
+                        test_f1=spell_result['test_f1'],
+                        concepts_tested=spell_result.get('concepts_tested', 0),
+                        prediction=spell_result['prediction']
+                    )
+                
+                # NERO (requires namespace setup)
+                a_prop = list(kb.ontology.object_properties_in_signature())[:1].pop()
+                ns = a_prop.iri.get_namespace()
+                nero.ns = ns
+                nero_result = run_and_time_prediction(nero, train_lp, test_lp, kb)
+                nero_times.append(nero_result['prediction_time'])
+                nero_train_f1s.append(nero_result['train_f1'])
+                nero_test_f1s.append(nero_result['test_f1'])
+                
+                if tracker:
+                    tracker.add_result(
+                        method='NERO',
+                        problem=str_target_concept,
+                        fold=ith + 1,
+                        train_time=0,
+                        inference_time=nero_result['prediction_time'],
+                        train_f1=nero_result['train_f1'],
+                        test_f1=nero_result['test_f1'],
+                        concepts_tested=nero_result.get('concepts_tested', 0),
+                        prediction=nero_result['prediction']
+                    )
             
             print(f"  OCEL:")
             print(f"    Prediction: {ocel_result['prediction']}")
@@ -552,22 +565,24 @@ def start(args):
             print(f"    Prediction: {celoe_result['prediction']}")
             print(f"    Train F1: {celoe_result['train_f1']:.3f} | Test F1: {celoe_result['test_f1']:.3f}")
             print(f"    Prediction time: {celoe_result['prediction_time']:.2f} seconds")
-            print(f"  TDL:")
-            print(f"    Prediction: {tdl_result['prediction']}")
-            print(f"    Train F1: {tdl_result['train_f1']:.3f} | Test F1: {tdl_result['test_f1']:.3f}")
-            print(f"    Prediction time: {tdl_result['prediction_time']:.2f} seconds")
-            print(f"  ALCSAT:")
-            print(f"    Prediction: {alcsat_result['prediction']}")
-            print(f"    Train F1: {alcsat_result['train_f1']:.3f} | Test F1: {alcsat_result['test_f1']:.3f}")
-            print(f"    Prediction time: {alcsat_result['prediction_time']:.2f} seconds")
-            print(f"  SPELL:")
-            print(f"    Prediction: {spell_result['prediction']}")
-            print(f"    Train F1: {spell_result['train_f1']:.3f} | Test F1: {spell_result['test_f1']:.3f}")
-            print(f"    Prediction time: {spell_result['prediction_time']:.2f} seconds")
-            print(f"  NERO:")
-            print(f"    Prediction: {nero_result['prediction']}")
-            print(f"    Train F1: {nero_result['train_f1']:.3f} | Test F1: {nero_result['test_f1']:.3f}")
-            print(f"    Prediction time: {nero_result['prediction_time']:.2f} seconds")
+            
+            if include_non_search:
+                print(f"  TDL:")
+                print(f"    Prediction: {tdl_result['prediction']}")
+                print(f"    Train F1: {tdl_result['train_f1']:.3f} | Test F1: {tdl_result['test_f1']:.3f}")
+                print(f"    Prediction time: {tdl_result['prediction_time']:.2f} seconds")
+                print(f"  ALCSAT:")
+                print(f"    Prediction: {alcsat_result['prediction']}")
+                print(f"    Train F1: {alcsat_result['train_f1']:.3f} | Test F1: {alcsat_result['test_f1']:.3f}")
+                print(f"    Prediction time: {alcsat_result['prediction_time']:.2f} seconds")
+                print(f"  SPELL:")
+                print(f"    Prediction: {spell_result['prediction']}")
+                print(f"    Train F1: {spell_result['train_f1']:.3f} | Test F1: {spell_result['test_f1']:.3f}")
+                print(f"    Prediction time: {spell_result['prediction_time']:.2f} seconds")
+                print(f"  NERO:")
+                print(f"    Prediction: {nero_result['prediction']}")
+                print(f"    Train F1: {nero_result['train_f1']:.3f} | Test F1: {nero_result['test_f1']:.3f}")
+                print(f"    Prediction time: {nero_result['prediction_time']:.2f} seconds")
             
             if args.compare_random_v and drillv_random_result:
                 print(f"  DrillV ({variant_name} with random values):")
@@ -616,10 +631,12 @@ def start(args):
         print(f"  DrillV (random V):        {avg_drillv_random_time:.3f} seconds")
     print(f"  OCEL:                     {avg_ocel_time:.3f} seconds")
     print(f"  CELOE:                    {avg_celoe_time:.3f} seconds")
-    print(f"  TDL:                      {avg_tdl_time:.3f} seconds")
-    print(f"  ALCSAT:                   {avg_alcsat_time:.3f} seconds")
-    print(f"  SPELL:                    {avg_spell_time:.3f} seconds")
-    print(f"  NERO:                     {avg_nero_time:.3f} seconds")
+    
+    if include_non_search:
+        print(f"  TDL:                      {avg_tdl_time:.3f} seconds")
+        print(f"  ALCSAT:                   {avg_alcsat_time:.3f} seconds")
+        print(f"  SPELL:                    {avg_spell_time:.3f} seconds")
+        print(f"  NERO:                     {avg_nero_time:.3f} seconds")
     
     print("\nAverage Test F1 Scores:")
     print(f"  Drill (DQN):              {np.mean(drill_test_f1s):.3f}")
@@ -628,10 +645,12 @@ def start(args):
         print(f"  DrillV (random V):        {np.mean(drillv_random_test_f1s):.3f}")
     print(f"  OCEL:                     {np.mean(ocel_test_f1s):.3f}")
     print(f"  CELOE:                    {np.mean(celoe_test_f1s):.3f}")
-    print(f"  TDL:                      {np.mean(tdl_test_f1s):.3f}")
-    print(f"  ALCSAT:                   {np.mean(alcsat_test_f1s):.3f}")
-    print(f"  SPELL:                    {np.mean(spell_test_f1s):.3f}")
-    print(f"  NERO:                     {np.mean(nero_test_f1s):.3f}")
+    
+    if include_non_search:
+        print(f"  TDL:                      {np.mean(tdl_test_f1s):.3f}")
+        print(f"  ALCSAT:                   {np.mean(alcsat_test_f1s):.3f}")
+        print(f"  SPELL:                    {np.mean(spell_test_f1s):.3f}")
+        print(f"  NERO:                     {np.mean(nero_test_f1s):.3f}")
     
     print("\nAverage Concepts Tested:")
     print(f"  Drill (DQN):              {np.mean(drill_concepts):.0f}")
@@ -711,6 +730,9 @@ if __name__ == '__main__':
                         help="Number of problems to evaluate from the learning problem file. 0 means all problems.")
     parser.add_argument("--max_runtime", type=int, default=10, help="Max runtime")
     parser.add_argument("--folds", type=int, default=5, help="Number of folds of cross validation.")
+    parser.add_argument("--learner_mode", type=str, default='search',
+                        choices=['search', 'all'],
+                        help="Which learners to include: 'search' (Drill, DrillV, OCEL, CELOE) or 'all' (includes TDL, ALCSAT, SPELL, NERO)")
     parser.add_argument("--random_seed", type=int, default=1)
     parser.add_argument("--iter_bound", type=int, default=10_000, help='iter_bound during testing.')
     parser.add_argument("--compare_random_v", action='store_true', 

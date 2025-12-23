@@ -1362,17 +1362,139 @@ class DrillV(Drill):
             "caching_enabled": False
         }
     
+    def extract_kb_driven_starting_concepts(self, pos_examples: Set[OWLNamedIndividual], 
+                                           neg_examples: Set[OWLNamedIndividual],
+                                           max_concepts: int = 10) -> List[OWLClassExpression]:
+        """
+        Extract relevant starting concepts from the KB based on positive and negative examples.
+        This provides a data-driven initialization instead of starting from Thing.
+        
+        Strategy:
+        1. Find classes that positive examples belong to
+        2. Filter out classes that negative examples also belong to
+        3. Prioritize classes with high positive coverage and low negative coverage
+        
+        Args:
+            pos_examples: Set of positive example individuals
+            neg_examples: Set of negative example individuals  
+            max_concepts: Maximum number of starting concepts to return
+            
+        Returns:
+            List of OWL class expressions to use as starting points for refinement
+        """
+        from collections import defaultdict
+        
+        # Count how many positive and negative examples belong to each class
+        class_pos_count = defaultdict(int)
+        class_neg_count = defaultdict(int)
+        
+        # Gather types for positive examples
+        for ind in pos_examples:
+            for owl_class in self.kb.get_types(ind, direct=False):  # Include indirect types
+                class_pos_count[owl_class] += 1
+        
+        # Gather types for negative examples  
+        for ind in neg_examples:
+            for owl_class in self.kb.get_types(ind, direct=False):
+                class_neg_count[owl_class] += 1
+        
+        # Score each class: favor high positive coverage, penalize negative coverage
+        class_scores = []
+        for owl_class, pos_count in class_pos_count.items():
+            neg_count = class_neg_count.get(owl_class, 0)
+            
+            # Skip if negatives also belong to this class significantly
+            if neg_count >= pos_count:
+                continue
+                
+            # Score: positive coverage minus negative penalty
+            # Normalize by total examples
+            pos_coverage = pos_count / len(pos_examples) if pos_examples else 0
+            neg_penalty = neg_count / len(neg_examples) if neg_examples else 0
+            score = pos_coverage - neg_penalty
+            
+            if score > 0:  # Only keep classes with positive score
+                class_scores.append((owl_class, score, pos_count, neg_count))
+        
+        # Sort by score (descending) and positive coverage
+        class_scores.sort(key=lambda x: (x[1], x[2]), reverse=True)
+        
+        # Return top concepts
+        starting_concepts = [owl_class for owl_class, score, pos_count, neg_count 
+                           in class_scores[:max_concepts]]
+        
+        if self.verbose > 0 and starting_concepts:
+            print(f"\n🎯 KB-Driven Initialization: Found {len(starting_concepts)} relevant starting concepts:")
+            for i, (owl_class, score, pos_count, neg_count) in enumerate(class_scores[:max_concepts]):
+                print(f"  {i+1}. {owl_expression_to_dl(owl_class)}: "
+                      f"Score={score:.3f}, Pos={pos_count}/{len(pos_examples)}, "
+                      f"Neg={neg_count}/{len(neg_examples)}")
+        
+        return starting_concepts
+    
+    def should_prune_refinement(self, concept: OWLClassExpression, 
+                               pos_examples: Set[OWLNamedIndividual],
+                               neg_examples: Set[OWLNamedIndividual],
+                               min_coverage_threshold: float = 0.1) -> bool:
+        """
+        Early pruning: Check if a concept is worth exploring based on KB coverage.
+        
+        This avoids computing quality for concepts that clearly won't work:
+        - If it covers too few positives (< min_coverage_threshold)
+        - If it covers all negatives (no discrimination possible)
+        
+        Args:
+            concept: The OWL class expression to check
+            pos_examples: Positive examples
+            neg_examples: Negative examples
+            min_coverage_threshold: Minimum fraction of positives that must be covered
+            
+        Returns:
+            True if the concept should be pruned (not explored), False otherwise
+        """
+        try:
+            # Quick check: get individuals that satisfy the concept
+            instances = set(self.kb.individuals(concept))
+            
+            # Count coverage
+            pos_covered = len(instances.intersection(pos_examples))
+            neg_covered = len(instances.intersection(neg_examples))
+            
+            # Prune if covers too few positives
+            if pos_covered < len(pos_examples) * min_coverage_threshold:
+                return True
+            
+            # Prune if covers all negatives (no way to discriminate)
+            if neg_covered == len(neg_examples) and neg_covered > 0:
+                return True
+                
+            return False
+            
+        except Exception:
+            # If we can't check (e.g., complex concept), don't prune
+            return False
+    
     def fit(self, learning_problem: PosNegLPStandard, max_runtime=None):
         if max_runtime:
             assert isinstance(max_runtime, float) or isinstance(max_runtime, int)
             self.max_runtime = max_runtime
         self.clean()
         self.start_time = time.time()
-        pos_type_counts = Counter(
-            [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.pos))])
-        neg_type_counts = Counter(
-            [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.neg))])
-        type_bias = pos_type_counts - neg_type_counts
+        
+        # OLD APPROACH: Only use type bias from direct types
+        # pos_type_counts = Counter(
+        #     [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.pos))])
+        # neg_type_counts = Counter(
+        #     [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.neg))])
+        # type_bias = pos_type_counts - neg_type_counts
+        
+        # NEW APPROACH: KB-driven starting concepts with better scoring
+        kb_driven_concepts = self.extract_kb_driven_starting_concepts(
+            pos_examples=learning_problem.pos,
+            neg_examples=learning_problem.neg,
+            max_concepts=20  # Increased from positive_type_bias (typically 1-2)
+        )
+        
         root_state = self.initialize_training_class_expression_learning_problem(pos=learning_problem.pos,
                                                                                neg=learning_problem.neg)
         self.operator.set_input_examples(pos=learning_problem.pos, neg=learning_problem.neg)
@@ -1380,14 +1502,18 @@ class DrillV(Drill):
         root_state.heuristic = root_state.quality
         self.search_tree.add(root_state)
         best_found_quality = 0
-        for ith_bias, x in enumerate((self.create_rl_state(i, parent_node=root_state) for i in type_bias)):
+        
+        # Add KB-driven concepts to search tree (replaces old type_bias approach)
+        for x in (self.create_rl_state(i, parent_node=root_state) for i in kb_driven_concepts):
             self.compute_quality_of_class_expression(x)
             x.heuristic = x.quality
             if x.quality > best_found_quality:
                 best_found_quality = x.quality
                 self.search_tree.add(x)
-            if ith_bias == self.positive_type_bias:
-                break
+        
+        if self.verbose > 0:
+            print(f"✓ Initialized search tree with {len(kb_driven_concepts)} KB-driven concepts "
+                  f"(best quality: {best_found_quality:.3f})")
 
         for _ in make_iterable_verbose(range(0, self.iter_bound),
                                       verbose=self.verbose,
@@ -1403,6 +1529,13 @@ class DrillV(Drill):
                                                           position=0, leave=True)):
                 if time.time() - self.start_time > self.max_runtime:
                     break
+                
+                # KB-DRIVEN OPTIMIZATION: Early pruning of clearly irrelevant concepts
+                if self.should_prune_refinement(ref.concept, learning_problem.pos, learning_problem.neg):
+                    if self.verbose > 1:
+                        tqdm_bar.set_description_str(f"Pruned: {owl_expression_to_dl(ref.concept)} (low coverage)")
+                    continue
+                
                 self.compute_quality_of_class_expression(ref)
                 if ref.quality == 0:
                     continue
