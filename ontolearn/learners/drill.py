@@ -1044,7 +1044,6 @@ class DrillV(Drill):
     """Deep V-Learning for Class Expression Learning with ADVANCED RL techniques."""
 
     def __init__(self, *args, use_random_v_values=False, 
-                 use_prioritized_replay=True,
                  use_reward_shaping=True,
                  use_dueling_network=True,
                  target_update_freq=100,
@@ -1052,7 +1051,6 @@ class DrillV(Drill):
         super().__init__(*args, **kwargs)
         self.name = "DRILLV"
         self.use_random_v_values = use_random_v_values
-        self.use_prioritized_replay = use_prioritized_replay
         self.use_reward_shaping = use_reward_shaping
         self.use_dueling_network = use_dueling_network
         self.target_update_freq = target_update_freq
@@ -1060,8 +1058,6 @@ class DrillV(Drill):
         
         if self.df_embeddings is not None:
             # Create improved network with dueling architecture
-            from ontolearn.data_struct import PrioritizedExperience
-            
             self.heuristic_func = DrillVHeuristic(
                 mode="averaging", 
                 model_args={'input_shape': (1, self.embedding_dim), 'use_dueling': use_dueling_network}, 
@@ -1069,16 +1065,8 @@ class DrillV(Drill):
                 use_random=use_random_v_values
             )
             
-            # Use prioritized replay for better learning
-            if use_prioritized_replay:
-                self.experiences = PrioritizedExperience(
-                    maxlen=self.max_len_replay_memory,
-                    alpha=0.6,  # Prioritization strength
-                    beta=0.4,   # Importance sampling
-                    beta_increment=0.001
-                )
-            else:
-                self.experiences = Experience(maxlen=self.max_len_replay_memory)
+            # Use standard experience replay
+            self.experiences = Experience(maxlen=self.max_len_replay_memory)
             
             if self.learning_rate:
                 # Use AdamW with weight decay for better generalization
@@ -1215,39 +1203,26 @@ class DrillV(Drill):
 
     def learn_from_replay_memory(self, gamma=0.99) -> None:
         """
-        IMPROVED V-learning with:
-        1. Prioritized experience replay
-        2. Target network for stability
-        3. Gradient clipping
-        4. Better loss tracking
+        V-learning with:
+        1. Target network for stability
+        2. Gradient clipping
+        3. Better loss tracking
         """
         if isinstance(self.heuristic_func, CeloeBasedReward):
             return None
 
-        # Retrieve experiences (handles both regular and prioritized)
-        if self.use_prioritized_replay:
-            minibatch = self.batch_size or 128
-            current_state_list, next_state_list, reward_list, indices, weights = \
-                self.experiences.retrieve(batch_size=minibatch, prioritized=True)
-            
-            if not current_state_list:
-                return None
-            
-            # Convert importance weights to tensor
-            weights = torch.tensor(weights, dtype=torch.float32, device=self.device)
-        else:
-            current_state_list, next_state_list, reward_list, _, _ = self.experiences.retrieve(prioritized=False)
-            N = len(reward_list)
-            if N == 0:
-                return None
-            
-            minibatch = self.batch_size or 128
-            minibatch = min(minibatch, N)
-            indices = random.sample(range(N), minibatch)
-            current_state_list = [current_state_list[i] for i in indices]
-            next_state_list = [next_state_list[i] for i in indices]
-            reward_list = [reward_list[i] for i in indices]
-            weights = torch.ones(minibatch, device=self.device)
+        # Retrieve experiences
+        current_state_list, next_state_list, reward_list = self.experiences.retrieve()
+        N = len(reward_list)
+        if N == 0:
+            return None
+        
+        minibatch = self.batch_size or 128
+        minibatch = min(minibatch, N)
+        indices = random.sample(range(N), minibatch)
+        current_state_list = [current_state_list[i] for i in indices]
+        next_state_list = [next_state_list[i] for i in indices]
+        reward_list = [reward_list[i] for i in indices]
 
         self.heuristic_func.net.train()
         total_loss = 0.0
@@ -1269,14 +1244,11 @@ class DrillV(Drill):
             # Compute target
             target = reward_batch + gamma * v_next
             
-            # Compute TD errors for priority updates
+            # Compute TD errors
             td_errors = (target - v_current).detach()
             
-            # Weighted loss (importance sampling)
-            if self.use_prioritized_replay:
-                loss = (weights * (v_current - target) ** 2).mean()
-            else:
-                loss = self.heuristic_func.net.loss(v_current, target)
+            # Compute loss
+            loss = self.heuristic_func.net.loss(v_current, target)
             
             # Backpropagation with gradient clipping
             self.optimizer.zero_grad()
@@ -1286,10 +1258,6 @@ class DrillV(Drill):
             
             total_loss += loss.item()
             total_td_error += td_errors.abs().mean().item()
-
-        # Update priorities if using prioritized replay
-        if self.use_prioritized_replay and indices is not None:
-            self.experiences.update_priorities(indices, td_errors.cpu().numpy())
         
         # Update target network periodically
         self.update_counter += 1
