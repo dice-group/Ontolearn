@@ -21,7 +21,7 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.learners import Drill, DrillV, OCEL, CELOE, TDL
-from ontolearn.concept_learner import EvoLearner
+from ontolearn.learners import EvoLearner, ALCSAT, SPELL, NERO
 from ontolearn.metrics import F1
 from ontolearn.heuristics import CeloeBasedReward
 from owlapy.owl_individual import OWLNamedIndividual, IRI
@@ -109,17 +109,37 @@ def start(args):
     # Initialize experiment tracker
     tracker = ExperimentTracker() if args.save_results else None
 
-    # Initialize traditional symbolic learners (OCEL, CELOE, ELTL)
+    # Initialize traditional symbolic learners (OCEL, CELOE, TDL)
     print("\nInitializing symbolic learners...")
     ocel = OCEL(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
     celoe = CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
-    eltl = TDL(knowledge_base=kb, 
+    tdl = TDL(knowledge_base=kb, 
                kwargs_classifier={"random_state": args.random_seed},
                max_runtime=args.max_runtime)
     
+    # Initialize SAT-based and neural learners
+    alcsat = ALCSAT(knowledge_base=kb,
+                    max_runtime=args.max_runtime,
+                    max_concept_size=30)
+    
+    spell = SPELL(knowledge_base=kb,
+                  max_runtime=args.max_runtime,
+                  max_query_size=10,
+                  search_mode="full_approx")
+    
+    nero = NERO(knowledge_base=kb,
+                num_embedding_dim=128,
+                neural_architecture='DeepSet',
+                learning_rate=0.001,
+                num_epochs=50,
+                batch_size=32)
+    
     print("  ✓ OCEL initialized")
     print("  ✓ CELOE initialized")
-    print("  ✓ ELTL (TDL) initialized")
+    print("  ✓ TDL initialized")
+    print("  ✓ ALCSAT initialized")
+    print("  ✓ SPELL initialized")
+    print("  ✓ NERO initialized")
 
     # Initialize both learners
     drill = Drill(
@@ -252,7 +272,10 @@ def start(args):
     drillv_random_times = []
     ocel_times = []
     celoe_times = []
-    eltl_times = []
+    tdl_times = []
+    alcsat_times = []
+    spell_times = []
+    nero_times = []
     # Collect concepts tested counts
     drill_concepts = []
     drillv_concepts = []
@@ -268,8 +291,14 @@ def start(args):
     ocel_test_f1s = []
     celoe_train_f1s = []
     celoe_test_f1s = []
-    eltl_train_f1s = []
-    eltl_test_f1s = []
+    tdl_train_f1s = []
+    tdl_test_f1s = []
+    alcsat_train_f1s = []
+    alcsat_test_f1s = []
+    spell_train_f1s = []
+    spell_test_f1s = []
+    nero_train_f1s = []
+    nero_test_f1s = []
     print("\nComparing models on each class expression:\n")
     
     # Limit the number of problems if specified
@@ -427,23 +456,83 @@ def start(args):
                     prediction=celoe_result['prediction']
                 )
             
-            # ELTL (TDL)
-            eltl_result = run_and_time_prediction(eltl, train_lp, test_lp, kb)
-            eltl_times.append(eltl_result['prediction_time'])
-            eltl_train_f1s.append(eltl_result['train_f1'])
-            eltl_test_f1s.append(eltl_result['test_f1'])
+            # TDL
+            tdl_result = run_and_time_prediction(tdl, train_lp, test_lp, kb)
+            tdl_times.append(tdl_result['prediction_time'])
+            tdl_train_f1s.append(tdl_result['train_f1'])
+            tdl_test_f1s.append(tdl_result['test_f1'])
             
             if tracker:
                 tracker.add_result(
-                    method='ELTL',
+                    method='TDL',
                     problem=str_target_concept,
                     fold=ith + 1,
-                    train_time=0,  # ELTL doesn't require pre-training
-                    inference_time=eltl_result['prediction_time'],
-                    train_f1=eltl_result['train_f1'],
-                    test_f1=eltl_result['test_f1'],
-                    concepts_tested=eltl_result.get('concepts_tested', 0),
-                    prediction=eltl_result['prediction']
+                    train_time=0,  # TDL doesn't require pre-training
+                    inference_time=tdl_result['prediction_time'],
+                    train_f1=tdl_result['train_f1'],
+                    test_f1=tdl_result['test_f1'],
+                    concepts_tested=tdl_result.get('concepts_tested', 0),
+                    prediction=tdl_result['prediction']
+                )
+            
+            # ALCSAT
+            alcsat_result = run_and_time_prediction(alcsat, train_lp, test_lp, kb)
+            alcsat_times.append(alcsat_result['prediction_time'])
+            alcsat_train_f1s.append(alcsat_result['train_f1'])
+            alcsat_test_f1s.append(alcsat_result['test_f1'])
+            
+            if tracker:
+                tracker.add_result(
+                    method='ALCSAT',
+                    problem=str_target_concept,
+                    fold=ith + 1,
+                    train_time=0,
+                    inference_time=alcsat_result['prediction_time'],
+                    train_f1=alcsat_result['train_f1'],
+                    test_f1=alcsat_result['test_f1'],
+                    concepts_tested=alcsat_result.get('concepts_tested', 0),
+                    prediction=alcsat_result['prediction']
+                )
+            
+            # SPELL
+            spell_result = run_and_time_prediction(spell, train_lp, test_lp, kb)
+            spell_times.append(spell_result['prediction_time'])
+            spell_train_f1s.append(spell_result['train_f1'])
+            spell_test_f1s.append(spell_result['test_f1'])
+            
+            if tracker:
+                tracker.add_result(
+                    method='SPELL',
+                    problem=str_target_concept,
+                    fold=ith + 1,
+                    train_time=0,
+                    inference_time=spell_result['prediction_time'],
+                    train_f1=spell_result['train_f1'],
+                    test_f1=spell_result['test_f1'],
+                    concepts_tested=spell_result.get('concepts_tested', 0),
+                    prediction=spell_result['prediction']
+                )
+            
+            # NERO (requires namespace setup)
+            a_prop = list(kb.ontology.object_properties_in_signature())[:1].pop()
+            ns = a_prop.iri.get_namespace()
+            nero.ns = ns
+            nero_result = run_and_time_prediction(nero, train_lp, test_lp, kb)
+            nero_times.append(nero_result['prediction_time'])
+            nero_train_f1s.append(nero_result['train_f1'])
+            nero_test_f1s.append(nero_result['test_f1'])
+            
+            if tracker:
+                tracker.add_result(
+                    method='NERO',
+                    problem=str_target_concept,
+                    fold=ith + 1,
+                    train_time=0,
+                    inference_time=nero_result['prediction_time'],
+                    train_f1=nero_result['train_f1'],
+                    test_f1=nero_result['test_f1'],
+                    concepts_tested=nero_result.get('concepts_tested', 0),
+                    prediction=nero_result['prediction']
                 )
             
             print(f"  OCEL:")
@@ -454,10 +543,22 @@ def start(args):
             print(f"    Prediction: {celoe_result['prediction']}")
             print(f"    Train F1: {celoe_result['train_f1']:.3f} | Test F1: {celoe_result['test_f1']:.3f}")
             print(f"    Prediction time: {celoe_result['prediction_time']:.2f} seconds")
-            print(f"  ELTL (TDL):")
-            print(f"    Prediction: {eltl_result['prediction']}")
-            print(f"    Train F1: {eltl_result['train_f1']:.3f} | Test F1: {eltl_result['test_f1']:.3f}")
-            print(f"    Prediction time: {eltl_result['prediction_time']:.2f} seconds")
+            print(f"  TDL:")
+            print(f"    Prediction: {tdl_result['prediction']}")
+            print(f"    Train F1: {tdl_result['train_f1']:.3f} | Test F1: {tdl_result['test_f1']:.3f}")
+            print(f"    Prediction time: {tdl_result['prediction_time']:.2f} seconds")
+            print(f"  ALCSAT:")
+            print(f"    Prediction: {alcsat_result['prediction']}")
+            print(f"    Train F1: {alcsat_result['train_f1']:.3f} | Test F1: {alcsat_result['test_f1']:.3f}")
+            print(f"    Prediction time: {alcsat_result['prediction_time']:.2f} seconds")
+            print(f"  SPELL:")
+            print(f"    Prediction: {spell_result['prediction']}")
+            print(f"    Train F1: {spell_result['train_f1']:.3f} | Test F1: {spell_result['test_f1']:.3f}")
+            print(f"    Prediction time: {spell_result['prediction_time']:.2f} seconds")
+            print(f"  NERO:")
+            print(f"    Prediction: {nero_result['prediction']}")
+            print(f"    Train F1: {nero_result['train_f1']:.3f} | Test F1: {nero_result['test_f1']:.3f}")
+            print(f"    Prediction time: {nero_result['prediction_time']:.2f} seconds")
             
             if args.compare_random_v and drillv_random_result:
                 print(f"  DrillV ({variant_name} with random values):")
@@ -491,7 +592,10 @@ def start(args):
     avg_drillv_random_time = np.mean(drillv_random_times) if drillv_random_times else 0
     avg_ocel_time = np.mean(ocel_times) if ocel_times else 0
     avg_celoe_time = np.mean(celoe_times) if celoe_times else 0
-    avg_eltl_time = np.mean(eltl_times) if eltl_times else 0
+    avg_tdl_time = np.mean(tdl_times) if tdl_times else 0
+    avg_alcsat_time = np.mean(alcsat_times) if alcsat_times else 0
+    avg_spell_time = np.mean(spell_times) if spell_times else 0
+    avg_nero_time = np.mean(nero_times) if nero_times else 0
     
     print("\n" + "="*80)
     print("SUMMARY STATISTICS")
@@ -503,7 +607,10 @@ def start(args):
         print(f"  DrillV (random V):        {avg_drillv_random_time:.3f} seconds")
     print(f"  OCEL:                     {avg_ocel_time:.3f} seconds")
     print(f"  CELOE:                    {avg_celoe_time:.3f} seconds")
-    print(f"  ELTL (TDL):               {avg_eltl_time:.3f} seconds")
+    print(f"  TDL:                      {avg_tdl_time:.3f} seconds")
+    print(f"  ALCSAT:                   {avg_alcsat_time:.3f} seconds")
+    print(f"  SPELL:                    {avg_spell_time:.3f} seconds")
+    print(f"  NERO:                     {avg_nero_time:.3f} seconds")
     
     print("\nAverage Test F1 Scores:")
     print(f"  Drill (DQN):              {np.mean(drill_test_f1s):.3f}")
@@ -512,7 +619,10 @@ def start(args):
         print(f"  DrillV (random V):        {np.mean(drillv_random_test_f1s):.3f}")
     print(f"  OCEL:                     {np.mean(ocel_test_f1s):.3f}")
     print(f"  CELOE:                    {np.mean(celoe_test_f1s):.3f}")
-    print(f"  ELTL (TDL):               {np.mean(eltl_test_f1s):.3f}")
+    print(f"  TDL:                      {np.mean(tdl_test_f1s):.3f}")
+    print(f"  ALCSAT:                   {np.mean(alcsat_test_f1s):.3f}")
+    print(f"  SPELL:                    {np.mean(spell_test_f1s):.3f}")
+    print(f"  NERO:                     {np.mean(nero_test_f1s):.3f}")
     
     print("\nAverage Concepts Tested:")
     print(f"  Drill (DQN):              {np.mean(drill_concepts):.0f}")
