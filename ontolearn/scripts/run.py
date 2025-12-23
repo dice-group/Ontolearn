@@ -37,7 +37,7 @@ from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.triple_store import TripleStore
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.learners import Drill, TDL
-from ontolearn.concept_learner import NCES
+from ontolearn.learners import NCES
 from ontolearn.metrics import F1
 from ontolearn.verbalizer import LLMVerbalizer
 from owlapy import owl_expression_to_dl

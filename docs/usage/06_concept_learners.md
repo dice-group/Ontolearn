@@ -4,39 +4,45 @@ This is a guide to show how to use a concept learner to generate hypotheses for 
 concept in an ontology.
 In this guide we will show how to use the following concept learners
 of Ontolearn library:
-- [TDL](ontolearn.learners.learners.tree_learner.TDL)
-- [EvoLearner](ontolearn.concept_learner.EvoLearner)
+- [TDL](ontolearn.learners.tree_learner.TDL)
+- [EvoLearner](ontolearn.learners.concept_learner.EvoLearner)
 - [CELOE](ontolearn.learners.celoe.CELOE)
 - [OCEL](ontolearn.learners.ocel.OCEL)
 - [Drill](ontolearn.learners.drill.Drill)
 
-It is worth mentioning that NCES2 and NERO are not yet implemented in Ontolearn,
-but they will be soon.
+It is worth mentioning that NERO is not yet implemented in Ontolearn, but it will be soon.
 
 ### Expressiveness
 
-TDL → **SHOIN**
+TDL → **$\mathcal{SHOIN}$**
 
-Evolearner → _**ALCQ(D)**_.
+Evolearner → **$\mathcal{ALCQ^{(D)}}$**.
 
-DRILL  → _**ALC**_
+DRILL  → **$\mathcal{ALC}$**
 
-NCES  → **_ALC_**
+NCES  → **$\mathcal{ALC}$**
 
-NCES2 → **_ALCHIQ(D)_**
+NCES2 → **$\mathcal{ALCHIQ^{(D)}}$**
 
-NERO → **_ALC_**
+ROCES → **$\mathcal{ALCHIQ^{(D)}}$**
 
-CLIP → **_ALC_**
+NERO → **$\mathcal{ALC}$**
 
-CELOE and OCEL → **_ALC_**
+CLIP → **$\mathcal{ALC}$**
+
+CELOE → **$\mathcal{ALC}$**
+
+OCEL → **$\mathcal{ALC}$**
+
+ALCSAT → **$\mathcal{ALC}$**
+
+SPELL → **$\mathcal{ELH^r}$**
 
 -----------------------------------
 
 
 The learning models that we mentioned in the beginning are similar to execute, for that reason, we are 
-describing them in a general manner. To test them separately see [_Quick try-out_](#quick-try-out).
-Each algorithm has different available configuration. However, at
+describing them in a general manner. Each algorithm has different available configuration. However, at
 minimum, they require a [knowledge base](04_knowledge_base.md) to initialize and a [learning problem](04_knowledge_base.md#construct-a-learning-problem) to learn predictions for.
 
 Let's see the prerequisites needed to run the concept learners:
@@ -178,7 +184,7 @@ from ontolearn.metrics import Accuracy
 pred_acc = Accuracy()
 ```
 
-In the following example we have built a model of [OCEL](ontolearn.concept_learner.OCEL) and 
+In the following example we have built a model of [OCEL](ontolearn.learners.ocel.OCEL) and 
 we have specified some of the parameters which can be set for OCEL.
 
 *(Optional)* If you are using `KnowledeBase` and you want the learning model to ignore a target concepts see 
@@ -188,7 +194,7 @@ we have specified some of the parameters which can be set for OCEL.
 
 <!--pytest-codeblocks:cont-->
 ```python
-from ontolearn.concept_learner import OCEL
+from ontolearn.learners import OCEL
 
 model = OCEL(knowledge_base=kb, 
               quality_func = pred_acc,
@@ -283,6 +289,9 @@ This will create for each class expression inside `Predictions.owl` a `.png`
 image that contain the tree representation of that class expression.
 
 ---------------------------------------------------------------------------------------
+
+We highly encourage you to check out the [examples](https://github.com/dice-group/Ontolearn/tree/develop/examples) folder where you will find examples 
+for each concept learner offered in Ontolearn.
 
 In the next guide you will find further resources about Ontolearn including papers to cite, further directions for 
 examples inside the project, code coverage, etc.

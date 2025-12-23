@@ -16,7 +16,7 @@ import platform
 import pandas as pd
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learners import CELOE, OCEL, Drill, TDL
-from ontolearn.concept_learner import EvoLearner, NCES, CLIP
+from ontolearn.learners import EvoLearner, NCES, CLIP
 from ontolearn.refinement_operators import ExpressRefinement
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.metrics import F1
@@ -26,7 +26,8 @@ from sklearn.model_selection import StratifiedKFold
 import numpy as np
 from ontolearn.utils.static_funcs import compute_f1_score
 from ontolearn.triple_store import TripleStore
-from ontolearn.owl_neural_reasoner import TripleStoreNeuralReasoner
+from owlapy.owl_reasoner import EBR
+from owlapy.owl_ontology import NeuralOntology
 from owlapy import owl_expression_to_dl
 
 pd.set_option("display.precision", 5)
@@ -40,7 +41,7 @@ def dl_concept_learning(args):
     drill_with_symbolic_retriever = Drill(knowledge_base=kb, path_embeddings=args.path_drill_embeddings,
                                           quality_func=F1(), max_runtime=args.max_runtime,verbose=0)
 
-    neural_kb = TripleStore(reasoner=TripleStoreNeuralReasoner(path_neural_embedding=args.kge))
+    neural_kb = TripleStore(reasoner=EBR(NeuralOntology(path_neural_embedding=args.kge)))
 
     drill_with_neural_retriever = Drill(knowledge_base=neural_kb,
                                         path_embeddings=args.path_drill_embeddings,

@@ -11,7 +11,7 @@ Note: One can leave the option `--path_train_data` and new training data will be
 
 import argparse
 import json, os
-from ontolearn.concept_learner import NCES, NCES2, ROCES
+from ontolearn.learners import NCES, NCES2, ROCES
 from ontolearn.knowledge_base import KnowledgeBase
 from transformers import set_seed
 

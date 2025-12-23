@@ -43,7 +43,8 @@ from owlapy.owl_axiom import (
 )
 from owlapy.owl_datatype import OWLDatatype
 from owlapy.owl_individual import OWLNamedIndividual
-from owlapy.owl_literal import OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES
+from owlapy.owl_literal import OWLLiteral, BooleanOWLDatatype, DoubleOWLDatatype, NUMERIC_DATATYPES, TIME_DATATYPES, \
+    NonNegativeIntegerOWLDatatype
 from owlapy.owl_ontology import OWLOntologyID
 from owlapy.abstracts import AbstractOWLOntology, AbstractOWLReasoner
 from owlapy.owl_property import (
@@ -830,7 +831,7 @@ class TripleStore(AbstractKnowledgeBase):
         else:
             def get_properties_from_xsd_range(r: OWLDatatype):
                 query = (f"{rdf_prefix}\n{rdfs_prefix}\n{xsd_prefix}SELECT DISTINCT ?x " +
-                         f"WHERE {{?x rdfs:range xsd:{r.iri.reminder}}}")
+                         f"WHERE {{?x rdfs:range xsd:{r.iri.remainder}}}")
                 for binding in self.query(query).json()["results"]["bindings"]:
                     yield OWLDataProperty(binding["x"]["value"])
             if isinstance(ranges, OWLDatatype):

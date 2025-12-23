@@ -21,6 +21,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # -----------------------------------------------------------------------------
+
+"""
+SPARQL Query Learner Module.
+
+This module provides functionality to learn and improve SPARQL queries based on
+OWL class expressions and learning problems with positive/negative examples.
+"""
+
 from typing import List
 
 import requests

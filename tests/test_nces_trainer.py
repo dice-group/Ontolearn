@@ -1,4 +1,4 @@
-from ontolearn.concept_learner import NCES
+from ontolearn.learners import NCES
 from ontolearn.knowledge_base import KnowledgeBase
 import random
 import unittest

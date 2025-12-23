@@ -32,8 +32,18 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinxcontrib.plantuml',
     'myst_parser',
-    'sphinx_rtd_theme',
+    "sphinx.ext.mathjax",
 ]
+
+myst_enable_extensions = [
+    "amsmath",
+    "dollarmath",
+    "colon_fence",
+    "deflist",
+]
+
+mathjax_path = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+
 
 # autoapi for ontolearn and owlapy. for owlapy we need to refer to its path in GitHub Action environment
 autoapi_dirs = ['../ontolearn',
@@ -49,11 +59,6 @@ autoapi_add_toctree_entry = False
 
 
 inheritance_graph_attrs = dict(rankdir="TB")
-
-myst_enable_extensions = [
-    'colon_fence',
-    'deflist',
-]
 
 myst_heading_anchors = 3
 

@@ -22,7 +22,7 @@
 # SOFTWARE.
 # -----------------------------------------------------------------------------
 
-from ..base_concept_learner import RefinementBasedConceptLearner
+from .base import RefinementBasedConceptLearner
 
 from ..abstracts import AbstractScorer, BaseRefinement, AbstractHeuristic, EncodedPosNegLPStandardKind, \
     AbstractKnowledgeBase
@@ -37,7 +37,7 @@ from owlapy.class_expression import OWLClassExpression
 from contextlib import contextmanager
 from sortedcontainers import SortedSet
 from owlapy.utils import OrderedOWLObject
-from owlapy.utils import EvaluatedDescriptionSet, ConceptOperandSorter, OperandSetTransform
+from owlapy.utils import EvaluatedDescriptionSet, ConceptOperandSorter, CESimplifier
 import time
 from itertools import islice
 from owlapy.render import DLSyntaxObjectRenderer
@@ -262,7 +262,7 @@ class CELOE(RefinementBasedConceptLearner):
             # ignoring refinement, it has been refined from another parent
             return False
 
-        norm_concept = OperandSetTransform().simplify(ref.concept)
+        norm_concept = CESimplifier().simplify(ref.concept)
         if norm_concept in self._seen_norm_concepts:
             norm_seen = True
         else:
@@ -288,7 +288,7 @@ class CELOE(RefinementBasedConceptLearner):
         return True
 
     def _add_node_evald(self, ref: OENode, eval_: EvaluatedConcept, tree_parent: Optional[TreeNode[OENode]]):  # pragma: no cover
-        norm_concept = OperandSetTransform().simplify(ref.concept)
+        norm_concept = CESimplifier().simplify(ref.concept)
         if norm_concept in self._seen_norm_concepts:
             norm_seen = True
         else:
