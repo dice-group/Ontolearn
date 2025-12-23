@@ -1324,8 +1324,8 @@ class DrillV(Drill):
         if self.verbose > 0:
             print("Lean performance optimizations applied:")
             print(f"- Network eval mode: {'Yes' if hasattr(self.heuristic_func, 'net') else 'No'}")
-            print(f"- Batch processing: Enabled")
-            print(f"- Memory overhead: Minimized (no caching)")
+            print("- Batch processing: Enabled")
+            print("- Memory overhead: Minimized (no caching)")
             
     def print_performance_summary(self):
         """Print a summary of lean optimizations."""
@@ -1510,9 +1510,6 @@ class DrillVNet(torch.nn.Module):  # pragma: no cover
         """
         if X.dim() == 3:
             X = X.view(X.shape[0], self.embedding_dim)
-        
-        # Shared feature extraction with residual
-        identity = X
         
         # First layer with batch norm and dropout
         X = torch.nn.functional.relu(self.bn1(self.fc1(X)))
