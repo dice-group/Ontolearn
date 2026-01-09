@@ -238,8 +238,11 @@ def start(args):
     # Load learning problems
     with open(args.path_learning_problem, "r", encoding="utf-8") as json_file:
         data = json.load(json_file)
-
-    problems = data.get("problems", {})
+    
+    if "problems" in data:
+        problems = data.get("problems", {})
+    else:
+        problems = data
 
     # Define concept limits to test
     concept_limits = [0, 50, 100, 150, 250, 350, 500, 700, 1000]
