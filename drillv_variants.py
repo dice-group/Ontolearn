@@ -503,12 +503,12 @@ class DrillV_Complex(KBDrivenOptimizationMixin, DrillV_Enhanced):
     - Learning rate scheduling
     - All smart features from Enhanced
     - **NEW: Intelligent RL-based termination (agent decides when to stop)**
-    - **NEW: KB-driven initialization and early pruning**
+    - **NEW: KB-driven initialization and early pruning (optional)**
     """
-    def __init__(self, *args, termination_epsilon=0.3, **kwargs):
+    def __init__(self, *args, termination_epsilon=0.3, enable_pruning=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "DrillV_Complex"
-        
+        self.enable_pruning = enable_pruning  # Flag to control KB-driven pruning
         # Import and initialize V-learning termination agent
         from rl_termination_module import IntelligentTerminationAgent
         self.termination_agent = IntelligentTerminationAgent(
@@ -516,8 +516,8 @@ class DrillV_Complex(KBDrivenOptimizationMixin, DrillV_Enhanced):
             gamma=0.95,                     # Discount for future improvements
             epsilon=termination_epsilon,    # Exploration rate (user configurable!)
             min_quality_threshold=0.75,     # Minimum acceptable quality
-            min_concepts_explored=10,      # Safety minimum
-            max_concepts_explored=15000,     # Safety maximum
+            min_concepts_explored=1,      # Safety minimum
+            max_concepts_explored=self.max_num_of_concepts_tested+1 if hasattr(self, 'max_num_of_concepts_tested') else 15000,     # Safety maximum
             memory_path='termination_agent_memory.pkl'  # Persistent memory file
         )
         
@@ -634,19 +634,22 @@ class DrillV_Complex(KBDrivenOptimizationMixin, DrillV_Enhanced):
         self.clean()
         self.start_time = time.time()
         
-        # OLD APPROACH: Limited type bias
-        # pos_type_counts = Counter(
-        #     [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.pos))])
-        # neg_type_counts = Counter(
-        #     [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.neg))])
-        # type_bias = pos_type_counts - neg_type_counts
-        
-        # NEW APPROACH: KB-driven starting concepts
-        kb_driven_concepts = self.extract_kb_driven_starting_concepts(
-            pos_examples=learning_problem.pos,
-            neg_examples=learning_problem.neg,
-            max_concepts=20
-        )
+        # KB-driven initialization (optional - controlled by enable_pruning flag)
+        if self.enable_pruning:
+            # NEW APPROACH: KB-driven starting concepts
+            kb_driven_concepts = self.extract_kb_driven_starting_concepts(
+                pos_examples=learning_problem.pos,
+                neg_examples=learning_problem.neg,
+                max_concepts=20
+            )
+        else:
+            # FALLBACK: Use type bias (old approach)
+            pos_type_counts = Counter(
+                [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.pos))])
+            neg_type_counts = Counter(
+                [i for i in chain.from_iterable((self.kb.get_types(ind, direct=True) for ind in learning_problem.neg))])
+            type_bias = pos_type_counts - neg_type_counts
+            kb_driven_concepts = list(type_bias.keys())[:20]
         
         root_state = self.initialize_training_class_expression_learning_problem(
             pos=learning_problem.pos, neg=learning_problem.neg)
@@ -657,7 +660,7 @@ class DrillV_Complex(KBDrivenOptimizationMixin, DrillV_Enhanced):
         self.search_tree.add(root_state)
         best_found_quality = 0
         
-        # Add KB-driven concepts to search tree (replaces old type_bias approach)
+        # Add KB-driven concepts to search tree
         for x in (self.create_rl_state(i, parent_node=root_state) for i in kb_driven_concepts):
             self.compute_quality_of_class_expression(x)
             x.heuristic = x.quality
@@ -666,7 +669,8 @@ class DrillV_Complex(KBDrivenOptimizationMixin, DrillV_Enhanced):
                 self.search_tree.add(x)
         
         if self.verbose > 0:
-            print(f"✓ Initialized with {len(kb_driven_concepts)} KB-driven concepts "
+            init_method = "KB-driven" if self.enable_pruning else "type bias"
+            print(f"✓ Initialized with {len(kb_driven_concepts)} {init_method} concepts "
                   f"(best quality: {best_found_quality:.3f})")
         
         # Main loop with intelligent agent-based termination
@@ -706,6 +710,9 @@ class DrillV_Complex(KBDrivenOptimizationMixin, DrillV_Enhanced):
                 self.termination_agent.learn_from_episode()
                 return self.terminate()
             
+            if self.max_num_of_concepts_tested is not None and self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
+                return self.terminate()
+            
             # Get most promising state
             most_promising = self.next_node_to_expand()
             next_possible_states = []
@@ -726,11 +733,12 @@ class DrillV_Complex(KBDrivenOptimizationMixin, DrillV_Enhanced):
                 if time.time() - self.start_time > self.max_runtime:
                     break
                 
-                # KB-DRIVEN OPTIMIZATION: Early pruning of clearly irrelevant concepts
-                if self.should_prune_refinement(ref.concept, learning_problem.pos, learning_problem.neg):
-                    if self.verbose > 1:
-                        print(f"Pruned: {owl_expression_to_dl(ref.concept)} (low KB coverage)")
-                    continue
+                # KB-DRIVEN OPTIMIZATION: Early pruning of clearly irrelevant concepts (optional)
+                if self.enable_pruning:
+                    if self.should_prune_refinement(ref.concept, learning_problem.pos, learning_problem.neg):
+                        if self.verbose > 1:
+                            print(f"Pruned: {owl_expression_to_dl(ref.concept)} (low KB coverage)")
+                        continue
                 
                 self.compute_quality_of_class_expression(ref)
                 if ref.quality == 0:

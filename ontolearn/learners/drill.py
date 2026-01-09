@@ -374,6 +374,9 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                 # (6.3.1) Checking the runtime termination criterion.
                 if time.time() - self.start_time > self.max_runtime:
                     break
+
+                if self.max_num_of_concepts_tested is not None and self.number_of_tested_concepts >= self.max_num_of_concepts_tested:
+                    return self.terminate()
                 # (6.3.2) Compute the quality stored in the RL state
                 self.compute_quality_of_class_expression(ref)
                 if ref.quality == 0:
@@ -404,6 +407,7 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             if self.goal_found and self.stop_at_goal:
                 if self.terminate_on_goal:
                     return self.terminate()
+                
         return self.terminate()
 
     def init_embeddings_of_examples(self, pos_uri: FrozenSet[OWLNamedIndividual],

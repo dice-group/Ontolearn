@@ -430,7 +430,7 @@ class IntelligentTerminationAgent:
         # decay_rate = 1.0 means NO decay (constant epsilon)
         # decay_rate < 1.0 means epsilon decreases with experience
         decay_rate = 0.95  # Mild decay: 1.0 -> 0.95 -> 0.90 -> 0.86...
-        current_epsilon = max(0.001, self.epsilon * (decay_rate ** self.total_runs))
+        current_epsilon = self.epsilon #max(0.001, self.epsilon * (decay_rate ** self.total_runs))
        
         self.episode_explore_mode = np.random.random() < current_epsilon
         if self.episode_explore_mode:

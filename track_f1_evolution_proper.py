@@ -40,12 +40,13 @@ class ExperimentTracker:
         self.results = []
         
     def add_result(self, method, problem, fold, train_time, inference_time, 
-                   train_f1, test_f1, concepts_tested, prediction):
+                   train_f1, test_f1, concepts_tested, prediction, concept_limit=None):
         """Add a single experiment result."""
         self.results.append({
             'method': method,
             'problem': problem,
             'fold': fold,
+            'concept_limit': concept_limit,
             'train_time': train_time,
             'inference_time': inference_time,
             'total_time': train_time + inference_time,
@@ -78,7 +79,24 @@ def run_and_time_training(learner, train_args, directory):
     learner.save(directory=directory)
     return end_time - start_time
 
-def run_and_time_prediction(learner, train_lp, test_lp, kb):
+def run_and_time_prediction(learner, train_lp, test_lp, kb, force_iter_bound=None):
+    """
+    Run learner and time the prediction, optionally forcing iter_bound for Drill/DrillV.
+    
+    Args:
+        learner: The learner to run
+        train_lp: Training learning problem (for backward compatibility, same as test_lp now)
+        test_lp: Test learning problem (same as train_lp in simplified version)
+        kb: Knowledge base
+        force_iter_bound: If provided, force learner.iter_bound AND max_num_of_concepts_tested to this value
+    """
+    # Force iter_bound and max_num_of_concepts_tested if requested (for Drill/DrillV)
+    if force_iter_bound is not None:
+        if hasattr(learner, 'iter_bound'):
+            learner.iter_bound = force_iter_bound
+        if hasattr(learner, 'max_num_of_concepts_tested'):
+            learner.max_num_of_concepts_tested = force_iter_bound
+        
     dl_render = DLSyntaxObjectRenderer()
     start_time = time.time()
     
@@ -91,18 +109,18 @@ def run_and_time_prediction(learner, train_lp, test_lp, kb):
         pred = learner.fit(train_lp).best_hypotheses()
     
     pred_time = time.time() - start_time
-    train_f1 = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred)}),
-                                pos=train_lp.pos, neg=train_lp.neg)
-    test_f1 = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred)}),
-                               pos=test_lp.pos, neg=test_lp.neg)
+    
+    # Since train_lp == test_lp now, both F1 scores will be the same
+    f1 = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred)}),
+                          pos=train_lp.pos, neg=train_lp.neg)
     
     # Get concepts tested if available
     concepts_tested = getattr(learner, '_number_of_tested_concepts', 0)
     
     return {
         "prediction": dl_render.render(pred),
-        "train_f1": train_f1,
-        "test_f1": test_f1,
+        "train_f1": f1,  # Kept for backward compatibility
+        "test_f1": f1,   # Same as train_f1 now
         "prediction_time": pred_time,
         "concepts_tested": concepts_tested
     }
@@ -124,8 +142,8 @@ def start(args):
     print("\nInitializing learners...")
     print(f"Mode: {args.learner_mode} ({'search-based only' if args.learner_mode == 'search' else 'all learners'})")
     
-    ocel = OCEL(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
-    celoe = CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
+    ocel = OCEL(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime, max_num_of_concepts_tested=args.max_num_of_concepts_tested)
+    celoe = CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime, max_num_of_concepts_tested=args.max_num_of_concepts_tested)
     print("  ✓ OCEL initialized (search-based)")
     print("  ✓ CELOE initialized (search-based)")
     
@@ -169,8 +187,7 @@ def start(args):
         verbose=0,
         num_of_sequential_actions=args.num_of_sequential_actions,
         num_episode=args.num_episode,
-        iter_bound=args.iter_bound,
-        max_num_of_concepts_tested=5,
+        max_num_of_concepts_tested=args.max_num_of_concepts_tested,
         max_runtime=args.max_runtime
     )
 
@@ -192,13 +209,13 @@ def start(args):
         refinement_operator=LengthBasedRefinement(knowledge_base=kb),
         quality_func=F1(),
         reward_func=CeloeBasedReward(),
-        epsilon_decay=args.epsilon_decay,
+        # epsilon_decay=args.epsilon_decay,
+        termination_epsilon=args.epsilon_decay, 
         learning_rate=args.learning_rate,
         verbose=0,
         num_of_sequential_actions=args.num_of_sequential_actions,
         num_episode=args.num_episode,
-        iter_bound=args.iter_bound,
-        max_num_of_concepts_tested=5,
+        max_num_of_concepts_tested=args.max_num_of_concepts_tested,
         max_runtime=args.max_runtime
     )
 
@@ -215,7 +232,7 @@ def start(args):
         drillv_train_time = run_and_time_training(drillv, train_args, directory="pretrained_drillv")
         print(f"DrillV training time: {drillv_train_time:.2f} seconds\n")
         print(f"Drill training time: {drill_train_time:.2f} seconds\n")
-      
+
     # time.sleep(10)  # Just to have a small break between training and testing
     # exit(0)
     # Load learning problems
@@ -224,6 +241,9 @@ def start(args):
 
     problems = data.get("problems", {})
 
+    # Define concept limits to test
+    concept_limits = [0, 50, 100, 150, 250, 350, 500, 700, 1000]
+    print(f"\nTesting with concept limits: {concept_limits}")
 
     # Collect prediction times
     drill_times = []
@@ -268,36 +288,64 @@ def start(args):
     else:
         print(f"Evaluating on all {len(problem_items)} problems\n")
     
-    for str_target_concept, examples in problem_items:
-        p = examples['positive_examples']
-        n = examples['negative_examples']
-        print(f"\n{'='*80}")
-        print(f"Target concept: {str_target_concept}")
-        print(f"{'='*80}")
+    # Loop over different concept limits
+    for concept_limit in concept_limits:
+        print(f"\n{'#'*80}")
+        print(f"# TESTING WITH CONCEPT LIMIT: {concept_limit}")
+        print(f"{'#'*80}\n")
         
-        # Reset V-learning agent for new LP (deletes old memory file)
-        if hasattr(drillv, 'reset_for_new_lp'):
-            drillv.reset_for_new_lp()
-
-        kf = StratifiedKFold(n_splits=args.folds, shuffle=True, random_state=args.random_seed)
-        X = np.array(p + n)
-        Y = np.array([1.0 for _ in p] + [0.0 for _ in n])
+        # Special case: concept_limit 0 means F1 = 0 for all learners
+        if concept_limit == 0:
+            for str_target_concept, examples in problem_items:
+                # Add zero F1 results for all learners
+                if tracker:
+                    for method in ['Drill', f'DrillV_{variant_name}', 'OCEL', 'CELOE']:
+                        tracker.add_result(
+                            method=method,
+                            problem=str_target_concept,
+                            fold=1,
+                            concept_limit=0,
+                            train_time=0.0,
+                            inference_time=0.0,
+                            train_f1=0.0,
+                            test_f1=0.0,
+                            concepts_tested=0,
+                            prediction="None"
+                        )
+                    if include_non_search:
+                        for method in ['TDL', 'ALCSAT', 'SPELL', 'NERO']:
+                            tracker.add_result(
+                                method=method,
+                                problem=str_target_concept,
+                                fold=1,
+                                concept_limit=0,
+                                train_time=0.0,
+                                inference_time=0.0,
+                                train_f1=0.0,
+                                test_f1=0.0,
+                                concepts_tested=0,
+                                prediction="None"
+                            )
+            continue  # Skip to next concept limit
         
-        # Track concepts per fold for analysis
-        fold_drillv_concepts = []
+        for str_target_concept, examples in problem_items:
+            p = examples['positive_examples']
+            n = examples['negative_examples']
+            print(f"\n{'='*80}")
+            print(f"Target concept: {str_target_concept} [Limit: {concept_limit} concepts]")
+            print(f"{'='*80}")
+            
+            # Reset V-learning agent for new LP (deletes old memory file)
+            if hasattr(drillv, 'reset_for_new_lp'):
+                drillv.reset_for_new_lp()
 
-        for (ith, (train_index, test_index)) in enumerate(kf.split(X, Y)):
-            train_pos = {pos_individual for pos_individual in X[train_index][Y[train_index] == 1]}
-            train_neg = {neg_individual for neg_individual in X[train_index][Y[train_index] == 0]}
-            test_pos = {pos_individual for pos_individual in X[test_index][Y[test_index] == 1]}
-            test_neg = {neg_individual for neg_individual in X[test_index][Y[test_index] == 0]}
-            train_lp = PosNegLPStandard(pos=set(map(OWLNamedIndividual, map(IRI.create, train_pos))),
-                                        neg=set(map(OWLNamedIndividual, map(IRI.create, train_neg))))
-            test_lp = PosNegLPStandard(pos=set(map(OWLNamedIndividual, map(IRI.create, test_pos))),
-                                       neg=set(map(OWLNamedIndividual, map(IRI.create, test_neg))))
+            # Use all examples (no train/test split, no folds)
+            all_pos = set(map(OWLNamedIndividual, map(IRI.create, p)))
+            all_neg = set(map(OWLNamedIndividual, map(IRI.create, n)))
+            lp = PosNegLPStandard(pos=all_pos, neg=all_neg)
 
-            # # Drill
-            drill_result = run_and_time_prediction(drill, train_lp, test_lp, kb)
+            # Drill
+            drill_result = run_and_time_prediction(drill, lp, lp, kb, force_iter_bound=concept_limit)
             drill_times.append(drill_result['prediction_time'])
             drill_concepts.append(drill_result.get('concepts_tested', 0))
             drill_train_f1s.append(drill_result['train_f1'])
@@ -308,7 +356,8 @@ def start(args):
                 tracker.add_result(
                     method='Drill',
                     problem=str_target_concept,
-                    fold=ith + 1,
+                    fold=1,
+                    concept_limit=concept_limit,
                     train_time=drill_train_time,  
                     inference_time=drill_result['prediction_time'],
                     train_f1=drill_result['train_f1'],
@@ -317,223 +366,141 @@ def start(args):
                     prediction=drill_result['prediction']
                 )
 
-            # DrillV with trained V-values
-            drillv_result = run_and_time_prediction(drillv, train_lp, test_lp, kb)
+            # DrillV
+            drillv_result = run_and_time_prediction(drillv, lp, lp, kb, force_iter_bound=concept_limit)
             drillv_times.append(drillv_result['prediction_time'])
             drillv_concepts.append(drillv_result.get('concepts_tested', 0))
             drillv_train_f1s.append(drillv_result['train_f1'])
             drillv_test_f1s.append(drillv_result['test_f1'])
-            fold_drillv_concepts.append(drillv_result.get('concepts_tested', 0))
-            
+        
             # Track DrillV results
             if tracker:
                 tracker.add_result(
                     method=f'DrillV_{variant_name}',
                     problem=str_target_concept,
-                    fold=ith + 1,
+                    fold=1,
+                    concept_limit=concept_limit,
                     train_time=drillv_train_time,
                     inference_time=drillv_result['prediction_time'],
                     train_f1=drillv_result['train_f1'],
                     test_f1=drillv_result['test_f1'],
                     concepts_tested=drillv_result.get('concepts_tested', 0),
                     prediction=drillv_result['prediction']
-                )
-            
-            # Get performance statistics after this prediction (if method exists)
-            perf_stats = drillv.get_performance_stats() if hasattr(drillv, 'get_performance_stats') else None
-            
-            # Get V-learning stats if using DrillV_Complex with termination agent
-            v_learning_stats = None
-            if hasattr(drillv, 'termination_agent') and drillv.termination_agent:
-                v_learning_stats = drillv.termination_agent.get_statistics()
+                )        # Get performance statistics after this prediction (if method exists)
+        perf_stats = drillv.get_performance_stats() if hasattr(drillv, 'get_performance_stats') else None
+        
+        # Get V-learning stats if using DrillV_Complex with termination agent
+        v_learning_stats = None
+        if hasattr(drillv, 'termination_agent') and drillv.termination_agent:
+            v_learning_stats = drillv.termination_agent.get_statistics()
 
-            # Print results
-            print(f"Fold {ith + 1}:")
-            print(f"  Drill (DQN):")
-            print(f"    Prediction: {drill_result['prediction']}")
-            print(f"    Train F1: {drill_result['train_f1']:.3f} | Test F1: {drill_result['test_f1']:.3f}")
-            print(f"    Concepts tested: {drill_result['concepts_tested']}")
-            print(f"    Prediction time: {drill_result['prediction_time']:.2f} seconds")
-            print(f"  DrillV ({variant_name}):")
-            print(f"    Prediction: {drillv_result['prediction']}")
-            print(f"    Train F1: {drillv_result['train_f1']:.3f} | Test F1: {drillv_result['test_f1']:.3f}")
-            print(f"    Concepts tested: {drillv_result['concepts_tested']}")
-            print(f"    Prediction time: {drillv_result['prediction_time']:.2f} seconds")
-            if perf_stats:
-                print(f"    Optimization: {perf_stats['optimization_type']} (memory efficient: {perf_stats['memory_efficient']})")
-            if v_learning_stats:
-                print(f"    V-Learning: Total runs={v_learning_stats['total_runs']}, "
-                      f"Best ever={v_learning_stats['best_ever_quality']:.3f}, "
-                      f"Termination={v_learning_stats['termination_reason']}")
-            
+        # Print results
+        print(f"  Drill (DQN):")
+        print(f"    Prediction: {drill_result['prediction']}")
+        print(f"    F1: {drill_result['train_f1']:.3f}")
+        print(f"    Concepts tested: {drill_result['concepts_tested']}")
+        print(f"    Runtime: {drill_result['prediction_time']:.2f} seconds")
+        print(f"  DrillV ({variant_name}):")
+        print(f"    Prediction: {drillv_result['prediction']}")
+        print(f"    F1: {drillv_result['train_f1']:.3f}")
+        print(f"    Concepts tested: {drillv_result['concepts_tested']}")
+        print(f"    Runtime: {drillv_result['prediction_time']:.2f} seconds")
+        if perf_stats:
+            print(f"    Optimization: {perf_stats['optimization_type']} (memory efficient: {perf_stats['memory_efficient']})")
+        if v_learning_stats:
+            print(f"    V-Learning: Total runs={v_learning_stats['total_runs']}, "
+                  f"Best ever={v_learning_stats['best_ever_quality']:.3f}, "
+                  f"Termination={v_learning_stats['termination_reason']}")
+        
             # OCEL
-            ocel_result = run_and_time_prediction(ocel, train_lp, test_lp, kb)
-            ocel_times.append(ocel_result['prediction_time'])
-            ocel_train_f1s.append(ocel_result['train_f1'])
-            ocel_test_f1s.append(ocel_result['test_f1'])
-            
-            if tracker:
-                tracker.add_result(
-                    method='OCEL',
-                    problem=str_target_concept,
-                    fold=ith + 1,
-                    train_time=0,  # OCEL doesn't require pre-training
-                    inference_time=ocel_result['prediction_time'],
-                    train_f1=ocel_result['train_f1'],
-                    test_f1=ocel_result['test_f1'],
-                    concepts_tested=ocel_result.get('concepts_tested', 0),
-                    prediction=ocel_result['prediction']
-                )
+            try:
+                ocel_result = run_and_time_prediction(ocel, lp, lp, kb, force_iter_bound=concept_limit)
+                ocel_times.append(ocel_result['prediction_time'])
+                ocel_train_f1s.append(ocel_result['train_f1'])
+                ocel_test_f1s.append(ocel_result['test_f1'])
+                
+                if tracker:
+                    tracker.add_result(
+                        method='OCEL',
+                        problem=str_target_concept,
+                        fold=1,
+                        concept_limit=concept_limit,
+                        train_time=0,
+                        inference_time=ocel_result['prediction_time'],
+                        train_f1=ocel_result['train_f1'],
+                        test_f1=ocel_result['test_f1'],
+                        concepts_tested=ocel_result.get('concepts_tested', 0),
+                        prediction=ocel_result['prediction']
+                    )
+                
+                print(f"  OCEL:")
+                print(f"    Prediction: {ocel_result['prediction']}")
+                print(f"    F1: {ocel_result['train_f1']:.3f}")
+                print(f"    Concepts tested: {ocel_result.get('concepts_tested', 0)}")
+                print(f"    Runtime: {ocel_result['prediction_time']:.2f} seconds")
+            except Exception as e:
+                print(f"  OCEL: ✗ FAILED - {str(e)}")
+                if tracker:
+                    tracker.add_result(
+                        method='OCEL',
+                        problem=str_target_concept,
+                        fold=1,
+                        concept_limit=concept_limit,
+                        train_time=0,
+                        inference_time=0,
+                        train_f1=0,
+                        test_f1=0,
+                        concepts_tested=0,
+                        prediction="ERROR"
+                    )
             
             # CELOE
-            celoe_result = run_and_time_prediction(celoe, train_lp, test_lp, kb)
-            celoe_times.append(celoe_result['prediction_time'])
-            celoe_train_f1s.append(celoe_result['train_f1'])
-            celoe_test_f1s.append(celoe_result['test_f1'])
-            
-            if tracker:
-                tracker.add_result(
-                    method='CELOE',
-                    problem=str_target_concept,
-                    fold=ith + 1,
-                    train_time=0,  # CELOE doesn't require pre-training
-                    inference_time=celoe_result['prediction_time'],
-                    train_f1=celoe_result['train_f1'],
-                    test_f1=celoe_result['test_f1'],
-                    concepts_tested=celoe_result.get('concepts_tested', 0),
-                    prediction=celoe_result['prediction']
-                )
-            
-            # Non-search-based learners (only if include_non_search is True)
-            if include_non_search:
-                # TDL
-                tdl_result = run_and_time_prediction(tdl, train_lp, test_lp, kb)
-                tdl_times.append(tdl_result['prediction_time'])
-                tdl_train_f1s.append(tdl_result['train_f1'])
-                tdl_test_f1s.append(tdl_result['test_f1'])
+            try:
+                celoe_result = run_and_time_prediction(celoe, lp, lp, kb, force_iter_bound=concept_limit)
+                celoe_times.append(celoe_result['prediction_time'])
+                celoe_train_f1s.append(celoe_result['train_f1'])
+                celoe_test_f1s.append(celoe_result['test_f1'])
                 
                 if tracker:
                     tracker.add_result(
-                        method='TDL',
+                        method='CELOE',
                         problem=str_target_concept,
-                        fold=ith + 1,
+                        fold=1,
+                        concept_limit=concept_limit,
                         train_time=0,
-                        inference_time=tdl_result['prediction_time'],
-                        train_f1=tdl_result['train_f1'],
-                        test_f1=tdl_result['test_f1'],
-                        concepts_tested=tdl_result.get('concepts_tested', 0),
-                        prediction=tdl_result['prediction']
+                        inference_time=celoe_result['prediction_time'],
+                        train_f1=celoe_result['train_f1'],
+                        test_f1=celoe_result['test_f1'],
+                        concepts_tested=celoe_result.get('concepts_tested', 0),
+                        prediction=celoe_result['prediction']
                     )
                 
-                # ALCSAT
-                alcsat_result = run_and_time_prediction(alcsat, train_lp, test_lp, kb)
-                alcsat_times.append(alcsat_result['prediction_time'])
-                alcsat_train_f1s.append(alcsat_result['train_f1'])
-                alcsat_test_f1s.append(alcsat_result['test_f1'])
-                
+                print(f"  CELOE:")
+                print(f"    Prediction: {celoe_result['prediction']}")
+                print(f"    F1: {celoe_result['train_f1']:.3f}")
+                print(f"    Concepts tested: {celoe_result.get('concepts_tested', 0)}")
+                print(f"    Runtime: {celoe_result['prediction_time']:.2f} seconds")
+            except Exception as e:
+                print(f"  CELOE: ✗ FAILED - {str(e)}")
                 if tracker:
                     tracker.add_result(
-                        method='ALCSAT',
+                        method='CELOE',
                         problem=str_target_concept,
-                        fold=ith + 1,
+                        fold=1,
+                        concept_limit=concept_limit,
                         train_time=0,
-                        inference_time=alcsat_result['prediction_time'],
-                        train_f1=alcsat_result['train_f1'],
-                        test_f1=alcsat_result['test_f1'],
-                        concepts_tested=alcsat_result.get('concepts_tested', 0),
-                        prediction=alcsat_result['prediction']
-                    )
-                
-                # SPELL
-                spell_result = run_and_time_prediction(spell, train_lp, test_lp, kb)
-                spell_times.append(spell_result['prediction_time'])
-                spell_train_f1s.append(spell_result['train_f1'])
-                spell_test_f1s.append(spell_result['test_f1'])
-                
-                if tracker:
-                    tracker.add_result(
-                        method='SPELL',
-                        problem=str_target_concept,
-                        fold=ith + 1,
-                        train_time=0,
-                        inference_time=spell_result['prediction_time'],
-                        train_f1=spell_result['train_f1'],
-                        test_f1=spell_result['test_f1'],
-                        concepts_tested=spell_result.get('concepts_tested', 0),
-                        prediction=spell_result['prediction']
-                    )
-                
-                # NERO (requires namespace setup)
-                a_prop = list(kb.ontology.object_properties_in_signature())[:1].pop()
-                ns = a_prop.iri.get_namespace()
-                nero.ns = ns
-                nero_result = run_and_time_prediction(nero, train_lp, test_lp, kb)
-                nero_times.append(nero_result['prediction_time'])
-                nero_train_f1s.append(nero_result['train_f1'])
-                nero_test_f1s.append(nero_result['test_f1'])
-                
-                if tracker:
-                    tracker.add_result(
-                        method='NERO',
-                        problem=str_target_concept,
-                        fold=ith + 1,
-                        train_time=0,
-                        inference_time=nero_result['prediction_time'],
-                        train_f1=nero_result['train_f1'],
-                        test_f1=nero_result['test_f1'],
-                        concepts_tested=nero_result.get('concepts_tested', 0),
-                        prediction=nero_result['prediction']
+                        inference_time=0,
+                        train_f1=0,
+                        test_f1=0,
+                        concepts_tested=0,
+                        prediction="ERROR"
                     )
             
-            print(f"  OCEL:")
-            print(f"    Prediction: {ocel_result['prediction']}")
-            print(f"    Train F1: {ocel_result['train_f1']:.3f} | Test F1: {ocel_result['test_f1']:.3f}")
-            print(f"    Prediction time: {ocel_result['prediction_time']:.2f} seconds")
-            print(f"  CELOE:")
-            print(f"    Prediction: {celoe_result['prediction']}")
-            print(f"    Train F1: {celoe_result['train_f1']:.3f} | Test F1: {celoe_result['test_f1']:.3f}")
-            print(f"    Prediction time: {celoe_result['prediction_time']:.2f} seconds")
-            
-            if include_non_search:
-                print(f"  TDL:")
-                print(f"    Prediction: {tdl_result['prediction']}")
-                print(f"    Train F1: {tdl_result['train_f1']:.3f} | Test F1: {tdl_result['test_f1']:.3f}")
-                print(f"    Prediction time: {tdl_result['prediction_time']:.2f} seconds")
-                print(f"  ALCSAT:")
-                print(f"    Prediction: {alcsat_result['prediction']}")
-                print(f"    Train F1: {alcsat_result['train_f1']:.3f} | Test F1: {alcsat_result['test_f1']:.3f}")
-                print(f"    Prediction time: {alcsat_result['prediction_time']:.2f} seconds")
-                print(f"  SPELL:")
-                print(f"    Prediction: {spell_result['prediction']}")
-                print(f"    Train F1: {spell_result['train_f1']:.3f} | Test F1: {spell_result['test_f1']:.3f}")
-                print(f"    Prediction time: {spell_result['prediction_time']:.2f} seconds")
-                print(f"  NERO:")
-                print(f"    Prediction: {nero_result['prediction']}")
-                print(f"    Train F1: {nero_result['train_f1']:.3f} | Test F1: {nero_result['test_f1']:.3f}")
-                print(f"    Prediction time: {nero_result['prediction_time']:.2f} seconds")
-            
-        # Print V-learning trend for this problem (if agent is learning)
-        if len(fold_drillv_concepts) > 1 and hasattr(drillv, 'termination_agent') and drillv.termination_agent:
-            print(f"\nV-Learning Analysis for '{str_target_concept}':")
-            print(f"   Concepts per fold: {fold_drillv_concepts}")
-            first_fold = fold_drillv_concepts[0]
-            last_fold = fold_drillv_concepts[-1]
-            if first_fold > 0:
-                improvement = ((first_fold - last_fold) / first_fold) * 100
-                print(f"   Learning trend: {first_fold} → {last_fold} ({improvement:+.1f}% efficiency)")
-                if improvement > 5:
-                    print(f"   Agent is learning! Concepts decreased across folds")
-                elif improvement < -5:
-                    print(f"   Concepts increased (agent exploring more)")
-                else:
-                    print(f"   Stable performance across folds")
-
-
     # Print average prediction times
     avg_drill_time = np.mean(drill_times) if drill_times else 0
     avg_drillv_time = np.mean(drillv_times) if drillv_times else 0
-    avg_ocel_time = np.mean(ocel_times) if ocel_times else 0
-    avg_celoe_time = np.mean(celoe_times) if celoe_times else 0
+    avg_ocel_time = np.mean(ocel_times) #if ocel_times else 0
+    avg_celoe_time = np.mean(celoe_times) #if celoe_times else 0
     avg_tdl_time = np.mean(tdl_times) if tdl_times else 0
     avg_alcsat_time = np.mean(alcsat_times) if alcsat_times else 0
     avg_spell_time = np.mean(spell_times) if spell_times else 0
@@ -542,10 +509,9 @@ def start(args):
     print("\n" + "="*80)
     print("SUMMARY STATISTICS")
     print("="*80)
-    print("\nAverage Prediction Times:")
+    print("\nAverage Runtimes:")
     print(f"  Drill (DQN):              {avg_drill_time:.3f} seconds")
     print(f"  DrillV ({variant_name}):  {avg_drillv_time:.3f} seconds")
-    
     print(f"  OCEL:                     {avg_ocel_time:.3f} seconds")
     print(f"  CELOE:                    {avg_celoe_time:.3f} seconds")
     
@@ -555,18 +521,17 @@ def start(args):
         print(f"  SPELL:                    {avg_spell_time:.3f} seconds")
         print(f"  NERO:                     {avg_nero_time:.3f} seconds")
     
-    print("\nAverage Test F1 Scores:")
-    print(f"  Drill (DQN):              {np.mean(drill_test_f1s):.3f}")
-    print(f"  DrillV ({variant_name}):  {np.mean(drillv_test_f1s):.3f}")
-    
-    print(f"  OCEL:                     {np.mean(ocel_test_f1s):.3f}")
-    print(f"  CELOE:                    {np.mean(celoe_test_f1s):.3f}")
+    print("\nAverage F1 Scores:")
+    print(f"  Drill (DQN):              {np.mean(drill_train_f1s):.3f}")
+    print(f"  DrillV ({variant_name}):  {np.mean(drillv_train_f1s):.3f}")
+    print(f"  OCEL:                     {np.mean(ocel_train_f1s):.3f}")
+    print(f"  CELOE:                    {np.mean(celoe_train_f1s):.3f}")
     
     if include_non_search:
-        print(f"  TDL:                      {np.mean(tdl_test_f1s):.3f}")
-        print(f"  ALCSAT:                   {np.mean(alcsat_test_f1s):.3f}")
-        print(f"  SPELL:                    {np.mean(spell_test_f1s):.3f}")
-        print(f"  NERO:                     {np.mean(nero_test_f1s):.3f}")
+        print(f"  TDL:                      {np.mean(tdl_train_f1s):.3f}")
+        print(f"  ALCSAT:                   {np.mean(alcsat_train_f1s):.3f}")
+        print(f"  SPELL:                    {np.mean(spell_train_f1s):.3f}")
+        print(f"  NERO:                     {np.mean(nero_train_f1s):.3f}")
     
     print("\nAverage Concepts Tested:")
     print(f"  Drill (DQN):              {np.mean(drill_concepts):.0f}")
@@ -587,20 +552,34 @@ def start(args):
         reduction = (avg_drill_concepts - avg_drillv_concepts) / avg_drill_concepts * 100 if avg_drill_concepts > 0 else 0.0
         print(f"  Concepts: DrillV explores {reduction:+.1f}% {'fewer' if reduction > 0 else 'more'} concepts than Drill")
     
-    avg_drill_test_f1 = np.mean(drill_test_f1s) if drill_test_f1s else 0
-    avg_drillv_test_f1 = np.mean(drillv_test_f1s) if drillv_test_f1s else 0
-    f1_diff = avg_drillv_test_f1 - avg_drill_test_f1
-    print(f"  Quality: DrillV test F1 is {f1_diff:+.3f} {'better' if f1_diff > 0 else 'worse'} than Drill")
+    avg_drill_f1 = np.mean(drill_train_f1s) if drill_train_f1s else 0
+    avg_drillv_f1 = np.mean(drillv_train_f1s) if drillv_train_f1s else 0
+    f1_diff = avg_drillv_f1 - avg_drill_f1
+    print(f"  Quality: DrillV F1 is {f1_diff:+.3f} {'better' if f1_diff > 0 else 'worse'} than Drill")
     
     print("\n" + "="*80)
     
     # Save results to CSV if requested
     if tracker and args.save_results:
+        # Extract dataset name from knowledge base path (e.g., KGs/Family/... -> Family)
+        kb_parts = args.path_knowledge_base.split('/')
+        dataset_name = kb_parts[1] if len(kb_parts) > 1 else 'Unknown'
+        
+        # Extract LP filename without extension (e.g., lps_difficult.json -> lps_difficult)
+        lp_parts = args.path_learning_problem.split('/')
+        lp_filename = lp_parts[-1] if lp_parts else 'lps'
+        lp_name = lp_filename.replace('.json', '')
+        
+        # Create directory name
+        results_dir = f"results_{dataset_name}"
+        
+        # Create filename with LP name
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        csv_filename = f"results/drill_vs_drillv_{variant_name}_{timestamp}.csv"
+        csv_filename = f"{results_dir}/drill_vs_drillv_{variant_name}_{lp_name}_{timestamp}.csv"
+        
         df = tracker.save_to_csv(csv_filename)
         print(f"\nTo visualize results, run:")
-        print(f"  python visualize_drill_drillv_evolution.py --input {csv_filename}")
+        print(f"  python visualize_f1_checkpoints.py --input {csv_filename}")
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -617,19 +596,19 @@ if __name__ == '__main__':
                         default=20)
     parser.add_argument("--path_pretrained_dir", type=str, default=None)
 
-    parser.add_argument("--path_learning_problem", type=str, default='LPs/Family/lps_difficult.json',
+    parser.add_argument("--path_learning_problem", type=str, default='LPs/Family/lps.json',
                         help="Path to a .json file that contains 2 properties 'positive_examples' and "
                              "'negative_examples'. Each of this properties should contain the IRIs of the respective"
                              "instances. e.g. 'some/path/lp.json'")
-    parser.add_argument("--num_problems", type=int, default=2,
+    parser.add_argument("--num_problems", type=int, default=0,
                         help="Number of problems to evaluate from the learning problem file. 0 means all problems.")
-    parser.add_argument("--max_runtime", type=int, default=160, help="Max runtime")
-    parser.add_argument("--folds", type=int, default=5, help="Number of folds of cross validation.")
+    parser.add_argument("--max_runtime", type=int, default=100, help="Max runtime")
+    parser.add_argument("--folds", type=int, default=2, help="Number of folds of cross validation.")
     parser.add_argument("--learner_mode", type=str, default='search',
                         choices=['search', 'all'],
                         help="Which learners to include: 'search' (Drill, DrillV, OCEL, CELOE) or 'all' (includes TDL, ALCSAT, SPELL, NERO)")
     parser.add_argument("--random_seed", type=int, default=1)
-    parser.add_argument("--iter_bound", type=int, default=10_000, help='iter_bound during testing.')
+    parser.add_argument("--iter_bound", type=int, default=None, help='iter_bound during testing.')
    
     parser.add_argument("--drill_variant", type=str, default='complex',
                         choices=['default', 'minimal', 'standard', 'enhanced', 'complex'],
@@ -641,7 +620,7 @@ if __name__ == '__main__':
                         help='Save experiment results to CSV file for visualization')
     # DQL related
     parser.add_argument("--num_episode", type=int, default=1, help='Number of trajectories created for a given lp.')
-
+    parser.add_argument("--max_num_of_concepts_tested", type=int, default=10, help='Maximum number of concepts to be tested during learning.')
     parser.add_argument("--epsilon_decay", type=float, default=1.00, help='Epsilon greedy trade off per epoch') # Choose 0.0 for pure exploitation
     parser.add_argument("--max_len_replay_memory", type=int, default=1024,
                         help='Maximum size of the experience replay')
