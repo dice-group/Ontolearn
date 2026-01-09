@@ -68,3 +68,33 @@ class TestDrill(unittest.TestCase):
                   f"Test Quality: {test_f1_drill:.3f} \n")
         print(total_test_f1/5)
         assert total_test_f1/5 >= 0.8
+
+    def test_max_num_of_concepts_tested(self):
+        """Test that DRILL stops when max_num_of_concepts_tested is reached."""
+        kb = KnowledgeBase(path=self.kg_path)
+        max_concepts = 10
+        drill = Drill(knowledge_base=kb,
+                      path_embeddings=self.embeddings_path,
+                      refinement_operator=LengthBasedRefinement(knowledge_base=kb),
+                      quality_func=F1(),
+                      reward_func=CeloeBasedReward(),
+                      epsilon_decay=.01,
+                      learning_rate=.01,
+                      num_of_sequential_actions=1,
+                      num_episode=1,
+                      iter_bound=10_000,
+                      max_runtime=300,
+                      max_num_of_concepts_tested=max_concepts)
+
+        with open(self.lp_path) as json_file:
+            examples = json.load(json_file)
+        p = examples["problems"]["Uncle"]['positive_examples']
+        n = examples["problems"]["Uncle"]['negative_examples']
+
+        train_lp = PosNegLPStandard(pos=set(map(OWLNamedIndividual, map(IRI.create, p))),
+                                    neg=set(map(OWLNamedIndividual, map(IRI.create, n))))
+
+        drill.fit(train_lp)
+        # Verify that the number of tested concepts does not exceed the limit
+        assert drill.number_of_tested_concepts <= max_concepts, \
+            f"Expected at most {max_concepts} concepts tested, but got {drill.number_of_tested_concepts}"

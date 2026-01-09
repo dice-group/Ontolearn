@@ -358,6 +358,9 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             # (6.2) Checking the runtime termination criterion.
             if time.time() - self.start_time > self.max_runtime:
                 return self.terminate()
+            # (6.2.1) Checking the max_num_of_concepts_tested termination criterion.
+            if self._number_of_tested_concepts >= self.max_num_of_concepts_tested:
+                return self.terminate()
             # (6.3) Refine (6.1)
             # Convert this into tqdm with an update ?!
             for ref in (tqdm_bar := make_iterable_verbose(self.apply_refinement(most_promising),
@@ -365,6 +368,9 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                                                           position=0, leave=True)):
                 # (6.3.1) Checking the runtime termination criterion.
                 if time.time() - self.start_time > self.max_runtime:
+                    break
+                # (6.3.1.1) Checking the max_num_of_concepts_tested termination criterion.
+                if self._number_of_tested_concepts >= self.max_num_of_concepts_tested:
                     break
                 # (6.3.2) Compute the quality stored in the RL state
                 self.compute_quality_of_class_expression(ref)
