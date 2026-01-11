@@ -20,13 +20,16 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-# -----------------------------------------------------------------------------
-
+# --------------------------------------------------------------------
+# ---------
+from sklearn.inspection import permutation_importance
+import matplotlib.pyplot as plt
 from typing import Dict, Set, Tuple, List, Union, Callable
 from fitter import Fitter, get_common_distributions
 import logging
 import scipy as sc
 from scipy.stats._distn_infrastructure import rv_frozen
+
 logging.getLogger("fitter").setLevel(logging.CRITICAL)
 import numpy as np
 import pandas as pd
@@ -276,12 +279,13 @@ class TDL:
         plot_feature_importance: bool = False,
         verbose: int = 10,
         verbalize: bool = False,
+        feature_refinement: bool = False,
     ):
         self.use_inverse = use_inverse
         self.use_data_properties = use_data_properties
         self.use_nominals = use_nominals
-        self.use_data_properties = use_data_properties
         self.use_card_restrictions = use_card_restrictions
+        self.feature_refinement = feature_refinement
         self.verbose = verbose
 
         if grid_search_over is None and grid_search_apply:
@@ -420,13 +424,13 @@ class TDL:
             # A mapping from str dl representation to owl object.
             features[str_dl_concept] = owl_class_expression
 
-    def _compute_dt_gaussian_ranges(self, values: set, best_dist:str) -> List[tuple]:
+    def _compute_dt_gaussian_ranges(self, values: set, best_dist: dict) -> List[tuple]:
         print(type(list(best_dist.keys())[0]))
         dist_name = list(best_dist.keys())[0]
         distribution = getattr(sc.stats, dist_name)
         frozen_dist: rv_frozen
         frozen_dist = distribution(**best_dist[dist_name])
-        mean = frozen_dist.stats(moments='m')
+        mean = frozen_dist.stats(moments="m")
         std = frozen_dist.std()
         ranges = [
             (mean - std, mean),
@@ -453,18 +457,30 @@ class TDL:
                 ranges_dict.setdefault(
                     prop, self._get_data_property_range(data_properties_dict[prop])
                 )
-                
+
             if mode == "gauss":
-                f = Fitter(data_properties_dict[prop], distributions= get_common_distributions())
+                f = Fitter(
+                    data_properties_dict[prop], distributions=get_common_distributions()
+                )
                 f.fit()
-                print("prop" + prop.__repr__())
-                best_dist = f.get_best(method="sumsquare_error")
+                if "lumo" in prop.__repr__():
+                    f.summary(Nbest=1, method="ks_statistic")
+                    plt.legend(["exponpow", "lumo data (Histogram)"])
+
+                    plt.xlabel("lumo values")
+                    plt.ylabel("Density (Data & Probability)")
+                    plt.title("Best Distribution Fit (Ranked by K-S)")
+                    plt.show()
+                print("act" + prop.__repr__())
+                best_dist = f.get_best(method="ks_statistic")
                 print(best_dist)
                 ranges_dict.setdefault(
-                    prop, self._compute_dt_gaussian_ranges(data_properties_dict[prop], best_dist)
+                    prop,
+                    self._compute_dt_gaussian_ranges(
+                        data_properties_dict[prop], best_dist
+                    ),
                 )
-                
-                
+
         for r in ranges_dict:
             for interval in range(len(ranges_dict[r])):
                 new_class_expression = (
@@ -866,6 +882,26 @@ class TDL:
         }
         return list(prediction_per_example)
 
+    def plot_feature_importances(self, perm_importance_result, feat_name):
+        """bar plot the feature importance"""
+        feat_name = np.array(feat_name)
+        fig, ax = plt.subplots()
+
+        indices = perm_importance_result["importances_mean"].argsort()
+        perm_importance = perm_importance_result["importances_mean"][indices[-40:]]
+        perm_err = perm_importance_result["importances_std"][indices[-40:]]
+
+        plt.barh(
+            range(len(indices[-40:])),
+            perm_importance,
+            xerr=perm_err,
+        )
+
+        ax.set_yticks(range(len(indices[-40:])))
+        _ = ax.set_yticklabels(feat_name[indices[-40:]])
+        print("show plot")
+        plt.show()
+
     def fit(self, learning_problem: PosNegLPStandard = None, max_runtime: int = None):
         """Fit the learner to the given learning problem
 
@@ -911,6 +947,27 @@ class TDL:
             X=X.values, y=y.values
         )
 
+        if self.feature_refinement:
+            topk = 30
+            for i in range(1):
+                topk_id = np.argsort(self.clf.feature_importances_)
+                top_expressions = [self.features[i] for i in topk_id[-topk:].tolist()]
+                # least important features
+                least_important_expressions = [
+                    self.features[i] for i in topk_id[: -topk - 1].tolist()
+                ]
+
+                self.X = self.X.iloc[:, topk_id[-topk:]]
+                X = self.X
+                # refit decision tree
+                self.clf = tree.DecisionTreeClassifier(**self.kwargs_classifier).fit(
+                    X=self.X.values, y=self.y.values
+                )
+
+                # self.clf.fit(X=self.X.values, y=self.y.values)
+                # only top_expressions in features also have to be removed from y
+                # TODO refine features for most_important
+
         if self.report_classification:
             self.__classification_report = (
                 "Classification Report: Negatives: -1 and Positives 1 \n"
@@ -931,6 +988,14 @@ class TDL:
             plot_topk_feature_importance(
                 feature_names=[owl_expression_to_dl(f) for f in self.features],
                 cart_tree=self.clf,
+                topk=100,
+            )
+            # plot permutation feature importance
+            res = permutation_importance(
+                self.clf, X.values, y.values, n_repeats=10, random_state=0, n_jobs=8
+            )
+            self.plot_feature_importances(
+                res, [owl_expression_to_dl(f) for f in self.features]
             )
 
         self.owl_class_expressions.clear()
