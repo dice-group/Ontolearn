@@ -26,6 +26,7 @@
 
 import logging
 import re
+from functools import cache
 from itertools import chain
 from typing import Iterable, Set, Optional, Generator, Union, Tuple, Callable, FrozenSet
 import requests
@@ -177,11 +178,27 @@ def suf(direct: bool):
 
 class TripleStoreOntology(AbstractOWLOntology):
 
-    def __init__(self, triplestore_address: str):
+    def __init__(self, triplestore_address: str, use_cache: bool = False):
+        """
+        Args:
+            triplestore_address: The URL of the triplestore where the ontology is stored.
+            use_cache: Whether to use caching for method which retrieve objects in signature.
+                If your triplestore is immutable setting this to True is strongly recommended.
+        """
         assert is_valid_url(triplestore_address), (
             "You should specify a valid URL in the following argument: "
             "'triplestore_address' of class `TripleStore`")
         self.url = triplestore_address
+        self.use_cache = use_cache
+        if use_cache:
+            self.enable_caching()
+
+
+    def enable_caching(self):
+        self.classes_in_signature = cache(self.classes_in_signature)
+        self.data_properties_in_signature = cache(self.data_properties_in_signature)
+        self.object_properties_in_signature = cache(self.object_properties_in_signature)
+        self.individuals_in_signature = cache(self.individuals_in_signature)
 
     def classes_in_signature(self) -> Iterable[OWLClass]:
         query = owl_prefix + "SELECT DISTINCT ?x WHERE {?x a owl:Class.}"
@@ -588,7 +605,15 @@ class TripleStoreReasoner(AbstractOWLReasoner):
 
 class TripleStore(AbstractKnowledgeBase):
 
-    def __init__(self, ontology=None, reasoner=None, url: str = None):
+    def __init__(self, ontology=None, reasoner=None, url: str = None, use_cache: bool = False):
+        """
+        Args:
+            ontology: An instance of TripleStoreOntology.
+            reasoner: An instance of TripleStoreReasoner.
+            url: The URL of the triplestore endpoint can also be passed directly.
+            use_cache: Whether to use caching for method which retrieve objects in signature.
+                If your triplestore is immutable setting this to True is strongly recommended.
+        """
 
         self.url = url
         self.ontology = ontology
@@ -604,10 +629,14 @@ class TripleStore(AbstractKnowledgeBase):
             if reasoner is not None:
                 self.ontology = reasoner.ontology
             else:
-                self.ontology = TripleStoreOntology(url)
+                self.ontology = TripleStoreOntology(url, use_cache)
 
         if reasoner is None:
             self.reasoner = TripleStoreReasoner(self.ontology)
+
+        if not self.ontology.use_cache and use_cache and isinstance(self.ontology, TripleStoreOntology):
+            self.ontology.use_cache = True
+            self.ontology.enable_caching()
 
         assert self.url == self.ontology.url == self.reasoner.url, "URLs do not match"
 
