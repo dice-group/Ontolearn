@@ -103,7 +103,7 @@ extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "ontosample", "ru
 setup(
     name="ontolearn",
     description="Ontolearn is an open-source software library for structured machine learning in Python. Ontolearn includes modules for processing knowledge bases, inductive logic programming and ontology engineering.",
-    version="0.9.2",
+    version="0.10.0",
     packages=find_packages(),
     install_requires=extras["min"],
     extras_require=extras,
