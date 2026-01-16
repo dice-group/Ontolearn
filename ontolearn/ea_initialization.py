@@ -359,7 +359,7 @@ class EARandomWalkInitialization(AbstractEAInitialization):
 
     def _add_object_terminal(self, expr: Tree, pset: PrimitiveSetTyped, type_: OWLClass):
         for t in pset.terminals[OWLClassExpression]:
-            if t.name == escape(type_.iri.get_remainder()):
+            if t.name == escape(type_.str):
                 expr.append(t)
                 return
 

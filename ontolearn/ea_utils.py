@@ -153,6 +153,13 @@ class ToolboxVocabulary(str, Enum):
 
 def escape(name: str) -> str:
     name = name.replace('-', 'minus')
+    name = name.replace('http://', '')
+    name = name.replace('https://', '')
+    name = name.replace('#', '_')
+    name = name.replace('.', '_')
+    name = name.replace('/', '_')
+    name = name.replace(':', '_')
+
     return re.sub(r'[\W+]', '', name)
 
 
