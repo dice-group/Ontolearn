@@ -371,6 +371,6 @@ class EARandomWalkInitialization(AbstractEAInitialization):
 
     def _add_primitive(self, expr: Tree, pset: PrimitiveSetTyped, property_: Property, vocab: OperatorVocabulary):
         for p in pset.primitives[OWLClassExpression]:
-            if p.name == vocab + escape(property_.iri.get_remainder()):
+            if p.name == vocab + escape(property_.str):
                 expr.append(p)
                 return

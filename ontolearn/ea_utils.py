@@ -173,5 +173,5 @@ def owlliteral_to_primitive_string(lit: OWLLiteral, pe: Optional[Union[OWLDataPr
     str_ = type(lit.to_python()).__name__ + escape(lit.get_literal())
     if lit.get_datatype() in NUMERIC_DATATYPES:
         assert pe is not None
-        return escape(pe.iri.get_remainder()) + str_
+        return escape(pe.str) + str_
     return str_
