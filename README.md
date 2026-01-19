@@ -40,13 +40,16 @@ Find more in the [Documentation](https://ontolearn-docs-dice-group.netlify.app/u
 
 ## Installation
 
-```shell
-pip install ontolearn 
-```
-For CPU-only:
+For CPU-only (recommended for most users):
 ```shell
 pip install ontolearn --extra-index-url https://download.pytorch.org/whl/cpu
 ```
+
+For NVIDIA CUDA-enabled GPUs (full installation):
+```shell
+pip install ontolearn 
+```
+
 or
 ```shell
 git clone https://github.com/dice-group/Ontolearn.git 
