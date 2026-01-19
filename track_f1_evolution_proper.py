@@ -81,7 +81,7 @@ def run_and_time_training(learner, train_args, directory):
 
 def run_and_time_prediction(learner, train_lp, test_lp, kb, force_iter_bound=None):
     """
-    Run learner and time the prediction, optionally forcing iter_bound for Drill/DrillV.
+    Run learner and time the prediction, optionally forcing iter_bound for Drill/DrillV and max_num_of_concepts_tested for all.
     
     Args:
         learner: The learner to run
@@ -90,7 +90,8 @@ def run_and_time_prediction(learner, train_lp, test_lp, kb, force_iter_bound=Non
         kb: Knowledge base
         force_iter_bound: If provided, force learner.iter_bound AND max_num_of_concepts_tested to this value
     """
-    # Force iter_bound and max_num_of_concepts_tested if requested (for Drill/DrillV)
+    # Force iter_bound and max_num_of_concepts_tested if requested
+    # This applies to ALL learners that have these attributes (Drill, DrillV, OCEL, CELOE, etc.)
     if force_iter_bound is not None:
         if hasattr(learner, 'iter_bound'):
             learner.iter_bound = force_iter_bound
@@ -245,7 +246,7 @@ def start(args):
         problems = data
 
     # Define concept limits to test
-    concept_limits = [0, 50, 100, 150, 250, 350, 500, 700, 1000]
+    concept_limits = [0, 500, 1000, 1500, 2500, 3500, 5000, 7000]
     print(f"\nTesting with concept limits: {concept_limits}")
 
     # Collect prediction times
@@ -599,13 +600,13 @@ if __name__ == '__main__':
                         default=20)
     parser.add_argument("--path_pretrained_dir", type=str, default=None)
 
-    parser.add_argument("--path_learning_problem", type=str, default='LPs/Family/lps.json',
+    parser.add_argument("--path_learning_problem", type=str, default='LPs/Family/lps_with_concept_injection.json',
                         help="Path to a .json file that contains 2 properties 'positive_examples' and "
                              "'negative_examples'. Each of this properties should contain the IRIs of the respective"
                              "instances. e.g. 'some/path/lp.json'")
     parser.add_argument("--num_problems", type=int, default=0,
                         help="Number of problems to evaluate from the learning problem file. 0 means all problems.")
-    parser.add_argument("--max_runtime", type=int, default=100, help="Max runtime")
+    parser.add_argument("--max_runtime", type=int, default=200, help="Max runtime")
     parser.add_argument("--folds", type=int, default=2, help="Number of folds of cross validation.")
     parser.add_argument("--learner_mode", type=str, default='search',
                         choices=['search', 'all'],

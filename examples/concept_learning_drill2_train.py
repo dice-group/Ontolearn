@@ -31,6 +31,7 @@ from owlapy.render import DLSyntaxObjectRenderer
 import sys
 sys.path.insert(0, '.')
 from drillv_variants import DrillV_Minimal, DrillV_Standard, DrillV_Enhanced, DrillV_Complex
+from prunecel_wrapper import PruneCELWrapper, check_prunecel_available
 
 
 class ExperimentTracker:
@@ -91,6 +92,24 @@ def run_and_time_prediction(learner, train_lp, test_lp, kb):
         pred = learner.fit(train_lp).best_hypotheses()
     
     pred_time = time.time() - start_time
+    
+    # Handle PruneCEL wrapper specially (it returns a string wrapper)
+    from prunecel_wrapper import PruneCELWrapper
+    if isinstance(learner, PruneCELWrapper):
+        # For PruneCEL, use the extracted F1 scores from its output
+        # Note: PruneCEL computes F1 on training data, so we use it for both train and test
+        # (test F1 would require running PruneCEL separately on test fold)
+
+        pred_time = learner.last_runtime
+        concepts_tested = learner.number_of_tested_concepts
+        # return {
+        #     "prediction": str(pred),
+        #     "train_f1": learner._last_train_f1,
+        #     "test_f1": learner._last_train_f1,  # Using train F1 as approximation
+        #     "prediction_time": pred_time,
+        #     "concepts_tested": getattr(learner, '_number_of_tested_concepts', 0)
+        # }
+    
     train_f1 = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred)}),
                                 pos=train_lp.pos, neg=train_lp.neg)
     test_f1 = compute_f1_score(individuals=frozenset({i for i in kb.individuals(pred)}),
@@ -128,6 +147,34 @@ def start(args):
     celoe = CELOE(knowledge_base=kb, quality_func=F1(), max_runtime=args.max_runtime)
     print("  ✓ OCEL initialized (search-based)")
     print("  ✓ CELOE initialized (search-based)")
+    
+    # Initialize PruneCEL if requested and available
+    prunecel = None
+    if args.use_prunecel:
+        if not args.prunecel_jar or not args.prunecel_sparql_url:
+            print("  ⚠ PruneCEL requested but missing --prunecel_jar or --prunecel_sparql_url")
+            print("    Skipping PruneCEL initialization")
+        elif check_prunecel_available(args.prunecel_jar):
+            try:
+                prunecel = PruneCELWrapper(
+                    jar_path=args.prunecel_jar,
+                    sparql_url=args.prunecel_sparql_url,
+                    knowledge_base=kb,
+                    max_runtime=args.max_runtime,
+                    recursive=args.prunecel_recursive,
+                    skip_none=args.prunecel_skip_none
+                )
+                print(f"  ✓ PruneCEL initialized (search-based, Java)")
+                print(f"    JAR: {args.prunecel_jar}")
+                print(f"    SPARQL: {args.prunecel_sparql_url}")
+                print(f"    Extensions: R={args.prunecel_recursive}, S={args.prunecel_skip_none}")
+            except Exception as e:
+                print(f"  ⚠ Failed to initialize PruneCEL: {e}")
+                print("    Continuing without PruneCEL")
+                prunecel = None
+        else:
+            print("  ⚠ PruneCEL not available. Run ./setup_prunecel.sh to install.")
+            print("    Continuing without PruneCEL")
     
     # Initialize non-search-based learners only if 'all' mode
     if include_non_search:
@@ -170,7 +217,7 @@ def start(args):
         num_of_sequential_actions=args.num_of_sequential_actions,
         num_episode=args.num_episode,
         iter_bound=args.iter_bound,
-        max_num_of_concepts_tested=5,
+        # max_num_of_concepts_tested=5,
         max_runtime=args.max_runtime
     )
 
@@ -198,7 +245,7 @@ def start(args):
         num_of_sequential_actions=args.num_of_sequential_actions,
         num_episode=args.num_episode,
         iter_bound=args.iter_bound,
-        max_num_of_concepts_tested=5,
+        # max_num_of_concepts_tested=5,
         max_runtime=args.max_runtime
     )
 
@@ -231,6 +278,7 @@ def start(args):
     drillv_random_times = []
     ocel_times = []
     celoe_times = []
+    prunecel_times = []
     tdl_times = []
     alcsat_times = []
     spell_times = []
@@ -239,6 +287,7 @@ def start(args):
     drill_concepts = []
     drillv_concepts = []
     drillv_random_concepts = []
+    prunecel_concepts = []
     # Collect F1 scores
     drill_train_f1s = []
     drill_test_f1s = []
@@ -250,6 +299,8 @@ def start(args):
     ocel_test_f1s = []
     celoe_train_f1s = []
     celoe_test_f1s = []
+    prunecel_train_f1s = []
+    prunecel_test_f1s = []
     tdl_train_f1s = []
     tdl_test_f1s = []
     alcsat_train_f1s = []
@@ -404,6 +455,27 @@ def start(args):
                     prediction=celoe_result['prediction']
                 )
             
+            # PruneCEL (if available)
+            if prunecel is not None:
+                prunecel_result = run_and_time_prediction(prunecel, train_lp, test_lp, kb)
+                prunecel_times.append(prunecel_result['prediction_time'])
+                prunecel_train_f1s.append(prunecel_result['train_f1'])
+                prunecel_test_f1s.append(prunecel_result['test_f1'])
+                prunecel_concepts.append(prunecel_result.get('concepts_tested', 0))
+                
+                if tracker:
+                    tracker.add_result(
+                        method='PruneCEL',
+                        problem=str_target_concept,
+                        fold=ith + 1,
+                        train_time=0,  # PruneCEL doesn't require pre-training
+                        inference_time=prunecel_result['prediction_time'],
+                        train_f1=prunecel_result['train_f1'],
+                        test_f1=prunecel_result['test_f1'],
+                        concepts_tested=prunecel_result.get('concepts_tested', 0),
+                        prediction=prunecel_result['prediction']
+                    )
+            
             # Non-search-based learners (only if include_non_search is True)
             if include_non_search:
                 # TDL
@@ -494,6 +566,13 @@ def start(args):
             print(f"    Train F1: {celoe_result['train_f1']:.3f} | Test F1: {celoe_result['test_f1']:.3f}")
             print(f"    Prediction time: {celoe_result['prediction_time']:.2f} seconds")
             
+            if prunecel is not None:
+                print(f"  PruneCEL:")
+                print(f"    Prediction: {prunecel_result['prediction']}")
+                print(f"    Train F1: {prunecel_result['train_f1']:.3f} | Test F1: {prunecel_result['test_f1']:.3f}")
+                print(f"    Concepts tested: {prunecel_result['concepts_tested']}")
+                print(f"    Prediction time: {prunecel_result['prediction_time']:.2f} seconds")
+            
             if include_non_search:
                 print(f"  TDL:")
                 print(f"    Prediction: {tdl_result['prediction']}")
@@ -534,6 +613,7 @@ def start(args):
     avg_drillv_time = np.mean(drillv_times) if drillv_times else 0
     avg_ocel_time = np.mean(ocel_times) if ocel_times else 0
     avg_celoe_time = np.mean(celoe_times) if celoe_times else 0
+    avg_prunecel_time = np.mean(prunecel_times) if prunecel_times else 0
     avg_tdl_time = np.mean(tdl_times) if tdl_times else 0
     avg_alcsat_time = np.mean(alcsat_times) if alcsat_times else 0
     avg_spell_time = np.mean(spell_times) if spell_times else 0
@@ -548,6 +628,8 @@ def start(args):
     
     print(f"  OCEL:                     {avg_ocel_time:.3f} seconds")
     print(f"  CELOE:                    {avg_celoe_time:.3f} seconds")
+    if prunecel is not None:
+        print(f"  PruneCEL:                 {avg_prunecel_time:.3f} seconds")
     
     if include_non_search:
         print(f"  TDL:                      {avg_tdl_time:.3f} seconds")
@@ -561,6 +643,8 @@ def start(args):
     
     print(f"  OCEL:                     {np.mean(ocel_test_f1s):.3f}")
     print(f"  CELOE:                    {np.mean(celoe_test_f1s):.3f}")
+    if prunecel is not None:
+        print(f"  PruneCEL:                 {np.mean(prunecel_test_f1s):.3f}")
     
     if include_non_search:
         print(f"  TDL:                      {np.mean(tdl_test_f1s):.3f}")
@@ -571,6 +655,8 @@ def start(args):
     print("\nAverage Concepts Tested:")
     print(f"  Drill (DQN):              {np.mean(drill_concepts):.0f}")
     print(f"  DrillV ({variant_name}):  {np.mean(drillv_concepts):.0f}")
+    if prunecel is not None and prunecel_concepts:
+        print(f"  PruneCEL:                 {np.mean(prunecel_concepts):.0f}")
     
     print("\n" + "="*80)
     
@@ -597,7 +683,7 @@ def start(args):
     # Save results to CSV if requested
     if tracker and args.save_results:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        csv_filename = f"results/drill_vs_drillv_{variant_name}_{timestamp}.csv"
+        csv_filename = f"results/drill_vs_drillv_{variant_name}_{timestamp}_{args.max_runtime}.csv"
         df = tracker.save_to_csv(csv_filename)
         print(f"\nTo visualize results, run:")
         print(f"  python visualize_drill_drillv_evolution.py --input {csv_filename}")
@@ -621,9 +707,9 @@ if __name__ == '__main__':
                         help="Path to a .json file that contains 2 properties 'positive_examples' and "
                              "'negative_examples'. Each of this properties should contain the IRIs of the respective"
                              "instances. e.g. 'some/path/lp.json'")
-    parser.add_argument("--num_problems", type=int, default=2,
+    parser.add_argument("--num_problems", type=int, default=5,
                         help="Number of problems to evaluate from the learning problem file. 0 means all problems.")
-    parser.add_argument("--max_runtime", type=int, default=160, help="Max runtime")
+    parser.add_argument("--max_runtime", type=int, default=5, help="Max runtime")
     parser.add_argument("--folds", type=int, default=5, help="Number of folds of cross validation.")
     parser.add_argument("--learner_mode", type=str, default='search',
                         choices=['search', 'all'],
@@ -639,6 +725,19 @@ if __name__ == '__main__':
                              'complex (4-layer residual with target network) [default: complex]')
     parser.add_argument("--save_results", action='store_true', default=True,
                         help='Save experiment results to CSV file for visualization')
+    
+    # PruneCEL related
+    parser.add_argument("--use_prunecel", action='store_true', default=False,
+                        help='Include PruneCEL as a baseline (requires Java and compiled JAR)')
+    parser.add_argument("--prunecel_jar", type=str, default="PruneCEL/target/prune-cel-0.0.1-SNAPSHOT.jar",
+                        help='Path to compiled PruneCEL JAR file')
+    parser.add_argument("--prunecel_sparql_url", type=str, default="http://localhost:3030/family/sparql",
+                        help='SPARQL endpoint URL with loaded knowledge base')
+    parser.add_argument("--prunecel_recursive", action='store_true', default=True,
+                        help='Enable PruneCEL recursive extension (-R)')
+    parser.add_argument("--prunecel_skip_none", action='store_true', default=True,
+                        help='Enable PruneCEL skip-none extension (-S)')
+    
     # DQL related
     parser.add_argument("--num_episode", type=int, default=1, help='Number of trajectories created for a given lp.')
 
