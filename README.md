@@ -43,6 +43,10 @@ Find more in the [Documentation](https://ontolearn-docs-dice-group.netlify.app/u
 ```shell
 pip install ontolearn 
 ```
+For CPU-only:
+```shell
+pip install ontolearn --extra-index-url https://download.pytorch.org/whl/cpu
+```
 or
 ```shell
 git clone https://github.com/dice-group/Ontolearn.git 
