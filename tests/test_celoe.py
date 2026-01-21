@@ -4,7 +4,7 @@ from owlapy.class_expression import OWLClass
 from owlapy.iri import IRI
 from owlapy.owl_individual import OWLNamedIndividual
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import CELOE
+from ontolearn.learners import CELOE
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.utils import compute_f1_score
 from owlapy.render import DLSyntaxObjectRenderer

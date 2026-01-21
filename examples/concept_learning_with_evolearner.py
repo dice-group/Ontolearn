@@ -2,7 +2,7 @@ import json
 import os
 
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.concept_learner import EvoLearner
+from ontolearn.learners import EvoLearner
 from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.owl_individual import OWLNamedIndividual, IRI
 from owlapy.class_expression import OWLClass
@@ -60,7 +60,7 @@ for str_target_concept, examples in settings['problems'].items():
 
     model.save_best_hypothesis(n=3, path='Predictions_{0}'.format(str_target_concept))
     # Get Top n hypotheses
-    hypotheses = list(model.best_hypotheses(n=3))
+    hypotheses = list(model.best_hypotheses(n=3, return_node=True))
     # Use hypotheses as binary function to label individuals.
     predictions = model.predict(individuals=list(typed_pos | typed_neg),
                                 hypotheses=hypotheses)

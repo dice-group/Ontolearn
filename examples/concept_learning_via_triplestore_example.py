@@ -1,11 +1,9 @@
 import argparse
 import json
 
-from ontolearn.concept_learner import CELOE
 from ontolearn.heuristics import CELOEHeuristic
 from ontolearn.knowledge_base import KnowledgeBase
-from ontolearn.learners import TDL, Drill
-from ontolearn.concept_learner import EvoLearner
+from ontolearn.learners import TDL, Drill, CELOE, EvoLearner
 from ontolearn.learning_problem import PosNegLPStandard
 from owlapy.owl_individual import IRI, OWLNamedIndividual
 from ontolearn.refinement_operators import ModifiedCELOERefinement

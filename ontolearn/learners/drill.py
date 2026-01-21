@@ -28,7 +28,7 @@ from owlapy.class_expression import OWLClassExpression, OWLThing
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy import owl_expression_to_dl
 
-from ontolearn.base_concept_learner import RefinementBasedConceptLearner
+from .base import RefinementBasedConceptLearner
 from ontolearn.refinement_operators import LengthBasedRefinement
 from ontolearn.abstracts import AbstractNode, AbstractKnowledgeBase
 from ontolearn.search import RL_State
@@ -358,6 +358,9 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
             # (6.2) Checking the runtime termination criterion.
             if time.time() - self.start_time > self.max_runtime:
                 return self.terminate()
+            # (6.2.1) Checking the max_num_of_concepts_tested termination criterion.
+            if self._number_of_tested_concepts >= self.max_num_of_concepts_tested:
+                return self.terminate()
             # (6.3) Refine (6.1)
             # Convert this into tqdm with an update ?!
             for ref in (tqdm_bar := make_iterable_verbose(self.apply_refinement(most_promising),
@@ -365,6 +368,9 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
                                                           position=0, leave=True)):
                 # (6.3.1) Checking the runtime termination criterion.
                 if time.time() - self.start_time > self.max_runtime:
+                    break
+                # (6.3.1.1) Checking the max_num_of_concepts_tested termination criterion.
+                if self._number_of_tested_concepts >= self.max_num_of_concepts_tested:
                     break
                 # (6.3.2) Compute the quality stored in the RL state
                 self.compute_quality_of_class_expression(ref)
@@ -706,61 +712,84 @@ class Drill(RefinementBasedConceptLearner):  # pragma: no cover
 
             Time complexity: O(n^2) n = named concepts
         """
-        counter = 0
-        size_of_examples = 3
-        examples = []
-        # C: Iterate over all named OWL concepts
+        # Initialize counters and containers
+        counter = 0   
+        size_of_examples = 3  # Minimum number of examples required for positive/negative sets
+        examples = []   
+         # C: Iterate over all named OWL concepts
         for i in self.kb.get_concepts():
-            # Retrieve(C)
+            # Retrieve all individuals that belong to concept i (positive examples)
             individuals_i = set(self.kb.individuals(i, True))
+            
+            # Skip concepts with insufficient individuals for sampling
             if len(individuals_i) < size_of_examples:
                 continue
+                
             for j in self.kb.get_concepts():
+                # Skip if same concept (can't use same concept for both positive and negative examples)
                 if i == j:
                     continue
                 str_dl_concept_i = owl_expression_to_dl(i)
+                
+                # Retrieve all individuals that belong to concept j (negative examples)
                 individuals_j = set(self.kb.individuals(j, True))
+                
+                # Skip concepts with insufficient individuals for sampling
                 if len(individuals_j) < size_of_examples:
                     continue
 
                 # Generate Learning problems from a single target
                 for _ in range(num_of_target_concepts):
+                    # Randomly sample positive examples from concept i
                     sampled_positives = set(random.sample(individuals_i, size_of_examples))
+                    
+                    # Randomly sample negative examples from concept j
                     sampled_negatives = set(random.sample(individuals_j, size_of_examples))
-                    if sampled_negatives== sampled_positives:
+                    
+                    # Validate that positive and negative examples are different
+                    if sampled_negatives == sampled_positives:
                         print("Sampled Positives and negatives are same. We need to ignore this example")
                         continue
-                    lp = (str_dl_concept_i,sampled_positives,sampled_negatives)
+                     
+                    lp = (str_dl_concept_i, sampled_positives, sampled_negatives)
                     examples.append(lp)
                     counter += 1
+                    
+                    # Break innermost loop: Stop sampling from this concept pair
                     if counter == num_learning_problems:
                         break
 
+                # Break middle loop: Stop iterating through concept j for this concept i
                 if counter == num_learning_problems:
                     break
+                    
+            # Break outermost loop: Stop iterating through all concepts i
+            if counter == num_learning_problems:
+                    break
+                
+        # Return the generated learning problems
+        return examples
+        """
+        # if |Retrieve(C|>3
+        if len(individuals_i) > size_of_examples:
+            str_dl_concept_i = owl_expression_to_dl(i)
+            for j in self.kb.get_concepts():
+                if i == j:
+                    continue
+                individuals_j = set(self.kb.individuals(j))
+                if len(individuals_j) > size_of_examples:
+                    for _ in range(num_learning_problems):
+                        lp = (str_dl_concept_i,
+                                set(random.sample(individuals_i, size_of_examples)),
+                                set(random.sample(individuals_j, size_of_examples)))
+                        yield lp
 
-            return examples
-            """
-            # if |Retrieve(C|>3
-            if len(individuals_i) > size_of_examples:
-                str_dl_concept_i = owl_expression_to_dl(i)
-                for j in self.kb.get_concepts():
-                    if i == j:
-                        continue
-                    individuals_j = set(self.kb.individuals(j))
-                    if len(individuals_j) > size_of_examples:
-                        for _ in range(num_learning_problems):
-                            lp = (str_dl_concept_i,
-                                  set(random.sample(individuals_i, size_of_examples)),
-                                  set(random.sample(individuals_j, size_of_examples)))
-                            yield lp
-
-                    counter += 1
-                    if counter == num_of_target_concepts:
-                        break
+                counter += 1
                 if counter == num_of_target_concepts:
                     break
-            """
+            if counter == num_of_target_concepts:
+                break
+        """
 
     def learn_from_illustration(self, sequence_of_goal_path: List[RL_State]):
         """

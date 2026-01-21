@@ -1,5 +1,4 @@
 import unittest
-import tempfile
 import pandas as pd
 from owlapy.class_expression import OWLClass, OWLObjectIntersectionOf, OWLObjectSomeValuesFrom, OWLThing
 from owlapy.iri import IRI
@@ -7,7 +6,7 @@ from owlapy.owl_axiom import OWLClassAssertionAxiom, OWLObjectPropertyAssertionA
 from owlapy.owl_individual import OWLNamedIndividual
 from owlapy.owl_property import OWLObjectProperty
 
-from ontolearn.concept_learner import CELOE
+from ontolearn.learners import CELOE
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.learning_problem import PosNegLPStandard
 from ontolearn.search import EvoLearnerNode

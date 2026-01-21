@@ -36,7 +36,7 @@ with open('README.md', 'r') as fh:
 _deps = [
     "matplotlib>=3.3.4",
     "scikit-learn>=1.4.1",
-    "torch==2.2.0",
+    "torch>=2.2.0",
     "rdflib>=6.0.2",
     "ruff>=0.7.2",
     "pandas>=1.5.0",
@@ -47,8 +47,8 @@ _deps = [
     "tqdm>=4.64.0",
     "transformers>=4.38.1",
     "pytest>=7.2.2",
-    "owlapy==1.5.1",
-    "dicee==0.1.4",
+    "owlapy==1.6.2",
+    "dicee==0.2.0",
     "ontosample>=0.2.2",
     "sphinx>=7.2.6",
     "sphinx-autoapi>=3.0.0",
@@ -60,7 +60,10 @@ _deps = [
     "flake8>=6.0.0",
     "fastapi>=0.110.1",
     "uvicorn>=0.29.0",
-    "openai>=1.86.0"]
+    "openai>=1.86.0",
+    "lxml==5.3.0",
+    "python-sat==0.1.7.dev23",
+    "asciitree==0.3.3"]
 
 deps = {b: a for a, b in (re.findall(r"^(([^!=<>~ ]+)(?:[!=<>~ ].*)?$)", x)[0] for x in _deps)}
 
@@ -83,7 +86,10 @@ extras["min"] = deps_list(
     "deap",  # Evolearner
     "fastapi",
     "uvicorn",
-    "openai")
+    "openai",
+    "lxml",
+    "python-sat",
+    "asciitree",)
 
 extras["doc"] = (deps_list("sphinx",
                            "sphinx-autoapi",
