@@ -63,7 +63,8 @@ _deps = [
     "openai>=1.86.0",
     "lxml==5.3.0",
     "python-sat==0.1.7.dev23",
-    "asciitree==0.3.3"]
+    "asciitree==0.3.3",
+    "more-itertools>=10.0.0"]
 
 deps = {b: a for a, b in (re.findall(r"^(([^!=<>~ ]+)(?:[!=<>~ ].*)?$)", x)[0] for x in _deps)}
 
@@ -88,7 +89,8 @@ extras["min"] = deps_list(
     "openai",
     "lxml",
     "python-sat",
-    "asciitree",)
+    "asciitree",
+    "more-itertools",)
 
 extras["doc"] = (deps_list("sphinx",
                            "sphinx-autoapi",
