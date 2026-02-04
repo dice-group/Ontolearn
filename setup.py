@@ -47,8 +47,8 @@ _deps = [
     "tqdm>=4.64.0",
     "transformers>=4.38.1",
     "pytest>=7.2.2",
-    "owlapy==1.6.2",
-    "dicee==0.2.0",
+    "owlapy==1.6.3",
+    "dicee==0.3.2",
     "ontosample>=0.2.2",
     "sphinx>=7.2.6",
     "sphinx-autoapi>=3.0.0",
@@ -82,7 +82,6 @@ extras["min"] = deps_list(
     "owlapy",
     "flask",  # Drill, NCES
     "tqdm", "transformers",  # NCES
-    "dicee",  # Drill
     "deap",  # Evolearner
     "fastapi",
     "uvicorn",
@@ -98,7 +97,7 @@ extras["doc"] = (deps_list("sphinx",
                            "sphinxcontrib-plantuml",
                            "plantuml-local-client", "myst-parser"))
 
-extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "ontosample", "ruff"))
+extras["full"] = (extras["min"] + deps_list("httpx", "pytest", "ontosample", "ruff", "dicee"))
 
 setup(
     name="ontolearn",

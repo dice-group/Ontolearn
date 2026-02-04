@@ -1,5 +1,7 @@
 """ StratifiedKFold Cross Validating DL Concept Learning Algorithms
 
+pip install dicee --extra-index-url https://download.pytorch.org/whl/cpu
+
 dicee --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --path_to_store_single_run KeciFamilyRun --backend rdflib
 
 
