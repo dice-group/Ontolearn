@@ -232,6 +232,8 @@ class EvoLearner(BaseConceptLearner):
                           name=OperatorVocabulary.INTERSECTION.value)
 
         for op in self.kb.get_object_properties():
+            # AB: Started using .str instead of .iri.get_remainder() to distinct between entities with the same
+            # remainder but different namespaces
             name = escape(op.str)
             existential, universal = factory.create_existential_universal(op)
             pset.addPrimitive(existential, [OWLClassExpression], OWLClassExpression,
@@ -256,6 +258,8 @@ class EvoLearner(BaseConceptLearner):
             pset.addTerminal(true_, Bool, name=owlliteral_to_primitive_string(true_))
 
             for bool_dp in self.kb.get_boolean_data_properties():
+                # AB: Started using .str instead of .iri.get_remainder() to distinct between entities with the same
+                # remainder but different namespaces
                 name = escape(bool_dp.str)
                 self._dp_to_prim_type[bool_dp] = Bool
 
@@ -264,6 +268,8 @@ class EvoLearner(BaseConceptLearner):
                                   name=OperatorVocabulary.DATA_HAS_VALUE + name)
 
             for split_dp in chain(self.kb.get_time_data_properties(), self.kb.get_numeric_data_properties()):
+                # AB: Started using .str instead of .iri.get_remainder() to distinct between entities with the same
+                # remainder but different namespaces
                 name = escape(split_dp.str)
                 type_ = type(name, (object,), {})
 
@@ -280,6 +286,8 @@ class EvoLearner(BaseConceptLearner):
             for i in range(1, self.card_limit + 1):
                 pset.addTerminal(i, int)
             for op in self.kb.get_object_properties():
+                # AB: Started using .str instead of .iri.get_remainder() to distinct between entities with the same
+                # remainder but different namespaces
                 name = escape(op.str)
                 card_min, card_max, _ = factory.create_card_restrictions(op)
                 pset.addPrimitive(card_min, [int, OWLClassExpression], OWLClassExpression,
@@ -290,6 +298,8 @@ class EvoLearner(BaseConceptLearner):
         for class_ in self.kb.get_concepts():
             if class_ == OWLThing:
                 continue
+            # AB: Started using .str instead of .iri.get_remainder() to distinct between entities with the same
+            # remainder but different namespaces
             pset.addTerminal(class_, OWLClassExpression, name=escape(class_.str))
 
         pset.addTerminal(self.generator.thing, OWLClassExpression,
